@@ -1,33 +1,35 @@
 /**
- * `/admin/review` — the console's review shelf (#665).
+ * `/admin/review` — the console's review shelf (#665), reading the store #667 landed.
  *
  * **Four gates, in this order.** `requireAdminProduct()` first (#509): the console is a template
  * capability, so a template that does not claim `product.admin` answers the 404 an unknown URL gets
  * before a session is read. Then `requireAdmin()`, which sends a signed-out visitor to
- * `/login?next=/admin/review` and answers a member with the same 404. Then the catalogue read. Then
- * the selection — an `?artifact=` id the manifest does not carry, or an `?issue=` the selected
- * artifact's record does not hold, is `notFound()` rather than a quiet fallback to the first row: a
- * review somebody linked to must stay the review it named, and probing the parameters tells a
- * refused visitor nothing about which ids exist.
+ * `/login?next=/admin/review` and answers a member with the same 404. Then the read. Then the
+ * selection — an `?artifact=` the catalogue does not carry, or an `?issue=` the selected artifact's
+ * record does not hold, is `notFound()` rather than a quiet fallback: a review somebody linked to
+ * must stay the review it named, and probing the parameters tells a refused visitor nothing about
+ * which ids exist.
  *
- * **The manifest is the catalogue, and the read is the only one.** `readReviewCatalogue()` reads
- * `docs/review/artifacts.json`, validates it against `content/review.ts`, checks every artifact's
- * release against `docs/changelog/releases.json` and every named file against
- * `docs/review/artifacts/`, and groups the result by release. A manifest that cannot be read is the
- * screen's own panel with the reason — never an empty list, because "there is nothing to review" and
- * "the catalogue could not be read" are different statements and only one of them is true.
+ * **One read for the list, one for the detail.** `listReviewArtifacts()` answers every artifact with
+ * its two counts in a single statement, so the row above and the panes below cannot disagree;
+ * `readReviewArtifact()` answers the open artifact's to-dos and issues, and `readReviewIssue()`
+ * answers one thread when `?issue=` asks for it. Nothing here invents a count.
  *
- * **Request-time, always.** `force-dynamic`: the manifest and the files it names are read per
- * request, so publishing an artifact is a file plus one manifest row and no rebuild — and
- * `pnpm build` keeps passing with no database and no auth environment, because nothing here is
- * prerendered.
+ * **Two honest failures.** The database not answering is `DatabaseUnavailableError` and the
+ * catalogue/manifest disagreeing is `ReviewManifestUnreadable`; both draw the screen's own panel
+ * with the reason, because "there is nothing to review" and "the shelf could not be built" are
+ * different statements and only one of them is true. A row that does not parse still throws.
  *
- * **No clock in this render.** Every date on the screen is the manifest's own day or a record's own
- * instant, formatted by `content/core.ts`. The page never asks what time it is, so there is no
- * second render that could disagree with the first.
+ * **Request-time, always.** `force-dynamic`: the list is a database read on every visit and the
+ * manifest is a file, so a published artifact is a fixture row plus a manifest row and no rebuild —
+ * and `pnpm build` keeps passing with `DATABASE_URL` unset, because nothing here is prerendered.
  *
- * Nothing here writes: the review store is read through `reviewStore` and its `readOnlyReason` is
- * what the checklist and the thread print while the three tables are carded separately.
+ * **No clock in this render.** Every date is the record's own instant (`capturedAt`, `openedAt`,
+ * `doneAt`, `createdAt`), formatted by `content/core.ts`.
+ *
+ * **Read-only.** The writes live in `./actions.ts` (`toggleReviewTodoAction`,
+ * `setReviewIssueStateAction`, `commentOnReviewIssueAction`) and are not mounted here; the checklist
+ * and the thread say so rather than looking live and dropping the write.
  */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -36,13 +38,22 @@ import { ReviewArtifacts } from "@/components/admin/review-artifacts";
 import { adminReviewPageCopy } from "@/data/pages/admin-review";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
+import { DatabaseUnavailableError } from "@/lib/db/client";
 import {
-  type ReviewCatalogue,
+  type ReviewArtifactDetail,
+  type ReviewIssueThread,
+  listReviewArtifacts,
+  readReviewArtifact,
+  readReviewIssue,
+} from "@/lib/db/review-artifacts";
+import {
+  type ReviewShelf,
   ReviewManifestUnreadable,
-  readReviewCatalogue,
+  readReleaseVersions,
+  readReviewManifest,
+  shelfOf,
 } from "@/lib/review/artifacts";
 import { ADMIN_REVIEW_PATH } from "@/lib/review/paths";
-import { reviewStore } from "@/lib/review/store";
 
 export const dynamic = "force-dynamic";
 
@@ -63,55 +74,71 @@ export default async function AdminReviewPage({
   searchParams?: Promise<{ artifact?: string | string[]; issue?: string | string[] }>;
 }) {
   // The capability before the role (#509): a template that does not claim the console answers the
-  // 404 an unknown URL gets, with no session read and no manifest read behind it.
+  // 404 an unknown URL gets, with no session read and no database read behind it.
   requireAdminProduct();
   await requireAdmin({ next: ADMIN_REVIEW_PATH });
 
-  let catalogue: ReviewCatalogue | null = null;
+  let shelf: ReviewShelf | null = null;
   let unreadable: string | null = null;
   try {
-    catalogue = readReviewCatalogue();
+    const summaries = await listReviewArtifacts();
+    shelf = shelfOf(summaries, readReviewManifest(), readReleaseVersions());
   } catch (error) {
-    if (!(error instanceof ReviewManifestUnreadable)) throw error;
-    console.error("admin-review: the review catalogue could not be read", error);
-    unreadable = error.reason;
+    if (error instanceof ReviewManifestUnreadable) {
+      console.error("admin-review: the review shelf could not be built", error);
+      unreadable = error.reason;
+    } else if (error instanceof DatabaseUnavailableError) {
+      console.error("admin-review: the review store could not be read", error);
+      unreadable = error.message;
+    } else {
+      throw error;
+    }
   }
 
   const params = (await searchParams) ?? {};
   const requested = oneOf(params.artifact);
 
   /**
-   * Which artifact is open. An explicit id is read as asked; with no parameter the first artifact
-   * of the first group opens, which is how a shelf is browsed. An id the manifest does not carry is
-   * a 404, not a silent fallback: a link to an artifact that was withdrawn must not become a
+   * Which artifact is open. An explicit id or slug is read as asked; with no parameter the first
+   * row of the first group opens, which is how a shelf is browsed. An address the catalogue does not
+   * carry is a 404, not a silent fallback: a link to a withdrawn artifact must not become a
    * different artifact's review.
    */
-  const selectedId = requested ?? catalogue?.groups[0]?.artifacts[0]?.id ?? null;
+  const selectedEntry =
+    requested === null
+      ? (shelf?.groups[0]?.entries[0] ?? null)
+      : (shelf?.byId.get(requested) ?? shelf?.bySlug.get(requested) ?? null);
 
-  if (catalogue !== null && requested !== null && !catalogue.byId.has(requested)) notFound();
+  if (shelf !== null && requested !== null && selectedEntry === null) notFound();
 
-  const record = selectedId === null ? null : reviewStore.recordFor(selectedId);
+  let detail: ReviewArtifactDetail | null = null;
+  if (selectedEntry !== null) {
+    detail = await readReviewArtifact(selectedEntry.summary.artifact.id);
+    if (detail === null) notFound();
+  }
 
   /**
-   * The open issue, resolved inside the selected record. `?issue=` is only meaningful beside an
-   * artifact, so a number no issue carries is a 404 — the same answer a member gets, which keeps
-   * the parameter from confirming which numbers exist.
+   * The open issue, resolved inside the selected artifact. `?issue=` carries the per-artifact
+   * number a person quotes (`#3`), so it is only meaningful beside an artifact; a number no issue
+   * carries is a 404 — the same answer a member gets, which keeps the parameter from confirming
+   * which numbers exist.
    */
   const requestedIssue = oneOf(params.issue);
   const issueNumber = requestedIssue === null ? null : Number.parseInt(requestedIssue, 10) || null;
-  const issue =
-    issueNumber === null || record === null
-      ? null
-      : (record.issues.find((candidate) => candidate.number === issueNumber) ?? null);
-  if (issueNumber !== null && record !== null && issue === null) notFound();
+  let thread: ReviewIssueThread | null = null;
+  if (issueNumber !== null && detail !== null) {
+    const match = detail.issues.find((issue) => issue.number === issueNumber);
+    if (match === undefined) notFound();
+    thread = await readReviewIssue(match.id);
+    if (thread === null) notFound();
+  }
 
   return (
     <ReviewArtifacts
       copy={adminReviewPageCopy}
-      catalogue={catalogue}
-      selectedId={selectedId}
-      record={record}
-      issue={issue}
+      shelf={shelf}
+      selected={detail}
+      thread={thread}
       unreadable={unreadable}
     />
   );

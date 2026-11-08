@@ -1,59 +1,74 @@
 /**
- * The review manifest, read and resolved (#665).
+ * The review shelf's presentation layer (#665) — the manifest that groups by release, and the
+ * resolution from a catalogue row to the committed file the frame loads.
  *
- * **The manifest is the whole catalogue.** `/admin/review` lists what
- * `docs/review/artifacts.json` names and serves the file that entry names — there is no directory
- * scan, no glob and no `?path=` parameter anywhere in this module or its route. That is what makes
- * "a path outside the manifest cannot be rendered" a property rather than a check: an id the
- * manifest does not carry resolves to `null`, and the route answers 404.
+ * **Two records, deliberately separate, and this is the seam between them.**
  *
- * **Three things are validated when the file is read**, all as one `ReviewManifestUnreadable` so a
- * broken manifest is a named panel on the screen rather than a stack trace:
+ *   `data/review-artifacts.ts` (authored, mirrored into `review_artifact` by `db:seed`) is the
+ *   **record**: id, slug, title, kind, version, path, capturedAt. #667's store owns it, and the
+ *   viewer reads it through `lib/db/review-artifacts.ts` — never from this file.
  *
- *   shape      the artifact schema in `content/review.ts` — a `file` with a slash in it fails there,
- *              which is why the traversal case never reaches a string comparison.
- *   release    every artifact names a version `docs/changelog/releases.json` carries. The release
- *              record is the changelog's, not a second table here, so an artifact cannot claim a
- *              release that never shipped.
- *   file       every named file exists under `docs/review/artifacts/`, so a manifest that points at
- *              a file the tree does not have fails the page instead of rendering an empty frame.
+ *   `docs/review/artifacts.json` is **presentation metadata**: which release the artifact belongs
+ *   to and the one line a reviewer should be looking at. Neither belongs in a table (a release is a
+ *   changelog fact, `lookFor` is editorial), and neither may be a second copy of the record — so a
+ *   row here carries an id and those two fields, and nothing else.
  *
- * **Grouping is a derivation, never a field.** The owner's rule is that the list is grouped by
- * releases and that a group is *archived or active as one*: membership comes from the artifact's
- * `release`, and the state comes from the release record — the newest version is active, every
- * earlier one is archived. A group therefore cannot disagree with the artifact inside it, and a
- * release that ships its first artifact later needs no edit here.
+ * That split is what makes the owner's rule checkable: the list is *grouped by releases*, and **a
+ * group is archived or active as one** — membership comes from the artifact's release, the state
+ * from `docs/changelog/releases.json`, where only the newest recorded version is `active`. A group
+ * cannot disagree with the rows inside it, and the next release needs a manifest row, not code.
  *
- * Nothing in this module reads a clock. Dates are formatted from the manifest's own day and the
- * record's own instants (`content/core.ts`), which is the repo's rule for a render path.
+ * **Every catalogue artifact must carry a manifest row, and every manifest row must name a
+ * catalogue artifact.** A store row with no release is a row the list cannot group, and a manifest
+ * row with no store row is a line about nothing; both are `ReviewManifestUnreadable`, which the
+ * page draws as its own panel.
+ *
+ * **The frame's file comes from the record, not from the request.** `reviewFilePath()` takes the
+ * artifact's own `path`, which `content/review.ts` already refuses unless it is a relative
+ * `docs/review/**.html` with no `..` and no scheme. The route answers for an id or slug the
+ * *catalogue* carries and for nothing else — there is no directory scan and no path parameter.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import {
-  type ReviewArtifact,
-  type ReviewManifest,
-  type ReviewRecord,
-  zReviewManifest,
-} from "@/content/review";
+import { z } from "zod";
 
-/** Where the catalogue lives, relative to the repository root. */
+import { zId } from "@/content/core";
+import type { ReviewArtifact } from "@/content/review";
+import { reviewArtifacts } from "@/data/review-artifacts";
+import type { ReviewArtifactSummary } from "@/lib/db/review-artifacts";
+
+/** Where the presentation manifest lives, relative to the repository root. */
 export const REVIEW_MANIFEST_PATH = "docs/review/artifacts.json";
 
-/** Where the published files live, relative to the repository root. Part of the URL contract. */
-export const REVIEW_ARTIFACT_DIR = "docs/review/artifacts";
-
-/**
- * The release record — authored by `docs/changelog/releases.json` (#652) and generated into pages
- * by `scripts/changelog-view.mjs`. Read here rather than duplicated: the review list says "part of
- * release X", and X is the changelog's row, not a second spelling of a version number.
- */
+/** The release record — `docs/changelog/releases.json` (#652), the authority on what shipped. */
 export const RELEASES_RECORD_PATH = "docs/changelog/releases.json";
 
 /**
- * The one failure the page draws as a panel. Everything else — a schema drift, a missing file — is
- * this class too, because from the screen's point of view they are the same fact: the catalogue
- * could not be read, so nothing may be listed.
+ * One manifest row: the artifact it describes, the release it ships with, and the line a reviewer
+ * reads first. `id` joins to the record; nothing else here is a copy of a column.
+ */
+export const zReviewManifestEntry = z
+  .object({
+    id: zId,
+    release: z.string().min(1),
+    lookFor: z.string().min(1),
+  })
+  .strict();
+
+export const zReviewManifest = z
+  .object({
+    schemaVersion: z.literal(1),
+    artifacts: z.array(zReviewManifestEntry).min(1),
+  })
+  .strict();
+
+export type ReviewManifestEntry = z.infer<typeof zReviewManifestEntry>;
+
+/**
+ * The one failure the page draws as a panel. A schema drift, an unknown id, a missing file and an
+ * unreadable release record are all this class: from the screen's point of view they are one fact —
+ * the shelf cannot be built, so nothing may be listed.
  */
 export class ReviewManifestUnreadable extends Error {
   readonly reason: string;
@@ -65,23 +80,26 @@ export class ReviewManifestUnreadable extends Error {
   }
 }
 
-/** A release, as the list draws it: the label, the day it shipped (if the changelog says) and state. */
+/** A release, as the list draws it: the label, the state, and the rows it holds. */
 export interface ReviewReleaseGroup {
-  /** The version string, as `docs/changelog/releases.json` spells it. */
   readonly version: string;
-  /** The label a reader sees — `v` + the version, so a row does not print `1.6.0` beside `v4`. */
+  /** `v` + the version, so a heading does not print `1.6.0` beside a row that says `v4`. */
   readonly label: string;
-  /** The newest release this tree knows about is active; everything before it is archived. */
   readonly status: "active" | "archived";
-  readonly artifacts: readonly ReviewArtifact[];
+  readonly entries: readonly ReviewGroupEntry[];
 }
 
-/** The manifest plus the derived groups — what a page hands the view in one prop. */
-export interface ReviewCatalogue {
-  readonly manifest: ReviewManifest;
+/** One row: the store's summary (record + counts) plus the manifest's editorial line. */
+export interface ReviewGroupEntry {
+  readonly summary: ReviewArtifactSummary;
+  readonly lookFor: string;
+}
+
+/** The shelf: the groups, and every entry by id and by slug for the `?artifact=` lookup. */
+export interface ReviewShelf {
   readonly groups: readonly ReviewReleaseGroup[];
-  /** Every artifact by id, across all groups, for the `?artifact=` lookup. */
-  readonly byId: ReadonlyMap<string, ReviewArtifact>;
+  readonly byId: ReadonlyMap<string, ReviewGroupEntry>;
+  readonly bySlug: ReadonlyMap<string, ReviewGroupEntry>;
 }
 
 /** `1.6.0` → `[1, 6, 0]`, with a prerelease suffix carried as text (it sorts below the release). */
@@ -91,11 +109,7 @@ function splitVersion(version: string): { parts: number[]; pre: string | null } 
   return { parts, pre: rest.length === 0 ? null : rest.join("-") };
 }
 
-/**
- * Newest first. Dot-separated numbers compared numerically, and a prerelease (`1.1.0-rc1`) sorts
- * below the release it precedes — the same ordering `content/core.ts` uses for the release pages,
- * scoped to the two shapes this repo's versions take.
- */
+/** Newest first: numeric dot-parts, and a prerelease below the release it precedes. */
 export function compareVersions(a: string, b: string): number {
   const left = splitVersion(a);
   const right = splitVersion(b);
@@ -135,7 +149,7 @@ export function readReleaseVersions(
   const rows = (parsed as { releases?: unknown }).releases;
   if (!Array.isArray(rows)) {
     throw new ReviewManifestUnreadable(
-      `${RELEASES_RECORD_PATH} carries no \`releases\` array — the record of what shipped is where a review artifact's release is resolved`,
+      `${RELEASES_RECORD_PATH} carries no \`releases\` array — the record of what shipped is where a review artifact's release resolves`,
     );
   }
 
@@ -152,23 +166,11 @@ export function readReleaseVersions(
   return versions.sort(compareVersions);
 }
 
-/** Where a named artifact lives on disk. `file` is a basename (the schema refuses a slash). */
-export function reviewArtifactFile(artifact: ReviewArtifact, root: string = process.cwd()): string {
-  return join(root, REVIEW_ARTIFACT_DIR, artifact.file);
-}
-
-/**
- * Read, validate and group the manifest.
- *
- * The validation order is deliberate: schema first (so `file` cannot escape the directory by
- * shape), then the release record (so a group has a row behind it), then the filesystem (so a
- * listed artifact is readable). Anything that fails is `ReviewManifestUnreadable` with the reason
- * a reader can act on.
- */
-export function readReviewCatalogue(
+/** The manifest, parsed and validated against the catalogue it describes. */
+export function readReviewManifest(
   manifestPath: string = join(process.cwd(), REVIEW_MANIFEST_PATH),
-  root: string = process.cwd(),
-): ReviewCatalogue {
+  catalogue: readonly ReviewArtifact[] = reviewArtifacts,
+): Map<string, ReviewManifestEntry> {
   let text: string;
   try {
     text = readFileSync(manifestPath, "utf8");
@@ -196,71 +198,107 @@ export function readReviewCatalogue(
     );
   }
 
-  const manifest = result.data;
-  const versions = readReleaseVersions(join(root, RELEASES_RECORD_PATH));
-
-  const byId = new Map<string, ReviewArtifact>();
-  for (const artifact of manifest.artifacts) {
-    if (byId.has(artifact.id)) {
+  const byId = new Map<string, ReviewManifestEntry>();
+  for (const entry of result.data.artifacts) {
+    if (byId.has(entry.id)) {
       throw new ReviewManifestUnreadable(
-        `${REVIEW_MANIFEST_PATH} lists "${artifact.id}" twice — an id is the address of one artifact`,
+        `${REVIEW_MANIFEST_PATH} lists "${entry.id}" twice — an id is the address of one artifact`,
       );
     }
-    if (!versions.includes(artifact.release)) {
-      throw new ReviewManifestUnreadable(
-        `${REVIEW_MANIFEST_PATH}: artifact "${artifact.id}" names release ${artifact.release}, and ${RELEASES_RECORD_PATH} records only ${versions.join(", ")}`,
-      );
-    }
-    const path = reviewArtifactFile(artifact, root);
-    if (!existsSync(path)) {
-      throw new ReviewManifestUnreadable(
-        `${REVIEW_MANIFEST_PATH}: artifact "${artifact.id}" names ${REVIEW_ARTIFACT_DIR}/${artifact.file}, and that file is not in this tree`,
-      );
-    }
-    byId.set(artifact.id, artifact);
+    byId.set(entry.id, entry);
   }
 
-  return { manifest, groups: groupsOf(manifest, versions), byId };
+  const catalogueIds = new Set(catalogue.map((artifact) => artifact.id));
+  for (const artifact of catalogue) {
+    if (!byId.has(artifact.id)) {
+      throw new ReviewManifestUnreadable(
+        `${REVIEW_MANIFEST_PATH} has no row for "${artifact.id}" — a published artifact with no release cannot be grouped, and dropping it from the list silently is worse than a red page`,
+      );
+    }
+  }
+  for (const id of byId.keys()) {
+    if (!catalogueIds.has(id)) {
+      throw new ReviewManifestUnreadable(
+        `${REVIEW_MANIFEST_PATH} describes "${id}", which data/review-artifacts.ts does not publish`,
+      );
+    }
+  }
+
+  return byId;
 }
 
 /**
- * Group the artifacts by release, in the release record's own order.
+ * Group the summaries by release, newest release first.
  *
- * A release with no artifact today is not a group — the list draws releases that have something to
- * review, and an empty heading is a promise the shelf does not keep. The **state** is still the
- * release's: only the newest recorded version is `active`, so every earlier group renders as
- * archived as one, whatever it holds.
+ * A release with no artifact today is not a group — an empty heading is a promise the shelf does
+ * not keep. The **state** is still the release's: only the newest recorded version is `active`, so
+ * every earlier group renders as archived as one, whatever it holds. Inside a group the rows lead
+ * with the highest version, so `v4` opens its series.
  */
-export function groupsOf(
-  manifest: ReviewManifest,
+export function shelfOf(
+  summaries: readonly ReviewArtifactSummary[],
+  manifest: ReadonlyMap<string, ReviewManifestEntry>,
   versions: readonly string[],
-): ReviewReleaseGroup[] {
+): ReviewShelf {
   const newest = versions[0];
+  const byId = new Map<string, ReviewGroupEntry>();
+  const bySlug = new Map<string, ReviewGroupEntry>();
+
+  const entries = summaries.map((summary) => {
+    const entry = manifest.get(summary.artifact.id);
+    if (entry === undefined) {
+      throw new ReviewManifestUnreadable(
+        `the review store returned "${summary.artifact.id}", which ${REVIEW_MANIFEST_PATH} does not describe`,
+      );
+    }
+    const groupEntry: ReviewGroupEntry = { summary, lookFor: entry.lookFor };
+    byId.set(summary.artifact.id, groupEntry);
+    bySlug.set(summary.artifact.slug, groupEntry);
+    return { groupEntry, release: entry.release };
+  });
+
   const groups: ReviewReleaseGroup[] = [];
   for (const version of versions) {
-    const artifacts = manifest.artifacts.filter((artifact) => artifact.release === version);
-    if (artifacts.length === 0) continue;
+    const members = entries.filter((entry) => entry.release === version);
+    if (members.length === 0) continue;
+    members.sort((left, right) => {
+      const byVersion = compareVersions(
+        right.groupEntry.summary.artifact.version,
+        left.groupEntry.summary.artifact.version,
+      );
+      if (byVersion !== 0) return byVersion;
+      return right.groupEntry.summary.artifact.id.localeCompare(
+        left.groupEntry.summary.artifact.id,
+      );
+    });
     groups.push({
       version,
       label: `v${version}`,
       status: version === newest ? "active" : "archived",
-      artifacts,
+      entries: members.map((member) => member.groupEntry),
     });
   }
-  return groups;
+
+  return { groups, byId, bySlug };
 }
 
-/** The counts a list row shows, from the record itself — never from a second tally. */
-export function reviewStatsOf(record: ReviewRecord): {
-  done: number;
-  total: number;
-  open: number;
-  closed: number;
-} {
-  return {
-    done: record.todos.filter((todo) => todo.done).length,
-    total: record.todos.length,
-    open: record.issues.filter((issue) => issue.status === "open").length,
-    closed: record.issues.filter((issue) => issue.status === "closed").length,
-  };
+/**
+ * The file a catalogue row renders, on this tree's disk.
+ *
+ * `artifact.path` is already the guarded shape (`content/review.ts::zReviewArtifactPath` refuses an
+ * absolute path, a scheme and any `..`), so this is a join plus a readability check rather than a
+ * second traversal rule. The check is here because a row naming a file the tree does not have
+ * should fail as an honest panel, not as an empty frame.
+ */
+export function reviewFilePath(
+  artifact: { readonly path: string },
+  root: string = process.cwd(),
+): string {
+  const full = join(root, artifact.path);
+  if (!existsSync(full)) {
+    throw new ReviewManifestUnreadable(
+      `${artifact.path} is named by the review catalogue and is not in this tree`,
+    );
+  }
+  return full;
 }

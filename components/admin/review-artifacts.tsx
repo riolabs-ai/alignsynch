@@ -1,30 +1,30 @@
 /**
- * template-ancestor: components/admin/support-inbox.tsx   (variation: the inbox's list-and-record shape, with a review artifact in place of a support thread — the list is grouped by release, the record is a sandboxed file beside its to-dos and its feedback issues, and the address carries two query parameters instead of one: `?artifact=` and, inside it, `?issue=`)
+ * template-ancestor: components/admin/support-inbox.tsx   (variation: the inbox's list-and-record shape, with a review artifact in place of a support thread — the list is grouped by release, the record is a sandboxed file beside its to-do checklist and its feedback issues, and the address carries two query parameters instead of one: `?artifact=` and, inside it, `?issue=`)
  *
- * `/admin/review` — the console's review shelf (#665).
+ * `/admin/review` — the console's review shelf (#665), drawn from the store #667 landed.
  *
- * **Three panes from one manifest entry.** The list, the file and the review record all answer from
- * the artifact the address names, so a row's counts and the checklist below it cannot disagree —
- * there is no second fetch that could return a different snapshot.
+ * **Three panes from one record.** The list, the file and the review detail all answer from the
+ * artifact the address names, so a row's counts and the checklist below it cannot disagree — the
+ * counts are the store's own aggregates (`ReviewArtifactSummary.progress`) and the detail is one
+ * `readReviewArtifact()`, not a second fetch that could return a different snapshot.
  *
  * **The list is grouped by release, and a group is archived or active as one.** The grouping is
- * derived (`lib/review/artifacts.ts::groupsOf`), never authored: membership comes from the
- * artifact's `release`, the state comes from the changelog's release record. A group's rows carry no
- * badge of their own — the heading is the state, which is what the owner asked for.
+ * derived (`lib/review/artifacts.ts::shelfOf`), never authored: membership comes from the artifact's
+ * release in `docs/review/artifacts.json`, the state from the changelog's release record. A group's
+ * rows carry no badge of their own — the heading is the state, which is what the owner asked for.
  *
  * **The file is served, never embedded.** The `<iframe>` loads `/review-artifacts/[id]`, which
- * resolves the id through the manifest and 404s for anything it does not name, and it is sandboxed
+ * resolves the id through the catalogue and 404s for anything it does not name, and it is sandboxed
  * to `allow-scripts`: the document's own scripts run (the prototypes are interactive) and it has no
- * same-origin access to the console around it. The manifest is the only catalogue — there is no
- * disk scan here and no path parameter anywhere.
+ * same-origin access to the console around it.
  *
- * **Read-only, and it says so.** Checking a to-do and closing an issue are writes, and the store
- * that owns them (`review_artifact` / `review_todo` / `review_issue`) is carded separately. The
- * sentence comes from `reviewStore.readOnlyReason`, which is a fact about the store rather than
- * page copy: when the store lands it answers `null` and the note leaves with it.
+ * **Read-only, and it says so.** The store's writes — `toggleReviewTodoAction`,
+ * `setReviewIssueStateAction`, `commentOnReviewIssueAction` — exist in `./actions.ts` and are not
+ * mounted here: a control that posts to one is the follow-up card. The checklist and the thread
+ * print that sentence rather than looking live and dropping the write.
  *
- * Every word resolves from `data/pages/admin-review.ts` (E23); the artifact's own title, look-for
- * line and the review rows come from the manifest and the store, because they are records.
+ * Every word resolves from `data/pages/admin-review.ts` (E23); the artifact's title, version, kind,
+ * the to-do bodies and the issue titles are records and come from the store.
  */
 import {
   ArrowLeft,
@@ -32,8 +32,8 @@ import {
   Circle,
   ExternalLink,
   FileText,
-  Network,
   MessageSquare,
+  Network,
   ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
@@ -42,16 +42,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
-import type {
-  ReviewArtifact,
-  ReviewArtifactKind,
-  ReviewIssue,
-  ReviewRecord,
-} from "@/content/review";
-import type { ReviewCatalogue } from "@/lib/review/artifacts";
-import { reviewStatsOf } from "@/lib/review/artifacts";
+import type { ReviewIssueThread, ReviewArtifactDetail } from "@/lib/db/review-artifacts";
+import type { ReviewKind } from "@/content/review";
+import type { ReviewReleaseGroup, ReviewShelf } from "@/lib/review/artifacts";
 import { reviewArtifactFileUrl, reviewArtifactPath, reviewIssuePath } from "@/lib/review/paths";
-import { reviewStore } from "@/lib/review/store";
 import { cn } from "@/lib/utils";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -62,40 +56,38 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
  */
 const IFRAME_SANDBOX = "allow-scripts";
 
-/** The picture a kind gets in the row. Three kinds, three marks — a review artifact is not a logo. */
-const KIND_ICON: Record<ReviewArtifactKind, typeof FileText> = {
+/** The picture a kind gets in the row. Three kinds, three marks — an artifact is not a logo. */
+const KIND_ICON: Record<ReviewKind, typeof FileText> = {
   prototype: FileText,
   diagram: Network,
   report: ClipboardList,
 };
 
 /** Open feedback is the alarm; closed is quiet. Same two variants the inbox uses for a status. */
-const ISSUE_VARIANT: Record<ReviewIssue["status"], "warning" | "muted"> = {
+const ISSUE_VARIANT: Record<"open" | "closed", "warning" | "muted"> = {
   open: "warning",
   closed: "muted",
 };
 
-/** The `kind` label a reader sees, resolved from the fixture rather than `artifact.kind` itself. */
-function kindLabelOf(copy: PageCopy, kind: ReviewArtifactKind): string {
-  const section = sectionOf(copy, "artifact");
-  return itemLabel(section, `kind-${kind}`);
+/** A day, from a record's own instant — never a clock read in the render. */
+function dayOf(iso: string): string {
+  return formatDate(iso);
 }
 
 export function ReviewArtifacts({
   copy,
-  catalogue,
-  selectedId,
-  record,
-  issue,
+  shelf,
+  selected,
+  thread,
   unreadable,
 }: {
   copy: PageCopy;
-  /** `null` when the catalogue could not be read — `unreadable` says why. */
-  catalogue: ReviewCatalogue | null;
-  selectedId: string | null;
-  record: ReviewRecord | null;
-  /** The issue whose thread is open (`?issue=`), resolved by the page inside the selected record. */
-  issue: ReviewIssue | null;
+  /** `null` when the shelf could not be built — `unreadable` says why. */
+  shelf: ReviewShelf | null;
+  /** The open artifact's record, both lists and counts; `null` when nothing is selected. */
+  selected: ReviewArtifactDetail | null;
+  /** The open issue and its comments (`?issue=`), resolved inside the selected artifact. */
+  thread: ReviewIssueThread | null;
   unreadable: string | null;
 }) {
   const listCopy = sectionOf(copy, "list");
@@ -106,24 +98,27 @@ export function ReviewArtifacts({
   const issueCopy = sectionOf(copy, "issue");
   const unreadableCopy = sectionOf(copy, "unreadable");
 
-  /**
-   * The row's one line. It comes from the record, so a to-do ticked in the store moves the number
-   * on the row above it in the same render — the same rule the inbox's queue states.
-   */
-  const rowMeta = (artifact: ReviewArtifact): string => {
-    const stats = reviewStatsOf(
-      reviewStore.recordFor(artifact.id) ?? { artifactId: artifact.id, todos: [], issues: [] },
-    );
+  const selectedId = selected?.artifact.id ?? null;
+
+  /** The row's one line: kind, both to-do counts, both issue counts — from the store's aggregates. */
+  const rowMeta = (group: ReviewReleaseGroup, entryIndex: number): string => {
+    const entry = group.entries[entryIndex];
+    if (entry === undefined) return "";
+    const { artifact, progress } = entry.summary;
     return fillLabel(itemLabel(listCopy, "row-meta"), {
-      kind: kindLabelOf(copy, artifact.kind),
-      done: stats.done,
-      total: stats.total,
-      open: stats.open,
-      closed: stats.closed,
+      kind: itemLabel(artifactCopy, `kind-${artifact.kind}`),
+      done: progress.todosDone,
+      total: progress.todosTotal,
+      open: progress.issuesOpen,
+      closed: progress.issuesClosed,
     });
   };
 
-  const selected = selectedId === null ? null : (catalogue?.byId.get(selectedId) ?? null);
+  /** The release a selected artifact belongs to — the heading above its row, by construction. */
+  const releaseLabelOf = (artifactId: string): string =>
+    shelf?.groups.find((group) =>
+      group.entries.some((entry) => entry.summary.artifact.id === artifactId),
+    )?.label ?? "";
 
   return (
     <div className="space-y-8">
@@ -146,21 +141,21 @@ export function ReviewArtifacts({
         </Card>
       )}
 
-      {catalogue === null ? null : (
+      {shelf === null ? null : (
         <div className="grid gap-6 lg:grid-cols-[340px_1fr] lg:items-start">
           <Card>
             <CardHeader>
               <CardTitle>{listCopy.heading ?? ""}</CardTitle>
               <CardDescription>{sectionBody(listCopy)}</CardDescription>
             </CardHeader>
-            <CardContent className={cn("px-0", catalogue.groups.length === 0 && "px-6")}>
-              {catalogue.groups.length === 0 ? (
+            <CardContent className={cn("px-0", shelf.groups.length === 0 && "px-6")}>
+              {shelf.groups.length === 0 ? (
                 <p data-empty="true" className="text-sm text-muted-foreground">
                   {itemLabel(listCopy, "empty")}
                 </p>
               ) : (
                 <div className="space-y-6">
-                  {catalogue.groups.map((group) => (
+                  {shelf.groups.map((group) => (
                     <section key={group.version} data-release={group.version}>
                       <h2 className="flex items-center gap-2 px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         <span>{group.label}</span>
@@ -174,20 +169,21 @@ export function ReviewArtifacts({
                           {fillLabel(
                             itemLabel(
                               listCopy,
-                              group.artifacts.length === 1 ? "group-count-one" : "group-count",
+                              group.entries.length === 1 ? "group-count-one" : "group-count",
                             ),
-                            { count: group.artifacts.length },
+                            { count: group.entries.length },
                           )}
                         </span>
                       </h2>
                       <ul className="divide-y">
-                        {group.artifacts.map((artifact) => {
+                        {group.entries.map((entry, index) => {
+                          const artifact = entry.summary.artifact;
                           const Icon = KIND_ICON[artifact.kind];
                           const isSelected = artifact.id === selectedId;
                           return (
                             <li key={artifact.id}>
                               <Link
-                                href={reviewArtifactPath(artifact.id)}
+                                href={reviewArtifactPath(artifact.slug)}
                                 data-artifact={artifact.id}
                                 data-selected={isSelected ? "true" : "false"}
                                 className={cn(
@@ -206,11 +202,11 @@ export function ReviewArtifacts({
                                     <Badge variant="muted">{artifact.version}</Badge>
                                   </span>
                                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                                    {rowMeta(artifact)}
+                                    {rowMeta(group, index)}
                                   </span>
                                   <span className="block text-[11px] text-muted-foreground">
                                     {fillLabel(itemLabel(listCopy, "row-published"), {
-                                      date: formatDate(artifact.date),
+                                      date: dayOf(artifact.capturedAt),
                                     })}
                                   </span>
                                 </span>
@@ -241,13 +237,15 @@ export function ReviewArtifacts({
                   <CardHeader className="flex-row items-start justify-between space-y-0">
                     <div className="space-y-1">
                       <CardTitle className="flex items-center gap-2">
-                        <span>{selected.title}</span>
-                        <Badge variant="muted">{selected.version}</Badge>
+                        <span>{selected.artifact.title}</span>
+                        <Badge variant="muted">{selected.artifact.version}</Badge>
                       </CardTitle>
-                      <CardDescription>{selected.lookFor}</CardDescription>
+                      <CardDescription>
+                        {shelf.byId.get(selected.artifact.id)?.lookFor ?? ""}
+                      </CardDescription>
                     </div>
                     <Link
-                      href={reviewArtifactFileUrl(selected.id)}
+                      href={reviewArtifactFileUrl(selected.artifact.slug)}
                       className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-action hover:underline"
                     >
                       {itemLabel(previewCopy, "open-file")}
@@ -256,14 +254,14 @@ export function ReviewArtifacts({
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <iframe
-                      src={reviewArtifactFileUrl(selected.id)}
+                      src={reviewArtifactFileUrl(selected.artifact.slug)}
                       title={fillLabel(itemLabel(previewCopy, "frame-title"), {
-                        title: selected.title,
-                        version: selected.version,
+                        title: selected.artifact.title,
+                        version: selected.artifact.version,
                       })}
                       sandbox={IFRAME_SANDBOX}
                       className="h-[520px] w-full rounded-md border border-gray-200 bg-white"
-                      data-artifact-frame={selected.id}
+                      data-artifact-frame={selected.artifact.id}
                     />
                     <p className="text-xs text-muted-foreground">
                       {itemLabel(previewCopy, "served")}
@@ -278,13 +276,19 @@ export function ReviewArtifacts({
                   <CardContent>
                     <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
                       {[
-                        { id: "kind", value: kindLabelOf(copy, selected.kind) },
-                        { id: "version", value: selected.version },
-                        { id: "release", value: `v${selected.release}` },
-                        { id: "published", value: formatDate(selected.date) },
-                        { id: "file", value: selected.file },
+                        {
+                          id: "kind",
+                          value: itemLabel(artifactCopy, `kind-${selected.artifact.kind}`),
+                        },
+                        { id: "version", value: selected.artifact.version },
+                        {
+                          id: "release",
+                          value: releaseLabelOf(selected.artifact.id),
+                        },
+                        { id: "published", value: dayOf(selected.artifact.capturedAt) },
+                        { id: "file", value: selected.artifact.path },
                         { id: "sandbox", value: itemLabel(artifactCopy, "sandbox-value") },
-                        { id: "id", value: selected.id },
+                        { id: "id", value: selected.artifact.id },
                       ].map((row) => (
                         <div key={row.id} className="flex flex-col gap-0.5">
                           <dt className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -297,13 +301,13 @@ export function ReviewArtifacts({
                         <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                           {itemLabel(artifactCopy, "look-for")}
                         </dt>
-                        <dd>{selected.lookFor}</dd>
+                        <dd>{shelf.byId.get(selected.artifact.id)?.lookFor ?? ""}</dd>
                       </div>
                     </dl>
                   </CardContent>
                 </Card>
 
-                {issue === null ? (
+                {thread === null ? (
                   <>
                     <Card>
                       <CardHeader>
@@ -311,37 +315,35 @@ export function ReviewArtifacts({
                           <ClipboardList className="size-4" aria-hidden="true" />
                           <span>{todosCopy.heading ?? ""}</span>
                         </CardTitle>
-                        {record === null ? null : (
-                          <CardDescription>
-                            {fillLabel(itemLabel(todosCopy, "progress"), {
-                              done: reviewStatsOf(record).done,
-                              total: reviewStatsOf(record).total,
-                            })}
-                          </CardDescription>
-                        )}
+                        <CardDescription>
+                          {fillLabel(itemLabel(todosCopy, "progress"), {
+                            done: selected.progress.todosDone,
+                            total: selected.progress.todosTotal,
+                          })}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        {record === null || record.todos.length === 0 ? (
+                        {selected.todos.length === 0 ? (
                           <p data-empty="true" className="text-sm text-muted-foreground">
                             {itemLabel(todosCopy, "empty")}
                           </p>
                         ) : (
                           <ul className="divide-y">
-                            {record.todos.map((todo) => (
+                            {selected.todos.map((todo) => (
                               <li
                                 key={todo.id}
                                 data-todo={todo.id}
-                                data-done={todo.done ? "true" : "false"}
+                                data-done={todo.doneAt === null ? "false" : "true"}
                                 className="flex items-start gap-3 py-2.5"
                               >
-                                {todo.done ? (
-                                  <CheckCircle2
-                                    className="mt-0.5 size-4 shrink-0 text-action"
+                                {todo.doneAt === null ? (
+                                  <Circle
+                                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                                     aria-hidden="true"
                                   />
                                 ) : (
-                                  <Circle
-                                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                                  <CheckCircle2
+                                    className="mt-0.5 size-4 shrink-0 text-action"
                                     aria-hidden="true"
                                   />
                                 )}
@@ -349,34 +351,36 @@ export function ReviewArtifacts({
                                   <span
                                     className={cn(
                                       "block text-sm",
-                                      todo.done && "text-muted-foreground line-through",
+                                      todo.doneAt !== null && "text-muted-foreground line-through",
                                     )}
                                   >
-                                    {todo.label}
+                                    {todo.body}
                                   </span>
-                                  {todo.done &&
-                                  todo.actor !== undefined &&
-                                  todo.at !== undefined ? (
-                                    <span className="block text-xs text-muted-foreground">
-                                      {fillLabel(itemLabel(todosCopy, "done-by"), {
-                                        actor: todo.actor,
-                                        date: formatDate(todo.at),
-                                      })}
-                                    </span>
-                                  ) : null}
+                                  <span className="block text-xs text-muted-foreground">
+                                    {todo.doneAt === null
+                                      ? fillLabel(itemLabel(todosCopy, "opened-by"), {
+                                          author: todo.authorUserId,
+                                          date: dayOf(todo.createdAt),
+                                        })
+                                      : fillLabel(itemLabel(todosCopy, "done-by"), {
+                                          actor: todo.authorUserId,
+                                          date: dayOf(todo.doneAt),
+                                        })}
+                                  </span>
                                 </span>
-                                <Badge variant={todo.done ? "muted" : "outline"}>
-                                  {itemLabel(todosCopy, todo.done ? "state-done" : "state-open")}
+                                <Badge variant={todo.doneAt === null ? "outline" : "muted"}>
+                                  {itemLabel(
+                                    todosCopy,
+                                    todo.doneAt === null ? "state-open" : "state-done",
+                                  )}
                                 </Badge>
                               </li>
                             ))}
                           </ul>
                         )}
-                        {reviewStore.readOnlyReason === null ? null : (
-                          <p className="text-xs text-muted-foreground">
-                            {reviewStore.readOnlyReason}
-                          </p>
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {itemLabel(todosCopy, "read-only")}
+                        </p>
                       </CardContent>
                     </Card>
 
@@ -386,61 +390,62 @@ export function ReviewArtifacts({
                           <MessageSquare className="size-4" aria-hidden="true" />
                           <span>{feedbackCopy.heading ?? ""}</span>
                         </CardTitle>
-                        {record === null ? null : (
-                          <CardDescription>
-                            {fillLabel(itemLabel(feedbackCopy, "summary"), {
-                              open: reviewStatsOf(record).open,
-                              closed: reviewStatsOf(record).closed,
-                            })}
-                          </CardDescription>
-                        )}
+                        <CardDescription>
+                          {fillLabel(itemLabel(feedbackCopy, "summary"), {
+                            open: selected.progress.issuesOpen,
+                            closed: selected.progress.issuesClosed,
+                          })}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="px-0">
-                        {record === null || record.issues.length === 0 ? (
+                        {selected.issues.length === 0 ? (
                           <p data-empty="true" className="px-6 text-sm text-muted-foreground">
                             {itemLabel(feedbackCopy, "empty")}
                           </p>
                         ) : (
                           <ul className="divide-y">
-                            {record.issues.map((entry) => (
-                              <li key={entry.number}>
+                            {selected.issues.map((issue) => (
+                              <li key={issue.id}>
                                 <Link
-                                  href={reviewIssuePath(selected.id, entry.number)}
-                                  data-issue={entry.number}
-                                  data-status={entry.status}
+                                  href={reviewIssuePath(
+                                    selected.artifact.slug,
+                                    issue.number,
+                                  )}
+                                  data-issue={issue.number}
+                                  data-status={issue.state}
                                   className="flex flex-col gap-1.5 px-6 py-3 transition-colors hover:bg-muted/60"
                                 >
                                   <span className="flex items-center gap-2">
                                     <Badge
-                                      variant={ISSUE_VARIANT[entry.status]}
-                                      data-issue-state={entry.status}
+                                      variant={ISSUE_VARIANT[issue.state]}
+                                      data-issue-state={issue.state}
                                     >
-                                      {itemLabel(feedbackCopy, `state-${entry.status}`)}
+                                      {itemLabel(feedbackCopy, `state-${issue.state}`)}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground">
                                       {fillLabel(itemLabel(feedbackCopy, "number"), {
-                                        number: entry.number,
+                                        number: issue.number,
                                       })}
                                     </span>
                                     <span
                                       className={cn(
                                         "truncate text-sm font-medium",
-                                        entry.status === "closed" && "text-muted-foreground",
+                                        issue.state === "closed" && "text-muted-foreground",
                                       )}
                                     >
-                                      {entry.title}
+                                      {issue.title}
                                     </span>
                                   </span>
                                   <span className="flex flex-wrap items-center gap-1.5">
-                                    {entry.labels.map((label) => (
+                                    {issue.labels.map((label) => (
                                       <Badge key={label} variant="outline" className="font-normal">
                                         {label}
                                       </Badge>
                                     ))}
                                     <span className="text-xs text-muted-foreground">
                                       {fillLabel(itemLabel(feedbackCopy, "opened-by"), {
-                                        author: entry.author,
-                                        date: formatDate(entry.at),
+                                        author: issue.authorUserId,
+                                        date: dayOf(issue.openedAt),
                                       })}
                                     </span>
                                   </span>
@@ -453,10 +458,10 @@ export function ReviewArtifacts({
                     </Card>
                   </>
                 ) : (
-                  <Card data-issue-thread={issue.number}>
+                  <Card data-issue-thread={thread.issue.number}>
                     <CardHeader className="space-y-3">
                       <Link
-                        href={reviewArtifactPath(selected.id)}
+                        href={reviewArtifactPath(selected.artifact.slug)}
                         className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
                       >
                         <ArrowLeft className="size-3.5" aria-hidden="true" />
@@ -464,26 +469,26 @@ export function ReviewArtifacts({
                       </Link>
                       <div className="space-y-2">
                         <CardTitle className="flex flex-wrap items-center gap-2">
-                          <span>{issue.title}</span>
-                          <Badge variant={ISSUE_VARIANT[issue.status]}>
-                            {itemLabel(feedbackCopy, `state-${issue.status}`)}
+                          <span>{thread.issue.title}</span>
+                          <Badge variant={ISSUE_VARIANT[thread.issue.state]}>
+                            {itemLabel(feedbackCopy, `state-${thread.issue.state}`)}
                           </Badge>
                           <span className="text-sm font-normal text-muted-foreground">
                             {fillLabel(itemLabel(feedbackCopy, "number"), {
-                              number: issue.number,
+                              number: thread.issue.number,
                             })}
                           </span>
                         </CardTitle>
                         <CardDescription className="flex flex-wrap items-center gap-1.5">
-                          {issue.labels.map((label) => (
+                          {thread.issue.labels.map((label) => (
                             <Badge key={label} variant="outline" className="font-normal">
                               {label}
                             </Badge>
                           ))}
                           <span>
                             {fillLabel(itemLabel(feedbackCopy, "opened-by"), {
-                              author: issue.author,
-                              date: formatDate(issue.at),
+                              author: thread.issue.authorUserId,
+                              date: dayOf(thread.issue.openedAt),
                             })}
                           </span>
                         </CardDescription>
@@ -494,25 +499,25 @@ export function ReviewArtifacts({
                         <h3 className="text-xs uppercase tracking-wide text-muted-foreground">
                           {itemLabel(issueCopy, "body-heading")}
                         </h3>
-                        <p className="text-sm">{issue.body}</p>
+                        <p className="text-sm">{thread.issue.body}</p>
                       </section>
 
                       <section className="space-y-3">
                         <h3 className="text-xs uppercase tracking-wide text-muted-foreground">
                           {itemLabel(issueCopy, "thread-heading")}
                         </h3>
-                        {issue.comments.length === 0 ? (
+                        {thread.comments.length === 0 ? (
                           <p className="text-sm text-muted-foreground">
                             {itemLabel(issueCopy, "no-replies")}
                           </p>
                         ) : (
                           <ul className="space-y-3">
-                            {issue.comments.map((comment) => (
+                            {thread.comments.map((comment) => (
                               <li key={comment.id} className="rounded-md border p-3">
                                 <p className="text-xs text-muted-foreground">
                                   {fillLabel(itemLabel(feedbackCopy, "opened-by"), {
-                                    author: comment.author,
-                                    date: formatDate(comment.at),
+                                    author: comment.authorUserId,
+                                    date: dayOf(comment.createdAt),
                                   })}
                                 </p>
                                 <p className="mt-1 text-sm">{comment.body}</p>
@@ -523,14 +528,14 @@ export function ReviewArtifacts({
                       </section>
 
                       <section className="space-y-3">
-                        <label className="block text-xs uppercase tracking-wide text-muted-foreground">
+                        <span className="block text-xs uppercase tracking-wide text-muted-foreground">
                           {itemLabel(issueCopy, "reply-label")}
-                          <textarea
-                            disabled
-                            rows={3}
-                            className="mt-1 w-full rounded-md border border-gray-300 bg-muted/40 p-2 text-sm normal-case tracking-normal"
-                          />
-                        </label>
+                        </span>
+                        <textarea
+                          disabled
+                          rows={3}
+                          className="w-full rounded-md border border-gray-300 bg-muted/40 p-2 text-sm"
+                        />
                         <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
@@ -550,7 +555,7 @@ export function ReviewArtifacts({
                             {itemLabel(issueCopy, "read-only")}
                           </span>
                         </div>
-                        {issue.status === "closed" ? (
+                        {thread.issue.state === "closed" ? (
                           <p className="text-xs text-muted-foreground">
                             {itemLabel(issueCopy, "closed-note")}
                           </p>

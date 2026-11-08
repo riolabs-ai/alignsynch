@@ -211,6 +211,23 @@ export const ADMIN_ACTIONS = [
    */
   "relationship.void",
   "relationship.extend",
+  /**
+   * #667 — the review store's three names, and the reason `/admin/review` is a `support` surface.
+   *
+   * A review artifact is a prototype, a diagram or a report somebody has to look at: the TODO
+   * list is work on it and the issue list is feedback about it. `review.todo` ticks a checklist
+   * item, `review.issue` raises one and closes or reopens it, `review.comment` answers one. All
+   * three are `support`, for the reason the inbox's three are: none of them touches a customer's
+   * row, a party's words or money, they are the work a seat does on the product itself, and the
+   * audit row is what makes "who marked this done" answerable.
+   *
+   * They are separate names rather than one `review.write` because `/admin/audit` filters on
+   * `action`, and "which ticks happened last week" and "what feedback came in" are different
+   * questions about the same store.
+   */
+  "review.todo",
+  "review.issue",
+  "review.comment",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -304,6 +321,16 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.
   "relationship.void": "admin",
   "relationship.extend": "admin",
+  /**
+   * #667 — the review store's three, floor `support`. The same argument as the inbox's three
+   * above: this is work on the product's own artifacts (a prototype, a diagram, a report), not a
+   * write to anybody's row, so the rung that exists to work a queue is the rung that ticks a
+   * checklist and raises feedback. The refusal for a `member` comes from `act()` inside the
+   * transaction (`role-too-low`), never from a control the page chose not to draw.
+   */
+  "review.todo": "support",
+  "review.issue": "support",
+  "review.comment": "support",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.
@@ -407,6 +434,17 @@ export const AUDIT_TARGET_TABLES = [
    */
   "contact_message",
   "contact_reply",
+  /**
+   * #667 — the review store's four. The artifact, the checklist item, the issue and the comment
+   * are each the row an audit entry points at: "which artifact", "which item", "which issue",
+   * "which comment". The artifact is the target of nothing (the store never edits one — the
+   * catalogue in `data/review-artifacts.ts` is what a row is seeded from), so it is listed for
+   * the join a reader makes and not for a write.
+   */
+  "review_artifact",
+  "review_todo",
+  "review_issue",
+  "review_issue_comment",
 ] as const;
 
 export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];

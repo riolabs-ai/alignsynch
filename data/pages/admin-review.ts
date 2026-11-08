@@ -84,9 +84,15 @@ export const adminReviewPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "progress", label: "{done} / {total} done" },
         { id: "empty", label: "No to-dos on this artifact yet." },
+        { id: "opened-by", label: "opened by {author} on {date}" },
         { id: "done-by", label: "ticked by {actor} on {date}" },
         { id: "state-done", label: "Done" },
         { id: "state-open", label: "Open" },
+        {
+          id: "read-only",
+          label:
+            "Ticking a to-do is the store's own write; this cut draws the state, and the control that calls it is the follow-up.",
+        },
       ],
     },
     {
@@ -119,7 +125,7 @@ export const adminReviewPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "read-only",
           label:
-            "Replying and closing both need the review store; this cut draws the thread and writes nothing.",
+            "Replying and closing are the store's own actions; this cut draws the thread and writes nothing.",
         },
       ],
     },
