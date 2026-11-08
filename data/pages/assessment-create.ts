@@ -23,26 +23,21 @@
  * `SETTING_LABELS`, `SETTING_DEFINITIONS`), not a second copy of them here.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { lifecycleStageSection } from "./lifecycle";
 
 export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
   heading: "Create a relationship",
   subtitle: "One template, two seats, and the two choices that shape every screen after this one.",
   sections: [
-    {
-      /**
-       * The journey's rail (#618) — the third step, drawn on the create screen. Same ids and shape
-       * as the product page's rail, so the two screens read as one journey rather than two pages
-       * that happen to be near each other.
-       */
-      id: "steps",
-      items: [
-        { id: "1", label: "Products" },
-        { id: "2", label: "This product" },
-        { id: "3", label: "Create the relationship" },
-        { id: "count", label: "Step {step} of 3" },
-        { id: "label", label: "Creating a relationship" },
-      ],
-    },
+    /**
+     * The onboarding flow's rail (#687) — the six stages, with this screen as the first of them
+     * (Who). The words are authored once, in `data/pages/lifecycle.ts`, and *referenced* here:
+     * the same rail sits above every stage, so a copy per fixture would be six places a rename
+     * hides. This screen replaced the browse journey's three-step rail (#618, "Products · This
+     * product · Create the relationship") with it, because the create step is where the flow
+     * starts — the template screens before it are pre-stage views, not numbered stages.
+     */
+    lifecycleStageSection,
     {
       id: "template",
       heading: "The template you are copying",

@@ -65,6 +65,8 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
         { id: "1", label: "What this is" },
         { id: "2", label: "What happens next" },
         { id: "3", label: "Your account" },
+        /** The rail's accessible name — a nav landmark among several on the screen. */
+        { id: "label", label: "Onboarding steps" },
         { id: "count", label: "Step {step} of 3" },
         { id: "back", label: "Back" },
         { id: "next", label: "Continue" },
