@@ -135,6 +135,21 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * #690 — the hard gate at publish.
+       *
+       * The plans at stage 4 are a soft prompt: a relationship is created and invited with no
+       * method. This band is the other half — publishing needs one on file, so the screen draws
+       * **no publish control at all** and names the page where a plan is actually bought. A
+       * disabled button would be worse than nothing: it would say "you cannot publish yet" and
+       * leave the person to guess what would change that.
+       */
+      id: "publish-gate",
+      heading: "A payment method is needed to publish",
+      body: "Publishing sends the invitation that starts the assessment, so it is the step that needs a card on file. The relationship, its Aspects and its title are saved and untouched — nothing is lost by adding one now.",
+      items: [{ id: "plans", label: "See plans and prices" }],
+    },
+    {
       id: "republish",
       heading: "Reissue the invitation",
       body: "One click: a new token on the same invitation row, a new seven-day window, and the old link stops working. Nothing about the Aspects changes, and the relationship stays published.",

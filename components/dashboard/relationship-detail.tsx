@@ -48,6 +48,7 @@ import {
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import { PRICING_PATH } from "@/lib/flow/paths";
 import { useState, useTransition } from "react";
 
 /** One Aspect while it is being edited. `id` is absent only for a row added in this edit. */
@@ -101,6 +102,7 @@ export function RelationshipDetail({
   const statusCopy = sectionOf(copy, "status");
   const aspectCopy = sectionOf(copy, "aspects");
   const publishCopy = sectionOf(copy, "publish");
+  const publishGateCopy = sectionOf(copy, "publish-gate");
   const republishCopy = sectionOf(copy, "republish");
   const linkCopy = sectionOf(copy, "link");
   const closedCopy = sectionOf(copy, "closed");
@@ -131,6 +133,13 @@ export function RelationshipDetail({
 
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
+  /**
+   * #690 — **the hard gate at publish.** A relationship may be published from its status, but not
+   * without a payment method on file: the plans on stage 4 are the soft prompt and this is the half
+   * that is not optional. When the method is missing the publish band is not drawn at all — no
+   * disabled button, no form whose submit would be refused — and a band that says what to do is.
+   */
+  const methodMissing = publishableNow && !relationship.hasPaymentMethod;
   const offersRepublish = relationship.offersRepublish;
   const trialAlone = relationship.trialWithoutLiveInvite;
 
@@ -429,7 +438,31 @@ export function RelationshipDetail({
         </Card>
       ) : null}
 
-      {publishableNow ? (
+      {methodMissing ? (
+        /*
+         * #690 — the hard gate. Publishing needs a method on file, and the create flow only ever
+         * *asked* for one: a person who skipped the plans on stage 4 lands here, with no publish
+         * button and one door to the page that sells a tier. The copy is the fixture's, so the
+         * sentence and the link are reviewable beside the prices they promise.
+         */
+        <Card data-publish-gate="method-required">
+          <CardHeader>
+            <CardTitle>{publishGateCopy.heading}</CardTitle>
+            <CardDescription>{sectionBody(publishGateCopy)}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <a
+              className="text-sm font-medium text-action underline underline-offset-4"
+              href={PRICING_PATH}
+              data-publish-gate-link="pricing"
+            >
+              {itemLabel(publishGateCopy, "plans")}
+            </a>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {publishableNow && relationship.hasPaymentMethod ? (
         <Card>
           <CardHeader>
             <CardTitle>{publishCopy.heading}</CardTitle>

@@ -10,7 +10,8 @@ import {
 } from "@/lib/flow/store";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
 import {
-  createAspectsPath,
+  afterCreateTarget,
+  createCommitPath,
   createModePath,
   createRelationshipPath,
   instancePath,
@@ -32,11 +33,11 @@ import {
  * that named no template has nowhere to go back to and lands on the library instead, which is
  * the screen that lists what can be copied.
  *
- * **Which step it returns to is the draft's own fact (#688, #689).** A post that came through the
- * flow (the draft cookie exists) was sent from the **Aspects** screen — the last stage before the
- * create — so the refusal belongs there, above the list the person just arranged. A post that
- * never went through the draft — `scripts/flow-e2e.mjs`, a `curl`, the pre-#688 form — is returned
- * to the Who screen, which is the only stage it ever saw.
+ * **Which step it returns to is the draft's own fact (#688, #689, #690).** A post that came through
+ * the flow (the draft cookie exists) was sent from **stage 4, Create** — the conversion is the
+ * last screen before the create since #690 — so the refusal belongs there, above the review card
+ * the person just pressed. A post that never went through the draft — `scripts/flow-e2e.mjs`, a
+ * `curl`, the pre-#688 form — is returned to the Who screen, which is the only stage it ever saw.
  */
 function refusalTarget(
   request: Request,
@@ -49,7 +50,7 @@ function refusalTarget(
     id === ""
       ? TEMPLATE_LIBRARY_PATH
       : fromDraft
-        ? createAspectsPath(id)
+        ? createCommitPath(id)
         : createRelationshipPath(id);
   const target = new URL(back, request.url);
   target.searchParams.set("problem", code);
@@ -228,7 +229,21 @@ export async function POST(request: Request): Promise<Response> {
     return { outcome: "failed" as const };
   });
 
-  const target = new URL(instancePath(created.instanceRecordId), request.url);
+  // #690 — a signed-out creator keeps what they just created: the gate is the screen that asks
+  // for an account *after* the commit, and it can only draw for a browser that holds this
+  // relationship's own initiator token (the cookie set above). The `invite` outcome is not carried
+  // there: the gate is about the account, and the relationship screen behind it draws the notice.
+  // The decision itself is `afterCreateTarget`, so it is a test rather than a claim.
+  const destination = afterCreateTarget({
+    viewerSignedIn: viewer !== null,
+    templateRecordId,
+    instanceRecordId: created.instanceRecordId,
+  });
+  if (destination !== instancePath(created.instanceRecordId)) {
+    return NextResponse.redirect(new URL(destination, request.url), 303);
+  }
+
+  const target = new URL(destination, request.url);
   target.searchParams.set("invite", outcome.outcome);
   // 303: the browser follows with a GET, so a reload of the instance screen cannot create
   // a second instance.

@@ -68,7 +68,6 @@ function createStepHtml(): string {
       backHref: "/assessment/templates/template-relationship-basics",
       problem: null,
       problemLink: null,
-      gate: null,
     }),
   );
 }

@@ -11,13 +11,13 @@
  * URL, and a signed-out visitor's answer is the built-ins only (`author_user_id IS NULL`
  * matches nobody).
  *
- * **A signed-out visitor gets the account gate, not the form (#618).** The endpoint still accepts
- * a signed-out post and writes a null initiator (#146/#213) — that is the store's documented
- * behaviour and this card does not change it. What changed is the *screen*: it used to offer the
- * form, and a relationship created that way is in nobody's list, so its creator could not find it
- * again to invite, finish or pay for it. The gate's two links carry `next` = this template's own
- * create path (`createSignUpPath` / `createSignInPath`), which is what keeps the chosen product
- * across the auth round trip: the product is the URL, so there is nothing to lose.
+ * **No account is asked for here, and that is the point of stage 1 (#690).** Until this card a
+ * signed-out visitor was shown an account gate instead of the form, because a relationship created
+ * with no account is in nobody's list (#618). The endpoint never required one — `POST
+ * /assessment/new` has always accepted a signed-out post and written a null initiator
+ * (#146/#213) — so the screen was refusing what the server allowed, four stages before the flow
+ * says the account belongs. The approved flow puts the gate *after* stage 4, in its own surface
+ * (`…/create/account`), and this page now draws the form for everybody.
  *
  * **The draft is read here, so coming back to stage 1 shows what was typed (#688).** A refusal
  * from stage 1's own validation, a back-link from stage 2, or a plain reload all render this
@@ -47,12 +47,7 @@ import { currentUserIfConfigured } from "@/lib/auth/session";
 import { EMPTY_CREATE_DRAFT, parseCreateDraft, type CreateDraft } from "@/lib/flow/create-draft";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { readLibraryTemplate } from "@/lib/db/template-library";
-import {
-  TEMPLATE_LIBRARY_PATH,
-  createSignInPath,
-  createSignUpPath,
-  templateDetailPath,
-} from "@/lib/flow/paths";
+import { TEMPLATE_LIBRARY_PATH, templateDetailPath } from "@/lib/flow/paths";
 import { createDraftCookieName } from "@/lib/flow/session";
 
 export const dynamic = "force-dynamic";
@@ -115,14 +110,6 @@ export default async function TemplateCreatePage({
       backHref={detail === undefined ? TEMPLATE_LIBRARY_PATH : templateDetailPath(templateId)}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
-      gate={
-        viewerUserId === null
-          ? {
-              signInHref: createSignInPath(templateId),
-              signUpHref: createSignUpPath(templateId),
-            }
-          : null
-      }
     />
   );
 }

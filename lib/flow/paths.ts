@@ -247,25 +247,58 @@ export function createAspectsPath(templateRecordId: string): string {
 }
 
 /**
- * `/register?next=<the product's own create step>` — sign-up that returns to the chosen product (#618).
+ * `/assessment/templates/[templateId]/create/commit` — stage 4 of the create flow (#690).
  *
- * **The chosen product is the URL, not client state.** `next` is this template's create path, so a
- * person who leaves for an account and comes back is looking at the same product with nothing held
- * in a cookie, a draft row or a selected id read back from a form. A sign-up that returned to the
- * product *list* is the failure the builder makes impossible: there is no other address to return to.
- *
- * Composed here rather than through `lib/auth/paths.ts::loginPathFor`, for the mechanical reason
- * that module already imports `OVERVIEW_PATH` from this one — the dependency runs one way. The
- * encoding is the same `encodeURIComponent`, and `/register` reads `next` through the same
- * `safeNextPath` gate as `/login` (a value that leaves this site falls back to the brand's home).
+ * The fourth sibling, exactly as the docstring above predicted. **Create** is the stage that
+ * reviews the six facts, offers the two plans and holds the conversion, so it is the last screen
+ * that can be reached without anything existing: pressing its control commits the relationship and
+ * sends the invitation. It is a page for the same reason the three before it are — it can be
+ * reloaded, linked and gone back to, and the draft is what it renders.
  */
-export function createSignUpPath(templateRecordId: string): string {
-  return `/register?next=${encodeURIComponent(createRelationshipPath(templateRecordId))}`;
+export function createCommitPath(templateRecordId: string): string {
+  return `${createRelationshipPath(templateRecordId)}/commit`;
 }
 
-/** `/login?next=<the same create step>` — the returning account's half of the same round trip. */
-export function createSignInPath(templateRecordId: string): string {
-  return `/login?next=${encodeURIComponent(createRelationshipPath(templateRecordId))}`;
+/**
+ * `/assessment/templates/[templateId]/create/account` — the account gate **after** stage 4 (#690).
+ *
+ * The one surface in the flow that is not a stage: it follows the commit, it is never in front of
+ * the create, and the spec says so explicitly ("Account is not a stage", #659). `instance` is the
+ * relationship stage 4 just committed; the page proves the browser holds that relationship's own
+ * initiator token before it draws a form, which is what makes the address unreachable before
+ * stage 4 — a relationship id alone is not enough, because it is not a secret.
+ */
+export function createAccountPath(templateRecordId: string): string {
+  return `${createRelationshipPath(templateRecordId)}/account`;
+}
+
+/** The gate for one committed relationship: the template's gate, naming the relationship. */
+export function createAccountForPath(templateRecordId: string, instanceRecordId: string): string {
+  return `${createAccountPath(templateRecordId)}?instance=${encodeURIComponent(instanceRecordId)}`;
+}
+
+/**
+ * **Where the create sends the browser (#690).** The one decision `POST /assessment/new` makes
+ * about the screen, kept here so it is a test rather than a claim about a route handler.
+ *
+ * - A **signed-out** creator lands on the gate. Their relationship exists — the endpoint has always
+ *   accepted a post with no initiator (#146/#213) — and the gate is the screen that offers the
+ *   account *after* the fact, which is the whole of #659: the account is not a stage, so nothing
+ *   makes a person sign up before they have something to sign up for.
+ * - A **signed-in** creator lands on the relationship, where the invitation's outcome and the
+ *   publish band are. Asking an account of somebody who has one is a step that can only annoy.
+ * - A post naming **no template** never came through the flow (`scripts/flow-e2e.mjs`, a `curl`),
+ *   so there is no gate to send it to: it goes to the relationship like any other committed create.
+ */
+export function afterCreateTarget(input: {
+  viewerSignedIn: boolean;
+  templateRecordId: string;
+  instanceRecordId: string;
+}): string {
+  const gate = !input.viewerSignedIn && input.templateRecordId !== "";
+  return gate
+    ? createAccountForPath(input.templateRecordId, input.instanceRecordId)
+    : instancePath(input.instanceRecordId);
 }
 
 /**

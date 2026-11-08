@@ -445,6 +445,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/templates/[templateId]/create/commit",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Stage 4 of the create flow (Create): the six facts stages 1–3 decided, the two plans as a single-choice soft prompt, and the one control that commits the relationship and sends the invitation.",
+    notes:
+      'The conversion (#690). A form posting `templateRecordId` to `POST /assessment/new`, which reads who, mode, setting and the Aspect list from the same draft cookie the three earlier stages wrote, copies the template\'s version, writes the relationship and sends one invitation — the same endpoint and the same transaction as before, with the screen moved behind it. **No account is required and none is asked for**: the endpoint has always accepted a signed-out post and written a null initiator (#146/#213), and the account gate now sits after this stage. The plans are `components/assessment-flow/plan-choices.tsx`, a `role="radiogroup"` of `role="radio"` rows carrying `aria-checked` and both prices from `data/pages/assessment-create.ts`; choosing one writes nothing — it is the soft half of a decision whose hard half is at publish — and the door to add a method is `/pricing`, where a tier is actually bought. The six facts are the template (with its own Aspect count), both seats, the title, the Mode and the Setting.',
+  },
+  {
+    kind: "route",
+    surface: "/assessment/templates/[templateId]/create/account",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The account gate after stage 4: a three-step progress strip, the create-account form, a way back to the relationship and a switch to the sign-in tab.",
+    notes:
+      "Not a stage (#659 says so explicitly), which is why it draws its own `Relationship ready · Your account · Invitation sent` strip instead of the six-stage rail. It is reached only with `?instance=<id>`, and the page proves that id is this browser's by reading the screen through `readFlowScreen()` with its own party cookie: a crafted URL, a stranger's relationship, a dead id and a cold bookmark all redirect to stage 1, which is the acceptance's \"routing cannot reach it before stage 4\" and the reason the check is a read rather than a hidden field. A signed-in visitor is forwarded to the relationship — the gate exists for somebody who has no account. The form is `authClient.signUp.email` (the call `/register` makes) and the second tab is a link to `/login` carrying `next` = this gate, so the sign-in form keeps one home. Signing up does not yet bind the party row to the new account (the claim-by-token is its own decision, filed separately): the copy says what an account is for and never promises it is already on the dashboard.",
+  },
+  {
+    kind: "route",
     surface: "/assessment/templates/new",
     status: "fixture",
     templates: ["alignsynch"],

@@ -46,6 +46,7 @@ import {
   SAVE_ASPECTS_PATH,
   SAVE_MODE_PATH,
   createAspectsPath,
+  createCommitPath,
   createModePath,
   createRelationshipPath,
 } from "@/lib/flow/paths";
@@ -93,7 +94,6 @@ function stageThreeHtml(aspects: readonly AspectDraft[] = TEMPLATE_ASPECTS): str
       backHref: createModePath(TEMPLATE_ID),
       problem: null,
       problemLink: null,
-      gate: null,
     }),
   );
 }
@@ -267,10 +267,11 @@ describe("the screen", () => {
     );
   });
 
-  it("keeps the create behind its own control, posting the template it copies", () => {
+  it("hands the create to stage 4 instead of holding it (#690)", () => {
     const html = stageThreeHtml();
-    expect(html).toContain(`action="${CREATE_INSTANCE_PATH}"`);
-    expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
+    expect(html).toContain(`href="${createCommitPath(TEMPLATE_ID)}"`);
+    expect(html).toContain('data-create-next="commit"');
+    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
     // The two save endpoints are reachable from this screen and nowhere else in the flow.
     expect(SAVE_MODE_PATH).toBe(`${CREATE_INSTANCE_PATH}/mode`);
     expect(SAVE_ASPECTS_PATH).toBe(`${CREATE_INSTANCE_PATH}/aspects`);
@@ -291,7 +292,6 @@ describe("the screen", () => {
         backHref: createModePath(TEMPLATE_ID),
         problem: sentence,
         problemLink: null,
-        gate: null,
       }),
     );
     expect(html).toContain('data-create-problem="true"');

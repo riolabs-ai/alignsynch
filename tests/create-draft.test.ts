@@ -79,7 +79,6 @@ function stageHtml(stage: 1 | 2, draft = savedDraft()): string {
       backHref: createRelationshipPath(TEMPLATE_ID),
       problem: null,
       problemLink: null,
-      gate: null,
     }),
   );
 }
@@ -278,7 +277,6 @@ describe("a refusal names the field by its label", () => {
         backHref: createRelationshipPath(TEMPLATE_ID),
         problem: sentence,
         problemLink: null,
-        gate: null,
       }),
     );
     expect(html).toContain('data-create-problem="true"');

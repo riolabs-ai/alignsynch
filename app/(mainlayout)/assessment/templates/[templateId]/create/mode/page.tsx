@@ -14,9 +14,10 @@
  * behind stage 3's own control.
  *
  * **No draft, no stage 2.** A person who deep-links this address without passing through stage 1
- * has nothing to commit, so the page sends them back to Who — where the account gate lives too.
- * The same redirect covers a session that ended between the steps: a relationship created with
- * no account is in nobody's list, and the gate is the screen that says so.
+ * has nothing to commit, so the page sends them back to Who. Since #690 that redirect is the
+ * *only* gate here: a signed-out visitor goes straight through, because the account is asked for
+ * after stage 4 (`…/create/account`) and never in front of a form the endpoint accepts from
+ * anybody.
  *
  * **A refusal lands here when the Mode or the Setting was refused** — `?problem=<reason>&field=`
  * — and on stage 1 when the store refused the template itself. `lib/flow/create-copy.ts`
@@ -33,11 +34,7 @@ import { currentUserIfConfigured } from "@/lib/auth/session";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { parseCreateDraft } from "@/lib/flow/create-draft";
 import { readLibraryTemplate } from "@/lib/db/template-library";
-import {
-  TEMPLATE_LIBRARY_PATH,
-  createRelationshipPath,
-  templateDetailPath,
-} from "@/lib/flow/paths";
+import { createRelationshipPath } from "@/lib/flow/paths";
 import { createDraftCookieName } from "@/lib/flow/session";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +71,6 @@ export default async function TemplateCreateModePage({
 
   const viewer = await currentUserIfConfigured();
   const viewerUserId = viewer?.userId ?? null;
-  if (viewerUserId === null) redirect(whoPath);
 
   const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
   const detail = await readLibraryTemplate(templateId, viewerUserId);
@@ -98,7 +94,6 @@ export default async function TemplateCreateModePage({
       backHref={whoPath}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
-      gate={null}
     />
   );
 }
