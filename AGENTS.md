@@ -9,6 +9,18 @@ unset. `content/` holds the zod content model, `data/` holds the fixtures that m
 and `pnpm data:check` fails the build when a fixture drifts. Remote:
 `github.com/riolabs-ai/alignsynch`.
 
+## The flow is six stages, and that is a spec, not a preference
+
+Read [`docs/specs/flow-stages.md`](docs/specs/flow-stages.md) before touching any screen in the
+create-and-complete flow. It is binding: **1 Details · 2 Settings · 3 Aspects · 4 Invite ·
+5 Connect · 6 Align**, the rail prints `Stage {n} of 6`, `Align` is live only once one or more
+assessments are shared, and there is **no `Ongoing` stage** — completion lands on the relationship
+detail page in the member dashboard. The approved visual reference is the review artifact
+`prototype-relationship-lifecycle-v5` (`/admin/review?artifact=…`), and the build matches the
+artifact, never the other way round. A screen that renames a stage, adds a seventh, adds a field the
+artifact does not draw, or drops one it does, is a defect — the spec file carries the stage table,
+stage 1's full field inventory, and the tests that enforce both.
+
 ## Start every card with a fresh `main`
 
 A stale tree is a gate failure, not a style issue: a branch tested against a tree nobody

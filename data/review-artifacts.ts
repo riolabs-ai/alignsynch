@@ -24,6 +24,22 @@
 import type { ReviewArtifact } from "@/content/review";
 
 export const reviewArtifacts: readonly ReviewArtifact[] = [
+  /**
+   * v7 — the six stages in the owner's words (#735). v5/v6 drew `Who · Mode · Aspects · Create ·
+   * Sent · Ongoing`; the spec in `docs/specs/flow-stages.md` names them `Details · Settings ·
+   * Aspects · Invite · Completed · Align`, with Align live only once an assessment is shared and no
+   * `Ongoing` at all. Only the stage words and the counter moved: Details keeps the five fields,
+   * Back, Close and Continue the artifact already had.
+   */
+  {
+    id: "review-relationship-lifecycle-v7",
+    slug: "prototype-relationship-lifecycle-v7",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v7",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v7.html",
+    capturedAt: "2026-11-08T00:00:00.000Z",
+  },
   {
     id: "review-relationship-lifecycle-v4",
     slug: "prototype-relationship-lifecycle-v4",
