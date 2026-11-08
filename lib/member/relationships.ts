@@ -57,7 +57,7 @@ import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
 import { billingProvider } from "@/lib/billing";
 import { readActiveSubscription } from "@/lib/db/billing";
 import { queryRows } from "@/lib/db/client";
-import { openPaymentObligation } from "@/lib/db/relationship-payment";
+import { readRelationshipPayment, openPaymentObligation } from "@/lib/db/relationship-payment";
 import {
   assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
@@ -285,8 +285,22 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
   readonly template: Assessment;
   /** May the Aspects be edited right now? `draft` and `pending` only (`aspectsEditable`). */
   readonly aspectsEditable: boolean;
-  /** May it be published from its current status? `publishable()` — the detail screen's band. */
+  /**
+   * May it be published from its current status? `publishable()` — the detail screen's band.
+   *
+   * **Status is only half the answer since #690.** Publishing is the hard gate for payment: a
+   * relationship with no method on file gets no publish control at all, and this flag says only
+   * what the status allows. The screen reads both (`publishable && hasPaymentMethod`).
+   */
   readonly publishable: boolean;
+  /**
+   * Is a payment method on file for this relationship? #690's hard gate.
+   *
+   * Read from `relationship_payment.method_captured_at` — the same obligation the completion fee
+   * is charged against — and `false` when the row does not exist. The soft prompt belongs to the
+   * create (stage 4's plans); this is the half that is not optional.
+   */
+  readonly hasPaymentMethod: boolean;
   /** Does the invitation's state offer the one-click reissue? `republishable()` — `expired`/`revoked`. */
   readonly offersRepublish: boolean;
   /**
@@ -360,6 +374,20 @@ export async function readMyRelationship(
   const subscription = await readActiveSubscription(userId);
   const base = relationshipOf(row, now, subscription);
   const trial = trialStateOf(subscription, now);
+  /*
+   * #690 — **the hard gate at publish, as a fact.**
+   *
+   * The plans on stage 4 are a soft prompt: a relationship is created and invited with no method.
+   * Publishing is the other half, and it needs a card on file — so the screen has to know whether
+   * one is, and the answer lives on the payment obligation this relationship already carries
+   * (`relationship_payment.method_captured_at`, written by `recordMethodCaptured()`). A
+   * relationship with no row at all reads `false` here rather than "not measured": the question
+   * this field answers is asked of the screen, and a screen that cannot show the fact must not
+   * draw the control.
+   */
+  const payment = await readRelationshipPayment(row.id);
+  const hasPaymentMethod =
+    payment?.method_captured_at !== null && payment?.method_captured_at !== undefined;
   // #533 phase 3 — derived at the instant the page was handed, never written here (a render may
   // not write). The same function the claim and the answer submit refuse with, so the band and the
   // refusal can never disagree about whether this relationship may be written to.
@@ -369,6 +397,9 @@ export async function readMyRelationship(
     template: assessmentTemplateFromRows({ record: primary, items, options }),
     aspectsEditable: aspectsEditable(base.status),
     publishable: publishable(base.status),
+    // #690 — a method on file, or nothing to click at publish. `publishable` stays the status
+    // question the transaction re-asks; this is the second half the screen must not guess.
+    hasPaymentMethod,
     offersRepublish: republishable(base.view) && membership.state !== "lapsed",
     trialWithoutLiveInvite: trialRunningWithoutLiveInvite(trial, base.view),
     closed: isClosed(base.status),

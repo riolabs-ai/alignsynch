@@ -113,6 +113,11 @@ const DYNAMIC_ROUTES = [
   // #689 — stage 3, the sibling the docstring above predicted. Same reason: an address that can be
   // reloaded, and the draft is what puts the person back on it.
   "/assessment/templates/[templateId]/create/aspects",
+  // #690 — stage 4, Create: the review, the two plans and the conversion.
+  "/assessment/templates/[templateId]/create/commit",
+  // #690 — the account gate *after* stage 4. Not a stage (the spec is explicit), and the only
+  // screen in the flow that sits behind the create.
+  "/assessment/templates/[templateId]/create/account",
   // #542 phase 2 — the member's own CRUD detail pages, moved here from `STATIC_ROUTES` where
   // #533 phase 2 had filed them: a `[id]` pattern in the static list matches one literal string
   // and nothing else, so the list's own links were invisible to the route matcher.

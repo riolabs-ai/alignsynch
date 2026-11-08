@@ -7,7 +7,10 @@
  *
  *   - **the draft**, or a redirect back to Who. A person who deep-links this address without
  *     passing through the two earlier stages has nothing to copy and no relationship to name, so
- *     the screen sends them to the stage that starts it (the account gate lives there too);
+ *     the screen sends them to the stage that starts it. Since #690 that is the only gate: a
+ *     signed-out visitor goes straight through, because the account is asked for after the create
+ *     (`…/create/account`), never in front of a form — a relationship with no account is created
+ *     and invited exactly like any other;
  *   - **the template's own list**, read through `readLibraryTemplate()` with the *session's* id —
  *     the same authorization the library, the detail page and the two earlier stages use. It is
  *     what a first visit seeds the working list from;
@@ -73,7 +76,6 @@ export default async function TemplateCreateAspectsPage({
 
   const viewer = await currentUserIfConfigured();
   const viewerUserId = viewer?.userId ?? null;
-  if (viewerUserId === null) redirect(whoPath);
 
   const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
   const detail = await readLibraryTemplate(templateId, viewerUserId);
@@ -100,7 +102,6 @@ export default async function TemplateCreateAspectsPage({
       backHref={modePath}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
-      gate={null}
     />
   );
 }

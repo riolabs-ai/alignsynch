@@ -576,6 +576,23 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
+  // #690 — stage 4 (Create) and the account gate that follows it. The same row shape, dirs and
+  // fixture as the three stages above: one flow, one vocabulary, and a budget of 0 so the review
+  // card's labels, the two prices and the gate's form copy are a red build if they are typed into
+  // a component. The gate is not a stage and still reads the same fixture — the account step's
+  // words are this flow's words, not a second create vocabulary.
+  "/assessment/templates/[templateId]/create/commit": {
+    page: "app/(mainlayout)/assessment/templates/[templateId]/create/commit/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
+  "/assessment/templates/[templateId]/create/account": {
+    page: "app/(mainlayout)/assessment/templates/[templateId]/create/account/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
   // #255 — the template authoring form. Budget 0 from the first commit, for the reason the
   // three flow surfaces above are: every word is in `data/pages/assessment-template-new.ts`,
   // including the six refusals, so the next literal written in the form is a red build.

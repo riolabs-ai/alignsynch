@@ -30,13 +30,7 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
 import type { LibraryTemplateDetail } from "@/lib/db/template-library";
 import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
-import {
-  PRICING_PATH,
-  SAVE_WHO_PATH,
-  createRelationshipPath,
-  createSignInPath,
-  createSignUpPath,
-} from "@/lib/flow/paths";
+import { PRICING_PATH, SAVE_WHO_PATH, createRelationshipPath } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const TEMPLATE_ID = "template-relationship-basics";
@@ -87,7 +81,6 @@ function landerHtml(): string {
 }
 
 function createHtml(input: {
-  signedIn: boolean;
   problem?: string | null;
   problemLink?: { href: string; label: string } | null;
 }): string {
@@ -100,20 +93,8 @@ function createHtml(input: {
       backHref: `/assessment/templates/${TEMPLATE_ID}`,
       problem: input.problem ?? null,
       problemLink: input.problemLink ?? null,
-      gate: input.signedIn
-        ? null
-        : { signInHref: createSignInPath(TEMPLATE_ID), signUpHref: createSignUpPath(TEMPLATE_ID) },
     }),
   );
-}
-
-/** The `next` a link carries, decoded — the product the auth round trip has to bring back. */
-function nextOf(html: string, href: string): string {
-  const anchor = new RegExp(`href="${href.replace(/[?&]/g, "\\$&")}"`).test(html);
-  expect(anchor, `expected an anchor to ${href}`).toBe(true);
-  const match = /next=([^"&]+)/.exec(href);
-  if (match === null) throw new Error(`no next in ${href}`);
-  return decodeURIComponent(match[1] as string);
 }
 
 describe("stage 2 — the product page", () => {
@@ -148,29 +129,22 @@ describe("stage 2 — the product page", () => {
   });
 });
 
-describe("stage 3 — the create step", () => {
-  it("asks a signed-out visitor for an account instead of drawing the form", () => {
-    const html = createHtml({ signedIn: false });
-    expect(html).toContain('data-create-gate="true"');
-    expect(html).not.toContain(`action="${SAVE_WHO_PATH}"`);
-    expect(html).not.toContain('name="templateRecordId"');
-  });
-
-  it("preserves the chosen product across the auth round trip", () => {
-    const html = createHtml({ signedIn: false });
-    expect(nextOf(html, createSignUpPath(TEMPLATE_ID))).toBe(CREATE_PATH);
-    expect(nextOf(html, createSignInPath(TEMPLATE_ID))).toBe(CREATE_PATH);
-  });
-
-  it("draws stage 1's form for a signed-in person, posting the template the page was read for", () => {
-    const html = createHtml({ signedIn: true });
+describe("stage 1 — the create step", () => {
+  it("draws the form for a signed-out visitor — no account is asked for before stage 4 (#690)", () => {
+    const html = createHtml({});
     expect(html).toContain(`action="${SAVE_WHO_PATH}"`);
-    expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
+    expect(html).toContain('name="templateRecordId"');
+    // The gate that used to stand here is gone from this screen and lives after the create.
     expect(html).not.toContain('data-create-gate="true"');
   });
 
+  it("posts the template the page was read for", () => {
+    const html = createHtml({});
+    expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
+  });
+
   it("draws the six-stage rail with this page as the first stage, Who (#687)", () => {
-    const html = createHtml({ signedIn: true });
+    const html = createHtml({});
     expect(html).toContain('data-wizard-rail="1"');
     expect(html).toContain("Stage 1 of 6");
     // The browse journey's three-step rail is gone: the flow starts here, and the template
@@ -186,7 +160,7 @@ describe("the plan refusals are no longer dead ends", () => {
   for (const code of ["relationship-limit", "mode-not-entitled"] as const) {
     it(`${code} keeps its sentence and gains a working pricing link`, () => {
       const sentence = itemLabel(problems, code);
-      const html = createHtml({ signedIn: true, problem: sentence, problemLink: plansLink });
+      const html = createHtml({ problem: sentence, problemLink: plansLink });
       expect(html).toContain(sentence);
       expect(html).toContain(`data-create-problem-link="${PRICING_PATH}"`);
       expect(html).toContain(`href="${PRICING_PATH}"`);
@@ -195,7 +169,6 @@ describe("the plan refusals are no longer dead ends", () => {
 
   it("a refusal that names no plan draws no pricing link", () => {
     const html = createHtml({
-      signedIn: true,
       problem: itemLabel(problems, "instance-limit"),
       problemLink: null,
     });

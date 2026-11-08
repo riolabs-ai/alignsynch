@@ -61,23 +61,161 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The account gate (#618).
+       * Stage 4 — **Create** (#690).
        *
-       * The page used to render the form to a signed-out visitor, and the endpoint still accepts a
-       * signed-out post (it writes a null initiator, #146/#213). The product spec is the opposite:
-       * "not a user? → signup, then edit meta". So the screen asks for the account *first* rather
-       * than after the relationship exists — a relationship created with no account is in nobody's
-       * list, and there is no screen from which its creator could finish, pay for or even find it.
+       * The review card, the two plans and the conversion, in the words the owner settled on for
+       * the approved prototype (`s8.*`). **Six facts, not a form**: the template (with its Aspect
+       * count), both seats, the title, the Mode and the Setting — everything stages 1–3 decided,
+       * printed back for one last read before anything is created.
        *
-       * Both links carry `next` = this template's create path, so the product survives the round
-       * trip in the URL rather than in a cookie or a hidden field.
+       * `none` is the value a blank optional field renders as, because a blank row is worse than a
+       * dash: a reviewer cannot tell an empty description from a rendering bug.
        */
-      id: "gate",
-      heading: "An account holds this relationship",
-      body: "The relationship you are about to create belongs to your account: it is where the invitation comes from and where you come back to see it answered. Creating one takes a name, an email address and a password, and it brings you back to this same template.",
+      id: "review",
+      heading: "What gets created",
+      body: "One relationship, its own copy of the Aspects, and one invitation. Nothing is charged today.",
       items: [
-        { id: "sign-up", label: "Create an account" },
-        { id: "sign-in", label: "I already have an account" },
+        { id: "template", label: "Template" },
+        { id: "initiator", label: "Initiator" },
+        { id: "counterparty", label: "Counterparty" },
+        { id: "title", label: "Title" },
+        { id: "mode", label: "Mode" },
+        { id: "setting", label: "Setting" },
+        { id: "none", label: "—" },
+      ],
+    },
+    {
+      /**
+       * The conversion (#690) — the one control on stage 4 that writes.
+       *
+       * A plain form posting to the create endpoint, like every other write in this flow: the
+       * draft already carries who, mode, setting and the list, so the post names the template and
+       * nothing else, and a reload of the refusal cannot create a second relationship.
+       *
+       * `submit-note` says what the press does *and* what it does not do. Payment is a soft prompt
+       * on this screen, so the sentence has to be true for the person who adds no method: the
+       * relationship is created and the invitation is sent either way.
+       */
+      id: "commit",
+      heading: "Create the relationship",
+      body: "Submitting now creates the relationship and sends the invitation. Nothing is charged yet.",
+      items: [
+        { id: "submit", label: "Create relationship and send invite" },
+        {
+          id: "submit-note",
+          label:
+            "Submitting copies these Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.",
+        },
+        {
+          id: "cta-heading",
+          label: "Send the invitation",
+        },
+        {
+          id: "cta-body",
+          label:
+            "One email with one link. The relationship waits at Invited until they accept — nothing is charged and nothing is visible to them until they claim the seat.",
+        },
+        {
+          id: "reassure",
+          label: "You can resend, edit the title, or withdraw the invitation at any point.",
+        },
+        { id: "back", label: "Back to aspects" },
+      ],
+    },
+    {
+      /**
+       * The two plans (#690) — **a soft prompt, not a checkout**.
+       *
+       * The approved prices are data here for the reason every other figure in this tree is: a
+       * price typed into markup is a price that can disagree with the one the pricing page sells.
+       * The rows are a single-choice group (`role="radio"`, `aria-checked`) shaped like the Mode
+       * choice, and choosing one commits nothing: the plan is remembered for this screen, the
+       * create is not gated on it, and the door to capture a method is the pricing page's, which
+       * is where a tier is actually bought (`components/pricing/plan-checkout-button.tsx`).
+       *
+       * The trial sentence is the prototype's, verbatim, because it is the promise the hard gate at
+       * publish rests on: nothing is charged until then.
+       */
+      id: "plans",
+      heading: "How you would pay",
+      body: "Add a way to pay now and publishing is one click later — or skip it and pay when you submit the assessment. Nothing is charged today.",
+      items: [
+        { id: "legend", label: "Choose a plan" },
+        { id: "one", label: "One relationship" },
+        {
+          id: "one-note",
+          label:
+            "One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
+        },
+        { id: "one-price", label: "$9.95" },
+        { id: "unlimited", label: "Unlimited relationships" },
+        {
+          id: "unlimited-note",
+          label: "Every relationship you open, for as long as you keep the plan.",
+        },
+        { id: "unlimited-price", label: "$19.85" },
+        { id: "per", label: "/mo" },
+        { id: "best-value", label: "best value" },
+        {
+          id: "trial",
+          label:
+            "7 days free — the trial starts only when you add a method, and nothing is charged until you publish.",
+        },
+        { id: "trial-short", label: "7 days free" },
+        { id: "add-method", label: "Add a payment method" },
+        {
+          id: "add-method-note",
+          label:
+            "Optional here. Publishing needs a method on file, and the plans page is where one is added.",
+        },
+      ],
+    },
+    {
+      /**
+       * The account gate (#690) — **after** stage 4, never before it.
+       *
+       * Until this card the gate sat on stage 1 and a signed-out visitor could not fill in the
+       * form at all (#618). The approved flow puts it behind the create instead: the relationship
+       * and its invitation exist first, and this screen is where a person keeps them. So the
+       * sentences say what has already happened — "the invitation is already out" — rather than
+       * promising a send that has already happened.
+       *
+       * `progress` is the strip's own label ("Account · step 2 of 3"), and the three step labels
+       * are the prototype's `s9.authStep1..3`. Step 3 is already done by the time the gate draws
+       * (the invite commits with the relationship), which is why the strip's third marker is a ✓
+       * rather than a circle: the account is the only step left, not the only step taken.
+       *
+       * `sign-in` is the second tab, and it is a link rather than a second form: the sign-in
+       * screen already exists, and a copy of it here would be a second place for the failure
+       * sentences to drift. It carries `next` = this gate, so signing in lands back on it.
+       */
+      id: "account",
+      heading: "Keep this relationship — create your account",
+      body: "The invitation is already out, so nothing is lost by waiting. An account is the sender the invitation carries and the address we can reach you at; without one, your seat lives in this browser.",
+      items: [
+        { id: "progress", label: "Account · step 2 of 3" },
+        { id: "step-1", label: "Relationship ready" },
+        { id: "step-2", label: "Your account" },
+        { id: "step-3", label: "Invitation sent" },
+        { id: "tab-create", label: "Create account" },
+        { id: "tab-sign-in", label: "Sign in" },
+        { id: "name", label: "Your name" },
+        { id: "name-help", label: "Shown to the person you invited." },
+        { id: "email", label: "Email address" },
+        { id: "password", label: "Password" },
+        { id: "password-help", label: "At least 10 characters." },
+        { id: "submit", label: "Create account and continue" },
+        { id: "submitting", label: "Creating…" },
+        {
+          id: "required",
+          label: "A name, an email address and a password are needed to create the account.",
+        },
+        {
+          id: "failed",
+          label:
+            "That account was not created. Check the address and the password, or sign in if you already have an account.",
+        },
+        { id: "back", label: "Back to the relationship" },
       ],
     },
     {
@@ -195,11 +333,11 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "saved", label: "Aspect saved." },
         { id: "reordered", label: "Order saved." },
         { id: "refused", label: "That Aspect was not saved." },
-        { id: "submit", label: "Create the relationship" },
+        { id: "submit", label: "Continue to create" },
         {
           id: "submit-note",
           label:
-            "Submitting copies these Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.",
+            "Nothing is created yet. The last stage reviews the six facts and sends the invitation.",
         },
         { id: "back", label: "Back to mode" },
       ],

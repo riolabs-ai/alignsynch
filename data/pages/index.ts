@@ -113,6 +113,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/assessment/templates/[templateId]/create/mode": assessmentCreatePageCopy,
   // #689 — stage 3, the third register of the same fixture.
   "/assessment/templates/[templateId]/create/aspects": assessmentCreatePageCopy,
+  // #690 — stage 4 (Create) and the account gate behind it: the same fixture again, because the
+  // gate's words are this flow's words and a second copy of them is how a flow grows two dialects.
+  "/assessment/templates/[templateId]/create/commit": assessmentCreatePageCopy,
+  "/assessment/templates/[templateId]/create/account": assessmentCreatePageCopy,
   "/assessment/templates/new": assessmentTemplatePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
