@@ -12,8 +12,9 @@
  *   answering               the same sheet, with the other party's answers absent — not
  *                          hidden, absent (`FlowScreen.report` is `null` and the view model
  *                          has no field to carry them)
- *   complete                the existing `AssessmentReportView`, which every Gap in it
- *                          computes through `gapOf()` from the two scores beside it
+ *   complete                the Alignment, Aspect by Aspect (`AlignmentView`, #692): both
+ *                          sheets, both opinions and the difference, drawn from the same
+ *                          `screen.report` every Gap in it computes through `gapOf()`
  *
  * A refusal (`?problem=frozen` and friends) is rendered here too, for the one case that is
  * a redirect; the submit endpoint itself answers 409/403 with `problem-page.tsx`, so an
@@ -48,7 +49,7 @@
  * names, which are the glossary's own vocabulary authored once in `content/assessment.ts`
  * (`MODE_LABELS`) — the same way the report component carries "Aspect" and "Gap".
  */
-import { AssessmentReportView } from "@/components/assessment/assessment-report";
+import { AlignmentView } from "@/components/assessment-flow/alignment-view";
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
@@ -574,7 +575,7 @@ export function AssessmentInstanceView({
             <h2 className="font-semibold">{reportBand.heading}</h2>
             <p className="mt-1">{sectionBody(reportBand)}</p>
           </section>
-          <AssessmentReportView report={screen.report} />
+          <AlignmentView screen={screen} copy={copy} />
           {/* #478 — the plan the completion derived, drawn on the screen that owns it. A party
               ticks and rewords; a coach reads. Only in the report state: a Step names the widest Gap
               on its Aspect, so drawing one before both seats have accepted would hand a party the

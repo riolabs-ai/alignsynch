@@ -58,10 +58,13 @@ stepper is the obvious answer to "four stages". Against it:
     already says who; the stage sentence just names the stage).
   - `complete` → **"Sharing — the report is open to both of you."**
     Never add a count. The sentence goes in `data/pages/assessment-instance.ts` (E23).
-- **Report (both `AssessmentReportView` and the instance screen's complete band):** the
+- **Report (the `/assessment/[slug]` and demo surfaces' `AssessmentReportView`, and the
+  relationship's own Alignment — `components/assessment-flow/alignment-view.tsx`, #692):** the
   verdict, not a stage: **"Aligned under Soft"** / **"{n} Gaps exceed Full"** from
   `instanceAlignment` (see ux-report.md). This is where "Aligned" belongs — it is a property
-  of the numbers, computed only once both parties' opinions are readable anyway.
+  of the numbers, computed only once both parties' opinions are readable anyway. On the
+  relationship screen it is one row per Aspect (both sheets, both Opinions, the difference),
+  never a stage and never a total; the per-Gap tables stay on `…/report`, one link away.
 - **Optional process list (if §4.3's "derived and named" bar is ever wanted):** an `<ol>` on the
   instance screen, four items with the current one `aria-current="step"`, completed ones marked
   with a check **plus** the word "Complete" (never check-only — WCAG 1.4.1), pending ones

@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **89** — 55 static, 34 dynamic, from `app/**/page.tsx`
-- component domains: **42** — 311 files under `components/`, 304 of them `.tsx`
+- component domains: **42** — 312 files under `components/`, 305 of them `.tsx`
 - route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 67 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 42 · AlignSynch 45 · QuizHub 42 · No template yet 2
@@ -377,10 +377,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: Scoped by relationship_member.user_id (or party.user_id for rows seeded before #340) against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. The stage, the counts and the search are derived per render; `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.
 
 - `/assessment/instances/[instanceId]` — **db**
-  - capability: The screen both parties share: answer blind while the other has not, then read the report and the Gap once both have answered **and both have accepted**.
-  - components: `components/assessment`, `components/assessment-flow`
+  - capability: The screen both parties share: answer blind while the other has not, then — stage 6, Ongoing — read the Alignment Aspect by Aspect once both have answered **and both have accepted**.
+  - components: `components/assessment-flow`
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
-  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own until both seats have accepted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257).
+  - notes: The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own until both seats have accepted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257). The completed state is the relationship's Alignment (`components/assessment-flow/alignment-view.tsx`, #692): one row per Aspect with both sheets, both Opinions behind every difference, and a per-Aspect verdict, linked to the per-Gap report at `…/report`. It draws no total and no composite score, and the status sentence above it stays a sentence — the stages here are not the viewer's to drive (`docs/specs/ux-stages.md`).
 
 - `/assessment/instances/[instanceId]/accept` — **db**
   - capability: Review and accept a session: the decision first, both seats side by side with what each party has answered, then every Aspect beneath with both Opinion columns sealed.
@@ -499,12 +499,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/assessment` — **mock**
   - capability: The assessment report: each Aspect's two Opinions, the Values behind them and the Gap between the parties.
   - files (2): `assessment-report.tsx`, `assessment-unreadable.tsx`
-  - routes (3): `/assessment/[slug]`, `/assessment/demo/[type]`, `/assessment/instances/[instanceId]`
+  - routes (2): `/assessment/[slug]`, `/assessment/demo/[type]`
   - notes: Reads nothing itself — the instance arrives as props from the route that read Postgres, which is why the surface is `mock` and the route above it is `db`. Since #204 it also draws the one failure state the route can describe: `assessment-unreadable.tsx` prints the database layer's own sentence when the read did not answer, instead of Next's 500 and a digest.
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (25): `accept-session.tsx`, `account-gate.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
+  - files (26): `accept-session.tsx`, `account-gate.tsx`, `alignment-view.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
   - routes (19): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/account`, `/assessment/templates/[templateId]/create/aspects`, `/assessment/templates/[templateId]/create/commit`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 

@@ -238,7 +238,9 @@ describe("the acceptance entry point (#617)", () => {
 
     expect(screen.status).toBe("complete");
     expect(acceptAnchor(html)).toBeNull();
-    expect(html).toContain("data-feel-gap");
+    // #692 — the complete state draws the Alignment, Aspect by Aspect: the Gap is on screen
+    // (the row's own `data-alignment-gap`), not hidden behind the acceptance band.
+    expect(html).toContain("data-alignment-gap");
   });
 });
 

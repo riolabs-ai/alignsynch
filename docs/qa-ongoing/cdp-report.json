@@ -1,0 +1,50 @@
+{
+  "route": "/assessment/instances/1e537ea5-defa-4ed0-a4a3-8c04fd426859",
+  "cookie": "flow party seat (initiator)",
+  "widths": {
+    "390": {
+      "innerWidth": 390,
+      "documentHeight": 6235,
+      "scrollWidth": 390,
+      "horizontalOverflow": false,
+      "band": {
+        "left": 28,
+        "width": 334,
+        "height": 4797
+      },
+      "aspects": 5,
+      "sheetsPerAspect": [2, 2, 2, 2, 2],
+      "differenceRows": [4, 4, 4, 4, 4],
+      "opinionValues": [4, 4, 4, 4, 4],
+      "aspectVerdicts": ["2 over the Soft Setting", "Aligned", "Aligned", "Aligned", "Aligned"],
+      "relationshipVerdict": "2 of the 20 Gaps here exceed the Soft Setting.",
+      "reportLink": "/assessment/instances/1e537ea5-defa-4ed0-a4a3-8c04fd426859/report",
+      "heading": "Alignment",
+      "stageSentence": "Sharing — the report is open to both of you.",
+      "stepperMarkup": 0,
+      "totalGap": false
+    },
+    "1440": {
+      "innerWidth": 1440,
+      "documentHeight": 3025,
+      "scrollWidth": 1425,
+      "horizontalOverflow": false,
+      "band": {
+        "left": 406,
+        "width": 864,
+        "height": 1901
+      },
+      "aspects": 5,
+      "sheetsPerAspect": [2, 2, 2, 2, 2],
+      "differenceRows": [4, 4, 4, 4, 4],
+      "opinionValues": [4, 4, 4, 4, 4],
+      "aspectVerdicts": ["2 over the Soft Setting", "Aligned", "Aligned", "Aligned", "Aligned"],
+      "relationshipVerdict": "2 of the 20 Gaps here exceed the Soft Setting.",
+      "reportLink": "/assessment/instances/1e537ea5-defa-4ed0-a4a3-8c04fd426859/report",
+      "heading": "Alignment",
+      "stageSentence": "Sharing — the report is open to both of you.",
+      "stepperMarkup": 0,
+      "totalGap": false
+    }
+  }
+}

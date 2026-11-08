@@ -29,7 +29,8 @@
  *                  instance screen, the accept page — because posting `/accepts` by hand is what
  *                  let the accept step ship with no entry point at all (#617)
  *   6c. locked     an edit after the seat accepted is a 409 and the stored row is unchanged
- *   6d. gap        both parties now see `data-feel-gap="3"` where Feel 2 meets Feel 5, and
+ *   6d. gap        both parties now see a Feel Gap of 3 where Feel 2 meets Feel 5 (the
+ *                  `data-alignment-gap` rows of stage 6, #692), and
  *                  "In synch" where they agree; an Advanced instance draws all eight kinds,
  *                  the four prediction ones against the other party's actual (#219)
  *   8. copy        editing the Template's prompt afterwards does not change the instance
@@ -102,6 +103,30 @@ function acceptFormAction(html) {
     if (action?.endsWith("/accepts")) return action;
   }
   return null;
+}
+
+/**
+ * The Alignment rows of one Aspect on the relationship screen (#692).
+ *
+ * The completed screen draws one `data-alignment-gap-kind` row per Gap the Aspect has, and each
+ * row prints the two Opinions it subtracts beside the number, so this reads the numbers off the
+ * markup instead of parsing a sentence — the same discipline the old `data-feel-gap` attributes
+ * carried. Returns `[[kind, gap], …]` in glossary order; `[]` when the Aspect is not drawn (the
+ * report is still locked, or the id is not on the page).
+ */
+function alignmentGaps(html, itemId) {
+  const start = html.indexOf(`data-alignment-aspect="${itemId}"`);
+  if (start === -1) return [];
+  const next = html.indexOf('data-alignment-aspect="', start + 1);
+  const section = html.slice(start, next === -1 ? undefined : next);
+  return [
+    ...section.matchAll(/data-alignment-gap-kind="([a-z-]+)"[\s\S]*?data-alignment-gap="(\d)"/g),
+  ].map((match) => [match[1], Number(match[2])]);
+}
+
+/** One kind's Gap out of a list `alignmentGaps()` returned, or `undefined`. */
+function gapOfKind(gaps, kind) {
+  return gaps.find(([name]) => name === kind)?.[1];
 }
 
 /* ------------------------------------------------------------------ *
@@ -591,10 +616,7 @@ async function main() {
     "the Counterparty's screen renders while the Initiator has answered",
     blindScreen.status === 200,
   );
-  check(
-    "the Counterparty sees no Gap at all",
-    !blindScreen.html.includes("data-feel-gap") && !blindScreen.html.includes("data-wish-gap"),
-  );
+  check("the Counterparty sees no Gap at all", !blindScreen.html.includes("data-alignment-gap"));
   check(
     "the Counterparty's page names no score of the Initiator's",
     !/aria-label="Avery E2E (feel|wish):/.test(blindScreen.html) &&
@@ -661,7 +683,7 @@ async function main() {
   // until both parties accept, which is the review window the accept page exists for.
   check(
     "both submitted: the report is still locked, with no Gap on the instance screen",
-    !afterBoth.html.includes("data-feel-gap") && !afterBoth.html.includes("data-wish-gap"),
+    !afterBoth.html.includes("data-alignment-gap"),
   );
   const editBeforeAccept = await initiator.post(
     `${instancePath}/answers`,
@@ -738,8 +760,7 @@ async function main() {
   const afterFirstAccept = await initiator.get(instancePath);
   check(
     "one acceptance: the Gap is still sealed for both of you",
-    !afterFirstAccept.html.includes("data-feel-gap") &&
-      !afterFirstAccept.html.includes("data-wish-gap"),
+    !afterFirstAccept.html.includes("data-alignment-gap"),
   );
   check(
     "and the instance screen replaces the link with the wait",
@@ -808,39 +829,35 @@ async function main() {
     afterAcceptance.html.includes('data-stage-badge="sharing"'),
   );
 
-  const gapAttribute = afterAcceptance.html.match(
-    /data-aspect="aspect-time-together" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
-  );
+  const gapAttribute = alignmentGaps(afterAcceptance.html, TIME);
   check(
     "Feel 2 against Feel 5 renders a Gap of 3",
-    gapAttribute !== null && gapAttribute[1] === "3",
-    gapAttribute === null ? "attribute not found" : `data-feel-gap="${gapAttribute[1]}"`,
+    gapOfKind(gapAttribute, "feel") === 3,
+    `feel = ${String(gapOfKind(gapAttribute, "feel"))}`,
   );
   check(
     "Wish 5 against Wish 3 renders a Gap of 2",
-    gapAttribute !== null && gapAttribute[2] === "2",
-    gapAttribute === null ? "" : `data-wish-gap="${gapAttribute[2]}"`,
+    gapOfKind(gapAttribute, "wish") === 2,
+    `wish = ${String(gapOfKind(gapAttribute, "wish"))}`,
   );
-  const moneyRow = afterAcceptance.html.match(
-    /data-aspect="aspect-money" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
-  );
+  const moneyRow = alignmentGaps(afterAcceptance.html, MONEY);
   check(
-    "the agreed Aspect renders 'In synch'",
-    moneyRow !== null && moneyRow[1] === "0" && afterAcceptance.html.includes("In Synch"),
-    moneyRow === null ? "" : "gap 0",
+    "the agreed Aspect renders 'In Synch'",
+    moneyRow.length > 0 &&
+      moneyRow.every(([, gap]) => gap === 0) &&
+      afterAcceptance.html.includes("In Synch"),
+    moneyRow.length === 0 ? "no difference rows" : `${moneyRow.length} rows, all 0`,
   );
   note(
-    `rendered: data-aspect="aspect-time-together" data-feel-gap="${gapAttribute?.[1]}" data-wish-gap="${gapAttribute?.[2]}"`,
+    `rendered: data-alignment-aspect="${TIME}" feel ${String(gapOfKind(gapAttribute, "feel"))} · wish ${String(gapOfKind(gapAttribute, "wish"))}`,
   );
 
   const counterpartyReport = await counterparty.get(instancePath);
-  const counterpartyGap = counterpartyReport.html.match(
-    /data-aspect="aspect-time-together" data-feel-gap="(\d)"/,
-  );
+  const counterpartyGap = gapOfKind(alignmentGaps(counterpartyReport.html, TIME), "feel");
   check(
     "both parties see the same Gap",
-    counterpartyGap?.[1] === "3",
-    `counterparty data-feel-gap="${counterpartyGap?.[1]}"`,
+    counterpartyGap === 3,
+    `counterparty feel gap = ${String(counterpartyGap)}`,
   );
 
   /* 7. the freeze, now per party (#R2) -------------------------------- */
@@ -1028,7 +1045,7 @@ async function main() {
   );
   check(
     "and the Advanced report is still locked until both accept",
-    !(await advInitiator.get(advPath)).html.includes("data-feel-gap"),
+    !(await advInitiator.get(advPath)).html.includes("data-alignment-gap"),
   );
   const advAccept1 = await advInitiator.post(`${advPath}/accepts`, {});
   const advAccept2 = await advCounterparty.post(`${advPath}/accepts`, {});
@@ -1039,30 +1056,31 @@ async function main() {
   );
 
   const advReport = await advInitiator.get(advPath);
-  const advRow = advReport.html.match(new RegExp(`<section[^>]*data-aspect="${TIME}"[^>]*>`))?.[0];
+  const advRow = alignmentGaps(advReport.html, TIME);
   check(
     "the Advanced report draws all eight Gap kinds (#219)",
-    advRow?.includes('data-feel-gap="3"') === true &&
-      advRow.includes('data-wish-gap="2"') &&
-      advRow.includes('data-initiator-gap="3"') &&
-      advRow.includes('data-counterparty-gap="2"') &&
+    advRow.length === 8 &&
+      gapOfKind(advRow, "feel") === 3 &&
+      gapOfKind(advRow, "wish") === 2 &&
+      gapOfKind(advRow, "initiator") === 3 &&
+      gapOfKind(advRow, "counterparty") === 2 &&
       // A prediction against the other party's actual: Initiator Think 4 vs Counterparty
       // Feel 5 → 1; Initiator Guess 1 vs Counterparty Wish 3 → 2; Counterparty Think 3 vs
       // Initiator Feel 2 → 1; Counterparty Guess 4 vs Initiator Wish 5 → 1.
-      advRow.includes('data-initiator-think-gap="1"') &&
-      advRow.includes('data-initiator-guess-gap="2"') &&
-      advRow.includes('data-counterparty-think-gap="1"') &&
-      advRow.includes('data-counterparty-guess-gap="1"'),
-    advRow?.slice(0, 260) ?? "no row",
+      gapOfKind(advRow, "initiator-think") === 1 &&
+      gapOfKind(advRow, "initiator-guess") === 2 &&
+      gapOfKind(advRow, "counterparty-think") === 1 &&
+      gapOfKind(advRow, "counterparty-guess") === 1,
+    `${advRow.length} rows: ${advRow.map(([kind, gap]) => `${kind} ${gap}`).join(" · ")}`,
   );
-  const advGapAttributes = (advReport.html.match(/data-[a-z]+(?:-[a-z]+)*-gap=/g) ?? []).length;
+  const advGapAttributes = (advReport.html.match(/data-alignment-gap="/g) ?? []).length;
   check(
     "every Aspect carries eight Gaps (5 × 8)",
     advGapAttributes === ASPECT_IDS.length * 8,
     `${advGapAttributes} gap attributes`,
   );
   note(
-    `rendered: data-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
+    `rendered: data-alignment-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
   );
 }
 
