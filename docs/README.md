@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**95 documents in 9 sections.** Every page carries the same nav block, generated
+**96 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,7 +31,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 4 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 18 documents
+- [Product](#product) — 19 documents
 - [Operations](#operations) — 8 documents
 - [Reference](#reference) — 9 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -100,6 +100,7 @@ What the product promises, and the specifications behind it.
 - [`specs/catalogue.md`](specs/catalogue.md) — **Template catalogue** — How is the catalogue grouped, and what does each category mean?
 - [`specs/flow-emails.md`](specs/flow-emails.md) — **Transactional email lifecycle** — Which emails send, when, and to whom?
 - [`specs/flow-reinvite.md`](specs/flow-reinvite.md) — **Re-invite** — What happens when an invitation expires — and why not a void?
+- [`specs/flow-stages.md`](specs/flow-stages.md) — **The six flow stages (binding spec)** — What are the stages, which fields does stage 1 carry, and where does the flow end?
 - [`specs/maintenance-fields.md`](specs/maintenance-fields.md) — **Maintenance fields** — Which fields does the relationship-maintenance form carry?
 - [`specs/ux-input.md`](specs/ux-input.md) — **Answer input** — How does a person answer — scale, labels, semantics?
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
