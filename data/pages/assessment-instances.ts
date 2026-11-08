@@ -1,11 +1,14 @@
 /**
  * `/assessment/instances` — the instances the signed-in account is a party to (#213).
  *
- * **The heading is "My Relationships", and it is the page's title too.** The rail has called this
- * destination My Relationships since the console rail was rewritten (`data/pages/shell.ts`), and
- * the page said "Your assessments" in two places — an `<h1>` from this fixture and a `<title>`
- * spelled in the page module. Both now read this one field: the product's noun is *relationship*,
- * and an instance is the row that holds one, not the word a member is asked to recognise.
+ * **The heading is "Your relationships", and it is the page's title too (#706).** It used to read
+ * "My Relationships" — the rail row's word — while the rail row of that name points at
+ * `/dashboard/relationships`, which is a *different* screen: the console's card list of every
+ * relationship you are a party to, with its four actions. Two screens reading one name while one
+ * meant something narrower is the confusion #706 was filed about, so the console keeps the rail's
+ * word and this surface, the one you answer from, takes the label `data/surface-registry.ts`
+ * already gave it. Both now say plainly who is in the relationship; they differ in what you do on
+ * them — answer here, start and publish there.
  *
  * **Three words, and this page only uses two of them.** A *relationship* is the ongoing container
  * — bought once, holding every cycle. A *session* is one cycle of answering inside it. An
@@ -45,7 +48,7 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const myInstancesPageCopy: PageCopy = zPageCopy.parse({
-  heading: "My Relationships",
+  heading: "Your relationships",
   subtitle:
     "Every relationship you're a party to, whichever link brought you in. Open one to answer, or to read the Gap once you've both accepted.",
   cta: { label: "Start a relationship", href: "/assessment" },

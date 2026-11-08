@@ -252,6 +252,13 @@ export function RelationshipDetail({
             <Badge variant="outline" data-relationship-invite={relationship.view}>
               {viewSentence(relationship.view)}
             </Badge>
+            {/* #706 — the viewer's own seat, from their party row. The card says it too; the
+                detail screen repeats it because this is where the absent controls would be. */}
+            <Badge variant="outline" data-viewer-role={relationship.viewerRole}>
+              {relationship.viewerRole === "initiator"
+                ? pageItemOf(copy, "role-initiator").label
+                : pageItemOf(copy, "role-counterparty").label}
+            </Badge>
             {/* #533 phase 3 — the derived membership, beside the stored status. */}
             {relationship.membership.state === "lapsed" ? (
               <Badge variant="outline" data-membership-state="lapsed">
@@ -301,6 +308,16 @@ export function RelationshipDetail({
               {itemLabel(viewCopy, "trial-running-no-invite")}
             </p>
           ) : null}
+          {/* #706 — the sentence that stands in for the three absent bands, so a Counterparty
+              reads why this screen has no editor, no publish panel and no reissue control. */}
+          {relationship.isInitiator ? null : (
+            <p
+              data-relationship-read-only="counterparty"
+              className="rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200"
+            >
+              {itemLabel(viewCopy, "counterparty-read-only")}
+            </p>
+          )}
         </CardContent>
       </Card>
 

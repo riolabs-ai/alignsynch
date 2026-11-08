@@ -57,9 +57,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   /**
-   * The page's `heading` is the title, not a second string: the rail says "My Relationships"
-   * (`data/pages/shell.ts`), and a `<title>` spelled here would be the one place the console
-   * could call this surface something else. The `<h1>` reads the same field.
+   * The page's `heading` is the title, not a second string — a `<title>` spelled here would be the
+   * one place this surface could be called something else. The `<h1>` reads the same field. Since
+   * #706 the field is "Your relationships", which is the label `data/surface-registry.ts` gives this
+   * route and no longer collides with the rail row of the same name pointed at the console list.
    */
   title: myInstancesPageCopy.heading,
 };

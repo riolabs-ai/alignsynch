@@ -1,5 +1,6 @@
 /**
- * `/dashboard/relationships/[id]` — one relationship the member started (#533 phase 2).
+ * `/dashboard/relationships/[id]` — one relationship, from draft to a live invitation (#533 phase
+ * 2, #706).
  *
  * The screen has four bands, and which of them renders is `publishViewOf()`'s answer — one value
  * derived from the stored status, the invitation row and the instant the page rendered, never four
@@ -18,9 +19,12 @@
  * link that lapsed — and leaving it to be inferred from two columns is how a person concludes the
  * product took their money and stopped.
  *
- * **No configuration is shown to a counterparty, and no button is the enforcement.** The editor is
- * not rendered unless `aspectsEditable(status)`; the server action checks ownership inside its
- * transaction and answers `not-yours` to anyone else. Hiding the form is a courtesy, not a rule.
+ * **A Counterparty opens this screen and reads it, read-only (#706).** The three write bands are
+ * absent for them because `aspectsEditable`, `publishable` and `offersRepublish` are each derived
+ * as `isInitiator && …`, and `counterparty-read-only` says so in words rather than leaving three
+ * missing panels to be interpreted. No button is the enforcement either way: the server actions
+ * check ownership inside their transaction and answer `not-yours` to anyone else. Hiding the form
+ * is a courtesy, not a rule.
  *
  *   link       the invitation link, shown **once** after it is minted (a token is never stored, so
  *              a reload cannot reproduce it — the copy says so)
@@ -32,7 +36,7 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship",
   subtitle:
-    "Its Aspects are yours to change until you publish. Publishing starts your fourteen-day trial (or a checkout), opens the session and mints an invitation good for seven days.",
+    "Its Aspects are fixed once it is published: publishing opens the session and mints the invitation, and a link that lapsed is reissued in one click. Which of those the person reading this may do depends on which seat they hold — the card says so.",
   items: [
     { id: "status", label: "State" },
     { id: "aspects", label: "Aspects" },
@@ -43,6 +47,9 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     { id: "none", label: "—" },
     /** #533 phase 3 — the badge the derived lapse draws beside the stored status. */
     { id: "read-only", label: "Read-only" },
+    /** #706 — the viewer's own seat, from their party row. */
+    { id: "role-initiator", label: "Initiator" },
+    { id: "role-counterparty", label: "Counterparty" },
   ],
   sections: [
     {
@@ -76,6 +83,16 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           id: "trial-running-no-invite",
           label:
             "Your trial is running and no invitation is live. Reissue the link below — publishing again is one click and does not re-enter the Aspects.",
+        },
+        {
+          /**
+           * #706 — the sentence a Counterparty reads instead of an editor, a publish panel and a
+           * reissue button. It names the split rather than leaving three absent bands to be
+           * interpreted: the relationship is theirs to answer, not theirs to configure.
+           */
+          id: "counterparty-read-only",
+          label:
+            "You are the Counterparty on this relationship. Its Aspects, publishing and invitation belong to the person who started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent.",
         },
       ],
     },
