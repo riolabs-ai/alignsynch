@@ -107,11 +107,78 @@ a general lever, and pushing any other branch still produces no build to share. 
 enables is not serving anything yet (see the last paragraph of this section): the branch does not
 exist on `origin`, the domain is not attached, and creation is still disabled upstream.
 
-The trade-off is real and it is nearly all this rule costs: **there is no shareable preview URL for
-someone who is not on this machine**, with that one exception. If a shareable preview is ever needed
-for a _branch under review_ — a review with someone outside the team, a bug that only reproduces on
-Vercel's edge — it comes back as a deliberate opt-in argued on a card, not as a default that spends
-a deployment on every push.
+The trade-off is real and it is nearly all this rule costs: **a push produces no shareable preview
+URL**, with that one exception — so a branch is normally reviewed by reading it and running it. When
+a shareable preview _is_ needed for a branch under review — feedback on a screen from someone who is
+not at this checkout, a bug that only reproduces on Vercel's edge — it is a deliberate opt-in argued
+on a card and taken by hand, never a default that spends a deployment on every push. Since #664 that
+opt-in is one command: [`scripts/preview.mjs`](#a-preview-for-review-one-command-and-the-toolbar-with-it).
+
+### A preview for review: one command, and the toolbar comes with it
+
+The project's own Ignored Build Step string already ended with the answer, before this script
+existed: _"Run `vercel deploy` by hand if you need a preview."_ [`scripts/preview.mjs`](../scripts/preview.mjs)
+is that sentence with the parts a hand-run gets wrong made mechanical — it links the checkout when
+`.vercel/project.json` is missing, deploys with `--yes`, takes the URL out of the CLI's own output,
+and refuses `--prod` outright so a preview can never become a production deployment:
+
+```bash
+node scripts/preview.mjs            # → preview:  https://alignsynch-<hash>-riolabs-ais-projects.vercel.app
+node scripts/preview.mjs --json     # the same facts as one object, for a PR body or a script
+```
+
+Measured on 2026-11-07, against the deployment that command created:
+
+| Fact                             | Measurement                                                                                                                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| it spends one deployment         | the script prints the counter from `scripts/deploy-check.mjs` (`N / 100 in the last 24h — M remaining`), never a zero                                                                          |
+| it shows the **tree**, not a SHA | a CLI deployment carries no git metadata, so the preview's `GET /api/version` answers `{"version":"1.6.0","commit":"unknown"}`; the script prints the tree's own `HEAD` beside the URL instead |
+| a cold build is ~40 s            | `● Ready` in 40 s, environment `Preview`                                                                                                                                                       |
+| the toolbar is on it             | `enablePreviewFeedback: true` on the project (API), and `vercel.live/_next-live/feedback/feedback.js` in the preview's rendered DOM                                                            |
+
+**The toolbar is already Vercel's, and `@vercel/toolbar` is deliberately not a dependency.** Vercel
+injects the Toolbar into every preview deployment by default; the npm package is the _production and
+localhost_ path, where nothing is injected. Mounting it in this tree would ship toolbar code into the
+production bundle to duplicate a preview behaviour that already exists, so #664 changed no product
+code and added no dependency — this page and the one script are the whole change.
+
+**The issue's acceptance grep measures the wrong surface.** `curl -s <url> | grep -c vercel-toolbar`
+answers `0` on production **and** on a preview, because the injection is client-side: the server HTML
+carries nothing on either, and the loader is added when the document runs. The honest instrument is a
+rendered DOM:
+
+```bash
+google-chrome --headless=new --dump-dom <preview-url>   | grep -c 'vercel.live'   # 1 — the toolbar
+google-chrome --headless=new --dump-dom https://alignsynch.com | grep -c 'vercel.live'   # 0 — production
+```
+
+Both were measured on 2026-11-07 against a preview this script created and against the live
+production alias. The two server HTMLs are identical in this respect, so no `curl` can tell them
+apart; a rendered DOM can.
+
+**Comments need a person, and one dashboard setting.** The toolbar asks you to sign in to Vercel, so
+a comment thread belongs to a team member with access to that deployment, and the Toolbar's Preview
+visibility is a project setting — _Settings → General → Vercel Toolbar_ on the project, or the same
+row team-wide — which this project already reports as `On` (`enablePreviewFeedback: true`). A
+preview under a **custom alias domain** (`demo.alignsynch.com` is one) needs the Toolbar opted in
+explicitly in project settings; a `*.vercel.app` preview URL does not. None of that is a commit,
+which is why a card that lands a preview workflow names the click instead of claiming it done.
+
+**A preview of an ordinary branch has no environment.** Preview variables are scoped per branch
+(§3: `--target preview --branch demo`) and every variable this project holds on Preview is scoped to
+`demo`. So a preview of any other branch renders what needs no secrets and redirects or refuses what
+does — measured on the same 2026-11-07 preview:
+
+| Route          | Answer                      |
+| -------------- | --------------------------- |
+| `/`            | `200`                       |
+| `/login`       | `200`                       |
+| `/dashboard`   | `307` → `/login`            |
+| `/api/version` | `200`, `"commit":"unknown"` |
+
+Feedback on a public or marketing screen therefore works on any branch's preview; a signed-in screen
+needs a preview that carries the demo environment, which is the `demo` branch and the second rule in
+§1 above.
 
 The Vercel schema caps `ignoreCommand` at 256 characters; this rule is 105, measured from the file
 (109 as written in the JSON, where each `"` inside the command is escaped). The branch test is the
@@ -148,6 +215,18 @@ record** rather than the working switch: it is the reviewable statement of what 
 nothing, and it becomes the effective gate the moment preview creation is allowed again or the
 project is transferred.
 
+**Re-measured on 2026-11-07: still off, and now said out loud in the dashboard.** The project API
+answers `previewDeploymentsDisabled: true` with `gitProviderOptions.createDeployments: "disabled"`,
+and the dashboard's Ignored Build Step — the one `vercel.json` overrides, §1 above — has been
+rewritten to state the decision instead of hiding it: _"Preview deployments are disabled; only main
+builds. Run `vercel deploy` by hand if you need a preview."_ That last sentence is the route
+[below](#a-preview-for-review-one-command-and-the-toolbar-with-it) automates.
+
+A branch push on that date produced **no record at all**, not a `CANCELED` one: `vercel ls` was
+identical before and after pushing `alignsynch/t_34d47fd0-…` and waiting three minutes, so the
+`ignoreCommand` was never consulted. Disabled creation is upstream of the rule, which is why a
+preview has to be asked for.
+
 Turning previews on takes two changes that have to agree, and only one of them is in this
 repository:
 
@@ -156,6 +235,14 @@ repository:
   rule. While both stand, a branch push creates no deployment record and `ignoreCommand` is never
   consulted, so the `demo` exemption is inert;
 - **name the branch in this file** — done, for `demo` and for nothing else.
+
+Those two are the price of an **automatic** preview per push, and both are still refused. A preview
+on demand costs neither, which is why it is the route this page documents: `vercel deploy` — and
+`scripts/preview.mjs`, which is the same thing with the footguns removed — builds a preview from any
+branch with no dashboard change, no per-branch literal, and no record created for the pushes nobody
+asked about. Measured 2026-11-07: `● Ready` in 40 s, environment `Preview`. The one thing it cannot
+do is carry `demo`'s environment, because preview variables are branch-scoped — see
+[A preview for review](#a-preview-for-review-one-command-and-the-toolbar-with-it).
 
 "Production only" is still the deliberate position: widening it was a card, argued and measured, not
 a default that drifted. Exactly one branch is exempt, and because that exemption is a literal in
