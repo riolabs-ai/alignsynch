@@ -65,8 +65,8 @@ describe("brandThemeVars", () => {
       "--action": "200 17.9% 26.3%",
       "--action-foreground": "0 0% 100%",
       "--nav-active": "200 17.9% 26.3%",
-      "--action-hover": "201 19.2% 20.4%",
-      "--accent-press": "192.5 93.7% 37.3%",
+      "--action-hover": "hsl(201 19.2% 20.4%)",
+      "--accent-press": "hsl(192.5 93.7% 37.3%)",
     });
   });
 
