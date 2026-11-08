@@ -19,6 +19,12 @@ Four documents, read in this order. Each one argues from the previous.
 | [SPEC.md](SPEC.md)         | **how it is built** — the table, the modules, the job ladder including the branch that is missing today, the refusal codes, the server-side enforcement points, rollout, and the test plan               | you are implementing or reviewing the code                        |
 | [ADR.md](ADR.md)           | **what we chose and what it cost** — eleven decisions, each with the alternative it beat, its reversibility, and its consequences                                                                        | you disagree with something, or you are about to change it        |
 
+One artifact sits beside the documents: [`mockup-pay-to-complete-v1.html`](mockup-pay-to-complete-v1.html)
+draws the payer surfaces #619 asks for — the method choice at the end of the create stages, the capture
+widget, and the `needs-action` band after an off-session decline. It is a mockup: no route renders it,
+every string carries a source, and the strings with no source are marked for approval. Open it in a
+browser; screen 8 audits itself.
+
 ## The one-paragraph version
 
 A relationship is free to create and free to answer. A payment method is offered at the end of the create
