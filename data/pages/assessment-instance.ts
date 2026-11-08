@@ -223,6 +223,47 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
     },
     /**
+     * #692 — stage 6, **Ongoing**: the Alignment, Aspect by Aspect.
+     *
+     * The artifact of record (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`,
+     * `s10.*`) draws this as the relationship's own Gap card: one row per Aspect, both sheets
+     * side by side, the difference between them. The words are the owner's, narrowed to the three
+     * sentences this screen needs — the two verdicts are stated per Aspect *and* once for the
+     * relationship, because a couple reads the row first and the total second, and neither is a
+     * **composite metric**: the glossary's own grep (`docs/specs/ux-report.md`, acceptance 5) forbids
+     * a "Total Gap", so this band counts Gaps over the Setting and never adds them up.
+     *
+     * The two verdict sentences are deliberately worded differently from the report's own band
+     * (`data/pages/assessment-relationship-report.ts`): the report answers "are we aligned", this
+     * band answers "how much of it is over the line here", and a sentence copied between two
+     * fixtures is the drift `data/pages/lifecycle.ts` exists to stop. The glossary's vocabulary —
+     * `Aligned`, the four Opinion names, the eight Gap names, `Soft`/`Full` — is *not* here: it is
+     * authored once in `content/`, and this fixture is only the page's own prose.
+     */
+    {
+      id: "alignment",
+      heading: "Alignment",
+      body: "Both sheets are sealed. The Gap is what the two sets of answers disagree by, Aspect by Aspect.",
+      items: [
+        { id: "scope", label: "Lives in the dashboard" },
+        { id: "sheets", label: "The two sheets" },
+        { id: "difference", label: "Difference" },
+        { id: "gap", label: "Gap" },
+        { id: "scale", label: "Scale {min}–{max}" },
+        { id: "within", label: "Within the {setting} Setting" },
+        { id: "over", label: "{count} over the {setting} Setting" },
+        { id: "unscored", label: "Not answered" },
+        { id: "in-synch", label: "In Synch" },
+        { id: "no-gap", label: "No Gap is measurable on this Aspect — nothing was subtracted." },
+        { id: "verdict-aligned", label: "Every Gap here meets the {setting} Setting." },
+        {
+          id: "verdict-unmet",
+          label: "{count} of the {measured} Gaps here exceed the {setting} Setting.",
+        },
+        { id: "report-link", label: "Read every Gap on the report" },
+      ],
+    },
+    /**
      * The confirmation a submit lands on (#t_0aa81144).
      *
      * The submit used to answer with a 303 to this screen and nothing else: the person had answered
