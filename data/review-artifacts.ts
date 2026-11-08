@@ -82,4 +82,24 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     path: "docs/review/artifacts/prototype-relationship-lifecycle-v5.html",
     capturedAt: "2026-11-08T00:00:00.000Z",
   },
+  /**
+   * v6 — **the flow as a modal** (#708, the approval gate for release #707 / v1.8.0).
+   *
+   * v5, unchanged, plus four things: the six stages run inside one fullscreen dialog (`Dialog` at
+   * >=1024, a full-height `Sheet` at 390) with the six-word rail inside it; the member dashboard the
+   * flow closes onto, with the new relationship under My Relationships; the invite-response path in
+   * the same shell; and both viewports drawn. The owner's model is untouched — six stages, no
+   * seventh, no renames, templates still the pre-stage, the account gate still the step after Create
+   * inside the modal, Alignment still dashboard functionality. Appended rather than prepended for
+   * the same reason as v5: the rows before it keep their place.
+   */
+  {
+    id: "review-relationship-lifecycle-v6",
+    slug: "prototype-relationship-lifecycle-v6",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v6",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v6.html",
+    capturedAt: "2026-11-08T00:00:00.000Z",
+  },
 ];
