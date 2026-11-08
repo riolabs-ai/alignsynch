@@ -1,5 +1,6 @@
 // template-ancestor: components/ui/card.tsx   (variation: the account support page — a contact-form card beside three bands of the same shape, each a heading, a paragraph and its rows)
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeavingLink } from "@/components/layout/leaving-link";
@@ -35,7 +36,7 @@ export function AccountSupportPage({ copy }: AccountSupportPageProps) {
   const whereElse = sectionOf(copy, "where-else");
 
   return (
-    <div className="container mx-auto max-w-6xl py-8">
+    <StageColumn>
       <header className="max-w-3xl">
         <h1 className="text-3xl font-bold tracking-tight">{copy.heading}</h1>
         {copy.subtitle !== undefined && (
@@ -73,7 +74,7 @@ export function AccountSupportPage({ copy }: AccountSupportPageProps) {
           </InfoCard>
         </div>
       </div>
-    </div>
+    </StageColumn>
   );
 }
 

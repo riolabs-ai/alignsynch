@@ -50,4 +50,4 @@ counts
   images    2
   buttons   18
   inputs    2
-  classes   253 (sha 5da515933aee)
+  classes   252 (sha 731338a0f89b)

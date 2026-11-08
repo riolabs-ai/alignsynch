@@ -119,7 +119,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/dashboard/user` — **db**
   - capability: The signed-in person's account home: their saved profile, wallet, recent activity and their quizzes, read from Postgres.
-  - components: `components/identity`, `components/media`, `components/ui`
+  - components: `components/assessment-flow`, `components/identity`, `components/media`, `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/forgot-password` — **db**
@@ -146,7 +146,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/profile/[username]` — **db**
   - capability: A public profile read from Postgres: header, stats, achievements, followers, quiz history and created quizzes.
-  - components: `components/identity`, `components/media`, `components/profile`, `components/ui`
+  - components: `components/assessment-flow`, `components/identity`, `components/media`, `components/profile`, `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/register` — **live**
@@ -168,12 +168,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/settings` — **live**
   - capability: The parts of your account you can change — display name, handle, bio and the country pair — saved through the guarded POST /api/profile.
-  - components: `components/identity`, `components/media`, `components/ui`
+  - components: `components/assessment-flow`, `components/identity`, `components/media`, `components/ui`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/account/purge.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
   - capability: Account support inside the app: what to include in a message and what actually happens to it (stored in Postgres first, mailed second, read by a person), the links to the help centre and account settings, and a pointer to the one contact form rather than a second copy of it.
-  - components: `components/layout`, `components/support`, `components/ui`
+  - components: `components/assessment-flow`, `components/layout`, `components/support`, `components/ui`
   - reads: Postgres — `lib/db/client.ts` · an `/api` path — `app/(mainlayout)/support/page.tsx`, `components/support/contact-pointer.tsx`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The in-app half of the Help/Support split (owner's review). It draws no form: `ContactPointer` renders the fixture's sentence and a link to the form on `/help`, so exactly one contact form exists in the tree and it is the public one. The route resolves the session first: a member gets this page and a visitor with none is redirected to `/help` — not to `/login` and not to a 404 — because the same URL has two correct answers. The `lib/db` reach above is the admin-allowlist grant's (`lib/auth/session.ts` → `admin-allowlist.ts`), which returns before any query when `ADMIN_EMAILS` is unset: this page renders no row.
 
@@ -361,12 +361,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/assessment/[slug]` — **db**
   - capability: One assessment instance from Postgres: both parties' answers per Aspect, the Opinions and Values behind them, and the Gap between the two.
-  - components: `components/assessment`
+  - components: `components/assessment`, `components/assessment-flow`
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/assessment/demo/[type]` — **fixture**
   - capability: The worked example: one Relationship Type's finished report, answered by You and Them and labelled Example, rendered through the live report projection and component — the value shown before anyone pays, and launch criterion 5's one readable proof.
-  - components: `components/assessment`
+  - components: `components/assessment`, `components/assessment-flow`
   - reads: 2 record fixtures — `data/assessments.ts`, `data/relationship-types.ts`
   - notes: Lands here as `docs/V1-RETIREMENT.md`'s `release` demo row: it was `/v1/templates/[type]/demo`, the last customer route under `/v1`, and it moved out when that namespace was retired (#478). The projection and renderer are `lib/assessment-report.ts` + `components/assessment/assessment-report.tsx` — the v1 report component was deleted with the move, so the app has one report renderer, not two. The example is built from the type's own Aspects and authored demo sheet, never from a stored template record (the staff-manager record predates the taxonomy and carries Aspects its sheet never answered).
 
@@ -505,7 +505,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
   - files (26): `accept-session.tsx`, `account-gate.tsx`, `alignment-view.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
-  - routes (19): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/account`, `/assessment/templates/[templateId]/create/aspects`, `/assessment/templates/[templateId]/create/commit`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/invite/[token]`
+  - routes (25): `/admin/templates/[id]`, `/assessment`, `/assessment/[slug]`, `/assessment/demo/[type]`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/account`, `/assessment/templates/[templateId]/create/aspects`, `/assessment/templates/[templateId]/create/commit`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/dashboard/user`, `/invite/[token]`, `/profile/[username]`, `/settings`, `/support`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/console` — **mock**
