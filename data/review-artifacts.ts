@@ -92,6 +92,11 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
    * seventh, no renames, templates still the pre-stage, the account gate still the step after Create
    * inside the modal, Alignment still dashboard functionality. Appended rather than prepended for
    * the same reason as v5: the rows before it keep their place.
+   *
+   * `capturedAt` is a distinct instant from v5's. The console lists `ORDER BY captured_at DESC,
+   * a.id`, so two rows sharing v5's midnight capture sort v5 first — the newest artifact would be
+   * listed under the one it supersedes. It is the capture, not a sort trick: this one was taken
+   * that afternoon.
    */
   {
     id: "review-relationship-lifecycle-v6",
@@ -100,6 +105,6 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     kind: "prototype",
     version: "v6",
     path: "docs/review/artifacts/prototype-relationship-lifecycle-v6.html",
-    capturedAt: "2026-11-08T00:00:00.000Z",
+    capturedAt: "2026-11-08T18:00:00.000Z",
   },
 ];
