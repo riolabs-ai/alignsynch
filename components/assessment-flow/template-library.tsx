@@ -33,6 +33,7 @@ import type {
   LibraryTemplate,
   LibraryView,
 } from "@/lib/flow/template-library";
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
 import { formatCurrency, formatDate } from "@/content/core";
 import { TEMPLATE_LIBRARY_PATH, templateDuplicatePath, templateStatusPath } from "@/lib/flow/paths";
@@ -152,7 +153,7 @@ export function TemplateLibrary({
   if (unreadable !== null) {
     const failure = sectionOf(copy, "unavailable");
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-10">
+      <StageColumn>
         <div
           data-template-library-unreadable="true"
           role="alert"
@@ -167,7 +168,7 @@ export function TemplateLibrary({
             </a>
           </p>
         </div>
-      </div>
+      </StageColumn>
     );
   }
 
@@ -201,7 +202,7 @@ export function TemplateLibrary({
   ];
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-10">
+    <StageColumn>
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">{copy.heading}</h1>
         {copy.subtitle === undefined ? null : <p className={`mt-3 ${MUTED}`}>{copy.subtitle}</p>}
@@ -465,7 +466,7 @@ export function TemplateLibrary({
           </p>
         )}
       </section>
-    </div>
+    </StageColumn>
   );
 }
 

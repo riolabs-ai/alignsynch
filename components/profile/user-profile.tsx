@@ -1,6 +1,7 @@
 "use client";
 // template-ancestor: components/identity/account-home.tsx   (variation: another person's page — the cover and header band, then six tabs of their activity)
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { MessageModal } from "@/components/profile/message-modal";
 import { ProfileAchievements } from "@/components/profile/profile-achievements";
 import { ProfileActivity } from "@/components/profile/profile-activity";
@@ -45,7 +46,7 @@ export function UserProfile({ profile, hiddenNav }: UserProfileProps) {
   };
 
   return (
-    <div className="container mx-auto max-w-6xl py-6">
+    <StageColumn>
       {/* The back-link is this page's only leaderboard reference: a demo person is reached from
           the board, so with `community.leaderboard` off (#175 follow-up) it is not drawn — the
           header beneath already says whose page this is, and inventing a replacement destination
@@ -122,7 +123,7 @@ export function UserProfile({ profile, hiddenNav }: UserProfileProps) {
             </>
           ) : null}
 
-          <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="rounded-lg border bg-card p-6">
             <h3 className="mb-3 font-semibold">Contact</h3>
             <Button
               variant="outline"
@@ -141,6 +142,6 @@ export function UserProfile({ profile, hiddenNav }: UserProfileProps) {
         onClose={() => setIsMessageModalOpen(false)}
         recipient={{ name: person.name, seed: person.id }}
       />
-    </div>
+    </StageColumn>
   );
 }

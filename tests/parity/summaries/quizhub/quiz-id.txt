@@ -38,4 +38,4 @@ counts
   images    0
   buttons   17
   inputs    1
-  classes   282 (sha 768f3bb7c0cc)
+  classes   281 (sha b3f7a3211007)

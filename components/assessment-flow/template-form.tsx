@@ -20,6 +20,7 @@
  *
  * The words come from `data/pages/assessment-template-new.ts` (E23); this file holds none.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
 import { CREATE_TEMPLATE_PATH } from "@/lib/flow/paths";
 import { MAX_ASPECTS } from "@/lib/flow/template-draft";
@@ -43,7 +44,7 @@ export function TemplateForm({
   const rows = Array.from({ length: MAX_ASPECTS }, (_, index) => index + 1);
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10">
+    <StageColumn>
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{copy.heading}</h1>
         {copy.subtitle === undefined ? null : (
@@ -150,6 +151,6 @@ export function TemplateForm({
           );
         })}
       </section>
-    </div>
+    </StageColumn>
   );
 }

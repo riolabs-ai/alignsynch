@@ -23,9 +23,11 @@
  * stack (see `lib/db/client.ts`), and the reload is safe because nothing is cached across
  * requests.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
+
 export function AssessmentUnreadable({ slug, reason }: { slug: string; reason: string }) {
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
+    <StageColumn>
       <div
         // Read back by the render test: this panel is the failure state, and a test should not
         // have to guess at it from a class name.
@@ -50,7 +52,7 @@ export function AssessmentUnreadable({ slug, reason }: { slug: string; reason: s
           </a>
         </p>
       </div>
-    </div>
+    </StageColumn>
   );
 }
 

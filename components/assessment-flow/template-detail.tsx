@@ -33,6 +33,7 @@
  * The archived state is drawn as a band, not as a hidden control: an archived template still
  * opens, because its instances copied their Aspects at creation and nothing joins back to it.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
 import { formatDate } from "@/content/core";
 import {
@@ -55,7 +56,7 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { relationshipTypeOf } from "./template-card";
 import { WizardSteps } from "./wizard-steps";
 
-const CARD = "rounded-lg border border-border bg-card p-4";
+const CARD = "rounded-lg border border-border bg-card p-6";
 const MUTED = "text-sm text-muted-foreground";
 const CHIP = "rounded-md border border-background/30 px-2 py-0.5 text-xs text-background/80";
 const FACT_LABEL = "text-xs uppercase tracking-wide text-muted-foreground";
@@ -113,7 +114,7 @@ export function TemplateDetail({
   const archivedTemplate = template.status === "archived";
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8">
+    <StageColumn>
       <nav aria-label={itemLabel(back, "all")} className="mb-3">
         <a className="text-sm font-medium text-action hover:underline" href={TEMPLATE_LIBRARY_PATH}>
           {itemLabel(back, "all")}
@@ -169,11 +170,15 @@ export function TemplateDetail({
             <dl className="grid grid-cols-2 gap-3">
               <div>
                 <dt className={FACT_LABEL}>{itemLabel(facts, "aspects")}</dt>
-                <dd className="text-lg font-semibold text-foreground">{template.aspectCount}</dd>
+                <dd className="text-lg font-semibold tabular-nums text-foreground">
+                  {template.aspectCount}
+                </dd>
               </div>
               <div>
                 <dt className={FACT_LABEL}>{itemLabel(facts, "instances")}</dt>
-                <dd className="text-lg font-semibold text-foreground">{template.instanceCount}</dd>
+                <dd className="text-lg font-semibold tabular-nums text-foreground">
+                  {template.instanceCount}
+                </dd>
               </div>
               <div>
                 <dt className={FACT_LABEL}>{itemLabel(facts, "status")}</dt>
@@ -341,6 +346,6 @@ export function TemplateDetail({
           <p className="mt-2 text-sm text-foreground">{sectionBody(archived)}</p>
         </section>
       ) : null}
-    </div>
+    </StageColumn>
   );
 }

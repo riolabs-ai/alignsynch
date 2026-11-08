@@ -20,6 +20,7 @@
  * Nothing on this route reads a clock or a database, so it is safe to prerender — and it must be,
  * because the catalogue that links it is a fixture page.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { formatCurrency } from "@/content/core";
 import { RELATIONSHIP_PRICE_CENTS } from "@/data/relationship-types";
@@ -53,28 +54,30 @@ export default async function AssessmentDemoPage({
   if (demo === undefined) notFound();
 
   return (
-    <div className="space-y-6 pb-8">
-      <div className="mx-auto max-w-4xl space-y-3 px-4 pt-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700">
-            Example
-          </span>
-          <p className="text-xs text-muted-foreground">
-            A finished session&apos;s report, from two sample people — you&apos;ll see your own
-            answers here, under your own names.
-          </p>
+    <div className="space-y-6">
+      <StageColumn>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700">
+              Example
+            </span>
+            <p className="text-xs text-muted-foreground">
+              A finished session&apos;s report, from two sample people — you&apos;ll see your own
+              answers here, under your own names.
+            </p>
+          </div>
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-3 text-xs">
+            <Link href={TEMPLATE_LIBRARY_PATH} className="font-medium text-action hover:underline">
+              ← {demo.type.name} in the template library
+            </Link>
+          </nav>
         </div>
-        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-3 text-xs">
-          <Link href={TEMPLATE_LIBRARY_PATH} className="font-medium text-action hover:underline">
-            ← {demo.type.name} in the template library
-          </Link>
-        </nav>
-      </div>
+      </StageColumn>
 
       <AssessmentReportView report={demo.report} />
 
-      <div className="mx-auto max-w-4xl space-y-3 px-4">
-        <div className="rounded-lg border border-border bg-card p-4">
+      <StageColumn>
+        <div className="rounded-lg border border-border bg-card p-6">
           <p className="text-sm font-semibold text-foreground">Like what you see?</p>
           <p className="mt-1 text-xs text-muted-foreground">
             One relationship costs {formatCurrency(RELATIONSHIP_PRICE_CENTS)}. You pay; the other
@@ -89,7 +92,7 @@ export default async function AssessmentDemoPage({
             </Link>
           </div>
         </div>
-      </div>
+      </StageColumn>
     </div>
   );
 }
