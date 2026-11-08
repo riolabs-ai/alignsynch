@@ -2,6 +2,11 @@
   "schemaVersion": 1,
   "artifacts": [
     {
+      "id": "review-relationship-lifecycle-v5",
+      "release": "1.6.0",
+      "lookFor": "The approved flow, six stages: Who · Mode · Aspects · Create · Sent · Ongoing. Templates are pre-stage views (the button is Create Relationship and it enters Stage 1), the invite is account-free, payment is a soft prompt at the invite ($9.95/mo one relationship, $19.85/mo unlimited) and a hard gate at publish, the account step comes after Stage 4, and the Aspects collapse to one row and reorder by drag."
+    },
+    {
       "id": "review-relationship-lifecycle-v4",
       "release": "1.6.0",
       "lookFor": "The version in review: all ten stages in order, each naming the person who acts, and the Gap appearing only where both parties have accepted."

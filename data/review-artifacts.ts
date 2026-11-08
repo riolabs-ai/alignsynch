@@ -66,4 +66,20 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     path: "docs/review/artifacts/prototype-relationship-lifecycle-v1.html",
     capturedAt: "2026-11-07T00:00:00.000Z",
   },
+  /**
+   * v5 — **the approved flow.** Six stages (Who · Mode · Aspects · Create · Sent · Ongoing), templates
+   * as pre-stage views, the invite account-free with payment a soft prompt at the invite and a hard
+   * gate at publish, the account step after Stage 4, and the two priced plans. It supersedes v1–v4
+   * for the next cut; those stay as the record of how the flow got here. Appended rather than
+   * prepended so every existing row — and the assertions written around them — keep their place.
+   */
+  {
+    id: "review-relationship-lifecycle-v5",
+    slug: "prototype-relationship-lifecycle-v5",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v5",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v5.html",
+    capturedAt: "2026-11-08T00:00:00.000Z",
+  },
 ];
