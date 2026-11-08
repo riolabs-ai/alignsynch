@@ -148,6 +148,7 @@ import { Client } from "pg";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { allowlistedAdminProblems } from "./db-admin-allowlist.mjs";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 
 const CONTENT_TABLES = [
@@ -1732,6 +1733,25 @@ async function main() {
         : demoSeeded
           ? `${boundParties.length} party binding(s) resolve to an account, ${seededBindings} seeded binding(s) intact`
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
+
+    // The admin allowlist, as drift rather than as prose: an address that HAS an account on this
+    // branch and is not `admin` is exactly the state a seed exists to prevent, and a `pending`
+    // address (no account yet) is information, not a failure. `scripts/db-admin-allowlist.mjs` is
+    // the one implementation; this only asks it in check mode.
+    const allowlist = await allowlistedAdminProblems(client);
+    if (allowlist.notAdmin.length > 0) {
+      for (const row of allowlist.notAdmin) {
+        console.error(
+          `✗ ADMIN_EMAILS: ${row.email} has an account but its profile is not admin (${row.status}) — run \`pnpm admin:ensure\``,
+        );
+      }
+      process.exitCode = 1;
+    }
+    if (allowlist.pending.length > 0) {
+      console.log(
+        `  · allowlist: ${allowlist.pending.length} address(es) on ADMIN_EMAILS have no account on this branch yet (promoted on first sign-in)`,
+      );
+    }
 
     console.log(
       `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
