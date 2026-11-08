@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Payer copy inventory · prev [Research](RESEARCH.md) · next [Billing](../billing.md)
+[Docs hub](../README.md) › **Product** › Payer copy inventory · prev [Research](RESEARCH.md) · next [Payer-present state](PAYER-PRESENT.md)
 
 <!-- docs-nav:end -->
 
@@ -244,6 +244,6 @@ its surface table with the new `file:line` rather than editing the absence claim
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Payer copy inventory · prev [Research](RESEARCH.md) · next [Billing](../billing.md)
+[Docs hub](../README.md) › **Product** › Payer copy inventory · prev [Research](RESEARCH.md) · next [Payer-present state](PAYER-PRESENT.md)
 
 <!-- docs-nav:end -->
