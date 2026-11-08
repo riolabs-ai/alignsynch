@@ -22,30 +22,35 @@ Stage {n} of 6
 ```
 
 `stage-1-details-1440.png` and `stage-1-details-390.png` — stage 1 of the create flow, read back
-from the DOM at each width: `nav[aria-label="Relationship lifecycle"]` with **6** `li`, the
-`Stage 1 of 6` line, the sixth cell `data-step-state="unavailable"`, and the stage column
-(`max-w-[1126px]`) inside the viewport (375×… at 390, no horizontal overflow).
+from the DOM at each width: `nav[aria-label="Relationship lifecycle"]` with **6** cells
+(`data-step-cell`, the measured cell rail #716 draws), the `Stage 1 of 6` line, the sixth cell
+`data-step-state="unavailable"`, and the stage column (`max-w-[1126px]`) inside the viewport
+(375×… at 390, no horizontal overflow).
 
 ## Align is conditional
 
 The sixth cell is live only once an assessment is shared on the relationship — `answering`,
 `awaiting_payment` or `complete` (`alignAvailableOf()` in `lib/flow/stage.ts`). It is never a
 step the wizard advances into: no stage posts to it, and the create flow's four stages plus
-Completed are the only `current` values the rail is mounted with.
+Connect are the only `current` values the rail is mounted with — the answer sheet mounts it at
+`Align`, which is the stage that screen is in, and `current` is live by definition.
 
-| Still                            | Relationship state                           | Sixth cell                                                                     |
-| -------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------ |
-| `align-unavailable-1440.png`     | invitation unclaimed — nothing is shared     | `data-step-state="unavailable"`, no `<a>`, visually-hidden `Not available yet` |
-| `align-unavailable-390.png`      | the same, at 390                             | the same                                                                       |
-| `align-available-1440.png`       | claimed, both seats bound (in progress)      | a link to `/assessment/instances/<id>`                                         |
-| `align-available-390.png`        | the same, at 390                             | the same                                                                       |
-| `align-opens-alignment-1440.png` | both answered and both accepted (`complete`) | the link opens the Alignment the repo has                                      |
-| `align-opens-alignment-390.png`  | the same, at 390                             | the same                                                                       |
+| Still                            | Relationship state                                         | Sixth cell                                                                      |
+| -------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `align-unavailable-1440.png`     | invitation unclaimed — one seat, nothing is shared         | `data-step-state="unavailable"`, no `<a>`, visually-hidden `Not available yet`  |
+| `align-unavailable-390.png`      | the same, at 390                                           | the same                                                                        |
+| `align-available-1440.png`       | both seats claimed and both accepted (a shared assessment) | a link to `/assessment/instances/<id>`, `data-step-state="upcoming"` at stage 5 |
+| `align-available-390.png`        | the same, at 390                                           | the same                                                                        |
+| `align-opens-alignment-1440.png` | what the live cell opens: the instance screen              | the Alignment, Aspect by Aspect (`Both sheets are sealed…`)                     |
+| `align-opens-alignment-390.png`  | the same, at 390                                           | the same                                                                        |
 
 Both relationships were created through the shipped flow (stage 1 → Settings → commit), the
 counterparty seat claimed through the real invitation link (`POST /invite/<token>/claim`), and the
-answers posted to the real endpoints (`…/answers`, `…/accepts`) — no fixture was written into the
-database by hand, and both instances are demo-branch rows.
+answers posted to the real endpoints (`…/answers`) — no fixture was written into the database by
+hand, and both instances are demo-branch rows. Each still is captured with DOM-fact assertions
+attached (`cdp-capture-flow.py`): the viewport width, the cell count, the sixth cell's state and
+href, and the `Stage n of 6` line are read back out of the rendered page and the capture fails
+when any of them is not the claim above.
 
 ## Stage 1 — the inventory, and the grid
 
@@ -58,10 +63,10 @@ row 2 (6/6), `description` across row 3 (12). Two lines the artifact does not dr
 
 ## The tests bite, measured
 
-| Change made locally                              | Result                                                    |
-| ------------------------------------------------ | --------------------------------------------------------- |
-| `Settings` → `Mode` in `data/pages/lifecycle.ts` | 3 red: the six words, the six names drawn, `Stage 2 of 6` |
-| an extra `who` item added to the fixture         | 1 red: the inventory is 15 items, not 16                  |
+| Change made locally                              | Result                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `Settings` → `Mode` in `data/pages/lifecycle.ts` | 2 red: the six words in order, the six names the rail draws |
+| an extra `who` item added to the fixture         | 1 red: the inventory is 15 items, not 16                    |
 
 Both were reverted before the gate run.
 
