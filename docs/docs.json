@@ -513,6 +513,11 @@
           "question": "Were the six hero defects fixed, before and after?"
         },
         {
+          "path": "qa-ia/README.md",
+          "title": "IA v2 — four operator groups",
+          "question": "Does the admin rail reduce to four groups with submenus, and does template authoring name create / clone / publish?"
+        },
+        {
           "path": "qa-lockup-2rem/README.md",
           "title": "Lockup 2rem",
           "question": "Is the lockup 2rem in every expanded-header viewport?"

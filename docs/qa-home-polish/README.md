@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [Lockup 2rem](../qa-lockup-2rem/README.md)
+[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [IA v2 — four operator groups](../qa-ia/README.md)
 
 <!-- docs-nav:end -->
 
@@ -73,6 +73,6 @@ than a spacing change, which is the line the card draws.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [Lockup 2rem](../qa-lockup-2rem/README.md)
+[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [IA v2 — four operator groups](../qa-ia/README.md)
 
 <!-- docs-nav:end -->

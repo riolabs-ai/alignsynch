@@ -1,44 +1,60 @@
 /**
- * The app's information architecture, as **data** — the proposal in issue #721, drawn beside the
- * rail that ships instead of replacing it.
+ * The app's information architecture, as **data** — the proposal in issue #721, revised to the
+ * owner's feedback in **#731**, drawn beside the rail that ships instead of replacing it.
  *
- * `lib/nav-menu.ts` is what the rail *does* today: three groups, thirteen rows, and the four rows a
- * member sees. This module is what the owner asked for after using the console — *the console is
- * the product* — written down the same way, so the review screen (`/admin/review/ia`) can render a
- * real rail from it and a test can hold every proposed destination to the route manifest.
+ * `lib/nav-menu.ts` is what the rail *does* today: three groups, thirteen rows, and the rows a
+ * member sees. This module is what the owner asked for after using the console, written down the
+ * same way, so the review screen (`/admin/review/ia`) can render a real rail from it and a test can
+ * hold every proposed destination to the route manifest.
  *
- * **The diagnosis the shape answers.** Every capability the product sells — Relationship CRUD, an
- * assessment, the Gap — was reachable only through an operator URL: `ALIGN_MENU`'s member groups
- * hold four rows, and `/assessment/instances` and `/admin/gaps` appear in neither. Meanwhile one
- * noun had two homes that did not know about each other (Relationships at `/dashboard/relationships`
- * *and* `/admin/console/relationships`; Templates at three addresses; instances at two). So the
- * proposal does two things, and only two:
+ * **v1's defect, and what v2 changes.** v1 answered "the console has no navigation" with one
+ * `Operations` group: a `console` hub row on top of five sub-groups (people, content, sessions,
+ * money, system) — nineteen rows, and every operator page still behind a hub you had to land on
+ * first. The owner read that as *"way too many menu groups"* and asked for the shape a SaaS product
+ * has: **four operator groups, each a main item whose pages are its submenu**, and the console's
+ * pages folded into them rather than hung off it. So v2 does three things, and only three:
  *
- *   - **one noun, one row.** The four capabilities open the rail in the order the work happens:
- *     who you are working with → what you asked them → what they answered → where you differ.
- *   - **sub-grouping inside Operations.** One flat list of ten operator rows is why the console
- *     "has no navigation": a rail shows *where you can go*, never *what kind of thing you are
- *     looking at*. People · Content · Sessions · Money · System is that kind.
+ *   - **the member rail is untouched** in membership and order — Workspace, Do, and the Support
+ *     band — because those are the patterns already approved;
+ *   - **`Operations` is gone**, replaced by `Users`, `Templates`, `Billing` and `System`, each of
+ *     which is a main item with its pages beneath it;
+ *   - **`/admin/console` stops being a destination.** Its pages are the four groups' submenu rows,
+ *     which is the owner's *"console functionality is part of core Admin UI"*. The hub row is
+ *     recorded in `APP_IA_REMOVED` rather than silently dropped.
  *
- * **Every `href` is an existing destination.** Nothing here invents a screen; the test
- * `tests/app-ia.test.ts` resolves each one against `content/routes.ts`, and the screen map names
- * the route pattern (`[id]`) rather than a concrete id.
+ * **Template authoring is visible, and two thirds of it is proposed.** The owner asked that admins
+ * "create or clone new templates drafts and publish revisions". `New template` is a real route
+ * (`/assessment/templates/new`) and links. **Clone → draft** and **Publish revision** have no route
+ * yet, so they carry `proposed: true`: they are drawn as controls, never as links, because a rail
+ * must never point at a placeholder (the `isLinkableHref` rule the crash in #721 taught us).
+ *
+ * **One row shape, three renders.** A row is `{ id, href, icon, needs, note }` plus two flags:
+ *
+ *   proposed: true      no route exists — drawn as a `<button>`, never an `<a>`
+ *   bracketed href      a route *pattern* (`/admin/templates/[id]`) — drawn as text, never a link
+ *
+ * Everything else is a destination and links. The renderer (`components/admin/ia-rail-preview.tsx`)
+ * decides from those two facts only, so the preview cannot disagree with the tests.
+ *
+ * **Every `href` is an existing destination, unless it is marked proposed.** The test
+ * `tests/app-ia.test.ts` resolves each one against `content/routes.ts`, and asserts a *proposed*
+ * href resolves to nothing — a proposal that quietly became a route would otherwise look shipped.
  *
  * **One product decision, recorded and not smuggled in.** Gap Analysis (`/admin/gaps`) is a
  * member's own alignment report, so the proposal draws it in Workspace for a `member` — but the
  * page still answers `requireAdmin()` and this branch does not move that gate. The row's `needs`
  * is the *proposed* rung, and `APP_IA_PLACEMENTS` says in words that the gate is unchanged until
- * #721's decision is taken. A prototype that quietly changed a permission would be a ship.
+ * the decision is taken. A prototype that quietly changed a permission would be a ship.
  *
  * **Pure — no React, no Next, no zod, no clock.** Icons are *names*, resolved to a component by
- * the one renderer (`components/admin/ia-rail-preview.tsx`), which is the same rule
- * `lib/nav-menu.ts` keeps: the descriptor is data, the glyph is how a rail draws it.
+ * the one renderer, which is the same rule `lib/nav-menu.ts` keeps: the descriptor is data, the
+ * glyph is how a rail draws it.
  */
 import type { UserRole } from "../content/role-ladder";
 
 /**
  * The glyphs this proposal draws. Deliberately a wider vocabulary than `NavIconName` — a
- * destination gets the picture that says what it *is* (`users`, `reports`), and the rail preview
+ * destination gets the picture that says what it *is* (`users`, `catalogue`), and the rail preview
  * owns the table that resolves a name to a lucide component. A name with no entry is a type error
  * rather than a blank square.
  */
@@ -50,22 +66,36 @@ export type AppIaIconName =
   | "gap"
   | "invitations"
   | "reports"
-  | "console"
   | "users"
-  | "instances"
   | "inbox"
+  | "library"
+  | "new-template"
+  | "clone"
+  | "publish"
+  | "instances"
   | "health"
   | "billing"
   | "broadcast"
   | "review"
   | "audit"
+  | "system"
   | "help"
   | "support";
 
 /**
+ * Who a group is drawn for. This is what makes "two member groups and four admin groups" a fact a
+ * test can count rather than a sentence in a docblock:
+ *
+ *   member   the reader's own work — Workspace and Do
+ *   admin    platform operation — Users, Templates, Billing, System
+ *   shared   the Support band, drawn under both rails because the same two pages serve both
+ */
+export type AppIaAudience = "member" | "admin" | "shared";
+
+/**
  * How a screen is navigated — the second half of the fix, and the reason the console "has no
  * navigation" even when every page is reachable. Three shapes cover the proposal; `single` is the
- * honest fourth for a screen with no detail page behind it (a report, a log, a hub).
+ * honest fourth for a screen with no detail page behind it (a report, a log).
  *
  *   list-detail  a list, and one row opens a detail with a back link and a breadcrumb
  *   tab-rail     one entity's detail, the same tab strip wherever that entity is drawn
@@ -78,7 +108,11 @@ export type AppIaPattern = "list-detail" | "tab-rail" | "row-actions" | "single"
 export interface AppIaRow {
   /** The copy id in `data/pages/admin-review-ia.ts`'s `nav-alignsynch` section. */
   readonly id: string;
-  /** The destination. A literal, so a test (and a reviewer) can resolve it against the manifest. */
+  /**
+   * The destination. A literal, so a test (and a reviewer) can resolve it against the manifest.
+   * For a **proposed** action this is the route the action would live at — a pattern, because no
+   * page answers it yet, and the renderer refuses to link it.
+   */
   readonly href: string;
   readonly icon: AppIaIconName;
   /**
@@ -88,55 +122,62 @@ export interface AppIaRow {
   readonly needs: UserRole;
   /** One sentence on why the row exists where it does. Rendered by the review screen. */
   readonly note: string;
+  /**
+   * **No route exists yet.** A proposed action is drawn as a button with its label and a
+   * "proposed — no route yet" marker, and never as an `<a>`: a link to a page nobody has written
+   * is the 404 the review artifact exists to prevent.
+   */
+  readonly proposed?: true;
 }
 
-/** A labelled run of rows inside a group — Operations is the only group that has one today. */
-export interface AppIaSubGroup {
-  /** The copy id for the sub-heading (`people`, `content`, `sessions`, `money`, `system`). */
-  readonly id: string;
-  readonly items: readonly AppIaRow[];
-}
-
-/** One heading in the rail, with its own rows and, where the group is broad, sub-groups. */
+/**
+ * One group: **a main item, and the pages that are its submenu.**
+ *
+ * The group's own id is the main item's copy id — `Users`, `Templates`, `Billing`, `System` — and
+ * the renderer draws it as a row-shaped control that opens and closes `items` beneath it. There is
+ * no `subGroups` field any more: v1 nested five sub-headings inside `Operations`, which is the
+ * structure the owner counted as "too many menu groups". One level is the whole point.
+ */
 export interface AppIaGroup {
-  /** The copy id for the heading (`group-workspace` …). */
+  /** The copy id for the main item (`group-users` …). */
   readonly id: string;
-  /** Rows that sit directly under the heading, above any sub-group. */
+  readonly audience: AppIaAudience;
+  /** The main item's glyph. */
+  readonly icon: AppIaIconName;
+  /** The rung the whole group is proposed for — every row in it carries the same one. */
+  readonly needs: UserRole;
+  /** The submenu: the pages that hang off the main item. Drawn in this order. */
   readonly items: readonly AppIaRow[];
   /**
    * **Row actions, not destinations.** A screen reached from one of the group's own rows — the
    * report you open from an instance row — belongs to the group's *verbs*, not to its rail. It
    * carries the same shape so the screen map and the copy stay one table, but nothing renders it
-   * as a link: a rail row pointing at `/admin/instances/[id]/report` would link the literal
+   * in the preview: a rail row pointing at `/admin/instances/[id]/report` would link the literal
    * placeholder, because a rail cannot know which instance you meant.
    */
   readonly actions: readonly AppIaRow[];
-  readonly subGroups: readonly AppIaSubGroup[];
 }
 
 /**
- * The proposal, in the order the work happens.
+ * The proposal.
  *
- * **Workspace is the product.** Five rows, in the lifecycle's own order — Overview, the
- * relationships themselves, the templates they are built from, the assessments they run, and the
- * Gap between the two parties' answers. The Overview returns as a row here after #620 retired it:
- * a dashboard nobody can reach from the rail was the same defect the console hub had.
+ * **Workspace and Do are the member's own work, unchanged in membership and order.** Workspace is
+ * the lifecycle — Home, the relationships, the templates they are built from, the assessments they
+ * run, and the Gap between the two parties' answers. Do is what a member performs on a
+ * relationship: Invitations, with Reports as a *row action* rather than a rail destination.
  *
- * **Do is what a member performs on a relationship.** Invitations is an existing queue
- * (`/admin/inbox`); Reports is the one row that is a *row action* rather than a rail destination,
- * and it is drawn anyway because "where is the report" was one of the questions the console could
- * not answer — the screen map marks its pattern so the prototype does not pretend it is a page.
+ * **Users, Templates, Billing and System are the operator's four.** The console's pages are the
+ * submenu rows here; `/admin/console` itself is not in the rail at all.
  *
- * **Operations is the operator's group, sub-grouped for the first time.** Console first (the hub
- * every other console page hangs off), then People, Content, Sessions, Money and System — the five
- * kinds of thing an operator looks at.
- *
- * **Support is unchanged** in membership and order; `How It Works` becomes `Help`, which is the
- * destination it always pointed at.
+ * **Support is a band both rails draw** — the same two pages serve a member and an operator, so
+ * counting it as either audience would make one of them a lie.
  */
 export const APP_IA_GROUPS: readonly AppIaGroup[] = [
   {
     id: "group-workspace",
+    audience: "member",
+    icon: "overview",
+    needs: "member",
     items: [
       {
         id: "overview",
@@ -175,10 +216,12 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
       },
     ],
     actions: [],
-    subGroups: [],
   },
   {
     id: "group-do",
+    audience: "member",
+    icon: "invitations",
+    needs: "member",
     items: [
       {
         id: "invitations",
@@ -194,123 +237,158 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
         href: "/admin/instances/[id]/report",
         icon: "reports",
         needs: "member",
-        note: "One relationship's report, opened from its row rather than from the rail. An action, not a destination: the path carries an instance id the rail cannot know, so the screen map marks it `row-actions` and nothing draws it as a link.",
+        note: "One relationship's report, opened from its row rather than from the rail. An action, not a destination: the path carries an instance id the rail cannot know, so the screen map marks it `row-actions` and nothing draws it as a row.",
       },
     ],
-    subGroups: [],
   },
   {
-    id: "group-operations",
+    id: "group-users",
+    audience: "admin",
+    icon: "users",
+    needs: "admin",
     items: [
       {
-        id: "console",
-        href: "/admin/console",
-        icon: "console",
+        id: "users",
+        href: "/admin/console/users",
+        icon: "users",
         needs: "admin",
-        note: "The operator's hub, first in its own group — it had no entry anywhere in the UI until #542, and it still explains none of the rows below it.",
+        note: "The people directory: who has an account, at which rung, in which relationships. The group's landing page, because a user is what this group is about.",
+      },
+      {
+        id: "operations-relationships",
+        href: "/admin/console/relationships",
+        icon: "relationships",
+        needs: "admin",
+        note: "The operator's view of the same noun Workspace opens — deliberately second, because a member's own list is the product and this is its repair screen.",
+      },
+      {
+        id: "admin-invitations",
+        href: "/admin/inbox",
+        icon: "inbox",
+        needs: "admin",
+        note: "The support queue's operator view — the same page Do names for a member, drawn once per audience.",
       },
     ],
     actions: [],
-    subGroups: [
+  },
+  {
+    id: "group-templates",
+    audience: "admin",
+    icon: "templates",
+    needs: "admin",
+    items: [
       {
-        id: "people",
-        items: [
-          {
-            id: "users",
-            href: "/admin/console/users",
-            icon: "users",
-            needs: "admin",
-            note: "The people directory: who has an account, at which rung, in which relationships.",
-          },
-          {
-            id: "operations-relationships",
-            href: "/admin/console/relationships",
-            icon: "relationships",
-            needs: "admin",
-            note: "The operator's view of the same noun Workspace opens — deliberately second, because a member's own list is the product and this is its repair screen.",
-          },
-        ],
+        id: "admin-templates",
+        href: "/admin/templates",
+        icon: "templates",
+        needs: "admin",
+        note: "All templates in the tenant, including the ones no member has used — the group's landing page, and the list an operator opens a template from.",
       },
       {
-        id: "content",
-        items: [
-          {
-            id: "operations-templates",
-            href: "/admin/console/templates",
-            icon: "templates",
-            needs: "admin",
-            note: "Every template in the tenant, including the ones no member has used.",
-          },
-          {
-            id: "review",
-            href: "/admin/review",
-            icon: "review",
-            needs: "admin",
-            note: "The review shelf: published artifacts, their to-dos and their feedback.",
-          },
-        ],
+        id: "operations-templates",
+        href: "/admin/console/templates",
+        icon: "library",
+        needs: "admin",
+        note: "The catalogue view: the same templates as shelf cards, which is how an operator compares what is on offer rather than what exists.",
       },
       {
-        id: "sessions",
-        items: [
-          {
-            id: "instances",
-            href: "/admin/instances",
-            icon: "instances",
-            needs: "admin",
-            note: "Every assessment in flight, filterable by stage. Labelled Relationships today, which is the collision this proposal removes.",
-          },
-          {
-            id: "inbox",
-            href: "/admin/inbox",
-            icon: "inbox",
-            needs: "support",
-            note: "The support queue's operator view — the same page Invitations names for a member, drawn once per audience.",
-          },
-        ],
+        id: "admin-template-editor",
+        href: "/admin/templates/[id]",
+        icon: "new-template",
+        needs: "admin",
+        note: "One template's editor. The path carries an id, so it is drawn as a pattern rather than a link — you arrive here from a row, never from the rail.",
       },
       {
-        id: "money",
-        items: [
-          {
-            id: "billing",
-            href: "/admin/billing",
-            icon: "billing",
-            needs: "admin",
-            note: "Each relationship's plan, the owner's comp, and the limit a plan sets.",
-          },
-        ],
+        id: "review",
+        href: "/admin/review",
+        icon: "review",
+        needs: "admin",
+        note: "The review shelf: published artifacts, their to-dos and their feedback — kept in this group because what it reviews is authored content.",
       },
       {
-        id: "system",
-        items: [
-          {
-            id: "health",
-            href: "/admin/health",
-            icon: "health",
-            needs: "admin",
-            note: "The platform's own health: last gate lane, release drift, database verification.",
-          },
-          {
-            id: "broadcast",
-            href: "/admin/broadcast",
-            icon: "broadcast",
-            needs: "admin",
-            note: "A one-off notice to the news list, dry-run before it sends.",
-          },
-          {
-            id: "audit",
-            href: "/admin/audit",
-            icon: "audit",
-            needs: "admin",
-            note: "The log of what every row above it did. Last, because it is the record.",
-          },
-        ],
+        id: "template-new",
+        href: "/assessment/templates/new",
+        icon: "new-template",
+        needs: "admin",
+        note: "Create. A real route, so it links: the first of the three authoring actions the owner asked to see named here.",
+      },
+      {
+        id: "template-clone",
+        href: "/admin/templates/[id]/clone",
+        icon: "clone",
+        needs: "admin",
+        note: "Clone an existing template into a draft. **Proposed** — no route answers this yet, so it is drawn as an action with a marker and never as a link.",
+        proposed: true,
+      },
+      {
+        id: "template-publish",
+        href: "/admin/templates/[id]/publish",
+        icon: "publish",
+        needs: "admin",
+        note: "Publish a revision of a template without forking it. **Proposed** — no route answers this yet, so it is drawn as an action with a marker and never as a link.",
+        proposed: true,
       },
     ],
+    actions: [],
+  },
+  {
+    id: "group-billing",
+    audience: "admin",
+    icon: "billing",
+    needs: "admin",
+    items: [
+      {
+        id: "billing",
+        href: "/admin/billing",
+        icon: "billing",
+        needs: "admin",
+        note: "Each relationship's plan, the owner's comp, and the limit a plan sets. One page, so this group is one row.",
+      },
+    ],
+    actions: [],
+  },
+  {
+    id: "group-system",
+    audience: "admin",
+    icon: "system",
+    needs: "admin",
+    items: [
+      {
+        id: "health",
+        href: "/admin/health",
+        icon: "health",
+        needs: "admin",
+        note: "The platform's own health: last gate lane, release drift, database verification.",
+      },
+      {
+        id: "broadcast",
+        href: "/admin/broadcast",
+        icon: "broadcast",
+        needs: "admin",
+        note: "A one-off notice to the news list, dry-run before it sends.",
+      },
+      {
+        id: "audit",
+        href: "/admin/audit",
+        icon: "audit",
+        needs: "admin",
+        note: "The log of what every row above it did. Last, because it is the record.",
+      },
+      {
+        id: "instances",
+        href: "/admin/instances",
+        icon: "instances",
+        needs: "admin",
+        note: "Every assessment in flight, filterable by stage. Labelled Relationships today, which is the collision this proposal removes.",
+      },
+    ],
+    actions: [],
   },
   {
     id: "group-support",
+    audience: "shared",
+    icon: "support",
+    needs: "member",
     items: [
       {
         id: "help",
@@ -328,7 +406,6 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
       },
     ],
     actions: [],
-    subGroups: [],
   },
 ];
 
@@ -338,11 +415,13 @@ export interface AppIaScreen {
   readonly id: string;
   /** The route pattern, as `content/routes.ts` spells it. */
   readonly href: string;
-  /** The group id it hangs under (`group-workspace` …). */
+  /** The group id it hangs under (`group-templates` …). */
   readonly group: string;
   /** The row id it belongs to. */
   readonly row: string;
   readonly pattern: AppIaPattern;
+  /** **No route exists yet** — the screen a proposed authoring action would open. */
+  readonly proposed?: true;
 }
 
 /**
@@ -351,9 +430,12 @@ export interface AppIaScreen {
  * A row is a destination; a screen is what you look at once you are there. The distinction is the
  * whole of the second half of the diagnosis: `/admin/console/users/[id]` had no back link, so the
  * only way out was the browser's own button, and `/admin/instances/[id]` was a cul-de-sac the same
- * way. Every `list-detail` screen below is promised a breadcrumb (`Operations › People › Users ›
- * Ada`) and a back link at the top-left; every `tab-rail` screen the same tab strip its sibling
- * draws.
+ * way. Every `list-detail` screen below is promised a breadcrumb (`Users › People › Ada`) and a
+ * back link at the top-left; every `tab-rail` screen the same tab strip its sibling draws.
+ *
+ * **The two proposed screens are the authoring flows' landing places**, not pages anyone can
+ * visit: `/admin/templates/[id]/clone` and `/admin/templates/[id]/publish` are named so the map
+ * says *what shape* each action opens, and marked `proposed` so nothing draws them as a link.
  */
 export const APP_IA_SCREEN_MAP: readonly AppIaScreen[] = [
   {
@@ -427,102 +509,132 @@ export const APP_IA_SCREEN_MAP: readonly AppIaScreen[] = [
     pattern: "row-actions",
   },
   {
-    id: "screen-console",
-    href: "/admin/console",
-    group: "group-operations",
-    row: "console",
-    pattern: "single",
-  },
-  {
     id: "screen-users",
     href: "/admin/console/users",
-    group: "group-operations",
+    group: "group-users",
     row: "users",
     pattern: "list-detail",
   },
   {
     id: "screen-console-relationships",
     href: "/admin/console/relationships",
-    group: "group-operations",
+    group: "group-users",
     row: "operations-relationships",
     pattern: "list-detail",
   },
   {
     id: "screen-console-relationship-detail",
     href: "/admin/console/relationships/[id]",
-    group: "group-operations",
+    group: "group-users",
     row: "operations-relationships",
+    pattern: "tab-rail",
+  },
+  {
+    id: "screen-admin-invitations",
+    href: "/admin/inbox",
+    group: "group-users",
+    row: "admin-invitations",
+    pattern: "list-detail",
+  },
+  {
+    id: "screen-admin-templates",
+    href: "/admin/templates",
+    group: "group-templates",
+    row: "admin-templates",
+    pattern: "list-detail",
+  },
+  {
+    id: "screen-admin-template-detail",
+    href: "/admin/templates/[id]",
+    group: "group-templates",
+    row: "admin-template-editor",
     pattern: "tab-rail",
   },
   {
     id: "screen-console-templates",
     href: "/admin/console/templates",
-    group: "group-operations",
+    group: "group-templates",
     row: "operations-templates",
     pattern: "list-detail",
   },
   {
     id: "screen-console-template-detail",
     href: "/admin/console/templates/[id]",
-    group: "group-operations",
+    group: "group-templates",
     row: "operations-templates",
     pattern: "tab-rail",
   },
   {
+    id: "screen-review",
+    href: "/admin/review",
+    group: "group-templates",
+    row: "review",
+    pattern: "list-detail",
+  },
+  {
+    id: "screen-template-new",
+    href: "/assessment/templates/new",
+    group: "group-templates",
+    row: "template-new",
+    pattern: "single",
+  },
+  {
+    id: "screen-template-clone",
+    href: "/admin/templates/[id]/clone",
+    group: "group-templates",
+    row: "template-clone",
+    pattern: "single",
+    proposed: true,
+  },
+  {
+    id: "screen-template-publish",
+    href: "/admin/templates/[id]/publish",
+    group: "group-templates",
+    row: "template-publish",
+    pattern: "single",
+    proposed: true,
+  },
+  {
+    id: "screen-billing",
+    href: "/admin/billing",
+    group: "group-billing",
+    row: "billing",
+    pattern: "single",
+  },
+  {
+    id: "screen-health",
+    href: "/admin/health",
+    group: "group-system",
+    row: "health",
+    pattern: "single",
+  },
+  {
+    id: "screen-broadcast",
+    href: "/admin/broadcast",
+    group: "group-system",
+    row: "broadcast",
+    pattern: "single",
+  },
+  {
+    id: "screen-audit",
+    href: "/admin/audit",
+    group: "group-system",
+    row: "audit",
+    pattern: "single",
+  },
+  {
     id: "screen-instances",
     href: "/admin/instances",
-    group: "group-operations",
+    group: "group-system",
     row: "instances",
     pattern: "list-detail",
   },
   {
     id: "screen-instance-detail",
     href: "/admin/instances/[id]",
-    group: "group-operations",
+    group: "group-system",
     row: "instances",
     pattern: "list-detail",
-  },
-  {
-    id: "screen-inbox",
-    href: "/admin/inbox",
-    group: "group-operations",
-    row: "inbox",
-    pattern: "list-detail",
-  },
-  {
-    id: "screen-health",
-    href: "/admin/health",
-    group: "group-operations",
-    row: "health",
-    pattern: "single",
-  },
-  {
-    id: "screen-billing",
-    href: "/admin/billing",
-    group: "group-operations",
-    row: "billing",
-    pattern: "single",
-  },
-  {
-    id: "screen-broadcast",
-    href: "/admin/broadcast",
-    group: "group-operations",
-    row: "broadcast",
-    pattern: "single",
-  },
-  {
-    id: "screen-review",
-    href: "/admin/review",
-    group: "group-operations",
-    row: "review",
-    pattern: "list-detail",
-  },
-  {
-    id: "screen-audit",
-    href: "/admin/audit",
-    group: "group-operations",
-    row: "audit",
-    pattern: "single",
   },
   {
     id: "screen-help",
@@ -587,14 +699,8 @@ export const APP_IA_PLACEMENTS: readonly AppIaPlacement[] = [
     change: "Unchanged.",
   },
   {
-    id: "console",
-    group: "group-operations",
-    row: "console",
-    change: "Leads the Operations group instead of opening a flat ten-row list.",
-  },
-  {
     id: "admin-instances",
-    group: "group-operations",
+    group: "group-system",
     row: "instances",
     change:
       "Relabelled: today's row reads “Relationships”, which now names the member's page. The page and the href are untouched.",
@@ -604,49 +710,50 @@ export const APP_IA_PLACEMENTS: readonly AppIaPlacement[] = [
     group: "group-workspace",
     row: "gap-analysis",
     change:
-      "Moves to Workspace and is proposed for a `member`. The only permission shift in this proposal — the page keeps `requireAdmin()` until #721's decision is taken.",
+      "Moves to Workspace and is proposed for a `member`. The only permission shift in this proposal — the page keeps `requireAdmin()` until the decision is taken.",
   },
   {
     id: "admin-inbox",
-    group: "group-do",
-    row: "invitations",
+    group: "group-users",
+    row: "admin-invitations",
     change:
-      "Appears twice on purpose: “Invitations” in Do for the member's work, and “Inbox” in Operations › Sessions for the support queue. One page, two audiences.",
+      "Appears twice on purpose: “Invitations” in Do for the member's work, and “Invitations” in Users for the support queue. One page, two audiences.",
   },
   {
     id: "admin-health",
-    group: "group-operations",
+    group: "group-system",
     row: "health",
-    change: "Moves under Operations › System as “Health”.",
+    change: "Moves into System, beside the two rows it is a fact about.",
   },
   {
     id: "admin-billing",
-    group: "group-operations",
+    group: "group-billing",
     row: "billing",
-    change: "Moves under Operations › Money.",
+    change:
+      "Becomes the whole Billing group — one page, so one row, which is what a group of one means.",
   },
   {
     id: "admin-broadcast",
-    group: "group-operations",
+    group: "group-system",
     row: "broadcast",
-    change: "Moves under Operations › System.",
+    change: "Moves into System, between Health and Audit.",
   },
   {
     id: "review",
-    group: "group-operations",
+    group: "group-templates",
     row: "review",
-    change: "Moves under Operations › Content.",
+    change:
+      "Moves into Templates: the shelf reviews authored content, so it sits with the authoring rather than in a group of its own.",
   },
   {
     id: "admin-audit",
-    group: "group-operations",
+    group: "group-system",
     row: "audit",
-    change:
-      "Moves under Operations › System, and stays last: it is the record of the rows above it.",
+    change: "Moves into System, and stays last: it is the record of the rows above it.",
   },
 ];
 
-/** A row of today's rail the proposal drops, with the reason. Empty, and kept so it can be read. */
+/** A row of today's rail the proposal drops, with the reason. */
 export interface AppIaRemoved {
   readonly id: string;
   readonly href: string;
@@ -654,22 +761,25 @@ export interface AppIaRemoved {
 }
 
 /**
- * Nothing in today's rail is removed.
+ * **The hub is the one destination v2 retires**, and it is retired on purpose.
  *
- * Every one of the thirteen rows lands somewhere in the proposal — which is the point worth
- * stating out loud, because the owner's complaint was that the *console* had no navigation, not
- * that it had too many rows. The array is declared anyway: a later revision that does drop a
- * destination has one place to say so, and `tests/app-ia.test.ts` reads it before it will accept
- * the map as complete.
+ * The owner's words are "console functionality is part of core Admin UI", so `/admin/console`
+ * cannot stay a row: its pages are the four admin groups' submenu rows now, and a hub between the
+ * rail and the page is the extra click the console's navigation was missing in the first place.
+ * The URL keeps answering — nothing is deleted — but the rail does not point at it.
  */
-export const APP_IA_REMOVED: readonly AppIaRemoved[] = [];
+export const APP_IA_REMOVED: readonly AppIaRemoved[] = [
+  {
+    id: "console",
+    href: "/admin/console",
+    reason:
+      "The hub stops being a destination: its pages are the Users, Templates, Billing and System submenus, so an operator is one click from the page they wanted instead of two.",
+  },
+];
 
-/** Every proposed row, in rail order, sub-groups flattened — the whole descriptor. */
+/** Every proposed row, in rail order — the whole descriptor, actions excluded. */
 export function appIaRows(): AppIaRow[] {
-  return APP_IA_GROUPS.flatMap((group) => [
-    ...group.items,
-    ...group.subGroups.flatMap((subGroup) => [...subGroup.items]),
-  ]);
+  return APP_IA_GROUPS.flatMap((group) => [...group.items]);
 }
 
 /**
@@ -685,10 +795,15 @@ export function appIaRowOf(id: string): AppIaRow | undefined {
   return [...appIaRows(), ...appIaActions()].find((row) => row.id === id);
 }
 
+/** The groups one audience is drawn for — `member` excludes the four operator groups. */
+export function appIaGroupsFor(audience: AppIaAudience): AppIaGroup[] {
+  return APP_IA_GROUPS.filter((group) => group.audience === audience);
+}
+
 /**
  * Can this `href` be handed to `<Link>`?
  *
- * The screen map names the **route pattern** a screen lives at, so some rows read
+ * The proposal names the **route pattern** a screen lives at, so some rows read
  * `/dashboard/relationships/[id]` — a shape, not a destination. A pattern in a `Link` is the
  * dynamic-href error Next raises (`app-directory/dynamic-href`), and on `/admin/review/ia` it
  * crashed the client render rather than merely mis-linking. This predicate is the one place that
@@ -698,7 +813,7 @@ export function isLinkableHref(href: string): boolean {
   return !href.includes("[");
 }
 
-/** The four headings in order — the assertion the group order is a fact, not a comment. */
+/** The group headings in order — the assertion the group order is a fact, not a comment. */
 export function appIaGroupIds(): string[] {
   return APP_IA_GROUPS.map((group) => group.id);
 }

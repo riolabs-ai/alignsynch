@@ -38,6 +38,7 @@ import {
   APP_IA_PLACEMENTS,
   APP_IA_REMOVED,
   APP_IA_SCREEN_MAP,
+  appIaActions,
   appIaRows,
   isLinkableHref,
   type AppIaPattern,
@@ -82,6 +83,7 @@ export function AdminReviewIaView({ copy }: { copy: PageCopy }) {
   );
   const placementOf = new Map(APP_IA_PLACEMENTS.map((placement) => [placement.id, placement]));
   const proposedRows = appIaRows();
+  const proposedActions = appIaActions();
 
   return (
     <div className="space-y-6">
@@ -102,7 +104,7 @@ export function AdminReviewIaView({ copy }: { copy: PageCopy }) {
           </div>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">{itemLabel(rail, "rail-note")}</p>
-            <dl className="grid grid-cols-3 gap-4">
+            <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="rounded-lg border border-gray-200 p-3">
                 <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                   {itemLabel(rail, "rail-groups")}
@@ -117,11 +119,18 @@ export function AdminReviewIaView({ copy }: { copy: PageCopy }) {
               </div>
               <div className="rounded-lg border border-gray-200 p-3">
                 <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {itemLabel(rail, "rail-actions")}
+                </dt>
+                <dd className="text-2xl font-semibold">{proposedActions.length}</dd>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-3">
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                   {itemLabel(rail, "rail-screens")}
                 </dt>
                 <dd className="text-2xl font-semibold">{APP_IA_SCREEN_MAP.length}</dd>
               </div>
             </dl>
+            <p className="text-sm text-muted-foreground">{itemLabel(rail, "rail-authoring")}</p>
           </div>
         </CardContent>
       </Card>
@@ -257,6 +266,15 @@ export function AdminReviewIaView({ copy }: { copy: PageCopy }) {
                     <Badge variant={PATTERN_VARIANT[screen.pattern]} className="w-fit">
                       {itemLabel(map, PATTERN_ITEM[screen.pattern])}
                     </Badge>
+                    {/*
+                      A proposed screen has no page behind it: the badge says so in the rail's own
+                      words, so a reader of the map cannot mistake a drawn flow for a shipped one.
+                    */}
+                    {screen.proposed === true ? (
+                      <Badge variant="muted" className="mt-1 w-fit">
+                        {itemLabel(nav, "proposed-marker")}
+                      </Badge>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               ))}

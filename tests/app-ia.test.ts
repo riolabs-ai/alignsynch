@@ -1,22 +1,28 @@
 /**
- * The IA proposal is a descriptor, and a descriptor nothing checks is a document (#721).
+ * The IA proposal is a descriptor, and a descriptor nothing checks is a document (#721, revised
+ * for #731).
  *
- * The review screen at `/admin/review/ia` draws `lib/app-ia.ts` beside the rail that ships. Three
+ * The review screen at `/admin/review/ia` draws `lib/app-ia.ts` beside the rail that ships. Four
  * things have to be true for that to be a *proposal* rather than a drawing:
  *
  *   1. **every proposed href resolves.** `lib/app-ia.ts` is not in E10's link scan — that scan
  *      names `lib/nav-menu.ts` alone, on purpose — so a destination invented for a mockup would
  *      compile, render, and land on a 404 for the owner clicking it. This file is that scan for
- *      the proposal: rows *and* screen-map patterns are resolved against `content/routes.ts`.
+ *      the proposal: rows, row actions and screen-map patterns are resolved against
+ *      `content/routes.ts`. The **proposed** rows are the one exception, and the test asserts the
+ *      exception holds: a proposed href must resolve to *nothing*, or it is not a proposal.
  *   2. **nothing in today's rail is dropped in silence.** Every item id in `ALIGN_MENU` must land
  *      in a group and a row that exist, or in `APP_IA_REMOVED` with a reason. A placement that
  *      changes the destination is caught too: the proposed row's href must be the one the current
  *      row already pointed at.
- *   3. **the group order is the proposal.** Workspace · Do · Operations · Support — the order the
- *      work happens in, which is the whole of the fix to a flat list of thirteen rows.
+ *   3. **the shape is four operator groups.** Two member groups, four admin groups, one shared
+ *      Support band — asserted by id and by count, not by reading the docblock — and no member row
+ *      inside an admin group or the reverse.
+ *   4. **the console is not a destination.** `/admin/console` appears in no row, in no placement
+ *      and in no href the render draws; its three pages appear as submenu rows of the groups.
  *
  * It also holds the descriptor to the fixture: every label the review screen asks for
- * (`itemLabel(nav, id)` for a group, a sub-group, a row, a screen or a pattern) must exist in
+ * (`itemLabel(nav, id)` for a group, a row, a screen or a pattern) must exist in
  * `data/pages/admin-review-ia.ts`, because E23 resolves those ids at build time for the component
  * but a row added to the descriptor with no label would render blank here first.
  */
@@ -43,6 +49,7 @@ import {
   type AppIaPattern,
   appIaActions,
   appIaGroupIds,
+  appIaGroupsFor,
   appIaRowOf,
   appIaRows,
   isLinkableHref,
@@ -59,12 +66,15 @@ const nav = sectionOf(adminReviewIaPageCopy, "nav-alignsynch");
 /** The screen map's words — the third band's section. */
 const map = sectionOf(adminReviewIaPageCopy, "map");
 
+/** The console hub — retired in v2, and named once so the assertions read as one fact. */
+const CONSOLE_HUB = "/admin/console";
+
 /** Every id the review screen asks the fixture for, in the order the three bands print them. */
 function railLabelIds(): string[] {
   return [
     ...APP_IA_GROUPS.map((group) => group.id),
-    ...APP_IA_GROUPS.flatMap((group) => group.subGroups.map((subGroup) => subGroup.id)),
     ...appIaRows().map((row) => row.id),
+    ...appIaActions().map((row) => row.id),
   ];
 }
 
@@ -76,16 +86,35 @@ function mapLabelIds(): string[] {
   ];
 }
 
-describe("lib/app-ia — the proposed rail", () => {
-  it("puts the four capabilities first, in the lifecycle's order", () => {
+describe("lib/app-ia — the shape of the rail", () => {
+  it("is two member groups, four admin groups and one shared band", () => {
     expect(appIaGroupIds()).toEqual([
       "group-workspace",
       "group-do",
-      "group-operations",
+      "group-users",
+      "group-templates",
+      "group-billing",
+      "group-system",
       "group-support",
     ]);
 
-    const workspace = APP_IA_GROUPS[0];
+    // The owner's own count: the member rail keeps its two work groups, operator work is four.
+    expect(appIaGroupsFor("member").map((group) => group.id)).toEqual([
+      "group-workspace",
+      "group-do",
+    ]);
+    expect(appIaGroupsFor("admin").map((group) => group.id)).toEqual([
+      "group-users",
+      "group-templates",
+      "group-billing",
+      "group-system",
+    ]);
+    // Support serves both rails — counting it as either audience would make one of them a lie.
+    expect(appIaGroupsFor("shared").map((group) => group.id)).toEqual(["group-support"]);
+  });
+
+  it("keeps the member rail's rows and order, which is the approved pattern", () => {
+    const workspace = APP_IA_GROUPS.find((group) => group.id === "group-workspace");
     expect(workspace?.items.map((row) => row.id)).toEqual([
       "overview",
       "relationships",
@@ -93,27 +122,86 @@ describe("lib/app-ia — the proposed rail", () => {
       "assessments",
       "gap-analysis",
     ]);
+    const support = APP_IA_GROUPS.find((group) => group.id === "group-support");
+    expect(support?.items.map((row) => row.id)).toEqual(["help", "support"]);
   });
 
-  it("opens Operations with the console and sub-groups the rest", () => {
-    const operations = APP_IA_GROUPS.find((group) => group.id === "group-operations");
-    expect(operations?.items.map((row) => row.id)).toEqual(["console"]);
-    expect(operations?.subGroups.map((subGroup) => subGroup.id)).toEqual([
-      "people",
-      "content",
-      "sessions",
-      "money",
-      "system",
+  it("puts every operator page in one of the four admin groups, and none in a member group", () => {
+    const admin = appIaGroupsFor("admin");
+    const strays = admin.flatMap((group) =>
+      group.items.filter((row) => row.needs !== "admin").map((row) => row.id),
+    );
+    expect(strays).toEqual([]);
+
+    const memberGroups = [...appIaGroupsFor("member"), ...appIaGroupsFor("shared")];
+    const leaked = memberGroups.flatMap((group) =>
+      group.items.filter((row) => row.needs === "admin").map((row) => row.id),
+    );
+    expect(leaked).toEqual([]);
+
+    // And the reverse: an admin group may not be half member rows either.
+    for (const group of admin) {
+      expect(group.needs).toBe("admin");
+      expect(group.items.every((row) => row.needs === "admin")).toBe(true);
+    }
+  });
+
+  it("names the four groups the owner asked for, and the pages under each", () => {
+    const submenuOf = (id: string) =>
+      APP_IA_GROUPS.find((group) => group.id === id)?.items.map((row) => row.id);
+
+    expect(submenuOf("group-users")).toEqual([
+      "users",
+      "operations-relationships",
+      "admin-invitations",
     ]);
+    expect(submenuOf("group-templates")).toEqual([
+      "admin-templates",
+      "operations-templates",
+      "admin-template-editor",
+      "review",
+      "template-new",
+      "template-clone",
+      "template-publish",
+    ]);
+    expect(submenuOf("group-billing")).toEqual(["billing"]);
+    expect(submenuOf("group-system")).toEqual(["health", "broadcast", "audit", "instances"]);
   });
 
-  it("resolves every proposed href against content/routes.ts", () => {
-    const unresolvable = [
-      ...appIaRows().map((row) => row.href),
-      ...APP_IA_SCREEN_MAP.map((s) => s.href),
-    ].filter((href) => matchRoute(routeManifest, href) === undefined);
+  it("retires the console hub instead of pointing at it", () => {
+    // No row, action or screen may name the hub as a destination.
+    expect([...appIaRows(), ...appIaActions()].map((row) => row.href)).not.toContain(CONSOLE_HUB);
+    expect(APP_IA_SCREEN_MAP.map((screen) => screen.href)).not.toContain(CONSOLE_HUB);
+    // It is retired loudly: `APP_IA_REMOVED` carries the reason.
+    const hub = APP_IA_REMOVED.find((row) => row.href === CONSOLE_HUB);
+    expect(hub?.id).toBe("console");
+    expect(hub?.reason).toContain("submenu");
+    // And its pages are submenu rows, which is the whole of "console functionality is core admin UI".
+    const hrefs = appIaRows().map((row) => row.href);
+    expect(hrefs).toContain("/admin/console/users");
+    expect(hrefs).toContain("/admin/console/relationships");
+    expect(hrefs).toContain("/admin/console/templates");
+  });
+
+  it("resolves every shipped href against content/routes.ts, and no proposed one", () => {
+    const shipped = [...appIaRows(), ...appIaActions(), ...APP_IA_SCREEN_MAP].filter(
+      (item) => item.proposed !== true,
+    );
+    const unresolvable = shipped
+      .map((item) => item.href)
+      .filter((href) => matchRoute(routeManifest, href) === undefined);
     // A destination invented for a prototype is a 404 for the person reviewing it.
     expect(unresolvable).toEqual([]);
+
+    const proposed = [...appIaRows(), ...appIaActions(), ...APP_IA_SCREEN_MAP].filter(
+      (item) => item.proposed === true,
+    );
+    expect(proposed.length).toBeGreaterThan(0);
+    // The other direction of the same rule: a proposed route that resolves is no longer proposed.
+    const shippedByAccident = proposed
+      .map((item) => item.href)
+      .filter((href) => matchRoute(routeManifest, href) !== undefined);
+    expect(shippedByAccident).toEqual([]);
   });
 
   it("has one copy label per id the review screen prints", () => {
@@ -142,16 +230,48 @@ describe("lib/app-ia — the proposed rail", () => {
   });
 });
 
+describe("lib/app-ia — template authoring", () => {
+  const templates = APP_IA_GROUPS.find((group) => group.id === "group-templates");
+  const rows = templates?.items ?? [];
+
+  it("names create, clone and publish-revision under Templates", () => {
+    expect(rows.map((row) => row.id)).toContain("template-new");
+    expect(rows.map((row) => row.id)).toContain("template-clone");
+    expect(rows.map((row) => row.id)).toContain("template-publish");
+
+    // Create has a route; the other two do not, and say so.
+    expect(appIaRowOf("template-new")?.proposed).toBeUndefined();
+    expect(appIaRowOf("template-new")?.href).toBe("/assessment/templates/new");
+    expect(appIaRowOf("template-clone")?.proposed).toBe(true);
+    expect(appIaRowOf("template-publish")?.proposed).toBe(true);
+  });
+
+  it("gives both proposed authoring actions a screen, marked proposed", () => {
+    for (const id of ["template-clone", "template-publish"]) {
+      const screens = APP_IA_SCREEN_MAP.filter((screen) => screen.row === id);
+      expect(screens.length).toBe(1);
+      expect(screens[0]?.proposed).toBe(true);
+    }
+  });
+
+  it("never lets a proposed row be linkable, whatever its href says", () => {
+    const proposed = [...appIaRows(), ...appIaActions()].filter((row) => row.proposed === true);
+    expect(proposed.map((row) => row.id).sort()).toEqual(["template-clone", "template-publish"]);
+    for (const row of proposed) {
+      expect(isLinkableHref(row.href)).toBe(false);
+    }
+  });
+});
+
 describe("lib/app-ia — current versus proposed", () => {
-  /** Every current rail row, flattened, with the group it hangs under. */
+  /** Every current rail row, flattened. */
   const current = ALIGN_MENU.flatMap((group) => group.items.map((item) => item));
 
   it("places every row of today's rail somewhere, or records why it is gone", () => {
     const unaccounted = current
       .filter((item) => !APP_IA_PLACEMENTS.some((placement) => placement.id === item.id))
       .filter((item) => !APP_IA_REMOVED.some((row) => row.id === item.id));
-    // The owner's complaint was that the console had no navigation, never that it had too many
-    // rows — a proposal that drops a destination has to say so, not lose it between two lists.
+    // A proposal that drops a destination has to say so, not lose it between two lists.
     expect(unaccounted).toEqual([]);
   });
 
@@ -177,9 +297,19 @@ describe("lib/app-ia — current versus proposed", () => {
     expect(moved).toEqual([]);
   });
 
+  it("sends today's operator rows into the four admin groups, not into a hub", () => {
+    const adminGroups = appIaGroupsFor("admin").map((group) => group.id);
+    const operatorRows = ["admin-instances", "admin-health", "admin-billing", "admin-broadcast"];
+    for (const id of operatorRows) {
+      const placement = APP_IA_PLACEMENTS.find((row) => row.id === id);
+      expect(adminGroups).toContain(placement?.group);
+      expect(placement?.row).not.toBe("console");
+    }
+  });
+
   it("records a removal with a reason, never a bare id", () => {
     for (const row of APP_IA_REMOVED) {
-      expect(row.reason.length).toBeGreaterThan(0);
+      expect(row.reason.trim().length).toBeGreaterThan(24);
     }
   });
 
@@ -250,44 +380,86 @@ describe("the review screen draws the proposal, not a picture of it", () => {
   /** Every `href` in the drawn tree, in document order. */
   const drawnHrefs = [...html.matchAll(/href="([^"]*)"/g)].map((match) => match[1] ?? "");
 
-  it("draws every proposed row as a real link, once", () => {
-    for (const row of appIaRows()) {
+  /**
+   * The rendered text with the three entities React escapes for a reader's eye put back. A label
+   * like `Plans & subscriptions` reaches the DOM as `Plans &amp; subscriptions`, and an assertion
+   * against the raw markup would call the fixture wrong for a character the browser draws
+   * correctly. Hrefs and anchors are asserted against `html` itself — escaping is not the subject
+   * of those cases.
+   */
+  const text = html.replaceAll("&amp;", "&").replaceAll("&#x27;", "'").replaceAll("&quot;", '"');
+
+  it("draws every shipped row as a real link, once", () => {
+    const linkable = appIaRows().filter((row) => row.proposed !== true && isLinkableHref(row.href));
+    for (const row of linkable) {
       expect(drawnHrefs.filter((href) => href === row.href).length).toBeGreaterThan(0);
     }
-    // The rail preview is nineteen rows and the screen map is twenty-six more screens — of which the
-    // pattern rows print as code, because a pattern is not a destination. A preview that rendered
-    // nothing would still pass every `toContain` above, so the count is asserted.
+    // The preview would still pass every `toContain` below if it rendered nothing, so the count is
+    // asserted: the rail's linkable rows plus the screen map's linkable screens.
     const linkableScreens = APP_IA_SCREEN_MAP.filter((screen) => isLinkableHref(screen.href));
-    expect(drawnHrefs.length).toBeGreaterThanOrEqual(appIaRows().length + linkableScreens.length);
+    expect(drawnHrefs.length).toBeGreaterThanOrEqual(linkable.length + linkableScreens.length);
   });
 
-  it("prints the rail's own words — the group headings and each row's label", () => {
+  it("prints the rail's own words — every main item and each row's label", () => {
     for (const group of APP_IA_GROUPS) {
-      expect(html).toContain(itemLabel(nav, group.id));
-      for (const subGroup of group.subGroups) {
-        expect(html).toContain(itemLabel(nav, subGroup.id));
+      expect(text).toContain(itemLabel(nav, group.id));
+      // A submenu row's label is drawn only when its group is open, which the preview starts as.
+      for (const row of group.items) {
+        expect(text).toContain(itemLabel(nav, row.id));
       }
     }
-    for (const row of appIaRows()) {
-      expect(html).toContain(itemLabel(nav, row.id));
+  });
+
+  it("prints the authoring actions as controls, and never as links", () => {
+    for (const id of ["template-new", "template-clone", "template-publish"]) {
+      expect(text).toContain(itemLabel(nav, id));
     }
+    // New template is a real route, so it links…
+    expect(drawnHrefs).toContain("/assessment/templates/new");
+    // …and the two proposed actions are `<button>`s with the marker under them, never anchors.
+    for (const id of ["template-clone", "template-publish"]) {
+      const label = itemLabel(nav, id);
+      const href = appIaRowOf(id)?.href ?? "";
+      expect(href).not.toBe("");
+      expect(drawnHrefs).not.toContain(href);
+      expect(html).not.toMatch(new RegExp(`<a[^>]*>[^<]*${label}`));
+      expect(html).toMatch(new RegExp(`<button[^>]*aria-label="${label}"`));
+    }
+    expect(html).toContain(itemLabel(nav, "proposed-marker"));
+  });
+
+  it("draws no anchor whose href is the retired console hub", () => {
+    // The hub is not a destination anywhere in the drawing — its pages are.
+    expect(drawnHrefs).not.toContain(CONSOLE_HUB);
+    expect(html).toContain("/admin/console/users");
+    expect(html).toContain("/admin/console/relationships");
+    expect(html).toContain("/admin/console/templates");
   });
 
   it("prints today's labels beside the proposed ones, so the diff is readable", () => {
     const today = sectionOf(shellPageCopy, "nav-alignsynch");
     for (const item of ALIGN_MENU.flatMap((group) => group.items)) {
-      expect(html).toContain(itemLabel(today, item.id));
+      expect(text).toContain(itemLabel(today, item.id));
     }
   });
 
   it("prints one screen-map row per screen, with the pattern's own sentence", () => {
-    expect(APP_IA_SCREEN_MAP.length).toBe(26);
     for (const screen of APP_IA_SCREEN_MAP) {
-      expect(html).toContain(itemLabel(map, screen.id));
+      expect(text).toContain(itemLabel(map, screen.id));
     }
     for (const pattern of PATTERNS) {
-      expect(html).toContain(itemLabel(map, `pattern-${pattern}`));
+      expect(text).toContain(itemLabel(map, `pattern-${pattern}`));
     }
+    expect(APP_IA_SCREEN_MAP.length).toBe(30);
+  });
+
+  it("does not count the groups by hand — the rail band's numbers are the arrays' lengths", () => {
+    // 7 groups, 23 submenu rows, 1 row action, 30 screens, as drawn.
+    expect(APP_IA_GROUPS.length).toBe(7);
+    expect(appIaRows().length).toBe(23);
+    expect(appIaActions().length).toBe(1);
+    expect(html).toContain(String(APP_IA_GROUPS.length));
+    expect(html).toContain(String(APP_IA_SCREEN_MAP.length));
   });
 
   /**
@@ -317,7 +489,7 @@ describe("the review screen draws the proposal, not a picture of it", () => {
     expect(drawn).toEqual([]);
   });
 
-  it("links every non-pattern row, so a destination in the map is reachable", () => {
+  it("links every non-pattern screen, so a destination in the map is reachable", () => {
     for (const screen of APP_IA_SCREEN_MAP.filter((row) => isLinkableHref(row.href))) {
       expect(matchRoute(routeManifest, screen.href)).toBeDefined();
     }

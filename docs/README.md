@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**95 documents in 9 sections.** Every page carries the same nav block, generated
+**96 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 9 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 10 documents
-- [Records & QA](#records-qa) — 15 documents
+- [Records & QA](#records-qa) — 16 documents
 
 ## Start here
 
@@ -172,6 +172,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-contact-land/README.md`](qa-contact-land/README.md) — **Contact landing** — What do the contact pages look like?
 - [`qa-help-two-column/README.md`](qa-help-two-column/README.md) — **Help two-column** — Did `/help` get its two-column layout?
 - [`qa-home-polish/README.md`](qa-home-polish/README.md) — **Home hero polish** — Were the six hero defects fixed, before and after?
+- [`qa-ia/README.md`](qa-ia/README.md) — **IA v2 — four operator groups** — Does the admin rail reduce to four groups with submenus, and does template authoring name create / clone / publish?
 - [`qa-lockup-2rem/README.md`](qa-lockup-2rem/README.md) — **Lockup 2rem** — Is the lockup 2rem in every expanded-header viewport?
 - [`qa-recharts-3/README.md`](qa-recharts-3/README.md) — **recharts 3** — Do the pie labels still render after the recharts 3 bump?
 - [`qa-swiper-12/README.md`](qa-swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
