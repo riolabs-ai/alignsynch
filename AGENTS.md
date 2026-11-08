@@ -67,9 +67,11 @@ bash scripts/verify.sh       # THE gate. ~150 s locally (code lane), green = shi
 
 It runs, in order, and stops at the first failure (printing the failing step and its exit
 code): `deps (pnpm install --frozen-lockfile)` → `glossary` (`pnpm glossary:check`) →
-`release:check` (`bash scripts/release.sh --check`) → `typecheck` (`next typegen && tsc --noEmit`) →
-`lint` (`biome check` + the brand rule, see below) → `format:check`
-(`biome format`) → `data:check` → `test` → `parity` → `build` (`next build`). `data:check`,
+`ui-registry` (`pnpm ui:registry:check`) → `release:check` (`bash scripts/release.sh --check`) →
+`changelog:check` (`pnpm changelog:check`) → `docs:check` (`pnpm docs:check`) → `typecheck`
+(`next typegen && tsc --noEmit`) → `lint` (`biome check` + the brand rule, see below) →
+`format:check` (`biome format`) → `data:check` → `demo:verify` (conditional: a printed skip when the
+environment cannot support it) → `test` → `parity` → `build` (`next build`). `data:check`,
 `test` and `parity` run only when `package.json` defines that script; otherwise they are
 skipped with a visible `○ … skipped` line, so the same script is correct on `main` (no
 `data:check` yet) and on branches that carry it.
@@ -497,6 +499,13 @@ those figures are read against: **CI under 4 min holds**, and the local ceiling 
 at **≤ 3 min**. Do not make a step optional to buy time.
 
 ## Docs
+
+[`docs/README.md`](docs/README.md) is the hub: every document under `docs/`, listed once, grouped by
+the question it answers, with the previous/next page of its section on every page. The rows and the
+nav blocks are generated from `docs/docs.json` by `scripts/docs-nav.mjs` — adding a page means a row
+in that manifest then `pnpm docs:nav`, and `pnpm docs:check` (a gate step in every lane) fails by
+name when a page is missing from the hub, listed twice, has no nav block, or carries a link or image
+that does not resolve.
 
 `docs/ENV-SPEC.md` is the environment, team, integration and P1–P4 gate spec, and carries the P1
 completion record and QA evidence. Read it before adding tooling or a dependency.
