@@ -41,6 +41,7 @@ import {
   APP_IA_REMOVED,
   APP_IA_SCREEN_MAP,
   type AppIaPattern,
+  appIaActions,
   appIaGroupIds,
   appIaRowOf,
   appIaRows,
@@ -214,6 +215,14 @@ describe("lib/app-ia — the screen map", () => {
   it("keeps the Row Actions paradox honest: a row action is not a rail destination", () => {
     const report = APP_IA_SCREEN_MAP.find((screen) => screen.row === "reports");
     expect(report?.pattern).toBe("row-actions");
+  });
+
+  it("does not draw Reports as a rail row — its path carries an id the rail cannot know", () => {
+    // A rail row pointing at `/admin/instances/[id]/report` links the literal `[id]`. The row is a
+    // *verb* on the instance list, so it lives in the group's `actions` and never in `items`, and
+    // `appIaRows()` — the list the preview renders — must not contain it.
+    expect(appIaRows().some((row) => row.id === "reports")).toBe(false);
+    expect(appIaActions().some((row) => row.id === "reports")).toBe(true);
   });
 
   it("gives every destination in the rail at least one screen on the map", () => {

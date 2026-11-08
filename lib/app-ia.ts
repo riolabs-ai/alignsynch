@@ -103,6 +103,14 @@ export interface AppIaGroup {
   readonly id: string;
   /** Rows that sit directly under the heading, above any sub-group. */
   readonly items: readonly AppIaRow[];
+  /**
+   * **Row actions, not destinations.** A screen reached from one of the group's own rows — the
+   * report you open from an instance row — belongs to the group's *verbs*, not to its rail. It
+   * carries the same shape so the screen map and the copy stay one table, but nothing renders it
+   * as a link: a rail row pointing at `/admin/instances/[id]/report` would link the literal
+   * placeholder, because a rail cannot know which instance you meant.
+   */
+  readonly actions: readonly AppIaRow[];
   readonly subGroups: readonly AppIaSubGroup[];
 }
 
@@ -166,6 +174,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
         note: "Where the two parties differ, aspect by aspect. The one row whose audience changes — the page keeps its operator gate on this branch.",
       },
     ],
+    actions: [],
     subGroups: [],
   },
   {
@@ -178,12 +187,14 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
         needs: "member",
         note: "The queue of people who wrote in, read as the invitations and replies a relationship needs — one existing surface, named for the verb.",
       },
+    ],
+    actions: [
       {
         id: "reports",
         href: "/admin/instances/[id]/report",
         icon: "reports",
         needs: "member",
-        note: "One relationship's report, opened from its row rather than from the rail. Drawn here so the destination has a home; the screen map marks it a row action.",
+        note: "One relationship's report, opened from its row rather than from the rail. An action, not a destination: the path carries an instance id the rail cannot know, so the screen map marks it `row-actions` and nothing draws it as a link.",
       },
     ],
     subGroups: [],
@@ -199,6 +210,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
         note: "The operator's hub, first in its own group — it had no entry anywhere in the UI until #542, and it still explains none of the rows below it.",
       },
     ],
+    actions: [],
     subGroups: [
       {
         id: "people",
@@ -315,6 +327,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
         note: "The account's support page, unchanged.",
       },
     ],
+    actions: [],
     subGroups: [],
   },
 ];
@@ -659,9 +672,17 @@ export function appIaRows(): AppIaRow[] {
   ]);
 }
 
+/**
+ * Every row action, flattened. **Not** part of `appIaRows()`: these are verbs on a group's rows,
+ * not destinations, and a rail that drew one would link a path with an id the rail cannot know.
+ */
+export function appIaActions(): AppIaRow[] {
+  return APP_IA_GROUPS.flatMap((group) => [...group.actions]);
+}
+
 /** One proposed row by id, or `undefined` — the screen map's link back to the rail. */
 export function appIaRowOf(id: string): AppIaRow | undefined {
-  return appIaRows().find((row) => row.id === id);
+  return [...appIaRows(), ...appIaActions()].find((row) => row.id === id);
 }
 
 /** The four headings in order — the assertion the group order is a fact, not a comment. */
