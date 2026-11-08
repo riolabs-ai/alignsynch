@@ -8,16 +8,16 @@
 #
 # route | brand | sha256
 / | quizhub | 6a9b795b84c83c235bc0fe226ca5062406478f2076232dfcb94be3be4d06bc1e
-/ | alignsynch | a7bc79baaaf352449d450406e5ae73d6ad142bcb2d0d9e96f53006048f8cb97b
+/ | alignsynch | 53520463192b47141ce262ee2d8dfd3218a7eaccbf7bc042d4e8b7cae2a22228
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
 /news | quizhub | 13d9400c1fb4db49c619bdcd9ed0e729c6ccd446329d5a30b373d09a0c7438c7
-/news | alignsynch | cd3f64b7846ba1eb6a053872cdd9b3b452e9b641e0709d1ab8c6dac0987df679
+/news | alignsynch | cc8b47ba09914097270b62cec6b01a1131e6bf4193e337635087f11b7f672d7e
 /news/[slug] | quizhub | 968eea7097a9eed121f1867b138909029c7135bb6c4d49b522b71e248e586e49
-/news/[slug] | alignsynch | 411b0083fe398b5c2c4219fa84d24a8d6b5ec832ceaec5860e90694b39a9cf0d
+/news/[slug] | alignsynch | aa586fc322d9ba8c05019886dd2e0a57bd0ab24a34124c3955f7e7274fbbaeb2
 /quiz/[id] | quizhub | 29046df2b765d5383edbd8ad1191ddc51a0c7deb89cb23d2947c4ba444c0d2d4
 /quiz/[id] | alignsynch | 5f540b18f7e8b10a95d5a597cdbcad605987e5f78e4d8b67b5d90ce4c78a71ac
 /assessment/avery-rowan | quizhub | f02d71f79f690b31ef4cfede9d64c7979420c0bc7cad921508ec44b444edfbb0
-/assessment/avery-rowan | alignsynch | d9d35bab450cb560c913f7f15caff9cbf130892ed6b88315fca139cfa6ea653d
+/assessment/avery-rowan | alignsynch | d12094cde67956e0b558d6a63ddfb02928cd30fd15b35b74aeb826cd39845b40
 /profile/[username] | quizhub | 35a8c4da1f3f809608e5ebf4223a26f0daf27f4633c2d0ae92f0625f76dcd8a1
-/profile/[username] | alignsynch | 4fec7835375f472d097b1506c87bb02385e415623403aa0561d4e8d76d4cec45
+/profile/[username] | alignsynch | d2c8908ecd1ffca8769e5c09f4d6860287e62413caf080a318b74099a6cef1f7
