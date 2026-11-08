@@ -1,10 +1,20 @@
 /**
- * `/dashboard/relationships` — the relationships this member started (#533 phase 2).
+ * `/dashboard/relationships` — the relationships this member is a party to (#533 phase 2, #706).
  *
- * One row per relationship: its title, the state the lifecycle stores (`draft`, `pending`,
+ * One card per relationship: its title, the state the lifecycle stores (`draft`, `pending`,
  * `published`, `active`, …), the Aspect count, when it was created, and — once published — who was
- * invited and whether the link is still inside its seven-day window. The row links to the detail
+ * invited and whether the link is still inside its seven-day window. The card links to the detail
  * screen, which is the only place that writes.
+ *
+ * **Two people read this list, and the copy says so (#706).** `role-initiator` and
+ * `role-counterparty` are the seats; the person who started the relationship sees the two write
+ * controls, the person who was invited sees the same card without them. The empty state is about
+ * having no relationship at all — never about not being the initiator, which was the rule before
+ * this card and is what made a Counterparty's screen read "No relationships yet".
+ *
+ * **"My Relationships" is this page's name and the rail row's name, deliberately.** The other list
+ * (`/assessment/instances`) has been renamed away from it: two screens may not both read "My
+ * Relationships" while one means something narrower.
  *
  *   list       what the screen is, and what a relationship is
  *   columns    the table's headings, in the order the table draws them
@@ -20,9 +30,9 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
-  heading: "My relationships",
+  heading: "My Relationships",
   subtitle:
-    "Every relationship you started, newest first. A draft is a configuration nobody has been invited to yet; publishing one starts your trial (or a checkout), opens the session and mints the invitation.",
+    "Every relationship you're a party to, newest first — the ones you started and the ones you were invited into. A draft is a configuration nobody has been invited to yet; publishing one opens the session and mints the invitation, and only the person who started it can publish.",
   items: [
     { id: "aspects", label: "{count} Aspects" },
     { id: "open", label: "Open" },
@@ -33,7 +43,7 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "list",
       heading: "The list",
-      body: "A relationship is a template copied and given two people. Yours are the ones you started; being invited to somebody else's is not a relationship you own, so it is not here.",
+      body: "A relationship is a template copied and given two people. Both of them see it here; the one who started it configures the Aspects and publishes it, and the card says which seat you hold.",
     },
     {
       id: "columns",
@@ -75,9 +85,21 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "template", label: "Template" },
         { id: "with", label: "with" },
         { id: "not-claimed", label: "Not claimed yet" },
+        { id: "the-other", label: "the other party" },
+        /**
+         * #706 — the viewer's own seat. Two people read one list, and a card that did not say
+         * whose it is read as the initiator's to both of them.
+         */
+        { id: "role-initiator", label: "Initiator" },
+        { id: "role-counterparty", label: "Counterparty" },
         { id: "aspects", label: "{count} Aspects" },
         { id: "open-assessment", label: "Open Assessment" },
         { id: "publish-assessment", label: "Publish Assessment" },
+        /**
+         * #706 — the card's primary action for the seat that cannot publish. The destination is
+         * the same screen; only the verb is honest for a reader who will not be writing.
+         */
+        { id: "open-relationship", label: "View Relationship" },
         { id: "activate", label: "Activate Relationship" },
         { id: "gap", label: "Gap Analysis" },
         {
@@ -127,7 +149,7 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "empty",
       heading: "No relationships yet",
-      body: "Start one from a template you own. Its Aspects are yours to tune until you publish it, and publishing is what invites the other person.",
+      body: "Nobody has started one with you, and you have not started one. Start from a template you own — its Aspects are yours to tune until you publish it — or open the invitation somebody sends you, and it appears here.",
     },
     {
       id: "unreadable",

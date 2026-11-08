@@ -270,7 +270,7 @@ describe("signed in", () => {
     const html = await render();
     const text = textOf(html);
 
-    expect(text).toContain("My Relationships");
+    expect(text).toContain("Your relationships");
     expect(text).toContain("Start a relationship");
     expect(text).not.toMatch(/assessment/i);
     expect(text).toContain("read the Gap once you&#x27;ve both accepted");

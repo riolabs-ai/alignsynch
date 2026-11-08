@@ -43,10 +43,14 @@ const GATE_HEADING = sectionOf(dashboardRelationshipDetailPageCopy, "publish-gat
 function viewOf(input: {
   status: MemberRelationshipView["status"];
   hasPaymentMethod: boolean;
+  isInitiator?: boolean;
 }): MemberRelationshipView {
+  const isInitiator = input.isInitiator ?? true;
   return {
     id: "relationship-publish-gate",
     status: input.status,
+    viewerRole: isInitiator ? "initiator" : "counterparty",
+    isInitiator,
     templateId: template.id,
     title: template.title,
     summary: template.summary,
@@ -56,11 +60,12 @@ function viewOf(input: {
     aspectCount: template.items.length,
     invite: null,
     counterpartyName: "Rowan",
+    initiatorName: "Avery",
     view: input.status === "draft" ? "not-published" : "invite-missing",
     membership: { state: "open", reason: null, endedAt: null, writable: true },
     template,
-    aspectsEditable: input.status === "draft",
-    publishable: input.status === "draft",
+    aspectsEditable: isInitiator && input.status === "draft",
+    publishable: isInitiator && input.status === "draft",
     hasPaymentMethod: input.hasPaymentMethod,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
@@ -118,5 +123,28 @@ describe("a relationship that is already published", () => {
     const rendered = html(viewOf({ status: "published", hasPaymentMethod: false }));
     expect(rendered).not.toContain(PUBLISH_SUBMIT);
     expect(rendered).not.toContain('data-publish-gate="method-required"');
+  });
+});
+
+/**
+ * #706 — the Counterparty's screen is the same page, read-only.
+ *
+ * The read hands this viewer `aspectsEditable: false` and `publishable: false` on purpose; what
+ * this block holds is that the component turns those two facts into **absent surfaces**, and that
+ * it says why rather than leaving three missing panels to be guessed at.
+ */
+describe("a Counterparty's detail screen", () => {
+  it("draws no editor, no publish form and no reissue control", () => {
+    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true, isInitiator: false }));
+    expect(rendered).not.toContain("data-aspect-editor");
+    expect(rendered).not.toContain(PUBLISH_SUBMIT);
+    expect(rendered).not.toContain('id="publish-name"');
+    expect(rendered).not.toContain('data-publish-gate="method-required"');
+  });
+
+  it("says which seat it is, and that the screen is read-only", () => {
+    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true, isInitiator: false }));
+    expect(rendered).toContain('data-viewer-role="counterparty"');
+    expect(rendered).toContain('data-relationship-read-only="counterparty"');
   });
 });
