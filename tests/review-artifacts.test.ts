@@ -189,6 +189,7 @@ describe("grouping by release", () => {
     /* the rule is newest-first, so the expectation is every published version in descending order —
        adding a row is a data change, and this must keep proving the order rather than a fixed list */
     expect(shelf.groups[0].entries.map((entry) => entry.summary.artifact.version)).toEqual([
+      "v7",
       "v6",
       "v5",
       "v4",
