@@ -45,6 +45,7 @@ import {
   appIaGroupIds,
   appIaRowOf,
   appIaRows,
+  isLinkableHref,
 } from "@/lib/app-ia";
 import { ALIGN_MENU } from "@/lib/nav-menu";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -253,9 +254,11 @@ describe("the review screen draws the proposal, not a picture of it", () => {
     for (const row of appIaRows()) {
       expect(drawnHrefs.filter((href) => href === row.href).length).toBeGreaterThan(0);
     }
-    // The rail preview is nineteen rows and the screen map is twenty-six more destinations; a
-    // preview that rendered nothing would still pass a `toContain`, so the count is asserted.
-    expect(drawnHrefs.length).toBeGreaterThanOrEqual(appIaRows().length + APP_IA_SCREEN_MAP.length);
+    // The rail preview is nineteen rows and the screen map is twenty-six more screens — of which the
+    // pattern rows print as code, because a pattern is not a destination. A preview that rendered
+    // nothing would still pass every `toContain` above, so the count is asserted.
+    const linkableScreens = APP_IA_SCREEN_MAP.filter((screen) => isLinkableHref(screen.href));
+    expect(drawnHrefs.length).toBeGreaterThanOrEqual(appIaRows().length + linkableScreens.length);
   });
 
   it("prints the rail's own words — the group headings and each row's label", () => {
@@ -286,4 +289,38 @@ describe("the review screen draws the proposal, not a picture of it", () => {
       expect(html).toContain(itemLabel(map, `pattern-${pattern}`));
     }
   });
+
+  /**
+   * A route **pattern** is not a destination. `/dashboard/relationships/[id]` in a `<Link>` is the
+   * dynamic-href error Next raises, and on `/admin/review/ia` it crashed the client render — the
+   * page answered 200 and the reader saw a broken screen. Three cases hold the line: the predicate
+   * itself, that every bracketed row in the map is treated as a pattern, and that the rows which
+   * *are* linked resolve to real destinations.
+   */
+  it("treats a route pattern as text, never as a link target", () => {
+    expect(isLinkableHref("/dashboard/relationships/[id]")).toBe(false);
+    expect(isLinkableHref("/admin/instances/[id]/report")).toBe(false);
+    expect(isLinkableHref("/dashboard/relationships")).toBe(true);
+    expect(isLinkableHref("/admin/review")).toBe(true);
+  });
+
+  it("has a bracketed href on the screen map, and never links one", () => {
+    const patterns = APP_IA_SCREEN_MAP.filter((screen) => screen.href.includes("["));
+    expect(patterns.length).toBeGreaterThan(0);
+    for (const screen of patterns) {
+      expect(isLinkableHref(screen.href)).toBe(false);
+    }
+  });
+
+  it("draws no bracketed href as a link, which is the crash the client hit", () => {
+    const drawn = [...html.matchAll(/href="([^"]*\[)/g)].map((match) => match[1]);
+    expect(drawn).toEqual([]);
+  });
+
+  it("links every non-pattern row, so a destination in the map is reachable", () => {
+    for (const screen of APP_IA_SCREEN_MAP.filter((row) => isLinkableHref(row.href))) {
+      expect(matchRoute(routeManifest, screen.href)).toBeDefined();
+    }
+  });
+
 });

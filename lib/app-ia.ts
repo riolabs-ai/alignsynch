@@ -685,6 +685,19 @@ export function appIaRowOf(id: string): AppIaRow | undefined {
   return [...appIaRows(), ...appIaActions()].find((row) => row.id === id);
 }
 
+/**
+ * Can this `href` be handed to `<Link>`?
+ *
+ * The screen map names the **route pattern** a screen lives at, so some rows read
+ * `/dashboard/relationships/[id]` — a shape, not a destination. A pattern in a `Link` is the
+ * dynamic-href error Next raises (`app-directory/dynamic-href`), and on `/admin/review/ia` it
+ * crashed the client render rather than merely mis-linking. This predicate is the one place that
+ * decides, so the renderer cannot disagree with the test.
+ */
+export function isLinkableHref(href: string): boolean {
+  return !href.includes("[");
+}
+
 /** The four headings in order — the assertion the group order is a fact, not a comment. */
 export function appIaGroupIds(): string[] {
   return APP_IA_GROUPS.map((group) => group.id);

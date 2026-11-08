@@ -38,8 +38,9 @@ import {
   APP_IA_PLACEMENTS,
   APP_IA_REMOVED,
   APP_IA_SCREEN_MAP,
-  type AppIaPattern,
   appIaRows,
+  isLinkableHref,
+  type AppIaPattern,
 } from "@/lib/app-ia";
 import { ALIGN_MENU } from "@/lib/nav-menu";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -228,12 +229,24 @@ export function AdminReviewIaView({ copy }: { copy: PageCopy }) {
                   <TableCell className="align-top">
                     <div className="flex flex-col gap-1">
                       <span className="text-sm font-medium">{itemLabel(map, screen.id)}</span>
-                      <Link
-                        href={screen.href}
-                        className="text-xs text-muted-foreground hover:text-action"
-                      >
-                        {screen.href}
-                      </Link>
+                      {/*
+                        A **route pattern is not a destination.** `screen.href` names the shape of a
+                        URL (`/dashboard/relationships/[id]`), so handing it to `<Link>` is the
+                        dynamic-href error Next raises — and on this page it crashed the client
+                        render, taking the whole prototype down. Patterns print as code; concrete
+                        routes link. `isLinkableHref` is the one predicate, tested in
+                        `tests/app-ia.test.ts`.
+                      */}
+                      {isLinkableHref(screen.href) ? (
+                        <Link
+                          href={screen.href}
+                          className="text-xs text-muted-foreground hover:text-action"
+                        >
+                          {screen.href}
+                        </Link>
+                      ) : (
+                        <code className="text-xs text-muted-foreground">{screen.href}</code>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="align-top text-sm">
