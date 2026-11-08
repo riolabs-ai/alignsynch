@@ -10,6 +10,7 @@ import {
 } from "@/lib/flow/store";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
 import {
+  createAspectsPath,
   createModePath,
   createRelationshipPath,
   instancePath,
@@ -31,10 +32,11 @@ import {
  * that named no template has nowhere to go back to and lands on the library instead, which is
  * the screen that lists what can be copied.
  *
- * **Which step it returns to is the draft's own fact (#688).** A post that came through stage 1
- * (the draft cookie exists) was sent from the Mode screen, so the refusal belongs there; a post
- * that never went through the draft — `scripts/flow-e2e.mjs`, a `curl`, the pre-#688 form — is
- * returned to the Who screen, which is the only stage it ever saw.
+ * **Which step it returns to is the draft's own fact (#688, #689).** A post that came through the
+ * flow (the draft cookie exists) was sent from the **Aspects** screen — the last stage before the
+ * create — so the refusal belongs there, above the list the person just arranged. A post that
+ * never went through the draft — `scripts/flow-e2e.mjs`, a `curl`, the pre-#688 form — is returned
+ * to the Who screen, which is the only stage it ever saw.
  */
 function refusalTarget(
   request: Request,
@@ -44,7 +46,11 @@ function refusalTarget(
 ): URL {
   const id = templateRecordId.trim();
   const back =
-    id === "" ? TEMPLATE_LIBRARY_PATH : fromDraft ? createModePath(id) : createRelationshipPath(id);
+    id === ""
+      ? TEMPLATE_LIBRARY_PATH
+      : fromDraft
+        ? createAspectsPath(id)
+        : createRelationshipPath(id);
   const target = new URL(back, request.url);
   target.searchParams.set("problem", code);
   return target;
@@ -114,10 +120,17 @@ export async function POST(request: Request): Promise<Response> {
       ? null
       : parseCreateDraft(jar.get(createDraftCookieName(templateRecordId))?.value);
 
-  // Stage 2's own validation, before the store is asked anything: the Mode and the Setting
-  // are the only two fields this step owns, so a refusal names which one is wrong.
+  // Stage 2's own validation, before the store is asked anything: the Mode and the Setting are
+  // the only two fields that step owns, so a refusal names which one is wrong.
+  //
+  // #689 — since Aspects sits between Mode and the create, the post that arrives here comes from
+  // the Aspects stage and carries no radios: the two choices are the **draft's**. The validation
+  // did not move, only the place the values are read from, so a draft missing either is still
+  // refused with the field named and the Mode screen is still where it is fixed.
   if (draft !== null) {
-    const choice = modeDraft(value, draft);
+    const fromDraft = (name: string) =>
+      name === "mode" ? draft.mode : name === "alignmentSetting" ? draft.alignmentSetting : "";
+    const choice = modeDraft(fromDraft, draft);
     if (!choice.ok) {
       return NextResponse.redirect(
         fieldTarget(request, templateRecordId, choice.problem.field, choice.problem.reason),
@@ -150,12 +163,17 @@ export async function POST(request: Request): Promise<Response> {
       description: draft?.description ?? value("description"),
       // The create form's radios (#213). A post without one is refused by the store —
       // "mode must be basic or advanced" — rather than defaulted to Basic, so a crafted
-      // POST cannot choose a mode the form never offered.
-      mode: value("mode"),
+      // POST cannot choose a mode the form never offered. #689 — when the post came through the
+      // flow, the choice is the draft's (validated above), because the Aspects stage carries no
+      // radios; a direct post still names them itself.
+      mode: draft?.mode ?? value("mode"),
       // #427 — the Setting the same form asks for. The store parses it and writes the choice on
       // the session row; a blank value falls to the schema's documented default (`soft`), so a
       // post that predates the radios still creates what it always created.
-      alignmentSetting: value("alignmentSetting"),
+      alignmentSetting: draft?.alignmentSetting ?? value("alignmentSetting"),
+      // #689 — stage 3's list. The ids and the order stay the template's
+      // (`lib/flow/aspects.ts::aspectEditsFor` says why); what the person reworded is theirs.
+      aspects: draft?.aspects,
       // Not `value("userId")`: there is no such field, and the session cannot be posted.
       viewerUserId: viewer?.userId ?? null,
       // #258 — the address the unlock notice will reach this creator at when the Counterparty

@@ -4,8 +4,14 @@
  * The second step reads the draft stage 1 wrote and asks the last two questions before anything
  * is created: which Mode both parties answer, and which Setting the report is judged against.
  * It is a page rather than a panel on stage 1 so that it can be reloaded, linked and cached by
- * its own address — and because slice 3 adds `…/create/aspects` and slice 4 `…/create/commit`
- * as siblings, which is the shape the approved flow describes.
+ * its own address — and because stage 3 (`…/create/aspects`) and slice 4's create are siblings,
+ * which is the shape the approved flow describes.
+ *
+ * **It saves; it does not create (#689).** Until stage 3 existed, this screen's form posted to
+ * `POST /assessment/new` and the second of six stages created the relationship. The approved flow
+ * puts the Aspects between Mode and the invite, so the form posts to `POST /assessment/new/mode`,
+ * which merges the two choices into the same draft and answers a 303 to stage 3. The create is
+ * behind stage 3's own control.
  *
  * **No draft, no stage 2.** A person who deep-links this address without passing through stage 1
  * has nothing to commit, so the page sends them back to Who — where the account gate lives too.

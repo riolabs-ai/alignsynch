@@ -1,7 +1,8 @@
 /**
  * template-ancestor: components/create/quiz-editor.tsx   (variation: a server component on the app's own route, posting to the route handler — the layout survives, the disabled submit and its "not wired" note do not)
  *
- * `CreateRelationship` — the create flow's first two stages, **Who** and **Mode** (#427, #688).
+ * `CreateRelationship` — the create flow's first three stages, **Who**, **Mode** and **Aspects**
+ * (#427, #688, #689).
  *
  * **One form split into two steps, one draft behind both.** Until #688 this was a single form:
  * the names, the address, the Mode and the Setting, submitted together or lost together. The
@@ -52,14 +53,16 @@ import {
   SETTING_LABELS,
 } from "@/content/assessment";
 import type { PageCopy } from "@/content/pages";
+import type { AspectDraft } from "@/lib/flow/aspects";
 import type { CreateDraft } from "@/lib/flow/create-draft";
-import { CREATE_INSTANCE_PATH, SAVE_WHO_PATH } from "@/lib/flow/paths";
+import { CREATE_INSTANCE_PATH, SAVE_MODE_PATH, SAVE_WHO_PATH } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { AspectList } from "./aspect-list";
 import { StageColumn } from "./stage-column";
 import { StageRail } from "./stage-rail";
 
-/** Which of the create flow's two steps this render is (#688). */
-export type CreateStage = 1 | 2;
+/** Which of the create flow's three steps this render is (#688, #689). */
+export type CreateStage = 1 | 2 | 3;
 
 /** The template being copied, as much of it as this screen prints. */
 export interface CreateTemplate {
@@ -133,19 +136,25 @@ export function CreateRelationship({
   stage,
   template,
   draft,
+  aspects,
   backHref,
   problem,
   problemLink,
   gate,
 }: {
   copy: PageCopy;
-  /** 1 = Who, 2 = Mode. The rail and the form both read it. */
+  /** 1 = Who, 2 = Mode, 3 = Aspects. The rail and the form both read it. */
   stage: CreateStage;
   /** The template to copy, or `null` when the refusal means there is none to read. */
   template: CreateTemplate | null;
   /** Stage 1's saved answers — empty on a first visit, filled from the draft on a return. */
   draft: CreateDraft;
-  /** Where the back link goes: the template on stage 1, stage 1 on stage 2. */
+  /**
+   * Stage 3's working list (#689): the draft's own when it has one, the template's on a first
+   * visit. Absent on stages 1 and 2, which have no list to draw.
+   */
+  aspects?: readonly AspectDraft[];
+  /** Where the back link goes: the template on stage 1, the stage before on 2 and 3. */
   backHref: string;
   /** The fixture's sentence for the refusal that brought the person back; `null` on a clean visit. */
   problem: string | null;
@@ -165,6 +174,7 @@ export function CreateRelationship({
   const band = sectionOf(copy, "template");
   const who = sectionOf(copy, "who");
   const mode = sectionOf(copy, "mode");
+  const aspectsSection = sectionOf(copy, "aspects");
   const problems = sectionOf(copy, "problems");
   const accountGate = sectionOf(copy, "gate");
 
@@ -198,19 +208,27 @@ export function CreateRelationship({
       <div className="space-y-6">
         <p>
           <Link href={backHref} className="text-sm font-medium text-action hover:underline">
-            {stage === 1 ? itemLabel(band, "back") : itemLabel(mode, "back")}
+            {stage === 1
+              ? itemLabel(band, "back")
+              : stage === 2
+                ? itemLabel(mode, "back")
+                : itemLabel(aspectsSection, "back")}
           </Link>
         </p>
 
-        {/* Where the person is in the six stages (#687): Who and Mode are the first two. */}
+        {/* Where the person is in the six stages (#687): Who, Mode and Aspects are the first three. */}
         <StageRail copy={copy} current={stage} />
 
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {stage === 1 ? copy.heading : mode.heading}
+            {stage === 1 ? copy.heading : stage === 2 ? mode.heading : aspectsSection.heading}
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-            {stage === 1 ? copy.subtitle : sectionBody(mode)}
+            {stage === 1
+              ? copy.subtitle
+              : stage === 2
+                ? sectionBody(mode)
+                : sectionBody(aspectsSection)}
           </p>
         </div>
 
@@ -369,9 +387,9 @@ export function CreateRelationship({
               </section>
             )}
           </>
-        ) : (
+        ) : stage === 2 ? (
           <form
-            action={CREATE_INSTANCE_PATH}
+            action={SAVE_MODE_PATH}
             method="post"
             aria-labelledby="create-mode-heading"
             className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
@@ -470,6 +488,47 @@ export function CreateRelationship({
               </p>
             </div>
           </form>
+        ) : (
+          <div className="space-y-5">
+            {/*
+              The list itself (#689). It is the one client component in the flow: a row opens in
+              place, saves itself and collapses again, and the order is dragged — none of which a
+              page navigation can do. It writes the list into the same draft cookie the two stages
+              above wrote, so a reload renders what the person left behind.
+            */}
+            <AspectList copy={copy} templateRecordId={template.recordId} aspects={aspects ?? []} />
+
+            {/*
+              The create stays behind the last stage's control, and it is still a plain form: the
+              draft now carries everything the endpoint needs (who, mode, setting, this list), so
+              the post names the template and nothing else.
+            */}
+            <form
+              action={CREATE_INSTANCE_PATH}
+              method="post"
+              aria-labelledby="create-aspects-create-heading"
+              className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+            >
+              <h2
+                id="create-aspects-create-heading"
+                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {itemLabel(aspectsSection, "submit")}
+              </h2>
+              <input type="hidden" name="templateRecordId" value={template.recordId} />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button
+                  type="submit"
+                  className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground"
+                >
+                  {itemLabel(aspectsSection, "submit")}
+                </button>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  {itemLabel(aspectsSection, "submit-note")}
+                </p>
+              </div>
+            </form>
+          </div>
         )}
       </div>
     </StageColumn>

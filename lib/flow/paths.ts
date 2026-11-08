@@ -45,6 +45,26 @@ export const CREATE_INSTANCE_PATH = "/assessment/new";
 export const SAVE_WHO_PATH = "/assessment/new/who";
 
 /**
+ * `POST /assessment/new/mode` — stage 2's save (#689).
+ *
+ * Before stage 3 existed, the Mode screen's own form posted straight to `CREATE_INSTANCE_PATH`
+ * and the relationship was created there. The approved flow puts Aspects between the two, so the
+ * Mode form now saves its two choices into the same draft and hands over to
+ * `createAspectsPath()`; the create stays behind the last stage's own control.
+ */
+export const SAVE_MODE_PATH = "/assessment/new/mode";
+
+/**
+ * `POST /assessment/new/aspects` — stage 3's list save (#689), answered as JSON.
+ *
+ * A route handler of its own rather than a field on the create endpoint: the list is saved on
+ * each gesture (an Aspect's Save, a drag's drop), so it is a small request that must not create
+ * anything. It answers `{ok: true}` or `{ok: false, problem: <field>}` and never redirects —
+ * the screen that posted it is already where it should be.
+ */
+export const SAVE_ASPECTS_PATH = "/assessment/new/aspects";
+
+/**
  * `/dashboard/support` — the member's support surface (#542 phase 1).
  *
  * The rail's Support row used to open `/support`, whose one action was a link out to the public
@@ -213,6 +233,17 @@ export function createRelationshipPath(templateRecordId: string): string {
  */
 export function createModePath(templateRecordId: string): string {
   return `${createRelationshipPath(templateRecordId)}/mode`;
+}
+
+/**
+ * `/assessment/templates/[templateId]/create/aspects` — stage 3 of the create flow (#689).
+ *
+ * The third sibling, exactly as the docstring above predicted: a stage that can be deep-linked,
+ * reloaded and cached by its own address. It reads the draft stages 1 and 2 wrote, so opening it
+ * cold sends the person back to Who rather than showing a list with no relationship behind it.
+ */
+export function createAspectsPath(templateRecordId: string): string {
+  return `${createRelationshipPath(templateRecordId)}/aspects`;
 }
 
 /**

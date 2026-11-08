@@ -33,6 +33,7 @@ import { createRefusal, fieldSentence } from "@/lib/flow/create-copy";
 import {
   CREATE_INSTANCE_PATH,
   PRICING_PATH,
+  SAVE_MODE_PATH,
   SAVE_WHO_PATH,
   createModePath,
   createRelationshipPath,
@@ -181,11 +182,13 @@ describe("stage 2 — Mode", () => {
     });
   });
 
-  it("renders as stage 2 of the rail, posting to the create endpoint", () => {
+  it("renders as stage 2 of the rail, saving and handing over to the Aspects", () => {
     const html = stageHtml(2, { ...savedDraft(), mode: "advanced", alignmentSetting: "full" });
     expect(html).toContain('data-wizard-rail="2"');
     expect(html).toContain("Stage 2 of 6");
-    expect(html).toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    // #689 — Mode no longer creates: it saves its two choices into the draft and stage 3 follows.
+    expect(html).toContain(`action="${SAVE_MODE_PATH}"`);
+    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
     expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
     // The saved choices come back selected after a reload.
     expect(html).toMatch(/name="mode"[^>]*checked=""[^>]*value="advanced"/);

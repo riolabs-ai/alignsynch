@@ -567,6 +567,15 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
+  // #689 — stage 3 (Aspects). The same row shape and the same fixture, for the same reason: the
+  // list is one stage of one flow, and its words belong beside the two forms' words. Budget 0, so a
+  // sentence typed into the list is a red build rather than a second vocabulary.
+  "/assessment/templates/[templateId]/create/aspects": {
+    page: "app/(mainlayout)/assessment/templates/[templateId]/create/aspects/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
   // #255 — the template authoring form. Budget 0 from the first commit, for the reason the
   // three flow surfaces above are: every word is in `data/pages/assessment-template-new.ts`,
   // including the six refusals, so the next literal written in the form is a red build.

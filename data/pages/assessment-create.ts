@@ -150,13 +150,58 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Setting is what a party may change later: it moves the bar the report is judged against, never a question.",
         },
+        { id: "submit", label: "Continue to aspects" },
+        {
+          id: "submit-note",
+          label:
+            "Nothing is created yet. The next stage is the Aspects, and the create comes after them.",
+        },
+        { id: "back", label: "Back to who" },
+      ],
+    },
+    {
+      /**
+       * Stage 3 — **Aspects** (#689).
+       *
+       * The prototype's `s6.*` block: the list the relationship will ask, collapsed to one row an
+       * Aspect so five of them read without scrolling, opening in place, and reordered by the
+       * handle. The two ends of the 1..5 band are the model's own Left and Right Value, and the
+       * words here are the ones a person needs to know which end is which — "what a 1 means" and
+       * "what a 5 means", not "low" and "high" left to be guessed.
+       *
+       * The Aspect rows themselves are **record data**, never copy: they are the template's, they
+       * are edited by the person, and E23 counts what a component writes, not what a row says.
+       */
+      id: "aspects",
+      heading: "Aspects",
+      body: "Copied from the template. Each Aspect is one question, answered by both seats — and the two labels say what the ends of its scale mean.",
+      items: [
+        { id: "count", label: "{count} Aspects" },
+        {
+          id: "tap-to-edit",
+          label: "Tap an Aspect to open it, then drag its handle to change the order.",
+        },
+        { id: "prompt-label", label: "The question both seats answer" },
+        { id: "left-label", label: "Left opinion label" },
+        { id: "left-help", label: "The low end of the scale — what a 1 means." },
+        { id: "right-label", label: "Right opinion label" },
+        { id: "right-help", label: "The high end — what a 5 means." },
+        { id: "edit", label: "Edit" },
+        { id: "save", label: "Save Aspect" },
+        { id: "cancel", label: "Cancel" },
+        { id: "grip", label: "Reorder {name}" },
+        { id: "move-up", label: "Move {name} up" },
+        { id: "move-down", label: "Move {name} down" },
+        { id: "saved", label: "Aspect saved." },
+        { id: "reordered", label: "Order saved." },
+        { id: "refused", label: "That Aspect was not saved." },
         { id: "submit", label: "Create the relationship" },
         {
           id: "submit-note",
           label:
-            "Submitting copies the Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.",
+            "Submitting copies these Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.",
         },
-        { id: "back", label: "Back to who" },
+        { id: "back", label: "Back to mode" },
       ],
     },
     {

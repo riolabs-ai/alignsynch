@@ -234,6 +234,24 @@ export interface CreateInstanceInput {
    */
   readonly description?: string;
   /**
+   * Stage 3's list (#689) — the template's Aspects as the person reworded them.
+   *
+   * Optional: a direct post to this endpoint (a `curl`, `scripts/flow-e2e.mjs`) carries no list
+   * and copies the version's Aspects exactly as it always did. When present it is consulted **by
+   * id**: an entry whose id the version does not offer is ignored, and a version Aspect the list
+   * does not mention is copied from the version. That is deliberate — a relationship's copy is
+   * compared against the version it is bound to, id for id and in order
+   * (`lib/db/rows.ts::copyDriftProblems`, `db:verify` V4), so the copy may be *reworded* by the
+   * person who created it but may not gain or lose an Aspect. Adding and removing is a different
+   * decision (it needs a V4 rule that can tell an edit from drift) and is not this field's job.
+   */
+  readonly aspects?: readonly {
+    readonly id: string;
+    readonly prompt: string;
+    readonly leftValue: string;
+    readonly rightValue: string;
+  }[];
+  /**
    * The signed-in account creating the instance, when the request has one (#213 follow-up).
    *
    * Resolved by the route from the request's **session cookies** (`currentUser()`), never from
@@ -519,6 +537,19 @@ export async function createInstanceFromTemplate(
     // to. No `response_option` copy: a version is `zAssessment`, whose every item's scale is the
     // fixed 1..5 band, so there is no option row for it to carry.
     const copyIds = offered.items.map((item) => item.id);
+    // #689 — what the person reworded at stage 3, looked up by id. The ids and the order are the
+    // version's (`copyDriftProblems` compares them); the words are theirs. A list entry the version
+    // does not offer is ignored rather than inserted, and a blank value falls back to the version's
+    // — the same "never invent a row, never delete one" rule the draft's own reduction uses.
+    const edited = new Map((input.aspects ?? []).map((aspect) => [aspect.id, aspect]));
+    const copies = offered.items.map((item) => {
+      const edit = edited.get(item.id);
+      return {
+        prompt: edit?.prompt.trim() || item.prompt,
+        leftValue: edit?.leftValue.trim() || item.leftValue,
+        rightValue: edit?.rightValue.trim() || item.rightValue,
+      };
+    });
     await client.query(
       `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
        SELECT $1, t.item_id, t.position, t.prompt, 'score', t.left_value, t.right_value
@@ -527,10 +558,10 @@ export async function createInstanceFromTemplate(
       [
         instanceRecordId,
         copyIds,
-        offered.items.map((_, position) => position),
-        offered.items.map((item) => item.prompt),
-        offered.items.map((item) => item.leftValue),
-        offered.items.map((item) => item.rightValue),
+        copies.map((_, position) => position),
+        copies.map((copy) => copy.prompt),
+        copies.map((copy) => copy.leftValue),
+        copies.map((copy) => copy.rightValue),
       ],
     );
 
