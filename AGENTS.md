@@ -25,6 +25,25 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 `git switch -c backup/main-<date>` to keep the work, then `git switch main` +
 `git reset --keep origin/main`. Never open a card against a `main` that is behind.
 
+Then **prove** the tree is the one you think it is, before the first edit. Both checks, every card:
+
+```bash
+git rev-parse --abbrev-ref HEAD              # must print main (or your branch) — never HEAD
+git rev-parse HEAD                           # must equal: git rev-parse origin/main
+node -p "require('./package.json').version"  # must equal origin/main's package.json version
+```
+
+`HEAD` is the trap this repo has already paid for: **detached, `git push` succeeds and moves
+nothing**, so a branch can be green and exist only on the machine that made it. Measured
+2026-11-07 in the shared checkout — `HEAD` detached at `ae91ff69` while `origin/main` was
+`71561560`, local `package.json` `1.5.0` against main's `1.6.0`. A version that disagrees with
+`origin/main` is not a release that is ahead; it is a tree that is behind.
+
+**`git switch main` refusing with "already used by worktree" is the same trap in another
+coat.** A release worktree left on `main` pins the branch for everyone. Detach that worktree
+(`git -C <worktree> switch --detach`) so the shared checkout can hold `main` — never answer
+that refusal by working detached in the shared checkout.
+
 ## Commands (repo root, `pnpm` only — the lockfile is `pnpm-lock.yaml` v9)
 
 | Command                          | Verified             | Notes                                                                                                                  |
