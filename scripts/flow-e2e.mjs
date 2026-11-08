@@ -5,8 +5,13 @@
  * This is not part of `scripts/verify.sh`: the gate must stay database-free and build-free.
  * It is the dogfood the issue asks for, written down so it can be repeated:
  *
- *   1. create      an Instance from a published Template, over the create form
- *   2. invite      the invitation link is on the screen (no RESEND_API_KEY, so no email)
+ *   1. create      an Instance from a published Template through the **four stages** the create
+ *                  is (#688 Who → Mode, #689 Aspects, #690 Create), then follow whichever of the
+ *                  two redirect shapes the endpoint answers with: **Sent** for a signed-in
+ *                  creator, the **account gate** for a signed-out one (#704)
+ *   2. invite      the invitation link is on the screen — drawn whether or not this deployment
+ *                  has a mailer, because a send that did not happen must never make the link
+ *                  unshareable (#220)
  *   2b. self-claim the Initiator's own browser cannot claim its own invitation: the page
  *                  names them as the party they already are, the claim is refused with
  *                  `already-a-party`, and the token stays live (#202)
@@ -41,6 +46,13 @@
  *
  * It creates its own instance and deletes it (and the Template edit) before it exits, so it
  * is safe to re-run against a database another process is reading.
+ *
+ * **A failed run prints what the demo branch looks like (#704).** The create commits a `record`
+ * row on the branch every card shares, so a throw before that row is registered for cleanup
+ * leaves it behind — and `pnpm db:seed` then refuses ("record holds assessment row(s) this seed
+ * does not author") until somebody deletes it by hand. The instance id is therefore registered the
+ * moment it is parsed, and a failure ends with the branch's own `session` / `party` / `record`
+ * counts, so "did this run leave a row" is answered by the output.
  */
 import { Client } from "pg";
 
@@ -189,6 +201,162 @@ class Jar {
       html: await response.text(),
     };
   }
+
+  /**
+   * A JSON post — the shape `POST /assessment/new/aspects` takes (#689).
+   *
+   * Stage 3's list is the one step of the create that is not a form: it saves itself on each
+   * committed gesture and answers `{ok: true}`, so its reply is read as data rather than as a
+   * redirect or a page.
+   */
+  async postJson(path, body) {
+    const response = await fetch(`${BASE_URL}${path}`, {
+      method: "POST",
+      redirect: "manual",
+      headers: { cookie: this.header(), "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    this.absorb(response);
+    const text = await response.text();
+    let json = null;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // Not JSON: the assertion below reports the status and the body's first line instead.
+    }
+    return { status: response.status, body: json, html: text };
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * The four-stage create (#688 → #690), driven like a person drives it
+ * ------------------------------------------------------------------ */
+
+/** `/assessment/templates/<id>/create` — the stem every create stage hangs off (#688). */
+function createStem(templateRecordId) {
+  return `/assessment/templates/${templateRecordId}/create`;
+}
+
+/**
+ * The instance id in a create redirect, in **either** shape it has (#704).
+ *
+ * `…/assessment/instances/<id>` is the committed relationship (where a post that names no
+ * template lands, and where a signed-in creator is sent on from), and
+ * `…/create/account?instance=<id>` is the account gate a signed-out creator is sent to since
+ * #690. The id is in both addresses, so the flow continues from it either way — which shape the
+ * app answers with is the app's decision, and this reads it rather than picking one.
+ */
+function instanceIdIn(location) {
+  return (
+    location.match(/\/assessment\/instances\/([0-9a-f-]{36})/)?.[1] ??
+    location.match(/[?&]instance=([0-9a-f-]{36})/)?.[1] ??
+    null
+  );
+}
+
+/**
+ * One relationship, created through the four stages: Who, Mode, Aspects, then Create's own control.
+ *
+ * **The stages are the app's, not this script's.** A single post to `POST /assessment/new` still
+ * works — the endpoint keeps the pre-#688 shape for a post that carries no draft — and that is
+ * what this script used to do, which is how three slices of the create (#688 who, #689 aspects,
+ * #690 commit) shipped without the e2e ever seeing them (#704). What is driven here is what a
+ * person does: two form posts that only write a draft cookie, one JSON save from the list, and
+ * then the commit that writes.
+ *
+ * **The id is registered before anything after it can throw.** `created` is what `cleanup()`
+ * deletes, and a throw between the commit and the registration is what left `record` rows on the
+ * demo branch — where `pnpm db:seed` then refuses to run for every other card. So the parse and
+ * the push happen together, and the assertion about them comes after.
+ */
+async function createThroughStages(
+  jar,
+  {
+    templateRecordId,
+    initiatorName,
+    counterpartyName,
+    email,
+    title,
+    mode,
+    setting = "soft",
+    aspects,
+  },
+) {
+  const stem = createStem(templateRecordId);
+
+  /* stage 1 — Who ---------------------------------------------------- */
+  const who = await jar.post("/assessment/new/who", {
+    templateRecordId,
+    initiatorName,
+    counterpartyName,
+    email,
+    title,
+    description: "",
+  });
+  check(
+    `stage 1 Who answers 303 to the Mode stage (${initiatorName})`,
+    who.status === 303 && (who.location ?? "").endsWith(`${stem}/mode`),
+    `${who.status} ${who.location}`,
+  );
+
+  /* stage 2 — Mode --------------------------------------------------- */
+  const modeScreen = await jar.get(who.location ?? `${stem}/mode`);
+  check(
+    "stage 2 Mode asks its two questions, and nothing was created to get here",
+    modeScreen.status === 200 &&
+      modeScreen.html.includes('name="mode"') &&
+      modeScreen.html.includes('name="alignmentSetting"'),
+    `status ${modeScreen.status}`,
+  );
+
+  const modePost = await jar.post("/assessment/new/mode", {
+    templateRecordId,
+    mode,
+    alignmentSetting: setting,
+  });
+  check(
+    "stage 2 answers 303 to the Aspects stage",
+    modePost.status === 303 && (modePost.location ?? "").endsWith(`${stem}/aspects`),
+    `${modePost.status} ${modePost.location}`,
+  );
+
+  /* stage 3 — Aspects ------------------------------------------------ */
+  const aspectsScreen = await jar.get(modePost.location ?? `${stem}/aspects`);
+  check(
+    "stage 3 Aspects renders the template's list",
+    aspectsScreen.status === 200 &&
+      aspectsScreen.html.includes('data-aspect-list="true"') &&
+      aspectsScreen.html.includes(`data-aspect-row="${aspects[0].id}"`),
+    `status ${aspectsScreen.status}, ${aspects.length} row(s) offered`,
+  );
+
+  const saved = await jar.postJson("/assessment/new/aspects", { templateRecordId, aspects });
+  check(
+    "stage 3 saves the list into the draft",
+    saved.status === 200 && saved.body?.ok === true,
+    `status ${saved.status} ${JSON.stringify(saved.body)}`,
+  );
+
+  /* stage 4 — Create ------------------------------------------------- */
+  const commitScreen = await jar.get(`${stem}/commit`);
+  check(
+    "stage 4 Create reviews what the three stages decided and offers the one control that writes",
+    commitScreen.status === 200 &&
+      commitScreen.html.includes('data-create-review="true"') &&
+      commitScreen.html.includes('data-create-commit="true"'),
+    `status ${commitScreen.status}`,
+  );
+
+  const committed = await jar.post("/assessment/new", { templateRecordId });
+  const location = committed.location ?? "";
+  const instanceId = instanceIdIn(location);
+  if (instanceId !== null) created.push(instanceId);
+  check(
+    "the commit on stage 4 answers 303 to the new relationship, in either of its two shapes",
+    committed.status === 303 && instanceId !== null,
+    `${committed.status} ${location}`,
+  );
+  return { location, instanceId };
 }
 
 /* ------------------------------------------------------------------ *
@@ -218,10 +386,18 @@ async function main() {
   await db.connect();
 
   const templateItems = await db.query(
-    "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
+    "SELECT item_id, prompt, left_value, right_value FROM item WHERE record_id = $1 ORDER BY position",
     [TEMPLATE_ID],
   );
   ASPECT_IDS = templateItems.rows.map((row) => row.item_id);
+  // The list stage 3 saves (#689): read before the run edits anything below, so a run that later
+  // touches the template's copy cannot put its own edit into the draft.
+  const templateAspects = templateItems.rows.map((row) => ({
+    id: row.item_id,
+    prompt: row.prompt,
+    leftValue: row.left_value,
+    rightValue: row.right_value,
+  }));
   check(
     "the template has the five Aspects the run answers",
     ASPECT_IDS.length === 5,
@@ -232,35 +408,49 @@ async function main() {
   const counterparty = new Jar("counterparty");
   const stranger = new Jar("stranger");
 
-  /* 1. create ------------------------------------------------------- */
-  const createdResponse = await initiator.post("/assessment/new", {
+  /* 1. create — the four stages: Who, Mode, Aspects, Create (#688 → #690) --- */
+  // #704 — the create is four screens, and its redirect has two shapes: a signed-in creator is
+  // sent on to Sent (stage 5, #691) and a signed-out one to the account gate, which names the
+  // relationship stage 4 just committed. This run is signed out, so the gate is the shape it
+  // should meet; the id is in the address either way, and that is where the flow continues.
+  const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorName: "Avery E2E",
     counterpartyName: "Rowan E2E",
     email: "rowan-e2e@example.com",
-    // The create form's radios (#213). Without one the store refuses: a mode is chosen, never
-    // defaulted, so a post cannot pick a sheet the form did not offer.
+    title: "Avery and Rowan E2E",
     mode: "basic",
+    aspects: templateAspects,
   });
-  check(
-    "POST /assessment/new answers 303",
-    createdResponse.status === 303,
-    `status ${createdResponse.status}`,
-  );
-  const location = createdResponse.location ?? "";
-  const instanceMatch = location.match(/\/assessment\/instances\/([0-9a-f-]{36})/);
-  check("it redirects to the new instance", instanceMatch !== null, location);
-  if (instanceMatch === null) throw new Error("no instance id in the redirect");
-  const instanceId = instanceMatch[1];
-  created.push(instanceId);
+  if (firstCreate.instanceId === null) throw new Error("no instance id in the create redirect");
+  const instanceId = firstCreate.instanceId;
 
   const instancePath = `/assessment/instances/${instanceId}`;
-  const inviteNotice = new URL(location, BASE_URL).searchParams.get("invite");
+  const destination = new URL(firstCreate.location, BASE_URL);
+  const onTheGate = destination.pathname.endsWith("/create/account");
   check(
-    "with no RESEND_API_KEY the redirect says the emailer was not configured",
-    inviteNotice === "unset",
-    `invite=${inviteNotice}`,
+    "the create sends the creator to one of the two screens it has: the gate, or Sent",
+    (onTheGate && destination.searchParams.get("instance") === instanceId) ||
+      destination.pathname === `${instancePath}/sent`,
+    `${destination.pathname}${destination.search}`,
   );
+
+  if (onTheGate) {
+    const gateScreen = await initiator.get(firstCreate.location);
+    check(
+      "the gate draws its own three-step strip and the account form, for the browser that committed",
+      gateScreen.status === 200 &&
+        gateScreen.html.includes('data-account-gate-progress="true"') &&
+        gateScreen.html.includes('data-account-gate-form="true"'),
+      `status ${gateScreen.status}`,
+    );
+    check(
+      "and it offers the way back into the relationship it just committed",
+      gateScreen.html.includes(`href="${instancePath}"`),
+      instancePath,
+    );
+  }
+
   check(
     "the initiator's party cookie is set",
     initiator.cookies.has(`flow_party_${instanceId}`),
@@ -278,9 +468,12 @@ async function main() {
   );
 
   /* 2. invite ------------------------------------------------------- */
-  // The creation redirect carries `?invite=unset` (no key in this run); the notice is a fact
-  // about that instant, so the probe reads the screen the redirect pointed at.
-  const initiatorScreen = await initiator.get(`${instancePath}?invite=${inviteNotice}`);
+  // The screen the create handed the creator to is the account gate, which is about the account
+  // and carries no mailer outcome; the relationship's own screen is one click behind it (the gate
+  // draws that link) and is what draws the invitation. **The link is what matters here** — it is
+  // drawn whether the mailer sent, refused or was never configured (#220), which is why this
+  // reads the screen rather than a `?invite=` sentence the create no longer hands along (#704).
+  const initiatorScreen = await initiator.get(instancePath);
   check(
     "the initiator's screen renders",
     initiatorScreen.status === 200,
@@ -288,14 +481,18 @@ async function main() {
   );
   const linkMatch = initiatorScreen.html.match(/http:\/\/[^\s"<>]+\/invite\/[A-Za-z0-9_-]{43}/);
   check(
-    "the screen shows the invitation link, because no email was sent",
+    "the screen shows the invitation link, so the invitation is shareable whatever the mailer did",
     linkMatch !== null,
     linkMatch?.[0],
   );
   if (linkMatch === null) throw new Error("no invitation link on the screen");
   const link = linkMatch[0];
   const token = link.split("/invite/")[1];
-  check("the screen says no email was sent", initiatorScreen.html.includes("No email was sent"));
+  check(
+    "and draws the invitation's own state beside it",
+    initiatorScreen.html.includes('data-invite-state="unclaimed"'),
+    initiatorScreen.html.match(/data-invite-state="([a-z]+)"/)?.[1] ?? "(no state)",
+  );
   // #220: the reader is told the outcome, never the deployment's configuration.
   check(
     "the screen names no environment variable",
@@ -938,22 +1135,17 @@ async function main() {
   // demo showed all four, and a newly created instance could not.
   const advInitiator = new Jar("advanced-initiator");
   const advCounterparty = new Jar("advanced-counterparty");
-  const advCreate = await advInitiator.post("/assessment/new", {
+  const advCreate = await createThroughStages(advInitiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorName: "Noor E2E",
     counterpartyName: "Iris E2E",
     email: "iris-e2e@example.com",
+    title: "Noor and Iris E2E",
     mode: "advanced",
+    aspects: templateAspects,
   });
-  check(
-    "an Advanced instance is created with 303",
-    advCreate.status === 303,
-    `status ${advCreate.status}`,
-  );
-  const advMatch = (advCreate.location ?? "").match(/\/assessment\/instances\/([0-9a-f-]{36})/);
-  if (advMatch === null) throw new Error("no instance id in the advanced redirect");
-  const advInstanceId = advMatch[1];
-  created.push(advInstanceId);
+  if (advCreate.instanceId === null) throw new Error("no instance id in the advanced redirect");
+  const advInstanceId = advCreate.instanceId;
   const advPath = `/assessment/instances/${advInstanceId}`;
 
   const advScreen = await advInitiator.get(advPath);
@@ -1097,6 +1289,36 @@ async function cleanup() {
   }
 }
 
+/**
+ * What the demo branch looks like when the run failed (#704).
+ *
+ * Read **after** `cleanup()`, so the numbers are what this run left rather than what it made: a
+ * relationship whose id reached `created` is deleted above, one that never did is not. `session`
+ * and `party` are the two tables a stray create grows; `record` is the one `pnpm db:seed` refuses
+ * on ("record holds assessment row(s) this seed does not author"), and the branch is shared with
+ * every other card, so the three counts together answer the question an operator actually has —
+ * without a second probe against a branch somebody else may be using.
+ */
+async function reportBranch() {
+  try {
+    const { rows } = await db.query(
+      `SELECT (SELECT count(*) FROM session)::int AS sessions,
+              (SELECT count(*) FROM party)::int AS parties,
+              (SELECT count(*) FROM record WHERE record_type = 'assessment')::int AS records`,
+    );
+    const { sessions, parties, records } = rows[0];
+    console.log(
+      `! the demo branch holds ${sessions} session row(s), ${parties} party row(s), ${records} assessment record(s)`,
+    );
+    console.log(
+      `! registered for cleanup: ${created.length === 0 ? "(none)" : created.join(", ")}`,
+    );
+    console.log("! a stray record makes `pnpm db:seed` refuse — delete it before the next seed");
+  } catch (error) {
+    console.error(`! could not read the demo branch's counts: ${error.message}`);
+  }
+}
+
 try {
   await main();
 } catch (error) {
@@ -1104,6 +1326,8 @@ try {
   console.error(error);
 } finally {
   await cleanup();
+  // #704 — a red run says what state it left the shared branch in, so nobody has to probe.
+  if (failures.length > 0) await reportBranch();
   await db.end();
   console.log(`\n${failures.length === 0 ? "PASS" : "FAIL"} — ${failures.length} failure(s)`);
   for (const failure of failures) console.log(`  ✘ ${failure}`);

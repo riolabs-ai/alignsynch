@@ -195,10 +195,29 @@ claiming a send that never happened. Nothing sets it on a real deployment.
 ## The proof
 
 `pnpm flow:e2e` (not a gate step — the gate stays database-free) drives the running app over HTTP
-with three cookie jars: create, invite, a stranger's 404, the claim, a second claim refused, the
-Initiator answering alone (no Gap on the Counterparty's page), the Counterparty answering, the
-report (`data-feel-gap="3"` where Feel 2 meets Feel 5), a post-completion submit answering 409 with
-the rows unchanged, a Template edit that does not reach the Instance, and the hash-only columns.
+with three cookie jars. It opens with **the four-stage create** the app now has (#688 Who → Mode,
+#689 Aspects, #690 Create), then follows whichever redirect the endpoint answers with — the account
+gate for a signed-out creator (`…/create/account?instance=<id>`, #690), Sent for a signed-in one
+(`…/instances/<id>/sent`, #691) — and continues from the id in that address. The rest is the flow as
+before: invite, a stranger's 404, the claim, a second claim refused, the Initiator answering alone
+(no Gap on the Counterparty's page), the Counterparty answering, the report (`data-feel-gap="3"`
+where Feel 2 meets Feel 5), a post-completion submit answering 409 with the rows unchanged, a
+Template edit that does not reach the Instance, and the hash-only columns.
+
+**When to run it.** Nothing fails when it is skipped, which is how it stayed red at its first step
+across three slices (#704). Run it before merging a card that touches the create flow
+(`/assessment/new*`, `…/create/*`), the invitation, the answer sheet, acceptance or the report: the
+`tests/` suite pins the same rules without a server, and this is the only evidence that a person
+can reach those screens. It needs a build of the branch and the demo branch's env, on a port:
+
+```bash
+BASE_URL=http://localhost:3199 pnpm flow:e2e
+```
+
+The create commits a `record` row on the branch every card shares, so the script registers the
+relationship the moment the redirect is parsed and a red run ends with the branch's own `session` /
+`party` / `record` counts — "did it leave a row behind" is answered by the output, because a stray
+assessment row makes `pnpm db:seed` refuse.
 
 ## Related
 
