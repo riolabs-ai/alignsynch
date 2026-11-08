@@ -170,11 +170,17 @@ measurement that no screen offers it.
 
 ## 9. Gaps against `mockup-pay-to-complete-v2-final.html`
 
-There is **no `mockup-pay-to-complete-v1.html`** — not in the tree (`git ls-tree -r origin/main`
-has no such path; `find . -name "*pay-to-complete*"` returns nothing outside `docs/`) and not among
-the parent card's attachments. The current artifact is
+The revision this section asks for now exists:
+[`mockup-pay-to-complete-v1.html`](mockup-pay-to-complete-v1.html) — committed beside this file so it
+is reviewable in a diff rather than living in a card attachment. It carries the three surfaces #619
+asks for, marks every string with a kind and a source, and generates its copy ledger from the page
+instead of typing one over it. It is **not** production UI: no route renders it and nothing imports it.
+
+The filename is `v1` because that is the path the card and this document name. The older artifact is
 `/home/jadenblack/.hermes/kanban/boards/alignsynch/attachments/t_5d16034f/mockup-pay-to-complete-v2-final.html`,
-whose own copy ledger is at its line 545ff ("15 verbatim, 1 near-verbatim, 7 proposed").
+whose own copy ledger is at its line 545ff ("15 verbatim, 1 near-verbatim, 7 proposed"). The two rows
+below are why it was not revised in place: its ledger claims verbatim status for strings that are
+stale, composed or absent, and a ledger typed by hand over a screen drifts from the screen.
 
 Verified row by row against the tree:
 

@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MOCKUP — pay to complete, v1 (payer surfaces, blind rule) — not production UI</title>
+<!--
+  MOCKUP — NOT PRODUCTION UI. Nothing here is imported by the app, and no route renders it.
+  It is the payer surfaces #619 asks for, drawn so the owner can approve or reject each state
+  before any of it becomes a component in app/ or components/.
+
+  NAME. This file is `mockup-pay-to-complete-v1.html` because that is the path the card and
+  docs/pay-to-complete/COPY-INVENTORY.md §9 name. It supersedes the card attachment
+  `mockup-pay-to-complete-v2-final.html`: that file's copy ledger marks six strings "verbatim"
+  which COPY-INVENTORY §9 re-checked and found stale, composed, or absent from the tree. Here
+  every visible string carries a machine-checkable source, and the ledger is generated from the
+  page itself instead of being hand-typed over it.
+
+  THREE CLASSES OF STRING, ONE RULE — a string with no source is not on the screen:
+    v  verbatim      an exact fixture literal          data-src="data/pages/x.ts:123"
+    t  template      a fixture template, {slot} filled  data-src + data-literal="{slot}"
+    c  composed      shipped parts joined at render     data-src lists every part
+    s  spec          the spec's own sentence, adopted   data-src="docs/pay-to-complete/…:N"
+                     verbatim but not yet a fixture     — it needs a fixture row before shipping
+    p  proposed      NO source anywhere                 data-approval="who must approve it"
+    d  data          a fixture value (name, date, count) — not reader-visible copy
+    x  annotation    review note, not product text
+  A `p` string is always dotted and badged. Every other kind can show its source with the
+  "sources" toggle. The page audits itself on screen 8 and prints PASS/FAIL; run it headless with
+  the command in "How to re-check" at the bottom.
+
+  THE OPEN DECISION. The `needs-action` band (screen 4) has no copy in the tree, the spec or
+  the code: SPEC §9 is a PR checklist, `grep -rn "3DS\|Approve payment"` returns zero files, and
+  PRD §9 q3 has not chosen link-vs-expire. Its four sentences are therefore marked `p`, and the
+  band must not be built until they are approved — docs/pay-to-complete/PAYER-PRESENT.md §6.
+-->
+<meta name="robots" content="noindex, nofollow" />
+<style>
+  /* The shipped token values, transcribed from app/globals.css (:root) and
+     data/brands/alignsynch.ts (#37474f action / #2a373e pressed / #ffffff ink).
+     No CDN, no network: this file opens offline, which is the only way a reviewer can trust
+     that it renders what the tree renders. */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 21% 44%;
+    --border: 30 16% 84%;
+    --input: 30 16% 84%;
+    --action: 200 17.9% 26.3%;
+    --action-foreground: 0 0% 100%;
+    --action-hover: 201 19.2% 20.4%;
+    --radius: 0.3125rem;
+    --emerald-bg: #ecfdf5; --emerald-br: #a7f3d0; --emerald-ink: #064e3b;
+    --amber-bg: #fffbeb;  --amber-br: #fde68a;  --amber-ink: #78350f;
+    --red-bg: #fef2f2;    --red-br: #fecaca;    --red-ink: #7f1d1d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  /* Element defaults first: a later plain `h2` after a `.band h2` is descending specificity. */
+  h1 { font-size: 1.5rem; margin: 0; }
+  h2 { font-size: 1.125rem; margin: 0; }
+  h3 { font-size: 0.8125rem; letter-spacing: .04em; text-transform: uppercase; margin: 0; color: #4b5563; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  body {
+    background: hsl(var(--background)); color: hsl(var(--foreground));
+    font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  [hidden] { display: none; }
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1rem; }
+
+  /* ── the mockup banner (not product) ───────────────────────────────────── */
+  .mock { background: #1f2937; color: #f9fafb; font-size: 12px; }
+  .mock .wrap { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; padding: .375rem 1rem; }
+  .mock b { letter-spacing: .06em; text-transform: uppercase; font-size: 11px; color: #fde68a; }
+  .mock code { color: #d1d5db; }
+
+  /* ── demo chrome (not product) ─────────────────────────────────────────── */
+  .demo { border-bottom: 1px solid #e5e7eb; background: #f9fafb; position: sticky; top: 0; z-index: 9; }
+  .demo .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; padding: .5rem 1rem; }
+  .demo .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6b7280; }
+  .sw { border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #374151;
+        padding: .25rem .625rem; font-size: 12px; font-weight: 500; cursor: pointer; }
+  .sw[aria-pressed="true"] { background: #111827; border-color: #111827; color: #fff; }
+  .legend { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; font-size: 11px; color: #6b7280; }
+  .legend button { font: inherit; border: 1px solid #d1d5db; background: #fff; border-radius: 999px; padding: 0 .5rem; cursor: pointer; }
+  .legend button[aria-pressed="true"] { background: #111827; border-color: #111827; color: #fff; }
+  .status { font-variant-numeric: tabular-nums; }
+  .status[data-ok="true"] { color: #065f46; font-weight: 600; }
+  .status[data-ok="false"] { color: #7f1d1d; font-weight: 600; }
+
+  /* ── product chrome ────────────────────────────────────────────────────── */
+  .appbar { border-bottom: 1px solid #e5e7eb; background: #fff; }
+  .appbar .wrap { display: flex; height: 3.5rem; align-items: center; justify-content: space-between; }
+  .wordmark { font-weight: 700; letter-spacing: -.01em; }
+  .btn { display: inline-flex; min-height: 2.25rem; align-items: center; justify-content: center;
+         border-radius: calc(var(--radius)); padding: 0 .75rem; font-size: .875rem; font-weight: 600;
+         text-decoration: none; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: hsl(var(--action)); color: hsl(var(--action-foreground)); min-height: 2.75rem; padding: 0 1.25rem; }
+  .btn-primary:hover { background: hsl(var(--action-hover)); }
+  .btn-ghost { background: #fff; border-color: #d1d5db; color: #1f2937; }
+  .btn-ghost:hover { background: #f9fafb; }
+  .btn[disabled] { opacity: .45; cursor: default; }
+
+  .card { border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) + 2px); background: #fff; }
+  .card > .head { border-bottom: 1px solid #e5e7eb; background: #f9fafb; padding: .875rem 1rem;
+                  border-radius: calc(var(--radius) + 2px) calc(var(--radius) + 2px) 0 0; }
+  .card > .body { padding: 1rem; }
+  .chip { display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid #d1d5db;
+          padding: .125rem .5rem; font-size: 12px; font-weight: 500; color: #374151; background: #fff; }
+  .band { border-radius: calc(var(--radius) + 2px); border: 1px solid; padding: 1rem; }
+  .band.emerald { background: var(--emerald-bg); border-color: var(--emerald-br); color: var(--emerald-ink); }
+  .band.amber   { background: var(--amber-bg);   border-color: var(--amber-br);   color: var(--amber-ink); }
+  .band.red     { background: var(--red-bg);     border-color: var(--red-br);     color: var(--red-ink); }
+  .band h2 { font-size: 1rem; }
+  .band p { margin: .375rem 0 0; }
+
+  /* A form surface: border + background contrast, NO shadow (AGENTS.md). */
+  .form-surface { border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius));
+                  background: #fff; padding: 1rem; }
+  .field { display: grid; gap: .25rem; }
+  .field > label { font-size: 12px; color: #4b5563; }
+  .field input { min-height: 2.5rem; border: 1px solid hsl(var(--input)); border-radius: calc(var(--radius));
+                 padding: 0 .625rem; font: inherit; background: #fff; }
+  .field input:focus { outline: 2px solid hsl(var(--action)); outline-offset: 1px; }
+  .grid2 { display: grid; gap: .75rem; grid-template-columns: 1fr; }
+  @media (min-width: 34rem) { .grid2 { grid-template-columns: 2fr 1fr 1fr; } }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+
+  .radio { display: inline-flex; align-items: center; gap: .375rem; cursor: pointer; }
+  .radio input { appearance: none; -webkit-appearance: none; width: 1rem; height: 1rem; margin: 0;
+                 border: 1px solid #9ca3af; border-radius: 999px; background: #fff; display: grid;
+                 place-content: center; }
+  .radio input::after { content: ""; width: .5rem; height: .5rem; border-radius: 999px;
+                        background: hsl(var(--action-foreground)); transform: scale(0); }
+  .radio input:checked { border-color: hsl(var(--action)); background: hsl(var(--action)); }
+  .radio input:checked::after { transform: scale(1); }
+  .radio input:focus-visible { outline: 2px solid hsl(var(--action)); outline-offset: 2px; }
+
+  .seats { display: grid; gap: .5rem; grid-template-columns: 1fr; }
+  @media (min-width: 34rem) { .seats { grid-template-columns: 1fr 1fr; } }
+  .seat { border: 1px solid #e5e7eb; border-radius: calc(var(--radius)); background: #f9fafb; padding: .625rem .75rem; }
+  .seat .k { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #6b7280; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; text-align: center; }
+  .metric { border: 1px solid #e5e7eb; border-radius: calc(var(--radius)); padding: .5rem; }
+  .metric .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .metric .l { font-size: 11px; color: #6b7280; }
+
+  .muted { color: hsl(var(--muted-foreground)); }
+  .price { font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .spacer { height: 1.5rem; }
+
+  /* ── the copy markers ──────────────────────────────────────────────────── */
+  /* A proposed string is dotted and badged, always: the owner can see exactly what he is being
+     asked to accept, and nothing unapproved ships. The other kinds show a source badge only when
+     the reviewer turns "sources" on, so the default view reads like a screen. */
+  .k-p { border-bottom: 1px dotted #9ca3af; }
+  .badge { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+           vertical-align: super; margin-left: 2px; border-radius: 3px; padding: 0 3px; white-space: nowrap; }
+  .k-p .badge { color: #7f1d1d; background: #fee2e2; }
+  .src { display: none; font-size: 10px; vertical-align: super; margin-left: 2px; color: #6b7280;
+         font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  body.show-src .src { display: inline; }
+
+  /* review annotations: differ from product text on purpose */
+  .note { border-left: 3px solid #d1d5db; padding: .25rem 0 .25rem .75rem; font-size: 12px;
+          color: #4b5563; margin: 1rem 0; }
+  .note b { color: #111827; }
+  .note code { color: #111827; }
+
+  table.ledger { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.ledger th, table.ledger td { text-align: left; padding: .375rem .5rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  table.ledger th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
+  table.ledger td.src { white-space: normal; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  table.ledger td.kind { white-space: nowrap; font-weight: 600; }
+  .kinds { display: grid; gap: .375rem; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+  .kinds li { display: grid; grid-template-columns: 2rem 1fr; gap: .5rem; }
+  .kinds .t { font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  ul.check { display: grid; gap: .375rem; margin: 0; padding: 0; list-style: none; }
+  ul.check li { display: grid; grid-template-columns: 1.25rem 1fr; gap: .5rem; align-items: start; font-size: 13px; }
+  ul.check .no { color: #7f1d1d; font-weight: 700; }
+  ul.check .yes { color: #065f46; font-weight: 700; }
+  details summary { cursor: pointer; font-weight: 600; }
+  pre { background: #0f172a; color: #e2e8f0; padding: .75rem 1rem; border-radius: calc(var(--radius));
+        overflow-x: auto; font-size: 12px; }
+  .state-rail { display: flex; flex-wrap: wrap; gap: .375rem; margin: .25rem 0 1rem;
+                border: 0; padding: 0; }
+  .state-rail button { font: inherit; font-size: 12px; border: 1px solid #d1d5db; background: #fff;
+                       border-radius: 999px; padding: .125rem .5rem; cursor: pointer;
+                       font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .state-rail button[aria-pressed="true"] { background: #111827; border-color: #111827; color: #fff; }
+  .two-up { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 48rem) { .two-up { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="mock">
+  <div class="wrap">
+    <b>Mockup — not shipped</b>
+    <span>No route renders this file and nothing imports it. Building any of it needs the owner's approval of the strings marked <span class="badge k-p">p</span>.</span>
+    <code>docs/pay-to-complete/mockup-pay-to-complete-v1.html</code>
+  </div>
+</div>
+
+<div class="demo">
+  <div class="wrap">
+    <span class="tag">Screen</span>
+    <button class="sw" type="button" data-screen="create" aria-pressed="true">1 · Create, last step</button>
+    <button class="sw" type="button" data-screen="publish-new" aria-pressed="false">2 · Publish, no method</button>
+    <button class="sw" type="button" data-screen="publish-method" aria-pressed="false">3 · Publish, method on file</button>
+    <button class="sw" type="button" data-screen="payer-present" aria-pressed="false">4 · Payer present</button>
+    <button class="sw" type="button" data-screen="counterparty" aria-pressed="false">5 · Counterparty</button>
+    <button class="sw" type="button" data-screen="seats" aria-pressed="false">6 · Two seats</button>
+    <button class="sw" type="button" data-screen="ledger" aria-pressed="false">7 · Copy ledger</button>
+    <button class="sw" type="button" data-screen="audit" aria-pressed="false">8 · Blind rule, checked</button>
+    <span class="legend">
+      <button type="button" id="toggle-src" aria-pressed="false">sources</button>
+      <span class="status" id="audit-chip" data-ok="false">audit: not run</span>
+    </span>
+  </div>
+</div>
+
+<header class="appbar">
+  <div class="wrap">
+    <span class="wordmark">AlignSynch</span>
+    <span class="btn btn-ghost" data-copy="v" data-src="data/pages/assessment-template-detail.ts:80" data-literal="Create Relationship">Create Relationship</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     1 · CREATE — the last stage, with the pay-now / pay-later choice and the
+         card widget `capturePaymentMethodAction` needs (app/…/relationships/actions.ts:405)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-create" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" data-copy-root data-name="create">
+  <p class="muted" style="margin:0 0 .25rem">
+    <span data-copy="t" data-src="data/pages/assessment-create.ts:42" data-literal="Step {step} of 3">Step 3 of 3</span>
+    <span aria-hidden="true"> · </span>
+    <span data-copy="v" data-src="data/pages/assessment-create.ts:39" data-literal="Products">Products</span>
+    <span aria-hidden="true"> · </span>
+    <span data-copy="v" data-src="data/pages/assessment-create.ts:40" data-literal="This product">This product</span>
+    <span aria-hidden="true"> · </span>
+    <span data-copy="v" data-src="data/pages/assessment-create.ts:41" data-literal="Create the relationship">Create the relationship</span>
+  </p>
+  <h1 data-copy="v" data-src="data/pages/assessment-create.ts:43" data-literal="Creating a relationship">Creating a relationship</h1>
+
+  <div class="card" style="margin:1.5rem 0">
+    <div class="head"><h2 data-copy="v" data-src="data/pages/assessment-create.ts:48" data-literal="The template you are copying">The template you are copying</h2></div>
+    <div class="body">
+      <div class="row" style="justify-content:space-between">
+        <strong data-copy="d" data-src="demo data">Staff &amp; Manager</strong>
+        <span class="chip"><span data-copy="t" data-src="data/pages/assessment-create.ts:51" data-literal="{count} Aspects">5 Aspects</span></span>
+      </div>
+      <p class="muted" style="margin:.5rem 0 0" data-copy="v" data-src="data/pages/assessment-create.ts:54-55" data-literal="Two seats: an Initiator and a Counterparty. Both answer the same sheet, and neither sees the other&#39;s answers until both accept.">Two seats: an Initiator and a Counterparty. Both answer the same sheet, and neither sees the other's answers until both accept.</p>
+      <div class="seats" style="margin-top:.75rem">
+        <div class="seat">
+          <p class="k" data-copy="v" data-src="data/pages/assessment-instances.ts:61" data-literal="Initiator">Initiator</p>
+          <p style="margin:.125rem 0 0;font-weight:600" data-copy="d" data-src="demo data">Daniel Reyes</p>
+        </div>
+        <div class="seat">
+          <p class="k" data-copy="v" data-src="data/pages/assessment-instances.ts:62" data-literal="Counterparty">Counterparty</p>
+          <p style="margin:.125rem 0 0;font-weight:600" data-copy="d" data-src="demo data">Nadia Alvarez</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="head"><h2 data-copy="v" data-src="data/pages/assessment-create.ts:83" data-literal="Who and how">Who and how</h2></div>
+    <div class="body">
+      <div class="grid2" style="grid-template-columns:1fr 1fr">
+        <div class="field">
+          <label for="f-name" data-copy="v" data-src="data/pages/assessment-create.ts:85" data-literal="Your name — the Initiator">Your name — the Initiator</label>
+          <input id="f-name" value="Daniel Reyes" readonly />
+        </div>
+        <div class="field">
+          <label for="f-who" data-copy="v" data-src="data/pages/assessment-create.ts:87" data-literal="Who you are asking">Who you are asking</label>
+          <input id="f-who" value="Nadia Alvarez" readonly />
+        </div>
+      </div>
+      <div class="grid2" style="grid-template-columns:1fr 1fr; margin-top:.75rem">
+        <div class="field">
+          <label for="f-email" data-copy="v" data-src="data/pages/assessment-create.ts:94" data-literal="Their email address">Their email address</label>
+          <input id="f-email" value="nadia@example.com" readonly />
+        </div>
+        <div class="field">
+          <label for="f-mode" data-copy="v" data-src="data/pages/assessment-create.ts:101" data-literal="Mode">Mode</label>
+          <input id="f-mode" value="Advanced Mode" readonly />
+        </div>
+      </div>
+      <div class="grid2" style="grid-template-columns:1fr 1fr; margin-top:.75rem">
+        <div class="field">
+          <label for="f-setting" data-copy="v" data-src="data/pages/assessment-create.ts:109" data-literal="Setting">Setting</label>
+          <input id="f-setting" value="Full" readonly />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── (b) THE CHOICE. Note what is NOT here: no plan, no price, no fee. The method is
+          captured here and nothing is charged — `capturePaymentMethodAction` only makes the
+          completion possible (lib/member/payment.ts:14-17). The plan is chosen at publish,
+          which is what the shipped sentence below already says. ────────────────────────── -->
+  <section class="card" style="margin-bottom:1.5rem" data-block="pay-now-or-later">
+    <div class="head">
+      <h2 data-copy="p" data-approval="owner — the heading of a new block on an existing screen; the tree has no such heading" data-literal="Payment">Payment</h2>
+    </div>
+    <div class="body">
+      <div class="row" style="gap:1rem">
+        <label class="radio">
+          <input type="radio" name="when" value="now" checked />
+          <span data-copy="s" data-src="docs/pay-to-complete/PRD.md:90" data-literal="pay now / later">pay now</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="when" value="later" />
+          <span data-copy="s" data-src="docs/pay-to-complete/PRD.md:91" data-literal="Choosing &#34;later&#34;">later</span>
+        </label>
+      </div>
+
+      <p class="muted" style="margin:.75rem 0 0" data-copy="v" data-src="data/pages/assessment-template-detail.ts:82-84" data-literal="Creating a relationship is free. Your plan decides how many you may hold at once, and it is chosen when a relationship is ready to complete, not here.">Creating a relationship is free. Your plan decides how many you may hold at once, and it is chosen when a relationship is ready to complete, not here.</p>
+
+      <div id="create-capture" style="margin-top:1rem">
+        <div class="form-surface" data-surface="card-widget" data-action="capturePaymentMethodAction">
+          <div class="grid2">
+            <div class="field">
+              <label for="c1" data-copy="p" data-approval="owner — no capture surface exists in the tree, so no field label does (COPY-INVENTORY §8)" data-literal="Card number">Card number</label>
+              <input id="c1" inputmode="numeric" placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
+            </div>
+            <div class="field">
+              <label for="c2" data-copy="p" data-approval="owner — no capture surface exists in the tree, so no field label does (COPY-INVENTORY §8)" data-literal="Expiry">Expiry</label>
+              <input id="c2" placeholder="MM / YY" autocomplete="cc-exp" />
+            </div>
+            <div class="field">
+              <label for="c3" data-copy="p" data-approval="owner — no capture surface exists in the tree, so no field label does (COPY-INVENTORY §8)" data-literal="CVC">CVC</label>
+              <input id="c3" inputmode="numeric" placeholder="123" autocomplete="cc-csc" />
+            </div>
+          </div>
+          <p style="margin:.75rem 0 0">
+            <span class="btn btn-primary" data-mock-action="capturePaymentMethodAction" data-copy="s" data-src="docs/pay-to-complete/PRD.md:90" data-literal="pay now / later">pay now</span>
+            <span class="muted" style="margin-left:.5rem" data-copy="p" data-approval="owner — one sentence stating what capture does not do; lib/member/payment.ts:14-17 is the fact, not the sentence" data-literal="Nothing is charged today — this only makes the completion possible.">Nothing is charged today — this only makes the completion possible.</span>
+          </p>
+        </div>
+      </div>
+
+      <div id="create-later" hidden style="margin-top:1rem">
+        <p class="muted" style="margin:0" data-copy="p" data-approval="owner — the pay-later confirmation; the model's only shipped sentence is the one above" data-literal="The invitation is sent either way. You will be asked for a method when the assessment is ready to be published.">The invitation is sent either way. You will be asked for a method when the assessment is ready to be published.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="row">
+    <span class="btn btn-primary" data-copy="v" data-src="data/pages/assessment-create.ts:115" data-literal="Create the relationship">Create the relationship</span>
+    <span class="muted" data-copy="v" data-src="data/pages/assessment-create.ts:117-119" data-literal="Submitting copies the Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.">Submitting copies the Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.</span>
+  </div>
+
+  <div class="note" data-copy="x" data-src="review annotation — not product text">
+    <b>What this screen draws, and why it contradicts nothing.</b>
+    The choice carries no plan and no figure: `capturePaymentMethodAction` (<code>app/(mainlayout)/dashboard/relationships/actions.ts:405</code>)
+    returns <code>{ ok: true, url }</code> or a refusal code, and its docstring says it “only makes the completion possible”.
+    The shipped sentence above it already says the plan is chosen <em>when a relationship is ready to complete, not here</em> —
+    putting a tier picker on this screen would contradict a fixture that ships today. The fee first appears on screen 2.
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     2 · PUBLISH, NO METHOD — `completeRelationshipAction` answers
+         `method-required` and the capture happens here, once (actions.ts:437-439)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-publish-new" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" data-copy-root data-name="publish-new" hidden>
+  <p class="muted" style="margin:0 0 .25rem" data-copy="v" data-src="data/pages/assessment-instance.ts:26" data-literal="Your instance">Your instance</p>
+  <div class="row" style="gap:.5rem">
+    <h1 data-copy="d" data-src="demo data">Staff &amp; Manager</h1>
+    <span class="chip" data-copy="v" data-src="content/stages.ts:107" data-literal="Sharing">Sharing</span>
+  </div>
+  <p style="margin:.5rem 0 1.5rem; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:66-68" data-literal="Sharing — both sheets are sealed; the Gap opens when the assessment is published." data-blind-anchor="sealed">Sharing — both sheets are sealed; the Gap opens when the assessment is published.</p>
+
+  <section class="card" style="margin-bottom:1.5rem" data-block="publish">
+    <div class="head row" style="justify-content:space-between">
+      <h2 data-copy="v" data-src="data/pages/dashboard-relationship-detail.ts:103" data-literal="Publish">Publish</h2>
+      <span class="chip" data-copy="v" data-src="data/pages/dashboard-relationships.ts:53" data-literal="Ready to publish">Ready to publish</span>
+    </div>
+    <div class="body">
+      <div class="band amber" style="margin-bottom:1rem">
+        <h2 data-copy="s" data-src="docs/pay-to-complete/SPEC.md:112" data-literal="add a payment method to open the Gap">add a payment method to open the Gap</h2>
+        <p class="muted" data-copy="x" data-src="optional annotation">The server's own refusal, <code>method-required</code> (SPEC §4). The screen may draw it; a test asserts the action refuses without it.</p>
+      </div>
+
+      <div class="row" style="justify-content:space-between; border-top:1px solid #e5e7eb; padding-top:.75rem">
+        <div>
+          <p class="muted" style="margin:0; font-size:12px" data-copy="v" data-src="data/pages/assessment-instance.ts:273" data-literal="Plan">Plan</p>
+          <p class="price" style="margin:.125rem 0 0" data-copy="c" data-src="data/billing-plans.ts:125 + data/billing-plans.ts:127 + data/pages/pricing.ts:80" data-literal="Basic|895|mo" data-why="the tier name, its monthlyCents, and the price suffix — no file contains the joined string (COPY-INVENTORY §6)">Basic · $8.95/mo</p>
+        </div>
+        <span class="muted" data-copy="v" data-src="data/pages/templates.ts:57" data-literal="{price} per relationship">per relationship</span>
+      </div>
+
+      <div style="margin-top:.75rem; border:1px solid #e5e7eb; border-radius:calc(var(--radius)); background:#f9fafb; padding:.625rem .75rem">
+        <p class="muted" style="margin:0; font-size:12px" data-copy="v" data-src="data/pages/assessment-instances.ts:130" data-literal="Paid">Paid</p>
+        <p style="margin:.125rem 0 0; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:275" data-literal="Nothing has been paid on this relationship.">Nothing has been paid on this relationship.</p>
+      </div>
+
+      <div class="form-surface" style="margin-top:1rem" data-surface="card-widget" data-action="completeRelationshipAction">
+        <div class="grid2">
+          <div class="field">
+            <label for="p1" data-copy="p" data-approval="owner — no capture surface exists in the tree, so no field label does (COPY-INVENTORY §8)" data-literal="Card number">Card number</label>
+            <input id="p1" inputmode="numeric" placeholder="1234 5678 9012 3456" autocomplete="cc-number" />
+          </div>
+          <div class="field">
+            <label for="p2" data-copy="p" data-approval="owner — no capture surface exists in the tree, so no field label does (COPY-INVENTORY §8)" data-literal="Expiry">Expiry</label>
+            <input id="p2" placeholder="MM / YY" autocomplete="cc-exp" />
+          </div>
+          <div class="field">
+            <label for="p3" data-copy="p" data-approval="owner — no capture surface exists in the tree, so no field label does (COPY-INVENTORY §8)" data-literal="CVC">CVC</label>
+            <input id="p3" inputmode="numeric" placeholder="123" autocomplete="cc-csc" />
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="border-top:1px solid #e5e7eb; margin-top:1rem; padding-top:1rem">
+        <span class="btn btn-primary" data-copy="v" data-src="data/pages/dashboard-relationships.ts:80" data-literal="Publish Assessment">Publish Assessment</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="note" data-copy="x" data-src="review annotation — not product text">
+    <b>A naming collision the mockup does not resolve, on purpose.</b>
+    The act that charges is the card's <code>Publish Assessment</code>
+    (<code>data/pages/dashboard-relationships.ts:80</code>) — one of the two controls #620 shipped disabled.
+    The publish <em>panel</em> on the detail screen ships a different submit, <code>Publish and invite</code>
+    (<code>data/pages/dashboard-relationship-detail.ts:131</code>), for minting the invitation. Both are drawn
+    here with their shipped words; which one names the charging act is
+    <a href="COPY-INVENTORY.md">COPY-INVENTORY §9 item 6</a> and is the owner's call before UI code.
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     3 · PUBLISH, METHOD ON FILE — the pay-later path: one click, the charge
+         is due at a stored instant (charge-due, PRD §4)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-publish-method" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" data-copy-root data-name="publish-method" hidden>
+  <p class="muted" style="margin:0 0 .25rem" data-copy="v" data-src="data/pages/assessment-instance.ts:26" data-literal="Your instance">Your instance</p>
+  <div class="row" style="gap:.5rem">
+    <h1 data-copy="d" data-src="demo data">Staff &amp; Manager</h1>
+    <span class="chip" data-copy="v" data-src="content/stages.ts:107" data-literal="Sharing">Sharing</span>
+  </div>
+  <p style="margin:.5rem 0 1.5rem; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:66-68" data-literal="Sharing — both sheets are sealed; the Gap opens when the assessment is published.">Sharing — both sheets are sealed; the Gap opens when the assessment is published.</p>
+
+  <section class="card" style="margin-bottom:1.5rem" data-block="publish-method-on-file">
+    <div class="head row" style="justify-content:space-between">
+      <h2 data-copy="v" data-src="data/pages/dashboard-relationship-detail.ts:103" data-literal="Publish">Publish</h2>
+      <span class="chip" data-copy="v" data-src="data/pages/dashboard-relationships.ts:53" data-literal="Ready to publish">Ready to publish</span>
+    </div>
+    <div class="body">
+      <div class="row" style="justify-content:space-between; border-bottom:1px solid #e5e7eb; padding-bottom:.75rem">
+        <div>
+          <p class="muted" style="margin:0; font-size:12px" data-copy="v" data-src="data/pages/assessment-instance.ts:273" data-literal="Plan">Plan</p>
+          <p class="price" style="margin:.125rem 0 0" data-copy="c" data-src="data/billing-plans.ts:125 + data/billing-plans.ts:127 + data/pages/pricing.ts:80" data-literal="Basic|895|mo" data-why="the tier name, its monthlyCents, and the price suffix — no file contains the joined string (COPY-INVENTORY §6)">Basic · $8.95/mo</p>
+        </div>
+        <span class="muted" data-copy="v" data-src="data/pages/templates.ts:57" data-literal="{price} per relationship">per relationship</span>
+      </div>
+
+      <div class="band amber" style="margin-top:1rem">
+        <h2 data-copy="s" data-src="docs/pay-to-complete/PRD.md:73" data-literal="opens on &lt;date&gt;">opens on <span data-copy="d" data-src="stored instant, not a clock">Nov 14, 2026</span></h2>
+        <p class="muted" data-copy="x" data-src="optional annotation">The <code>charge-due</code> state: the trial's window is stated, never hidden (PRD §4, R3). The date is a stored instant rendered once, as <code>Bought {date}</code> already is.</p>
+      </div>
+
+      <div style="margin-top:1rem; border:1px solid #e5e7eb; border-radius:calc(var(--radius)); background:#f9fafb; padding:.625rem .75rem">
+        <p class="muted" style="margin:0; font-size:12px" data-copy="v" data-src="data/pages/assessment-instances.ts:130" data-literal="Paid">Paid</p>
+        <p style="margin:.125rem 0 0; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:275" data-literal="Nothing has been paid on this relationship.">Nothing has been paid on this relationship.</p>
+      </div>
+
+      <div class="row" style="border-top:1px solid #e5e7eb; margin-top:1rem; padding-top:1rem">
+        <span class="btn btn-primary" data-copy="v" data-src="data/pages/dashboard-relationships.ts:80" data-literal="Publish Assessment">Publish Assessment</span>
+        <span class="muted" data-copy="x" data-src="optional annotation">No card field: the method is on file, so <code>completeRelationshipAction</code> charges it and completes in one act.</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     4 · (c) PAYER PRESENT — an off-session charge on a card that needs 3DS,
+         after the decline the retry ladder cannot fix. The `needs-action` state.
+         THE BAND'S COPY IS PROPOSED: no source exists (PAYER-PRESENT.md §3.2).
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-payer-present" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" data-copy-root data-name="payer-present" hidden>
+  <p class="muted" style="margin:0 0 .25rem" data-copy="v" data-src="data/pages/assessment-instance.ts:26" data-literal="Your instance">Your instance</p>
+  <div class="row" style="gap:.5rem">
+    <h1 data-copy="d" data-src="demo data">Staff &amp; Manager</h1>
+    <span class="chip" data-copy="v" data-src="content/stages.ts:107" data-literal="Sharing">Sharing</span>
+  </div>
+  <p style="margin:.5rem 0 1rem; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:66-68" data-literal="Sharing — both sheets are sealed; the Gap opens when the assessment is published.">Sharing — both sheets are sealed; the Gap opens when the assessment is published.</p>
+
+  <fieldset class="state-rail" aria-label="Mockup state switcher — demo chrome" data-copy="x" data-src="demo chrome — not product text">
+    <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">State</span>
+    <button type="button" data-payer-state="charge-failed" aria-pressed="false">charge-failed</button>
+    <button type="button" data-payer-state="needs-action" aria-pressed="true">needs-action</button>
+    <button type="button" data-payer-state="charged" aria-pressed="false">charged</button>
+  </fieldset>
+
+  <!-- state: charge-failed — the decline a retry CAN fix. Wording is the spec's. -->
+  <section class="band amber" id="payer-band-failed" data-payer-band="charge-failed" hidden>
+    <h2 data-copy="s" data-src="docs/pay-to-complete/PRD.md:75" data-literal="we&#39;ll try again on &lt;date&gt;">we'll try again on <span data-copy="d" data-src="stored instant, not a clock">Nov 14, 2026</span></h2>
+    <p class="muted" data-copy="x" data-src="optional annotation">The <code>charge-declined</code> refusal (SPEC §4) already covers every decline a retry can fix. No new string is needed for the common failure — which is why the band below is the only unwritten state.</p>
+  </section>
+
+  <!-- state: needs-action — the one this card was asked to draw. Every string is `p`. -->
+  <section class="band red" id="payer-band-needs-action" data-payer-band="needs-action" data-state="needs-action">
+    <h2>
+      <span data-copy="p" data-approval="owner — no band heading exists in the tree, the spec or the code (grep &#34;Approve payment&#34; → 0)" data-literal="Your bank needs you before this payment can go through">Your bank needs you before this payment can go through</span>
+    </h2>
+    <p>
+      <span data-copy="p" data-approval="owner — the trigger's body; no 3DS or challenge copy exists anywhere (grep &#34;3DS|3-D Secure&#34; → 0 files)" data-literal="The $8.95 fee was attempted on the card you saved and your bank asked for a check only you can give. Nothing has been taken.">The $8.95 fee was attempted on the card you saved and your bank asked for a check only you can give. Nothing has been taken.</span>
+    </p>
+    <p style="margin-top:.75rem">
+      <button class="btn btn-primary" type="button" id="approve-btn" data-approve="true" data-copy="p" data-approval="owner — the spec names no control (grep &#34;Approve payment&#34; → 0)" data-literal="Approve payment">Approve payment</button>
+    </p>
+    <p style="margin-top:.5rem; font-size:12px">
+      <span data-copy="p" data-approval="owner — the window is undecided: PRD §9 q3 asks link-vs-expire; CHARGE_RETRY_WINDOW_DAYS = 7 is only the proposal" data-literal="The check stays open for 7 days — the same window the charge retries in. After that the relationship expires and you are told once.">The check stays open for 7 days — the same window the charge retries in. After that the relationship expires and you are told once.</span>
+    </p>
+  </section>
+
+  <!-- state: charged — spec wording only. -->
+  <section class="band emerald" id="payer-band-charged" data-payer-band="charged" hidden>
+    <h2 data-copy="s" data-src="docs/pay-to-complete/PRD.md:74" data-literal="the Gap report">the Gap report</h2>
+    <p class="muted" data-copy="x" data-src="optional annotation">The <code>charged</code> row of PRD §4: the fee landed and the report is open to both. `Approve payment` returning here is the whole point of the band above.</p>
+  </section>
+
+  <section class="card" style="margin-top:1.5rem">
+    <div class="head row" style="justify-content:space-between">
+      <h2 data-copy="v" data-src="data/pages/dashboard-relationship-detail.ts:103" data-literal="Publish">Publish</h2>
+      <span class="chip" data-copy="v" data-src="data/pages/dashboard-relationships.ts:53" data-literal="Ready to publish">Ready to publish</span>
+    </div>
+    <div class="body">
+      <div class="row" style="justify-content:space-between; border-bottom:1px solid #e5e7eb; padding-bottom:.75rem">
+        <div>
+          <p class="muted" style="margin:0; font-size:12px" data-copy="v" data-src="data/pages/assessment-instance.ts:273" data-literal="Plan">Plan</p>
+          <p class="price" style="margin:.125rem 0 0" data-copy="c" data-src="data/billing-plans.ts:125 + data/billing-plans.ts:127 + data/pages/pricing.ts:80" data-literal="Basic|895|mo" data-why="the tier name, its monthlyCents, and the price suffix — no file contains the joined string (COPY-INVENTORY §6)">Basic · $8.95/mo</p>
+        </div>
+        <span class="muted" data-copy="v" data-src="data/pages/templates.ts:57" data-literal="{price} per relationship">per relationship</span>
+      </div>
+      <div style="margin-top:1rem; border:1px solid #e5e7eb; border-radius:calc(var(--radius)); background:#f9fafb; padding:.625rem .75rem">
+        <p class="muted" style="margin:0; font-size:12px" data-copy="v" data-src="data/pages/assessment-instances.ts:130" data-literal="Paid">Paid</p>
+        <p style="margin:.125rem 0 0; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:275" data-literal="Nothing has been paid on this relationship.">Nothing has been paid on this relationship.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="note" data-copy="x" data-src="review annotation — not product text">
+    <b>What the band is waiting on — four code gaps, no strings.</b>
+    The state is named by the spec (<code>needs-action</code>, <code>ADR.md:67</code>) and its trigger is described
+    (<code>RESEARCH.md:92</code>: “a payer-approved action (an SCA-style challenge) that an unattended job cannot satisfy”),
+    but nothing implements it:
+    <code>ChargeOutcome</code> has no member for it (<code>lib/billing/types.ts:191-197</code>);
+    <code>PAYMENT_REFUSALS</code> has six codes and none for it (<code>lib/flow/payment.ts:345-352</code>);
+    PRD §4's state table has no row; <code>PAYMENT_JOB_KINDS</code> is four jobs
+    (<code>lib/flow/payment-jobs.ts:41</code>). And PRD §9 q3 is still open: email a link that opens this
+    approval and retries, or expire with <code>charge-failed</code>? The spec proposes the link; the product has not agreed it.
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     5 · THE COUNTERPARTY at that same moment — the blind rule (ADR-8)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-counterparty" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" data-copy-root data-name="counterparty" hidden>
+  <p class="muted" style="margin:0 0 .25rem" data-copy="v" data-src="data/pages/assessment-instance.ts:26" data-literal="Your instance">Your instance</p>
+  <div class="row" style="gap:.5rem">
+    <h1 data-copy="d" data-src="demo data">Staff &amp; Manager</h1>
+    <span class="chip" data-copy="v" data-src="content/stages.ts:107" data-literal="Sharing">Sharing</span>
+  </div>
+
+  <!-- Byte for byte the payer's sentence. data-blind-anchor is what the audit compares. -->
+  <p style="margin:.5rem 0 1.5rem; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:66-68" data-literal="Sharing — both sheets are sealed; the Gap opens when the assessment is published." data-blind-anchor="sealed">Sharing — both sheets are sealed; the Gap opens when the assessment is published.</p>
+
+  <section class="band amber">
+    <h2 data-copy="s" data-src="docs/pay-to-complete/ADR.md:139" data-literal="waiting for &lt;name&gt; to publish">Waiting for Daniel to publish</h2>
+  </section>
+
+  <div class="note" data-copy="x" data-src="review annotation — not product text">
+    <b>One sentence, and it is the spec's — not a fixture string.</b>
+    ADR-8 fixes the sentence (<code>waiting for &lt;name&gt; to publish</code>) and its four bans: no amount, no date,
+    no method, no decline. The nearest shipped string is <code>Waiting for {name} to answer.</code>
+    (<code>data/pages/assessment-instances.ts:155</code>), which is a state about <em>answering</em> and cannot
+    stand in for this one — both people have already answered. That is why this row is <span class="badge k-p">s</span>
+    and not <span class="badge k-p">v</span>: the sentence is decided, the fixture row is not written.
+  </div>
+
+  <div class="note" data-copy="x" data-src="review annotation — not product text">
+    <b>What is deliberately absent.</b>
+    No plan, no price, no card, no “payment failed”, no countdown, no state name. The payer's own screen (4) carries
+    all of it; this seat is told <em>who</em> publishes and nothing else. The block that would leak is not hidden here —
+    it was never handed over: <code>paid: null</code> is set by the read, not by the view
+    (<code>lib/db/assessments.ts:875-881</code>, <code>:953-959</code>), and the component returns <code>null</code>
+    before drawing anything (<code>components/assessment-flow/my-instances.tsx:458-479</code>).
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     6 · TWO SEATS, ONE RELATIONSHIP — the separation, side by side
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-seats" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" data-copy-root data-name="seats" hidden>
+  <h1 data-copy="v" data-src="data/pages/assessment-instances.ts:48" data-literal="My Relationships">My Relationships</h1>
+  <p class="muted" style="margin:.5rem 0 1.5rem" data-copy="x" data-src="review annotation — not product text">The same row, read by the two seats. The paid block exists on one card and on one card only.</p>
+
+  <div class="two-up">
+    <div class="card">
+      <div class="head">
+        <p class="muted" style="margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase" data-copy="x" data-src="review annotation — not product text">Seat A — the initiator (payer)</p>
+        <p style="margin:.25rem 0 0;font-weight:600" data-copy="d" data-src="demo data">Staff &amp; Manager</p>
+        <p class="muted" style="margin:.125rem 0 0;font-size:12px">
+          <span data-copy="v" data-src="data/pages/assessment-instances.ts:113" data-literal="With">With</span>
+          <span aria-hidden="true"> · </span>
+          <span data-copy="d" data-src="demo data">Nadia Alvarez</span>
+        </p>
+      </div>
+      <div class="body" style="display:grid;gap:.75rem">
+        <div class="metrics">
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">1</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:100" data-literal="Sessions">Sessions</p></div>
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">100%</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:103" data-literal="Completion">Completion</p></div>
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">—</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:104" data-literal="Avg alignment">Avg alignment</p></div>
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">5</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:106" data-literal="Aspects">Aspects</p></div>
+        </div>
+        <div class="row" style="gap:.5rem">
+          <span class="chip" data-copy="v" data-src="content/assessment.ts:99" data-literal="Advanced Mode">Advanced Mode</span>
+          <span class="chip" data-copy="v" data-src="data/pages/assessment-instances.ts:145" data-literal="Accepted">Accepted</span>
+        </div>
+        <!-- the payer's block, present -->
+        <div style="border:1px solid #e5e7eb;border-radius:calc(var(--radius));background:#f9fafb;padding:.5rem .75rem;font-size:12px" data-paid-block="present">
+          <p class="muted" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:130" data-literal="Paid">Paid</p>
+          <p style="margin:.125rem 0 0;font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:275" data-literal="Nothing has been paid on this relationship.">Nothing has been paid on this relationship.</p>
+        </div>
+        <div class="row" style="gap:.5rem;border-top:1px solid #e5e7eb;padding-top:.75rem">
+          <span class="btn btn-ghost" data-copy="v" data-src="data/pages/dashboard-relationships.ts:79" data-literal="Open Assessment">Open Assessment</span>
+          <span class="btn btn-ghost" data-copy="v" data-src="data/pages/dashboard-relationships.ts:80" data-literal="Publish Assessment">Publish Assessment</span>
+          <span class="btn btn-ghost" data-copy="v" data-src="data/pages/dashboard-relationships.ts:81" data-literal="Activate Relationship">Activate Relationship</span>
+          <span class="btn btn-ghost" disabled data-copy="v" data-src="data/pages/dashboard-relationships.ts:82" data-literal="Gap Analysis">Gap Analysis</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head">
+        <p class="muted" style="margin:0;font-size:11px;letter-spacing:.06em;text-transform:uppercase" data-copy="x" data-src="review annotation — not product text">Seat B — the counterparty</p>
+        <p style="margin:.25rem 0 0;font-weight:600" data-copy="d" data-src="demo data">Staff &amp; Manager</p>
+        <p class="muted" style="margin:.125rem 0 0;font-size:12px">
+          <span data-copy="v" data-src="data/pages/assessment-instances.ts:113" data-literal="With">With</span>
+          <span aria-hidden="true"> · </span>
+          <span data-copy="d" data-src="demo data">Daniel Reyes</span>
+        </p>
+      </div>
+      <div class="body" style="display:grid;gap:.75rem">
+        <div class="metrics">
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">1</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:100" data-literal="Sessions">Sessions</p></div>
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">100%</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:103" data-literal="Completion">Completion</p></div>
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">—</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:104" data-literal="Avg alignment">Avg alignment</p></div>
+          <div class="metric"><p class="v" style="margin:0" data-copy="d" data-src="demo data">5</p><p class="l" style="margin:0" data-copy="v" data-src="data/pages/assessment-instances.ts:106" data-literal="Aspects">Aspects</p></div>
+        </div>
+        <div class="row" style="gap:.5rem">
+          <span class="chip" data-copy="v" data-src="content/assessment.ts:99" data-literal="Advanced Mode">Advanced Mode</span>
+          <span class="chip" data-copy="v" data-src="data/pages/assessment-instances.ts:145" data-literal="Accepted">Accepted</span>
+        </div>
+        <!-- the payer's block, absent — a hole drawn in the layout, not hidden markup -->
+        <div style="border:1px dashed #d1d5db;border-radius:calc(var(--radius));padding:.5rem .75rem;font-size:11px;color:#9ca3af" data-paid-block="absent">
+          <span data-copy="x" data-src="optional annotation"><code>paid: null</code> — no element is rendered for this seat</span>
+        </div>
+        <div class="row" style="gap:.5rem;border-top:1px solid #e5e7eb;padding-top:.75rem">
+          <span class="btn btn-ghost" data-copy="v" data-src="data/pages/dashboard-relationships.ts:79" data-literal="Open Assessment">Open Assessment</span>
+          <span class="btn btn-ghost" disabled data-copy="v" data-src="data/pages/dashboard-relationships.ts:81" data-literal="Activate Relationship">Activate Relationship</span>
+          <span class="btn btn-ghost" disabled data-copy="v" data-src="data/pages/dashboard-relationships.ts:82" data-literal="Gap Analysis">Gap Analysis</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" data-copy="x" data-src="review annotation — not product text">
+    <b>The separation is a hole in the data, not a lock in the markup.</b>
+    Seat B's card has no paid block because the read never gave it one — the same <code>RelationshipCard</code>
+    shape carries <code>paid: {plan, purchasedAt} | null</code> (<code>lib/db/assessments.ts:515-522</code>), and a
+    non-initiator is handed <code>null</code> (<code>:875-881</code>). Nothing is CSS-hidden, nothing is
+    <code>aria-hidden</code>; there is no element to reveal. The test for that is the audit on screen 8, not this note.
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     7 · COPY LEDGER — generated from the screens above, never typed over them
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-ledger" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" hidden>
+  <h1>Copy ledger</h1>
+  <p class="muted" style="margin:.5rem 0 1rem">Built at load from every marked string on screens 1–6, so it cannot drift from what the page shows. A string that is not marked does not exist on a screen — the audit fails on it.</p>
+
+  <ul class="kinds">
+    <li><span class="t">v</span><span><b>verbatim</b> — an exact fixture literal, cited <code>file:line</code>; it ships today.</span></li>
+    <li><span class="t">t</span><span><b>template</b> — a fixture template with its <code>{slot}</code> filled from a row; the literal is in <code>data-literal</code>.</span></li>
+    <li><span class="t">c</span><span><b>composed</b> — shipped parts joined at render (a plan name, a formatted amount, a suffix). No file contains the joined string.</span></li>
+    <li><span class="t">s</span><span><b>spec</b> — the spec's own sentence, adopted verbatim but not yet a fixture row. Decided, not written.</span></li>
+    <li><span class="t">p</span><span><b>proposed</b> — no source anywhere. Dotted and badged on screen; needs the owner's approval before any code.</span></li>
+    <li><span class="t">d</span><span><b>data</b> — a fixture value (a name, a date, a count), not reader-visible copy.</span></li>
+    <li><span class="t">x</span><span><b>annotation</b> — a review note. Not product text; never ships.</span></li>
+  </ul>
+
+  <p id="ledger-summary" class="muted" style="margin:1.25rem 0 .5rem"></p>
+  <div style="overflow-x:auto">
+    <table class="ledger">
+      <thead><tr><th>kind</th><th>string</th><th>source</th></tr></thead>
+      <tbody id="ledger-rows"></tbody>
+    </table>
+  </div>
+
+  <h2 style="margin-top:2rem">What is not here, and why</h2>
+  <ul class="check" style="margin-top:.5rem">
+    <li><span class="no">✕</span><span><code>Your bank needs you…</code> has no source: <code>grep -rn "Your bank needs you"</code> → 0. Marked <b>p</b>.</span></li>
+    <li><span class="no">✕</span><span><code>Approve payment</code> has no source: <code>grep -rn "Approve payment"</code> → 0. Marked <b>p</b>.</span></li>
+    <li><span class="no">✕</span><span>No card field label exists: <code>grep -rni "card number\|\bCVC\b"</code> → legal prose only. Marked <b>p</b>.</span></li>
+    <li><span class="no">✕</span><span><code>Waiting for Daniel to publish</code> is ADR-8's decided sentence, not a fixture string — marked <b>s</b>, and the <code>{name}</code> slot is the party row.</span></li>
+    <li><span class="no">✕</span><span><code>Basic · $8.95/mo</code> is <b>c</b>, not <b>v</b>: no file contains it. The v2-final ledger called it verbatim.</span></li>
+  </ul>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     8 · BLIND RULE, CHECKED — the page audits itself and prints the result
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main id="screen-audit" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" hidden>
+  <h1>Blind rule, checked</h1>
+  <p class="muted" style="margin:.5rem 0 1rem">Nine assertions over the DOM, run on load and re-run by the button. The list is <code>docs/pay-to-complete/PAYER-PRESENT.md</code> §5, minus the three that are properties of the server rather than of a screen, plus the three surfaces this card asks for.</p>
+  <p><button class="sw" type="button" id="rerun">Re-run</button> <span class="status" id="audit-chip-2" data-ok="false">not run</span></p>
+  <pre id="audit-out">not run</pre>
+
+  <h2 style="margin-top:2rem">How to re-check this file</h2>
+  <pre># 1. does it render, and does its own audit pass?  (jsdom is already a devDependency)
+export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
+node --input-type=module -e '
+  import { readFileSync } from "node:fs";
+  import { JSDOM } from "jsdom";
+  const html = readFileSync("docs/pay-to-complete/mockup-pay-to-complete-v1.html", "utf8");
+  const dom = new JSDOM(html, { runScripts: "dangerously" });
+  console.log(dom.window.document.getElementById("audit-out").textContent);'
+
+# 2. every `v` / `t` / `c` citation, against the tree (the check the v2-final ledger failed)
+grep -c "data-copy=\"v\"" docs/pay-to-complete/mockup-pay-to-complete-v1.html
+sed -n '130p' data/pages/assessment-instances.ts      # Paid
+sed -n '66,68p' data/pages/assessment-instance.ts     # Sharing — both sheets are sealed…
+sed -n '82,84p' data/pages/assessment-template-detail.ts  # Creating a relationship is free…
+
+# 3. the strings this file refuses to invent
+grep -rn "Approve payment\|Your bank needs you\|3DS\|3-D Secure" --include=*.ts --include=*.tsx .   # 0 in the tree
+grep -rni "pay now\|pay later" --include=*.ts --include=*.tsx data components app | grep label       # 0 labels</pre>
+</main>
+
+<section class="wrap" style="padding-top:1rem; padding-bottom:4rem">
+  <hr style="border:0;border-top:1px solid #e5e7eb;margin:1.5rem 0" />
+  <p class="muted" style="font-size:12px">
+    Mockup, revision 1 · supersedes the card attachment <code>mockup-pay-to-complete-v2-final.html</code> ·
+    cites <a href="COPY-INVENTORY.md">COPY-INVENTORY.md</a> and <a href="PAYER-PRESENT.md">PAYER-PRESENT.md</a> ·
+    no route renders this file.
+  </p>
+</section>
+
+<script>
+  (() => {
+    "use strict";
+
+    var SCREENS = ["create", "publish-new", "publish-method", "payer-present", "counterparty", "seats", "ledger", "audit"];
+    var KIND_ORDER = ["v", "t", "c", "s", "p", "d", "x"];
+    var KIND_NAME = { v: "verbatim", t: "template", c: "composed", s: "spec", p: "proposed", d: "data", x: "annotation" };
+    var NEEDS_SRC = { v: true, t: true, c: true, s: true, p: false, d: false, x: false };
+
+    function norm(text) { return (text || "").replace(/\s+/g, " ").trim(); }
+    function $(id) { return document.getElementById(id); }
+    function all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+    /* ── the screen switcher ─────────────────────────────────────────────── */
+    function show(name) {
+      all("[id^='screen-']").forEach((screen) => {
+        if (screen.id === `screen-${name}`) screen.removeAttribute("hidden");
+        else screen.setAttribute("hidden", "");
+      });
+      all("[data-screen]").forEach((button) => {
+        button.setAttribute("aria-pressed", button.dataset.screen === name ? "true" : "false");
+      });
+      // A file opened from disk, or a jsdom document, has a URL some engines refuse to rewrite;
+      // the hash is a convenience, never the state.
+      try {
+        if (window.history?.replaceState) window.history.replaceState(null, "", `#${name}`);
+      } catch (_error) { /* the hash is optional */ }
+    }
+
+    /* ── the payer-present state machine ─────────────────────────────────── */
+    function setPayerState(state) {
+      all("[data-payer-band]").forEach((band) => {
+        if (band.dataset.payerBand === state) band.removeAttribute("hidden");
+        else band.setAttribute("hidden", "");
+      });
+      all("[data-payer-state]").forEach((button) => {
+        button.setAttribute("aria-pressed", button.dataset.payerState === state ? "true" : "false");
+      });
+    }
+
+    /* ── the audit ───────────────────────────────────────────────────────── */
+    var isProductCopy = (kind) => kind !== "d" && kind !== "x";
+
+    function productStrings(screen) {
+      return all("[data-copy]", screen).filter((el) => isProductCopy(el.dataset.copy));
+    }
+
+    function audit() {
+      var results = [];
+      function check(name, failures, detail) {
+        results.push({ name: name, ok: failures.length === 0, detail: failures.length ? failures : (detail || []) });
+      }
+
+      /* 1 — every text node on a product screen sits inside a marked string. An unmarked string
+             is a string with no source, which is exactly what this mockup forbids. */
+      var unmarked = [];
+      all("[data-copy-root]").forEach((root) => {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        let node = walker.nextNode();
+        while (node !== null) {
+          const text = norm(node.nodeValue);
+          if (text !== "" && /[A-Za-z0-9]/.test(text)) {
+            const owner = node.parentElement?.closest("[data-copy]");
+            if (!owner) unmarked.push(`${root.dataset.name}: "${text.slice(0, 60)}"`);
+          }
+          node = walker.nextNode();
+        }
+      });
+      check("1 · every product string is marked with a kind and a source", unmarked);
+
+      /* 2 — a marked string carries the provenance its kind requires. */
+      var bare = [];
+      all("[data-copy]").forEach((el) => {
+        var kind = el.dataset.copy;
+        if (KIND_ORDER.indexOf(kind) === -1) { bare.push(`unknown kind ${kind}`); return; }
+        if (NEEDS_SRC[kind] && !el.dataset.src) bare.push(`${kind} with no data-src: "${norm(el.textContent).slice(0, 40)}"`);
+        if (!NEEDS_SRC[kind] && !el.dataset.src && kind !== "d" && !el.dataset.approval) {
+          bare.push(`${kind} with neither source nor approval lane: "${norm(el.textContent).slice(0, 40)}"`);
+        }
+        if (kind === "p" && !el.dataset.approval) bare.push(`proposed without an approval lane: "${norm(el.textContent).slice(0, 40)}"`);
+      });
+      check("2 · every kind carries the provenance it needs (p ⇒ an approval lane)", bare);
+
+      /* 3 — both capture surfaces are present, and each names the action it calls. */
+      var surfaces = all("[data-surface='card-widget']").map((el) => el.dataset.action);
+      var missing = [];
+      if (surfaces.indexOf("capturePaymentMethodAction") === -1) missing.push("no widget for capturePaymentMethodAction");
+      if (surfaces.indexOf("completeRelationshipAction") === -1) missing.push("no widget for completeRelationshipAction");
+      check("3 · both payer actions have a card widget on screen", missing, [surfaces.join(", ")]);
+
+      /* 4 — the create screen offers the choice, and shows no figure before a plan is chosen. */
+      var createProblems = [];
+      if (!$("create-capture")) createProblems.push("no capture block on the create screen");
+      if (all("input[name='when']").length !== 2) createProblems.push("the pay-now/later choice is not two radios");
+      var createText = norm(productStrings($("screen-create")).map((el) => el.textContent).join(" "));
+      if (/\$|€|£/.test(createText)) createProblems.push(`the create screen shows a price: ${createText.match(/[^.]{0,40}[$€£][^.]{0,20}/)[0]}`);
+      check("4 · the create stages carry the choice and no fee", createProblems);
+
+      /* 5+6 — the counterparty's screen carries no billing vocabulary and no date. */
+      var cp = $("screen-counterparty");
+      var cpText = norm(productStrings(cp).map((el) => el.textContent).join(" "));
+      var banned = ["$", "paid", "payment", "card", "declin", "retry", "needs-action", "plan", "price",
+                    "charge", "fee", "trial", "expir", "bank", "method", "remind", "unpaid", "cost"];
+      var hits = banned.filter((term) => cpText.toLowerCase().indexOf(term) !== -1);
+      check(`5 · the counterparty sees no billing word (${banned.length} terms)`, hits);
+      var dateHits = cpText.match(/\b(19|20)\d{2}\b|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b|opens on|try again on/g) || [];
+      check("6 · the counterparty sees no date and no countdown", dateHits);
+
+      /* 7 — the shipped sentence both seats see is identical, byte for byte. */
+      var shared = [];
+      all("[data-blind-anchor]").forEach((el) => { shared.push(norm(el.textContent)); });
+      var same = shared.length >= 2 && shared.every((text) => text === shared[0]);
+      check("7 · the sentence both seats read is byte-identical across seats", same ? [] : [shared.join(" ≠ ")], [`${shared.length} seats, 1 sentence`]);
+
+      /* 8 — raising the payer's needs-action state leaves the counterparty's markup identical. */
+      var before = $("screen-counterparty").innerHTML;
+      var was = (all("[data-payer-state][aria-pressed='true']")[0] || { dataset: {} }).dataset.payerState || "needs-action";
+      setPayerState("charged");
+      var after = $("screen-counterparty").innerHTML;
+      setPayerState(was);
+      var drift = [];
+      if (before !== after) drift.push("the counterparty's markup changed when the payer's state moved");
+      if (all("[data-copy='p']", cp).length !== 0) drift.push("a proposed string sits on the counterparty's screen");
+      check("8 · moving the payer's state does not touch the counterparty's markup", drift);
+
+      /* 9 — the §9 payer-present state exists, is reachable, and lives on one seat only. */
+      var nine = [];
+      var band = $("payer-band-needs-action");
+      if (!band) nine.push("no needs-action band");
+      if (band && band.closest("[data-copy-root]").dataset.name !== "payer-present") nine.push("the band is not on the payer's screen");
+      if (all("[data-payer-band]").length !== 3) nine.push("the three states are not all drawn");
+      var seenStates = 0;
+      ["charge-failed", "needs-action", "charged"].forEach((state) => {
+        setPayerState(state);
+        if (all("[data-payer-band]").filter((b) => !b.hasAttribute("hidden")).length === 1) seenStates += 1;
+      });
+      setPayerState("needs-action");
+      if (seenStates !== 3) nine.push("a state does not render alone");
+      if ($("screen-counterparty").querySelector("[data-state]")) nine.push("a state marker leaked onto the counterparty's screen");
+      check("9 · the payer-present state is drawn, reachable, and one seat only", nine);
+
+      return results;
+    }
+
+    function renderAudit() {
+      var results = audit();
+      var pass = results.filter((r) => r.ok).length;
+      var out = results.map((row) => {
+        var body = row.ok
+          ? "PASS"
+          : `FAIL\n${row.detail.map((line) => `         · ${line}`).join("\n")}`;
+        return `${(row.ok ? "  ✓ " : "  ✗ ") + row.name}\n      ${body}`;
+      }).join("\n\n");
+      var head = `${pass === results.length ? "PASS" : "FAIL"} — ${pass}/${results.length} checks\n\n`;
+      $("audit-out").textContent = head + out;
+      var ok = pass === results.length;
+      [["audit-chip", "audit: "], ["audit-chip-2", ""]].forEach((pair) => {
+        var chip = $(pair[0]);
+        if (!chip) return;
+        chip.dataset.ok = String(ok);
+        chip.textContent = `${(pair[1] || "") + pass}/${results.length}${ok ? " pass" : " FAIL"}`;
+      });
+      return results;
+    }
+
+    /* ── the ledger, generated from the screens ──────────────────────────── */
+    function renderLedger() {
+      var rows = [];
+      var seen = {};
+      all("[data-copy]").forEach((el) => {
+        var kind = el.dataset.copy;
+        var shown = norm(el.textContent);
+        var literal = el.dataset.literal || shown;
+        var source = el.dataset.src || el.dataset.approval || "";
+        if (kind === "x" && !el.dataset.src) source = "review annotation";
+        var key = `${kind}|${literal}|${source}`;
+        if (seen[key]) { seen[key].count += 1; return; }
+        seen[key] = { kind: kind, shown: shown, literal: literal, source: source, count: 1 };
+        rows.push(seen[key]);
+      });
+      rows.sort((a, b) => {
+        var ka = KIND_ORDER.indexOf(a.kind), kb = KIND_ORDER.indexOf(b.kind);
+        if (ka !== kb) return ka - kb;
+        return a.source.localeCompare(b.source);
+      });
+      var body = $("ledger-rows");
+      body.innerHTML = "";
+      rows.forEach((row) => {
+        var tr = document.createElement("tr");
+        tr.dataset.kind = row.kind;
+        var kind = document.createElement("td");
+        kind.className = "kind";
+        kind.textContent = `${row.kind} · ${KIND_NAME[row.kind]}`;
+        var text = document.createElement("td");
+        text.textContent = row.shown;
+        if ((row.kind === "t" || row.kind === "s") && row.literal !== row.shown) text.textContent = `${row.shown}  ⟵ ${row.literal}`;
+        if (row.kind === "c") text.textContent = `${row.shown}  ⟵ ${row.literal.split("|").join(" + ")}`;
+        if (row.count > 1) text.textContent += `  (${row.count}×)`;
+        var src = document.createElement("td");
+        src.className = "src";
+        src.textContent = row.source;
+        tr.appendChild(kind); tr.appendChild(text); tr.appendChild(src);
+        body.appendChild(tr);
+      });
+      var counts = {};
+      rows.forEach((row) => { counts[row.kind] = (counts[row.kind] || 0) + 1; });
+      $("ledger-summary").textContent =
+        `${KIND_ORDER.filter((k) => counts[k])
+          .map((k) => `${counts[k]} ${KIND_NAME[k]}`)
+          .join(" · ")} — ${rows.length} distinct strings, ${all("[data-copy]").length} rendered.`;
+    }
+
+    /* ── wiring ──────────────────────────────────────────────────────────── */
+    all("[data-screen]").forEach((button) => {
+      button.addEventListener("click", () => { show(button.dataset.screen); });
+    });
+    all("[data-payer-state]").forEach((button) => {
+      button.addEventListener("click", () => { setPayerState(button.dataset.payerState); });
+    });
+    all("[data-approve]").forEach((button) => {
+      button.addEventListener("click", () => { setPayerState("charged"); });
+    });
+    all("input[name='when']").forEach((radio) => {
+      radio.addEventListener("change", () => {
+        var now = document.querySelector("input[name='when']:checked").value === "now";
+        if (now) $("create-capture").removeAttribute("hidden");
+        else $("create-capture").setAttribute("hidden", "");
+        if (now) $("create-later").setAttribute("hidden", "");
+        else $("create-later").removeAttribute("hidden");
+      });
+    });
+    var toggle = $("toggle-src");
+    toggle.addEventListener("click", () => {
+      var on = document.body.classList.toggle("show-src");
+      toggle.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    $("rerun").addEventListener("click", () => { renderAudit(); });
+
+    renderLedger();
+    renderAudit();
+    var hash = (window.location.hash || "").replace("#", "");
+    show(SCREENS.indexOf(hash) === -1 ? "create" : hash);
+
+    window.__mockAudit = renderAudit;
+  })();
+</script>
+</body>
+</html>
