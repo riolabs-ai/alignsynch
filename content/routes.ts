@@ -32,6 +32,9 @@ const STATIC_ROUTES = [
   "/admin/instances",
   // #665 — the console's review shelf: published artifacts, their to-dos and their feedback.
   "/admin/review",
+  // #721 — the IA prototype: the proposed rail, the current-vs-proposed diff and the screen map,
+  // drawn beside the shipped menu and behind the console's own gates.
+  "/admin/review/ia",
   // #502a — template authoring: the console's authored catalogue and one template's editor.
   "/admin/templates",
   // #506 — the support inbox: the contact form's queue, one thread, the reply.

@@ -271,6 +271,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/review/ia",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The IA proposal for the relationship product, drawn beside the rail that ships: the proposed menu rendered live as a real sidebar, a current-versus-proposed table with one row per destination in today's rail, and a screen map that names each screen's navigation pattern (list → detail, entity tab rail, row action, one screen).",
+    notes:
+      "#721 — a **review artifact on a local branch**, not a ship: no PR, no route moved, no gate changed and no existing screen touched, so the branch is revertible by deleting this directory. `lib/app-ia.ts` is the proposal as data (groups → sub-groups → rows `{ id, href, icon, needs, note }`, plus the screen map and the placements), pure and clock-free; `data/pages/admin-review-ia.ts` holds every word (E23 budget 0); `components/admin/ia-review.tsx` and `ia-rail-preview.tsx` draw it with `Card`, `Table`, `Badge` and the shell's own `NavRow` — the row primitive, so the preview is a real rail rather than a new one. The one product change the proposal implies — Gap Analysis moving from operator-only to member-visible — is **drawn and not implemented**: the row is shown in Workspace for a `member`, the page keeps `requireAdmin()`, and the diff says so in words. `tests/app-ia.test.ts` resolves every proposed href against `content/routes.ts`, holds every `ALIGN_MENU` row to a placement or a recorded removal, and pins the group order (Workspace · Do · Operations · Support). Gates: `requireAdminProduct()` then `requireAdmin()`, the console's order, and no record read at all — the only database access is the role lookup the gate already performs.",
+  },
+  {
+    kind: "route",
     surface: "/admin/templates",
     status: "db",
     templates: ["alignsynch"],

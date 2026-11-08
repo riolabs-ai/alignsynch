@@ -135,6 +135,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-review",
     budget: 0,
   },
+  // #721 — the IA prototype. Budget 0 from the first commit: the four group headings, the five
+  // sub-headings, the twenty row labels, the three tables' column labels, the four navigation
+  // patterns, the twenty-six screen names and the two call-outs are `data/pages/admin-review-ia.ts`,
+  // so the next literal written in `ia-review.tsx` or `ia-rail-preview.tsx` is a red build.
+  // Attribution is reachability, so this row counts the two prototype components — `NavRow` comes
+  // from the shell and belongs to the shell's own budget, not this one.
+  "/admin/review/ia": {
+    page: "app/(mainlayout)/admin/review/ia/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-review-ia",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is

@@ -24,6 +24,8 @@ import { adminInstancesPageCopy } from "./admin-instances";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 // #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
 import { adminReviewPageCopy } from "./admin-review";
+// #721 — the IA prototype: the proposed rail, the diff and the screen map.
+import { adminReviewIaPageCopy } from "./admin-review-ia";
 import { adminTemplateEditorPageCopy } from "./admin-template-editor";
 import { adminTemplatesPageCopy } from "./admin-templates";
 import { adminReportPageCopy } from "./admin-report";
@@ -93,6 +95,9 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/instances/[id]": adminRelationshipPageCopy,
   // #665 — the review shelf, grouped by release; the manifest is the catalogue.
   "/admin/review": adminReviewPageCopy,
+  // #721 — the IA prototype. A review artifact on a local branch: the proposed rail is the
+  // descriptor in `lib/app-ia.ts`, this fixture is its words, and the real rail is untouched.
+  "/admin/review/ia": adminReviewIaPageCopy,
   "/admin/templates": adminTemplatesPageCopy,
   "/admin/templates/[id]": adminTemplateEditorPageCopy,
   "/admin/instances/[id]/report": adminReportPageCopy,
