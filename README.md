@@ -250,7 +250,8 @@ column, and `db:migrate` fails on the name.
 
 ## Quickstart
 
-**Node 24, or it does not start.** `.nvmrc` pins 24, `engines` says `>=20.9`, and `/usr/bin/node` is
+**Node 24, or it does not start.** `.nvmrc` pins 24, `engines` pins `24.x`, CI reads `.nvmrc` and the
+Vercel project is set to `24.x` — four places, one runtime (issue #682). `/usr/bin/node` is
 18.19.1 on the machines this tree was built on — it shadows a newer runtime on `PATH` and every Next
 command dies under it.
 

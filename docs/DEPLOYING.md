@@ -20,6 +20,56 @@ Neither is visible to `bash scripts/verify.sh`. The gate is network-free by cont
 opens a connection" ([`AGENTS.md`](../AGENTS.md)) — so it cannot see a deployment, and a green gate
 is not a claim about production. It is a claim about the tree.
 
+## The runtime: Node 24, in four places
+
+**Production, CI and every `pnpm` command in this tree run Node 24.** That is one decision recorded in
+four places, and a change that touches one has to touch all four:
+
+| Place                                        | States                                   | Read by                                                                                                                           |
+| -------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| [`.nvmrc`](../.nvmrc)                        | `24`                                     | `scripts/verify.sh` (runtime parity: it refuses to gate a shell on another major) and `actions/setup-node` in all three workflows |
+| `package.json` → `engines.node`              | `24.x`                                   | Vercel's build image, `pnpm install`, and anyone asking what the tree supports                                                    |
+| [`.github/workflows/`](../.github/workflows) | `node-version-file: .nvmrc` — no literal | GitHub Actions; three workflows set Node up and each reads the file                                                               |
+| the Vercel project `alignsynch`              | `nodeVersion: "24.x"`                    | every deployment of this repository                                                                                               |
+
+Until #682 the last row said **26.x** while the other three said 24, so a green check and a green gate
+were evidence about a runtime production did not use: a dependency could pass CI and fail in
+production, and nothing in the record said which runtime ran. The build log named the mechanism:
+
+```
+Warning: Detected "engines": { "node": ">=20.9.0" } in your `package.json` that will
+automatically upgrade when a new major Node.js Version is released.
+```
+
+An open-ended range is an invitation, not a floor: Vercel read it, took the newest major it offered and
+moved production to 26 with no commit behind the change. `24.x` is a pin, so adopting the next major
+is now a card with a gate run on it rather than something the platform does to the deploy.
+
+The two halves are verified differently, and the difference is the point:
+
+- **the three files are a unit test.** [`tests/runtime-pin.test.ts`](../tests/runtime-pin.test.ts) fails
+  when `.nvmrc`, `engines.node` and the workflows stop agreeing, so the invariant is enforced by the
+  gate instead of by this paragraph.
+- **the project setting is not in the repository**, so nothing offline can read it. It is `nodeVersion`
+  on the project record — `GET https://api.vercel.com/v9/projects/alignsynch` with the team id from
+  `~/.local/share/com.vercel.cli/config.json` — and the CLI does not print it. Read it there before
+  believing any claim about the runtime, and read it again after a project transfer.
+
+**A setting change does not rebuild what is serving.** The deployment production runs keeps the
+runtime it was built with; a new `nodeVersion` applies to the next build. So the proof is the
+deployment that follows the change — and Vercel prints it, because the first build after it cannot
+reuse a cache made by another runtime:
+
+```
+Skipping build cache since Node.js version changed from "26.x" to "24.x"
+```
+
+Measured on 2026-11-08 on the first deployment after the project moved from `26.x` to `24.x`
+(preview `alignsynch-i38xd7umh`), which also no longer carries the `engines` warning above. That log
+line is the only self-describing record a deployment makes of its runtime — `/api/version` reports the
+commit, not the runtime — so a later deployment that prints nothing about the cache is reusing a cache
+built by 24 and agrees with it.
+
 ## 1. What a deployment is allowed to build: production, plus one branch named in the file
 
 The rule lives in [`vercel.json`](../vercel.json), in one `ignoreCommand`:
