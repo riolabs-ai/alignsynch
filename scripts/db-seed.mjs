@@ -59,6 +59,7 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Client } from "pg";
 import { syncBillingPlans } from "./billing-plans.mjs";
+import { reconcileAllowlistedAdmins } from "./db-admin-allowlist.mjs";
 import {
   SEED_LOCK_ID,
   SEED_LOCK_NAMESPACE,
@@ -1200,6 +1201,23 @@ async function main() {
     // The admin seats — durable, independent of DEMO_AUTH. Runs in phase 2 (with the other
     // writes) after phase 1 committed any stale-admin removals.
     const adminSeats = await seedAdminAccounts(client, admin, staleAdmins);
+
+    // The allowlist, enforced after the accounts exist — the seed half of
+    // `lib/auth/admin-allowlist.ts`, which can only promote on a *sign-in*. Without this a branch
+    // whose accounts were just created has zero admins until each address happens to sign in,
+    // which is how a local server and a fresh demo ended up with no operator at all.
+    const allowlist = await reconcileAllowlistedAdmins(client, { mode: "apply" });
+    if (allowlist.counts.total > 0) {
+      console.log(
+        `  ○ allowlist: ${allowlist.counts.total} address(es) on ADMIN_EMAILS — ${allowlist.counts.admin} already admin, ${allowlist.counts.changed} created or promoted, ${allowlist.counts.pending} pending first sign-in`,
+      );
+      for (const row of allowlist.rows) {
+        if (row.status === "pending" || row.status.startsWith("failed")) {
+          const mark = row.status.startsWith("failed") ? "!" : "·";
+          console.log(`  ${mark} allowlist: ${row.email} ${row.status}`);
+        }
+      }
+    }
 
     const actual = await counts(client);
     for (const [table, count] of Object.entries(expected)) {
