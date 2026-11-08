@@ -41,7 +41,7 @@ import { alignAvailableOf } from "@/lib/flow/stage";
 import type { ItemRow, PartyRow } from "@/lib/db/rows";
 
 /** The six words the spec fixes, in order — written once here so a rename is one line of diff. */
-const STAGES = ["Details", "Settings", "Aspects", "Invite", "Completed", "Align"] as const;
+const STAGES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"] as const;
 
 /**
  * The copy the flow ships, and the components that draw it. The scan is deliberately the flow's

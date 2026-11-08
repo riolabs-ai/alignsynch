@@ -75,7 +75,7 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
    * around them — keep their place.
    *
    * **The rail's words are the spec's, not this file's.** `docs/specs/flow-stages.md` names the
-   * six stages (`Details · Settings · Aspects · Invite · Completed · Align`) and is binding on the
+   * six stages (`Details · Settings · Aspects · Invite · Connect · Align`) and is binding on the
    * build; the artifact keeps the words it was drawn with, because an approved artifact is never
    * edited to match the code. Read the spec for what the build must say.
    */

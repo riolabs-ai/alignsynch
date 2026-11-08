@@ -38,7 +38,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 /** The six names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #735). */
-const STAGE_NAMES = ["Details", "Settings", "Aspects", "Invite", "Completed", "Align"];
+const STAGE_NAMES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"];
 
 /** The three flow screens #687 names as centred, with the line each one centred on. */
 const FLOW_SCREENS = [

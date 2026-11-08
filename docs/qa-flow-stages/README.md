@@ -17,7 +17,7 @@ tree `bash scripts/verify.sh` passed on (`lane=code`, 16/16 steps green, 296.7 s
 rail renders it:
 
 ```
-1 Details · 2 Settings · 3 Aspects · 4 Invite · 5 Completed · 6 Align
+1 Details · 2 Settings · 3 Aspects · 4 Invite · 5 Connect · 6 Align
 Stage {n} of 6
 ```
 

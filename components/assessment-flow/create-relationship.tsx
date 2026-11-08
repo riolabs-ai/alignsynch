@@ -259,7 +259,7 @@ export function CreateRelationship({
 
           {/*
            * Where the person is in the six stages (#687, renamed by #735): Details, Settings,
-           * Aspects and Invite are the first four, and `Align` is drawn unavailable here — the
+           * Aspects and Invite are the first four. `Align` is drawn unavailable here — the
            * relationship this flow creates has no shared assessment until somebody has claimed
            * the invitation and answered.
            */}
