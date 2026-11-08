@@ -32,6 +32,14 @@
  *    drawn, disabled, with the reason above it) and `coach` (no sheet at all: a coach membership
  *    reads the relationship and has no answers to give). A coach page has no `<form>` element, not
  *    a disabled one, which is a fact a test reads rather than a promise.
+ * 5. **One progress pattern, and it is the shared cell rail (#716).** The sheet is a multi-step
+ *    surface, so rule 4 of `docs/specs/ux-reference-patterns.md` applies: the 39px cell rail sits
+ *    at the top of the block, on the six approved stage names, at stage 6 (`Ongoing`) — answering
+ *    is the counterparty's half of the journey the create and sent screens already draw. It is
+ *    mounted in every state, including `coach`, because the rail says where the *relationship* is
+ *    and a reader who is not a party is still reading that relationship. Nothing else on this
+ *    screen is a progress indicator: no bar, no numbered list, no second stepper — a rule a test
+ *    asserts against the rendered markup rather than a promise.
  *
  * The kinds asked are `opinionKindsFor(mode)` — imported, never typed here — so a Basic sheet
  * cannot draw Think and Guess, and the mode is a prop decided by the instance row. Literal-free:
@@ -51,6 +59,23 @@ import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import { ownScoreOf, type AnswerGate } from "@/lib/flow/answer-gate";
 import type { FlowAspect } from "@/lib/flow/screen";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import { StageRail } from "./stage-rail";
+
+/**
+ * Which of the six approved stages answering is (#716).
+ *
+ * The journey is `Who · Mode · Aspects · Create · Sent · Ongoing` (`data/pages/lifecycle.ts`), and
+ * answering is the last of them: the invitation has been sent, both parties are inside the
+ * relationship, and this sheet is the counterparty's half of the work that stage is for. The rail
+ * therefore says `Ongoing` rather than a seventh word invented for this screen — a surface that
+ * renames its place in the journey is the thing the shared rail exists to prevent.
+ *
+ * It is a constant here and not a read of the instance's status: the status moves
+ * (`awaiting_counterparty` → `answering` → `complete`) while the person stays on the same stage of
+ * the same journey, and a rail that jumped backwards on acceptance would be describing the
+ * session's state machine instead of the journey's.
+ */
+const ANSWER_STAGE = 6;
 
 /**
  * A segment's target box: 44×44 CSS px, the same constant the ancestor uses (SC 2.5.8's floor is
@@ -137,6 +162,10 @@ export function AnswerSheet({
   if (gate.state === "coach") {
     return (
       <div className="space-y-6">
+        {/* The same rail the six stage screens draw: a coach is reading this relationship, so the
+            journey's position is as true for them as for a party — it says where the relationship
+            is, not what the reader is being asked to do. */}
+        <StageRail copy={copy} current={ANSWER_STAGE} />
         {heading}
         <section
           aria-labelledby="answer-sheet-coach-heading"
@@ -241,6 +270,10 @@ export function AnswerSheet({
 
   return (
     <div className="space-y-6">
+      {/* Where the person is in the six stages (#716): the invitation is out and this sheet is the
+          Ongoing stage's work, so the rail above the block is the one progress pattern on this
+          surface — no bar, and no second stepper. */}
+      <StageRail copy={copy} current={ANSWER_STAGE} />
       {heading}
 
       <section
