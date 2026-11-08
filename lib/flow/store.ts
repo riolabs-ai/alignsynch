@@ -217,6 +217,23 @@ export interface CreateInstanceInput {
    */
   readonly alignmentSetting?: string;
   /**
+   * The card title both parties read (#688), when stage 1 named one.
+   *
+   * Optional, and blank means "the template's own title": a direct post to this endpoint — a
+   * `curl`, `scripts/flow-e2e.mjs`, the pre-#688 one-form create — carries no title, and its
+   * relationship must be created exactly as it always was. When present it becomes the instance
+   * record's `title`, which is what every card and screen prints; the template named the record,
+   * but the two people in it are naming the thing they are in the middle of.
+   */
+  readonly title?: string;
+  /**
+   * The sentence on why they are doing this (#688) — optional, never scored.
+   *
+   * Blank falls back to the generated caption ("<title>, answered by A and B."). The prototype
+   * calls it "shown to both parties, never scored", and that is exactly `record.summary`.
+   */
+  readonly description?: string;
+  /**
    * The signed-in account creating the instance, when the request has one (#213 follow-up).
    *
    * Resolved by the route from the request's **session cookies** (`currentUser()`), never from
@@ -468,19 +485,29 @@ export async function createInstanceFromTemplate(
 
     const slug = `${found.slug}-${instanceRecordId.slice(0, 8)}`;
 
+    /**
+     * The card both parties read (#688).
+     *
+     * Stage 1 names the relationship — the template's title is only the starting point — and its
+     * description, when one was typed, is the card's own sentence instead of the generated
+     * caption. A direct post carries neither, so both fall back to exactly what this insert wrote
+     * before the flow was split into stages.
+     */
+    const namedTitle = input.title?.trim() ?? "";
+    const instanceTitle = namedTitle === "" ? offered.title : namedTitle;
+    const namedDescription = input.description?.trim() ?? "";
+    const instanceSummary =
+      namedDescription === ""
+        ? `${instanceTitle}, answered by ${initiatorName} and ${counterpartyName}.`
+        : namedDescription;
+
     // The instance record. `draft` on purpose: a template is the published thing, an
     // instance is one relationship's private copy, and `zPublishStatus` has no value that
     // means "live but not a template" — draft is the honest one, and nothing reads it.
     await client.query(
       `INSERT INTO record (id, slug, record_type, status, date, title, summary)
        VALUES ($1, $2, 'assessment', 'draft', $3, $4, $5)`,
-      [
-        instanceRecordId,
-        slug,
-        now.toISOString(),
-        offered.title,
-        `${offered.title}, answered by ${initiatorName} and ${counterpartyName}.`,
-      ],
+      [instanceRecordId, slug, now.toISOString(), instanceTitle, instanceSummary],
     );
 
     // THE COPY. Rows owned by the instance, taken from the **version** at this instant and never

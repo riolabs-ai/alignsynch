@@ -1,10 +1,9 @@
 /**
- * `/assessment/templates/[templateId]/create` — the create step (#409, wired by #427).
+ * `/assessment/templates/[templateId]/create` — the create flow's stage 1, **Who** (#409, #427, #688).
  *
  * A child of the template's own address, so the template being copied is the route's own fact:
- * there is no picker. The form posts that id back in a hidden field, and the endpoint reads it
- * from the post — a crafted body can name another record, which is exactly what the store's
- * `FOR SHARE OF record` checks answer.
+ * there is no picker. Stage 1's form posts that id back in a hidden field, and the save handler
+ * (`POST /assessment/new/who`) answers with the draft cookie and a redirect to stage 2.
  *
  * The read is `readLibraryTemplate(recordId, viewerUserId)` — the same authorization the library
  * and the template detail page use: the platform's templates plus the viewer's own, and
@@ -20,11 +19,15 @@
  * create path (`createSignUpPath` / `createSignInPath`), which is what keeps the chosen product
  * across the auth round trip: the product is the URL, so there is nothing to lose.
  *
- * **A refusal is resolved here, from a code.** `POST /assessment/new` answers a `FlowError` with
- * a 303 to this path carrying `?problem=<code>`; this module turns the code into the fixture's
- * one sentence and hands it to the component. Nothing else is read from the query — no text
- * anybody typed travels in a URL — and an unrecognised code draws no sentence rather than an
- * invented one.
+ * **The draft is read here, so coming back to stage 1 shows what was typed (#688).** A refusal
+ * from stage 1's own validation, a back-link from stage 2, or a plain reload all render this
+ * page, and all three read the same cookie `POST /assessment/new/who` wrote. A first visit has
+ * no cookie and renders `EMPTY_CREATE_DRAFT`.
+ *
+ * **A refusal is resolved here, from two codes.** `?problem=<reason>&field=<field>` is a
+ * field refusal from this flow's own validation; `?problem=<FlowErrorCode>` is the store's.
+ * `lib/flow/create-copy.ts` turns either into the fixture's sentence, with the field's label
+ * for the first kind. Nothing anybody typed travels in the URL — the draft is the cookie.
  *
  * **A template that cannot be read is a screen, not a 404, when a refusal sent us here.** The
  * codes `unknown-template`, `record-is-an-instance` and `template-not-yours` all mean the record
@@ -35,21 +38,22 @@
  *
  * `force-dynamic`: this route reads a database and must not do so at build time.
  */
+import { cookies } from "next/headers";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
-import { authConfigured } from "@/lib/auth/config";
-import { currentUser } from "@/lib/auth/session";
+import { currentUserIfConfigured } from "@/lib/auth/session";
+import { EMPTY_CREATE_DRAFT, parseCreateDraft, type CreateDraft } from "@/lib/flow/create-draft";
+import { createRefusal } from "@/lib/flow/create-copy";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import {
-  PRICING_PATH,
   TEMPLATE_LIBRARY_PATH,
   createSignInPath,
   createSignUpPath,
   templateDetailPath,
 } from "@/lib/flow/paths";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { createDraftCookieName } from "@/lib/flow/session";
 
 export const dynamic = "force-dynamic";
 
@@ -57,8 +61,9 @@ export const metadata: Metadata = {
   title: "Create a relationship",
 };
 
-type ProblemParams = {
+type CreateParams = {
   readonly problem?: string | string[];
+  readonly field?: string | string[];
 };
 
 /** The first value of a search param — Next hands a repeated param back as an array. */
@@ -67,58 +72,12 @@ function firstValue(value: string | string[] | undefined): string | undefined {
   return value;
 }
 
-/**
- * The signed-in account id, or `null` — never a thrown error on a tree without auth env.
- *
- * The instance page resolves the viewer the same way, and for the same reason: the gate renders
- * this route with no `NEON_AUTH_*` variables at all, and a build that throws on a missing
- * session reads as a broken route rather than a signed-out one.
- */
-async function viewerUserId(): Promise<string | null> {
-  if (!authConfigured()) return null;
-  const user = await currentUser();
-  return user?.userId ?? null;
-}
-
-/**
- * The fixture's sentence for a refusal code, or `null` when there is no refusal to read.
- *
- * One branch per code rather than a computed `problem-${code}` id: E23 resolves every literal id
- * a component hands to the copy readers against the route's fixture, so a renamed item is a red
- * build. A constructed id would only resolve at runtime or throw, which is the blank band this
- * ratchet exists to prevent. The codes are the store's own `FlowErrorCode` values.
- */
-function problemMessage(code: string | undefined): string | null {
-  if (code === undefined) return null;
-  const problems = sectionOf(assessmentCreatePageCopy, "problems");
-
-  if (code === "invalid-input") return itemLabel(problems, "invalid-input");
-  if (code === "unknown-template") return itemLabel(problems, "unknown-template");
-  if (code === "template-not-published") return itemLabel(problems, "template-not-published");
-  if (code === "template-has-no-aspects") return itemLabel(problems, "template-has-no-aspects");
-  if (code === "record-is-an-instance") return itemLabel(problems, "record-is-an-instance");
-  if (code === "template-not-yours") return itemLabel(problems, "template-not-yours");
-  if (code === "instance-limit") return itemLabel(problems, "instance-limit");
-  // #505 — the plan's relationship limit. Beside `instance-limit` rather than folded into it: the
-  // two codes name different counts, and an operator reading `?problem=` should be able to tell
-  // which gate answered.
-  if (code === "relationship-limit") return itemLabel(problems, "relationship-limit");
-  if (code === "mode-not-entitled") return itemLabel(problems, "mode-not-entitled");
-  return null;
-}
-
-/**
- * The door a refusal's sentence points at (#618), or `null`.
- *
- * Only the two codes whose sentence names a plan get one: `relationship-limit` says "move to a paid
- * plan" and `mode-not-entitled` says "change your plan", and both used to draw nothing to click.
- * The other codes either need no action from this screen (the store refused the payload) or end at
- * the library (`unknown-template`).
- */
-function problemLink(code: string | undefined): { href: string; label: string } | null {
-  if (code !== "relationship-limit" && code !== "mode-not-entitled") return null;
-  const problems = sectionOf(assessmentCreatePageCopy, "problems");
-  return { href: PRICING_PATH, label: itemLabel(problems, "plans") };
+/** The draft stage 1 saved for this template, or an empty one on a first visit. */
+async function savedDraft(templateRecordId: string): Promise<CreateDraft> {
+  const jar = await cookies();
+  return (
+    parseCreateDraft(jar.get(createDraftCookieName(templateRecordId))?.value) ?? EMPTY_CREATE_DRAFT
+  );
 }
 
 export default async function TemplateCreatePage({
@@ -126,18 +85,22 @@ export default async function TemplateCreatePage({
   searchParams,
 }: {
   params: Promise<{ templateId: string }>;
-  searchParams: Promise<ProblemParams>;
+  searchParams: Promise<CreateParams>;
 }) {
   const { templateId } = await params;
-  const code = firstValue((await searchParams).problem);
-  const problem = problemMessage(code);
-  const viewer = await viewerUserId();
-  const detail = await readLibraryTemplate(templateId, viewer);
-  if (detail === undefined && problem === null) notFound();
+  const query = await searchParams;
+  const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
+  const viewer = await currentUserIfConfigured();
+  const viewerUserId = viewer?.userId ?? null;
+  const detail = await readLibraryTemplate(templateId, viewerUserId);
+  if (detail === undefined && refusal === null) notFound();
+
+  const draft = await savedDraft(templateId);
 
   return (
     <CreateRelationship
       copy={assessmentCreatePageCopy}
+      stage={1}
       template={
         detail === undefined
           ? null
@@ -148,11 +111,12 @@ export default async function TemplateCreatePage({
               aspectCount: detail.aspects.length,
             }
       }
+      draft={draft}
       backHref={detail === undefined ? TEMPLATE_LIBRARY_PATH : templateDetailPath(templateId)}
-      problem={problem}
-      problemLink={problemLink(code)}
+      problem={refusal?.sentence ?? null}
+      problemLink={refusal?.link ?? null}
       gate={
-        viewer === null
+        viewerUserId === null
           ? {
               signInHref: createSignInPath(templateId),
               signUpHref: createSignUpPath(templateId),
