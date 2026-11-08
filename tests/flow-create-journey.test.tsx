@@ -166,10 +166,13 @@ describe("stage 3 — the create step", () => {
     expect(html).not.toContain('data-create-gate="true"');
   });
 
-  it("draws the journey rail with this page as step 3 of 3", () => {
+  it("draws the six-stage rail with this page as the first stage, Who (#687)", () => {
     const html = createHtml({ signedIn: true });
-    expect(html).toContain('data-wizard-rail="3"');
-    expect(html).toContain("Step 3 of 3");
+    expect(html).toContain('data-wizard-rail="1"');
+    expect(html).toContain("Stage 1 of 6");
+    // The browse journey's three-step rail is gone: the flow starts here, and the template
+    // screens before it are pre-stage views rather than numbered stages.
+    expect(html).not.toContain("Step 3 of 3");
   });
 });
 

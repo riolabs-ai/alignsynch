@@ -31,6 +31,8 @@ import { claimPath, inviteAuthPath, inviteStepPath, type InviteWizardStep } from
 import type { InvitePreview } from "@/lib/flow/store";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
+import { StageColumn } from "./stage-column";
+import { WizardSteps } from "./wizard-steps";
 
 const RAIL: readonly { readonly step: InviteWizardStep; readonly item: string }[] = [
   { step: 1, item: "1" },
@@ -76,47 +78,13 @@ export function CounterpartyWizard({
       : undefined;
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-12">
-      <nav aria-label="Onboarding steps">
-        <ol className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          {RAIL.map((entry) => {
-            const current = entry.step === step;
-            const done = entry.step < step;
-            return (
-              <li
-                key={entry.step}
-                aria-current={current ? "step" : undefined}
-                data-step-state={current ? "current" : done ? "done" : "upcoming"}
-                className={
-                  current
-                    ? "flex items-center gap-2 font-semibold text-action"
-                    : done
-                      ? "flex items-center gap-2 font-medium text-gray-700 dark:text-gray-200"
-                      : "flex items-center gap-2 text-gray-500 dark:text-gray-400"
-                }
-              >
-                <span
-                  aria-hidden="true"
-                  className={
-                    current
-                      ? "flex h-6 w-6 items-center justify-center rounded-full bg-action text-xs font-bold text-action-foreground"
-                      : done
-                        ? "flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-xs font-bold text-white dark:bg-gray-200 dark:text-gray-900"
-                        : "flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs font-bold dark:border-gray-600"
-                  }
-                >
-                  {entry.step}
-                </span>
-                {itemLabel(rail, entry.item)}
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
-
-      <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {fillLabel(itemLabel(rail, "count"), values)}
-      </p>
+    <StageColumn>
+      <WizardSteps
+        label={itemLabel(rail, "label")}
+        count={fillLabel(itemLabel(rail, "count"), values)}
+        current={step}
+        steps={RAIL.map((entry) => ({ step: entry.step, label: itemLabel(rail, entry.item) }))}
+      />
       <h1 className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{band.heading}</h1>
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
 
@@ -221,6 +189,6 @@ export function CounterpartyWizard({
           </Link>
         )}
       </div>
-    </div>
+    </StageColumn>
   );
 }
