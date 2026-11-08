@@ -449,6 +449,11 @@
           "path": "changelog/v1-6-0.md",
           "title": "v1.6.0",
           "question": "The release where the fee moved to completion."
+        },
+        {
+          "path": "changelog/v1-7-0.md",
+          "title": "v1.7.0",
+          "question": "The release where the review shelf went live."
         }
       ]
     },
