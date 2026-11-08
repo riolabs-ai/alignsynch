@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.7.0](v1-7-0.md)
+
+- **Released** 2026-11-08
+- **Tag** [`v1.7.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.7.0)
+- **Pull requests named** 418
+- **Theme:** the review shelf goes live — every prototype grouped by the release it ships with, with the approved six-stage flow as its first artifact.
+- **Headline:** `feat(admin)` — the /admin/review shelf: the review store, the release-grouped list and the writes, with the six-stage prototype as its v5 artifact (#670) (#673) (#677)
+
 ### [v1.6.0](v1-6-0.md)
 
 - **Released** 2026-11-07
