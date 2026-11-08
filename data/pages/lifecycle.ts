@@ -38,5 +38,12 @@ export const lifecycleStageSection: PageCopySection = {
     { id: "count", label: "Stage {step} of 6" },
     /** The rail's accessible name — the nav is one landmark among several on the screen. */
     { id: "label", label: "Relationship lifecycle" },
+    /**
+     * The one control the shell itself draws (#709) — the modal's close. It lives here rather
+     * than in each stage's fixture because the shell is shared by all six stage surfaces, so one
+     * word with one home is the same rule the six names above follow. The accessible name is the
+     * whole label: the control is a 44px icon with no visible text.
+     */
+    { id: "close", label: "Close" },
   ],
 };

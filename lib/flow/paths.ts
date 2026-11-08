@@ -305,16 +305,19 @@ export function sentPath(instanceRecordId: string): string {
 export const SENT_RETURN_VALUE = "sent";
 
 /**
- * **Where the create sends the browser (#690, #691).** The one decision `POST /assessment/new` makes
- * about the screen, kept here so it is a test rather than a claim about a route handler.
+ * **Where the create sends the browser (#690, #691, #709).** The one decision `POST /assessment/new`
+ * makes about the screen, kept here so it is a test rather than a claim about a route handler.
  *
  * - A **signed-out** creator lands on the gate. Their relationship exists — the endpoint has always
  *   accepted a post with no initiator (#146/#213) — and the gate is the screen that offers the
  *   account *after* the fact, which is the whole of #659: the account is not a stage, so nothing
  *   makes a person sign up before they have something to sign up for.
- * - A **signed-in** creator lands on **Sent** (#691), which is stage 5: the invitation's state, what
- *   happens next and the way into the relationship. It is no longer the relationship screen itself,
- *   because that is stage 6 and the card's whole point is that the two are different screens.
+ * - A **signed-in** creator lands on **the dashboard** (#709). Until this card it was Sent, stage 5
+ *   — a page the flow navigated to, which made the commit a fifth page load and left the finished
+ *   relationship one screen away from the list it belongs in. The approved v6 artifact closes the
+ *   modal onto `/dashboard`, where the new relationship is under My relationships from that
+ *   redirect on. **Sent is no longer a destination**: it still answers on its own address (stage 5
+ *   renders when asked for by URL), and nothing in the flow sends anybody there.
  * - A post naming **no template** never came through the flow (`scripts/flow-e2e.mjs`, a `curl`),
  *   so there is no gate and no flow stage to send it to: it goes to the relationship like any other
  *   committed create.
@@ -326,7 +329,7 @@ export function afterCreateTarget(input: {
 }): string {
   if (input.templateRecordId !== "") {
     return input.viewerSignedIn
-      ? sentPath(input.instanceRecordId)
+      ? OVERVIEW_PATH
       : createAccountForPath(input.templateRecordId, input.instanceRecordId);
   }
   return instancePath(input.instanceRecordId);

@@ -33,6 +33,7 @@ import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_INSTANCE_PATH,
+  OVERVIEW_PATH,
   PRICING_PATH,
   afterCreateTarget,
   createAccountForPath,
@@ -198,14 +199,14 @@ describe("where the create sends the browser", () => {
     ).toBe(createAccountForPath(TEMPLATE_ID, INSTANCE_ID));
   });
 
-  it("sends a signed-in creator to Sent, which is stage 5 (#691)", () => {
+  it("sends a signed-in creator to the dashboard, and Sent is no longer a destination (#709)", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: true,
         templateRecordId: TEMPLATE_ID,
         instanceRecordId: INSTANCE_ID,
       }),
-    ).toBe(`/assessment/instances/${INSTANCE_ID}/sent`);
+    ).toBe(OVERVIEW_PATH);
   });
 
   it("has no gate for a post that never came through the flow", () => {

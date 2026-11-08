@@ -409,10 +409,11 @@ async function main() {
   const stranger = new Jar("stranger");
 
   /* 1. create — the four stages: Who, Mode, Aspects, Create (#688 → #690) --- */
-  // #704 — the create is four screens, and its redirect has two shapes: a signed-in creator is
-  // sent on to Sent (stage 5, #691) and a signed-out one to the account gate, which names the
-  // relationship stage 4 just committed. This run is signed out, so the gate is the shape it
-  // should meet; the id is in the address either way, and that is where the flow continues.
+  // #704 — the create is four screens, and its redirect has three shapes (#709): a signed-in
+  // creator is closed onto the dashboard, a signed-out one to the account gate, which names the
+  // relationship stage 4 just committed, and a post that named no template to the relationship
+  // itself. This run is signed out, so the gate is the shape it should meet; the id is in the
+  // address either way, and that is where the flow continues.
   const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorName: "Avery E2E",
@@ -428,9 +429,13 @@ async function main() {
   const instancePath = `/assessment/instances/${instanceId}`;
   const destination = new URL(firstCreate.location, BASE_URL);
   const onTheGate = destination.pathname.endsWith("/create/account");
+  // #709 — the signed-in shape is the dashboard now: the flow closes onto it and the new
+  // relationship is listed there. This run is signed out, so it meets the gate; the other two
+  // shapes are still accepted so the check describes the endpoint rather than this one journey.
   check(
-    "the create sends the creator to one of the two screens it has: the gate, or Sent",
+    "the create sends the creator to one of the three screens it has: the gate, the dashboard, or Sent",
     (onTheGate && destination.searchParams.get("instance") === instanceId) ||
+      destination.pathname === "/dashboard" ||
       destination.pathname === `${instancePath}/sent`,
     `${destination.pathname}${destination.search}`,
   );
