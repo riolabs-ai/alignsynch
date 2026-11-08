@@ -13,9 +13,23 @@
  *   node … scripts/health-record.mjs --gate          also run the gate in a clean env and time it
  *   node … scripts/health-record.mjs --ci 2026-11-02 also run docs/gate-baseline.py for that window
  *   node … scripts/health-record.mjs --carry         keep blocks this run did not measure
+ *   node … scripts/health-record.mjs --probe <name> --db --proves "…"
+ *                                                    record **evidence** into data/health/probes/<name>.json
  *
- * `--database-label` names the database the `db:verify` run was pointed at (never the URL — the
- * record is committed and a URL carries a password).
+ * **Two artifacts, two writers, and a probe cannot reach the platform record (#680).** The platform
+ * record is written from the demo branch only — `platformDatabaseRefusal()` in
+ * `scripts/health-record-rules.mjs` refuses every other endpoint, and since a copy of `demo` gets its
+ * own Neon endpoint, that refusal is what a probe run cannot pass. Evidence goes to
+ * `data/health/probes/` through `--probe`, which never opens `OUT` at all. `--database-label` is
+ * therefore **probe-only**: the platform record's label is derived from the facts the check just
+ * read, because a typed label is exactly how a scratch branch once recorded itself as platform
+ * status (#599).
+ *
+ * **The recorder asserts its own postcondition.** After writing, it reads the bytes back and
+ * requires a fresh `recordedAt`, `tree.packageVersion == package.json`, and a `dbVerify.database`
+ * that names the demo branch — and fails the command when any of them is wrong (R-29: assert the
+ * postcondition, not the exit code of the thing that ran). `--probe` is exempt by construction: its
+ * output is evidence, and evidence is allowed to be red.
  *
  * **A record has an age, and the gate holds it to one (#599).** `tests/platform-health.test.ts`
  * fails when `data/health/platform-health.json` is older than `PLATFORM_HEALTH_FRESHNESS_HOURS`
@@ -33,10 +47,22 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { zPlatformHealthRecord } from "@/content/platform-health";
+import {
+  demoDatabaseLabel,
+  platformDatabaseRefusal,
+  postconditionProblems,
+} from "./health-record-rules.mjs";
 import { loadEnv, repoRoot } from "./load-env.mjs";
 
 const OUT = join(repoRoot, "data", "health", "platform-health.json");
+const PROBES = join(repoRoot, "data", "health", "probes");
 const PRODUCTION_URL = "https://alignsynch.com/api/version";
+
+/** Why a probe run is not platform status, written into every probe file it produces. */
+const NOT_PLATFORM_HEALTH =
+  "A deliberately broken database — or a copy of it — is evidence about the checker, never about " +
+  "the platform. `/admin/health` reads data/health/platform-health.json as status, and that record " +
+  "is written from the demo branch only (#599, #680).";
 
 const argv = process.argv.slice(2);
 const has = (flag) => argv.includes(flag);
@@ -49,12 +75,100 @@ const wantDb = has("--db");
 const wantGate = has("--gate");
 const wantCarry = has("--carry");
 const ciWindow = flagValue("--ci");
+const probeName = flagValue("--probe");
+const proves = flagValue("--proves");
+
+const isProbe = probeName !== undefined;
+if (isProbe && !/^[a-z0-9][a-z0-9-]*$/.test(probeName)) {
+  throw new Error(
+    `--probe ${JSON.stringify(probeName)} is not a file name: lowercase letters, digits and hyphens`,
+  );
+}
+if (isProbe && !wantDb) {
+  throw new Error(
+    "--probe records a measurement, so it needs --db — evidence without a run proves nothing",
+  );
+}
+if (isProbe && (proves === undefined || proves.trim() === "")) {
+  throw new Error(
+    '--probe needs --proves "<what this run proves>" — a file in data/health/probes/ is read by a person, later',
+  );
+}
+if (isProbe && wantGate) {
+  throw new Error(
+    "--probe records the db:verify evidence only; the gate belongs to the platform record, and this run must not write one",
+  );
+}
 
 // The checkout's `.env.local` / `.env` supply DATABASE_URL for `--db`, and nothing else is read
 // from them: the probe is over https and the tree is read from git.
 loadEnv();
 
+/* ------------------------------------------------------------------ *
+ * Which database, and is this even a platform record? (#680)
+ * ------------------------------------------------------------------ */
+
+const databaseUrl = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? "";
+
+if (!isProbe) {
+  const typed = flagValue("--database-label");
+  if (typed !== undefined) {
+    throw new Error(
+      [
+        "--database-label is probe-only. The platform record's database label is derived from the",
+        "branch this run read (endpoint, NEON_BRANCH and host) and then asserted, because a label",
+        "somebody types is how a scratch branch recorded itself as platform status (#599).",
+        "",
+        `  evidence instead: pnpm health:record --probe <name> --db --database-label ${JSON.stringify(typed)} --proves "…"`,
+      ].join("\n"),
+    );
+  }
+  if (wantDb) {
+    const refusal = platformDatabaseRefusal({
+      databaseUrl,
+      neonBranch: process.env.NEON_BRANCH,
+    });
+    if (refusal !== null) throw new Error(refusal);
+  }
+}
+
 const now = () => new Date().toISOString();
+
+/* ------------------------------------------------------------------ *
+ * Probe mode — evidence, written into data/health/probes/, then out (#680)
+ *
+ * This run never touches `OUT`: the path is a different constant, and it exits before the tree,
+ * the production probe and the gate are measured, because none of them belong in evidence. That is
+ * the structural half of the guarantee — a proof run cannot write platform status because the only
+ * writer of platform status is the code path this branch returns before reaching.
+ * ------------------------------------------------------------------ */
+
+if (isProbe) {
+  const block = dbVerifyBlock();
+  const path = join(PROBES, `${probeName}.json`);
+  const probeRecord = {
+    schemaVersion: 1,
+    ...(flagValue("--issue") === undefined ? {} : { issue: flagValue("--issue") }),
+    proves: proves.trim(),
+    whyNotPlatformHealth: NOT_PLATFORM_HEALTH,
+    probe: {
+      kind: flagValue("--kind") ?? "db:verify against a database that was broken on purpose",
+      database: block.database,
+    },
+    dbVerify: block,
+  };
+
+  mkdirSync(PROBES, { recursive: true });
+  writeFileSync(path, `${JSON.stringify(probeRecord, null, 2)}\n`);
+
+  console.log(`wrote ${path}`);
+  console.log(
+    `  evidence   ${block.result} · ${block.violations.length} violation(s) · ${block.ranAt} · exit ${block.exitCode}`,
+  );
+  console.log(`  proves     ${probeRecord.proves}`);
+  console.log(`  not platform health — ${OUT} was not written by this run`);
+  process.exit(0);
+}
 
 function sh(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -158,7 +272,6 @@ function databaseLabel(uri) {
     return "an unparseable DATABASE_URL";
   }
 }
-
 function dbVerifyBlock() {
   const startedAt = now();
   const run = sh("pnpm", ["db:verify"]);
@@ -181,9 +294,12 @@ function dbVerifyBlock() {
 
   return {
     command: "pnpm db:verify",
-    database:
-      flagValue("--database-label") ??
-      databaseLabel(process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? ""),
+    database: isProbe
+      ? // Evidence describes itself; a probe may name the branch it broke on purpose.
+        (flagValue("--database-label") ?? databaseLabel(databaseUrl))
+      : // Platform status does not: the label is derived from the branch this run read, then the
+        // postcondition below requires it to name demo (#680).
+        demoDatabaseLabel({ databaseUrl, neonBranch: process.env.NEON_BRANCH }),
     exitCode: run.code,
     ranAt: startedAt,
     result,
@@ -315,3 +431,37 @@ console.log(
 console.log(
   `  tree       ${parsed.data.tree.packageVersion} · ${parsed.data.tree.latestTag} · main ${parsed.data.tree.mainSha.slice(0, 7)}`,
 );
+
+/* ------------------------------------------------------------------ *
+ * The postcondition — the bytes on disk, held to what they claim (#680, R-29)
+ *
+ * R-29: assert the postcondition, not the exit code of the thing that ran. `db:verify` exiting 0
+ * says the database is clean; it does not say this file says so, from this version, about the demo
+ * branch. So the check re-reads what was written — and `package.json`, again — and fails the
+ * command when the record describes a tree, a database or an instant that is not this run's.
+ * ------------------------------------------------------------------ */
+
+const written = JSON.parse(readFileSync(OUT, "utf8"));
+const packageVersionOnDisk = JSON.parse(
+  readFileSync(join(repoRoot, "package.json"), "utf8"),
+).version;
+const problems = postconditionProblems(written, {
+  packageVersion: packageVersionOnDisk,
+  now: new Date(),
+});
+
+if (problems.length > 0) {
+  console.error(`\n✗ ${OUT} does not satisfy the recorder's own postconditions:`);
+  for (const problem of problems) console.error(`  · ${problem}`);
+  console.error(
+    "\nThe artefact on disk is wrong, so this command fails instead of exiting 0 over it.",
+  );
+  console.error(
+    "Do not commit that record: fix the cause above and run `pnpm health:record` again.",
+  );
+  process.exitCode = 1;
+} else {
+  console.log(
+    `  postcheck  recordedAt fresh · ${packageVersionOnDisk} == package.json · dbVerify on the demo branch`,
+  );
+}
