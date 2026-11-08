@@ -16,8 +16,8 @@
  * hidden field because a hidden field is a client's claim about its own past.
  *
  * **Signed in already? This screen has nothing to say.** The gate exists to create or sign into an
- * account; a person who has one is forwarded to the relationship itself, which is where the invite,
- * the seats and (once slice 5 lands) the Sent state live.
+ * account; a person who has one is forwarded to **Sent** (`…/instances/[id]/sent`, stage 5 — #691),
+ * which is where the invitation's state and the way into the relationship are drawn.
  *
  * `force-dynamic`: the screen read is a database read and the party cookie is a request cookie.
  */
@@ -29,7 +29,12 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { loginPathFor } from "@/lib/auth/paths";
 import { readFlowScreen } from "@/lib/flow/store";
-import { createAccountForPath, createRelationshipPath, instancePath } from "@/lib/flow/paths";
+import {
+  createAccountForPath,
+  createRelationshipPath,
+  instancePath,
+  sentPath,
+} from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 
 export const dynamic = "force-dynamic";
@@ -74,15 +79,17 @@ export default async function TemplateCreateAccountPage({
   // Not this browser's relationship — the id alone is not proof of anything.
   if (screen === undefined) redirect(whoPath);
 
-  // An account already exists: the gate is behind them, not in front of them.
-  if (viewer !== null) redirect(instancePath(screen.instanceRecordId));
+  // An account already exists: the gate is behind them, not in front of them. **Sent** is where the
+  // flow goes next (#691) — stage 5, the invitation's state — and not the relationship itself,
+  // which is stage 6.
+  if (viewer !== null) redirect(sentPath(screen.instanceRecordId));
 
   return (
     <AccountGate
       copy={assessmentCreatePageCopy}
       signInHref={loginPathFor(createAccountForPath(templateId, screen.instanceRecordId))}
       backHref={instancePath(screen.instanceRecordId)}
-      destination={instancePath(screen.instanceRecordId)}
+      destination={sentPath(screen.instanceRecordId)}
     />
   );
 }

@@ -75,6 +75,22 @@ export interface FlowInvite {
    */
   readonly expiresAt: string;
   /**
+   * **When** the invitation was minted — the row's `created_at`, as an ISO instant (#691).
+   *
+   * The Sent screen's timeline dates its first moment from this, and it is the one instant a
+   * re-invite does not move: `resent_at` dates the live token, `created_at` dates the invitation.
+   *
+   * Optional for the same reason `FlowSeat.impersonated` is: the screen fixtures written before
+   * this field existed stay valid, and the production read always supplies it. A projection
+   * without it draws the timeline's first moment undated rather than inventing a date.
+   */
+  readonly sentAt?: string;
+  /**
+   * **When** the seat was filled — the row's `claimed_at`, as an ISO instant, or `null` while the
+   * invitation is unclaimed (#691). Optional for the same reason as `sentAt`.
+   */
+  readonly claimedAt?: string | null;
+  /**
    * **Which** of the three states the invitation is in, derived at read time by
    * `inviteStateOf()` — `unclaimed`, `expired` or `claimed` (#266).
    *

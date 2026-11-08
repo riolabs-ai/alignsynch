@@ -552,6 +552,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-accept",
     budget: 0,
   },
+  // #691 — stage 5, Sent. Budget 0 from the first commit, like every other flow surface: the state
+  // sentence, the timeline's nine items, the three next steps and the `go` band are
+  // `data/pages/assessment-sent.ts`, and the two bands it shares with the other screens are
+  // referenced from `data/pages/lifecycle.ts` and `data/pages/assessment-instance.ts`. Attribution
+  // is reachability, so this row counts `sent-state.tsx` and what it mounts, and the resend and
+  // copy bands' own copy stays the instance fixture's.
+  "/assessment/instances/[instanceId]/sent": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/sent/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-sent",
+    budget: 0,
+  },
   "/assessment/templates/[templateId]/create": {
     page: "app/(mainlayout)/assessment/templates/[templateId]/create/page.tsx",
     dirs: ["components/assessment-flow"],

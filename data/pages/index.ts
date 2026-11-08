@@ -37,6 +37,7 @@ import { templateLibraryPageCopy } from "./assessment-templates";
 import { relationshipReportPageCopy } from "./assessment-relationship-report";
 import { assessmentAcceptPageCopy } from "./assessment-accept";
 import { assessmentAnswerPageCopy } from "./assessment-answer";
+import { assessmentSentPageCopy } from "./assessment-sent";
 import { assessmentCreatePageCopy } from "./assessment-create";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
@@ -105,6 +106,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
   "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,
   "/assessment/instances/[instanceId]/accept": assessmentAcceptPageCopy,
+  // #691 — stage 5, Sent. Its own fixture: the status sentences and the timeline exist on no other
+  // screen, and the two bands it shares (the six stage names, one invitation's vocabulary) are
+  // referenced from their own homes rather than copied here.
+  "/assessment/instances/[instanceId]/sent": assessmentSentPageCopy,
   "/assessment/templates": templateLibraryPageCopy,
   "/assessment/templates/[templateId]": templateDetailPageCopy,
   "/assessment/templates/[templateId]/create": assessmentCreatePageCopy,

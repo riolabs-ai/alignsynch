@@ -20,7 +20,112 @@
  * composed first and the HTML derived from it. The `unlock-email` band this file used to carry
  * moved to `report-ready.ts` with the rest of the set; the screen's own words stayed.
  */
-import { zPageCopy, type PageCopy } from "../../content/pages";
+import { zPageCopy, type PageCopy, type PageCopySection } from "../../content/pages";
+
+/**
+ * The invitation band (#691) — the words one invitation is drawn with, on two surfaces.
+ *
+ * Authored here, beside the screen that grew them, and *referenced* by the Sent screen's
+ * fixture (`data/pages/assessment-sent.ts`) rather than copied into it: `claimed`, `expired`,
+ * `resend-heading`, the four `resend` refusals and the copy control's three outcomes are one
+ * invitation's vocabulary, and two fixtures carrying them would be two places a sentence drifts.
+ * That is the same rule `data/pages/lifecycle.ts` states for the six stage names.
+ *
+ * Typed as `PageCopySection` and validated where it is used: each fixture runs it through
+ * `zPageCopy.parse`, so this module carries no second schema.
+ */
+export const inviteBandSection: PageCopySection = {
+  id: "invite",
+  items: [
+    { id: "sent", label: "Invitation emailed to {email}" },
+    // Two ways for a send not to happen, and they are not the same sentence (#220). `unset`
+    // is a deployment with no mailer — it may name that fact to an operator, but never the
+    // variable, whose name is in the server log. `failed` is a send that was attempted and
+    // refused: it says only that, because the cause (a rate limit, an unverified domain, a
+    // bad recipient) is not something the reader can see or act on.
+    {
+      id: "unset",
+      label:
+        "No email was sent — this deployment has no mail sender configured. Send this link yourself:",
+    },
+    { id: "failed", label: "The invitation could not be sent. Send this link yourself:" },
+    { id: "link-label", label: "Invitation for {counterparty}" },
+    // #257 — the copy control beside that link. Three sentences, because there are three
+    // things that can happen and only one of them is a success: the link is on the
+    // clipboard, the browser refused and the link's text is selected for the reader, or the
+    // browser refused *and* the text could not be selected. The last one claims no
+    // selection, because a message that says "it is selected now" when it is not is worse
+    // than no message — the reader would paste nothing.
+    { id: "copy", label: "Copy link" },
+    { id: "copy-done", label: "Link copied — paste it into a message to {counterparty}." },
+    {
+      id: "copy-manual",
+      label:
+        "Your browser would not let the page copy the link, so it is selected above — press Ctrl+C or ⌘C to copy it.",
+    },
+    {
+      id: "copy-unavailable",
+      label:
+        "Your browser would not copy the link, and it could not be selected for you — select it above and copy it yourself.",
+    },
+    { id: "claimed", label: "{counterparty} has claimed the invitation" },
+    // #266 — three states, and the two that are not `claimed` name the deadline, because
+    // "no invitation has been claimed yet" and "the invitation died last Tuesday" are the
+    // same sentence to a reader who cannot see the clock. `expired` is deliberately not
+    // silent about the consequence: the link is not drawn in that state (`readFlowScreen`
+    // withholds it), so the panel says why there is nothing to send.
+    {
+      id: "unclaimed",
+      label: "{counterparty} has not claimed the invitation yet (it expires {date})",
+    },
+    {
+      id: "expired",
+      label:
+        "This invitation expired on {date}. The link no longer works — send {counterparty} a new one below.",
+    },
+    // #275 — the re-invite. One action, and it is revoke-and-replace: the new link is the only
+    // live one, so the panel says the old link dies rather than leaving the Initiator to
+    // assume two links now work. The budget (`{count} of {cap}`) is drawn because a refusal
+    // that arrives as a surprise is the thing the issue's copy guidance forbids; the refusals
+    // themselves are below, one item per code in `RESEND_REFUSALS` and keyed by that code, so
+    // the panel looks up the sentence the store's refusal named.
+    { id: "resend-heading", label: "Send {counterparty} a new invitation" },
+    { id: "resend-email", label: "Their email address" },
+    { id: "resend-submit", label: "Send a new link" },
+    {
+      id: "resend-note",
+      label:
+        "The new link replaces the one in the last email: the old link stops working as soon as you send this.",
+    },
+    { id: "resend-count", label: "Re-invitations sent: {count} of {cap}" },
+    {
+      id: "cooldown",
+      label:
+        "A new invitation went out less than 24 hours ago, so this one was not sent. You can send another a day after that.",
+    },
+    {
+      id: "cap-reached",
+      label:
+        "This invitation has been sent three times, which is as many as this app allows. Start a new instance with {counterparty} instead.",
+    },
+    {
+      id: "already-claimed",
+      label:
+        "This invitation has already been claimed, so there is nothing to send again — the link is spent.",
+    },
+    {
+      id: "instance-complete",
+      label:
+        "Both of you have answered, so this invitation is finished and there is nothing left to send.",
+    },
+    {
+      id: "invalid-email",
+      label: "That is not an address a message can be sent to. Check it and send again.",
+    },
+    { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
+    { id: "no-invite", label: "This instance has no invitation to send again." },
+  ],
+};
 
 export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
   heading: "Your instance",
@@ -275,98 +380,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         { id: "nothing", label: "Nothing has been paid on this relationship." },
       ],
     },
-    {
-      id: "invite",
-      items: [
-        { id: "sent", label: "Invitation emailed to {email}" },
-        // Two ways for a send not to happen, and they are not the same sentence (#220). `unset`
-        // is a deployment with no mailer — it may name that fact to an operator, but never the
-        // variable, whose name is in the server log. `failed` is a send that was attempted and
-        // refused: it says only that, because the cause (a rate limit, an unverified domain, a
-        // bad recipient) is not something the reader can see or act on.
-        {
-          id: "unset",
-          label:
-            "No email was sent — this deployment has no mail sender configured. Send this link yourself:",
-        },
-        { id: "failed", label: "The invitation could not be sent. Send this link yourself:" },
-        { id: "link-label", label: "Invitation for {counterparty}" },
-        // #257 — the copy control beside that link. Three sentences, because there are three
-        // things that can happen and only one of them is a success: the link is on the
-        // clipboard, the browser refused and the link's text is selected for the reader, or the
-        // browser refused *and* the text could not be selected. The last one claims no
-        // selection, because a message that says "it is selected now" when it is not is worse
-        // than no message — the reader would paste nothing.
-        { id: "copy", label: "Copy link" },
-        { id: "copy-done", label: "Link copied — paste it into a message to {counterparty}." },
-        {
-          id: "copy-manual",
-          label:
-            "Your browser would not let the page copy the link, so it is selected above — press Ctrl+C or ⌘C to copy it.",
-        },
-        {
-          id: "copy-unavailable",
-          label:
-            "Your browser would not copy the link, and it could not be selected for you — select it above and copy it yourself.",
-        },
-        { id: "claimed", label: "{counterparty} has claimed the invitation" },
-        // #266 — three states, and the two that are not `claimed` name the deadline, because
-        // "no invitation has been claimed yet" and "the invitation died last Tuesday" are the
-        // same sentence to a reader who cannot see the clock. `expired` is deliberately not
-        // silent about the consequence: the link is not drawn in that state (`readFlowScreen`
-        // withholds it), so the panel says why there is nothing to send.
-        {
-          id: "unclaimed",
-          label: "{counterparty} has not claimed the invitation yet (it expires {date})",
-        },
-        {
-          id: "expired",
-          label:
-            "This invitation expired on {date}. The link no longer works — send {counterparty} a new one below.",
-        },
-        // #275 — the re-invite. One action, and it is revoke-and-replace: the new link is the only
-        // live one, so the panel says the old link dies rather than leaving the Initiator to
-        // assume two links now work. The budget (`{count} of {cap}`) is drawn because a refusal
-        // that arrives as a surprise is the thing the issue's copy guidance forbids; the refusals
-        // themselves are below, one item per code in `RESEND_REFUSALS` and keyed by that code, so
-        // the panel looks up the sentence the store's refusal named.
-        { id: "resend-heading", label: "Send {counterparty} a new invitation" },
-        { id: "resend-email", label: "Their email address" },
-        { id: "resend-submit", label: "Send a new link" },
-        {
-          id: "resend-note",
-          label:
-            "The new link replaces the one in the last email: the old link stops working as soon as you send this.",
-        },
-        { id: "resend-count", label: "Re-invitations sent: {count} of {cap}" },
-        {
-          id: "cooldown",
-          label:
-            "A new invitation went out less than 24 hours ago, so this one was not sent. You can send another a day after that.",
-        },
-        {
-          id: "cap-reached",
-          label:
-            "This invitation has been sent three times, which is as many as this app allows. Start a new instance with {counterparty} instead.",
-        },
-        {
-          id: "already-claimed",
-          label:
-            "This invitation has already been claimed, so there is nothing to send again — the link is spent.",
-        },
-        {
-          id: "instance-complete",
-          label:
-            "Both of you have answered, so this invitation is finished and there is nothing left to send.",
-        },
-        {
-          id: "invalid-email",
-          label: "That is not an address a message can be sent to. Check it and send again.",
-        },
-        { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
-        { id: "no-invite", label: "This instance has no invitation to send again." },
-      ],
-    },
+    inviteBandSection,
     {
       id: "problems",
       items: [

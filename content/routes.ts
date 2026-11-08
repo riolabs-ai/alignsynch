@@ -105,6 +105,10 @@ const DYNAMIC_ROUTES = [
   // `page.tsx` in the same segment as a `route.ts`.
   "/assessment/instances/[instanceId]/answer",
   "/assessment/instances/[instanceId]/accept",
+  // #691 — stage 5, Sent: the screen the create lands on. A child of the instance rather than of
+  // the `create` tree, because the invitation's row is what it draws and the template is a fact on
+  // the session by the time it renders.
+  "/assessment/instances/[instanceId]/sent",
   "/assessment/templates/[templateId]",
   "/assessment/templates/[templateId]/create",
   // #688 — stage 2 of the create flow. A page, not a query switch: each stage has its own
