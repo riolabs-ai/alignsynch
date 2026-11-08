@@ -11,6 +11,10 @@ an **annotated tag `v<version>`**, and a **GitHub Release** whose body is that e
 `scripts/release.sh` writes all four, in that order, and refuses when the tree cannot support them.
 The script is the procedure; this page is why.
 
+A fifth artefact is written by a different command and answers the same question — does the released
+tree tell the truth about itself: `data/health/platform-health.json`, which `/admin/health` prints as
+status. Step 5 records it.
+
 ## The run order
 
 Eight steps, in this order. Each names the command it runs; the sections below are the reasons, and
@@ -93,17 +97,41 @@ that this tree passed.
 ### 5. Health record, last, at the version being released
 
 ```bash
-pnpm health:record --db --gate
+pnpm health:record --db --gate --carry
+git add data/health/platform-health.json
+git commit -m "chore(health): re-record platform health for 1.7.0"
 ```
 
 Run it after the bump and the entry are in the tree, and after the gate, so the record it writes
 describes the release it ships with rather than the previous one, and so its two expensive
 measurements are this tree's: `--db` adds a real `db:verify` block (against `demo`, never
-production), `--gate` a timed run of the gate in a clean environment. `--carry` keeps a block this
-run did not measure and marks it old. Commit the file — `/admin/health` renders the **committed**
-record, and `tests/platform-health.test.ts` fails the gate when it is older than
+production), `--gate` a timed run of the gate in a clean environment. `--carry` keeps the blocks this
+run did not measure — the CI yield, unless `--ci <window>` re-derives it — each with its own instant,
+so a carried block reads as old rather than as this run's. **Without `--carry` (or a `--ci` window)
+the command stops instead of carrying a block silently**, which is why it is in the line above.
+Commit the file — `/admin/health` renders the **committed** record, and
+`tests/platform-health.test.ts` fails the gate when it is older than
 `PLATFORM_HEALTH_FRESHNESS_HOURS` (72 h by default), so a stale record is a red build rather than a
 quiet lie.
+
+The recorder then checks the artefact it wrote and exits non-zero when any of these is untrue —
+asserting the postcondition, not the exit code of the run that produced it (#680):
+
+| The record must say                    | Because                                                                                                   |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `recordedAt` is this run               | a carried stamp makes an old measurement read as current                                                  |
+| `tree.packageVersion == package.json`  | a `1.5.0` record beside a `1.6.0` package describes neither version, and this is the step that catches it |
+| `dbVerify.database` is the demo branch | a deliberately broken probe recorded as status made `/admin/health` read `Fail` forever                   |
+
+The third is a refusal **before anything is measured**: the label is derived from the connection
+string's Neon endpoint, and a copy of `demo` — which is what a scratch or probe branch is — has its
+own, so a run pointed anywhere else writes nothing and names the alternative. Evidence about a check
+belongs in `data/health/probes/`, written by the same command's probe mode; `--database-label` exists
+**only** there, because a label somebody types is how a scratch branch once recorded itself as status:
+
+```bash
+pnpm health:record --probe <name> --db --database-label "<how it was broken>" --proves "<what it proves>"
+```
 
 One thing to expect rather than debug: the `production` block of a pre-cut record names the version
 production serves _now_ — the previous release. It is a measurement, not a claim about what you are
@@ -180,7 +208,6 @@ gh api repos/riolabs-ai/alignsynch/milestones/12 -X PATCH -f state=closed
 
 An issue that is genuinely unfinished does not get closed with the milestone: it moves to the next
 milestone, by name, in the same pass — the milestone is a scope statement, not an archive.
-
 
 The live prototype is <https://alignsynch-amber.vercel.app/>. The script does not deploy and does not
 wait for a deploy, and a tag is not a deploy trigger. A **merge** is: while the project's Git
