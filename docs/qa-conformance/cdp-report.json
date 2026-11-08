@@ -116,7 +116,7 @@
     },
     {
       "url": "/assessment/instances",
-      "title": "My Relationships",
+      "title": "Your relationships",
       "innerWidth": 1440,
       "scrollWidth": 1440,
       "columnLeft": 274,
@@ -130,7 +130,7 @@
     },
     {
       "url": "/assessment/instances",
-      "title": "My Relationships",
+      "title": "Your relationships",
       "innerWidth": 390,
       "scrollWidth": 390,
       "columnLeft": 12,
