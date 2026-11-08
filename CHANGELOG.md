@@ -6,6 +6,60 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.8.0] - 2026-11-08
+
+### Added
+
+- `feat(flow)` — conform to the six-stage spec — Details · Settings · Aspects · Invite · Connect · Align (#735) ([#737](https://github.com/riolabs-ai/alignsynch/pull/737))
+- `feat(admin)` — ADMIN_EMAILS is enforced at seed time, not only at sign-in ([#730](https://github.com/riolabs-ai/alignsynch/pull/730))
+- `feat(admin)` — a reason is optional on every action form, and no screen asks for one (#732) ([#736](https://github.com/riolabs-ai/alignsynch/pull/736))
+- `feat(ui)` — the answer flow shows one progress pattern — the cell rail (#716) ([#733](https://github.com/riolabs-ai/alignsynch/pull/733))
+- `feat(flow)` — the create flow opens as one modal and closes onto the dashboard (#709) ([#728](https://github.com/riolabs-ai/alignsynch/pull/728))
+- `feat(ui)` — the member console is left-justified on the shared StageColumn (C1) (#715) ([#722](https://github.com/riolabs-ai/alignsynch/pull/722))
+- `feat(onboarding)` — stage 6 Ongoing — the Alignment, aspect by aspect (#692) ([#703](https://github.com/riolabs-ai/alignsynch/pull/703))
+- `feat(onboarding)` — stage 5 Sent — the invitation's state, what happens next (#691) ([#702](https://github.com/riolabs-ai/alignsynch/pull/702))
+- `feat(onboarding)` — stage 4 Create and the post-stage-4 account gate (#690) ([#701](https://github.com/riolabs-ai/alignsynch/pull/701))
+
+### Fixed
+
+- `fix(review)` — v6's capture is dated after v5's, so the console lists it first (#708) ([#727](https://github.com/riolabs-ai/alignsynch/pull/727))
+- `fix(ui)` — a hover shade is painted as a color the parser accepts, not a bare triple ([#726](https://github.com/riolabs-ai/alignsynch/pull/726))
+- `fix(member)` — a Counterparty sees their relationship, and writes stay initiator-only (#706) ([#720](https://github.com/riolabs-ai/alignsynch/pull/720))
+- `fix(e2e)` — drive the four-stage create and register the instance before it throws (#704) ([#705](https://github.com/riolabs-ai/alignsynch/pull/705))
+
+### Maintenance
+
+- `docs(specs)` — the flow is six stages, and the spec is binding ([#734](https://github.com/riolabs-ai/alignsynch/pull/734))
+- `docs(review)` — v6 — the flow as a modal, the dashboard it closes onto, and both viewports (#708) ([#725](https://github.com/riolabs-ai/alignsynch/pull/725))
+- `docs(agents)` — Card carries no shadow — elevation is a border, not the primitive's default ([#724](https://github.com/riolabs-ai/alignsynch/pull/724))
+
+### Known limits
+
+- **`Align` is conditional, so a brand-new relationship shows five live stages.** The flow
+  conformed to the spec in this release (#735): the rail prints `Stage {n} of 6`, the words are
+  `Details · Settings · Aspects · Invite · Connect · Align`, `Ongoing` is gone, and completion
+  lands on the relationship detail page in the dashboard. `Align` goes live only once one or more
+  assessments are shared, so the sixth stage is visible but not enterable before then.
+- **Prototype text and content revisions are not in this release.** The owner is preparing them for
+  the next one; the `/admin/review/ia` rail proposal (#731) is parked and part of no release.
+- **`pnpm db:seed` refuses on the demo branch.** Demo carries assessment rows the demo dataset does
+  not author (eight at the time of writing), and the seed fails rather than clobber them. The
+  documented recovery is `pnpm demo:reset`, which is destructive to demo only. Local and CI are
+  unaffected: the gate never opens a connection.
+- **`ADMIN_EMAILS` is enforced at seed time, not by the platform.** `pnpm admin:ensure` and
+  `pnpm db:seed` create or promote the profile for any allowlisted address that already has an
+  account; an address with no account on the branch is reported `pending sign-in` and is promoted
+  the first time it signs in. Nothing creates an account.
+- **A reason is now optional, but the column is kept.** No screen asks for one and `act()` writes
+  NULL when none arrives; `admin_action.reason` stays nullable so an operator's stated reason is
+  still recorded when they give one. The audit history before this release keeps its reasons.
+- **The review artifacts are documents, not the product.** `/admin/review` serves the prototype
+  HTML behind the admin gate; it draws the proposal and ships none of the behaviour it shows.
+- **One payment path still carries a known risk.** Publishing can start a trial or checkout at
+  creation while completion also writes a `relationship_payment` obligation (ADR-1). Unchanged by
+  this release, and only reachable with test keys today.
+
+
 ## [1.7.0] - 2026-11-08
 
 ### Added
@@ -1035,3 +1089,4 @@ The admin console, and relationship templates become products.
 [1.2.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.1.0-rc1...v1.2.0
 [1.3.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.2.0...v1.3.0
 [1.7.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.6.0...v1.7.0
+[1.8.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.7.0...v1.8.0
