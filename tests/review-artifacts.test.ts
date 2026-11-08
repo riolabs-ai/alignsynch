@@ -160,8 +160,8 @@ describe("grouping by release", () => {
 
   it("groups by the release the manifest names, newest first, and a group is one state", () => {
     const summaries = reviewArtifacts.map((row) => summaryOf(row.id, row.version));
-    const shelf = shelfOf(summaries, manifest, ["1.6.0", "1.5.0"]);
-    expect(shelf.groups.map((group) => group.label)).toEqual(["v1.6.0"]);
+    const shelf = shelfOf(summaries, manifest, ["1.7.0", "1.6.0"]);
+    expect(shelf.groups.map((group) => group.label)).toEqual(["v1.7.0"]);
     expect(shelf.groups[0].status).toBe("active");
     for (const entry of shelf.groups[0].entries) {
       expect(entry.lookFor.length).toBeGreaterThan(0);
@@ -173,19 +173,19 @@ describe("grouping by release", () => {
     const withPrev = new Map(manifest);
     withPrev.set(reviewArtifacts[0].id, {
       ...withPrev.get(reviewArtifacts[0].id)!,
-      release: "1.5.0",
+      release: "1.6.0",
     });
-    const shelf = shelfOf(summaries, withPrev, ["1.6.0", "1.5.0"]);
+    const shelf = shelfOf(summaries, withPrev, ["1.7.0", "1.6.0"]);
     expect(shelf.groups.map((group) => `${group.label}:${group.status}`)).toEqual([
-      "v1.6.0:active",
-      "v1.5.0:archived",
+      "v1.7.0:active",
+      "v1.6.0:archived",
     ]);
     expect(shelf.groups[1].entries).toHaveLength(1);
   });
 
   it("orders the rows inside a group by version, newest first", () => {
     const summaries = reviewArtifacts.map((row) => summaryOf(row.id, row.version));
-    const shelf = shelfOf(summaries, manifest, ["1.6.0"]);
+    const shelf = shelfOf(summaries, manifest, ["1.7.0"]);
     /* the rule is newest-first, so the expectation is every published version in descending order —
        adding a row is a data change, and this must keep proving the order rather than a fixed list */
     expect(shelf.groups[0].entries.map((entry) => entry.summary.artifact.version)).toEqual([
@@ -200,13 +200,13 @@ describe("grouping by release", () => {
   it("keeps the latest capture at the head of its group", () => {
     const a = summaryOf(reviewArtifacts[0].id, "v4");
     const b = { ...summaryOf(reviewArtifacts[1].id, "v3") };
-    const shelf = shelfOf([b, a], manifest, ["1.6.0"]);
+    const shelf = shelfOf([b, a], manifest, ["1.7.0"]);
     expect(shelf.groups[0].entries[0].summary.artifact.id).toBe(a.artifact.id);
   });
 
   it("resolves the same entry by id and by slug", () => {
     const summaries = reviewArtifacts.map((row) => summaryOf(row.id, row.version));
-    const shelf = shelfOf(summaries, manifest, ["1.6.0"]);
+    const shelf = shelfOf(summaries, manifest, ["1.7.0"]);
     const artifact = reviewArtifacts[0];
     expect(shelf.byId.get(artifact.id)?.summary.artifact.slug).toBe(artifact.slug);
     expect(shelf.bySlug.get(artifact.slug)?.summary.artifact.id).toBe(artifact.id);
@@ -271,7 +271,7 @@ describe("the screen with rows in it (#665 follow-up)", () => {
       },
     ],
   };
-  const shelf = shelfOf([summary], manifest, ["1.6.0", "1.5.0"]);
+  const shelf = shelfOf([summary], manifest, ["1.7.0", "1.6.0"]);
   const noop = async () => ({ ok: true }) as const;
 
   const render = (thread: { issue: (typeof detail.issues)[number]; comments: [] } | null) =>
