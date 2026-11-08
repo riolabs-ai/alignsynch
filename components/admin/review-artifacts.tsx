@@ -407,10 +407,7 @@ export function ReviewArtifacts({
                             {selected.issues.map((issue) => (
                               <li key={issue.id}>
                                 <Link
-                                  href={reviewIssuePath(
-                                    selected.artifact.slug,
-                                    issue.number,
-                                  )}
+                                  href={reviewIssuePath(selected.artifact.slug, issue.number)}
                                   data-issue={issue.number}
                                   data-status={issue.state}
                                   className="flex flex-col gap-1.5 px-6 py-3 transition-colors hover:bg-muted/60"

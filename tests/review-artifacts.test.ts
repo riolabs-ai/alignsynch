@@ -79,16 +79,16 @@ describe("the review manifest", () => {
         slug: "prototype-unlisted",
       },
     ];
-    expect(() =>
-      readReviewManifest(join(root, "docs/review/artifacts.json"), catalogue),
-    ).toThrow(ReviewManifestUnreadable);
+    expect(() => readReviewManifest(join(root, "docs/review/artifacts.json"), catalogue)).toThrow(
+      ReviewManifestUnreadable,
+    );
   });
 
   it("refuses a manifest row that names no published artifact", () => {
     const catalogue = reviewArtifacts.filter((row) => row.id !== reviewArtifacts[0].id);
-    expect(() =>
-      readReviewManifest(join(root, "docs/review/artifacts.json"), catalogue),
-    ).toThrow(ReviewManifestUnreadable);
+    expect(() => readReviewManifest(join(root, "docs/review/artifacts.json"), catalogue)).toThrow(
+      ReviewManifestUnreadable,
+    );
   });
 
   it("refuses a manifest that is not the shape it claims", () => {
@@ -118,7 +118,9 @@ describe("the review manifest", () => {
       broken,
       JSON.stringify({ schemaVersion: 1, artifacts: [parsed.artifacts[0], parsed.artifacts[0]] }),
     );
-    expect(() => readReviewManifest(broken, [reviewArtifacts[0]])).toThrow(ReviewManifestUnreadable);
+    expect(() => readReviewManifest(broken, [reviewArtifacts[0]])).toThrow(
+      ReviewManifestUnreadable,
+    );
   });
 });
 
@@ -132,9 +134,9 @@ describe("every artifact renders a real file", () => {
   });
 
   it("reports a path the tree does not have as an unreadable shelf, not an empty frame", () => {
-    expect(() => reviewFilePath({ path: "docs/review/artifacts/does-not-exist.html" }, root)).toThrow(
-      ReviewManifestUnreadable,
-    );
+    expect(() =>
+      reviewFilePath({ path: "docs/review/artifacts/does-not-exist.html" }, root),
+    ).toThrow(ReviewManifestUnreadable);
   });
 });
 
@@ -154,7 +156,10 @@ describe("grouping by release", () => {
   it("renders an older release as archived as a whole", () => {
     const summaries = reviewArtifacts.map((row) => summaryOf(row.id, row.version));
     const withPrev = new Map(manifest);
-    withPrev.set(reviewArtifacts[0].id, { ...withPrev.get(reviewArtifacts[0].id)!, release: "1.5.0" });
+    withPrev.set(reviewArtifacts[0].id, {
+      ...withPrev.get(reviewArtifacts[0].id)!,
+      release: "1.5.0",
+    });
     const shelf = shelfOf(summaries, withPrev, ["1.6.0", "1.5.0"]);
     expect(shelf.groups.map((group) => `${group.label}:${group.status}`)).toEqual([
       "v1.6.0:active",
