@@ -21,11 +21,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **88** — 55 static, 33 dynamic, from `app/**/page.tsx`
-- component domains: **42** — 310 files under `components/`, 303 of them `.tsx`
+- routes: **89** — 55 static, 34 dynamic, from `app/**/page.tsx`
+- component domains: **42** — 311 files under `components/`, 304 of them `.tsx`
 - route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 15 · **fixture** 67 · **db** 39 · **live** 8 · **prototype** 1
-- templates: Both templates 42 · AlignSynch 44 · QuizHub 42 · No template yet 2
+- status: **mock** 15 · **fixture** 67 · **db** 40 · **live** 8 · **prototype** 1
+- templates: Both templates 42 · AlignSynch 45 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -400,6 +400,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The read surface the app did not have until #409, ported from the `/v1` prototype's `report-body.tsx` as a server component over `lib/assessment-report.ts` — never a rewiring of the client store (#228, E34). The blind rule is the `screen.report === null` branch, not a redaction: before both parties have submitted, `readFlowScreen` has not read the other party's opinion rows at all and the route draws the locked page, which carries no score, no Gap and no count of the other party's progress. Every number is `gapKindsOf()` over stored rows; an unanswered Opinion prints a dash, never a 0. The viewer is the party cookie's seat (or a coach's membership), so a browser with no role on the relationship gets a 404.
 
+- `/assessment/instances/[instanceId]/sent` — **db**
+  - capability: Stage 5, Sent: the invitation's state as three moments — sent, waiting or expired or withdrawn, accepted — with what happens next, the address it went to, the resend control and the way into the relationship.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The screen the create lands on (#691): `POST /assessment/new` redirects a signed-in creator here and the account gate forwards a freshly signed-in one, so the stage between the commit and the relationship is a page rather than nothing. The template is `components/assessment-flow/accept-session.tsx` — a single-outcome screen with a status sentence and a next-step list — and the variation is `components/assessment-flow/sent-state.tsx`: a state screen whose centre is the invitation's own timeline. Every state word is `inviteStateOf()`'s answer over the row (`claimed_at` / `expires_at` / `revoked_at`) at the instant the read carried, so `unclaimed`, `expired`, `claimed` and `revoked` each get their own sentence and `screen.invite.link` is only drawn while the claim path would still accept it. The two dates the timeline adds (`created_at`, `claimed_at`) are read in `readInstanceBundle()` and carried as ISO instants — no clock is read in the render path. Resend is the shipped `ReinviteForm` posting to the same `POST …/invite` endpoint, with its cooldown and lifetime cap; the form carries `returnTo=sent` so the 303 comes back to this screen rather than dropping the person onto stage 6 mid-action, and that field is a closed literal, never a URL. Signed out is behind the person, not in front: nothing here redirects to sign-in, and the `go` band says where the relationship lives until an account claims it.
+
 - `/assessment/templates` — **db**
   - capability: The template catalogue, grouped by the relationship type each template names (Business · Personal, then the ones that name none): one card per template with its type, realm, roles and Aspect count, a View details link, and duplicate/archive on the rows this account owns.
   - components: `components/assessment-flow`
@@ -498,8 +504,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (24): `accept-session.tsx`, `account-gate.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
-  - routes (18): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/account`, `/assessment/templates/[templateId]/create/aspects`, `/assessment/templates/[templateId]/create/commit`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/invite/[token]`
+  - files (25): `accept-session.tsx`, `account-gate.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
+  - routes (19): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/account`, `/assessment/templates/[templateId]/create/aspects`, `/assessment/templates/[templateId]/create/commit`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/console` — **mock**

@@ -278,27 +278,58 @@ export function createAccountForPath(templateRecordId: string, instanceRecordId:
 }
 
 /**
- * **Where the create sends the browser (#690).** The one decision `POST /assessment/new` makes
+ * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Sent** (#691).
+ *
+ * A child of the instance, beside `answer`, `accept` and `report`, because the screen is about one
+ * committed relationship: the invitation's row is what it draws, and the id in its address is the
+ * one the create just committed. It is deliberately **not** `…/create/sent`: the `create` tree is
+ * the template's, and by the time this screen renders the template is a fact on the session rather
+ * than the subject of the page.
+ *
+ * A page, not a query flag on the instance screen, because the two are different stages: Sent is
+ * stage 5 and draws the six-stage rail; the instance screen is stage 6 and keeps its status
+ * sentence (`docs/specs/ux-stages.md`). One route per stage is what lets a reload, a link and the
+ * back button all land where the person was.
+ */
+export function sentPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/sent`;
+}
+
+/**
+ * The `returnTo` value the Sent screen's resend form posts (#691).
+ *
+ * A value, not a sentence — the same rule `INVITE_INTENT_VALUE` follows. The re-invite endpoint
+ * reads it as a closed literal and maps it to `sentPath()`, so it never becomes a URL a post could
+ * choose; it lives here so the form and the handler cannot disagree about the spelling.
+ */
+export const SENT_RETURN_VALUE = "sent";
+
+/**
+ * **Where the create sends the browser (#690, #691).** The one decision `POST /assessment/new` makes
  * about the screen, kept here so it is a test rather than a claim about a route handler.
  *
  * - A **signed-out** creator lands on the gate. Their relationship exists — the endpoint has always
  *   accepted a post with no initiator (#146/#213) — and the gate is the screen that offers the
  *   account *after* the fact, which is the whole of #659: the account is not a stage, so nothing
  *   makes a person sign up before they have something to sign up for.
- * - A **signed-in** creator lands on the relationship, where the invitation's outcome and the
- *   publish band are. Asking an account of somebody who has one is a step that can only annoy.
+ * - A **signed-in** creator lands on **Sent** (#691), which is stage 5: the invitation's state, what
+ *   happens next and the way into the relationship. It is no longer the relationship screen itself,
+ *   because that is stage 6 and the card's whole point is that the two are different screens.
  * - A post naming **no template** never came through the flow (`scripts/flow-e2e.mjs`, a `curl`),
- *   so there is no gate to send it to: it goes to the relationship like any other committed create.
+ *   so there is no gate and no flow stage to send it to: it goes to the relationship like any other
+ *   committed create.
  */
 export function afterCreateTarget(input: {
   viewerSignedIn: boolean;
   templateRecordId: string;
   instanceRecordId: string;
 }): string {
-  const gate = !input.viewerSignedIn && input.templateRecordId !== "";
-  return gate
-    ? createAccountForPath(input.templateRecordId, input.instanceRecordId)
-    : instancePath(input.instanceRecordId);
+  if (input.templateRecordId !== "") {
+    return input.viewerSignedIn
+      ? sentPath(input.instanceRecordId)
+      : createAccountForPath(input.templateRecordId, input.instanceRecordId);
+  }
+  return instancePath(input.instanceRecordId);
 }
 
 /**

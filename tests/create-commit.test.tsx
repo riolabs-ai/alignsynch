@@ -198,14 +198,14 @@ describe("where the create sends the browser", () => {
     ).toBe(createAccountForPath(TEMPLATE_ID, INSTANCE_ID));
   });
 
-  it("sends a signed-in creator straight to the relationship", () => {
+  it("sends a signed-in creator to Sent, which is stage 5 (#691)", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: true,
         templateRecordId: TEMPLATE_ID,
         instanceRecordId: INSTANCE_ID,
       }),
-    ).toBe(`/assessment/instances/${INSTANCE_ID}`);
+    ).toBe(`/assessment/instances/${INSTANCE_ID}/sent`);
   });
 
   it("has no gate for a post that never came through the flow", () => {

@@ -395,6 +395,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/assessment/instances/[instanceId]/sent",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Stage 5, Sent: the invitation's state as three moments — sent, waiting or expired or withdrawn, accepted — with what happens next, the address it went to, the resend control and the way into the relationship.",
+    notes:
+      "The screen the create lands on (#691): `POST /assessment/new` redirects a signed-in creator here and the account gate forwards a freshly signed-in one, so the stage between the commit and the relationship is a page rather than nothing. The template is `components/assessment-flow/accept-session.tsx` — a single-outcome screen with a status sentence and a next-step list — and the variation is `components/assessment-flow/sent-state.tsx`: a state screen whose centre is the invitation's own timeline. Every state word is `inviteStateOf()`'s answer over the row (`claimed_at` / `expires_at` / `revoked_at`) at the instant the read carried, so `unclaimed`, `expired`, `claimed` and `revoked` each get their own sentence and `screen.invite.link` is only drawn while the claim path would still accept it. The two dates the timeline adds (`created_at`, `claimed_at`) are read in `readInstanceBundle()` and carried as ISO instants — no clock is read in the render path. Resend is the shipped `ReinviteForm` posting to the same `POST …/invite` endpoint, with its cooldown and lifetime cap; the form carries `returnTo=sent` so the 303 comes back to this screen rather than dropping the person onto stage 6 mid-action, and that field is a closed literal, never a URL. Signed out is behind the person, not in front: nothing here redirects to sign-in, and the `go` band says where the relationship lives until an account claims it.",
+  },
+  {
+    kind: "route",
     surface: "/assessment/templates",
     status: "db",
     templates: ["alignsynch"],

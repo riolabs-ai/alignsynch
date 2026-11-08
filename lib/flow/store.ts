@@ -2013,8 +2013,18 @@ export interface InstanceBundle {
   readonly invite: {
     readonly email: string;
     readonly counterpartyName: string;
+    /**
+     * `created_at` — when the invitation was minted (#691).
+     *
+     * Read for the Sent screen's timeline: "sent on <date>" is the row's own instant, not the
+     * instant the person happens to be looking at the screen. A re-invite replaces the token and
+     * moves `expires_at`, but not this, so the moment the invitation first went out stays true.
+     */
+    readonly sentAt: Date;
     /** `claimed_at IS NOT NULL` — the token was spent. */
     readonly claimed: boolean;
+    /** `claimed_at` — when the seat was filled, or `null` while it is not (#691, the timeline). */
+    readonly claimedAt: Date | null;
     /**
      * `expires_at`, straight off the row (#266).
      *
@@ -2086,13 +2096,14 @@ export async function readInstanceBundle(
   const [invite] = await query<{
     email: string;
     counterparty_name: string;
+    created_at: Date;
     claimed_at: Date | null;
     expires_at: Date;
     resent_at: Date | null;
     resent_count: number;
     revoked_at: Date | null;
   }>(
-    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count, revoked_at
+    `SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count, revoked_at
        FROM session_invite WHERE session_record_id = $1`,
     [instanceRecordId],
   );
@@ -2124,7 +2135,9 @@ export async function readInstanceBundle(
         : {
             email: invite.email,
             counterpartyName: invite.counterparty_name,
+            sentAt: invite.created_at,
             claimed: invite.claimed_at !== null,
+            claimedAt: invite.claimed_at,
             expiresAt: invite.expires_at,
             resentAt: invite.resent_at,
             resentCount: invite.resent_count,
@@ -2424,6 +2437,11 @@ export async function readFlowScreen(input: {
       : {
           email: bundle.invite.email,
           counterpartyName: bundle.invite.counterpartyName,
+          // #691 — the two instants the Sent screen's timeline is drawn from, as ISO strings so
+          // the view formats them with `formatDate()` and never re-derives a date.
+          sentAt: bundle.invite.sentAt.toISOString(),
+          claimedAt:
+            bundle.invite.claimedAt === null ? null : bundle.invite.claimedAt.toISOString(),
           expiresAt: bundle.invite.expiresAt.toISOString(),
           state: inviteStateOf(bundle.invite, now),
           // #275 — the re-invite history, drawn as a sentence ("2 of 3 sent") rather than acted
