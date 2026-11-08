@@ -184,8 +184,11 @@ export function shellCopy(brand: Brand): PageCopy {
        *   Dashboard      `/dashboard`             the signed-in console's front page (console 2/5)
        *   How it works   `/how-it-works`          the in-app onboarding page: the order a member
        *                                           does the work in, step by step
-       *   My Relationships `/assessment/instances` — the relationship list R1 ships, read from
-       *                                             Postgres; not the browser-local `/v1/` prototype
+       *   My Relationships `/dashboard/relationships` — the console's list of every relationship the
+       *                                           member is a party to (console, cards with the four
+       *                                           actions). The surface you *answer* from,
+       *                                           `/assessment/instances`, reads **Your
+       *                                           relationships** since #706: two screens, two names.
        *   Library        `/assessment/templates`  the template catalogue: built-ins plus this
        *                                             account's
        *   Templates      `/templates`              the public Relationship Templates catalogue:

@@ -1,24 +1,32 @@
 // template-ancestor: components/assessment-flow/my-instances.tsx   (variation: the same relationship card — a `bg-gray-50` header block carrying the template pill and the state pill, a `text-lg font-semibold` title, a body of chips, and an `h-9` action row — with the two assessment actions on every card, the paid block and the four-metric grid left out because this read does not carry a session count, and two controls that are deliberately disabled until payment and the Gap exist)
 
 /**
- * `/dashboard/relationships` — the member's relationships as cards (#620).
+ * `/dashboard/relationships` — the member's relationships as cards (#620, #706).
+ *
+ * **The list is every relationship the viewer is a party to, and the card says which seat is
+ * theirs.** The same component draws the initiator's card and the counterparty's: the title, the
+ * status, the Aspects and the invitation state are one read (`MemberRelationshipRow`), and the two
+ * differences are derived, never guessed — `viewerRole` prints the seat, `isInitiator` decides
+ * whether the two write controls and their note exist at all. A Counterparty gets `View
+ * Relationship`, because the screen behind it is read-only for them; drawing `Publish Assessment`
+ * there would be an affordance the server answers with `not-yours`.
  *
  * **The card is `my-instances.tsx`'s card, and the axis of variation is the data.** That card is
  * a projection of `RelationshipCard` (`lib/db/assessments.ts`): sessions, completion, mean Gap,
  * what was paid. This screen reads `MemberRelationshipRow` (`lib/member/relationships.ts`), which
- * is the *initiator's* row — the stored lifecycle, the invitation's derived view, the membership,
- * the Aspect count — and carries no opinion rows at all. So the header block, the title, the
- * chips and the `h-9` action row are the ancestor's, and the metric grid is simply absent rather
- * than drawn from figures this read never returned. `template-ancestor:` names the file for the
- * same reason every other card in `components/dashboard/` does.
+ * carries the stored lifecycle, the invitation's derived view, the membership, the Aspect count —
+ * and carries no opinion rows at all. So the header block, the title, the chips and the `h-9`
+ * action row are the ancestor's, and the metric grid is simply absent rather than drawn from
+ * figures this read never returned. `template-ancestor:` names the file for the same reason every
+ * other card in `components/dashboard/` does.
  *
- * **Four actions, and only two of them are live — on purpose.** The owner's decision on #620:
- * ship the menu and the card now, with the actions the product cannot reach yet **visibly
- * disabled**. `Activate Relationship` needs payment (`#619`'s state does not exist) and
- * `Gap Analysis` needs the Gap the report opens; hiding them was rejected — a person should see
- * that completion is coming — and wiring them to nothing would be a dead control. **This is
- * temporary and it is written down in the handoff:** the change that makes payment possible must
- * wire `Activate Relationship`, or this ships a permanently dead button.
+ * **Four actions, and only two of them are live — on purpose, for the initiator only.** The
+ * owner's decision on #620: ship the menu and the card now, with the actions the product cannot
+ * reach yet **visibly disabled**. `Activate Relationship` needs payment (`#619`'s state does not
+ * exist) and `Gap Analysis` needs the Gap the report opens; hiding them was rejected — a person
+ * should see that completion is coming — and wiring them to nothing would be a dead control.
+ * **This is temporary and it is written down in the handoff:** the change that makes payment
+ * possible must wire `Activate Relationship`, or this ships a permanently dead button.
  *
  * **Two more refusals are drawn, not hidden.** `Publish Assessment` is a link to the relationship's
  * own screen, which is the only surface that publishes and the only one that can say why a
@@ -119,13 +127,17 @@ export function RelationshipCards({
             const assessmentHref =
               row.sessionRecordId === null ? null : instancePath(row.sessionRecordId);
             const publishHref = memberRelationshipPath(row.id);
-            const other = row.counterpartyName ?? itemLabel(card, "not-claimed");
+            const other =
+              row.viewerRole === "initiator"
+                ? (row.counterpartyName ?? itemLabel(card, "not-claimed"))
+                : (row.initiatorName ?? itemLabel(card, "the-other"));
             return (
               <li
                 key={row.id}
                 data-relationship-card={row.id}
                 data-relationship-status={row.status}
                 data-relationship-view={row.view}
+                data-relationship-role={row.viewerRole}
                 className={CARD}
               >
                 <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
@@ -138,6 +150,12 @@ export function RelationshipCards({
                           {statusLabel(statusCopy, "read-only")}
                         </span>
                       ) : null}
+                      {/* #706 — whose seat this is, from the viewer's own party row. */}
+                      <span data-viewer-role={row.viewerRole} className={CHIP}>
+                        {row.viewerRole === "initiator"
+                          ? itemLabel(card, "role-initiator")
+                          : itemLabel(card, "role-counterparty")}
+                      </span>
                     </span>
                   </div>
                   <Link
@@ -184,20 +202,29 @@ export function RelationshipCards({
                       </Link>
                     )}
                     <Link href={publishHref} className={ACTION_PRIMARY}>
-                      {itemLabel(card, "publish-assessment")}
+                      {row.isInitiator
+                        ? itemLabel(card, "publish-assessment")
+                        : itemLabel(card, "open-relationship")}
                     </Link>
                     {/* Disabled until payment exists (#619). The change that wires payment owns
-                        these two controls — see the handoff note on #620. */}
-                    <button type="button" disabled className={ACTION_DISABLED}>
-                      {itemLabel(card, "activate")}
-                    </button>
-                    <button type="button" disabled className={ACTION_DISABLED}>
-                      {itemLabel(card, "gap")}
-                    </button>
+                        these two controls — see the handoff note on #620. They are the initiator's
+                        to act on, so a Counterparty's card does not draw them (#706). */}
+                    {row.isInitiator ? (
+                      <>
+                        <button type="button" disabled className={ACTION_DISABLED}>
+                          {itemLabel(card, "activate")}
+                        </button>
+                        <button type="button" disabled className={ACTION_DISABLED}>
+                          {itemLabel(card, "gap")}
+                        </button>
+                      </>
+                    ) : null}
                   </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    {itemLabel(card, "disabled-note")}
-                  </p>
+                  {row.isInitiator ? (
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                      {itemLabel(card, "disabled-note")}
+                    </p>
+                  ) : null}
                 </div>
               </li>
             );

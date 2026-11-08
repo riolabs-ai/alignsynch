@@ -22,24 +22,28 @@ vi.mock("next/link", () => ({
 
 import { RelationshipCards } from "@/components/dashboard/relationship-cards";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
+import type { MemberRelationshipRow } from "@/lib/member/relationships";
 
 const copy = dashboardRelationshipsPageCopy;
 
 /** One relationship, in the shape `listMyRelationships()` hands the page. */
-const row = {
+const row: MemberRelationshipRow = {
   id: "relationship-member-abc123",
-  status: "pending" as const,
+  status: "pending",
+  viewerRole: "initiator",
+  isInitiator: true,
   templateId: "member-config-abc123",
   title: "Son Basics",
   summary: "What we want to ask each other every month.",
   createdAt: "2026-11-01T12:00:00.000Z",
   publishedAt: null,
-  sessionRecordId: "member-session-abc123" as string | null,
+  sessionRecordId: "member-session-abc123",
   aspectCount: 6,
   invite: null,
   counterpartyName: "Junior",
-  view: "not-published" as const,
-  membership: { state: "open" as const, reason: null, endedAt: null, writable: true },
+  initiatorName: "Avery",
+  view: "not-published",
+  membership: { state: "open", reason: null, endedAt: null, writable: true },
 };
 
 function render(overrides: Partial<typeof row> = {}): string {
@@ -92,5 +96,53 @@ describe("the relationship card", () => {
     expect(html).toContain("Not sent");
     expect(html).toContain("with");
     expect(html).toContain("Junior");
+  });
+
+  it("says which seat the initiator holds, and keeps both write controls (#706)", () => {
+    const html = render();
+    expect(html).toContain('data-relationship-role="initiator"');
+    expect(html).toContain("Initiator");
+    expect(html).toContain("Publish Assessment");
+    expect(html).toContain("Activate Relationship");
+  });
+});
+
+/**
+ * #706 — the same card, read by the Counterparty.
+ *
+ * The defect was that this reader got no row at all; the fix is a list keyed on the party binding.
+ * What this file holds is the other half: the row that now appears draws **no write control**, and
+ * it names the person whose relationship it is rather than printing the reader's own name back.
+ */
+describe("the relationship card a Counterparty reads", () => {
+  const counterparty = {
+    viewerRole: "counterparty" as const,
+    isInitiator: false,
+    counterpartyName: "Junior",
+    initiatorName: "Avery",
+  };
+
+  it("says Counterparty, and names the initiator it is with", () => {
+    const html = render(counterparty);
+    expect(html).toContain('data-relationship-role="counterparty"');
+    expect(html).toContain("Counterparty");
+    expect(html).toContain("with");
+    expect(html).toContain("Avery");
+    expect(html).not.toContain("Junior");
+  });
+
+  it("draws no publish control and no disabled pair — they are the initiator's", () => {
+    const html = render(counterparty);
+    expect(html).not.toContain("Publish Assessment");
+    expect(html).not.toContain("Activate Relationship");
+    expect(html).not.toContain("Gap Analysis");
+    expect(html).not.toContain("Payment is not built yet");
+    expect((html.match(/<button[^>]*disabled=""/g) ?? []).length).toBe(0);
+  });
+
+  it("still opens the relationship's own screen — read-only there, but reachable", () => {
+    const html = render(counterparty);
+    expect(html).toContain('href="/dashboard/relationships/relationship-member-abc123"');
+    expect(html).toContain("View Relationship");
   });
 });

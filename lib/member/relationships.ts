@@ -1,5 +1,13 @@
 /**
- * The initiator's relationships — `/dashboard/relationships`, read and written (#533 phase 2).
+ * The member's relationships — `/dashboard/relationships`, read and written (#533 phase 2, #706).
+ *
+ * **The list is every relationship the viewer is a party to; the writes are the initiator's.**
+ * #706 fixed a read that filtered `initiator_user_id` and therefore answered a Counterparty with
+ * nothing: the relationship was theirs to answer on `/assessment/instances` and absent from the
+ * console's own list, so the screen said the relationship did not exist. The two questions are now
+ * answered in two places and never merged — `viewerIsPartyOf` decides *membership* (the row is
+ * listed), `relationshipOf` compares `initiator_user_id` with the viewer to decide *permission*
+ * (`MemberRelationshipRow.isInitiator`, and the three write flags on the detail view).
  *
  * **A relationship is configured before it is sent, and this module is the "before".** #533's
  * lifecycle (`0030_relationship_lifecycle.sql`) stores its seven states; `lib/relationship/
@@ -52,7 +60,7 @@
  */
 import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
-import type { AlignmentSetting, Assessment, AssessmentMode } from "@/content/assessment";
+import type { AlignmentSetting, Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
 import { billingProvider } from "@/lib/billing";
 import { readActiveSubscription } from "@/lib/db/billing";
@@ -143,6 +151,22 @@ export const CHECKOUT_INTERVAL: BillingInterval = "month";
 export interface MemberRelationshipRow {
   readonly id: string;
   readonly status: RelationshipStatus;
+  /**
+   * #706 — which seat the **viewer** holds, read from their own `party` row (their session) and
+   * falling back to the `initiator_user_id` comparison for a draft, which has no session yet.
+   *
+   * It is a label, not a permission: the card prints it so one list reads correctly for both
+   * people — "with Walt · Counterparty" rather than a row that looks like its initiator's.
+   */
+  readonly viewerRole: PartyRole;
+  /**
+   * #706 — is the viewer the account that started this relationship?
+   *
+   * The one source of every write flag on the detail view (`aspectsEditable`, `publishable`,
+   * `offersRepublish`) and of the controls this row's screen draws. Compared against
+   * `relationship.initiator_user_id`; a party row that exists does **not** grant it.
+   */
+  readonly isInitiator: boolean;
   /** The relationship's own copy of the template — its title above the Aspects. */
   readonly templateId: string;
   readonly title: string;
@@ -159,6 +183,12 @@ export interface MemberRelationshipRow {
     readonly expiresAt: Date;
   } | null;
   readonly counterpartyName: string | null;
+  /**
+   * The initiator's name, from their `party` row on the latest round — the "with ·" name a
+   * Counterparty's card prints. `null` for a draft (no session, so no seats) and for a
+   * relationship whose initiator has no party row; the card falls back to its own word.
+   */
+  readonly initiatorName: string | null;
   /** What the band says, derived at the instant the read was given. */
   readonly view: PublishView;
   /**
@@ -172,6 +202,9 @@ export interface MemberRelationshipRow {
 interface RelationshipQueryRow {
   readonly id: string;
   readonly status: string;
+  readonly initiator_user_id: string | null;
+  /** The viewer's own seat in `party`, or `null` for a draft (no session exists to hold one). */
+  readonly viewer_role: string | null;
   readonly created_at: Date | string;
   readonly published_at: Date | string | null;
   /** #533 phase 3 — the lapse, when the row records one (`0032`). */
@@ -183,6 +216,7 @@ interface RelationshipQueryRow {
   readonly session_record_id: string | null;
   readonly aspect_count: number;
   readonly counterparty_name: string | null;
+  readonly initiator_name: string | null;
   readonly claimed: boolean | null;
   readonly revoked: boolean | null;
   readonly expires_at: Date | string | null;
@@ -191,13 +225,61 @@ interface RelationshipQueryRow {
 /**
  * The one read both surfaces use.
  *
- * `rel.initiator_user_id = $1` is the whole permission, in the query rather than in a component —
- * the rule `lib/db/my-instances.ts` follows for `party.user_id`. The session is the **latest
- * round** (`ORDER BY round DESC`), because a relationship may hold several and the list is about
- * the relationship, not one cycle. The invitation hangs off that session, so a draft has none.
+ * **Membership and permission are two predicates, deliberately.** `VIEWER_IS_PARTY` decides which
+ * rows a reader sees: the account that started the relationship, **or** any account bound to one of
+ * its seats — `party.user_id`, reached through `session.relationship_id`, which is the rule
+ * `lib/db/my-instances.ts` follows. The initiator half is not a permission leaking into the list; it
+ * is what keeps a **draft** visible, because a draft has no session and therefore no `party` row to
+ * bind anybody (#706).
+ *
+ * `VIEWER_ROLE` is the label beside the row, read from the viewer's own `party` row on the latest
+ * round. Permission is a separate comparison in `relationshipOf` (`initiator_user_id` against the
+ * viewer), so a Counterparty row is listed *and* read-only, and a hand-edited role can never grant a
+ * write.
+ *
+ * The session is the **latest round** (`ORDER BY round DESC`), because a relationship may hold
+ * several and the list is about the relationship, not one cycle. The invitation hangs off that
+ * session, so a draft has none.
  */
+const VIEWER_ROLE = `(
+    SELECT p.role
+      FROM session vs
+      JOIN party p ON p.session_record_id = vs.record_id
+     WHERE vs.relationship_id = rel.id AND p.user_id = $1
+     ORDER BY vs.round DESC
+     LIMIT 1
+  ) AS viewer_role`;
+
+/** Who may see the row. `$1` is the viewer, in both statements below. */
+const VIEWER_IS_PARTY = `(
+    rel.initiator_user_id = $1
+    OR EXISTS (
+      SELECT 1
+        FROM session vs
+        JOIN party p ON p.session_record_id = vs.record_id
+       WHERE vs.relationship_id = rel.id AND p.user_id = $1
+    )
+  )`;
+
+/**
+ * The name of the seat that is *not* the viewer's — what the card's "with ·" line prints.
+ *
+ * `session_invite.counterparty_name` is the invited person, which is the right name for the
+ * initiator's card and the wrong one for the Counterparty's (it would be their own). So the
+ * initiator's `party.name` is read here and the card picks by `viewerRole` (#706).
+ */
+const INITIATOR_NAME = `(
+    SELECT p.name
+      FROM session vs
+      JOIN party p ON p.session_record_id = vs.record_id
+     WHERE vs.relationship_id = rel.id AND p.role = 'initiator'
+     ORDER BY vs.round DESC
+     LIMIT 1
+  ) AS initiator_name`;
+
 const RELATIONSHIP_COLUMNS = `
   rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
+  rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME},
   t.id AS template_id, t.title, t.summary,
   s.record_id AS session_record_id,
   (SELECT count(*)::int FROM item i WHERE i.record_id = t.id) AS aspect_count,
@@ -224,12 +306,30 @@ function instantOf(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
+/** `party.role` is CHECK-constrained; a value that is neither is drift, so the comparison decides. */
+function viewerRoleOf(row: RelationshipQueryRow, isInitiator: boolean): PartyRole {
+  if (row.viewer_role === "initiator" || row.viewer_role === "counterparty") return row.viewer_role;
+  return isInitiator ? "initiator" : "counterparty";
+}
+
 function relationshipOf(
   row: RelationshipQueryRow,
   now: Date,
   subscription: TrialFacts | null,
+  viewerUserId: string,
 ): MemberRelationshipRow {
   const status = row.status as RelationshipStatus;
+  /*
+   * #706 — **the write permission, and the only place it is decided.**
+   *
+   * `relationship.initiator_user_id` compared with the viewer. The list itself is keyed on the
+   * party binding, so being *in* a relationship and being allowed to *change* it are two different
+   * facts; this is the second one, and every flag downstream (`aspectsEditable`, `publishable`,
+   * `offersRepublish`) is gated on it. A Counterparty is listed and reads the screen; they never
+   * get the controls, and the server actions refuse `not-yours` inside their transaction if a form
+   * were posted anyway.
+   */
+  const isInitiator = row.initiator_user_id !== null && row.initiator_user_id === viewerUserId;
   const invite =
     row.expires_at === null
       ? null
@@ -241,6 +341,8 @@ function relationshipOf(
   return {
     id: row.id,
     status,
+    viewerRole: viewerRoleOf(row, isInitiator),
+    isInitiator,
     templateId: row.template_id,
     title: row.title,
     summary: row.summary,
@@ -250,6 +352,7 @@ function relationshipOf(
     aspectCount: Number(row.aspect_count),
     invite,
     counterpartyName: row.counterparty_name,
+    initiatorName: row.initiator_name,
     view: publishViewOf({ status, invite, now }),
     membership: membershipOf({
       status,
@@ -261,7 +364,17 @@ function relationshipOf(
   };
 }
 
-/** Every relationship this member started, newest first. */
+/**
+ * Every relationship this member is a party to, newest first (#706).
+ *
+ * The membership predicate is `VIEWER_IS_PARTY`: the initiator **or** any account bound to a party
+ * seat. A Counterparty therefore sees the relationship they were invited into — the defect #706
+ * fixed, where this list filtered `initiator_user_id` and answered them with nothing while
+ * `/assessment/instances` showed it.
+ *
+ * No permission falls out of it. The row carries `isInitiator` (the comparison) and `viewerRole`
+ * (the label), and the detail view gates its three write flags on the first.
+ */
 export async function listMyRelationships(
   userId: string,
   now: Date = new Date(),
@@ -269,7 +382,7 @@ export async function listMyRelationships(
   const rows = await queryRows<RelationshipQueryRow>(
     `SELECT ${RELATIONSHIP_COLUMNS}
      ${RELATIONSHIP_FROM}
-      WHERE rel.initiator_user_id = $1
+      WHERE ${VIEWER_IS_PARTY}
       ORDER BY rel.created_at DESC, rel.id DESC`,
     [userId],
   );
@@ -277,13 +390,16 @@ export async function listMyRelationships(
   // per row would be the same query N times and could return two different answers if a payment
   // landed between two of them.
   const subscription = rows.length === 0 ? null : await readActiveSubscription(userId);
-  return rows.map((row) => relationshipOf(row, now, subscription));
+  return rows.map((row) => relationshipOf(row, now, subscription, userId));
 }
 
 /** The detail screen's view: the row above, plus the Aspects it configures. */
 export interface MemberRelationshipView extends MemberRelationshipRow {
   readonly template: Assessment;
-  /** May the Aspects be edited right now? `draft` and `pending` only (`aspectsEditable`). */
+  /**
+   * May the Aspects be edited right now? `draft` and `pending` only (`aspectsEditable`), **and**
+   * only for the initiator — a Counterparty's screen is read-only (#706).
+   */
   readonly aspectsEditable: boolean;
   /**
    * May it be published from its current status? `publishable()` — the detail screen's band.
@@ -330,15 +446,18 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
 }
 
 /**
- * One relationship, if it is this member's — and the Aspects it was configured with.
+ * One relationship, if this member is a party to it — and the Aspects it was configured with.
+ *
+ * **A stranger's id is still `undefined`** — the page turns it into `notFound()` — but "stranger"
+ * now means *neither* the initiator *nor* a bound party seat (#706): the same predicate the list
+ * uses, so a Counterparty can open the relationship that lists them and reads it, read-only. The
+ * three write flags below are gated on `isInitiator`, so the read-only half is the derivation, not
+ * the route.
  *
  * The Aspects are read from the relationship's **own copy** (`rel.template_id`), which is what the
  * member is editing while the relationship is a draft. After publish the lock is the model's
  * (`aspectsEditable`) and the copy is frozen for the same reason: the pair was invited on those
  * words, and the session that runs them holds its own snapshot of the same version.
- *
- * `undefined` for a stranger's id, exactly as `readMyTemplate` answers — the page turns it into
- * `notFound()`.
  */
 export async function readMyRelationship(
   userId: string,
@@ -348,7 +467,7 @@ export async function readMyRelationship(
   const rows = await queryRows<RelationshipQueryRow>(
     `SELECT ${RELATIONSHIP_COLUMNS}
      ${RELATIONSHIP_FROM}
-      WHERE rel.id = $2 AND rel.initiator_user_id = $1`,
+      WHERE rel.id = $2 AND ${VIEWER_IS_PARTY}`,
     [userId, relationshipId],
   );
   const row = rows[0];
@@ -372,7 +491,7 @@ export async function readMyRelationship(
   if (primary === undefined) return undefined;
 
   const subscription = await readActiveSubscription(userId);
-  const base = relationshipOf(row, now, subscription);
+  const base = relationshipOf(row, now, subscription, userId);
   const trial = trialStateOf(subscription, now);
   /*
    * #690 — **the hard gate at publish, as a fact.**
@@ -395,13 +514,22 @@ export async function readMyRelationship(
   return {
     ...base,
     template: assessmentTemplateFromRows({ record: primary, items, options }),
-    aspectsEditable: aspectsEditable(base.status),
-    publishable: publishable(base.status),
+    /*
+     * #706 — **every write flag is `isInitiator && …`.**
+     *
+     * The status question (`aspectsEditable`, `publishable`) and the invitation's question
+     * (`republishable`) are unchanged; what is new is that the viewer must also own the write. A
+     * Counterparty reads the same screen with all four false, so no editor, no publish panel and
+     * no reissue control is drawn — and the server actions still re-ask ownership under a row lock,
+     * because a flag here is a screen, not a refusal.
+     */
+    aspectsEditable: base.isInitiator && aspectsEditable(base.status),
+    publishable: base.isInitiator && publishable(base.status),
     // #690 — a method on file, or nothing to click at publish. `publishable` stays the status
     // question the transaction re-asks; this is the second half the screen must not guess.
     hasPaymentMethod,
-    offersRepublish: republishable(base.view) && membership.state !== "lapsed",
-    trialWithoutLiveInvite: trialRunningWithoutLiveInvite(trial, base.view),
+    offersRepublish: base.isInitiator && republishable(base.view) && membership.state !== "lapsed",
+    trialWithoutLiveInvite: base.isInitiator && trialRunningWithoutLiveInvite(trial, base.view),
     closed: isClosed(base.status),
     trial,
     membership,
