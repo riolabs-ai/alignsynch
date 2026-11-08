@@ -35,6 +35,16 @@ export const MY_INSTANCES_PATH = "/assessment/instances";
 export const CREATE_INSTANCE_PATH = "/assessment/new";
 
 /**
+ * `POST /assessment/new/who` — stage 1's save (#688).
+ *
+ * A route handler below the create endpoint rather than a second verb on it: the endpoint
+ * commits a relationship, and this writes a draft cookie — two different effects that should
+ * never be reachable by getting one form field wrong. The stage-2 form still posts to
+ * `CREATE_INSTANCE_PATH`, which reads the draft stage 1 wrote.
+ */
+export const SAVE_WHO_PATH = "/assessment/new/who";
+
+/**
  * `/dashboard/support` — the member's support surface (#542 phase 1).
  *
  * The rail's Support row used to open `/support`, whose one action was a link out to the public
@@ -191,6 +201,18 @@ export function reportPath(instanceRecordId: string): string {
  */
 export function createRelationshipPath(templateRecordId: string): string {
   return `${templateDetailPath(templateRecordId)}/create`;
+}
+
+/**
+ * `/assessment/templates/[templateId]/create/mode` — stage 2 of the create flow (#688).
+ *
+ * A child of the create path rather than a query parameter (`?step=mode`) because the flow is
+ * a sequence of stages, not one screen with a switch: slice 3 adds `…/create/aspects` and
+ * slice 4 `…/create/commit` the same way, and a stage that can be deep-linked, reloaded and
+ * cached by its own address is what makes each of them a page rather than a state.
+ */
+export function createModePath(templateRecordId: string): string {
+  return `${createRelationshipPath(templateRecordId)}/mode`;
 }
 
 /**

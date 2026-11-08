@@ -419,9 +419,19 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "Create a relationship from one template: the template and its two seats at the top, the counterparty, then Mode (fixed at creation) and Setting (the one choice a party may change later).",
+      "Create a relationship from one template, stage 1 (Who): the template and its two seats, the counterparty's address, and the card title both parties will read.",
     notes:
-      "Wired by #427 (R2), and the form is the create path's client end: it posts `templateRecordId`, both seats, the Mode and the Setting to `POST /assessment/new`, which copies the template's Aspects into a new relationship and writes the record, the relationship, the session and the initiating seat in one transaction, then answers a 303 to `/assessment/instances/<id>`. A refusal comes back as a 303 to this path carrying `?problem=<code>`, which the page resolves into the fixture's own sentence — no text anybody typed travels in a URL, and an unrecognised code draws no sentence rather than an invented one. A child of the template's own address, so the template being copied is the route's fact and the hidden `templateRecordId` cannot name a different one; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply.",
+      "Split into two stages by #688. Stage 1 posts `templateRecordId`, both seats, the address, the title and an optional description to `POST /assessment/new/who`, which validates them server-side (`lib/flow/create-draft.ts`), writes one draft cookie (`flow_draft_<templateId>`, 24 h) and answers a 303 to `…/create/mode`. A refusal is a 303 back to this path carrying `?problem=<reason>&field=<field>`, so the band names the field by its own label from `data/pages/assessment-create.ts` — never a column name. Coming back to this stage renders the saved values into the inputs. A child of the template's own address, so the template being copied is the route's fact; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. A signed-out visitor still gets the account gate (#618).",
+  },
+  {
+    kind: "route",
+    surface: "/assessment/templates/[templateId]/create/mode",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Stage 2 of the create flow (Mode): the Mode (fixed at creation) and the Setting (the one choice a party may change later), over the draft stage 1 wrote.",
+    notes:
+      "The step that commits (#688): it reads the draft cookie, refuses a missing draft or a signed-out viewer by sending them back to stage 1, and its form posts the Mode and the Setting to `POST /assessment/new`, which re-reads the draft, validates the two choices by label, copies the template's Aspects into a new relationship, clears the draft cookie and answers a 303 to `/assessment/instances/<id>`. The page is a sibling of `/…/create` rather than a `?step=` switch because the flow is a sequence of stages — slice 3 adds `…/create/aspects` the same way. It renders the same `CreateRelationship` component and the same fixture as stage 1, so the two steps cannot drift into two vocabularies.",
   },
   {
     kind: "route",

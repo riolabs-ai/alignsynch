@@ -1,22 +1,29 @@
 /**
- * `/assessment/templates/[templateId]/create` — the create step (#409, wired by #427).
+ * `/assessment/templates/[templateId]/create` and `…/create/mode` — the create flow's two steps
+ * (#409, wired by #427, split by #688).
  *
- * The v1 create form's shape, on the app's own route: the template and its two seats at the
- * top, then the counterparty, then the two choices that shape everything after creation.
+ * One fixture for both stages, because they are one flow: the rail, the refusals and the
+ * "nothing to copy" screen are shared, and a second fixture would be a second vocabulary for one
+ * relationship. The `who` and `mode` sections are the two forms; `validation` is the one band a
+ * server-side refusal draws.
  *
  * The two choices are explained in the words a decider needs, and the difference between them
- * is stated on the form rather than implied:
+ * is stated on the screen rather than implied:
  *
  * - **Mode is fixed at creation.** Both parties answer one shape, which is what makes two
  *   sheets comparable at all. It is not a later preference.
  * - **Setting is what a party may change later.** It moves the bar the report is judged
  *   against; it never changes a question.
  *
- * **The submit now creates the relationship**, so the sentence beside it says what submitting
- * does rather than that it cannot. A refusal comes back to this same screen as
- * `?problem=<code>`; the `problems` section is the one sentence per code the store can answer
- * with, and `refused` is the screen drawn when the code means the template itself cannot be
- * read (somebody else's, an instance, an id that names nothing).
+ * **A refusal names the field, not the column.** Stage 1 and stage 2 validate before the store
+ * is asked anything (`lib/flow/create-draft.ts`), and the refusal carries a field id and a
+ * reason; `lib/flow/create-copy.ts` fills the reason's sentence with that field's own label, so
+ * the band says "Their email address is required" rather than `counterparty_email`.
+ *
+ * **The create itself still refuses in codes.** A store refusal comes back as
+ * `?problem=<FlowErrorCode>`; the `problems` section is the one sentence per code, and `refused`
+ * is the screen drawn when the code means the template itself cannot be read (somebody else's,
+ * an instance, an id that names nothing).
  *
  * `{count}` is the template's own Aspect count, filled by `fillLabel()` from the record the
  * page read. The Mode and Setting option names are the model's own glossary (`MODE_LABELS`,
@@ -74,8 +81,16 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
-      id: "form",
+      /**
+       * Stage 1 — **Who** (#688).
+       *
+       * The prototype's `s4.*` block, verbatim where the words are the owner's: two seats, the
+       * counterparty's address, and the card title both of them read. The template band above the
+       * form is the record's own facts, not copy.
+       */
+      id: "who",
       heading: "Who and how",
+      body: "One template, two seats, and the facts that shape every screen after this one.",
       items: [
         { id: "initiator-label", label: "Your name — the Initiator" },
         { id: "initiator-help", label: "The seat this relationship is created from." },
@@ -93,13 +108,41 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "The invitation goes here. Without a mailer, the relationship page shows the link instead.",
         },
+        { id: "title-label", label: "What are you in the middle of" },
+        { id: "title-placeholder", label: "Relationship Basics" },
+        {
+          id: "title-help",
+          label: "The card title both of you see — the template's name is only the starting point.",
+        },
+        { id: "description-label", label: "Description" },
+        {
+          id: "description-placeholder",
+          label: "A sentence on why you are doing this — both of you read it on the card.",
+        },
+        { id: "description-help", label: "Optional. Shown to both parties, never scored." },
+        { id: "submit", label: "Continue to mode and setting" },
+        { id: "submit-note", label: "Nothing is created yet. The next step fixes the Mode." },
+      ],
+    },
+    {
+      /**
+       * Stage 2 — **Mode** (#688).
+       *
+       * The prototype's `s5.*` block. Mode is fixed at creation and the Setting is the one choice
+       * a party may move later; both sentences say so on the screen rather than leaving a person
+       * to learn it from a report.
+       */
+      id: "mode",
+      heading: "Mode and setting",
+      body: "Mode is fixed at creation: both parties answer one shape, which is what makes two sheets comparable at all.",
+      items: [
         { id: "mode-label", label: "Mode" },
+        { id: "mode-fixed", label: "Fixed at creation" },
         { id: "mode-basic-help", label: "Feel and Wish on every Aspect." },
         { id: "mode-advanced-help", label: "Feel, Wish, Think and Guess on every Aspect." },
         {
-          id: "mode-fixed",
-          label:
-            "Mode is fixed at creation. Both parties answer one shape, so two sheets can be compared.",
+          id: "mode-fixed-note",
+          label: "Mode cannot be changed after the relationship is created.",
         },
         { id: "setting-label", label: "Setting" },
         {
@@ -113,8 +156,31 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Submitting copies the Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.",
         },
+        { id: "back", label: "Back to who" },
       ],
     },
+    {
+      /**
+       * The one band a server-side refusal draws (#688).
+       *
+       * A refusal carries a *field* and a *reason*; the sentence is composed here with the field's
+       * own label, so the person is told "Their email address is required" and never that
+       * `counterparty_email` failed a CHECK. The label is not repeated here — it is read from the
+       * stage's own section, so a rename moves every sentence that names it.
+       */
+      id: "validation",
+      heading: "Check one field",
+      items: [
+        { id: "required", label: "{field} is required." },
+        { id: "email", label: "{field} must be an address the invitation can reach." },
+        {
+          id: "choice",
+          label:
+            "{field} is not one of the options this form offers — choose one of the options below.",
+        },
+      ],
+    },
+
     {
       id: "problems",
       heading: "That relationship was not created",

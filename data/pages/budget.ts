@@ -558,6 +558,15 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
+  // #688 — stage 2 (Mode) of the same flow. Its own row because attribution is per surface, and
+  // the fixture is shared on purpose: two stages that print different words for one relationship
+  // would be the copy drift this table exists to stop. Budget 0, so the form's next literal is red.
+  "/assessment/templates/[templateId]/create/mode": {
+    page: "app/(mainlayout)/assessment/templates/[templateId]/create/mode/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
   // #255 — the template authoring form. Budget 0 from the first commit, for the reason the
   // three flow surfaces above are: every word is in `data/pages/assessment-template-new.ts`,
   // including the six refusals, so the next literal written in the form is a red build.

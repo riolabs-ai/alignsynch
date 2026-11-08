@@ -108,6 +108,9 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/assessment/templates": templateLibraryPageCopy,
   "/assessment/templates/[templateId]": templateDetailPageCopy,
   "/assessment/templates/[templateId]/create": assessmentCreatePageCopy,
+  // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
+  // drift into two vocabularies.
+  "/assessment/templates/[templateId]/create/mode": assessmentCreatePageCopy,
   "/assessment/templates/new": assessmentTemplatePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,

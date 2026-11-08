@@ -1,19 +1,22 @@
 /**
  * template-ancestor: components/create/quiz-editor.tsx   (variation: a server component on the app's own route, posting to the route handler — the layout survives, the disabled submit and its "not wired" note do not)
  *
- * `CreateRelationship` — the create step, wired (#427).
+ * `CreateRelationship` — the create flow's first two stages, **Who** and **Mode** (#427, #688).
  *
- * **It renders inside the onboarding flow's shell (#687).** `StageColumn` is the one left-justified
- * column every stage sits in, and `StageRail` is the six-stage rail above it with this screen as the
- * first stage, Who. Both are shared components: a flow screen that draws its own column (the
- * `mx-auto max-w-*` all three shipped) or its own stepper is the defect that card removed, and
- * `tests/stage-shell.test.tsx` holds the rule across the three screens rather than one at a time.
+ * **One form split into two steps, one draft behind both.** Until #688 this was a single form:
+ * the names, the address, the Mode and the Setting, submitted together or lost together. The
+ * approved flow (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`) makes them
+ * stage 1 and stage 2, so stage 1 posts to `POST /assessment/new/who` — which answers with a
+ * redirect to stage 2 and a draft cookie — and stage 2 posts to `POST /assessment/new`, which
+ * reads that draft and commits. The component is one component with a `stage` prop rather than
+ * two files because the shell, the template band, the refusal band and the "nothing to copy"
+ * screen are the same band on both steps; only the form differs, and a second component would
+ * have been a copy of one that is 60 % identical.
  *
- * The v1 create form's shape, in the order a person decides: the template and its two seats at
- * the top, the counterparty, then the two choices that shape everything after creation. It is a
- * plain POST form — no `"use client"`, no state, no handler — so the browser, a `curl` and the
- * acceptance all drive the same endpoint (`POST /assessment/new`), and a refusal comes back as a
- * GET of this page with `?problem=<code>` rather than a JSON body in the window.
+ * **It renders inside the onboarding flow's shell (#687).** `StageColumn` is the one
+ * left-justified column every stage sits in, and `StageRail` is the six-stage rail above it
+ * with `current` the stage this screen is. Both are shared components: a flow screen that draws
+ * its own column or its own stepper is the defect that card removed.
  *
  * **Two decisions, stated differently, because they behave differently.**
  *
@@ -28,17 +31,19 @@
  * refuses a crafted post that omits the Mode, and a Setting it is not given falls to the schema's
  * documented default (see `CreateInstanceInput`).
  *
- * **A refused create is this same screen with a sentence above the form.** The URL carries the
- * code and nothing else; `data/pages/assessment-create.ts` owns every word here, so the band says
- * what the store refused without a second copy of the reason. When the refusal is one that means
- * the template cannot be read at all — somebody else's, an instance, an id that names nothing —
- * the screen still renders, with the sentence and a way back to the library, instead of a bare
+ * **A refused create is this same screen with a sentence above the form.** The refusal that a
+ * server-side validation produces names one field by its own label — "Their email address is
+ * required" — and arrives here as the sentence the page composed from the fixture
+ * (`lib/flow/create-copy.ts`), so the component renders words it never authored. The store's
+ * own refusals (`?problem=<code>`) arrive the same way; when the code means the template cannot
+ * be read at all, the screen still renders, with the sentence and a way back, instead of a bare
  * 404 that would swallow the refusal the post just gave.
  *
  * Literal-free: every word is `data/pages/assessment-create.ts` (E23), except the two vocabulary
  * sets the model authors once — `MODE_LABELS` and `SETTING_LABELS`/`SETTING_DEFINITIONS`.
  */
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   ALIGNMENT_SETTINGS,
   ASSESSMENT_MODES,
@@ -47,10 +52,14 @@ import {
   SETTING_LABELS,
 } from "@/content/assessment";
 import type { PageCopy } from "@/content/pages";
-import { CREATE_INSTANCE_PATH, PRICING_PATH } from "@/lib/flow/paths";
+import type { CreateDraft } from "@/lib/flow/create-draft";
+import { CREATE_INSTANCE_PATH, SAVE_WHO_PATH } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { StageColumn } from "./stage-column";
 import { StageRail } from "./stage-rail";
+
+/** Which of the create flow's two steps this render is (#688). */
+export type CreateStage = 1 | 2;
 
 /** The template being copied, as much of it as this screen prints. */
 export interface CreateTemplate {
@@ -61,7 +70,7 @@ export interface CreateTemplate {
   readonly aspectCount: number;
 }
 
-/** The band a refusal is drawn in, shared by the form's own screen and the read-nothing one. */
+/** The band a refusal is drawn in, shared by both stages and by the read-nothing one. */
 function ProblemBand({
   heading,
   sentence,
@@ -73,7 +82,7 @@ function ProblemBand({
    * The door the sentence names, when it names one (#618).
    *
    * `relationship-limit` and `mode-not-entitled` both tell a person to change their plan and, until
-   * this card, drew nothing to click. The label comes from the page fixture; the address is
+   * that card, drew nothing to click. The label comes from the page fixture; the address is
    * `/pricing` rather than a checkout session, because a checkout is started from the plan card
    * that sells a specific tier (`components/pricing/plan-checkout-button.tsx`).
    */
@@ -105,18 +114,38 @@ function ProblemBand({
   );
 }
 
+/** The field's label above a control: one shape for every input on both stages. */
+function FieldLabel({ children }: { children: ReactNode }) {
+  return <span className="font-medium text-gray-700 dark:text-gray-200">{children}</span>;
+}
+
+/** The sentence under a control — helper text, or what the field is for. */
+function FieldHelp({ children }: { children: ReactNode }) {
+  return <span className="text-xs text-gray-500 dark:text-gray-400">{children}</span>;
+}
+
+/** The shared input shape — the shipped create form's own classes, not a second style. */
+const INPUT_CLASSES =
+  "rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950";
+
 export function CreateRelationship({
   copy,
+  stage,
   template,
+  draft,
   backHref,
   problem,
   problemLink,
   gate,
 }: {
   copy: PageCopy;
+  /** 1 = Who, 2 = Mode. The rail and the form both read it. */
+  stage: CreateStage;
   /** The template to copy, or `null` when the refusal means there is none to read. */
   template: CreateTemplate | null;
-  /** Where the back link goes: the template, or the library when there is no template. */
+  /** Stage 1's saved answers — empty on a first visit, filled from the draft on a return. */
+  draft: CreateDraft;
+  /** Where the back link goes: the template on stage 1, stage 1 on stage 2. */
   backHref: string;
   /** The fixture's sentence for the refusal that brought the person back; `null` on a clean visit. */
   problem: string | null;
@@ -134,7 +163,8 @@ export function CreateRelationship({
   gate: { readonly signInHref: string; readonly signUpHref: string } | null;
 }) {
   const band = sectionOf(copy, "template");
-  const form = sectionOf(copy, "form");
+  const who = sectionOf(copy, "who");
+  const mode = sectionOf(copy, "mode");
   const problems = sectionOf(copy, "problems");
   const accountGate = sectionOf(copy, "gate");
 
@@ -168,169 +198,262 @@ export function CreateRelationship({
       <div className="space-y-6">
         <p>
           <Link href={backHref} className="text-sm font-medium text-action hover:underline">
-            {itemLabel(band, "back")}
+            {stage === 1 ? itemLabel(band, "back") : itemLabel(mode, "back")}
           </Link>
         </p>
 
-        {/* Where the person is in the six stages (#687): this screen is the first, Who. */}
-        <StageRail copy={copy} current={1} />
+        {/* Where the person is in the six stages (#687): Who and Mode are the first two. */}
+        <StageRail copy={copy} current={stage} />
 
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {copy.heading}
+            {stage === 1 ? copy.heading : mode.heading}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">{copy.subtitle}</p>
+          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+            {stage === 1 ? copy.subtitle : sectionBody(mode)}
+          </p>
         </div>
 
         <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
 
-        {/* What is being copied — its name, its words and its size, all from the record. */}
-        <section
-          aria-labelledby="create-template-heading"
-          className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-        >
-          <h2
-            id="create-template-heading"
-            className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-          >
-            {band.heading}
-          </h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
-          <div className="mt-3 rounded-md border border-gray-200 px-3 py-2.5 dark:border-gray-700">
-            <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              {template.title}
-            </p>
-            <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">{template.summary}</p>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
-            </p>
-          </div>
-          <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-            {itemLabel(band, "seats")}
-          </p>
-        </section>
+        {stage === 1 ? (
+          <>
+            {/* What is being copied — its name, its words and its size, all from the record. */}
+            <section
+              aria-labelledby="create-template-heading"
+              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+            >
+              <h2
+                id="create-template-heading"
+                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+              >
+                {band.heading}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
+              <div className="mt-3 rounded-md border border-gray-200 px-3 py-2.5 dark:border-gray-700">
+                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  {template.title}
+                </p>
+                <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
+                  {template.summary}
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
+                </p>
+              </div>
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                {itemLabel(band, "seats")}
+              </p>
+            </section>
 
-        {gate === null ? (
+            {gate === null ? (
+              <form
+                action={SAVE_WHO_PATH}
+                method="post"
+                aria-labelledby="create-who-heading"
+                className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+              >
+                <h2
+                  id="create-who-heading"
+                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                >
+                  {who.heading}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(who)}</p>
+
+                {/* The template is the route's own fact; the form carries it so the POST names it. */}
+                <input type="hidden" name="templateRecordId" value={template.recordId} />
+
+                <label className="grid gap-1 text-sm" htmlFor="create-initiator-name">
+                  <FieldLabel>{itemLabel(who, "initiator-label")}</FieldLabel>
+                  <input
+                    id="create-initiator-name"
+                    name="initiatorName"
+                    defaultValue={draft.initiatorName}
+                    className={INPUT_CLASSES}
+                  />
+                  <FieldHelp>{itemLabel(who, "initiator-help")}</FieldHelp>
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-sm" htmlFor="create-counterparty-name">
+                    <FieldLabel>{itemLabel(who, "counterparty-label")}</FieldLabel>
+                    <input
+                      id="create-counterparty-name"
+                      name="counterpartyName"
+                      defaultValue={draft.counterpartyName}
+                      placeholder={itemLabel(who, "counterparty-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "counterparty-help")}</FieldHelp>
+                  </label>
+
+                  <label className="grid gap-1 text-sm" htmlFor="create-email">
+                    <FieldLabel>{itemLabel(who, "email-label")}</FieldLabel>
+                    <input
+                      id="create-email"
+                      name="email"
+                      type="email"
+                      defaultValue={draft.email}
+                      placeholder={itemLabel(who, "email-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "email-help")}</FieldHelp>
+                  </label>
+                </div>
+
+                <label className="grid gap-1 text-sm" htmlFor="create-title">
+                  <FieldLabel>{itemLabel(who, "title-label")}</FieldLabel>
+                  <input
+                    id="create-title"
+                    name="title"
+                    defaultValue={draft.title}
+                    placeholder={itemLabel(who, "title-placeholder")}
+                    className={INPUT_CLASSES}
+                  />
+                  <FieldHelp>{itemLabel(who, "title-help")}</FieldHelp>
+                </label>
+
+                <label className="grid gap-1 text-sm" htmlFor="create-description">
+                  <FieldLabel>{itemLabel(who, "description-label")}</FieldLabel>
+                  <textarea
+                    id="create-description"
+                    name="description"
+                    rows={3}
+                    defaultValue={draft.description}
+                    placeholder={itemLabel(who, "description-placeholder")}
+                    className={INPUT_CLASSES}
+                  />
+                  <FieldHelp>{itemLabel(who, "description-help")}</FieldHelp>
+                </label>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <button
+                    type="submit"
+                    className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground"
+                  >
+                    {itemLabel(who, "submit")}
+                  </button>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    {itemLabel(who, "submit-note")}
+                  </p>
+                </div>
+              </form>
+            ) : (
+              <section
+                data-create-gate="true"
+                className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+              >
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {accountGate.heading}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {sectionBody(accountGate)}
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <a
+                    href={gate.signUpHref}
+                    data-create-gate-link="sign-up"
+                    className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover"
+                  >
+                    {itemLabel(accountGate, "sign-up")}
+                  </a>
+                  <a
+                    href={gate.signInHref}
+                    data-create-gate-link="sign-in"
+                    className="inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
+                  >
+                    {itemLabel(accountGate, "sign-in")}
+                  </a>
+                </div>
+              </section>
+            )}
+          </>
+        ) : (
           <form
             action={CREATE_INSTANCE_PATH}
             method="post"
-            aria-labelledby="create-form-heading"
+            aria-labelledby="create-mode-heading"
             className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
           >
             <h2
-              id="create-form-heading"
+              id="create-mode-heading"
               className="text-lg font-semibold text-gray-900 dark:text-gray-100"
             >
-              {form.heading}
+              {mode.heading}
             </h2>
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">
+              {itemLabel(mode, "mode-fixed")}
+            </p>
 
             {/* The template is the route's own fact; the form carries it so the POST names it. */}
             <input type="hidden" name="templateRecordId" value={template.recordId} />
 
-            <label className="grid gap-1 text-sm" htmlFor="create-initiator-name">
-              <span className="font-medium text-gray-700 dark:text-gray-200">
-                {itemLabel(form, "initiator-label")}
-              </span>
-              <input
-                id="create-initiator-name"
-                name="initiatorName"
-                className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950"
-              />
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {itemLabel(form, "initiator-help")}
-              </span>
-            </label>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm" htmlFor="create-counterparty-name">
-                <span className="font-medium text-gray-700 dark:text-gray-200">
-                  {itemLabel(form, "counterparty-label")}
-                </span>
-                <input
-                  id="create-counterparty-name"
-                  name="counterpartyName"
-                  placeholder={itemLabel(form, "counterparty-placeholder")}
-                  className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950"
-                />
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {itemLabel(form, "counterparty-help")}
-                </span>
-              </label>
-
-              <label className="grid gap-1 text-sm" htmlFor="create-email">
-                <span className="font-medium text-gray-700 dark:text-gray-200">
-                  {itemLabel(form, "email-label")}
-                </span>
-                <input
-                  id="create-email"
-                  name="email"
-                  type="email"
-                  placeholder={itemLabel(form, "email-placeholder")}
-                  className="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950"
-                />
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {itemLabel(form, "email-help")}
-                </span>
-              </label>
-            </div>
-
             {/* Mode — fixed at creation, and said so on the form. */}
             <fieldset className="grid gap-2 text-sm">
               <legend className="font-medium text-gray-700 dark:text-gray-200">
-                {itemLabel(form, "mode-label")}
+                {itemLabel(mode, "mode-label")}
               </legend>
-              {ASSESSMENT_MODES.map((mode) => (
+              {ASSESSMENT_MODES.map((option) => (
                 <label
-                  key={mode}
+                  key={option}
                   className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
                 >
-                  <input type="radio" name="mode" value={mode} required className="mt-1" />
+                  <input
+                    type="radio"
+                    name="mode"
+                    value={option}
+                    required
+                    defaultChecked={draft.mode === option}
+                    className="mt-1"
+                  />
                   <span>
                     <span className="font-medium text-gray-800 dark:text-gray-100">
-                      {MODE_LABELS[mode]}
+                      {MODE_LABELS[option]}
                     </span>
                     <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                      {mode === "basic"
-                        ? itemLabel(form, "mode-basic-help")
-                        : itemLabel(form, "mode-advanced-help")}
+                      {option === "basic"
+                        ? itemLabel(mode, "mode-basic-help")
+                        : itemLabel(mode, "mode-advanced-help")}
                     </span>
                   </span>
                 </label>
               ))}
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {itemLabel(form, "mode-fixed")}
+                {itemLabel(mode, "mode-fixed-note")}
               </p>
             </fieldset>
 
             {/* Setting — the bar the report is judged against, and the one choice a party may change. */}
             <fieldset className="grid gap-2 text-sm">
               <legend className="font-medium text-gray-700 dark:text-gray-200">
-                {itemLabel(form, "setting-label")}
+                {itemLabel(mode, "setting-label")}
               </legend>
-              {ALIGNMENT_SETTINGS.map((setting) => (
+              {ALIGNMENT_SETTINGS.map((option) => (
                 <label
-                  key={setting}
+                  key={option}
                   className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
                 >
                   <input
                     type="radio"
                     name="alignmentSetting"
-                    value={setting}
+                    value={option}
                     required
+                    defaultChecked={draft.alignmentSetting === option}
                     className="mt-1"
                   />
                   <span>
                     <span className="font-medium text-gray-800 dark:text-gray-100">
-                      {SETTING_LABELS[setting]}
+                      {SETTING_LABELS[option]}
                     </span>
                     <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                      {SETTING_DEFINITIONS[setting]}
+                      {SETTING_DEFINITIONS[option]}
                     </span>
                   </span>
                 </label>
               ))}
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {itemLabel(form, "setting-changeable")}
+                {itemLabel(mode, "setting-changeable")}
               </p>
             </fieldset>
 
@@ -340,39 +463,13 @@ export function CreateRelationship({
                 type="submit"
                 className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground"
               >
-                {itemLabel(form, "submit")}
+                {itemLabel(mode, "submit")}
               </button>
               <p className="text-xs text-gray-600 dark:text-gray-300">
-                {itemLabel(form, "submit-note")}
+                {itemLabel(mode, "submit-note")}
               </p>
             </div>
           </form>
-        ) : (
-          <section
-            data-create-gate="true"
-            className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-          >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {accountGate.heading}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(accountGate)}</p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <a
-                href={gate.signUpHref}
-                data-create-gate-link="sign-up"
-                className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover"
-              >
-                {itemLabel(accountGate, "sign-up")}
-              </a>
-              <a
-                href={gate.signInHref}
-                data-create-gate-link="sign-in"
-                className="inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
-              >
-                {itemLabel(accountGate, "sign-in")}
-              </a>
-            </div>
-          </section>
         )}
       </div>
     </StageColumn>

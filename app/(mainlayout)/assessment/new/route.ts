@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
+import { modeDraft, parseCreateDraft } from "@/lib/flow/create-draft";
 import {
   createInstanceFromTemplate,
   FlowError,
@@ -8,8 +9,14 @@ import {
   type FlowErrorCode,
 } from "@/lib/flow/store";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
-import { createRelationshipPath, instancePath, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
+  createModePath,
+  createRelationshipPath,
+  instancePath,
+  TEMPLATE_LIBRARY_PATH,
+} from "@/lib/flow/paths";
+import {
+  createDraftCookieName,
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
   inviteCookieName,
@@ -23,14 +30,42 @@ import {
  * else), so a crafted post cannot put words of its own into a page another person opens. A post
  * that named no template has nowhere to go back to and lands on the library instead, which is
  * the screen that lists what can be copied.
+ *
+ * **Which step it returns to is the draft's own fact (#688).** A post that came through stage 1
+ * (the draft cookie exists) was sent from the Mode screen, so the refusal belongs there; a post
+ * that never went through the draft — `scripts/flow-e2e.mjs`, a `curl`, the pre-#688 form — is
+ * returned to the Who screen, which is the only stage it ever saw.
  */
-function refusalTarget(request: Request, templateRecordId: string, code: FlowErrorCode): URL {
+function refusalTarget(
+  request: Request,
+  templateRecordId: string,
+  code: FlowErrorCode,
+  fromDraft: boolean,
+): URL {
   const id = templateRecordId.trim();
-  const target = new URL(
-    id === "" ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(id),
-    request.url,
-  );
+  const back =
+    id === "" ? TEMPLATE_LIBRARY_PATH : fromDraft ? createModePath(id) : createRelationshipPath(id);
+  const target = new URL(back, request.url);
   target.searchParams.set("problem", code);
+  return target;
+}
+
+/**
+ * A stage-2 refusal that names one field (#688) — `?problem=<reason>&field=<field>`.
+ *
+ * The person is on the Mode screen, so the band is drawn there: `mode` or `setting` for a value
+ * the form did not offer, never a store code. `lib/flow/create-copy.ts` turns the pair into the
+ * sentence with the field's own label.
+ */
+function fieldTarget(
+  request: Request,
+  templateRecordId: string,
+  field: string,
+  reason: string,
+): URL {
+  const target = new URL(createModePath(templateRecordId.trim()), request.url);
+  target.searchParams.set("problem", reason);
+  target.searchParams.set("field", field);
   return target;
 }
 
@@ -67,15 +102,52 @@ function refusalTarget(request: Request, templateRecordId: string, code: FlowErr
 export async function POST(request: Request): Promise<Response> {
   const form = await request.formData();
   const value = (name: string) => String(form.get(name) ?? "");
+  const templateRecordId = value("templateRecordId").trim();
   const viewer = await currentUserIfConfigured();
+
+  // #688 — the draft stage 1 wrote, when this post came through the two-stage flow. A post
+  // that carries no draft is the pre-#688 one-form create (and every script that posts the
+  // endpoint directly): its values come from the form, exactly as they always did.
+  const jar = await cookies();
+  const draft =
+    templateRecordId === ""
+      ? null
+      : parseCreateDraft(jar.get(createDraftCookieName(templateRecordId))?.value);
+
+  // Stage 2's own validation, before the store is asked anything: the Mode and the Setting
+  // are the only two fields this step owns, so a refusal names which one is wrong.
+  if (draft !== null) {
+    const choice = modeDraft(value, draft);
+    if (!choice.ok) {
+      return NextResponse.redirect(
+        fieldTarget(request, templateRecordId, choice.problem.field, choice.problem.reason),
+        303,
+      );
+    }
+  }
+
+  /**
+   * Who this relationship is for: stage 1's draft when there is one, the form's own fields
+   * otherwise. Read once and used twice — the store writes the seats and the invitation email
+   * addresses them — so the two can never disagree about who was named.
+   */
+  const who = {
+    initiatorName: draft?.initiatorName ?? value("initiatorName"),
+    counterpartyName: draft?.counterpartyName ?? value("counterpartyName"),
+    email: draft?.email ?? value("email"),
+  };
 
   let created: CreatedInstance;
   try {
     created = await createInstanceFromTemplate({
-      templateRecordId: value("templateRecordId"),
-      initiatorName: value("initiatorName"),
-      counterpartyName: value("counterpartyName"),
-      email: value("email"),
+      templateRecordId,
+      initiatorName: who.initiatorName,
+      counterpartyName: who.counterpartyName,
+      email: who.email,
+      // #688 — stage 1's card title and description. Absent on a direct post, which keeps the
+      // store's template-derived title and its generated summary.
+      title: draft?.title ?? value("title"),
+      description: draft?.description ?? value("description"),
       // The create form's radios (#213). A post without one is refused by the store —
       // "mode must be basic or advanced" — rather than defaulted to Basic, so a crafted
       // POST cannot choose a mode the form never offered.
@@ -97,14 +169,13 @@ export async function POST(request: Request): Promise<Response> {
       // the template it refused; a post that named no template at all has no screen to return to
       // and goes to the library, which lists what can be copied.
       return NextResponse.redirect(
-        refusalTarget(request, value("templateRecordId"), error.code),
+        refusalTarget(request, templateRecordId, error.code, draft !== null),
         303,
       );
     }
     throw error;
   }
 
-  const jar = await cookies();
   jar.set(
     partyCookieName(created.instanceRecordId),
     created.initiatorToken,
@@ -118,15 +189,19 @@ export async function POST(request: Request): Promise<Response> {
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
 
+  // #688 — the draft has become a relationship; there is nothing left to resume. Deleted rather
+  // than left to expire so a second create from the same template starts blank.
+  if (templateRecordId !== "") jar.delete(createDraftCookieName(templateRecordId));
+
   // `sendInvitation` reports three outcomes and never throws. The `.catch` is a belt and not
   // a path: if this function ever did throw, the creation already committed, so the screen
   // must still offer the link — which it does whenever `screen.invite.link` exists — and the
   // notice says only that the send failed, because a thrown error is not a diagnosis.
   const outcome = await sendInvitation(
     invitationMessage({
-      to: value("email").trim(),
-      initiatorName: value("initiatorName").trim(),
-      counterpartyName: value("counterpartyName").trim(),
+      to: who.email.trim(),
+      initiatorName: who.initiatorName.trim(),
+      counterpartyName: who.counterpartyName.trim(),
       templateTitle: created.templateTitle,
       token: created.inviteToken,
     }),

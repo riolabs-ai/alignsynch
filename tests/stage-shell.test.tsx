@@ -26,6 +26,7 @@ import { CreateRelationship } from "@/components/assessment-flow/create-relation
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { lifecycleStageSection } from "@/data/pages/lifecycle";
+import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
 import { itemLabel } from "@/lib/page-copy";
 
 /** The six names the approved artifact numbers, in order. */
@@ -56,12 +57,14 @@ function createStepHtml(): string {
   return renderToStaticMarkup(
     createElement(CreateRelationship, {
       copy: assessmentCreatePageCopy,
+      stage: 1,
       template: {
         recordId: "template-relationship-basics",
         title: "Relationship Basics",
         summary: "Ten Aspects about how a working relationship feels and where it should go.",
         aspectCount: 2,
       },
+      draft: EMPTY_CREATE_DRAFT,
       backHref: "/assessment/templates/template-relationship-basics",
       problem: null,
       problemLink: null,

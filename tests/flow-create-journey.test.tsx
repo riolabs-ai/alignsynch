@@ -29,9 +29,10 @@ import { TemplateDetail } from "@/components/assessment-flow/template-detail";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
 import type { LibraryTemplateDetail } from "@/lib/db/template-library";
+import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
 import {
-  CREATE_INSTANCE_PATH,
   PRICING_PATH,
+  SAVE_WHO_PATH,
   createRelationshipPath,
   createSignInPath,
   createSignUpPath,
@@ -93,7 +94,9 @@ function createHtml(input: {
   return renderToStaticMarkup(
     createElement(CreateRelationship, {
       copy: assessmentCreatePageCopy,
+      stage: 1,
       template: CREATE_TEMPLATE,
+      draft: EMPTY_CREATE_DRAFT,
       backHref: `/assessment/templates/${TEMPLATE_ID}`,
       problem: input.problem ?? null,
       problemLink: input.problemLink ?? null,
@@ -149,7 +152,7 @@ describe("stage 3 — the create step", () => {
   it("asks a signed-out visitor for an account instead of drawing the form", () => {
     const html = createHtml({ signedIn: false });
     expect(html).toContain('data-create-gate="true"');
-    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).not.toContain(`action="${SAVE_WHO_PATH}"`);
     expect(html).not.toContain('name="templateRecordId"');
   });
 
@@ -159,9 +162,9 @@ describe("stage 3 — the create step", () => {
     expect(nextOf(html, createSignInPath(TEMPLATE_ID))).toBe(CREATE_PATH);
   });
 
-  it("draws the form for a signed-in person, posting the template the page was read for", () => {
+  it("draws stage 1's form for a signed-in person, posting the template the page was read for", () => {
     const html = createHtml({ signedIn: true });
-    expect(html).toContain(`action="${CREATE_INSTANCE_PATH}"`);
+    expect(html).toContain(`action="${SAVE_WHO_PATH}"`);
     expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
     expect(html).not.toContain('data-create-gate="true"');
   });
