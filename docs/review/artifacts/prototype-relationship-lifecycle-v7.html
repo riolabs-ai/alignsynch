@@ -362,7 +362,7 @@ const DEFAULT_COPY = {
   "ctx.sheetTitle":"Create a relationship","ctx.close":"Close",
 
   "step.1":"Gallery","step.2":"Detail","step.3":"Account","step.4":"Details","step.5":"Settings",
-  "step.6":"Aspects","step.7":"Invite","step.8":"Completed","step.9":"Align","step.10":"Align",
+  "step.6":"Aspects","step.7":"Invite","step.8":"Connect","step.9":"Align","step.10":"Align",
 
   /* 1 — discovery: the two places a template is chosen from */
   "s1.heading":"Relationship Templates",
@@ -597,7 +597,7 @@ const DEFAULT_COPY = {
 };
 
 /* Screen index → copy key. The six stages are screens 4..9 in the owner's words:
-   Details · Settings · Aspects · Invite · Completed · Align. Screens 0-3 are the pre-stage
+   Details · Settings · Aspects · Invite · Connect · Align. Screens 0-3 are the pre-stage
    views (gallery, detail, account), so they keep their own labels and are never numbered. */
 const STEPS = ["step.1","step.2","step.3","step.2","step.4","step.5","step.6","step.7","step.8","step.9"];
 /* The template screens are PRE-STAGE views — a marketing template landing page and the
@@ -605,7 +605,7 @@ const STEPS = ["step.1","step.2","step.3","step.2","step.4","step.5","step.6","s
    flow; pressing "Create Relationship" is the conversion that enters Stage 1. */
 const FLOW_START = 2;   // below this a screen is a pre-stage view (template landing/detail)
 /* The flow, in order. SIX stages, the owner's words: 1 Details · 2 Settings · 3 Aspects ·
-   4 Invite · 5 Completed · 6 Align. Screen 3 (the template detail) is a pre-stage view.
+   4 Invite · 5 Connect · 6 Align. Screen 3 (the template detail) is a pre-stage view.
    Align (screen 9) is live only once one or more assessments are shared; it is never a
    stage the wizard advances into. There is no `Ongoing`: the living work of a completed
    relationship is its own page in the dashboard. */
