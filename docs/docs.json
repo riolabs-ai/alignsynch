@@ -203,6 +203,11 @@
           "question": "What does the tree do today, and what does the industry do?"
         },
         {
+          "path": "pay-to-complete/COPY-INVENTORY.md",
+          "title": "Payer copy inventory",
+          "question": "Which payer strings already exist, at which line, and which are still unwritten?"
+        },
+        {
           "path": "billing.md",
           "title": "Billing",
           "question": "How are the two billing drivers wired, and where is the pricing CTA?"
