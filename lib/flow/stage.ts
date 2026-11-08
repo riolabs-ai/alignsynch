@@ -74,6 +74,30 @@ export function relationshipStage(status: InstanceStatus): FlowStage | null {
 }
 
 /**
+ * Is the sixth stage — `Align` — live on a relationship in this status? (#735)
+ *
+ * `docs/specs/flow-stages.md` → *Align is the conditional stage*: the cell exists once **one or
+ * more assessments are shared** on the relationship, in progress or completed, and is drawn
+ * unavailable before that. In this model a relationship *is* the assessment, so "shared" is the
+ * moment the Counterparty has a seat:
+ *
+ *   awaiting_counterparty  false — nothing is shared; the invitation has not been claimed, so
+ *                          there is no second sheet to align against
+ *   answering              true  — in progress: both seats exist and the sheets are being filled
+ *   awaiting_payment       true  — both sheets are sealed and the fee is what is outstanding
+ *   complete               true  — completed: `AlignmentView` is what the cell opens
+ *   voided                 false — an operator ended the session; it is off the ladder
+ *
+ * **The cell opening is not the report opening.** It points at the instance screen, which renders
+ * the sheet while the blind rule holds and the Alignment once both seats have accepted
+ * (`visibleRoles()`). Deciding *that* here would be a second copy of the blind rule, and the whole
+ * point of `lib/flow/screen.ts` is that there is one.
+ */
+export function alignAvailableOf(status: InstanceStatus): boolean {
+  return status === "answering" || status === "awaiting_payment" || status === "complete";
+}
+
+/**
  * Which sentence of the `stage` copy section the screen draws.
  *
  * `invited` has two, because "nobody has claimed it yet" and "the invitation died last

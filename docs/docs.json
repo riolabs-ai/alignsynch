@@ -488,6 +488,11 @@
           "question": "Did every route answer, on a production build?"
         },
         {
+          "path": "qa-flow-stages/README.md",
+          "title": "Six flow stages",
+          "question": "Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?"
+        },
+        {
           "path": "qa-flow-validation/2026-11-07.md",
           "title": "Flow validation, 2026-11-07",
           "question": "Does the assessment flow work end to end with two real identities?"

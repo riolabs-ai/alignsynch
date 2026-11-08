@@ -1,12 +1,14 @@
 /**
  * template-ancestor: components/assessment-flow/report-view.tsx   (variation: stage 6 — the Alignment reached from the relationship itself rather than from a report route, with one row per Aspect carrying both sheets and their difference, where the report draws the eight Gaps group by group)
  *
- * #692 — **Alignment is dashboard functionality, not a stage.** Stage 6 is Ongoing: the live
- * relationship, whose screen is `/assessment/instances/[instanceId]` and whose status is one
- * sentence (`docs/specs/ux-stages.md`). This component is the *content* of that state — what the
- * relationship actually says — and it is deliberately not a seventh screen in the flow: no rail,
- * no stage number, no "finish". A couple reaches it from Sent (#691) by opening the relationship,
- * and it stays where it is for as long as the relationship does.
+ * #692 — **the alignment is stage 6's content, and the relationship owns it.** Stage 6 is
+ * **Align** (`docs/specs/flow-stages.md`): the live relationship, whose screen is
+ * `/assessment/instances/[instanceId]` and whose status is one sentence
+ * (`docs/specs/ux-stages.md`). This component is the *content* of that stage once both seats have
+ * accepted — what the relationship actually says — and it is deliberately not a screen of its own
+ * in the wizard: no rail of its own, no stage number, no "finish". A couple reaches it from
+ * Completed (#691) by opening the relationship, and it stays where it is for as long as the
+ * relationship does.
  *
  * ## The unit is the Aspect, and there are three facts per row
  *

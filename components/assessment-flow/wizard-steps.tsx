@@ -14,12 +14,31 @@
  *
  * A server component: a rail is a list of words, so it ships no JavaScript.
  */
+import Link from "next/link";
 
 export interface WizardStep {
   /** 1-based: the number the dot draws, and what `current` is compared against. */
   readonly step: number;
   /** The step's name, already resolved from the caller's fixture. */
   readonly label: string;
+  /**
+   * Where the step opens, when it opens anywhere (#735). Absent on the rails that are pure
+   * orientation (the create flow's first five stages advance through a form post, not a link), and
+   * present only where a step has a screen of its own to reach — `Align`, once an assessment is
+   * shared on the relationship.
+   */
+  readonly href?: string;
+  /**
+   * Drawn, but not live: `Align` before anything is shared. Wins over `href` — a step that is not
+   * available is never a link, whatever a caller passed — and it is drawn muted rather than
+   * hidden, because the sixth cell is part of the stage count the rail is stating.
+   */
+  readonly unavailable?: boolean;
+  /**
+   * The sentence a visually hidden span carries on an unavailable cell, already resolved from the
+   * caller's fixture: a muted cell tells the eye and tells a screen reader nothing.
+   */
+  readonly note?: string;
 }
 
 export function WizardSteps({
@@ -43,32 +62,59 @@ export function WizardSteps({
           {steps.map((entry) => {
             const isCurrent = entry.step === current;
             const isDone = entry.step < current;
-            return (
-              <li
-                key={entry.step}
-                aria-current={isCurrent ? "step" : undefined}
-                data-step-state={isCurrent ? "current" : isDone ? "done" : "upcoming"}
-                className={
-                  isCurrent
-                    ? "flex items-center gap-2 font-semibold text-action"
-                    : isDone
-                      ? "flex items-center gap-2 font-medium text-gray-700 dark:text-gray-200"
-                      : "flex items-center gap-2 text-gray-500 dark:text-gray-400"
-                }
-              >
+            const isUnavailable = entry.unavailable === true;
+            const content = (
+              <>
                 <span
                   aria-hidden="true"
                   className={
-                    isCurrent
-                      ? "flex h-6 w-6 items-center justify-center rounded-full bg-action text-xs font-bold text-action-foreground"
-                      : isDone
-                        ? "flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-xs font-bold text-white dark:bg-gray-200 dark:text-gray-900"
-                        : "flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs font-bold dark:border-gray-600"
+                    isUnavailable
+                      ? "flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-gray-300 text-xs font-bold text-gray-400 dark:border-gray-600 dark:text-gray-500"
+                      : isCurrent
+                        ? "flex h-6 w-6 items-center justify-center rounded-full bg-action text-xs font-bold text-action-foreground"
+                        : isDone
+                          ? "flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-xs font-bold text-white dark:bg-gray-200 dark:text-gray-900"
+                          : "flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs font-bold dark:border-gray-600"
                   }
                 >
                   {entry.step}
                 </span>
                 {entry.label}
+                {isUnavailable && entry.note !== undefined ? (
+                  <span className="sr-only">{entry.note}</span>
+                ) : null}
+              </>
+            );
+            const className = isUnavailable
+              ? "flex items-center gap-2 text-gray-400 dark:text-gray-500"
+              : isCurrent
+                ? "flex items-center gap-2 font-semibold text-action"
+                : isDone
+                  ? "flex items-center gap-2 font-medium text-gray-700 dark:text-gray-200"
+                  : "flex items-center gap-2 text-gray-500 dark:text-gray-400";
+            return (
+              <li
+                key={entry.step}
+                aria-current={isCurrent ? "step" : undefined}
+                data-step-state={
+                  isUnavailable
+                    ? "unavailable"
+                    : isCurrent
+                      ? "current"
+                      : isDone
+                        ? "done"
+                        : "upcoming"
+                }
+                className={className}
+              >
+                {/* A live step with a screen opens it; everything else is a word in a list. */}
+                {entry.href !== undefined && !isUnavailable && !isCurrent ? (
+                  <Link href={entry.href} className={`${className} hover:underline`}>
+                    {content}
+                  </Link>
+                ) : (
+                  content
+                )}
               </li>
             );
           })}

@@ -223,7 +223,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
     },
     /**
-     * #692 — stage 6, **Ongoing**: the Alignment, Aspect by Aspect.
+     * #692 — stage 6, **Align**: the Alignment, Aspect by Aspect.
      *
      * The artifact of record (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`,
      * `s10.*`) draws this as the relationship's own Gap card: one row per Aspect, both sheets

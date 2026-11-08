@@ -1,8 +1,8 @@
 /**
  * template-ancestor: components/create/quiz-editor.tsx   (variation: a server component on the app's own route, posting to the route handler — the layout survives, the disabled submit and its "not wired" note do not)
  *
- * `CreateRelationship` — the create flow's four stages, **Who**, **Mode**, **Aspects** and
- * **Create** (#427, #688, #689, #690).
+ * `CreateRelationship` — the create flow's four stages, **Details**, **Settings**, **Aspects** and
+ * **Invite** (#427, #688, #689, #690; named by #735).
  *
  * **One form split into four steps, one draft behind all of them.** Until #688 this was a single
  * form: the names, the address, the Mode and the Setting, submitted together or lost together. The
@@ -160,7 +160,7 @@ export function CreateRelationship({
   problemLink,
 }: {
   copy: PageCopy;
-  /** 1 = Who, 2 = Mode, 3 = Aspects, 4 = Create. The rail and the body both read it. */
+  /** 1 = Details, 2 = Settings, 3 = Aspects, 4 = Invite. The rail and the body both read it. */
   stage: CreateStage;
   /** The template to copy, or `null` when the refusal means there is none to read. */
   template: CreateTemplate | null;
@@ -239,20 +239,31 @@ export function CreateRelationship({
     <StageShell title={heading} {...shell}>
       <StageColumn>
         <div className="space-y-6">
-          <p>
-            <Link href={backHref} className="text-sm font-medium text-action hover:underline">
-              {stage === 1
-                ? itemLabel(band, "back")
-                : stage === 2
+          {/*
+           * Stages 2–4 keep their back link at the top of the column; stage 1 draws its own
+           * `Back` in the form's action row instead, because that is the artifact's stage foot
+           * (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`, `s4.back` beside
+           * `s4.next`) — one back affordance per screen, and on Details it is half of the pair.
+           */}
+          {stage === 1 ? null : (
+            <p>
+              <Link href={backHref} className="text-sm font-medium text-action hover:underline">
+                {stage === 2
                   ? itemLabel(mode, "back")
                   : stage === 3
                     ? itemLabel(aspectsSection, "back")
                     : itemLabel(commit, "back")}
-            </Link>
-          </p>
+              </Link>
+            </p>
+          )}
 
-          {/* Where the person is in the six stages (#687): Who, Mode, Aspects and Create are the first four. */}
-          <StageRail copy={copy} current={stage} />
+          {/*
+           * Where the person is in the six stages (#687, renamed by #735): Details, Settings,
+           * Aspects and Invite are the first four, and `Align` is drawn unavailable here — the
+           * relationship this flow creates has no shared assessment until somebody has claimed
+           * the invitation and answered.
+           */}
+          <StageRail copy={copy} current={stage} alignHref={null} />
 
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
@@ -318,19 +329,32 @@ export function CreateRelationship({
                 {/* The template is the route's own fact; the form carries it so the POST names it. */}
                 <input type="hidden" name="templateRecordId" value={template.recordId} />
 
-                <label className="grid gap-1 text-sm" htmlFor="create-initiator-name">
-                  <FieldLabel>{itemLabel(who, "initiator-label")}</FieldLabel>
-                  <input
-                    id="create-initiator-name"
-                    name="initiatorName"
-                    defaultValue={draft.initiatorName}
-                    className={INPUT_CLASSES}
-                  />
-                  <FieldHelp>{itemLabel(who, "initiator-help")}</FieldHelp>
-                </label>
+                {/*
+                The inventory the spec fixes (`docs/specs/flow-stages.md` → *Stage 1, Details*):
+                initiator and counterparty on row 1, email and title on row 2, the description
+                across row 3 — four 6-span fields and one 12-span, in that order, and nothing else.
+                `tests/create-fields.test.ts` asserts the order and the spans, so a sixth field or
+                a moved one is red rather than a reviewer's memory.
+              */}
+                <div className="grid gap-3 sm:grid-cols-12">
+                  <label
+                    className="grid gap-1 text-sm sm:col-span-6"
+                    htmlFor="create-initiator-name"
+                  >
+                    <FieldLabel>{itemLabel(who, "initiator-label")}</FieldLabel>
+                    <input
+                      id="create-initiator-name"
+                      name="initiatorName"
+                      defaultValue={draft.initiatorName}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "initiator-help")}</FieldHelp>
+                  </label>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="grid gap-1 text-sm" htmlFor="create-counterparty-name">
+                  <label
+                    className="grid gap-1 text-sm sm:col-span-6"
+                    htmlFor="create-counterparty-name"
+                  >
                     <FieldLabel>{itemLabel(who, "counterparty-label")}</FieldLabel>
                     <input
                       id="create-counterparty-name"
@@ -342,7 +366,8 @@ export function CreateRelationship({
                     <FieldHelp>{itemLabel(who, "counterparty-help")}</FieldHelp>
                   </label>
 
-                  <label className="grid gap-1 text-sm" htmlFor="create-email">
+                  {/* No help line: the artifact draws none under the address (`email-help` is gone). */}
+                  <label className="grid gap-1 text-sm sm:col-span-6" htmlFor="create-email">
                     <FieldLabel>{itemLabel(who, "email-label")}</FieldLabel>
                     <input
                       id="create-email"
@@ -352,45 +377,55 @@ export function CreateRelationship({
                       placeholder={itemLabel(who, "email-placeholder")}
                       className={INPUT_CLASSES}
                     />
-                    <FieldHelp>{itemLabel(who, "email-help")}</FieldHelp>
+                  </label>
+
+                  <label className="grid gap-1 text-sm sm:col-span-6" htmlFor="create-title">
+                    <FieldLabel>{itemLabel(who, "title-label")}</FieldLabel>
+                    <input
+                      id="create-title"
+                      name="title"
+                      defaultValue={draft.title}
+                      placeholder={itemLabel(who, "title-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "title-help")}</FieldHelp>
+                  </label>
+
+                  <label className="grid gap-1 text-sm sm:col-span-12" htmlFor="create-description">
+                    <FieldLabel>{itemLabel(who, "description-label")}</FieldLabel>
+                    <textarea
+                      id="create-description"
+                      name="description"
+                      rows={3}
+                      defaultValue={draft.description}
+                      placeholder={itemLabel(who, "description-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "description-help")}</FieldHelp>
                   </label>
                 </div>
 
-                <label className="grid gap-1 text-sm" htmlFor="create-title">
-                  <FieldLabel>{itemLabel(who, "title-label")}</FieldLabel>
-                  <input
-                    id="create-title"
-                    name="title"
-                    defaultValue={draft.title}
-                    placeholder={itemLabel(who, "title-placeholder")}
-                    className={INPUT_CLASSES}
-                  />
-                  <FieldHelp>{itemLabel(who, "title-help")}</FieldHelp>
-                </label>
-
-                <label className="grid gap-1 text-sm" htmlFor="create-description">
-                  <FieldLabel>{itemLabel(who, "description-label")}</FieldLabel>
-                  <textarea
-                    id="create-description"
-                    name="description"
-                    rows={3}
-                    defaultValue={draft.description}
-                    placeholder={itemLabel(who, "description-placeholder")}
-                    className={INPUT_CLASSES}
-                  />
-                  <FieldHelp>{itemLabel(who, "description-help")}</FieldHelp>
-                </label>
-
+                {/*
+                The stage foot: the secondary action, then the primary one, as the artifact
+                draws it (`s4.back` beside `s4.next`). There is no note under the pair — the
+                sentence that used to sit there is not in the artifact, and a step that says
+                what the next step does before doing it is the one thing the spec's inventory
+                has no line for.
+              */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Link
+                    href={backHref}
+                    data-create-back="true"
+                    className="inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    {itemLabel(who, "back")}
+                  </Link>
                   <button
                     type="submit"
-                    className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground"
+                    className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action-hover"
                   >
                     {itemLabel(who, "submit")}
                   </button>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    {itemLabel(who, "submit-note")}
-                  </p>
                 </div>
               </form>
             </>
