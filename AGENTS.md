@@ -310,8 +310,13 @@ process bug.
   `components/ui/form-surface.tsx`: border + background contrast, **no shadow**, because the auth
   screens drew `shadow-xl border-0` while the dashboard and marketing forms drew a flat card.
   `scripts/brand-classes.mjs` (inside `pnpm lint`) fails a `shadow-*` on a form surface and a bare
-  `Card` under `components/auth/**`; `Card`'s own `shadow-sm` default is untouched — this is about
-  forms, not every raised element.
+  `Card` under `components/auth/**`. **`Card` carries no shadow at all** since C1 (#715/#722): the
+  primitive is `rounded-lg border bg-card` and elevation is a border, not a shadow, on every raised
+  element — the measured reference draws one (`docs/specs/ux-reference-patterns.md` rule 3). A
+  surface that wants elevation asks for it explicitly with a `shadow-*` class and says why; the
+  default never supplies one. This replaced the earlier rule that left `Card`'s `shadow-sm` default
+  alone, which read as "forms only" while the marketing and quiz renders kept the shadow the
+  reference forbids.
 
 ### The template doctrine — one core, many expressions
 
