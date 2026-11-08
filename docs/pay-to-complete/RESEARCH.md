@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Billing](../billing.md)
+[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Payer copy inventory](COPY-INVENTORY.md)
 
 <!-- docs-nav:end -->
 
@@ -152,6 +152,6 @@ Not re-litigated here; they are inputs to the PRD:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Billing](../billing.md)
+[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Payer copy inventory](COPY-INVENTORY.md)
 
 <!-- docs-nav:end -->
