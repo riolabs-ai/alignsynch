@@ -243,6 +243,11 @@
           "question": "What happens when an invitation expires — and why not a void?"
         },
         {
+          "path": "specs/flow-stages.md",
+          "title": "The six flow stages (binding spec)",
+          "question": "What are the stages, which fields does stage 1 carry, and where does the flow end?"
+        },
+        {
           "path": "specs/maintenance-fields.md",
           "title": "Maintenance fields",
           "question": "Which fields does the relationship-maintenance form carry?"
