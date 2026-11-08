@@ -10,8 +10,8 @@
  *              invitation is doing (`live`, `expired`, `claimed`, `revoked`, `missing`)
  *   aspects    the Aspect editor, while the relationship is `draft`/`pending` — the initiator's
  *              alone, and refused by the server action rather than hidden from the counterparty
- *   publish    the counterparty's name and address, the reason, and the one button that starts the
- *              trial (or opens a checkout), publishes the relationship and mints the invitation
+ *   publish    the counterparty's name and address, and the one button that starts the trial (or
+ *              opens a checkout), publishes the relationship and mints the invitation
  *   republish  the one-click reissue a lapsed or revoked link gets — no Aspects re-entered
  *
  * **The trial sentence.** #533 requires the screen to say plainly when a trial is running and no
@@ -108,7 +108,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "remove", label: "Remove" },
         { id: "up", label: "Move up" },
         { id: "down", label: "Move down" },
-        { id: "reason", label: "Reason" },
         { id: "save-draft", label: "Save the draft" },
         { id: "save-pending", label: "Save and mark ready" },
         { id: "saving", label: "Saving…" },
@@ -144,7 +143,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "The Setting decides how the two sheets are read, never what they say. It is written at publish, like the mode.",
         },
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Publish and invite" },
         { id: "publishing", label: "Publishing…" },
         { id: "expiry", label: "The invitation expires {instant}." },
@@ -171,7 +169,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       heading: "Reissue the invitation",
       body: "One click: a new token on the same invitation row, a new seven-day window, and the old link stops working. Nothing about the Aspects changes, and the relationship stays published.",
       items: [
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Reissue the link" },
         { id: "working", label: "Reissuing…" },
         { id: "reissued", label: "Reissued. The new link expires {instant}." },
@@ -232,7 +229,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "The other person has joined, so the seat is theirs: their account holds it, and a name or address typed here would be a second truth. Support can re-point a seat; this form cannot.",
         },
-        { id: "reason", label: "Reason" },
         { id: "preview", label: "Check the cost" },
         { id: "previewing", label: "Checking…" },
         { id: "save", label: "Save the change" },
@@ -296,7 +292,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           id: "invalid-counterparty",
           label: "The invitation needs a name and a real address.",
         },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The change did not go through." },
       ],
@@ -326,7 +321,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label: "The invitation link is still live — there is nothing to reissue.",
         },
         { id: "checkout-required", label: "A checkout has to complete first." },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         /* #623 — the edit surface's own dead ends, one sentence each. */
         {
           id: "unconfirmed-invalidation",

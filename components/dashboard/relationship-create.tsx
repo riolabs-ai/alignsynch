@@ -20,7 +20,6 @@
  */
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -58,14 +57,13 @@ export function RelationshipCreate({
 }) {
   const fresh = sectionOf(copy, "new");
   const [templateId, setTemplateId] = useState("");
-  const [reason, setReason] = useState("");
   const [outcome, setOutcome] = useState<RelationshipCreateOutcome | null>(null);
   const [pending, startTransition] = useTransition();
 
   function submit(): void {
     setOutcome(null);
     startTransition(async () => {
-      setOutcome(await onCreate({ templateId, reason }));
+      setOutcome(await onCreate({ templateId }));
     });
   }
 
@@ -85,30 +83,20 @@ export function RelationshipCreate({
           </div>
         ) : (
           <>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="relationship-template">{itemLabel(fresh, "choose")}</Label>
-                <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger id="relationship-template">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="relationship-reason">{itemLabel(fresh, "reason")}</Label>
-                <Input
-                  id="relationship-reason"
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value)}
-                />
-              </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="relationship-template">{itemLabel(fresh, "choose")}</Label>
+              <Select value={templateId} onValueChange={setTemplateId}>
+                <SelectTrigger id="relationship-template">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <Button type="button" onClick={submit} disabled={pending || templateId === ""}>

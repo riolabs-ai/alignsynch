@@ -3,8 +3,8 @@
 /**
  * The support inbox's three operations, as one server action (#506).
  *
- * `components/admin/support-thread.tsx` posts one of three names here with a message id and a
- * reason. Everything that decides whether the operation may happen is downstream:
+ * `components/admin/support-thread.tsx` posts one of three names here with a message id.
+ * Everything that decides whether the operation may happen is downstream:
  * `lib/admin/inbox-ops.ts` asks `act()`, and `act()` reads the actor's rung out of `user_profile`
  * inside the transaction it writes. This file only resolves **who is asking** and **which
  * operation they named**.
@@ -13,7 +13,7 @@
  * request's cookies on the server; a payload that named a `userId` would be a caller choosing
  * whose audit row it gets, and there is no field for one.
  *
- * **Refusals come back as data.** `ActRefused` (short reason, low role) and `InboxOpRefused` (the
+ * **Refusals come back as data.** `ActRefused` (a rung below the floor) and `InboxOpRefused` (the
  * row cannot do what was asked — gone, unchanged, a non-seat, a bounced address) both map to
  * `{ ok: false, code }`, and the screen draws the sentence from its own fixture. A genuine failure
  * — a database that dropped, a bug — is rethrown: it is not a refusal, and the caller must not be
@@ -46,7 +46,9 @@ export async function performInboxOperation(
   if (user === null) return { ok: false, code: "signed-out" };
 
   const messageId = typeof input?.messageId === "string" ? input.messageId : "";
-  const reason = typeof input?.reason === "string" ? input.reason : "";
+  // No reason is posted any more (#732). The field stays in the payload shape so a caller that
+  // still has one is recorded; an empty string would be "nobody said why", which is `act()`'s NULL.
+  const reason = typeof input?.reason === "string" ? input.reason : undefined;
   const base = { actorUserId: user.userId, messageId, reason };
 
   try {

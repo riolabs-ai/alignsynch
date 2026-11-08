@@ -16,11 +16,10 @@
  *
  * **The create form asks for the minimum `zAssessment` accepts.** A template needs a title, a
  * summary and at least one Aspect (`items: z.array(zAspect).min(1)`), so the band asks for exactly
- * those plus the reason every *console create* still requires. This is the one template write that
- * keeps a typed reason (#625): it opens a catalogue row, so `act()` asks why. A member's create,
- * clone and save compose their sentence server-side instead. The client does not validate the
- * draft — the server does, through the model's own schema — and a refusal is drawn from `refusals`
- * beside the form rather than invented here.
+ * those and nothing else — the reason field every action form used to carry is gone (#732), and a
+ * console create is no exception. The client does not validate the draft — the server does,
+ * through the model's own schema — and a refusal is drawn from `refusals` beside the form rather
+ * than invented here.
  */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,7 +107,6 @@ export function TemplateRegistry({
   const [prompt, setPrompt] = useState("");
   const [leftValue, setLeftValue] = useState("");
   const [rightValue, setRightValue] = useState("");
-  const [reason, setReason] = useState("");
 
   const list = sectionOf(copy, "list");
   const columns = sectionOf(copy, "columns");
@@ -131,7 +129,6 @@ export function TemplateRegistry({
           date: "",
           aspects: [{ prompt, leftValue, rightValue }],
         }),
-        reason,
       });
       setOutcome(answer);
       if (answer.ok) {
@@ -194,14 +191,6 @@ export function TemplateRegistry({
               id="template-summary"
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="template-reason">{itemLabel(band, "reason")}</Label>
-            <Input
-              id="template-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
             />
           </div>
           <div className="flex items-center gap-4">

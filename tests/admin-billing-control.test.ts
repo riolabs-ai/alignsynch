@@ -340,12 +340,27 @@ describe("a request the rows cannot honour", () => {
     expect(db.grant).toBeUndefined();
   });
 
-  it("refuses a reason under eight characters before touching the database", async () => {
+  it("grants with no reason at all, and stores NULL rather than an empty string (#732)", async () => {
     const db = new FakeDb();
-    await expect(compPlan(request({ reason: "short" }), runner(db))).rejects.toMatchObject({
-      reason: "reason-too-short",
-    });
-    expect(db.statements).toEqual([]);
+    // The band posts five fields now: the reason field is gone from every action form, so the
+    // ordinary path is a request that never mentions one.
+    await compPlan(
+      {
+        actorUserId: ACTOR,
+        relationshipId: RELATIONSHIP,
+        planId: "basic",
+        kind: "comp",
+        interval: "month",
+        periodStart: "2026-11-01",
+      },
+      runner(db),
+    );
+
+    // The grant's own reason column is nullable since migration 0038, and `NULL` is how "nobody
+    // stated one" is spelled — the same choice the audit row makes.
+    expect(db.grant?.[6]).toBeNull();
+    expect(db.auditParam("reason")).toBeNull();
+    expect(db.committed).toEqual(["plan_grant", "relationship.plan", "admin_action:plan.comp"]);
   });
 });
 
