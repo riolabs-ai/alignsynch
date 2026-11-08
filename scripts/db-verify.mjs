@@ -131,6 +131,16 @@
  *       the `user_id` and the age, **never the address**: `db:verify` output is pasted into cards,
  *       logs and CI, and the row exists so an operator can find the id, not so the check can print
  *       the person.
+ *   V29 the review store (#667): `review_artifact`, `review_todo`, `review_issue` and
+ *       `review_issue_comment` exist, `review_issue` carries the `UNIQUE (artifact_id, number)`
+ *       that makes an issue number trustworthy under two concurrent raisers, and **no issue is in
+ *       the impossible state** — `state = 'closed'` with no `closed_at`, or `'open'` with one.
+ *       `0037`'s CHECK refuses that pair at the insert and `zReviewIssue`'s refinement refuses it
+ *       on the read, so this rule is the third guard and the only one that *names* the row: a
+ *       database whose constraint was dropped by hand, or one migrated halfway, still has a reader
+ *       who will believe the list. The duplicate-number half is here for the same reason — the
+ *       constraint makes it impossible, and a rule that only checks what is already impossible is
+ *       how the constraint's absence goes unnoticed.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -383,6 +393,59 @@ export function stuckDeletionJobProblems(jobs, now = Date.now()) {
       code: "V28",
       message: `account_deletion_job has an unfinished deletion for "${job.user_id}" started ${hours} h ago — the auth user is gone and the sweep never landed, so the address recorded with it is still retained with no owner: resume it (docs/ACCOUNT-DELETION-SPEC.md §7)`,
     });
+  }
+  return problems;
+}
+
+/**
+ * V29 over `review_issue`'s rows — the whole rule, so a test can drive it with no database.
+ *
+ * Three facts, and each one is a different way the list stops being trustworthy:
+ *
+ *   the pair          `closed` with no `closed_at` cannot be aged; `open` with one was reopened
+ *                     and forgot. `0037`'s CHECK refuses both at the insert and `zReviewIssue`
+ *                     refuses them on the read, so a row here means the constraint is gone —
+ *                     which is exactly the state a reader would still believe.
+ *   the vocabulary    a `state` outside `open`/`closed` is drift the CHECK also refuses.
+ *   the number        two issues sharing a number inside one artifact makes `#12 open` ambiguous,
+ *                     and the `UNIQUE (artifact_id, number)` is what prevents it. Repeated here
+ *                     because the constraint's absence is otherwise invisible until somebody
+ *                     quotes a number and lands on the wrong conversation.
+ *
+ * The failure line names the artifact and the number, never the body: this output is pasted into
+ * cards and CI, and a review issue can carry a client's words.
+ */
+export function reviewIssueProblems(issues) {
+  const problems = [];
+  const seen = new Map();
+  for (const issue of issues) {
+    const closed = issue.closed_at !== null && issue.closed_at !== undefined;
+    const ref = `${issue.artifact_id} #${issue.number}`;
+    if (issue.state !== "open" && issue.state !== "closed") {
+      problems.push({
+        code: "V29",
+        message: `review_issue "${issue.id}" (${ref}) carries state "${issue.state}" — the store's vocabulary is open|closed, so the list cannot say what it is`,
+      });
+    } else if (issue.state === "closed" && !closed) {
+      problems.push({
+        code: "V29",
+        message: `review_issue "${issue.id}" (${ref}) reads closed with no closed_at — the instant is what makes a closed issue ageable, and 0037's review_issue_state_pair refuses this pair (run \`pnpm db:migrate\` if the constraint is missing)`,
+      });
+    } else if (issue.state === "open" && closed) {
+      problems.push({
+        code: "V29",
+        message: `review_issue "${issue.id}" (${ref}) reads open and carries closed_at ${issue.closed_at} — reopening clears the instant in the same statement; a row with both says two things at once`,
+      });
+    }
+    const numbers = seen.get(issue.artifact_id) ?? new Set();
+    if (numbers.has(issue.number)) {
+      problems.push({
+        code: "V29",
+        message: `review_issue (${ref}) has two rows with the same number — every quote of "#${issue.number}" is ambiguous, which is what UNIQUE (artifact_id, number) exists to prevent`,
+      });
+    }
+    numbers.add(issue.number);
+    seen.set(issue.artifact_id, numbers);
   }
   return problems;
 }
@@ -1592,6 +1655,70 @@ async function main() {
       }
     }
 
+    /* V29 — the review store (#667).
+     *
+     * The store behind `/admin/review`: four tables, one constraint that makes an issue number
+     * trustworthy, and one pair of columns that must agree. The tables are checked by name from
+     * `information_schema`, the way V28 checks `account_deletion_job` — a database migrated without
+     * `0037` has nowhere to record a tick, so it also has nothing this rule could find, and a green
+     * run there would be the false evidence the rule exists to refuse.
+     *
+     * The rows are read in full (`review_issue` is a review screen's list, not an event log) and
+     * handed to `reviewIssueProblems()`, which is the rule in one place and the half a test can
+     * drive with no connection.
+     */
+    let reviewArtifacts = 0;
+    let reviewTodos = 0;
+    let reviewIssues = 0;
+    const { rows: reviewTables } = await client.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name IN ('review_artifact', 'review_todo', 'review_issue', 'review_issue_comment')
+        ORDER BY table_name`,
+    );
+    const reviewTableNames = reviewTables.map((row) => row.table_name);
+    for (const table of [
+      "review_artifact",
+      "review_todo",
+      "review_issue",
+      "review_issue_comment",
+    ]) {
+      if (!reviewTableNames.includes(table)) {
+        fail(
+          "V29",
+          `public.${table} does not exist — run \`pnpm db:migrate\` (0037): a review TODO or issue would have nowhere to be written`,
+        );
+      }
+    }
+    if (reviewTableNames.includes("review_artifact")) {
+      const { rows: numberKey } = await client.query(
+        `SELECT c.conname FROM pg_constraint c
+          WHERE c.conrelid = 'public.review_issue'::regclass
+            AND c.contype = 'u'
+            AND pg_get_constraintdef(c.oid) = 'UNIQUE (artifact_id, number)'`,
+      );
+      if (numberKey.length === 0) {
+        fail(
+          "V29",
+          "public.review_issue has no UNIQUE (artifact_id, number) — two people raising an issue at the same moment could share a number, and every quote of it becomes ambiguous",
+        );
+      }
+      const { rows: reviewCounts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM review_artifact) AS artifacts,
+                (SELECT count(*)::int FROM review_todo) AS todos,
+                (SELECT count(*)::int FROM review_issue) AS issues`,
+      );
+      reviewArtifacts = reviewCounts[0]?.artifacts ?? 0;
+      reviewTodos = reviewCounts[0]?.todos ?? 0;
+      reviewIssues = reviewCounts[0]?.issues ?? 0;
+      const { rows: issueRows } = await client.query(
+        `SELECT id, artifact_id, number, state, closed_at FROM review_issue ORDER BY artifact_id, number`,
+      );
+      for (const problem of reviewIssueProblems(issueRows)) {
+        fail(problem.code, problem.message);
+      }
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -1607,7 +1734,7 @@ async function main() {
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, no drift`,
+      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
