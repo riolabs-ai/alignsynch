@@ -27,15 +27,21 @@
  */
 import { z } from "zod";
 import { ALIGNMENT_SETTINGS, ASSESSMENT_MODES } from "@/content/assessment";
+import { zAspectDraft } from "./aspects";
 import { emailLooksDeliverable } from "./resend";
 
 /**
- * The draft, as the two stages build it.
+ * The draft, as the three stages build it.
  *
  * Every value is a string because every value arrives as form text: `mode` and
  * `alignmentSetting` are parsed against the model's enums by `modeDraft` below, and a draft
  * that has only been through Stage 1 carries them empty. `.catchall` is deliberately absent —
  * the object is written by this module alone, and an unknown key is not something to preserve.
+ *
+ * `aspects` is **optional and absent until stage 3 saves**, which is the distinction stage 3
+ * needs: absent means "the person has not touched the list, seed it from the template", and an
+ * empty array means "a list the person emptied". A `default([])` would collapse the two and
+ * silently restore the template under somebody who had just deleted its last Aspect (#689).
  */
 const zCreateDraft = z
   .object({
@@ -46,6 +52,7 @@ const zCreateDraft = z
     description: z.string(),
     mode: z.string(),
     alignmentSetting: z.string(),
+    aspects: z.array(zAspectDraft).optional(),
   })
   .strict();
 

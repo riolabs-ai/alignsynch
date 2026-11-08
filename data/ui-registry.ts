@@ -431,7 +431,17 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "Stage 2 of the create flow (Mode): the Mode (fixed at creation) and the Setting (the one choice a party may change later), over the draft stage 1 wrote.",
     notes:
-      "The step that commits (#688): it reads the draft cookie, refuses a missing draft or a signed-out viewer by sending them back to stage 1, and its form posts the Mode and the Setting to `POST /assessment/new`, which re-reads the draft, validates the two choices by label, copies the template's Aspects into a new relationship, clears the draft cookie and answers a 303 to `/assessment/instances/<id>`. The page is a sibling of `/…/create` rather than a `?step=` switch because the flow is a sequence of stages — slice 3 adds `…/create/aspects` the same way. It renders the same `CreateRelationship` component and the same fixture as stage 1, so the two steps cannot drift into two vocabularies.",
+      "Saves, and hands over (#688, #689). It reads the draft cookie, refuses a missing draft or a signed-out viewer by sending them back to stage 1, and its form posts the Mode and the Setting to `POST /assessment/new/mode`, which merges the two choices into the same draft and answers a 303 to `…/create/aspects`. The create itself moved to stage 3's control when the approved flow put Aspects between Mode and the invite: this step no longer copies a template or writes any row. The page is a sibling of `/…/create` rather than a `?step=` switch because the flow is a sequence of stages. It renders the same `CreateRelationship` component and the same fixture as stages 1 and 3, so the steps cannot drift into three vocabularies.",
+  },
+  {
+    kind: "route",
+    surface: "/assessment/templates/[templateId]/create/aspects",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "Stage 3 of the create flow (Aspects): the template's Aspects with both opinion labels, each collapsed to one row, opened in place, reworded, and reordered by drag before the relationship is created.",
+    notes:
+      "The one interactive stage (#689). It reads the draft stages 1–2 wrote and the template through `readLibraryTemplate()`, and renders the working list: the draft's own when stage 3 has saved, the template's on a first visit (`lib/flow/aspects.ts::workingAspects` — absent means \"untouched\", an emptied array means \"the person emptied it\"). `components/assessment-flow/aspect-list.tsx` is the flow's only client component: a row opens in place, saves itself with `POST /assessment/new/aspects` (JSON, one small request per committed gesture) and collapses on success; the order is a pointer drag on the handle (pointer events, not HTML5 dnd, so a finger works) with Arrow Up/Down on the same handle as the keyboard path. Both write the list into the same draft cookie, which is what makes the order and the words survive a reload. The create stays behind this stage's own control and posts to `POST /assessment/new`, which now takes who, mode, setting and the list from the draft; the copy keeps the template's ids and order (`aspectEditsFor`) because `db:verify` V4 compares a relationship's copy with the version it is bound to. Adding and removing an Aspect is deliberately not on this screen — it would need that V4 rule to tell an edit from drift, and it is filed as its own decision.",
   },
   {
     kind: "route",

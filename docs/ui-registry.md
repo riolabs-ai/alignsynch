@@ -21,11 +21,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **85** — 55 static, 30 dynamic, from `app/**/page.tsx`
-- component domains: **42** — 307 files under `components/`, 300 of them `.tsx`
-- route handlers: **26** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 15 · **fixture** 67 · **db** 36 · **live** 8 · **prototype** 1
-- templates: Both templates 42 · AlignSynch 41 · QuizHub 42 · No template yet 2
+- routes: **86** — 55 static, 31 dynamic, from `app/**/page.tsx`
+- component domains: **42** — 308 files under `components/`, 301 of them `.tsx`
+- route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
+- status: **mock** 15 · **fixture** 67 · **db** 37 · **live** 8 · **prototype** 1
+- templates: Both templates 42 · AlignSynch 42 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -418,11 +418,17 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: Split into two stages by #688. Stage 1 posts `templateRecordId`, both seats, the address, the title and an optional description to `POST /assessment/new/who`, which validates them server-side (`lib/flow/create-draft.ts`), writes one draft cookie (`flow_draft_<templateId>`, 24 h) and answers a 303 to `…/create/mode`. A refusal is a 303 back to this path carrying `?problem=<reason>&field=<field>`, so the band names the field by its own label from `data/pages/assessment-create.ts` — never a column name. Coming back to this stage renders the saved values into the inputs. A child of the template's own address, so the template being copied is the route's fact; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. A signed-out visitor still gets the account gate (#618).
 
+- `/assessment/templates/[templateId]/create/aspects` — **db**
+  - capability: Stage 3 of the create flow (Aspects): the template's Aspects with both opinion labels, each collapsed to one row, opened in place, reworded, and reordered by drag before the relationship is created.
+  - components: `components/assessment-flow`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The one interactive stage (#689). It reads the draft stages 1–2 wrote and the template through `readLibraryTemplate()`, and renders the working list: the draft's own when stage 3 has saved, the template's on a first visit (`lib/flow/aspects.ts::workingAspects` — absent means "untouched", an emptied array means "the person emptied it"). `components/assessment-flow/aspect-list.tsx` is the flow's only client component: a row opens in place, saves itself with `POST /assessment/new/aspects` (JSON, one small request per committed gesture) and collapses on success; the order is a pointer drag on the handle (pointer events, not HTML5 dnd, so a finger works) with Arrow Up/Down on the same handle as the keyboard path. Both write the list into the same draft cookie, which is what makes the order and the words survive a reload. The create stays behind this stage's own control and posts to `POST /assessment/new`, which now takes who, mode, setting and the list from the draft; the copy keeps the template's ids and order (`aspectEditsFor`) because `db:verify` V4 compares a relationship's copy with the version it is bound to. Adding and removing an Aspect is deliberately not on this screen — it would need that V4 rule to tell an edit from drift, and it is filed as its own decision.
+
 - `/assessment/templates/[templateId]/create/mode` — **db**
   - capability: Stage 2 of the create flow (Mode): the Mode (fixed at creation) and the Setting (the one choice a party may change later), over the draft stage 1 wrote.
   - components: `components/assessment-flow`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
-  - notes: The step that commits (#688): it reads the draft cookie, refuses a missing draft or a signed-out viewer by sending them back to stage 1, and its form posts the Mode and the Setting to `POST /assessment/new`, which re-reads the draft, validates the two choices by label, copies the template's Aspects into a new relationship, clears the draft cookie and answers a 303 to `/assessment/instances/<id>`. The page is a sibling of `/…/create` rather than a `?step=` switch because the flow is a sequence of stages — slice 3 adds `…/create/aspects` the same way. It renders the same `CreateRelationship` component and the same fixture as stage 1, so the two steps cannot drift into two vocabularies.
+  - notes: Saves, and hands over (#688, #689). It reads the draft cookie, refuses a missing draft or a signed-out viewer by sending them back to stage 1, and its form posts the Mode and the Setting to `POST /assessment/new/mode`, which merges the two choices into the same draft and answers a 303 to `…/create/aspects`. The create itself moved to stage 3's control when the approved flow put Aspects between Mode and the invite: this step no longer copies a template or writes any row. The page is a sibling of `/…/create` rather than a `?step=` switch because the flow is a sequence of stages. It renders the same `CreateRelationship` component and the same fixture as stages 1 and 3, so the steps cannot drift into three vocabularies.
 
 - `/assessment/templates/new` — **fixture**
   - capability: Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.
@@ -480,8 +486,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (21): `accept-session.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
-  - routes (15): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/invite/[token]`
+  - files (22): `accept-session.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
+  - routes (16): `/admin/templates/[id]`, `/assessment`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/aspects`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/invite/[token]`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/console` — **mock**
@@ -785,6 +791,8 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/assessment/instances/[instanceId]/invite` — `app/(mainlayout)/assessment/instances/[instanceId]/invite/route.ts`
 - `/assessment/instances/[instanceId]/steps` — `app/(mainlayout)/assessment/instances/[instanceId]/steps/route.ts`
 - `/assessment/new` — `app/(mainlayout)/assessment/new/route.ts`
+- `/assessment/new/aspects` — `app/(mainlayout)/assessment/new/aspects/route.ts`
+- `/assessment/new/mode` — `app/(mainlayout)/assessment/new/mode/route.ts`
 - `/assessment/new/who` — `app/(mainlayout)/assessment/new/who/route.ts`
 - `/assessment/templates/[templateId]/duplicate` — `app/(mainlayout)/assessment/templates/[templateId]/duplicate/route.ts`
 - `/assessment/templates/[templateId]/status` — `app/(mainlayout)/assessment/templates/[templateId]/status/route.ts`

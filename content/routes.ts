@@ -110,6 +110,9 @@ const DYNAMIC_ROUTES = [
   // #688 — stage 2 of the create flow. A page, not a query switch: each stage has its own
   // address, so a person can reload on Mode and the draft still puts them there.
   "/assessment/templates/[templateId]/create/mode",
+  // #689 — stage 3, the sibling the docstring above predicted. Same reason: an address that can be
+  // reloaded, and the draft is what puts the person back on it.
+  "/assessment/templates/[templateId]/create/aspects",
   // #542 phase 2 — the member's own CRUD detail pages, moved here from `STATIC_ROUTES` where
   // #533 phase 2 had filed them: a `[id]` pattern in the static list matches one literal string
   // and nothing else, so the list's own links were invisible to the route matcher.

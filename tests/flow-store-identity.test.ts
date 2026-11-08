@@ -535,3 +535,79 @@ describe("a seat already held is not taken twice", () => {
     expect(callsMatching(/UPDATE party/i)).toHaveLength(0);
   });
 });
+
+/* ------------------------------------------------------------------ *\
+ * Create — stage 3's list (#689)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Stage 3 edits the Aspects the relationship will ask (#689), and the copy is what carries the
+ * words. The ids and their order are the version's — `db:verify` V4 compares a relationship's copy
+ * with the version it is bound to — so these cases assert the arrays the `INSERT … SELECT
+ * unnest()` is handed: id, position, prompt, left, right.
+ */
+describe("createInstanceFromTemplate writes stage 3's list", () => {
+  /** The item INSERT's bound arrays, in the order the statement names them. */
+  async function itemCopy(over: Partial<CreateInstanceInput>) {
+    stub.reset();
+    await createInstanceFromTemplate(createInput(over));
+    const [insert] = callsMatching(/^INSERT INTO item/);
+    expect(insert).toBeDefined();
+    return {
+      ids: insert.values[1] as readonly string[],
+      positions: insert.values[2] as readonly number[],
+      prompts: insert.values[3] as readonly string[],
+      lefts: insert.values[4] as readonly string[],
+      rights: insert.values[5] as readonly string[],
+    };
+  }
+
+  it("copies the version's Aspects verbatim when the post carries no list", async () => {
+    const copy = await itemCopy({});
+    expect(copy.ids).toEqual(["aspect-one", "aspect-two", "aspect-three"]);
+    expect(copy.positions).toEqual([0, 1, 2]);
+    expect(copy.prompts).toEqual(["Aspect One", "Aspect Two", "Aspect Three"]);
+    expect(copy.lefts).toEqual(["Low", "Low", "Low"]);
+    expect(copy.rights).toEqual(["High", "High", "High"]);
+  });
+
+  it("writes the words the person reworded, keeping the version's ids and order", async () => {
+    const copy = await itemCopy({
+      aspects: [
+        {
+          id: "aspect-two",
+          prompt: "Do we say it early?",
+          leftValue: "Rarely",
+          rightValue: "Always",
+        },
+      ],
+    });
+    expect(copy.ids).toEqual(["aspect-one", "aspect-two", "aspect-three"]);
+    expect(copy.prompts).toEqual(["Aspect One", "Do we say it early?", "Aspect Three"]);
+    expect(copy.lefts).toEqual(["Low", "Rarely", "Low"]);
+    expect(copy.rights).toEqual(["High", "Always", "High"]);
+  });
+
+  it("ignores an id the version does not offer, and keeps the order the version has", async () => {
+    const copy = await itemCopy({
+      aspects: [
+        { id: "aspect-mine", prompt: "Not the version's", leftValue: "x", rightValue: "y" },
+        // The list's own order is a draft fact; the copy stays in the version's order, because
+        // `copyDriftProblems` compares the id sequence, not just the set.
+        { id: "aspect-three", prompt: "Aspect Three", leftValue: "Low", rightValue: "High" },
+        { id: "aspect-one", prompt: "Aspect One", leftValue: "Low", rightValue: "High" },
+      ],
+    });
+    expect(copy.ids).toEqual(["aspect-one", "aspect-two", "aspect-three"]);
+    expect(copy.prompts).not.toContain("Not the version's");
+  });
+
+  it("falls back to the version's words for a blank value, never writing an empty prompt", async () => {
+    const copy = await itemCopy({
+      aspects: [{ id: "aspect-one", prompt: "   ", leftValue: "", rightValue: "" }],
+    });
+    expect(copy.prompts[0]).toBe("Aspect One");
+    expect(copy.lefts[0]).toBe("Low");
+    expect(copy.rights[0]).toBe("High");
+  });
+});
