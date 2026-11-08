@@ -322,5 +322,4 @@ describe("the review screen draws the proposal, not a picture of it", () => {
       expect(matchRoute(routeManifest, screen.href)).toBeDefined();
     }
   });
-
 });
