@@ -48,8 +48,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
 import { formatDate } from "@/content/core";
 import { GAP_KIND_LABELS } from "@/content/gaps";
@@ -187,7 +185,6 @@ export function ReportOperations({
   copy,
   source,
   action,
-  reasonMin,
   canRegenerate,
   exportPaths,
   relationshipPath,
@@ -196,8 +193,6 @@ export function ReportOperations({
   copy: PageCopy;
   source: ReportSource;
   action: (input: ReportOperationInput) => Promise<ReportOperationOutcome>;
-  /** `REASON_MIN_LENGTH`, handed down: importing it here would pull `pg` into the bundle (E34). */
-  reasonMin: number;
   canRegenerate: boolean;
   exportPaths: { readonly json: string; readonly pdf: string };
   relationshipPath: string;
@@ -215,7 +210,6 @@ export function ReportOperations({
   const refusals = sectionOf(copy, "refusals");
 
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
-  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<"regenerate" | "read" | null>(null);
 
   // The exported document *is* the screen's source: one value rendered three ways (this screen,
@@ -225,20 +219,15 @@ export function ReportOperations({
 
   const refusalOf = (code: string): string => {
     const item = refusals.items?.find((candidate) => candidate.id === code);
-    return item === undefined
-      ? fillLabel(itemLabel(refusals, "failed"), { min: reasonMin })
-      : fillLabel(item.label, { min: reasonMin });
+    return item === undefined ? itemLabel(refusals, "failed") : item.label;
   };
 
   const submitRegenerate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (busy !== null) return;
     setBusy("regenerate");
-    void action({ operation: "regenerate", instanceRecordId: source.instanceRecordId, reason })
-      .then((outcome) => {
-        setPhase({ kind: "done", outcome });
-        if (outcome.ok) setReason("");
-      })
+    void action({ operation: "regenerate", instanceRecordId: source.instanceRecordId })
+      .then((outcome) => setPhase({ kind: "done", outcome }))
       .finally(() => setBusy(null));
   };
 
@@ -248,7 +237,6 @@ export function ReportOperations({
     void action({
       operation: "read-submission",
       instanceRecordId: source.instanceRecordId,
-      reason: "",
       role,
     })
       .then((outcome) => setPhase({ kind: "done", outcome }))
@@ -466,16 +454,6 @@ export function ReportOperations({
         </CardHeader>
         <CardContent>
           <form onSubmit={submitRegenerate} className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="report-reason">{itemLabel(regenerateCopy, "reason")}</Label>
-              <Input
-                id="report-reason"
-                minLength={reasonMin}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                disabled={busy !== null || ready === null || !canRegenerate}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={busy !== null || ready === null || !canRegenerate}>
                 {busy === "regenerate"

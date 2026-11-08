@@ -56,7 +56,6 @@ export async function performComp(input: GrantFormInput): Promise<GrantFormResul
       kind,
       interval,
       periodStart: text(input?.periodStart),
-      reason: text(input?.reason),
     });
     return {
       ok: true,

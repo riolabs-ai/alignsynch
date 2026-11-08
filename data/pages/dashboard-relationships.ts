@@ -127,7 +127,6 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
       body: "Pick one of your templates. The relationship gets its own copy of the Aspects, so tuning them here never changes the template you started from.",
       items: [
         { id: "choose", label: "Template" },
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Start the relationship" },
         { id: "starting", label: "Starting…" },
         { id: "created", label: "Started. Open it to configure the Aspects." },
@@ -140,7 +139,6 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
           id: "not-editable",
           label: "That template is archived — it cannot start a relationship.",
         },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "role-too-low", label: "Your role may not start a relationship." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The relationship was not started." },

@@ -22,7 +22,7 @@ import { describe, expect, test } from "vitest";
 import { zAssessmentInstance } from "@/content/assessment";
 import type { AssessmentInstance } from "@/content/assessment";
 import { assessments, assessmentInstances } from "@/data/assessments";
-import { ActRefused, type ActSql } from "@/lib/admin/act";
+import type { ActSql } from "@/lib/admin/act";
 import {
   REPORT_OP_REFUSALS,
   ReportOpRefused,
@@ -109,7 +109,7 @@ interface AuditEntry {
   readonly action: string;
   readonly target_table: string;
   readonly target_id: string;
-  readonly reason: string;
+  readonly reason: string | null;
   readonly before: unknown;
   readonly after: unknown;
 }
@@ -176,7 +176,7 @@ class FakeDb {
         action: String(paramOf("action")),
         target_table: String(paramOf("target_table")),
         target_id: String(paramOf("target_id")),
-        reason: String(paramOf("reason")),
+        reason: paramOf("reason") === null ? null : String(paramOf("reason")),
         before: JSON.parse(String(paramOf("before") ?? "null")),
         after: JSON.parse(String(paramOf("after") ?? "null")),
       });
@@ -357,18 +357,16 @@ describe("regenerating a report", () => {
     expect(db.audits).toHaveLength(0);
   });
 
-  test("a reason under eight characters is refused before anything runs", async () => {
+  test("reissues with no reason at all, and the audit row says NULL (#732)", async () => {
     const db = new FakeDb();
 
-    await expect(
-      regenerateReport(
-        { actorUserId: ACTOR, instanceRecordId: INSTANCE.id, reason: "short" },
-        deps(db),
-      ),
-    ).rejects.toBeInstanceOf(ActRefused);
+    // The regenerate band posts no reason now. The reissue still runs, still writes its audit row,
+    // and the row records that nobody stated why rather than inventing a sentence.
+    await regenerateReport({ actorUserId: ACTOR, instanceRecordId: INSTANCE.id }, deps(db));
 
-    // `act()` refuses before it opens a transaction, so not even a BEGIN was sent.
-    expect(db.statements).toHaveLength(0);
+    expect(db.audits).toHaveLength(1);
+    expect(db.audits[0]?.action).toBe("report.regenerate");
+    expect(db.audits[0]?.reason).toBeNull();
   });
 
   test("a member is refused, and nothing is written for the attempt", async () => {
@@ -408,9 +406,9 @@ describe("reading a party's submission", () => {
       target_id: `${INSTANCE.id}:initiator`,
       before: null,
     });
-    // The default reason is the action's own description, and it satisfies the eight-character
-    // floor — a read is a click, and it is still recorded with a reason.
-    expect(db.audits[0]?.reason.length).toBeGreaterThanOrEqual(8);
+    // A read is a click, and it is still recorded — no reason was posted, so the store composes
+    // the action's own description rather than leaving the row blank.
+    expect(db.audits[0]?.reason).toContain("party submission");
     expect(result.submission.answers).toHaveLength(INSTANCE.items.length);
     expect(result.recordedAt).toBe(RECORDED_AT.toISOString());
   });

@@ -38,7 +38,13 @@ import { randomUUID } from "node:crypto";
 
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
 import { BILLING_INTERVALS, billingPlan } from "@/data/billing-plans";
-import { type ActResult, act, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
+import {
+  type ActResult,
+  act,
+  type ActSql,
+  type ActTransactionRunner,
+  recordedReason,
+} from "@/lib/admin/act";
 
 /* ------------------------------------------------------------------ *
  * Refusals
@@ -47,7 +53,7 @@ import { type ActResult, act, type ActSql, type ActTransactionRunner } from "@/l
 /**
  * Why a grant was refused — every value a fact about the request or the rows, never a permission.
  *
- * Permissions are `act()`'s (`ActRefused`), and a short reason is `act()`'s too, so an `admin`
+ * Permissions are `act()`'s (`ActRefused`), so an `admin`
  * session attempting a comp answers `role-too-low` from exactly the mechanism a `support` session
  * attempting a void does. These four are the cases where the request itself cannot be honoured.
  */
@@ -153,8 +159,11 @@ export interface GrantRequest {
   readonly interval: BillingInterval;
   /** ISO-8601. The first instant the granted tier covers. */
   readonly periodStart: string;
-  /** Why. `act()` trims it and refuses under eight characters. */
-  readonly reason: string;
+  /**
+   * Why, when a caller has one. Optional since #732: the console no longer asks, and `NULL` is how
+   * "nobody stated one" is recorded.
+   */
+  readonly reason?: string;
 }
 
 /** What a successful grant answers, and what the audit row's `after` carries. */
@@ -172,7 +181,7 @@ export interface GrantOutcome {
 /**
  * Give one relationship a tier for one period, audited.
  *
- * Throws `ActRefused` for a short reason or a rung below `owner` (the floor is
+ * Throws `ActRefused` for a rung below `owner` (the floor is
  * `lib/admin/roles.ts::ACTION_REQUIREMENTS["plan.comp"]`), `GrantRefused` for a request the rows
  * cannot honour, and rethrows a database failure unchanged.
  *
@@ -239,7 +248,7 @@ export async function compPlan(
             request.kind,
             period.start.toISOString(),
             period.end.toISOString(),
-            request.reason.trim(),
+            recordedReason(request.reason),
             request.actorUserId,
           ],
         );

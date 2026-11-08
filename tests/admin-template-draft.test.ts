@@ -21,7 +21,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { ActRefused, type ActTransactionRunner, transactionRunner } from "@/lib/admin/act";
+import { type ActTransactionRunner, transactionRunner } from "@/lib/admin/act";
 import { createTemplateDraft, updateTemplateDraft } from "@/lib/admin/templates";
 import {
   aspectIdOf,
@@ -275,19 +275,22 @@ describe("a template save is act()'s write", () => {
     expect(inserted?.values).toContain(ACTOR);
   });
 
-  it("refuses a short reason before a statement of the caller's runs", async () => {
+  it("creates the draft with no reason at all (#732)", async () => {
     const db = new FakeDb();
     const parsed = validateTemplateRecord(bodyOf());
     if (!parsed.ok) throw new Error("the base record stopped validating");
-    await expect(
-      createTemplateDraft(
-        { actorUserId: ACTOR, reason: "short", record: parsed.record },
-        runnerFor(db),
-      ),
-    ).rejects.toBeInstanceOf(ActRefused);
+
+    // The registry's band posts a record and nothing else now: the create is still audited, and
+    // the audit row carries no sentence rather than a refused write.
+    await createTemplateDraft({ actorUserId: ACTOR, record: parsed.record }, runnerFor(db));
+
     expect(db.statements.some((statement) => /^INSERT INTO record/.test(statement.text))).toBe(
-      false,
+      true,
     );
+    const audit = db.statements.find((statement) =>
+      /^INSERT INTO admin_action/i.test(statement.text.trimStart()),
+    );
+    expect(audit?.values[5]).toBeNull();
   });
 
   it("refuses an id or slug another record already names", async () => {

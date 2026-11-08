@@ -136,7 +136,7 @@ export const adminBillingPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "form",
       heading: "Comp or extend a plan",
-      body: "One audited write: a reason is required, the period is granted once, and the row it writes is a grant rather than a purchase — no money moved, so nothing here can be mistaken for a payment.",
+      body: "One audited write: the period is granted once, and the row it writes is a grant rather than a purchase — no money moved, so nothing here can be mistaken for a payment.",
       items: [
         { id: "relationship", label: "Relationship" },
         { id: "plan", label: "Tier to grant" },
@@ -147,8 +147,6 @@ export const adminBillingPageCopy: PageCopy = zPageCopy.parse({
         { id: "interval-month", label: "One month" },
         { id: "interval-year", label: "One year" },
         { id: "start", label: "Period starts" },
-        { id: "reason", label: "Reason" },
-        { id: "reason-short", label: "At least {min} characters. This is the audit row's reason." },
         { id: "submit", label: "Grant the plan" },
         { id: "submitting", label: "Granting…" },
       ],
@@ -183,10 +181,6 @@ export const adminBillingPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "role-too-low",
           label: "A comp needs the owner rung. Nothing was written and no audit row exists.",
-        },
-        {
-          id: "reason-too-short",
-          label: "A reason of at least {min} characters is required. Nothing was written.",
         },
         {
           id: "signed-out",

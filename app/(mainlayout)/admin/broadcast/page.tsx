@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/create/quiz-editor.tsx   (variation: the editor's compose-and-preview step becomes a one-off notice to the news list — same two panes, its save bar replaced by a dry-run/send bar and an audited reason, its counters replaced by the audience counts, and its publication badge replaced by the mail-key mode banner)
+ * template-ancestor: components/create/quiz-editor.tsx   (variation: the editor's compose-and-preview step becomes a one-off notice to the news list — same two panes, its save bar replaced by a dry-run/send bar, its counters replaced by the audience counts, and its publication badge replaced by the mail-key mode banner)
  *
  * `/admin/broadcast` — a one-off notice to the news list (#507, epic #500, the epic's last child).
  *
@@ -37,7 +37,6 @@ import type { Metadata } from "next";
 import { BroadcastComposer } from "@/components/admin/broadcast-composer";
 import { PageHeader } from "@/components/ui/page-header";
 import { adminBroadcastPageCopy } from "@/data/pages/admin-broadcast";
-import { REASON_MIN_LENGTH } from "@/lib/admin/act";
 import { ADMIN_AUDIT_PATH, ADMIN_BROADCAST_PATH } from "@/lib/admin/paths";
 import { requirementFor } from "@/lib/admin/roles";
 import { requireAdmin } from "@/lib/auth/require-role";
@@ -108,7 +107,6 @@ export default async function AdminBroadcastPage() {
         sender={sender}
         role={role}
         floor={requirementFor("broadcast.send")}
-        reasonMin={REASON_MIN_LENGTH}
         unreadable={unreadable}
         auditPath={ADMIN_AUDIT_PATH}
         preview={previewBroadcastAction}

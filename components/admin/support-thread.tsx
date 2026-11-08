@@ -39,7 +39,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDateTimeLong } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
@@ -90,11 +89,9 @@ function say(
 }
 
 /** The refusal sentence for a code, falling back to the generic one the fixture carries. */
-function refusalOf(refusals: PageCopySection, code: string, reasonMin: number): string {
+function refusalOf(refusals: PageCopySection, code: string): string {
   const item = refusals.items?.find((candidate) => candidate.id === code);
-  return item === undefined
-    ? fillLabel(itemLabel(refusals, "failed"), { min: reasonMin })
-    : fillLabel(item.label, { min: reasonMin });
+  return item === undefined ? itemLabel(refusals, "failed") : item.label;
 }
 
 /** The sentence under a reply: what happened to it, and the provider's own words when it failed. */
@@ -207,15 +204,12 @@ export function SupportThread({
   thread,
   seats,
   action,
-  reasonMin,
   selfUserId,
 }: {
   copy: PageCopy;
   thread: InboxThread;
   seats: readonly InboxSeat[];
   action: (input: InboxOperationInput) => Promise<InboxOperationOutcome>;
-  /** `REASON_MIN_LENGTH`, handed down: importing it here would pull the pool (E34). */
-  reasonMin: number;
   selfUserId: string;
 }) {
   const router = useRouter();
@@ -232,27 +226,19 @@ export function SupportThread({
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [busy, setBusy] = useState<"reply" | "status" | "assign" | null>(null);
   const [body, setBody] = useState("");
-  const [replyReason, setReplyReason] = useState("");
   const [status, setStatus] = useState<MessageStatus>(thread.message.status);
-  const [statusReason, setStatusReason] = useState("");
   const [seat, setSeat] = useState(thread.message.assignedUserId ?? "");
-  const [assignReason, setAssignReason] = useState("");
 
   const message = thread.message;
   const refusal: SendRefusal | null = sendRefusalFor(message.delivery);
   const deliverySentence = itemLabel(deliveryCopy, message.delivery);
 
-  const run = (
-    which: "reply" | "status" | "assign",
-    input: InboxOperationInput,
-    reset: () => void,
-  ) => {
+  const run = (which: "reply" | "status" | "assign", input: InboxOperationInput) => {
     if (busy !== null) return;
     setBusy(which);
     void action(input)
       .then((outcome) => {
         setPhase({ kind: "done", outcome });
-        if (outcome.ok) reset();
         router.refresh();
       })
       .catch(() => setPhase({ kind: "error", code: "failed" }))
@@ -261,33 +247,21 @@ export function SupportThread({
 
   const submitReply = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    run("reply", { operation: "reply", messageId: message.id, reason: replyReason, body }, () => {
-      setBody("");
-      setReplyReason("");
-    });
+    run("reply", { operation: "reply", messageId: message.id, body });
   };
 
   const submitStatus = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    run(
-      "status",
-      { operation: "status", messageId: message.id, reason: statusReason, status },
-      () => setStatusReason(""),
-    );
+    run("status", { operation: "status", messageId: message.id, status });
   };
 
   const submitAssign = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    run(
-      "assign",
-      {
-        operation: "assign",
-        messageId: message.id,
-        reason: assignReason,
-        seatUserId: seat === "" ? null : seat,
-      },
-      () => setAssignReason(""),
-    );
+    run("assign", {
+      operation: "assign",
+      messageId: message.id,
+      seatUserId: seat === "" ? null : seat,
+    });
   };
 
   return (
@@ -398,16 +372,6 @@ export function SupportThread({
                 disabled={busy !== null || refusal !== null}
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="inbox-reply-reason">{itemLabel(replyCopy, "reason")}</Label>
-              <Input
-                id="inbox-reply-reason"
-                minLength={reasonMin}
-                value={replyReason}
-                onChange={(event) => setReplyReason(event.target.value)}
-                disabled={busy !== null || refusal !== null}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={busy !== null || refusal !== null}>
                 {busy === "reply"
@@ -416,7 +380,7 @@ export function SupportThread({
               </Button>
               {refusal === null ? null : (
                 <p data-send-refusal={refusal} className="text-sm font-medium text-amber-700">
-                  {refusalOf(refusals, refusal, reasonMin)}
+                  {refusalOf(refusals, refusal)}
                 </p>
               )}
             </div>
@@ -468,16 +432,6 @@ export function SupportThread({
                   ))}
                 </select>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="inbox-status-reason">{itemLabel(triageCopy, "reason")}</Label>
-                <Input
-                  id="inbox-status-reason"
-                  minLength={reasonMin}
-                  value={statusReason}
-                  onChange={(event) => setStatusReason(event.target.value)}
-                  disabled={busy !== null}
-                />
-              </div>
               <Button type="submit" disabled={busy !== null}>
                 {busy === "status"
                   ? itemLabel(triageCopy, "saving")
@@ -522,16 +476,6 @@ export function SupportThread({
                   ))}
                 </select>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="inbox-assign-reason">{itemLabel(assignCopy, "reason")}</Label>
-                <Input
-                  id="inbox-assign-reason"
-                  minLength={reasonMin}
-                  value={assignReason}
-                  onChange={(event) => setAssignReason(event.target.value)}
-                  disabled={busy !== null}
-                />
-              </div>
               <Button type="submit" disabled={busy !== null}>
                 {busy === "assign"
                   ? itemLabel(assignCopy, "saving")
@@ -552,12 +496,12 @@ export function SupportThread({
 
       {phase.kind === "done" && !phase.outcome.ok ? (
         <p data-refusal={phase.outcome.code} className="text-sm font-medium text-amber-700">
-          {refusalOf(refusals, phase.outcome.code, reasonMin)}
+          {refusalOf(refusals, phase.outcome.code)}
         </p>
       ) : null}
       {phase.kind === "error" ? (
         <p data-refusal={phase.code} className="text-sm font-medium text-amber-700">
-          {refusalOf(refusals, phase.code, reasonMin)}
+          {refusalOf(refusals, phase.code)}
         </p>
       ) : null}
     </div>

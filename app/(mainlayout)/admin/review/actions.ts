@@ -48,7 +48,6 @@ import { ADMIN_REVIEW_PATH } from "@/lib/review/paths";
 /** Every refusal an action can report: the session's, `act()`'s, and the store's own. */
 type ReviewActionCode =
   | "signed-out"
-  | "reason-too-short"
   | "role-too-low"
   | "unknown-action"
   | "unknown-target-table"

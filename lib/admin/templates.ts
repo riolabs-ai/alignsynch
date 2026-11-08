@@ -53,7 +53,7 @@ export { ADMIN_TEMPLATES_PATH, adminTemplatePath } from "@/lib/admin/paths";
 
 /**
  * Why a template save was refused — facts about the draft or the row, not about permission.
- * Permissions and the reason's length are `act()`'s (`ActRefused`), decided before the mutation.
+ * Permissions are `act()`'s (`ActRefused`), decided before the mutation.
  *
  *   no-such-template  the id is not a template record (or it is an instance)
  *   not-editable      the row is archived — unarchive it before editing
@@ -193,7 +193,11 @@ export async function readAdminTemplate(
 /** The actor, the reason and the draft: the whole request, resolved by the server action. */
 export interface TemplateWriteRequest {
   readonly actorUserId: string;
-  readonly reason: string;
+  /**
+   * Why, when the caller has one. Optional since #732: no action form asks for it, and `act()`
+   * records `NULL` when nobody states one.
+   */
+  readonly reason?: string;
   /**
    * The record, already parsed by `zAssessment` in the caller (`app/(mainlayout)/admin/templates/
    * actions.ts`). A draft that fails the schema never reaches this module: the action answers
@@ -386,7 +390,8 @@ export async function updateTemplateDraft(
 /** What a publish or an unpublish is asked for: who, why, and which template. */
 export interface TemplateVersionRequest {
   readonly actorUserId: string;
-  readonly reason: string;
+  /** Why, when the caller has one — optional since #732, like every other action. */
+  readonly reason?: string;
   readonly templateId: string;
 }
 

@@ -90,16 +90,14 @@ export type BroadcastRefusal = (typeof BROADCAST_REFUSALS)[number];
  * Every code a caller may see: this file's refusals, plus the three `act()` can answer with at this
  * call site.
  *
- * `act()` has four; `unknown-action` and `unknown-target-table` cannot come from
+ * `act()` has three; `unknown-action` and `unknown-target-table` cannot come from
  * `sendBroadcast()` — both are literals in that function — so they are not given a sentence a
  * person could never reach.
+ *
+ * The reason is no longer one of them (#732): the form stopped asking, and `act()` records `NULL`
+ * when nobody states one, so there is no refusal left to word.
  */
-export const BROADCAST_FAILURES = [
-  ...BROADCAST_REFUSALS,
-  "role-too-low",
-  "reason-too-short",
-  "signed-out",
-] as const;
+export const BROADCAST_FAILURES = [...BROADCAST_REFUSALS, "role-too-low", "signed-out"] as const;
 
 export type BroadcastFailure = (typeof BROADCAST_FAILURES)[number];
 
@@ -118,7 +116,6 @@ export interface BroadcastFormInput {
   readonly body: string;
   readonly segmentKind: string;
   readonly segmentSince: string;
-  readonly reason: string;
 }
 
 /** What a dry run answers: counts and the hash, and no field an address could be returned in. */

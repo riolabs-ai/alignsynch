@@ -19,11 +19,12 @@ export const REPORT_OPERATIONS = ["regenerate", "read-submission"] as const;
 
 export type ReportOperation = (typeof REPORT_OPERATIONS)[number];
 
-/** What the screen posts. `role` is read only by the submission read; `reason` only by a reissue. */
+/** What the screen posts. `role` is read only by the submission read; `reason` only by a reissue, and it is
+ * optional since #732 — the screen asks for none. */
 export interface ReportOperationInput {
   readonly operation: string;
   readonly instanceRecordId: string;
-  readonly reason: string;
+  readonly reason?: string;
   readonly role?: string;
 }
 

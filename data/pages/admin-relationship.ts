@@ -28,7 +28,7 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship operations",
   subtitle:
-    "Five repairs on one relationship: clear a party's unlock mark, reissue or withdraw the invitation, end the session, or accept it on a seat's behalf. Every one of them needs a reason, and every one of them is written to the audit log in the same transaction as the change.",
+    "Five repairs on one relationship: clear a party's unlock mark, reissue or withdraw the invitation, end the session, or accept it on a seat's behalf. Every one of them is written to the audit log in the same transaction as the change.",
   sections: [
     {
       id: "facts",
@@ -129,11 +129,9 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "form",
-      heading: "Reason",
-      body: "Required, and at least eight characters. It is stored on the audit row with the before and after values, so the next person to read this log knows why.",
+      heading: "Recording the repair",
+      body: "The change and its audit row commit in one transaction, with the before and after values stored beside it, so the next person to read this log knows what moved.",
       items: [
-        { id: "reason", label: "Why this repair" },
-        { id: "reason-short", label: "A reason of at least {min} characters is required." },
         { id: "submit", label: "Record it" },
         { id: "submitting", label: "Recording…" },
       ],
@@ -161,10 +159,6 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
           label: "That seat has not answered every Aspect — a sheet is accepted whole.",
         },
         { id: "invalid-email", label: "That is not an address a message can be sent to." },
-        {
-          id: "reason-too-short",
-          label: "The reason is too short. At least {min} characters, please.",
-        },
         { id: "role-too-low", label: "This repair needs a higher role than yours." },
         { id: "signed-out", label: "The sign-in expired while this form was open." },
         { id: "failed", label: "The repair did not commit. Nothing was changed." },
@@ -230,7 +224,6 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
           label:
             "The seat is claimed. It is a party row bound to an account — a name or address typed here would be a second truth, so the repair is a re-invite, not an edit.",
         },
-        { id: "reason", label: "Why this edit" },
         { id: "preview", label: "Check the cost" },
         { id: "previewing", label: "Checking…" },
         { id: "save", label: "Save the change" },
@@ -275,7 +268,6 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
         { id: "not-editable", label: "A closed relationship is not a form." },
         { id: "invalid-draft", label: "The model refused these Aspects — check each field." },
         { id: "invalid-counterparty", label: "The invitation needs a name and a real address." },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "signed-out", label: "The sign-in expired while this form was open." },
         { id: "failed", label: "The edit did not commit. Nothing was changed." },
       ],

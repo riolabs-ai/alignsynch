@@ -65,7 +65,7 @@ import { formatDateTimeLong } from "@/content/core";
 /**
  * Why an inbox operation was refused — every value is a fact about the rows, not a permission.
  *
- * Permissions and a too-short reason are `act()`'s (`ActRefused`). These are the cases where the
+ * Permissions are `act()`'s (`ActRefused`). These are the cases where the
  * operator asked for something the row cannot do, and each one has a sentence in
  * `data/pages/admin-inbox.ts`'s `refusals` band.
  */
@@ -115,8 +115,8 @@ export interface InboxOpDeps {
 export interface InboxOpRequest {
   readonly actorUserId: string;
   readonly messageId: string;
-  /** Why. Trimmed by `act()`, which refuses fewer than eight characters. */
-  readonly reason: string;
+  /** Why, when the operator states one. `act()` records `NULL` when they do not (#732). */
+  readonly reason?: string;
 }
 
 /* ------------------------------------------------------------------ *
