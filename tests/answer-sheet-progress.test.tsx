@@ -5,7 +5,7 @@
  * shows progress at the top of its block — the bar for uniform quiz items, the cell rail for
  * distinct form stages, **never both and never numbered circles**. `/answer` drew neither, which
  * is the gap this card closes: the sheet is the counterparty's half of the journey the create and
- * sent stages already draw, so it mounts the same rail at stage 6 (`Ongoing`).
+ * sent stages already draw, so it mounts the same rail at stage 6 (`Align`).
  *
  * The claim is a count, not an adjective. For every state the gate can pick — the live form, the
  * sealed sheet, a lapsed membership and the coach band — the rendered markup carries:
@@ -36,10 +36,10 @@ import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const INSTANCE_ID = "instance-answer-progress-test";
 
-/** The six approved names, in order — the artifact's own words (`data/pages/lifecycle.ts`). */
-const STAGE_NAMES = ["Who", "Mode", "Aspects", "Create", "Sent", "Ongoing"];
+/** The six approved names, in order — the spec's own words (`data/pages/lifecycle.ts`). */
+const STAGE_NAMES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"];
 
-/** The stage answering belongs to: the sixth, `Ongoing`. */
+/** The stage answering belongs to: the sixth, `Align`. */
 const ANSWER_STAGE = 6;
 
 /** Two Aspects, unanswered — enough to draw the sheet's bands without inventing answers. */

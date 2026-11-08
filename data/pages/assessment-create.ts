@@ -56,12 +56,11 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Two seats: an Initiator and a Counterparty. Both answer the same sheet, and neither sees the other's answers until both accept.",
         },
-        { id: "back", label: "Back to the template" },
       ],
     },
     {
       /**
-       * Stage 4 — **Create** (#690).
+       * Stage 4 — **Invite** (#690, named by #735).
        *
        * The review card, the two plans and the conversion, in the words the owner settled on for
        * the approved prototype (`s8.*`). **Six facts, not a form**: the template (with its Aspect
@@ -220,11 +219,19 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * Stage 1 — **Who** (#688).
+       * Stage 1 — **Details** (#688, named by #735).
        *
        * The prototype's `s4.*` block, verbatim where the words are the owner's: two seats, the
        * counterparty's address, and the card title both of them read. The template band above the
        * form is the record's own facts, not copy.
+       *
+       * **The inventory is the spec's, field for field** (`docs/specs/flow-stages.md` → *Stage 1,
+       * Details*), and `tests/create-fields.test.ts` pins it: four fields on a 6/6 grid and the
+       * description across all twelve, `back` as the secondary action beside
+       * "Continue to mode and setting". Two lines the artifact does not draw were deleted here —
+       * `email-help` and `submit-note` — because an extra sentence is a spec change, not a copy
+       * improvement, and `title-help` is the artifact's one clause rather than an explanation of
+       * where the template's name came from.
        */
       id: "who",
       heading: "Who and how",
@@ -241,17 +248,9 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "email-label", label: "Their email address" },
         { id: "email-placeholder", label: "name@example.com" },
-        {
-          id: "email-help",
-          label:
-            "The invitation goes here. Without a mailer, the relationship page shows the link instead.",
-        },
         { id: "title-label", label: "What are you in the middle of" },
         { id: "title-placeholder", label: "Relationship Basics" },
-        {
-          id: "title-help",
-          label: "The card title both of you see — the template's name is only the starting point.",
-        },
+        { id: "title-help", label: "The card title both of you see." },
         { id: "description-label", label: "Description" },
         {
           id: "description-placeholder",
@@ -259,12 +258,13 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "description-help", label: "Optional. Shown to both parties, never scored." },
         { id: "submit", label: "Continue to mode and setting" },
-        { id: "submit-note", label: "Nothing is created yet. The next step fixes the Mode." },
+        /** The secondary action beside the primary — the artifact's `s4.back`. */
+        { id: "back", label: "Back" },
       ],
     },
     {
       /**
-       * Stage 2 — **Mode** (#688).
+       * Stage 2 — **Settings** (#688, named by #735).
        *
        * The prototype's `s5.*` block. Mode is fixed at creation and the Setting is the one choice
        * a party may move later; both sentences say so on the screen rather than leaving a person

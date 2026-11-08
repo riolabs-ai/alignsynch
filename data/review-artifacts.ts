@@ -27,7 +27,7 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
   /**
    * v7 — the six stages in the owner's words (#735). v5/v6 drew `Who · Mode · Aspects · Create ·
    * Sent · Ongoing`; the spec in `docs/specs/flow-stages.md` names them `Details · Settings ·
-   * Aspects · Invite · Completed · Align`, with Align live only once an assessment is shared and no
+   * Aspects · Invite · Connect · Align`, with Align live only once an assessment is shared and no
    * `Ongoing` at all. Only the stage words and the counter moved: Details keeps the five fields,
    * Back, Close and Continue the artifact already had.
    */
@@ -83,11 +83,17 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     capturedAt: "2026-11-07T00:00:00.000Z",
   },
   /**
-   * v5 — **the approved flow.** Six stages (Who · Mode · Aspects · Create · Sent · Ongoing), templates
-   * as pre-stage views, the invite account-free with payment a soft prompt at the invite and a hard
-   * gate at publish, the account step after Stage 4, and the two priced plans. It supersedes v1–v4
-   * for the next cut; those stay as the record of how the flow got here. Appended rather than
-   * prepended so every existing row — and the assertions written around them — keep their place.
+   * v5 — **the approved flow.** The ten screens the flow was built from, six of them numbered
+   * stages, templates as pre-stage views, the invite account-free with payment a soft prompt at
+   * the invite and a hard gate at publish, the account step after the invite stage, and the two
+   * priced plans. It supersedes v1–v4 for the next cut; those stay as the record of how the flow
+   * got here. Appended rather than prepended so every existing row — and the assertions written
+   * around them — keep their place.
+   *
+   * **The rail's words are the spec's, not this file's.** `docs/specs/flow-stages.md` names the
+   * six stages (`Details · Settings · Aspects · Invite · Connect · Align`) and is binding on the
+   * build; the artifact keeps the words it was drawn with, because an approved artifact is never
+   * edited to match the code. Read the spec for what the build must say.
    */
   {
     id: "review-relationship-lifecycle-v5",

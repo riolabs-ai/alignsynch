@@ -32,12 +32,31 @@
  *
  * A server component: a rail is a list of words, so it ships no JavaScript.
  */
+import Link from "next/link";
 
 export interface WizardStep {
   /** 1-based: the step's position, and what `current` is compared against. */
   readonly step: number;
   /** The step's name, already resolved from the caller's fixture. */
   readonly label: string;
+  /**
+   * Where the step opens, when it opens anywhere (#735). Absent on the rails that are pure
+   * orientation (the create flow's first five stages advance through a form post, not a link), and
+   * present only where a step has a screen of its own to reach — `Align`, once an assessment is
+   * shared on the relationship.
+   */
+  readonly href?: string;
+  /**
+   * Drawn, but not live: `Align` before anything is shared. Wins over `href` — a step that is not
+   * available is never a link, whatever a caller passed — and it is drawn muted rather than
+   * hidden, because the sixth cell is part of the stage count the rail is stating.
+   */
+  readonly unavailable?: boolean;
+  /**
+   * The sentence a visually hidden span carries on an unavailable cell, already resolved from the
+   * caller's fixture: a muted cell tells the eye and tells a screen reader nothing.
+   */
+  readonly note?: string;
 }
 
 /** The band's own height, from the reference capture (39px, one row of 14px labels). */
@@ -68,21 +87,59 @@ export function WizardSteps({
           {steps.map((entry) => {
             const isCurrent = entry.step === current;
             const isDone = entry.step < current;
-            return (
+            /*
+             * The stage a person is on is live by definition, so `current` wins over `unavailable`:
+             * the answer sheet mounts this rail at `Align`, which is the stage it is *in*, and a
+             * rail that muted its own stage would be describing the relationship's status instead
+             * of the journey's position. `unavailable` is therefore only ever the sixth cell on a
+             * screen that is not there yet (`StageRail`'s `alignHref`).
+             */
+            const isUnavailable = entry.unavailable === true && !isCurrent;
+            const state = isCurrent
+              ? "current"
+              : isUnavailable
+                ? "unavailable"
+                : isDone
+                  ? "done"
+                  : "upcoming";
+            const className = `${CELL} ${
+              isUnavailable
+                ? "text-gray-400 dark:text-gray-500"
+                : isCurrent
+                  ? "bg-action font-semibold text-action-foreground"
+                  : isDone
+                    ? "font-medium text-gray-700 dark:text-gray-200"
+                    : "text-gray-500 dark:text-gray-400"
+            }`;
+            const body = (
+              <>
+                {entry.label}
+                {isUnavailable && entry.note !== undefined ? (
+                  <span className="sr-only">{entry.note}</span>
+                ) : null}
+              </>
+            );
+            // A live step with a screen opens it; everything else is one cell of the band.
+            return entry.href !== undefined && !isUnavailable && !isCurrent ? (
+              <Link
+                key={entry.step}
+                href={entry.href}
+                aria-current={isCurrent ? "step" : undefined}
+                data-step-cell={entry.step}
+                data-step-state={state}
+                className={`${className} hover:underline`}
+              >
+                {body}
+              </Link>
+            ) : (
               <span
                 key={entry.step}
                 aria-current={isCurrent ? "step" : undefined}
                 data-step-cell={entry.step}
-                data-step-state={isCurrent ? "current" : isDone ? "done" : "upcoming"}
-                className={`${CELL} ${
-                  isCurrent
-                    ? "bg-action font-semibold text-action-foreground"
-                    : isDone
-                      ? "font-medium text-gray-700 dark:text-gray-200"
-                      : "text-gray-500 dark:text-gray-400"
-                }`}
+                data-step-state={state}
+                className={className}
               >
-                {entry.label}
+                {body}
               </span>
             );
           })}

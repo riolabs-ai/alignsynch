@@ -37,8 +37,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
 }));
 
-/** The six names the approved artifact numbers, in order. */
-const STAGE_NAMES = ["Who", "Mode", "Aspects", "Create", "Sent", "Ongoing"];
+/** The six names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #735). */
+const STAGE_NAMES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"];
 
 /** The three flow screens #687 names as centred, with the line each one centred on. */
 const FLOW_SCREENS = [
@@ -92,7 +92,7 @@ describe("the stage rail", () => {
 
   it("draws all six names on the stage that mounts it", () => {
     const html = createStepHtml();
-    // Scoped to the rail itself: "Who" also appears in the form's own headings, so a check
+    // Scoped to the rail itself: "Details" also appears in the form's own headings, so a check
     // against the whole document would pass on a rail that drew nothing.
     const start = html.indexOf("<nav");
     const rail = html.slice(start, html.indexOf("</nav>", start));

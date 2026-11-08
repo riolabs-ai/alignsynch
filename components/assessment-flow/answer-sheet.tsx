@@ -34,7 +34,7 @@
  *    a disabled one, which is a fact a test reads rather than a promise.
  * 5. **One progress pattern, and it is the shared cell rail (#716).** The sheet is a multi-step
  *    surface, so rule 4 of `docs/specs/ux-reference-patterns.md` applies: the 39px cell rail sits
- *    at the top of the block, on the six approved stage names, at stage 6 (`Ongoing`) — answering
+ *    at the top of the block, on the six approved stage names, at stage 6 (`Align`) — answering
  *    is the counterparty's half of the journey the create and sent screens already draw. It is
  *    mounted in every state, including `coach`, because the rail says where the *relationship* is
  *    and a reader who is not a party is still reading that relationship. Nothing else on this
@@ -64,10 +64,11 @@ import { StageRail } from "./stage-rail";
 /**
  * Which of the six approved stages answering is (#716).
  *
- * The journey is `Who · Mode · Aspects · Create · Sent · Ongoing` (`data/pages/lifecycle.ts`), and
+ * The journey is `Details · Settings · Aspects · Invite · Connect · Align`
+ * (`data/pages/lifecycle.ts`), and
  * answering is the last of them: the invitation has been sent, both parties are inside the
  * relationship, and this sheet is the counterparty's half of the work that stage is for. The rail
- * therefore says `Ongoing` rather than a seventh word invented for this screen — a surface that
+ * therefore says `Align` rather than a seventh word invented for this screen — a surface that
  * renames its place in the journey is the thing the shared rail exists to prevent.
  *
  * It is a constant here and not a read of the instance's status: the status moves
@@ -271,7 +272,7 @@ export function AnswerSheet({
   return (
     <div className="space-y-6">
       {/* Where the person is in the six stages (#716): the invitation is out and this sheet is the
-          Ongoing stage's work, so the rail above the block is the one progress pattern on this
+          alignment work itself, so the rail above the block is the one progress pattern on this
           surface — no bar, and no second stepper. */}
       <StageRail copy={copy} current={ANSWER_STAGE} />
       {heading}

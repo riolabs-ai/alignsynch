@@ -137,7 +137,7 @@ describe("the four create stages", () => {
       const html = stageHtml(stage);
       expect(html, `stage ${stage} draws the shell`).toContain('data-stage-shell="true"');
       // The six words the rail owns are inside the panel, unchanged (#687).
-      for (const name of ["Who", "Mode", "Aspects", "Create", "Sent", "Ongoing"]) {
+      for (const name of ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"]) {
         expect(html, `stage ${stage} keeps the rail's ${name}`).toContain(name);
       }
       expect(html, `stage ${stage} still draws its column`).toContain("max-w-[1126px]");

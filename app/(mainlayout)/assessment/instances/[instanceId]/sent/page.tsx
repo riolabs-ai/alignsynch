@@ -1,5 +1,6 @@
 /**
- * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Sent** (#691).
+ * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Connect** (#691,
+ * named by #735).
  *
  * The screen `POST /assessment/new` lands on: the commit already happened, the invitation is out,
  * and what is left is the state of that invitation, what happens next and the way into the

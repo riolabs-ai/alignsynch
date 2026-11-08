@@ -25,7 +25,7 @@
  * **`stages` is referenced, not re-typed (#716).** The sheet mounts the shared cell rail
  * (`components/assessment-flow/stage-rail.tsx`), which asks this surface's copy for the `stages`
  * section by id — so the six approved names arrive from `data/pages/lifecycle.ts` through one
- * import rather than a seventh copy that could drift. Answering is the `Ongoing` stage of that
+ * import rather than a seventh copy that could drift. Answering is the `Align` stage of that
  * same journey; the rail's position is the view's fact, never a name authored here.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";

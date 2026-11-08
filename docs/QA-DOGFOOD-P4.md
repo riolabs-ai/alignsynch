@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Flow validation, 2026-11-07](qa-flow-validation/2026-11-07.md)
+[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Six flow stages](qa-flow-stages/README.md)
 
 <!-- docs-nav:end -->
 
@@ -198,6 +198,6 @@ Three routes render the wrong page (no `notFound()`) instead of a 404 for an unk
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Flow validation, 2026-11-07](qa-flow-validation/2026-11-07.md)
+[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Six flow stages](qa-flow-stages/README.md)
 
 <!-- docs-nav:end -->
