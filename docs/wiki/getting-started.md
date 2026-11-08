@@ -8,7 +8,7 @@
 
 ## Prerequisites
 
-- **Node 24** — [`.nvmrc`](../../.nvmrc) pins `24`, and `package.json` asks for `>=20.9.0`. Use 24:
+- **Node 24** — [`.nvmrc`](../../.nvmrc) pins `24`, and `package.json` asks for `24.x`. Use 24:
   `pnpm parity` refuses to run when the shell's Node major disagrees with `.nvmrc`.
 - **pnpm 12.16.1** — `packageManager` pins it; the lockfile is `pnpm-lock.yaml` v9 and `pnpm-lock.yaml`
   is the only lockfile (`npm i` produces a second one that nothing reads).
