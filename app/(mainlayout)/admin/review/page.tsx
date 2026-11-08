@@ -27,9 +27,12 @@
  * **No clock in this render.** Every date is the record's own instant (`capturedAt`, `openedAt`,
  * `doneAt`, `createdAt`), formatted by `content/core.ts`.
  *
- * **Read-only.** The writes live in `./actions.ts` (`toggleReviewTodoAction`,
- * `setReviewIssueStateAction`, `commentOnReviewIssueAction`) and are not mounted here; the checklist
- * and the thread say so rather than looking live and dropping the write.
+ * **The screen writes.** The checklist, the reply composer and the close/reopen control post to the
+ * store's three actions, and the page is where they enter: each one is imported here and handed to
+ * `ReviewArtifacts` as a prop (the inbox's pattern), so the client components never import a
+ * `"use server"` module and nothing in the browser graph can reach `pg`. Every action re-reads
+ * `ADMIN_REVIEW_PATH` through `revalidatePath` and answers a refusal code rather than a silent
+ * no-op, which is what keeps the counts above the panes and the row itself from disagreeing.
  */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -54,6 +57,12 @@ import {
   shelfOf,
 } from "@/lib/review/artifacts";
 import { ADMIN_REVIEW_PATH } from "@/lib/review/paths";
+
+import {
+  commentOnReviewIssueAction,
+  setReviewIssueStateAction,
+  toggleReviewTodoAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -140,6 +149,9 @@ export default async function AdminReviewPage({
       selected={detail}
       thread={thread}
       unreadable={unreadable}
+      onToggleTodo={toggleReviewTodoAction}
+      onCommentOnIssue={commentOnReviewIssueAction}
+      onSetIssueState={setReviewIssueStateAction}
     />
   );
 }

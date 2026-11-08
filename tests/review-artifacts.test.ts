@@ -21,8 +21,23 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+// The screen is a client component under `renderToStaticMarkup`, so the two Next hooks it reaches
+// are stubbed — this is a render of the layout, not a test of the framework.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+}));
+
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...rest }: { href: string; children?: unknown }) =>
+    createElement("a", { href, ...rest }, children as never),
+}));
+
+import { ReviewArtifacts } from "../components/admin/review-artifacts";
+import { adminReviewPageCopy } from "../data/pages/admin-review";
 import { reviewArtifacts } from "../data/review-artifacts";
 import type { ReviewArtifactSummary } from "../lib/db/review-artifacts";
 import {
@@ -198,6 +213,96 @@ describe("grouping by release", () => {
     expect(compareVersions("1.10.0", "1.9.0")).toBeLessThan(0);
     expect(compareVersions("1.6.0", "1.6.0-rc.1")).toBeLessThan(0);
     expect(compareVersions("1.6.0", "1.6.0")).toBe(0);
+  });
+});
+
+describe("the screen with rows in it (#665 follow-up)", () => {
+  /**
+   * The composed screen, rendered server-side with one artifact and its two lists. `renderTo`,
+   * `next/link` and the client controls all draw for real, so this is what catches a pane that
+   * throws when a shelf finally has rows — the failure the empty-state-only renders never see.
+   */
+  const manifest = readReviewManifest(join(root, "docs/review/artifacts.json"), reviewArtifacts);
+  const artifact = reviewArtifacts[0];
+  const summary = summaryOf(artifact.id, artifact.version);
+  const detail = {
+    ...summary,
+    progress: {
+      ...summary.progress,
+      todosDone: 1,
+      todosTotal: 2,
+      issuesOpen: 1,
+      issuesClosed: 1,
+      updatedAt: "2026-11-07T10:00:00.000Z",
+    },
+    todos: [
+      {
+        id: "todo-1",
+        artifactId: artifact.id,
+        body: "The invite step names the sender",
+        doneAt: "2026-11-07T10:00:00.000Z",
+        authorUserId: "user-avery",
+        createdAt: "2026-11-06T10:00:00.000Z",
+      },
+      {
+        id: "todo-2",
+        artifactId: artifact.id,
+        body: "The conversion CTA is one button",
+        doneAt: null,
+        authorUserId: "user-avery",
+        createdAt: "2026-11-06T10:00:00.000Z",
+      },
+    ],
+    issues: [
+      {
+        id: "issue-1",
+        artifactId: artifact.id,
+        number: 1,
+        title: "The second aspect has no right-hand label",
+        body: "",
+        state: "open" as const,
+        labels: ["copy"],
+        authorUserId: "user-rowan",
+        openedAt: "2026-11-06T11:00:00.000Z",
+        closedAt: null,
+      },
+    ],
+  };
+  const shelf = shelfOf([summary], manifest, ["1.6.0", "1.5.0"]);
+  const noop = async () => ({ ok: true }) as const;
+
+  const render = (thread: { issue: (typeof detail.issues)[number]; comments: [] } | null) =>
+    renderToStaticMarkup(
+      createElement(ReviewArtifacts, {
+        copy: adminReviewPageCopy,
+        shelf,
+        selected: detail,
+        thread,
+        unreadable: null,
+        onToggleTodo: noop,
+        onCommentOnIssue: noop,
+        onSetIssueState: noop,
+      }),
+    );
+
+  it("draws a live checkbox per to-do and the reply/close controls on the thread", () => {
+    const checklist = render(null);
+    expect(checklist).toContain(`data-todo="todo-1"`);
+    expect(checklist).toContain(`data-done="true"`);
+    expect(checklist).toContain(`data-done="false"`);
+    expect(checklist).toContain('role="checkbox"');
+    expect(checklist).toContain("Mark done: The conversion CTA is one button");
+    // The card's third requirement: a screen that writes must not say it does not.
+    expect(checklist.toLowerCase()).not.toContain("read-only");
+    expect(checklist).not.toContain('disabled=""');
+
+    const thread = render({ issue: detail.issues[0], comments: [] });
+    expect(thread).toContain(`data-issue-thread="1"`);
+    expect(thread).toContain(`data-issue-action="close"`);
+    expect(thread).toContain("Close issue");
+    expect(thread).toContain("Comment");
+    expect(thread).not.toContain('disabled=""');
+    expect(thread.toLowerCase()).not.toContain("read-only");
   });
 });
 

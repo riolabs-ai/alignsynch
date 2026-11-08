@@ -5,10 +5,14 @@
  * reopen.
  *
  * **Nothing here decides who may write.** `lib/admin/review-ops.ts` asks `act()`, and `act()` reads
- * the actor's rung out of `user_profile` **inside** the transaction it writes — so a `member`
+ * the actor's rung out of `user_profile` **inside** the transaction it writes — so a `support`
  * session is refused `role-too-low` by the same mechanism that refuses a role change, and a role
  * check in this file would be a second place policy could drift. The card's rule is exactly that:
- * a non-staff write is refused server-side, not by a control the page chose not to draw.
+ * a write below the floor is refused server-side, not by a control the page chose not to draw.
+ * (The floor for the three review actions is `admin` — `lib/admin/roles.ts`. It was `support` while
+ * this screen was read-only, which put the write floor *below* the surface's own gate; the screen
+ * is `requireAdmin()`, so a rung that can write a checklist but cannot open the shelf was a policy
+ * with no reachable path.)
  *
  * **The actor comes from the session, never from the body.** `currentUser()` resolves it from the
  * request's cookies; no payload here has a `userId` field, so a caller cannot choose whose audit
@@ -16,9 +20,10 @@
  *
  * **`revalidatePath` on the way out, on success only.** The page may be `force-dynamic` and re-read
  * on every visit, but a client that ticks a checkbox should not depend on that: the path is named
- * here so a cached render cannot show a list that is one tick behind. Both the list and the
- * artifact route are named — a segment path with `"page"` is how Next 16 revalidates the dynamic
- * route, and the list is what draws the counts.
+ * here, so a cached render cannot show a list that is one tick behind. It is the page that is
+ * revalidated (`ADMIN_REVIEW_PATH`), because the page is what draws the row counts and both panes —
+ * the artifact file route reads the manifest and a file on disk, which no write here moves. (Before
+ * this card the second call named `/admin/review/<artifact>`, a route that does not exist.)
  *
  * **Refusals come back as codes**, and the screen draws the sentence from its own fixture. A
  * genuine failure is rethrown unchanged: it is not a refusal, and a caller told "nothing happened"
@@ -36,15 +41,12 @@ import {
   setReviewIssueState,
   toggleReviewTodo,
 } from "@/lib/admin/review-ops";
+import type { ReviewActionOutcome } from "@/lib/admin/review-inputs";
 import { currentUser } from "@/lib/auth/session";
-
-/** What every action answers. `code` is a refusal the screen has words for. */
-export type ReviewActionOutcome =
-  | { readonly ok: true; readonly detail?: string }
-  | { readonly ok: false; readonly code: ReviewActionCode };
+import { ADMIN_REVIEW_PATH } from "@/lib/review/paths";
 
 /** Every refusal an action can report: the session's, `act()`'s, and the store's own. */
-export type ReviewActionCode =
+type ReviewActionCode =
   | "signed-out"
   | "reason-too-short"
   | "role-too-low"
@@ -64,10 +66,12 @@ function refusalOf(error: unknown): ReviewActionCode | null {
   return null;
 }
 
-/** The two paths a write can move. Kept in one place so an action cannot forget half of it. */
-function revalidateReview(artifactId: string): void {
-  revalidatePath("/admin/review");
-  revalidatePath(`/admin/review/${artifactId}`, "page");
+/**
+ * The one path a write moves. Kept as a function so an action cannot forget it, and so the
+ * artefact id a caller happens to hold cannot become a second address that does not exist.
+ */
+function revalidateReview(): void {
+  revalidatePath(ADMIN_REVIEW_PATH);
 }
 
 /** Read one string field off a payload a browser could have posted anything into. */
@@ -106,7 +110,7 @@ export async function toggleReviewTodoAction(input: {
       done,
       reason: note.trim() === "" ? reviewTodoReasonOf(text(input.body), done) : note,
     });
-    revalidateReview(artifactId);
+    revalidateReview();
     return { ok: true };
   } catch (error) {
     const code = refusalOf(error);
@@ -135,7 +139,7 @@ export async function openReviewIssueAction(input: {
       labels: texts(input.labels),
       reason: text(input.reason),
     });
-    revalidateReview(artifactId);
+    revalidateReview();
     return { ok: true, detail: `#${raised.after.number}` };
   } catch (error) {
     const code = refusalOf(error);
@@ -146,14 +150,12 @@ export async function openReviewIssueAction(input: {
 
 /** Comment under one issue. */
 export async function commentOnReviewIssueAction(input: {
-  readonly artifactId?: unknown;
   readonly issueId?: unknown;
   readonly body?: unknown;
   readonly reason?: unknown;
 }): Promise<ReviewActionOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
-  const artifactId = text(input.artifactId);
   try {
     await commentOnReviewIssue({
       actorUserId: user.userId,
@@ -161,7 +163,7 @@ export async function commentOnReviewIssueAction(input: {
       body: text(input.body),
       reason: text(input.reason),
     });
-    revalidateReview(artifactId);
+    revalidateReview();
     return { ok: true };
   } catch (error) {
     const code = refusalOf(error);
@@ -172,14 +174,12 @@ export async function commentOnReviewIssueAction(input: {
 
 /** Close or reopen one issue. `closed_at` is written with the state, in the same statement. */
 export async function setReviewIssueStateAction(input: {
-  readonly artifactId?: unknown;
   readonly issueId?: unknown;
   readonly state?: unknown;
   readonly reason?: unknown;
 }): Promise<ReviewActionOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
-  const artifactId = text(input.artifactId);
   try {
     await setReviewIssueState({
       actorUserId: user.userId,
@@ -187,7 +187,7 @@ export async function setReviewIssueStateAction(input: {
       state: text(input.state),
       reason: text(input.reason),
     });
-    revalidateReview(artifactId);
+    revalidateReview();
     return { ok: true };
   } catch (error) {
     const code = refusalOf(error);

@@ -10,9 +10,13 @@
  *             disagree with the heading above them.
  *   preview   what the frame is: a sandboxed document served from the manifest's own entry, so
  *             scripts run inside it and it cannot reach the page around it.
- *   todos     the checklist, and the sentence that says a tick is not yet possible.
+ *   todos     the checklist: the tick that writes it, the sentence a tick is saving under, and the
+ *             item's own author and date.
  *   feedback  the issue list, in the shape a GitHub issue list has — `#N`, state, labels, author.
- *   issue     one thread: the report, the replies, and the two controls that need a store.
+ *   issue     one thread: the report, the replies, the reply form, and the close/reopen control.
+ *   refusals  one sentence per refusal code, so a refused write is a sentence and never the
+ *             server's diagnostic text. A refusal is drawn, never swallowed: the control that
+ *             posted stays where it was and the reason appears beside it.
  *   unreadable  the catalogue could not be read. Never a cached list and never a partial one.
  *
  * `{placeholders}` are filled by the view with numbers and labels it computed
@@ -81,6 +85,7 @@ export const adminReviewPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "todos",
       heading: "To-dos",
+      body: "Ticking an item writes it to the review store and records who did it and when — the reason on the audit row is the item's own words, because a checkbox has no room for a sentence.",
       items: [
         { id: "progress", label: "{done} / {total} done" },
         { id: "empty", label: "No to-dos on this artifact yet." },
@@ -88,11 +93,9 @@ export const adminReviewPageCopy: PageCopy = zPageCopy.parse({
         { id: "done-by", label: "ticked by {actor} on {date}" },
         { id: "state-done", label: "Done" },
         { id: "state-open", label: "Open" },
-        {
-          id: "read-only",
-          label:
-            "Ticking a to-do is the store's own write; this cut draws the state, and the control that calls it is the follow-up.",
-        },
+        { id: "tick-on", label: "Mark done: {todo}" },
+        { id: "tick-off", label: "Mark not done: {todo}" },
+        { id: "saving", label: "Saving…" },
       ],
     },
     {
@@ -118,15 +121,45 @@ export const adminReviewPageCopy: PageCopy = zPageCopy.parse({
         { id: "reply-label", label: "Write a reply" },
         { id: "comment", label: "Comment" },
         { id: "close", label: "Close issue" },
+        { id: "reopen", label: "Reopen issue" },
+        { id: "posting", label: "Sending…" },
+        { id: "saving", label: "Saving…" },
+        {
+          id: "pending-row",
+          label: "Not committed yet — this reply becomes a row when the store answers.",
+        },
         {
           id: "closed-note",
-          label: "This issue is closed — reopening it lands with the review store.",
+          label:
+            "This issue is closed. The report and its replies stay readable, and reopening it clears the closed date.",
+        },
+        { id: "reason-comment", label: "reply to issue #{number}" },
+        { id: "reason-close", label: "close issue #{number}" },
+        { id: "reason-reopen", label: "reopen issue #{number}" },
+      ],
+    },
+    {
+      id: "refusals",
+      heading: "That did not happen",
+      items: [
+        {
+          id: "role-too-low",
+          label:
+            "This account's role cannot change review state. Nothing was written — the to-do, the issue and its replies are as they were.",
         },
         {
-          id: "read-only",
-          label:
-            "Replying and closing are the store's own actions; this cut draws the thread and writes nothing.",
+          id: "signed-out",
+          label: "The sign-in expired while this screen was open. Sign in and retry.",
         },
+        { id: "no-change", label: "Nothing changed — the row already says that." },
+        { id: "no-such-todo", label: "That to-do is no longer in the store." },
+        { id: "no-such-issue", label: "That issue is no longer in the store." },
+        { id: "no-such-artifact", label: "That artifact is no longer in the review store." },
+        { id: "empty-body", label: "A reply needs words before it can be posted." },
+        { id: "body-too-long", label: "That reply is longer than the store accepts." },
+        { id: "unknown-state", label: "That is not a state an issue can be in." },
+        { id: "reason-too-short", label: "The reason for the audit log is too short." },
+        { id: "failed", label: "The write did not commit. Nothing was changed." },
       ],
     },
     {
