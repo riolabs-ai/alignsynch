@@ -25,15 +25,17 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AccountGate } from "@/components/assessment-flow/account-gate";
+import { StageShell } from "@/components/assessment-flow/stage-shell";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { loginPathFor } from "@/lib/auth/paths";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { readFlowScreen } from "@/lib/flow/store";
 import {
   createAccountForPath,
   createRelationshipPath,
   instancePath,
-  sentPath,
+  OVERVIEW_PATH,
 } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 
@@ -79,17 +81,26 @@ export default async function TemplateCreateAccountPage({
   // Not this browser's relationship — the id alone is not proof of anything.
   if (screen === undefined) redirect(whoPath);
 
-  // An account already exists: the gate is behind them, not in front of them. **Sent** is where the
-  // flow goes next (#691) — stage 5, the invitation's state — and not the relationship itself,
-  // which is stage 6.
-  if (viewer !== null) redirect(sentPath(screen.instanceRecordId));
+  // An account already exists: the gate is behind them, not in front of them. **The dashboard is
+  // where the flow goes next** (#709) — the relationship is listed there, and Sent is no longer a
+  // destination the flow sends anybody to. It stays a screen that answers when asked for by URL.
+  if (viewer !== null) redirect(OVERVIEW_PATH);
+
+  const account = sectionOf(assessmentCreatePageCopy, "account");
+  const stages = sectionOf(assessmentCreatePageCopy, "stages");
 
   return (
-    <AccountGate
-      copy={assessmentCreatePageCopy}
-      signInHref={loginPathFor(createAccountForPath(templateId, screen.instanceRecordId))}
-      backHref={instancePath(screen.instanceRecordId)}
-      destination={sentPath(screen.instanceRecordId)}
-    />
+    <StageShell
+      title={account.heading}
+      closeLabel={itemLabel(stages, "close")}
+      closeHref={OVERVIEW_PATH}
+    >
+      <AccountGate
+        copy={assessmentCreatePageCopy}
+        signInHref={loginPathFor(createAccountForPath(templateId, screen.instanceRecordId))}
+        backHref={instancePath(screen.instanceRecordId)}
+        destination={OVERVIEW_PATH}
+      />
+    </StageShell>
   );
 }

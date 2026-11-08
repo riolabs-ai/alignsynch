@@ -21,13 +21,21 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { lifecycleStageSection } from "@/data/pages/lifecycle";
 import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
 import { itemLabel } from "@/lib/page-copy";
+
+/**
+ * #709 — every stage now renders inside `StageShell`, whose only Next dependency is `useRouter`.
+ * No render here navigates: the stub keeps a render a render.
+ */
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+}));
 
 /** The six names the approved artifact numbers, in order. */
 const STAGE_NAMES = ["Who", "Mode", "Aspects", "Create", "Sent", "Ongoing"];
