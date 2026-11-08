@@ -30,6 +30,8 @@ const STATIC_ROUTES = [
   "/admin/gaps",
   "/admin/health",
   "/admin/instances",
+  // #665 — the console's review shelf: published artifacts, their to-dos and their feedback.
+  "/admin/review",
   // #502a — template authoring: the console's authored catalogue and one template's editor.
   "/admin/templates",
   // #506 — the support inbox: the contact form's queue, one thread, the reply.

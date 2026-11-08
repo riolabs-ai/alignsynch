@@ -176,7 +176,9 @@ describe("the ladder decides the rows", () => {
     const staff = MENUS.admin.slice(MENUS.member.length);
     expect(staff[0]).toBe("/admin/console");
     expect(staff[staff.length - 1]).toBe("/admin/audit");
-    expect(staff).toHaveLength(8);
+    // #665 — the review shelf joined the operator group, between Broadcast and the audit log.
+    expect(staff[staff.length - 2]).toBe("/admin/review");
+    expect(staff).toHaveLength(9);
   });
 
   it("gives an owner everything an admin sees — the top rung is not a second list", () => {
@@ -186,7 +188,7 @@ describe("the ladder decides the rows", () => {
 
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    expect(counts).toEqual([4, 5, 12, 12]);
+    expect(counts).toEqual([4, 5, 13, 13]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);

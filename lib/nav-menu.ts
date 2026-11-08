@@ -50,6 +50,7 @@ export type NavIconName =
   | "health"
   | "billing"
   | "broadcast"
+  | "review"
   | "audit";
 
 /** One destination in the rail. */
@@ -148,6 +149,10 @@ export const ALIGN_MENU: readonly NavGroup[] = [
       { id: "admin-health", href: "/admin/health", icon: "health", needs: "admin" },
       { id: "admin-billing", href: "/admin/billing", icon: "billing", needs: "admin" },
       { id: "admin-broadcast", href: "/admin/broadcast", icon: "broadcast", needs: "admin" },
+      // #665 — the review shelf: published artifacts, each with its to-dos and its feedback. One row,
+      // between Broadcast and the audit log; `admin-audit` stays last because it is the record of
+      // what every other row did.
+      { id: "review", href: "/admin/review", icon: "review", needs: "admin" },
       { id: "admin-audit", href: "/admin/audit", icon: "audit", needs: "admin" },
     ],
   },

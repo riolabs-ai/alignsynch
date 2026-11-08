@@ -261,6 +261,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/review",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The console's review shelf: every published prototype, diagram and report grouped by the release it belongs to, with the artifact itself in a sandboxed frame beside its to-do checklist and its GitHub-shaped feedback list (issue number, state, title, labels, author, age → thread).",
+    notes:
+      "#665 — the record is #667's store (`review_artifact` / `review_todo` / `review_issue`, read through `lib/db/review-artifacts.ts`: `listReviewArtifacts()` carries both counts per row, `readReviewArtifact()` the two lists, `readReviewIssue()` one thread); `docs/review/artifacts.json` is presentation only — the release each artifact ships with and the one line a reviewer reads first — and every catalogue row must carry a manifest row and vice versa, or the shelf refuses to build. The list is **grouped by release** and a group is archived or active as one: membership from the manifest, state from `docs/changelog/releases.json`, so only the newest release is active. `/review-artifacts/[id]` resolves an id or slug against the authored catalogue and answers 404 for anything it does not name (no disk scan, no path parameter; `path` is the guarded `docs/review/**.html` shape in `content/review.ts`), and serves the file with `Content-Security-Policy: sandbox allow-scripts` beside the iframe's own sandbox. Read-only in this cut: the store's writes (`toggleReviewTodoAction`, `setReviewIssueStateAction`, `commentOnReviewIssueAction` in the page's `actions.ts`) are not mounted, and the checklist and thread say so. Both templates claim `product.admin` (#509), so `requireAdminProduct()` runs before `requireAdmin()`. `data/pages/admin-review.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
     surface: "/admin/templates",
     status: "db",
     templates: ["alignsynch"],

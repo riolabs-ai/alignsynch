@@ -33,4 +33,37 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     path: "docs/review/artifacts/prototype-relationship-lifecycle-v4.html",
     capturedAt: "2026-11-07T00:00:00.000Z",
   },
+  /**
+   * #665 — the three earlier cuts, published beside v4 so every version under review is a row
+   * rather than a chat screenshot. They are the same series (`version` distinguishes them) and the
+   * same day's capture; the viewer groups them by release from `docs/review/artifacts.json`, which
+   * is presentation metadata (release + what to look for) and never a second copy of this record.
+   */
+  {
+    id: "review-relationship-lifecycle-v3",
+    slug: "prototype-relationship-lifecycle-v3",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v3",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v3.html",
+    capturedAt: "2026-11-07T00:00:00.000Z",
+  },
+  {
+    id: "review-relationship-lifecycle-v2",
+    slug: "prototype-relationship-lifecycle-v2",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v2",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v2.html",
+    capturedAt: "2026-11-07T00:00:00.000Z",
+  },
+  {
+    id: "review-relationship-lifecycle-v1",
+    slug: "prototype-relationship-lifecycle-v1",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v1",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v1.html",
+    capturedAt: "2026-11-07T00:00:00.000Z",
+  },
 ];
