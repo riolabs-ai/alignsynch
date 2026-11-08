@@ -322,15 +322,25 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "relationship.void": "admin",
   "relationship.extend": "admin",
   /**
-   * #667 — the review store's three, floor `support`. The same argument as the inbox's three
-   * above: this is work on the product's own artifacts (a prototype, a diagram, a report), not a
-   * write to anybody's row, so the rung that exists to work a queue is the rung that ticks a
-   * checklist and raises feedback. The refusal for a `member` comes from `act()` inside the
-   * transaction (`role-too-low`), never from a control the page chose not to draw.
+   * #667 — the review store's three, and #665's screen mounts them (**this card** raised the floor
+   * from `support` to `admin`).
+   *
+   * #667 reasoned the floor to `support`: this is work on the product's own artifacts (a prototype,
+   * a diagram, a report), not a write to anybody's row, so the rung that exists to work a queue is
+   * the rung that ticks a checklist. The write half then had no reader: `/admin/review` is
+   * `requireAdmin()` and the rail row carries `needs: "admin"` (#665), so a `support` seat could
+   * write state it could not see, and no session that could see the shelf could be refused by the
+   * floor. A guard nothing can reach is not a guard — the review shelf's own card states the rule
+   * the other way round (a `support` rung is refused by `act()`), so the floor moved to the rung the
+   * surface already requires. Tightening: nobody gained a write.
+   *
+   * The refusal is still `act()`'s, inside the transaction (`role-too-low`), never a control the
+   * page chose not to draw — and because the rung is read per transaction, a session demoted under
+   * an open screen is refused on its next click.
    */
-  "review.todo": "support",
-  "review.issue": "support",
-  "review.comment": "support",
+  "review.todo": "admin",
+  "review.issue": "admin",
+  "review.comment": "admin",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.

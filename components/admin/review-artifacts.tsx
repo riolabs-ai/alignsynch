@@ -18,31 +18,35 @@
  * to `allow-scripts`: the document's own scripts run (the prototypes are interactive) and it has no
  * same-origin access to the console around it.
  *
- * **Read-only, and it says so.** The store's writes — `toggleReviewTodoAction`,
- * `setReviewIssueStateAction`, `commentOnReviewIssueAction` — exist in `./actions.ts` and are not
- * mounted here: a control that posts to one is the follow-up card. The checklist and the thread
- * print that sentence rather than looking live and dropping the write.
+ * **The writes are mounted, and the screen says what it does.** The checklist and the thread render
+ * `./review-todos` and `./review-thread`, two client components the page hands the store's three
+ * actions to (`toggleReviewTodoAction`, `commentOnReviewIssueAction`,
+ * `setReviewIssueStateAction`) — the inbox's pattern, where the server page passes the action down
+ * and the component never imports a `"use server"` module itself. A refused write draws the
+ * fixture's sentence beside the control; nothing here is disabled to hide a policy.
  *
  * Every word resolves from `data/pages/admin-review.ts` (E23); the artifact's title, version, kind,
  * the to-do bodies and the issue titles are records and come from the store.
  */
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Circle,
-  ExternalLink,
-  FileText,
-  MessageSquare,
-  Network,
-  ClipboardList,
-} from "lucide-react";
+import { ClipboardList, ExternalLink, FileText, MessageSquare, Network } from "lucide-react";
 import Link from "next/link";
 
+import { ReviewIssueThread } from "@/components/admin/review-thread";
+import { ReviewTodos } from "@/components/admin/review-todos";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
-import type { ReviewIssueThread, ReviewArtifactDetail } from "@/lib/db/review-artifacts";
+import type {
+  ReviewActionOutcome,
+  ReviewCommentInput,
+  ReviewIssueStateInput,
+  ReviewTodoInput,
+} from "@/lib/admin/review-inputs";
+import type {
+  ReviewIssueThread as ReviewIssueThreadRecord,
+  ReviewArtifactDetail,
+} from "@/lib/db/review-artifacts";
 import type { ReviewKind } from "@/content/review";
 import type { ReviewReleaseGroup, ReviewShelf } from "@/lib/review/artifacts";
 import { reviewArtifactFileUrl, reviewArtifactPath, reviewIssuePath } from "@/lib/review/paths";
@@ -80,6 +84,9 @@ export function ReviewArtifacts({
   selected,
   thread,
   unreadable,
+  onToggleTodo,
+  onCommentOnIssue,
+  onSetIssueState,
 }: {
   copy: PageCopy;
   /** `null` when the shelf could not be built — `unreadable` says why. */
@@ -87,15 +94,20 @@ export function ReviewArtifacts({
   /** The open artifact's record, both lists and counts; `null` when nothing is selected. */
   selected: ReviewArtifactDetail | null;
   /** The open issue and its comments (`?issue=`), resolved inside the selected artifact. */
-  thread: ReviewIssueThread | null;
+  thread: ReviewIssueThreadRecord | null;
   unreadable: string | null;
+  /**
+   * The store's three writes, handed down from the page. Not imported here: a component that
+   * imported a `"use server"` module would be the second place the action's identity lives.
+   */
+  onToggleTodo: (input: ReviewTodoInput) => Promise<ReviewActionOutcome>;
+  onCommentOnIssue: (input: ReviewCommentInput) => Promise<ReviewActionOutcome>;
+  onSetIssueState: (input: ReviewIssueStateInput) => Promise<ReviewActionOutcome>;
 }) {
   const listCopy = sectionOf(copy, "list");
   const previewCopy = sectionOf(copy, "preview");
   const artifactCopy = sectionOf(copy, "artifact");
-  const todosCopy = sectionOf(copy, "todos");
   const feedbackCopy = sectionOf(copy, "feedback");
-  const issueCopy = sectionOf(copy, "issue");
   const unreadableCopy = sectionOf(copy, "unreadable");
 
   const selectedId = selected?.artifact.id ?? null;
@@ -309,80 +321,13 @@ export function ReviewArtifacts({
 
                 {thread === null ? (
                   <>
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <ClipboardList className="size-4" aria-hidden="true" />
-                          <span>{todosCopy.heading ?? ""}</span>
-                        </CardTitle>
-                        <CardDescription>
-                          {fillLabel(itemLabel(todosCopy, "progress"), {
-                            done: selected.progress.todosDone,
-                            total: selected.progress.todosTotal,
-                          })}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {selected.todos.length === 0 ? (
-                          <p data-empty="true" className="text-sm text-muted-foreground">
-                            {itemLabel(todosCopy, "empty")}
-                          </p>
-                        ) : (
-                          <ul className="divide-y">
-                            {selected.todos.map((todo) => (
-                              <li
-                                key={todo.id}
-                                data-todo={todo.id}
-                                data-done={todo.doneAt === null ? "false" : "true"}
-                                className="flex items-start gap-3 py-2.5"
-                              >
-                                {todo.doneAt === null ? (
-                                  <Circle
-                                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                                    aria-hidden="true"
-                                  />
-                                ) : (
-                                  <CheckCircle2
-                                    className="mt-0.5 size-4 shrink-0 text-action"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                                <span className="min-w-0 flex-1">
-                                  <span
-                                    className={cn(
-                                      "block text-sm",
-                                      todo.doneAt !== null && "text-muted-foreground line-through",
-                                    )}
-                                  >
-                                    {todo.body}
-                                  </span>
-                                  <span className="block text-xs text-muted-foreground">
-                                    {todo.doneAt === null
-                                      ? fillLabel(itemLabel(todosCopy, "opened-by"), {
-                                          author: todo.authorUserId,
-                                          date: dayOf(todo.createdAt),
-                                        })
-                                      : fillLabel(itemLabel(todosCopy, "done-by"), {
-                                          actor: todo.authorUserId,
-                                          date: dayOf(todo.doneAt),
-                                        })}
-                                  </span>
-                                </span>
-                                <Badge variant={todo.doneAt === null ? "outline" : "muted"}>
-                                  {itemLabel(
-                                    todosCopy,
-                                    todo.doneAt === null ? "state-open" : "state-done",
-                                  )}
-                                </Badge>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {itemLabel(todosCopy, "read-only")}
-                        </p>
-                      </CardContent>
-                    </Card>
+                    <ReviewTodos
+                      copy={copy}
+                      artifactId={selected.artifact.id}
+                      todos={selected.todos}
+                      progress={selected.progress}
+                      onToggle={onToggleTodo}
+                    />
 
                     <Card>
                       <CardHeader>
@@ -455,111 +400,12 @@ export function ReviewArtifacts({
                     </Card>
                   </>
                 ) : (
-                  <Card data-issue-thread={thread.issue.number}>
-                    <CardHeader className="space-y-3">
-                      <Link
-                        href={reviewArtifactPath(selected.artifact.slug)}
-                        className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-                      >
-                        <ArrowLeft className="size-3.5" aria-hidden="true" />
-                        {itemLabel(issueCopy, "back")}
-                      </Link>
-                      <div className="space-y-2">
-                        <CardTitle className="flex flex-wrap items-center gap-2">
-                          <span>{thread.issue.title}</span>
-                          <Badge variant={ISSUE_VARIANT[thread.issue.state]}>
-                            {itemLabel(feedbackCopy, `state-${thread.issue.state}`)}
-                          </Badge>
-                          <span className="text-sm font-normal text-muted-foreground">
-                            {fillLabel(itemLabel(feedbackCopy, "number"), {
-                              number: thread.issue.number,
-                            })}
-                          </span>
-                        </CardTitle>
-                        <CardDescription className="flex flex-wrap items-center gap-1.5">
-                          {thread.issue.labels.map((label) => (
-                            <Badge key={label} variant="outline" className="font-normal">
-                              {label}
-                            </Badge>
-                          ))}
-                          <span>
-                            {fillLabel(itemLabel(feedbackCopy, "opened-by"), {
-                              author: thread.issue.authorUserId,
-                              date: dayOf(thread.issue.openedAt),
-                            })}
-                          </span>
-                        </CardDescription>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <section className="space-y-2">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {itemLabel(issueCopy, "body-heading")}
-                        </h3>
-                        <p className="text-sm">{thread.issue.body}</p>
-                      </section>
-
-                      <section className="space-y-3">
-                        <h3 className="text-xs uppercase tracking-wide text-muted-foreground">
-                          {itemLabel(issueCopy, "thread-heading")}
-                        </h3>
-                        {thread.comments.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">
-                            {itemLabel(issueCopy, "no-replies")}
-                          </p>
-                        ) : (
-                          <ul className="space-y-3">
-                            {thread.comments.map((comment) => (
-                              <li key={comment.id} className="rounded-md border p-3">
-                                <p className="text-xs text-muted-foreground">
-                                  {fillLabel(itemLabel(feedbackCopy, "opened-by"), {
-                                    author: comment.authorUserId,
-                                    date: dayOf(comment.createdAt),
-                                  })}
-                                </p>
-                                <p className="mt-1 text-sm">{comment.body}</p>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </section>
-
-                      <section className="space-y-3">
-                        <span className="block text-xs uppercase tracking-wide text-muted-foreground">
-                          {itemLabel(issueCopy, "reply-label")}
-                        </span>
-                        <textarea
-                          disabled
-                          rows={3}
-                          className="w-full rounded-md border border-gray-300 bg-muted/40 p-2 text-sm"
-                        />
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-9 items-center rounded-md bg-action px-3 text-sm font-medium text-action-foreground opacity-60"
-                          >
-                            {itemLabel(issueCopy, "comment")}
-                          </button>
-                          <button
-                            type="button"
-                            disabled
-                            className="inline-flex h-9 items-center rounded-md border border-gray-300 px-3 text-sm font-medium opacity-60"
-                          >
-                            {itemLabel(issueCopy, "close")}
-                          </button>
-                          <span className="text-xs text-muted-foreground">
-                            {itemLabel(issueCopy, "read-only")}
-                          </span>
-                        </div>
-                        {thread.issue.state === "closed" ? (
-                          <p className="text-xs text-muted-foreground">
-                            {itemLabel(issueCopy, "closed-note")}
-                          </p>
-                        ) : null}
-                      </section>
-                    </CardContent>
-                  </Card>
+                  <ReviewIssueThread
+                    copy={copy}
+                    thread={thread}
+                    onComment={onCommentOnIssue}
+                    onSetState={onSetIssueState}
+                  />
                 )}
               </>
             )}

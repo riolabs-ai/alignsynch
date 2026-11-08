@@ -202,6 +202,33 @@ describe("the #503 relationship operations", () => {
   });
 });
 
+describe("the review shelf's three writes (#665 follow-up)", () => {
+  /**
+   * `/admin/review` is `requireAdmin()` and its rail row carries `needs: "admin"` (#665), so the
+   * write floor is the surface's own rung. #667 shipped these three at `support` while the screen
+   * was read-only; a write floor below the reading gate is a guard no session can reach, and the
+   * shelf's card states the rule the other way round — a `support` rung is refused by `act()`.
+   * Raising it tightened the policy: nobody gained a write.
+   */
+  const REVIEW_ACTIONS: readonly AdminAction[] = ["review.todo", "review.issue", "review.comment"];
+
+  it("floors every review write at admin, the rung the screen itself requires", () => {
+    for (const action of REVIEW_ACTIONS) {
+      expect(requirementFor(action), `${action}'s floor`).toBe("admin");
+    }
+  });
+
+  it("refuses a support seat every review write, and admits admin and owner", () => {
+    for (const action of REVIEW_ACTIONS) {
+      expect(can("support", action), `support may not ${action}`).toBe(false);
+      expect(can("member", action), `member may not ${action}`).toBe(false);
+      expect(can(null, action), `nobody may ${action}`).toBe(false);
+      expect(can("admin", action), `admin may ${action}`).toBe(true);
+      expect(can("owner", action), `owner may ${action}`).toBe(true);
+    }
+  });
+});
+
 describe("the audit target vocabulary", () => {
   it("names the tables the five operations write, and no table a migration renamed", () => {
     // party (unlock, force-close), session (void), session_invite (resend, revoke).
