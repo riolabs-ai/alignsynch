@@ -83,11 +83,16 @@ import {
   withStepText,
   type Step,
 } from "@/content/steps";
-import { entitlementForAccount } from "@/lib/billing";
+import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
 import { activeInstanceCount, activeRelationshipCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
-import { paymentFactsOf, readPaymentForSession } from "@/lib/db/relationship-payment";
+import {
+  openPaymentObligation,
+  paymentFactsOf,
+  readPaymentForSession,
+  type PaymentSql,
+} from "@/lib/db/relationship-payment";
 import { paymentArmedOf } from "@/lib/flow/payment";
 import {
   assessmentInstanceFromRows,
@@ -571,12 +576,20 @@ export async function createInstanceFromTemplate(
     // claim (`claimInvite`) binds them, and `plan` is NULL — the tier is the billing module's
     // fact, not this store's. `purchased_at` is the acquisition instant, which in this create
     // path is the same instant the row is written.
+    //
+    // **`published`, not the column's `draft` default (#739).** This transaction is the Invite
+    // stage: it mints the invitation and opens the session in the same commit, so a row still
+    // saying `draft` described a relationship that does not exist — the invitation had gone out
+    // and the pair could answer it. It also made the fee unreachable: `draft → complete` is not a
+    // transition, so the payer's completion was refused `not-ready-to-complete` on every
+    // relationship created through the flow. `published → active` is the claim's own write
+    // (`claimInvite`), which is where the pair becomes live.
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
          (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
-          purchased_at, plan, created_at)
-       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5)`,
+          purchased_at, plan, created_at, status)
+       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5, 'published')`,
       [relationshipId, found.id, version.id, initiatorUserId, now.toISOString()],
     );
 
@@ -608,6 +621,23 @@ export async function createInstanceFromTemplate(
          VALUES ($1, $2, 'initiator', $3)`,
         [relationshipId, initiatorUserId, now.toISOString()],
       );
+
+      // #739 — **the obligation opens with the relationship.** `relationship_payment` is the row
+      // every payment fact is read from: the captured method, the fee's attempts, the unpaid
+      // window. `createRelationship()` has always written it (`openPaymentObligation`, "at
+      // relationship creation" — 0036); this create path minted the invitation and the session and
+      // then left the fee with nothing to record against, so a capture wrote no row
+      // (`recordMethodCaptured` is an UPDATE) and every completion answered
+      // `payment-method-required` for ever — and, worse, the Gap read as free because
+      // `paymentArmedOf(null)` is "not measured" rather than "unpaid".
+      //
+      // Only for a creator with an account: the payer is an account, and a signed-out create has
+      // none — the same NULL the party row above stores.
+      await openPaymentObligation(sqlOf(client), {
+        relationshipId,
+        payerUserId: initiatorUserId,
+        provider: billingProvider(),
+      });
     }
 
     await client.query(
@@ -2937,3 +2967,20 @@ const poolSql: Sql = {
     return { rows: result.rows as R[] };
   },
 };
+
+/**
+ * The client a create is already holding, in the shape `lib/db/relationship-payment.ts` writes
+ * through (#739).
+ *
+ * The obligation has to open **inside** the create's transaction: a relationship written without
+ * one is a relationship whose fee can never be captured, and committing the row first would leave
+ * that gap visible for as long as the second statement took.
+ */
+function sqlOf(client: PoolClient): PaymentSql {
+  return {
+    query: async <R = Record<string, unknown>>(text: string, values?: readonly unknown[]) => {
+      const result = await client.query(text, values as unknown[] | undefined);
+      return { rows: result.rows as R[] };
+    },
+  };
+}

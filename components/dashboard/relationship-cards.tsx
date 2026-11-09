@@ -20,13 +20,15 @@
  * figures this read never returned. `template-ancestor:` names the file for the same reason every
  * other card in `components/dashboard/` does.
  *
- * **Four actions, and only two of them are live — on purpose, for the initiator only.** The
- * owner's decision on #620: ship the menu and the card now, with the actions the product cannot
- * reach yet **visibly disabled**. `Activate Relationship` needs payment (`#619`'s state does not
- * exist) and `Gap Analysis` needs the Gap the report opens; hiding them was rejected — a person
- * should see that completion is coming — and wiring them to nothing would be a dead control.
- * **This is temporary and it is written down in the handoff:** the change that makes payment
- * possible must wire `Activate Relationship`, or this ships a permanently dead button.
+ * **Three actions, and the initiator's primary depends on whether the session exists (#739).** The
+ * owner's decision on #620 shipped the menu with `Activate Relationship` and `Gap Analysis`
+ * **visibly disabled** while payment was unreachable; `#739` built the payer's two acts and this
+ * card stopped lying about them. A permanently disabled control is a claim about the product, and
+ * the card cannot know from this read whether a method is on file or whether both sheets are
+ * sealed — so it draws no payment control at all and hands the reader to the screen that can say.
+ * What it does say is the true one: an initiator whose relationship has no session yet is
+ * publishing, and one that has a session is going to complete and open the Gap — the same link,
+ * with the verb that is honest at that state.
  *
  * **Two more refusals are drawn, not hidden.** `Publish Assessment` is a link to the relationship's
  * own screen, which is the only surface that publishes and the only one that can say why a
@@ -203,28 +205,12 @@ export function RelationshipCards({
                     )}
                     <Link href={publishHref} className={ACTION_PRIMARY}>
                       {row.isInitiator
-                        ? itemLabel(card, "publish-assessment")
+                        ? row.sessionRecordId === null
+                          ? itemLabel(card, "publish-assessment")
+                          : itemLabel(card, "complete-relationship")
                         : itemLabel(card, "open-relationship")}
                     </Link>
-                    {/* Disabled until payment exists (#619). The change that wires payment owns
-                        these two controls — see the handoff note on #620. They are the initiator's
-                        to act on, so a Counterparty's card does not draw them (#706). */}
-                    {row.isInitiator ? (
-                      <>
-                        <button type="button" disabled className={ACTION_DISABLED}>
-                          {itemLabel(card, "activate")}
-                        </button>
-                        <button type="button" disabled className={ACTION_DISABLED}>
-                          {itemLabel(card, "gap")}
-                        </button>
-                      </>
-                    ) : null}
                   </div>
-                  {row.isInitiator ? (
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                      {itemLabel(card, "disabled-note")}
-                    </p>
-                  ) : null}
                 </div>
               </li>
             );

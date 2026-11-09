@@ -63,7 +63,14 @@ import {
   recordChargeResult,
   recordMethodCaptured,
 } from "@/lib/db/relationship-payment";
-import { completionRefusalOf, paymentArmedOf, type PaymentRefusal } from "@/lib/flow/payment";
+import {
+  completionRefusalOf,
+  paymentArmedOf,
+  paymentDeadlineOf,
+  paymentPhaseOf,
+  type PaymentPhase,
+  type PaymentRefusal,
+} from "@/lib/flow/payment";
 import { relationshipScreenPath } from "@/lib/flow/paths";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
 import { MemberRefused } from "@/lib/member/publish-basis";
@@ -644,6 +651,69 @@ export async function completeRelationship(
 /** The payment gate for a screen that has the facts but not the status. `false` means "not armed". */
 export function paymentArmedFor(snapshot: PaymentSnapshot): boolean | undefined {
   return paymentArmedOf(paymentFactsOf(snapshot));
+}
+
+/* ------------------------------------------------------------------ *
+ * #739 — the gate the relationship screen draws
+ * ------------------------------------------------------------------ */
+
+/**
+ * What the payer's screen needs to know, in one value (#739).
+ *
+ * The relationship detail is where the two acts live — put a method on file, and complete and open
+ * the Gap — and it was rendering neither, so the payment workflow was reachable from nothing but
+ * a test. This is the read behind the band that draws them, and it answers the four questions the
+ * band asks, never a fifth:
+ *
+ *   `sealed`          both sheets are in (every Aspect answered by both, both acceptances) — the
+ *                     condition the fee is gated on, and the one that makes the button honest
+ *   `phase`           `none` / `method-on-file` / `retrying` / `charged` / `expired`, from the same
+ *                     derivation the job reads, so the sentence and the write cannot disagree
+ *   `hasMethod`       a card is on file, so the amount is one click away rather than two
+ *   `awaitingPayment` sealed and not armed — the state the session status calls `awaiting_payment`
+ *
+ * **Read here, decided nowhere else.** The component draws from this record; the server actions
+ * re-read the row under a lock before they write, so a screen that says "you may complete" is a
+ * courtesy and a refusal is still the transaction's.
+ */
+export interface CompletionGate {
+  readonly sealed: boolean;
+  readonly phase: PaymentPhase;
+  readonly hasMethod: boolean;
+  readonly awaitingPayment: boolean;
+  /** What the fee will be, in cents: the attempt that was recorded, else the tier's own price. */
+  readonly amountCents: number;
+  /** When the unpaid window closes — `sealed + 14 days`, or `null` while the sheets are open. */
+  readonly deadlineAt: string | null;
+  /** When the fee landed, if it did. The band's sentence after a completion. */
+  readonly chargedAt: string | null;
+}
+
+/**
+ * The completion gate for one session, or `undefined` when the session does not exist.
+ *
+ * Three statements, no clock of its own beyond the `now` a caller hands down — the same discipline
+ * every write in this module keeps.
+ */
+export async function readCompletionGate(
+  sessionRecordId: string,
+  now: Date = new Date(),
+): Promise<CompletionGate | undefined> {
+  const snapshot = await readPaymentForSession(sessionRecordId);
+  if (snapshot === undefined) return undefined;
+  const seal = await sealFactsOf(sessionRecordId);
+  const sealed = sealedOf(seal);
+  const facts = paymentFactsOf(snapshot);
+  const row = snapshot.row;
+  return {
+    sealed,
+    phase: paymentPhaseOf(facts, now),
+    hasMethod: row?.method_captured_at !== null && row?.method_captured_at !== undefined,
+    awaitingPayment: sealed && paymentArmedOf(facts) === false,
+    amountCents: row?.charge_amount_cents ?? relationshipFeeCents(),
+    deadlineAt: instantIso(paymentDeadlineOf(snapshot.sealedAt)),
+    chargedAt: instantIso(row?.charged_at),
+  };
 }
 
 /** An instant from facts → ISO, or `null`. Kept here so a refusal's sentence cannot print `Invalid Date`. */
