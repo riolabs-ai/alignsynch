@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.9.0",
+      "theme": "the payer can pay — a method is captured and a relationship completes, an invited counterparty answers inside the same modal, templates publish revisions instead of being destroyed, and paying still opens Stripe's own page rather than a frame.",
+      "headline": "`feat(crud)` — templates publish revisions and are retired, never destroyed in use (#711) (#742)"
+    },
+    {
       "version": "1.8.0",
       "theme": "the flow conforms to its six-stage spec — Details · Settings · Aspects · Invite · Connect · Align — opens as one modal, and no action form asks for a Reason.",
       "headline": "`feat(flow)` — conform to the six-stage spec — Details · Settings · Aspects · Invite · Connect · Align (#735) (#737)"
