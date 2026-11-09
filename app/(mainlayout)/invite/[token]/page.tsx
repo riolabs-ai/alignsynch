@@ -27,6 +27,14 @@ import type { Metadata } from "next";
  * the account gate. The token stays in the path of every step and in the encoded `next` of the
  * sign-in links, so nothing re-mints it and nothing loses it.
  *
+ * **The response renders inside the flow's one modal (#710).** `CounterpartyWizard` is framed by
+ * `StageShell` and sits under the six-stage `StageRail` at **Connect**, so the link a stranger
+ * follows opens the same dialog the Initiator's stages do — same rail, same close, and a completed
+ * response exits onto `/dashboard` (`afterClaimTarget()`). The stage is addressed, not inferred:
+ * `?step=1|2|3` with the token in the path means a refresh, a direct link and the sign-in round
+ * trip all land on the same screen. The refusal bands (`InviteView`) are not the response path —
+ * there is nothing to respond to on a dead token — so they keep the surface they had.
+ *
  * A browser that may not claim it still gets the sentence it needs, from `InviteView`:
  *
  *   a party already       `viewerRole` is the standing band (the Initiator following their own

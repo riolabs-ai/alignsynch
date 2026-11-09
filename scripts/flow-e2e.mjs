@@ -18,6 +18,11 @@
  *   3. claim       the Counterparty confirms joining as their own name; a claim that
  *                  confirms nothing, or the wrong name, is refused with `unconfirmed` and
  *                  spends nothing; the successful claim happens once (#202)
+ *   3a. response  the invitation renders inside the flow's modal (#710): the server's own HTML
+ *                  carries the shell, the six-stage rail reads Connect, a `?step=2` deep link
+ *                  lands on the same shell, and the completed claim leaves onto a screen that
+ *                  is never an `Ongoing` surface — `/dashboard` signed in, the relationship
+ *                  signed out
  *   3b. named      the instance screen names the answering party on every visit (#202)
  *   3c. cross-post a session bound as the Initiator that POSTs `role=counterparty` is
  *                  refused 403 and writes no Counterparty opinion (#202)
@@ -623,19 +628,41 @@ async function main() {
   check("it names the Initiator", invitePage.html.includes("Avery E2E"));
   check("it names the Template", invitePage.html.includes("Relationship Basics"));
   // #t_0aa81144 — the invitation lands on step 1 of the onboarding wizard, not on a claim button.
+  // #710 — and that wizard now renders inside the flow's modal, under the six-stage rail at
+  // Connect, closing onto the dashboard. Three facts, because a shell that only *looks* modal
+  // (a client overlay that mounts after hydration) would still 404 the deep link.
   check(
     "it opens on step 1 of the wizard",
-    invitePage.html.includes("Step 1 of 3") &&
-      invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+    invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+  );
+  check(
+    "the response renders inside the flow's modal, in the server's own HTML",
+    invitePage.html.includes('data-stage-shell="true"') &&
+      invitePage.html.includes('role="dialog"') &&
+      invitePage.html.includes('data-stage-close="/dashboard"'),
+  );
+  check(
+    "and under the six-stage rail, at Connect — stage 5 of 6",
+    invitePage.html.includes("Stage 5 of 6") &&
+      ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"].every((name) =>
+        invitePage.html.includes(name),
+      ),
   );
   const stepTwo = await counterparty.get(`/invite/${token}?step=2`);
-  check("step 2 keeps the token and explains the order", stepTwo.html.includes("Step 2 of 3"));
+  check(
+    "a ?step=2 deep link survives a refresh and lands on the same shell",
+    stepTwo.status === 200 &&
+      stepTwo.html.includes("You can change any opinion until you accept the session.") &&
+      stepTwo.html.includes('data-stage-shell="true"') &&
+      stepTwo.html.includes("Stage 5 of 6"),
+    `status ${stepTwo.status}`,
+  );
   const stepThree = await counterparty.get(`/invite/${token}?step=3`);
   check(
     "step 3 is the account gate and claims nothing on a GET",
-    stepThree.html.includes("Step 3 of 3") &&
+    stepThree.html.includes("Accepting costs you nothing") &&
       stepThree.html.includes("You are joining as Rowan E2E, the Counterparty.") === false &&
-      stepThree.html.includes("Accepting costs you nothing"),
+      stepThree.html.includes('data-stage-shell="true"'),
   );
   check(
     "it does not name an answering party for a browser that is not one",
@@ -677,10 +704,19 @@ async function main() {
   );
 
   const claim = await counterparty.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  // #710 — the exit is `afterClaimTarget()`: a signed-in claimer closes onto `/dashboard`, and a
+  // signed-out one (this run — it posted the endpoint directly, which the screens never offer
+  // because step 3 asks for an account) stays on the relationship it just bound, where the party
+  // cookie it was given is what makes the screen readable.
   check(
-    "claiming answers 303 to the instance screen",
-    claim.status === 303 && (claim.location ?? "").includes(instancePath),
+    "claiming answers 303 to the relationship for a signed-out claimer",
+    claim.status === 303 && (claim.location ?? "").endsWith(instancePath),
     `${claim.status} ${claim.location}`,
+  );
+  check(
+    "and the exit is never an `Ongoing` surface",
+    !/ongoing/i.test(claim.location ?? ""),
+    claim.location ?? "",
   );
   check(
     "the Counterparty's party cookie is set",
