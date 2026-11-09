@@ -4,7 +4,7 @@
     {
       "id": "review-relationship-lifecycle-v7",
       "release": "1.7.0",
-      "lookFor": "The six stages in the owner's words — Details · Settings · Aspects · Invite · Completed · Align. Details carries five fields (initiator, counterparty, email, title, description) with Back, Close and Continue to mode and setting; Completed replaces Sent; Align is the sixth cell and is only live once one or more assessments are shared. There is no Ongoing stage."
+      "lookFor": "The six stages in the owner's words — Details · Settings · Aspects · Invite · Connect · Align — with the rail printing Stage N of 6 and each stage name on the second line of its cell. Details carries five fields with their titles bolded and a description that mirrors into the stage subtitle; Continue reads Continue to Stage 2..6 and sits flush right with a [Back][Cancel] pair flush left. Settings draws two peer dimensions — Opinions Mode (Basic 2 / Advanced 4 questions per Aspect) and Alignment Setting (Soft / Full) — as the same single-select component side by side. Aspects lists five rows numbered 01–05 at the far left with a drag handle, no Copied-from-template chip, an edit icon at the far right, and an in-place editor that stays open until Save or Cancel. The sheet stops at 880px on every desktop width. Align is the sixth cell and is only live once one or more assessments are shared. There is no Ongoing stage."
     },
     {
       "id": "review-relationship-lifecycle-v6",

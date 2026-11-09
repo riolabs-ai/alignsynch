@@ -68,6 +68,12 @@
     overflow:hidden; text-overflow:ellipsis; max-width:100%}
   .steps li[data-state="now"] .stage-name{color:var(--ink)}
   .steps li[data-state="todo"] .stage-n{color:#94a3b8}
+  /* The count line under the band, measured off the build's WizardSteps: uppercase, tracked, muted.
+     It is the one place the position is said in words, which is what keeps it readable at 390 where
+     the cell names are hidden. */
+  .steps-count{margin:10px 20px 0; font-size:.72rem; font-weight:600; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--muted)}
+  .steps-count:empty{display:none}
 
   /* ---- surfaces ---- */
   .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius)}
@@ -88,7 +94,8 @@
   .span3{grid-column:span 3} .span4{grid-column:span 4} .span5{grid-column:span 5}
   .span6{grid-column:span 6} .span7{grid-column:span 7} .span8{grid-column:span 8} .span12{grid-column:span 12}
   label.field{display:block}
-  label.field>span{display:block; font-size:.75rem; font-weight:500; color:var(--muted); margin-bottom:8px}
+  /* A field title is a title: bold and at ink weight, with its help text staying muted beneath it. */
+  label.field>span{display:block; font-size:.75rem; font-weight:700; color:var(--ink); margin-bottom:8px}
   label.field>em{display:block; font-size:.78rem; color:var(--muted); font-style:normal; margin-top:6px}
   input[type=text],input[type=email],input[type=password],textarea,select{
     width:100%; min-height:40px; padding:9px 10px; border:1px solid var(--line-strong);
@@ -109,6 +116,13 @@
   .choice{display:flex; gap:12px; align-items:flex-start; padding:16px; border:1px solid var(--line-strong);
           border-radius:var(--radius); cursor:pointer; background:#fff}
   .choice[aria-checked="true"]{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action); background:#fbfcfc}
+  /* Both choices on this stage are the same control — one row of two equal cells, side by side —
+     because Mode and Setting are two dimensions of equal weight, not a card and a toolbar. They
+     stack only when the sheet is too narrow to hold two. */
+  .choice-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media (max-width:560px){
+    .choice-grid{grid-template-columns:1fr}
+  }
   .choice .price{display:flex; align-items:baseline; gap:1px; font-weight:700; font-size:1rem;
     color:var(--ink); white-space:nowrap; flex:0 0 auto}
   .choice .price i{font-style:normal; font-weight:500; font-size:.72rem; color:#6b7280}
@@ -135,9 +149,16 @@
   .skip-link:hover{color:var(--ink)}
   .skip-link:focus-visible{outline:2px solid var(--action); outline-offset:2px; border-radius:4px}
   .aspect{border:1px solid var(--line); border-radius:var(--radius); padding:16px; background:#fff}
-  /* collapsed = one compact line: handle · name + question · the two opinion labels · edit */
-  .aspect.compact{display:grid; grid-template-columns:22px minmax(0,1fr) auto auto; align-items:center;
-    gap:12px; padding:10px 12px}
+  /* collapsed = one compact line: position · handle · name + question · the two opinion labels ·
+     edit. The position is the aspect's order (01, 02 …) at the far left, drawn from the row's index
+     so a reorder renumbers it; the edit control is an icon at the far right. */
+  .aspect.compact{display:grid; grid-template-columns:auto 22px minmax(0,1fr) auto auto;
+    align-items:center; gap:12px; padding:10px 12px}
+  .aspect.compact .a-pos{font-size:11px; font-weight:600; letter-spacing:.06em; color:#94a3b8;
+    font-variant-numeric:tabular-nums; min-width:18px; text-align:left; user-select:none}
+  .aspect.compact .a-edit{min-width:32px; padding:0 8px; justify-content:center; font-size:14px;
+    color:var(--muted)}
+  .aspect.compact .a-edit:hover{color:var(--ink)}
   .aspect.compact .a-main{min-width:0}
   .aspect.compact .a-name{display:block; font-weight:600; font-size:14px; line-height:1.3}
   .aspect.compact .a-q{display:block; font-size:12px; color:#6b7280; white-space:nowrap; overflow:hidden;
@@ -150,10 +171,21 @@
   .aspect.dragging{opacity:.55; border-style:dashed}
   .aspect.dropover{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action)}
   @media (max-width:860px){
-    .aspect.compact{grid-template-columns:26px minmax(0,1fr) auto; gap:8px}
+    /* Narrow rows: the same five cells as the wide layout — position · handle · name · opinions ·
+       edit — with the question line dropped. */
+    .aspect.compact{grid-template-columns:auto 26px minmax(0,1fr) auto auto; gap:8px}
     .aspect.compact .a-q{display:none}
-    .aspect.compact .a-scale{grid-column:2 / span 2; font-size:11px}
+    .aspect.compact .a-scale{grid-column:auto; font-size:11px}
     .aspect .grip{width:26px; height:44px}
+  }
+  /* This has to come after the 860px block above: same specificity, so the later declaration wins,
+     and a 560px rule written earlier was silently overruled at 390. Four cells on one line leave the
+     name 49px wide there, so the opinions take a second line under it instead of crushing the name. */
+  @media (max-width:560px){
+    /* Four tracks for five children, with the opinions explicitly on row two — left to auto-placement
+       they fell to rows three and four and the "compact" row grew to 135px. */
+    .aspect.compact{grid-template-columns:auto 26px minmax(0,1fr) auto}
+    .aspect.compact .a-scale{grid-column:2 / span 3; grid-row:2; margin-top:4px}
   }
   .aspect header{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px}
   .two-up{display:grid; grid-template-columns:1fr 1fr; gap:12px}
@@ -165,9 +197,19 @@
           border:1px solid #bbf7d0; background:var(--ok-soft); font-size:.875rem}
   .kv{display:grid; grid-template-columns:auto 1fr; gap:6px 16px; font-size:.875rem}
   .kv dt{color:var(--muted)} .kv dd{margin:0; text-align:right; font-weight:600}
-  .stage-foot{display:flex; justify-content:space-between; gap:12px; margin-top:var(--gap); padding-top:16px; border-top:1px solid var(--line)}
-  /* sticky footer: pinned to the bottom of the modal's scrollport, bleeding to its edges */
-  .sheet .stage-foot{position:sticky; bottom:-20px; z-index:3; margin:16px -20px -20px;
+  .stage-foot{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-wrap:wrap; margin-top:var(--gap); padding-top:16px; border-top:1px solid var(--line)}
+  /* Two acts leave the flow and they sit left as a pair; the act that advances it sits right.
+     The pairing is structural, not a coincidence of order, so it survives every width. Back and
+     Cancel are the same fixed width so the group reads as one control, not two ragged buttons. */
+  .stage-foot .foot-left{display:flex; align-items:center; gap:8px; flex:0 0 auto; min-width:0}
+  .stage-foot .foot-left .btn{flex:0 0 auto; min-width:132px; padding:0 16px}
+  .stage-foot .btn{min-height:44px}
+  /* the advancing act hugs its own label and is pushed right — it is never stretched to fill */
+  .stage-foot .btn.primary{flex:0 0 auto; margin-left:auto; width:auto}
+  /* The footer rides the viewport, not an inner scrollport: the page is what scrolls now, so the
+     last thing the owner needs in reach is pinned while the stage moves under it. */
+  .sheet .stage-foot{position:sticky; bottom:0; z-index:3; margin:16px -20px -20px;
     padding:12px 20px; background:var(--panel); border-top:1px solid var(--line);
     box-shadow:0 -6px 12px rgb(15 23 42 / .04)}
   .tabs{display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:var(--gap)}
@@ -219,13 +261,24 @@
       radial-gradient(1100px 520px at 50% -8%, #e6edf0 0%, rgb(230 237 240 / 0) 62%),
       linear-gradient(158deg, #f7f9fa 0%, #eaf0f2 52%, #dde6ea 100%);
     background-attachment:fixed; min-height:100vh}
-  .backdrop{position:fixed; inset:0; background:
+  /* The wizard grows with its content and the PAGE scrolls. The sheet used to be an 80vh box with
+     its own scrolling body, which made a long stage a scroll box inside a box and clipped the rest
+     at 80vh; now the backdrop is in document flow, the sheet has no height ceiling and no interior
+     scrollport, and the footer pins to the viewport while the page moves under it. */
+  body{position:relative}
+  .backdrop{position:absolute; top:0; right:0; left:0; min-height:100vh; background:
       radial-gradient(1100px 520px at 50% -8%, #e6edf0 0%, rgb(230 237 240 / 0) 62%),
       linear-gradient(158deg, #f7f9fa 0%, #eaf0f2 52%, #dde6ea 100%);
-    display:flex; align-items:center; justify-content:center; z-index:30; overflow:auto; padding:24px}
-  body[data-shell="public"] .backdrop{position:fixed; inset:0; padding:24px}
-  .sheet{background:var(--panel); width:min(66vw, 1080px); max-height:min(80vh, 940px); min-height:0;
-         display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--line);
+    display:flex; align-items:flex-start; justify-content:center; z-index:30; overflow:visible;
+    padding:24px 24px 32px}
+  body[data-shell="public"] .backdrop{position:absolute; top:0; right:0; left:0; padding:24px 24px 32px}
+  /* A wizard is read as one column, so the sheet stops growing well before the viewport does: 880px
+     is a comfortable ceiling for a two-column field grid, and on a 3400px screen it is the same 880px
+     it is on a 1440px one. It used to be min(66vw, 1080px), which kept stretching to 1080 and put the
+     form's labels and their fields too far apart to read as a pair. */
+  .sheet{background:var(--panel); width:min(100% - 48px, 880px); max-width:880px;
+    max-height:none; min-height:0; height:auto;
+         display:flex; flex-direction:column; overflow:visible; border:1px solid var(--line);
          border-radius:var(--radius-dialog); box-shadow:0 24px 60px rgb(15 23 42 / .18)}
   .sheet>.steps{flex:0 0 auto; margin:14px 20px 0}
   .tagrow{flex:0 0 auto; display:flex; justify-content:flex-end; padding:8px 20px 0}
@@ -239,7 +292,7 @@
   .pill{display:inline-flex; align-items:center; min-height:24px; padding:0 10px; border-radius:999px;
     background:var(--bg); border:1px solid var(--line); color:var(--ink); font-size:.72rem;
     font-weight:600; letter-spacing:.01em}
-  .sheet>#sheetstage{flex:1 1 auto; overflow:auto; padding:16px 20px 20px; overscroll-behavior:contain}
+  .sheet>#sheetstage{flex:0 0 auto; overflow:visible; padding:16px 20px 20px}
   body[data-shell="public"] .sheet{border-right:1px solid var(--line)}
   .sheet>.bar{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px}
   .sheet .close{all:unset; cursor:pointer; min-height:36px; padding:0 12px; border-radius:6px; font-size:.875rem;
@@ -265,7 +318,7 @@
     .rail .nav,.rail .brand span{display:none}
     main{padding:16px 16px 84px}
     .backdrop{padding:12px}
-    .sheet,body[data-shell="public"] .sheet{width:92vw; max-height:88vh}
+    .sheet,body[data-shell="public"] .sheet{width:92vw; max-height:none}
     .sheet>.steps{margin:10px 14px 0}
     .sheet>#sheetstage{padding:14px 14px 18px}
     /* `1fr` is minmax(auto,1fr): it re-introduces a min-content floor and a nowrap chip
@@ -274,17 +327,33 @@
     .between{flex-wrap:wrap}
     .kv dd{text-align:left}
     .span3,.span4,.span5,.span6,.span7,.span8,.span12{grid-column:auto}
-    .steps button{min-height:38px; padding:0 2px}
+    .steps button{min-height:40px; padding:3px 2px}
     .steps .stage-n{font-size:.62rem}
-    .steps .stage-name{display:none}
-    .steps button::after{content:""; width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.45}
-    .steps li[data-state="now"] button{font-size:.75rem; padding:0 8px}
-    .steps li[data-state="now"] button::after{display:none}
-    .sheet .stage-foot{bottom:-18px; margin:14px -14px -18px; padding:10px 14px}
-    .stage-foot{flex-direction:column-reverse; align-items:stretch}
-    .seg{width:100%} .seg button{flex:1 1 0; justify-content:center; padding:0 8px; font-size:.8rem}
-    .stage-foot .btn{width:100%}
+    /* The name IS the second line at this width — the band is the only place the stage is named,
+       and the dot it used to draw instead named nothing at all. */
+    .steps .stage-name{display:block; font-size:.6rem; line-height:1.05; max-width:100%}
+    .steps li[data-state="now"] button{font-size:.75rem; padding:3px 8px}
+    .sheet .stage-foot{bottom:0; margin:14px -14px -18px; padding:10px 14px}
+    .seg{width:100%}    .seg button{flex:1 1 0; justify-content:center; padding:0 8px; font-size:.8rem}
+
     #editor{right:10px; left:10px; bottom:10px; justify-content:center}
+  }
+  @media (max-width:430px){
+    /* six cells in 390 leaves ~52px each: the active cell's extra padding was enough to ellipsise
+       "Settings", and a stage name that clips is not a stage name. */
+    .steps .stage-name{font-size:.54rem}
+    .steps li[data-state="now"] button{padding:3px 3px}
+  }
+  /* The footer holds one row for as long as the three buttons actually fit, which is why this
+     fallback is its own narrower query instead of riding the 860px one — at 820px the row is 447px
+     wide inside a 737px sheet, so stacking there would be premature. Below ~560px it cannot fit:
+     the advancing act takes its own full-width row on top (thumb reach first), and [Back][Cancel]
+     split the row beneath, still a pair at the same width as each other. */
+  @media (max-width:560px){
+    .stage-foot{align-items:stretch; gap:8px}
+    .stage-foot .foot-left{order:2; flex:1 1 100%}
+    .stage-foot .foot-left .btn{flex:1 1 0; min-width:0; min-height:48px}
+    .stage-foot .btn.primary{order:1; flex:1 1 100%; margin-left:0; width:auto; min-height:48px}
   }
 </style>
 </head>
@@ -359,7 +428,7 @@ const DEFAULT_COPY = {
   "nav.support":"Support","nav.settings":"Settings",
   "editor.live":"Copy loads from JSON","editor.edit":"Edit copy","editor.save":"Save .json",
   "editor.load":"Load","editor.reset":"Reset","editor.ctx":"Viewing as: new visitor",
-  "ctx.sheetTitle":"Create a relationship","ctx.close":"Close",
+  "ctx.sheetTitle":"Create a relationship","ctx.close":"Close","ctx.cancel":"Cancel",
 
   "step.1":"Gallery","step.2":"Detail","step.3":"Account","step.4":"Details","step.5":"Settings",
   "step.6":"Aspects","step.7":"Invite","step.8":"Connect","step.9":"Align","step.10":"Align",
@@ -413,39 +482,41 @@ const DEFAULT_COPY = {
   "s3.back":"Back","s3.next":"Continue",
 
   /* 4 — who and how, with description */
-  "s4.heading":"Who and how",
+  "s4.heading":"Relationship Details",
   "s4.body":"One template, two seats, and the facts that shape every screen after this one.",
   "s4.templateRow":"Template",
-  "s4.initiator":"Your name — the Initiator",
+  "s4.initiator":"Your Name as the Relationship Initiator",
   "s4.initiatorHelp":"The seat this relationship is created from.",
-  "s4.counterparty":"Who you are asking",
+  "s4.counterparty":"Counterparty's Name as Seen on the Invite",
   "s4.counterpartyPlaceholder":"Their name",
-  "s4.counterpartyHelp":"Display only: the seat is filled when they claim the invitation. A name typed here is not a party.",
-  "s4.email":"Their email address",
+  "s4.counterpartyHelp":"They will complete their name preference when they claim the invitation.",
+  "s4.email":"Email Address used to send the Counterparty Invite",
   "s4.emailPlaceholder":"name@example.com",
-  "s4.title":"What are you in the middle of",
+  "s4.title":"Your Personalized Relationship Title",
   "s4.titlePlaceholder":"Relationship Basics",
-  "s4.titleHelp":"The card title both of you see.",
-  "s4.description":"Description",
+  "s4.titleHelp":"The personalized name of the created Relationship.",
+  "s4.description":"Personalized Relationship Description",
   "s4.descriptionPlaceholder":"A sentence on why you are doing this — both of you read it on the card.",
   "s4.descriptionHelp":"Optional. Shown to both parties, never scored.",
-  "s4.back":"Back","s4.next":"Continue to mode and setting",
+  "s4.back":"Back","s4.next":"Continue to Stage 2",
 
   /* 5 — mode and setting */
-  "s5.heading":"Mode and setting",
-  "s5.body":"Mode is fixed at creation: both parties answer one shape, which is what makes two sheets comparable at all.",
-  "s5.modeHeading":"Mode",
+  "s5.heading":"Relationship Settings",
+  "s5.body":"Two independent choices: Mode decides how many Opinion questions each Aspect asks, and Setting decides how strictly the Gap analysis is judged.",
+  "s5.modeHeading":"Opinions Mode",
   "s5.modeFixed":"Fixed at creation",
-  "s5.modeFull":"Full","s5.modeFullHelp":"Every Aspect is asked, and every Gap is named.",
-  "s5.modeSoft":"Soft","s5.modeSoftHelp":"Small Gaps are tolerated rather than named.",
-  "s5.settingHeading":"Setting",
-  "s5.settingHelp":"Setting is what a party may change later. It moves the bar the report is judged against; it never changes a question.",
+  "s5.modeBasic":"Basic","s5.modeBasicHelp":"Two Opinion questions per Aspect.",
+  "s5.modeAdvanced":"Advanced","s5.modeAdvancedHelp":"Four Opinion questions per Aspect.",
+  "s5.settingHeading":"Alignment Setting",
+  "s5.settingHelp":"How strictly the Gap analysis is judged — a lens over the Gaps, never a question.",
   "s5.settingSoft":"Soft","s5.settingFull":"Full",
-  "s5.settingNote":"Setting moves the bar the report is judged against; it never changes a question.",
-  "s5.back":"Back","s5.next":"Continue to aspects",
+  "s5.settingSoftHelp":"Small Gap (1) OK — a satisfactory Setting.",
+  "s5.settingFullHelp":"No Gap OK — an exceptional Setting.",
+  "s5.settingNote":"Soft tolerates a Small Gap (1); Full accepts only In Synch.",
+  "s5.back":"Back","s5.next":"Continue to Stage 3",
 
   /* 6 — aspects: view and edit */
-  "s6.heading":"Aspects",
+  "s6.heading":"Relationship Aspects",
   "s6.body":"Copied from the template. You can rename or reword an Aspect here, and add one — it is yours from the moment the relationship is created.",
   "s6.editHeading":"Edit an Aspect",
   "s6.nameLabel":"Aspect name",
@@ -461,9 +532,9 @@ const DEFAULT_COPY = {
   "s6.leftLabel":"Left opinion label","s6.leftHelp":"The low end of the scale — what a 1 means.",
   "s6.rightLabel":"Right opinion label","s6.rightHelp":"The high end — what a 5 means.",
   "s6.opinions":"Opinion labels",
-  "s6.editInline":"Edit","s6.tapToEdit":"Tap an Aspect to edit it in place.",
+  "s6.editInline":"Edit","s6.dragHint":"Drag to Reorder Aspects","s6.cancel":"Cancel","s6.tapToEdit":"Tap an Aspect to edit it in place.",
   "s6.count":"5 Aspects",
-  "s6.back":"Back","s6.next":"Continue to create",
+  "s6.back":"Back","s6.next":"Continue to Stage 4",
 
 
   /* 8 — review and invite */
@@ -473,7 +544,7 @@ const DEFAULT_COPY = {
   "s8.titleRow":"Title","s8.descriptionRow":"Description","s8.modeRow":"Mode","s8.settingRow":"Setting",
   "s8.aspectsRow":"Aspects",
   "s8.none":"—",
-  "s8.back":"Back","s8.submit":"Create relationship and send invite",
+  "s8.back":"Back","s8.submit":"Continue to Stage 5",
   "s8.pitch":"One decision left: send the invitation now, or keep it as a draft you can finish later.",
   "s8.whatHeading":"What gets created",
   "s8.ctaHeading":"Send the invitation",
@@ -519,7 +590,7 @@ const DEFAULT_COPY = {
   "s9.next3":"When both sheets are sealed, the report opens to both of you.",
   "s9.resend":"Resend the invitation",
   "s9.copy":"Copy the invite link",
-  "s9.open":"Go to your dashboard",
+  "s9.open":"Continue to Stage 6",
   "s9.authHeading":"One step before the invitation goes out",
   "s9.authBody":"Your draft is kept exactly as you left it. Create the account, or step back and finish anything about the relationship first.",
   "s9.authStep1":"Relationship ready",
@@ -596,10 +667,13 @@ const DEFAULT_COPY = {
   "editor.na":"§9 state: off","editor.naOn":"§9 state: on"
 };
 
-/* Screen index → copy key. The six stages are screens 4..9 in the owner's words:
-   Details · Settings · Aspects · Invite · Connect · Align. Screens 0-3 are the pre-stage
-   views (gallery, detail, account), so they keep their own labels and are never numbered. */
-const STEPS = ["step.1","step.2","step.3","step.2","step.4","step.5","step.6","step.7","step.8","step.9"];
+/* Screen index → copy key. The six stages are the screens at indices 3..8 — Details · Settings ·
+   Aspects · Invite · Connect · Align. Indices 0-2 are the pre-stage views (gallery, template
+   detail, account gate), so they keep their own labels and are never numbered. */
+/* One entry per screen, and the entry names the copy key for THAT screen, so STEPS[3] is the
+   key for the screen at index 3. `step.N` is the stage number in words: 4 Details · 5 Settings ·
+   6 Aspects · 7 Invite · 8 Connect · 9 Align, per docs/specs/flow-stages.md. */
+const STEPS = ["step.1","step.2","step.3","step.4","step.5","step.6","step.7","step.8","step.9","step.10"];
 /* The template screens are PRE-STAGE views — a marketing template landing page and the
    template detail a dashboard member opens. They are not numbered steps of the create
    flow; pressing "Create Relationship" is the conversion that enters Stage 1. */
@@ -609,8 +683,17 @@ const FLOW_START = 2;   // below this a screen is a pre-stage view (template lan
    Align (screen 9) is live only once one or more assessments are shared; it is never a
    stage the wizard advances into. There is no `Ongoing`: the living work of a completed
    relationship is its own page in the dashboard. */
-const FLOW = [4, 5, 6, 7, 8, 9];
-const STORE = "alignsynch.prototype.copy.v3";
+/* The six stage SCREENS are state indices 3..8: 3 Details (s4Who) · 4 Settings (s5Mode) ·
+   5 Aspects (s6Aspects) · 6 Invite (s7Commit) · 7 Connect (s8Sent) · 8 Align (s9Dashboard).
+   The rail cell's number is its position in this list, and the cell's name is STEPS[i] — which is
+   why both must be indexed by the SCREEN, not by the stage number. They were one place apart, so
+   every cell opened the stage after the one it named. */
+const FLOW = [3, 4, 5, 6, 7, 8];
+/* v4: the copy edits an owner makes in the pane are session overrides held under this key, so a
+   stale override can shadow the defaults in this file and make the artifact disagree with itself.
+   Bumping the key retires those overrides when the wording they replaced has been folded back in
+   here — that is why it moved to v4 with the Stage 1 copy pass (2026-11-09). */
+const STORE = "alignsynch.prototype.copy.v6";
 /* The Aspects are data, not copy: they carry an order (drag), a question and two opinion labels.
    Kept under their own key so a copy reset never silently reshuffles somebody's list. */
 const ASP_STORE = "alignsynch.prototype.aspects.v1";
@@ -622,7 +705,9 @@ function loadAspects(){
 function persistAspects(){ try { localStorage.setItem(ASP_STORE, JSON.stringify(state.aspects)); } catch(e){} }
 /* Stage indices that run inside the create sheet. Before index 2 you are browsing public pages;
    from 8 on you have a dashboard, because the relationship exists. */
-const SHEET_FROM = 2, SHEET_TO = 6, DASH_FROM = 7;
+/* The overlay covers the six stages — Details (3) through Connect (7) — and the dashboard begins at
+   Align (8), which is a dashboard screen and not a step the wizard advances into. */
+const SHEET_FROM = 2, SHEET_TO = 7, DASH_FROM = 8;
 
 const TEMPLATES = [
   { id:"basics", nameKey:"s1.tplBasics", descKey:"s1.tplBasicsDesc", aspects:5, own:"s1.owned" },
@@ -644,7 +729,9 @@ let state = {
   stage: stageFromHash(), tab: "gallery", authTab: "signup",
   signedIn: /signedin=1/.test(location.hash || ""),
   hasMethod: /method=1/.test(location.hash || ""),
-  template:"basics", mode:"full", setting:"soft", method:"card",
+  template:"basics", mode:"basic", setting:"soft", method:"card",
+  /* the relationship's own description, mirrored as the Stage 1 subtitle while it is typed */
+  desc: "",
   aspects: loadAspects(),
   /* null = every Aspect collapsed; the stage opens as a compact list, not a stack of forms */
   editingAspect: null,
@@ -677,13 +764,22 @@ function paintSteps(id){
   el.innerHTML = FLOW.map((i,j)=>{
     const k = STEPS[i];
     const st = i<state.stage ? "done" : i===state.stage ? "now" : "todo";
-    const name = "Stage " + (j + 1) + " · " + c(k);
+    const name = "Stage " + (j + 1) + " of 6 · " + c(k);
     /* the tab label is the STAGE NUMBER; the name sits under it, and the copy editor still owns
        the name (the number is structure, not copy) */
     return '<li data-state="'+st+'"><button data-goto="'+i+'" aria-current="'+(i===state.stage?"step":"false")+'" title="'+esc(name)+'" aria-label="'+esc(name)+'">'
       + '<span class="stage-n">Stage '+(j + 1)+'</span>'
       + '<span class="stage-name" data-copy="'+k+'">'+esc(c(k))+'</span></button></li>';
   }).join("");
+  /* The count line under the band: "Stage 3 of 6". The cells print the number and the name; this
+     says the position in words once, which is what the spec asks the rail to print. */
+  if (id === "steps2") {
+    const count = document.getElementById("stepsCount");
+    if (count) {
+      const pos = FLOW.indexOf(state.stage) + 1;
+      count.textContent = pos > 0 ? "Stage " + pos + " of 6" : "";
+    }
+  }
 }
 function renderSteps(){ paintSteps("steps"); }
 
@@ -715,18 +811,17 @@ function render(){
     const pos = FLOW.indexOf(state.stage) + 1;
     const here = pos > 0 ? c(STEPS[state.stage]) : c("ctx.sheetTitle");
 
-    /* Close lives in the footer, beside Back, so the top of the modal is the rail and nothing else.
-       The stage title rides under the rail as a right-justified pill. */
-    const closeBtn = '<button class="btn ghost" data-close="1" data-copy="ctx.close">' + esc(c("ctx.close")) + '</button>';
-    const withClose = content.replace(
-      /(<button[^>]*data-copy="s\d+\.back"[^>]*>[^<]*<\/button>)/,
-      '$1' + closeBtn.replace(/'/g, "&#39;")
-    );
-
+    /* Every stage footer carries its own two exits ([Back][Cancel], a left-justified pair) and its
+       own advancing act on the right, so the footer is the one place a stage's controls live —
+       nothing is injected into a screen after it rendered. */
     document.getElementById("stage").innerHTML =
       '<div class="backdrop"><div class="sheet">'
       + '<ol class="steps" id="steps2" aria-label="Create a relationship"></ol>'
-      + '<div id="sheetstage">' + withClose + '</div>'
+      /* the position in words, under the band, exactly as the build's WizardSteps prints it: the
+         cells are short at 390 and lose their names there, so the count line is what still says
+         where the reader is (docs/specs/flow-stages.md: the rail prints `Stage {n} of 6`). */
+      + '<p class="steps-count" id="stepsCount"></p>'
+      + '<div id="sheetstage">' + content + '</div>'
       + '</div></div>';
     paintSteps("steps2");
   } else {
@@ -846,7 +941,7 @@ function s3Account(){
 function s4Who(){
   const t = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
   return '<div class="stack">'
-   + '<div><h1 data-copy="s4.heading">'+esc(c("s4.heading"))+'</h1><p class="muted" data-copy="s4.body">'+esc(c("s4.body"))+'</p></div>'
+   + '<div><h1 data-copy="s4.heading">'+esc(c("s4.heading"))+'</h1><p class="muted" id="s4Sub" data-copy="s4.body">'+esc(state.desc.trim()||c("s4.body"))+'</p></div>'
    + '<div class="card"><div class="head"><h2 data-copy="'+t.nameKey+'">'+esc(c(t.nameKey))+'</h2>'
      + '<span class="chip" data-copy="s1.aspects">'+esc(c("s1.aspects"))+'</span></div>'
    + '<div class="body stack">'
@@ -862,11 +957,13 @@ function s4Who(){
          + '<input type="text" value="'+esc(c("s4.titlePlaceholder"))+'">'
          + '<em data-copy="s4.titleHelp">'+esc(c("s4.titleHelp"))+'</em></label>'
        + '<label class="field span12"><span data-copy="s4.description">'+esc(c("s4.description"))+'</span>'
-         + '<textarea placeholder="'+esc(c("s4.descriptionPlaceholder"))+'"></textarea>'
+         + '<textarea id="s4Desc" placeholder="'+esc(c("s4.descriptionPlaceholder"))+'">'+esc(state.desc)+'</textarea>'
          + '<em data-copy="s4.descriptionHelp">'+esc(c("s4.descriptionHelp"))+'</em></label>'
      + '</div>'
    + '</div></div>'
-   + '<div class="stage-foot"><button class="btn secondary" data-goto="1" data-copy="s4.back">'+esc(c("s4.back"))+'</button>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="1" data-copy="s4.back">'+esc(c("s4.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
      + '<button class="btn primary" data-goto="4" data-copy="s4.next">'+esc(c("s4.next"))+'</button></div>'
   + '</div>';
 }
@@ -877,18 +974,21 @@ function s5Mode(){
    + '<div><h1 data-copy="s5.heading">'+esc(c("s5.heading"))+'</h1><p class="muted" data-copy="s5.body">'+esc(c("s5.body"))+'</p></div>'
    + '<div class="card"><div class="head"><h2 data-copy="s5.modeHeading">'+esc(c("s5.modeHeading"))+'</h2>'
      + '<span class="chip warn" data-copy="s5.modeFixed">'+esc(c("s5.modeFixed"))+'</span></div>'
-     + '<div class="body stack">'
-       + [["full","s5.modeFull","s5.modeFullHelp"],["soft","s5.modeSoft","s5.modeSoftHelp"]].map(([id,k,hk])=>
+     + '<div class="body"><div class="choice-grid">'
+       + [["basic","s5.modeBasic","s5.modeBasicHelp"],["advanced","s5.modeAdvanced","s5.modeAdvancedHelp"]].map(([id,k,hk])=>
          '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.mode===id)+'" data-mode="'+id+'">'
          + '<span class="dot"></span><span><b data-copy="'+k+'">'+esc(c(k))+'</b><span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span></div>').join("")
-     + '</div></div>'
-   + '<div class="card"><div class="head"><h2 data-copy="s5.settingHeading">'+esc(c("s5.settingHeading"))+'</h2>'
-     + '<span class="chip" data-copy="s5.settingSoft">'+esc(c("s5.settingSoft"))+' / '+esc(c("s5.settingFull"))+'</span></div>'
-   + '<div class="body stack"><p class="muted" data-copy="s5.settingHelp">'+esc(c("s5.settingHelp"))+'</p>'
-     + '<div class="row">'
-       + ['soft','full'].map(id=>'<button class="btn '+(state.setting===id?"primary":"secondary")+'" data-setting="'+id+'" data-copy="'+(id==="soft"?"s5.settingSoft":"s5.settingFull")+'">'+esc(c(id==="soft"?"s5.settingSoft":"s5.settingFull"))+'</button>').join("")
-     + '</div><p class="note" data-copy="s5.settingNote">'+esc(c("s5.settingNote"))+'</p></div></div>'
-   + '<div class="stage-foot"><button class="btn secondary" data-goto="3" data-copy="s5.back">'+esc(c("s5.back"))+'</button>'
+     + '</div></div></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="s5.settingHeading">'+esc(c("s5.settingHeading"))+'</h2></div>'
+   + '<div class="body"><p class="muted" data-copy="s5.settingHelp">'+esc(c("s5.settingHelp"))+'</p>'
+     + '<div class="choice-grid">'
+       + [["soft","s5.settingSoft","s5.settingSoftHelp"],["full","s5.settingFull","s5.settingFullHelp"]].map(([id,k,hk])=>
+         '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.setting===id)+'" data-setting="'+id+'">'
+         + '<span class="dot"></span><span><b data-copy="'+k+'">'+esc(c(k))+'</b><span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span></div>').join("")
+     + '</div><p class="note" style="margin-top:12px" data-copy="s5.settingNote">'+esc(c("s5.settingNote"))+'</p></div></div>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="3" data-copy="s5.back">'+esc(c("s5.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
      + '<button class="btn primary" data-goto="5" data-copy="s5.next">'+esc(c("s5.next"))+'</button></div>'
   + '</div>';
 }
@@ -897,16 +997,19 @@ function s5Mode(){
 function s6Aspects(){
   const list = state.aspects.map((asp,i)=>{
     const open = i === state.editingAspect;
-    const originChip = '<span class="chip'+(asp.origin==="s6.edited"?" warn":asp.origin==="s6.added"?" ok":"")+'" data-copy="'+asp.origin+'">'+esc(c(asp.origin))+'</span>';
+    const originChip = asp.origin === "s6.copied" ? "" : '<span class="chip'+(asp.origin==="s6.edited"?" warn":" ok")+'" data-copy="'+asp.origin+'">'+esc(c(asp.origin))+'</span>';
 
     if (!open) {
       /* COLLAPSED: the whole Aspect readable on one line, so five of them fit without scrolling */
       return '<div class="aspect compact" data-aspect="'+i+'">'
+        /* the position leads the row: it is the aspect's order (01, 02 …) read off the index, so a
+           drag renumbers it, and it is a plain span — never an input, never editable copy */
+        + '<span class="a-pos">'+String(i+1).padStart(2,"0")+'</span>'
         + '<span class="grip" data-grip="'+i+'" role="button" tabindex="0" aria-label="Reorder '+esc(c(asp.key))+'" title="'+esc(c("s6.dragHint"))+'">⠿</span>'
         + '<div class="a-main"><b class="a-name" data-copy="'+asp.key+'">'+esc(c(asp.key))+'</b>'
           + '<span class="a-q">'+esc(asp.q)+'</span></div>'
         + '<div class="a-scale"><span>'+esc(asp.left||"Not enough")+'</span><i>↔</i><span>'+esc(asp.right||"Too much")+'</span>'+originChip+'</div>'
-        + '<button class="btn ghost" data-aspect="'+i+'" data-copy="s6.editInline">'+esc(c("s6.editInline"))+'</button>'
+        + '<button class="btn ghost a-edit" data-aspect="'+i+'" aria-label="'+esc(c("s6.editInline"))+'" title="'+esc(c("s6.editInline"))+'">✎</button>'
       + '</div>';
     }
 
@@ -928,18 +1031,20 @@ function s6Aspects(){
         + '</div>'
         + '<div class="row"><button class="btn primary" data-save-aspect="'+i+'" data-copy="s6.save">'+esc(c("s6.save"))+'</button>'
           + '<button class="btn secondary" data-remove-aspect="'+i+'" data-copy="s6.remove">'+esc(c("s6.remove"))+'</button>'
-          + '<button class="btn ghost" data-aspect="'+i+'" data-copy="s6.editInline">'+esc(c("s6.editInline"))+'</button></div>'
+          + '<button class="btn ghost" data-cancel-aspect="'+i+'" data-copy="s6.cancel">'+esc(c("s6.cancel"))+'</button></div>'
       + '</div></div>';
   }).join("");
 
   return '<div class="stack">'
    + '<div class="between"><div><h1 data-copy="s6.heading">'+esc(c("s6.heading"))+'</h1>'
      + '<p class="muted" data-copy="s6.body">'+esc(c("s6.body"))+'</p></div>'
-     + '<span class="chip" id="aspectCount">'+state.aspects.length+'</span></div>'
+     + '</div>'
    + '<p class="mini" data-copy="s6.dragHint">'+esc(c("s6.dragHint"))+'</p>'
    + '<div class="stack" id="aspectList" style="gap:8px">'+list+'</div>'
    + '<button class="btn secondary" data-add-aspect="1">+ '+esc(c("s6.add"))+'</button>'
-   + '<div class="stage-foot"><button class="btn secondary" data-goto="4" data-copy="s6.back">'+esc(c("s6.back"))+'</button>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="4" data-copy="s6.back">'+esc(c("s6.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
      + '<button class="btn primary" data-goto="6" data-copy="s6.next">'+esc(c("s6.next"))+'</button></div>'
   + '</div>';
 }
@@ -952,7 +1057,7 @@ function s7Commit(){
     ["s8.initiatorRow", "Daniel"],
     ["s8.counterpartyRow", "Rowan"],
     ["s8.titleRow", c("s4.titlePlaceholder")],
-    ["s8.modeRow", c(state.mode==="full"?"s5.modeFull":"s5.modeSoft")],
+    ["s8.modeRow", c(state.mode==="advanced"?"s5.modeAdvanced":"s5.modeBasic")],
     ["s8.settingRow", c(state.setting==="soft"?"s5.settingSoft":"s5.settingFull")]
   ];
 
@@ -967,7 +1072,6 @@ function s7Commit(){
   const sendCard = '<div class="card" style="border-color:var(--action)">'
     + '<div class="head"><h2 data-copy="s8.ctaHeading">'+esc(c("s8.ctaHeading"))+'</h2></div>'
     + '<div class="body stack">'
-      + '<button class="btn primary" data-goto="7" data-copy="s8.submit" style="width:100%;min-height:48px">'+esc(c("s8.submit"))+'</button>'
       + '<span class="chip ok" style="align-self:flex-start" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span>'
       + '<p class="mini" data-copy="s8.ctaBody">'+esc(c("s8.ctaBody"))+'</p>'
       + '<button class="skip-link" data-goto="7" data-copy="s8.skip">'+esc(c("s8.skip"))+'</button>'
@@ -1014,7 +1118,10 @@ function s7Commit(){
      + '<div class="span7 stack">'+left+'</div>'
      + '<aside class="span5 stack">'+sendCard+whatCard+'</aside>'
    + '</div>'
-   + '<div class="stage-foot"><button class="btn secondary" data-goto="5" data-copy="s8.back">'+esc(c("s8.back"))+'</button></div>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="5" data-copy="s8.back">'+esc(c("s8.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
+     + '<button class="btn primary" data-goto="7" data-copy="s8.submit">'+esc(c("s8.submit"))+'</button></div>'
   + '</div>';
 }
 
@@ -1070,10 +1177,14 @@ function s8Sent(){
          + (state.signedIn ? '<span class="chip ok" data-copy="s9.accountSignedNote">'+esc(c("s9.accountSignedNote"))+'</span>' : '')
        + '</div>'
        + '<div class="body stack"><p class="mini" data-copy="s9.goBody">'+esc(c("s9.goBody"))+'</p>'
-       + '<button class="btn primary" data-goto="8" data-copy="s9.open" style="width:100%;min-height:48px">'+esc(c("s9.open"))+'</button>'
        + '<p class="mini" data-copy="s9.dashboardNote">'+esc(c("s9.dashboardNote"))+'</p>'
        + '</div></div></aside>'
-   + '</div></div>';
+       + '</div>'
+       + '<div class="stage-foot"><div class="foot-left">'
+       + '<button class="btn secondary" data-goto="6" data-copy="s9.back">'+esc(c("s9.back"))+'</button>'
+       + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
+       + '<button class="btn primary" data-goto="8" data-copy="s9.open">'+esc(c("s9.open"))+'</button></div>'
+       + '</div>';
 }
 
 /* ---------- 9: alignment — a DASHBOARD screen, not a wizard step ---------- */
@@ -1270,6 +1381,30 @@ document.addEventListener("pointerup", () => {
   }
 });
 
+/* What the open row's fields say right now, and whether that differs from what is stored. The name
+   is reader-visible copy (it lives in `copy` under the aspect's key); the question and the two
+   opinion labels live on the aspect itself. Cancel and switching rows both ask this, so a row that
+   was opened and not touched never prompts. */
+function aspectDraft(i){
+  const field = sel => document.querySelector(sel + '="' + i + '"]');
+  const a = state.aspects[i];
+  if (!a) return null;
+  const name = field("[data-asp-name"), q = field("[data-asp-q"),
+        left = field("[data-asp-left"), right = field("[data-asp-right");
+  return {
+    name: name ? name.value.trim() : c(a.key),
+    q: q ? q.value.trim() : a.q,
+    left: left ? left.value.trim() : (a.left || "Not enough"),
+    right: right ? right.value.trim() : (a.right || "Too much"),
+  };
+}
+function aspectDirty(i){
+  const a = state.aspects[i], d = aspectDraft(i);
+  if (!a || !d) return false;
+  return d.name !== c(a.key) || d.q !== a.q
+    || d.left !== (a.left || "Not enough") || d.right !== (a.right || "Too much");
+}
+
 document.addEventListener("click", e => {
   if (e.target.closest("#ctxToggle")) {
     /* prototype-only control: the same stages, with and without a dashboard behind them */
@@ -1297,10 +1432,20 @@ document.addEventListener("click", e => {
   }
   const asp = e.target.closest("[data-aspect]");
   if (asp && !asp.dataset.addAspect) {
-    const i = +asp.dataset.aspect;
-    /* toggle: opening a row collapses whatever was open; pressing Edit on the open row closes it */
-    state.editingAspect = (state.editingAspect === i) ? null : i;
-    render(); return;
+    /* Save / Remove / Cancel live INSIDE the open row, so their click also matches this row. They
+       are handled below and must not be treated as a dismiss. */
+    if (!e.target.closest("[data-save-aspect],[data-remove-aspect],[data-cancel-aspect]")) {
+      const i = +asp.dataset.aspect;
+      /* An open row stays open: clicking it (or any field in it) is an edit, not a collapse. It
+         closes only through Save or Cancel, which is what the owner asked for — the old toggle
+         shut the row on the first click into a field, so nothing could be typed at all. */
+      if (state.editingAspect !== i) {
+        if (state.editingAspect !== null && aspectDirty(state.editingAspect)
+            && !confirm("Discard the unsaved changes to this Aspect?")) return;
+        state.editingAspect = i; render();
+      }
+      return;
+    }
   }
   if (e.target.closest("[data-add-aspect]")) {
     const n = state.aspects.length + 1;
@@ -1324,6 +1469,13 @@ document.addEventListener("click", e => {
       a.origin = "s6.edited"; state.editingAspect = null; persistAspects(); persist(); render();
       toast("Aspect saved and collapsed — drag the handle to reorder");
     }
+    return;
+  }
+  const cancelBtn = e.target.closest("[data-cancel-aspect]");
+  if (cancelBtn) {
+    const i = +cancelBtn.dataset.cancelAspect;
+    if (aspectDirty(i) && !confirm("Discard the changes to this Aspect?")) return;
+    state.editingAspect = null; render(); toast("Reverted — nothing about that Aspect changed");
     return;
   }
   const rm = e.target.closest("[data-remove-aspect]");
@@ -1397,6 +1549,16 @@ document.addEventListener("blur", e => {
   copy[el.dataset.copy] = next; persist(); toast("Saved “"+el.dataset.copy+"”");
 }, true);
 function persist(){ try{ localStorage.setItem(STORE, JSON.stringify(copy)); }catch(e){} }
+/* The Stage 1 subtitle is the relationship's own description, mirrored as it is typed (owner,
+   2026-11-09). `s4.body` stays the fallback sentence for an empty description, so the field and
+   the header never say two different things — one value, two places it is read. */
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (!el || el.id !== "s4Desc") return;
+  state.desc = el.value;
+  const sub = document.getElementById("s4Sub");
+  if (sub) sub.textContent = el.value.trim() || c("s4.body");
+}, true);
 function saveJson(){
   const blob = new Blob([JSON.stringify(copy,null,2)],{type:"application/json"});
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "alignsynch-copy.json"; a.click();
