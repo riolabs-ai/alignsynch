@@ -50,6 +50,7 @@ import {
   completeRelationship,
   MemberPaymentRequired,
   captureReturnPath,
+  resolveCapturedMethod,
 } from "@/lib/member/payment";
 import type {
   AspectsOutcome,
@@ -399,13 +400,20 @@ function previewFailure(error: unknown): EditPreviewOutcome {
 /**
  * Put a payment method on this relationship — the "pay now / later" half.
  *
- * Nothing is charged and nothing is unlocked: this only makes the completion possible. The route a
- * hosted adapter sends the browser to is this deployment's own return endpoint, which resolves the
- * provider's session before landing the payer back on the relationship.
+ * Nothing is charged and nothing is unlocked: this only makes the completion possible.
+ *
+ * **Two presentations, chosen by the caller (#748).** `embedded` asks the adapter for a session the
+ * screen mounts in a frame, and answers `clientSecret` + `captureSessionId`; nothing navigates, and
+ * the frame's completion calls `resolveCaptureAction` below. No `presentation` (or `hosted`) is the
+ * path that shipped: the route a hosted adapter sends the browser to is this deployment's own
+ * return endpoint, which resolves the provider's session before landing the payer back here. The
+ * `presentation` value is a word this module recognises, never one it invents: anything else is
+ * the documented default rather than a refusal, because the hosted path is a working fallback.
  */
 export async function capturePaymentMethodAction(payload: {
   relationshipId?: string;
   reason?: string;
+  presentation?: string;
 }): Promise<CaptureOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
@@ -419,17 +427,78 @@ export async function capturePaymentMethodAction(payload: {
       relationshipId,
       returnUrl: `${baseUrl().replace(/\/+$/, "")}${captureReturnPath(relationshipId)}`,
       email: user.email ?? undefined,
+      presentation: text(payload.presentation) === "embedded" ? "embedded" : "hosted",
     });
-    return { ok: true, url: result.url };
+    return {
+      ok: true,
+      url: result.url,
+      captured: result.captured,
+      clientSecret: result.clientSecret,
+      publishableKey: result.publishableKey,
+      captureSessionId: result.captureSessionId,
+    };
   } catch (error) {
-    if (error instanceof MemberRefused) {
-      return { ok: false, code: error.reason, message: error.message };
-    }
-    if (error instanceof BillingRefusal) {
-      return { ok: false, code: error.code, message: error.message };
-    }
-    throw error;
+    return captureFailure(error);
   }
+}
+
+/**
+ * Record the method an embedded frame just saved (#748).
+ *
+ * The frame has no return URL to hand the session id to, so the browser hands it back here and
+ * this resolves it through `resolveCapturedMethod()` — the same function, and the same
+ * "the provider's objects, never the caller's claim" rule, that `/api/billing/payment/return` uses
+ * for the hosted path. The relationship id is taken from the payload and compared with the session's
+ * own metadata inside the write, so a session id lifted from elsewhere is refused by name.
+ */
+export async function resolveCaptureAction(payload: {
+  relationshipId?: string;
+  captureSessionId?: string;
+}): Promise<CaptureOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+  const captureSessionId = text(payload.captureSessionId);
+  if (captureSessionId === "") return { ok: false, code: "invalid-request" };
+
+  try {
+    const result = await resolveCapturedMethod({
+      actorUserId: user.userId,
+      relationshipId,
+      captureSessionId,
+    });
+    return {
+      ok: true,
+      url: result.url,
+      captured: result.captured,
+      clientSecret: null,
+      publishableKey: null,
+      captureSessionId: result.captureSessionId,
+    };
+  } catch (error) {
+    return captureFailure(error);
+  }
+}
+
+/**
+ * The capture's two handled failures, one sentence each — never a 500.
+ *
+ * `MemberRefused` is the member's own code (`not-yours`, `no-such-relationship`); `BillingRefusal`
+ * is `not-configured` when the deployment has no key for this path (the card's own requirement: a
+ * missing `STRIPE_TEST_SECRET_KEY` is a sentence, not a thrown error), plus the adapter's own
+ * sentences. Anything else is a real server failure and stays a throw, because swallowing it would
+ * report "billing is not configured" for a database that is down.
+ */
+function captureFailure(error: unknown): CaptureOutcome {
+  if (error instanceof MemberRefused) {
+    return { ok: false, code: error.reason, message: error.message };
+  }
+  if (error instanceof BillingRefusal) {
+    return { ok: false, code: error.code, message: error.message };
+  }
+  throw error;
 }
 
 /**

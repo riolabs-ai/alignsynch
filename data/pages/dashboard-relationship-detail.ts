@@ -161,8 +161,22 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
        */
       id: "publish-gate",
       heading: "A payment method is needed to publish",
-      body: "Publishing sends the invitation that starts the assessment, so it is the step that needs a card on file. The relationship, its Aspects and its title are saved and untouched — nothing is lost by adding one now.",
-      items: [{ id: "plans", label: "See plans and prices" }],
+      /**
+       * The artifact's own publish-lock sentence (`s11.publishBlocked`), verbatim (#748). It is the
+       * honest description of this build's gate: the Gap and the parity views *are* what the method
+       * unlocks, and both seats can still answer without one.
+       *
+       * The artifact's second line — "the fee is taken 7 days after the method was captured" — is
+       * deliberately **not** here: this build charges at completion (`completeRelationshipAction`),
+       * not seven days after the capture, and the completion band already says "The fee is taken
+       * once, when you complete the relationship". Copy that promised a delay the code does not
+       * implement would be a false statement about when money moves.
+       */
+      body: "Publish is locked until a payment method is on file — the Gap analysis and the parity views stay closed until then. Both seats can still answer.",
+      items: [
+        { id: "publish-help", label: "Publishing waits until a method is on file." },
+        { id: "plans", label: "See plans and prices" },
+      ],
     },
     {
       id: "republish",
@@ -306,6 +320,69 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The change did not go through." },
+      ],
+    },
+    {
+      /**
+       * #748 — how the payer would pay, and the frame that takes the method.
+       *
+       * The words are the approved artifact's (`prototype-relationship-lifecycle-v7.html`, the
+       * `s8.*` keys), verbatim, because that file is what was approved and this screen must draw
+       * what was approved rather than a tidier paraphrase. What is **not** the artifact's:
+       *
+       *   the prices      `$9.95` / `$19.85` in the prototype are not this product's prices —
+       *                   `data/billing-plans.ts` sells Basic at 895 and Principal at 1_695, and a
+       *                   figure typed into a component (or here) is exactly the drift that fixture
+       *                   exists to prevent. The rows print the fixture's own amounts, so the number
+       *                   a payer reads is the number a checkout would charge.
+       *   the card line   the artifact draws `Visa ending 4242`. No card brand or figure crosses the
+       *                   billing port (see `lib/billing/types.ts`), so this build cannot print one
+       *                   and says "a payment method is on file" instead.
+       *
+       * `frame` and `frame-note` describe what the frame *is* — the artifact's own note — and stay
+       * because they are the honest caption for a form drawn by somebody else inside our page.
+       */
+      id: "capture",
+      heading: "How you would pay",
+      body: "Add a way to pay now and publishing is one click later — or skip it and pay when you submit the assessment. Nothing is charged today.",
+      items: [
+        {
+          id: "trial",
+          label:
+            "7 days free — the trial starts only when you add a method, and nothing is charged until you publish.",
+        },
+        { id: "trial-short", label: "7 days free" },
+        { id: "best-value", label: "best value" },
+        { id: "plan-payg", label: "One relationship" },
+        {
+          id: "plan-payg-note",
+          label:
+            "One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
+        },
+        { id: "plan-unlimited", label: "Unlimited relationships" },
+        {
+          id: "plan-unlimited-note",
+          label: "Every relationship you open, for as long as you keep the plan.",
+        },
+        { id: "price-per", label: "/mo" },
+        { id: "add-method", label: "Add a payment method" },
+        { id: "starting", label: "Opening…" },
+        { id: "secure", label: "Secure payment · Stripe" },
+        { id: "test-mode", label: "test mode" },
+        {
+          id: "frame-body",
+          label:
+            "The card fields are Stripe's, drawn in a frame inside this page — you never leave it and no card detail touches our code. Nothing is charged today; the 7-day trial starts when the method is saved.",
+        },
+        { id: "frame", label: "Stripe Embedded Checkout renders here" },
+        { id: "frame-note", label: "ui_mode: embedded · return_url: this screen" },
+        { id: "save", label: "Save the payment method" },
+        { id: "cancel", label: "Cancel" },
+        { id: "skip", label: "Skip for now — I'll pay when I submit the assessment" },
+        {
+          id: "saved",
+          label: "The method is on file. Nothing was charged.",
+        },
       ],
     },
     {

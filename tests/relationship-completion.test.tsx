@@ -144,6 +144,7 @@ function mount(view: MemberRelationshipView, press: Press = {}): void {
         onPublish: async () => ({ ok: false as const, code: "failed" }),
         onRepublish: async () => ({ ok: false as const, code: "failed" }),
         onCapture: press.capture ?? (async () => ({ ok: false as const, code: "failed" })),
+        onResolve: async () => ({ ok: false as const, code: "failed" }),
         onComplete: press.complete ?? (async () => ({ ok: false as const, code: "failed" })),
       }),
     );
@@ -234,16 +235,34 @@ describe("the payer's band", () => {
 });
 
 describe("pressing add a payment method", () => {
-  it("names the relationship it is capturing for, from the screen and not from a form", async () => {
+  /** The dialog's own control — the one that asks the server for a capture. */
+  function addMethod(): HTMLButtonElement {
+    const found = container.querySelector<HTMLButtonElement>("[data-add-method]");
+    if (found === null) throw new Error("the capture dialog drew no add-method control");
+    return found;
+  }
+
+  it("opens the plan dialog first, and asks for an embedded capture from inside it", async () => {
     const capture = vi.fn(async () => ({ ok: true as const, url: null }));
     mount(viewOf({ gate: gateOf() }), { capture });
+
     await press(button(CAPTURE_LABEL));
-    expect(capture).toHaveBeenCalledWith({ relationshipId: "relationship-completion" });
+    // Nothing has been asked of the server yet: the band's control opens the dialog, and the
+    // dialog's own control is what starts a capture (#748).
+    expect(capture).not.toHaveBeenCalled();
+    expect(container.querySelector("[data-capture-dialog]")).not.toBeNull();
+
+    await press(addMethod());
+    expect(capture).toHaveBeenCalledWith({
+      relationshipId: "relationship-completion",
+      presentation: "embedded",
+    });
   });
 
   it("says the method is on file — and that nothing was charged — for the inline adapter", async () => {
     mount(viewOf({ gate: gateOf() }), { capture: async () => ({ ok: true, url: null }) });
     await press(button(CAPTURE_LABEL));
+    await press(addMethod());
     expect(container.querySelector("[data-capture-method-recorded]")).not.toBeNull();
     // The band is re-read only after the inline write; a hosted capture has not written yet.
     expect(refreshSpy).toHaveBeenCalledTimes(1);
@@ -254,6 +273,7 @@ describe("pressing add a payment method", () => {
       capture: async () => ({ ok: true, url: "https://checkout.example.test/cs_test_1" }),
     });
     await press(button(CAPTURE_LABEL));
+    await press(addMethod());
     const link = container.querySelector("[data-capture-link]");
     expect(link?.getAttribute("href")).toBe("https://checkout.example.test/cs_test_1");
     expect(refreshSpy).not.toHaveBeenCalled();

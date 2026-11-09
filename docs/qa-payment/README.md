@@ -130,6 +130,57 @@ $ pnpm payment:e2e verify
 A member pays: a method is captured, the $8.95 fee lands against it, the relationship moves to
 `complete`, and both parties can read the Gap.
 
+## The capture moved into the page — the dialog, measured (#748)
+
+#739 shipped the two acts; the capture was still the hosted adapter's **link**. The approved
+artifact draws the other thing: a plan card, then the provider's own card fields in a frame _inside
+the page_. This is that build, walked in a browser at 1440 and 390, with the DOM read back at every
+step. Stills and both reports are in [`capture-dialog/`](capture-dialog/).
+
+Two passes, because they answer different questions and one server cannot answer both:
+
+| Pass  | Adapter                               | What it proves                                                                                              |
+| ----- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| flow  | `BILLING_PROVIDER=mock`               | the dialog opens, the capture still completes **inline**, the fee is taken, the Gap opens                   |
+| frame | `BILLING_PROVIDER=stripe` (test keys) | the session really is `ui_mode=embedded_page`, and `@stripe/stripe-js` mounts Stripe's fields in our dialog |
+
+```bash
+# the flow pass, on the keyless adapter — `pnpm payment:e2e` unchanged
+pnpm payment:e2e setup                                  # 20 checks ✔
+python3 …/cdp-payment-dialog.py --mode flow --state .payment-e2e.json --out docs/qa-payment/capture-dialog
+pnpm payment:e2e verify                                 # 7 checks ✔
+
+# the frame pass, on the test-mode keys — nothing is completed and nothing is written
+BILLING_PROVIDER=stripe pnpm dev --port 3100
+python3 …/cdp-payment-dialog.py --mode frame --state .payment-e2e.json --out docs/qa-payment/capture-dialog
+```
+
+| Step               | `data-capture-stage` | plans | `data-add-method` | note                                                            |
+| ------------------ | -------------------- | ----- | ----------------- | --------------------------------------------------------------- |
+| sealed, no method  | —                    | 0     | —                 | the band draws _Add a payment method_                           |
+| the dialog, 390    | `plan`               | 2     | yes               | `scrollWidth == clientWidth` (356 → 356): no overflow           |
+| the dialog, 1440   | `plan`               | 2     | yes               | the plan card, verbatim from the fixture                        |
+| after the frame    | `frame`              | —     | —                 | Stripe's iframe mounted **421×933** at 1440, **290×968** at 390 |
+| after the capture  | —                    | —     | —                 | dialog closed, band reads `method=on-file`, nothing charged     |
+| after the complete | —                    | —     | —                 | `gate=charged`, status `complete`, 20 Gap rows                  |
+
+The dialog's copy is asserted against `data/pages/dashboard-relationship-detail.ts` (section
+`capture`) by `tests/payment-capture-dialog.test.tsx`, not against a literal — the numbers in it are
+`data/billing-plans.ts`'s, which is why the rows read **$8.95 / $16.95** and not the prototype's
+`$9.95` / `$19.85`.
+
+### Three things the live provider taught this build
+
+1. **`ui_mode: embedded` is gone.** The first real request came back
+   *“The ui_mode value `embedded` is no longer supported. Use `embedded_page` instead.”* — drawn on
+   the dialog as a sentence, which is the card's “a refusal is a sentence, not a 500” requirement
+   proven on the path that actually failed. The adapter now sends `embedded_page`.
+2. **An embedded page needs `currency`, even in `setup` mode** (_“Missing required param:
+   currency.”_) — it renders the session's own amount line. The form carries `usd`.
+3. **The frame is the provider's, mounted by `@stripe/stripe-js` v10's
+   `createEmbeddedCheckoutPage`** — measured at 421×933 (1440) and 290×968 (390), with the page
+   itself never overflowing (`documentElement.scrollWidth == innerWidth` at both widths).
+
 <!-- docs-nav:begin -->
 
 [Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [Flow validation, 2026-11-07](../qa-flow-validation/2026-11-07.md) · next [#542 phase 2](../qa-542-phase2/README.md)

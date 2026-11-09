@@ -42,17 +42,26 @@ export interface BillingPort {
    * Capture a payment method, and charge nothing (#619).
    *
    * This is the "pay now / later" half of the model: the method comes on file so completion can
-   * take the fee, and the invite is never blocked on it. The mock captures inline; a hosted adapter
-   * sends the browser to its own page and the ids arrive through `resolveMethodCapture()`.
+   * take the fee, and the invite is never blocked on it. Three presentations, one operation, and
+   * the caller says which it wants (`MethodCaptureRequest.presentation`, #748):
+   *
+   *   inline    the mock captures with no page at all and answers the ids directly;
+   *   hosted    a provider answers a `url` the browser leaves the page for;
+   *   embedded  a provider answers a `clientSecret` the browser mounts a frame with, inside the
+   *             screen that asked — nothing navigates.
+   *
+   * A caller that says nothing gets `hosted`, which is what every caller before #748 did, so
+   * adding the embedded path changed no existing behaviour.
    */
   startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession>;
 
   /**
-   * Resolve a hosted capture after the browser returned.
+   * Resolve a capture once the provider says the method was saved.
    *
-   * The return URL carries the provider's session id, and this reads it back so the ids are
-   * **the provider's own objects** rather than anything a return URL claimed. An incomplete or
-   * foreign session is a refusal, never a captured method.
+   * The hosted return URL carries the provider's session id, and the embedded frame's completion
+   * names the same id; either way this reads it back so the ids are **the provider's own objects**
+   * rather than anything a URL claimed. An incomplete or foreign session is a refusal, never a
+   * captured method — which is why both presentations resolve through this one function.
    */
   resolveMethodCapture(sessionId: string): Promise<ResolvedMethod>;
 

@@ -96,12 +96,24 @@ export type CompleteOutcome =
 /**
  * #739 — putting a method on file, from the relationship screen.
  *
- * `url` is `null` when the adapter completed inline (the mock, and a test-mode capture that needs
- * no redirect): the method is on file and nothing was charged. A hosted adapter answers with the
- * page the browser must visit, exactly as `PublishOutcome`'s checkout arm does.
+ * Three shapes, one arm each fact:
+ *
+ *   inline    `url` and `clientSecret` are both `null` and `captured` is `true`: the adapter
+ *             completed inside this request (the mock, and any offline one). Nothing else happens.
+ *   hosted    `url` is the page the browser must visit, exactly as `PublishOutcome`'s checkout arm.
+ *   embedded  `clientSecret` is the secret the screen mounts the provider's frame with (#748) —
+ *             nothing navigates — and `captureSessionId` is what the frame's completion hands back
+ *             so the method can be resolved by the same function the hosted return path uses.
  */
 export type CaptureOutcome =
-  | { readonly ok: true; readonly url: string | null }
+  | {
+      readonly ok: true;
+      readonly url: string | null;
+      readonly captured?: boolean;
+      readonly clientSecret?: string | null;
+      readonly publishableKey?: string | null;
+      readonly captureSessionId?: string | null;
+    }
   | { readonly ok: false; readonly code: string; readonly message?: string };
 
 /** Reissuing a lapsed or revoked invitation — one click, no Aspects re-entered. */

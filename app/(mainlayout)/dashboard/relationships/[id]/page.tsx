@@ -40,6 +40,7 @@ import {
   previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
+  resolveCaptureAction,
   saveAspectsAction,
 } from "../actions";
 
@@ -115,6 +116,7 @@ export default async function MemberRelationshipPage({
         onPublish={publishRelationshipAction}
         onRepublish={republishInviteAction}
         onCapture={capturePaymentMethodAction}
+        onResolve={resolveCaptureAction}
         onComplete={completeRelationshipAction}
       />
       {editState === undefined || editState.closed ? null : (
