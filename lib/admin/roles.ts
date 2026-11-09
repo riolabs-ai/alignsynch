@@ -117,6 +117,27 @@ export const ADMIN_ACTIONS = [
    */
   "template.unpublish",
   /**
+   * Retire a template so it is offered nowhere and edited nowhere (#711). `admin`, like the two
+   * above, and reversible: `template.restore` puts it back in the working state.
+   *
+   * **Archiving is not deleting, and the difference is the referential rule.** A template some
+   * relationship was created from can only ever be archived — every one of those relationships
+   * reads its version, and a version cannot outlive the record it belongs to — so the destructive
+   * path below is written to refuse exactly the rows this action is meant for.
+   */
+  "template.archive",
+  /** Un-retire an archived template (#711) — back to `draft`, with its versions and history intact. */
+  "template.restore",
+  /**
+   * Destroy a template that was never published and never handed to anybody (#711).
+   *
+   * The narrowest write in this table, on purpose: it refuses a template that has any version (its
+   * publishing history is what customers were offered) and one any relationship names (somebody's
+   * answers live in a copy of it). What is left — a draft an author started and abandoned — has no
+   * reader, so the row and its Aspects go. `archive` is the action for everything else.
+   */
+  "template.delete",
+  /**
    * Give a relationship a tier for a period, or extend the one it has (#505). The action name is
    * the card's word — an operator "comps" a plan — and the row it writes is `plan_grant`, not
    * `billing_subscription`: no money moved, so it must not read as a purchase.
@@ -269,6 +290,13 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // relationship that already exists, which is why an `admin` may do either.
   "template.publish": "admin",
   "template.unpublish": "admin",
+  // #711 — retiring and destroying a template. `admin` for the same reason the publish pair is:
+  // the catalogue is what the product offers. The delete's *narrowness* is the mutation's
+  // (`lib/admin/templates.ts` refuses a row with a version or a relationship), not a rung's — a
+  // floor says who may take this kind of action, and the referential rule says on which row.
+  "template.archive": "admin",
+  "template.restore": "admin",
+  "template.delete": "admin",
   /**
    * #505 — **`owner` alone, and the second action in this table that is owner-floored.**
    *

@@ -41,6 +41,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +63,7 @@ import type { Assessment, AssessmentMode } from "@/content/assessment";
 import { formatCurrency, type PublishStatus } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { SCORE_MAX, SCORE_MIN } from "@/content/record";
+import { ADMIN_TEMPLATES_PATH } from "@/lib/admin/paths";
 import type {
   TemplateFormPayload,
   TemplateSaveOutcome,
@@ -153,6 +165,9 @@ export function TemplateEditor({
   onSave,
   onPublish,
   onUnpublish,
+  onArchive,
+  onRestore,
+  onDelete,
 }: {
   copy: PageCopy;
   /** The flow's own answer-sheet copy — the preview renders that surface's words. */
@@ -184,6 +199,18 @@ export function TemplateEditor({
   onPublish?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
   /** Withdraw the template from the catalogue; no version row is touched. */
   onUnpublish?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  /**
+   * #711 — retire, restore, destroy. Three actions rather than one toggle, because the audit log
+   * filters on `action` and "who retired this" is not "who brought it back". All three are optional
+   * for the same reason `onPublish` is: the member's band draws none of them.
+   *
+   * The delete's rule is **not** in this component. `deleteTemplate()` refuses a template with a
+   * version or with a relationship naming it and writes nothing when it refuses; the dialog below
+   * is a confirmation that names what it would destroy, never the guard.
+   */
+  onArchive?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  onRestore?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  onDelete?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -201,6 +228,11 @@ export function TemplateEditor({
   );
   const [outcome, setOutcome] = useState<TemplateSaveOutcome | null>(null);
   const [versionOutcome, setVersionOutcome] = useState<TemplateVersionOutcome | null>(null);
+  /** Which retire write last answered — the notice names it, so the sentence matches the verb. */
+  const [retireOutcome, setRetireOutcome] = useState<{
+    readonly kind: "archive" | "restore" | "delete";
+    readonly answer: TemplateVersionOutcome;
+  } | null>(null);
 
   const details = sectionOf(copy, "details");
   const aspectCopy = sectionOf(copy, "aspects");
@@ -235,6 +267,26 @@ export function TemplateEditor({
           actionId: versionOutcome.actionId,
         });
   const versionRefusal = refusalText(refusals, versionOutcome);
+  /**
+   * The retire band's notice/refusal, from the same fixture the version band reads. The three
+   * sentences are named literally rather than looked up by the write's verb, so E23 can bind each
+   * one to a copy item — a `publishCopy[retireOutcome.kind]` would render blank on a typo.
+   */
+  const retireNotice =
+    retireOutcome === null || !retireOutcome.answer.ok
+      ? null
+      : fillLabel(
+          itemLabel(
+            publishCopy,
+            retireOutcome.kind === "archive"
+              ? "archived"
+              : retireOutcome.kind === "restore"
+                ? "restored"
+                : "deleted",
+          ),
+          { actionId: retireOutcome.answer.actionId },
+        );
+  const retireRefusal = refusalText(refusals, retireOutcome?.answer ?? null);
 
   /** Replace one Aspect, or add one, without mutating the array the render is reading. */
   function patchAspect(index: number, patch: Partial<AspectState>): void {
@@ -298,6 +350,30 @@ export function TemplateEditor({
       const answer = await onUnpublish({ templateId: template.id });
       setVersionOutcome(answer);
       if (answer.ok) router.refresh();
+    });
+  }
+
+  /**
+   * One of the three retire writes (#711). The payload is the id and nothing else, for the reason
+   * publish's is: these are facts about the row, not about the form, so an unsaved edit in the tabs
+   * cannot be swept into an archive, a restore or a delete.
+   *
+   * A successful **delete** pushes to the list: the row this page reads no longer exists, so a
+   * refresh here would be a 404. Archive and restore refresh in place, because the row is still
+   * there and the band's state line is one read away.
+   */
+  function retire(
+    kind: "archive" | "restore" | "delete",
+    write: ((payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>) | undefined,
+  ): void {
+    if (write === undefined) return;
+    setRetireOutcome(null);
+    startVersionTransition(async () => {
+      const answer = await write({ templateId: template.id });
+      setRetireOutcome({ kind, answer });
+      if (!answer.ok) return;
+      if (kind === "delete") router.push(ADMIN_TEMPLATES_PATH);
+      else router.refresh();
     });
   }
 
@@ -600,6 +676,97 @@ export function TemplateEditor({
                 </ul>
               </div>
             ) : null}
+
+            {/*
+              #711 — the retire band, inside the same card because it is the same question: what
+              this template is offered as. The delete control confirms in the shipped AlertDialog
+              and names what it destroys; the refusal it can still get is the server's, and the
+              sentence under the band is the fixture's, never this component's.
+            */}
+            {onArchive === undefined && onRestore === undefined && onDelete === undefined ? null : (
+              <div data-template-retire={status} className="space-y-3 border-t pt-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{itemLabel(publishCopy, "retire")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {itemLabel(publishCopy, "retire-body")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  {status === "archived" ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      data-template-restore
+                      disabled={versionPending}
+                      onClick={() => retire("restore", onRestore)}
+                    >
+                      {itemLabel(publishCopy, "restore")}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      data-template-archive
+                      disabled={versionPending}
+                      onClick={() => retire("archive", onArchive)}
+                    >
+                      {itemLabel(publishCopy, "archive")}
+                    </Button>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        data-template-delete-trigger
+                        disabled={versionPending || onDelete === undefined}
+                      >
+                        {itemLabel(publishCopy, "delete")}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent data-template-delete-dialog>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {fillLabel(itemLabel(publishCopy, "delete-title"), {
+                            title: template.title,
+                          })}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {itemLabel(publishCopy, "delete-body")}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{itemLabel(publishCopy, "cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                          data-template-delete-confirm
+                          onClick={() => retire("delete", onDelete)}
+                        >
+                          {itemLabel(publishCopy, "delete-confirm")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                {retireNotice === null ? null : (
+                  <p
+                    data-template-retire-notice={retireOutcome?.kind ?? ""}
+                    className="text-sm text-muted-foreground"
+                  >
+                    {retireNotice}
+                  </p>
+                )}
+                {retireRefusal === null ? null : (
+                  <p
+                    data-template-retire-refusal={
+                      retireOutcome?.answer.ok === false ? retireOutcome.answer.code : ""
+                    }
+                    className="text-sm"
+                  >
+                    {retireRefusal}
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

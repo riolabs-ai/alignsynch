@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Lockup 2rem](../qa-lockup-2rem/README.md) · next [swiper 12](../qa-swiper-12/README.md)
+[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [swiper 12](../qa-swiper-12/README.md)
 
 <!-- docs-nav:end -->
 
@@ -48,6 +48,6 @@ that reason.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Lockup 2rem](../qa-lockup-2rem/README.md) · next [swiper 12](../qa-swiper-12/README.md)
+[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [swiper 12](../qa-swiper-12/README.md)
 
 <!-- docs-nav:end -->

@@ -101,6 +101,14 @@ export function RelationshipEditPanel({
   const [outcome, setOutcome] = useState<EditOutcome | null>(null);
 
   const claimed = state.invite?.claimed === true;
+  /**
+   * The version this relationship is bound to — the fact #711's revision flow protects.
+   *
+   * `state.versions` marks the bound row with `current`, so this is a read of the same list the pin
+   * control draws, not a second derivation. `state.versionId` is the writer's view of it; the list
+   * is what the reader sees, and they agree because both come from `readVersions()` in one read.
+   */
+  const boundVersion = state.versions.find((version) => version.current);
 
   function patchAspect(index: number, patch: Partial<AspectState>): void {
     setAspects((current) =>
@@ -207,6 +215,22 @@ export function RelationshipEditPanel({
             </dd>
           </div>
         </dl>
+        {/*
+          #711 — which version this relationship was answered under. It is printed whether or not
+          the pin control is drawn (that control needs two versions to be worth a select), because
+          the sentence is the whole protection the revision flow offers: publishing N+1 leaves this
+          number alone, and a reader who cannot see the number has to take that on trust.
+        */}
+        <p
+          data-relationship-version={
+            boundVersion === undefined ? "none" : String(boundVersion.version)
+          }
+          className="text-sm text-muted-foreground"
+        >
+          {boundVersion === undefined
+            ? itemLabel(editCopy, "version-none")
+            : fillLabel(itemLabel(editCopy, "version"), { version: boundVersion.version })}
+        </p>
         {state.sessionExists ? (
           <p data-edit-locked className="text-sm text-muted-foreground">
             {itemLabel(editCopy, "locked-mode")}
