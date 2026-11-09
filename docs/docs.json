@@ -484,6 +484,11 @@
           "path": "changelog/v1-11-0.md",
           "title": "v1.11.0",
           "question": "The release where the build drew what the review approved."
+        },
+        {
+          "path": "changelog/v1-12-0.md",
+          "title": "v1.12.0",
+          "question": "Which release moved the payment decision into the create flow, and what does it defer?"
         }
       ]
     },
