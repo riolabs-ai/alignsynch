@@ -28,9 +28,13 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import { StageShell } from "@/components/assessment-flow/stage-shell";
+import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
+import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 
 /**
@@ -208,5 +212,102 @@ describe("the close control at 390", () => {
     expect(close).toContain('aria-label="Close"');
     // The band that holds it in flow collapses at 1024, so the desktop panel is unchanged.
     expect(shellHtml()).toContain("lg:h-0");
+  });
+});
+
+/**
+ * #745 — the 44px floor inside `[data-stage-shell]` at 390.
+ *
+ * The measured defect was a bare `text-sm` Back link: 17px tall, at the top of stages 2–4, while
+ * stage 1 kept its Back in the form's action row. One `StageFoot` on all four stages fixed both
+ * facts — the pair that dismisses is one group beside the advancing act, and every control in it is
+ * `h-11`.
+ *
+ * `pnpm test` has no layout engine, so these assertions are the classes that *are* the height
+ * (`h-11` is 44px in this app's scale). The resolved pixels were measured over CDP in #761 and
+ * again for v1.11.0's release page; this file is what stops the class being deleted.
+ */
+describe("the 44px control floor at 390 (#745)", () => {
+  const TEMPLATE = {
+    recordId: "template-relationship-basics",
+    title: "Relationship Basics",
+    summary: "Five Aspects of a relationship, each answered from how it feels to how it should.",
+    aspectCount: 2,
+  };
+
+  function stageHtml(stage: 1 | 2 | 3 | 4): string {
+    return renderToStaticMarkup(
+      createElement(CreateRelationship, {
+        copy: assessmentCreatePageCopy,
+        stage,
+        template: TEMPLATE,
+        ...(stage === 3 ? { aspects: [] } : {}),
+        draft: EMPTY_CREATE_DRAFT,
+        backHref: "/assessment/templates/template-relationship-basics",
+        problem: null,
+        problemLink: null,
+      }),
+    );
+  }
+
+  /** Every opening `<a>`/`<button>` tag with the given marker — asserted to be exactly one. */
+  function control(html: string, marker: string): string {
+    const tags = [...html.matchAll(/<(?:a|button)\b[^>]*>/g)].map((match) => match[0]);
+    const found = tags.filter((tag) => tag.includes(marker));
+    expect(found, `${marker} is drawn exactly once`).toHaveLength(1);
+    return found[0] ?? "";
+  }
+
+  it("draws one foot on every stage, and every control in it is 44px tall", () => {
+    for (const stage of [1, 2, 3, 4] as const) {
+      const html = stageHtml(stage);
+      expect(html.split('data-stage-foot="true"').length - 1, `stage ${stage} draws one foot`).toBe(
+        1,
+      );
+      expect(control(html, 'data-create-back="true"'), `stage ${stage} Back`).toContain("h-11");
+      expect(control(html, 'data-create-cancel="true"'), `stage ${stage} Cancel`).toContain("h-11");
+      // The advancing act: full width below 560 (its own row under the thumb), its label's own
+      // width above it — the artifact never stretches the primary.
+      const foot = html.slice(html.indexOf('data-stage-foot="true"'));
+      const advance = [...foot.matchAll(/<(?:a|button)\b[^>]*>/g)]
+        .map((match) => match[0])
+        .filter((tag) => tag.includes("h-11") && !tag.includes("data-create-back"))
+        .filter((tag) => !tag.includes("data-create-cancel"));
+      expect(advance.length, `stage ${stage} draws one advancing act`).toBeGreaterThan(0);
+      const primary = advance[advance.length - 1] ?? "";
+      expect(primary, `stage ${stage}'s advancing act is 44px`).toContain("h-11");
+      expect(primary).toContain("w-full");
+      expect(primary).toContain("min-[560px]:w-auto");
+    }
+  });
+
+  it("leaves one back affordance per screen, and it is the foot's", () => {
+    for (const stage of [1, 2, 3, 4] as const) {
+      const html = stageHtml(stage);
+      const backHref = "/assessment/templates/template-relationship-basics";
+      // The link this replaced was a second route to the same address, drawn above the rail at
+      // 17px. One address, one link.
+      expect(html.split(`href="${backHref}"`).length - 1, `stage ${stage} links back once`).toBe(1);
+      expect(html.indexOf('data-create-back="true"')).toBeGreaterThan(
+        html.indexOf('data-stage-foot="true"'),
+      );
+    }
+  });
+
+  it("gives the in-card text links the same floor as the foot", () => {
+    // Two survive outside the foot — the refusal screen's Back and stage 4's "add a method" pivot —
+    // and both measured 17px as bare anchors. The marker is the link colour: in this file it only
+    // appears on those, so every tag carrying it must also carry the 44px box.
+    const file = code("components/assessment-flow/create-relationship.tsx");
+    const links = [...file.matchAll(/<Link\b[\s\S]*?>/g)].map((match) => match[0]);
+    // The refusal band's link is inline inside a sentence, not a control: a 44px box on it would
+    // break the line it belongs to, so the floor is about targets and this one is prose.
+    const textLinks = links.filter(
+      (tag) => tag.includes("text-action") && !tag.includes("data-create-problem-link"),
+    );
+    expect(textLinks.length, "the file still draws its in-card links").toBeGreaterThan(0);
+    for (const tag of textLinks) {
+      expect(tag, `44px on: ${tag.replace(/\s+/g, " ").slice(0, 90)}`).toContain("h-11");
+    }
   });
 });
