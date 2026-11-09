@@ -136,6 +136,42 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
           label:
             "Unpublished. Version {version} and its history remain in the catalogue of records.",
         },
+        /**
+         * #711 — the retire band, in the band that draws it (`band="catalogue"` reads `publish`).
+         * Archiving is not deleting and the words say which is which, in the operator's own voice,
+         * because the difference is the referential rule and not a preference: a template somebody
+         * answered under is archived, never destroyed.
+         */
+        { id: "retire", label: "Retire" },
+        {
+          id: "retire-body",
+          label:
+            "Archive a template to take it out of use and keep everything — its versions, and every relationship created from them.",
+        },
+        { id: "archive", label: "Archive the template" },
+        { id: "restore", label: "Restore the template" },
+        { id: "delete", label: "Delete permanently" },
+        { id: "delete-title", label: "Delete {title} permanently?" },
+        {
+          id: "delete-body",
+          label:
+            "This destroys the template and its Aspects. It is refused, and nothing is written, if any relationship was created from it or any version of it was published — archive those instead.",
+        },
+        { id: "delete-confirm", label: "Delete it" },
+        { id: "cancel", label: "Cancel" },
+        {
+          id: "archived",
+          label:
+            "Archived. Every relationship keeps the version it was created from. Audit action {actionId}.",
+        },
+        {
+          id: "restored",
+          label: "Restored as a working copy. Publish to offer it again. Audit action {actionId}.",
+        },
+        {
+          id: "deleted",
+          label: "Deleted. The audit log holds the last copy of it. Audit action {actionId}.",
+        },
       ],
     },
     {
@@ -156,6 +192,22 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "role-too-low", label: "Your role may not author a template." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The save did not go through." },
+        // #711 — retiring a template, and the two referential refusals a delete answers with.
+        { id: "already-archived", label: "That template is already archived." },
+        {
+          id: "not-archived",
+          label: "That template is not archived, so there is nothing to restore.",
+        },
+        {
+          id: "template-in-use",
+          label:
+            "A relationship was created from this template, so it is archived rather than destroyed.",
+        },
+        {
+          id: "template-published",
+          label:
+            "This template has a published version — its history is what the catalogue offered. Archive it.",
+        },
       ],
     },
     {

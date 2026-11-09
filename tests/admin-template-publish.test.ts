@@ -340,6 +340,62 @@ describe("the version ordering is a function", () => {
   });
 });
 
+/* ------------------------------------------------------------------ *
+ * 4. A revision never reaches a relationship (#711)
+ * ------------------------------------------------------------------ */
+
+describe("publishing version N+1 leaves every bound relationship on the version it was answered under", () => {
+  /**
+   * The binding, modelled as a row this write could touch — and does not.
+   *
+   * `relationship.template_version_id` is `NOT NULL` and every party-facing read parses **that**
+   * payload (`0026_template_version.sql`), so "a revision does not re-bind anybody" is a claim about
+   * two things: this column, and the versions the column can name. The case below states both.
+   */
+  it("writes no statement naming `relationship`, so the binding is untouched by construction", async () => {
+    const db = new FakeDb();
+    db.status = "published";
+    db.version = 1;
+    const bound = templateVersionIdOf(TEMPLATE, 1);
+
+    await publishTemplate(
+      { actorUserId: ACTOR, reason: "correcting the second Aspect", templateId: TEMPLATE },
+      runnerFor(db),
+    );
+
+    // The one way a publish could re-bind is a statement against `relationship`; there is none.
+    expect(
+      db.statements.filter(
+        (statement) =>
+          /\brelationship\b/i.test(statement.text) &&
+          !/^SELECT role FROM user_profile/i.test(statement.text),
+      ),
+    ).toEqual([]);
+    // And the version it wrote is a new id, so the old binding cannot even accidentally name it.
+    expect(templateVersionIdOf(TEMPLATE, 2)).not.toBe(bound);
+    expect(db.committed).toContain("INSERT template_version:v2");
+  });
+
+  it("leaves the highest version ahead of the bound one, which is what 'answered under v1' means", () => {
+    const rows: TemplateVersionRow[] = [1, 2].map((version) => ({
+      id: templateVersionIdOf(TEMPLATE, version),
+      template_record_id: TEMPLATE,
+      version,
+      payload: {},
+      published_at: "2026-11-03T10:00:00.000Z",
+      published_by: null,
+      superseded_at: version === 1 ? "2026-11-04T00:00:00.000Z" : null,
+    }));
+    const bound = rows[0]?.id;
+
+    // v2 is the live template; v1 is what the relationship reads. The two disagreeing is the
+    // correct state after a revision, not a defect — that is what the edit panel prints.
+    expect(latestVersionOf(rows)?.version).toBe(2);
+    expect(bound).toBe(templateVersionIdOf(TEMPLATE, 1));
+    expect(rows.filter((row) => row.id === bound)).toHaveLength(1);
+  });
+});
+
 /** The validated record is still the model's — a guard against a fixture drifting under this suite. */
 it("the template this suite publishes is a valid zAssessment record", () => {
   const parsed = validateTemplateRecord(RECORD);

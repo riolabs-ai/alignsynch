@@ -175,6 +175,32 @@ describe("the relationship edit panel renders the state it is handed", () => {
     expect(oneVersion).not.toContain('id="edit-pin"');
   });
 
+  it("says which version the relationship was answered under, pin control or not (#711)", () => {
+    // Two versions, bound to v1: the panel names v1 even though v2 is the live template — the whole
+    // protection a revision flow offers is that publishing v2 does not move this number.
+    const markup = render(state());
+    expect(markup).toContain('data-relationship-version="1"');
+    expect(markup).toContain(itemLabel(editCopy, "version").replace("{version}", "1"));
+
+    // A single version draws no pin control, and the sentence is still there: it is a fact about the
+    // row, not a control's caption.
+    const oneVersion = render(
+      state({
+        versions: [{ id: "version-1", version: 1, publishedAt: "2026-10-01", current: true }],
+        versionId: "version-1",
+      }),
+    );
+    expect(oneVersion).not.toContain('id="edit-pin"');
+    expect(oneVersion).toContain('data-relationship-version="1"');
+  });
+
+  it("says so plainly when no published version is bound (#711)", () => {
+    const markup = render(state({ versions: [], versionId: null }));
+
+    expect(markup).toContain('data-relationship-version="none"');
+    expect(markup).toContain(itemLabel(editCopy, "version-none"));
+  });
+
   it("renders no cost list and no confirm until the preview has answered", () => {
     const markup = render(state());
 

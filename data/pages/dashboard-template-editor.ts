@@ -113,6 +113,40 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "working", label: "Working…" },
         { id: "published", label: "Published version {version}." },
         { id: "unpublished", label: "Withdrawn. Version {version} remains in the history." },
+        // #711 — declared because E23 binds this component's asks to every fixture its budget row
+        // names. The band is the console's (`band="catalogue"`), so a member's screen never draws
+        // these controls; the words are still the member's own, because a template they own is
+        // archived by an operator and never destroyed out from under a relationship.
+        { id: "retire", label: "Retire" },
+        {
+          id: "retire-body",
+          label:
+            "Retiring a template takes it out of use and keeps everything — its versions, and every relationship created from them.",
+        },
+        { id: "archive", label: "Archive the template" },
+        { id: "restore", label: "Restore the template" },
+        { id: "delete", label: "Delete permanently" },
+        { id: "delete-title", label: "Delete {title} permanently?" },
+        {
+          id: "delete-body",
+          label:
+            "This destroys the template and its Aspects. It is refused, and nothing is written, if any relationship was created from it or any version of it was published — archive those instead.",
+        },
+        { id: "delete-confirm", label: "Delete it" },
+        { id: "cancel", label: "Cancel" },
+        {
+          id: "archived",
+          label:
+            "Archived. Every relationship keeps the version it was created from. Audit action {actionId}.",
+        },
+        {
+          id: "restored",
+          label: "Restored as a working copy. Audit action {actionId}.",
+        },
+        {
+          id: "deleted",
+          label: "Deleted. The audit log holds the last copy of it. Audit action {actionId}.",
+        },
       ],
     },
     {
@@ -126,6 +160,22 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "role-too-low", label: "Your role may not edit a template." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The save did not go through." },
+        // #711 — the retire band's refusals, declared for the same reason its labels are.
+        { id: "already-archived", label: "That template is already archived." },
+        {
+          id: "not-archived",
+          label: "That template is not archived, so there is nothing to restore.",
+        },
+        {
+          id: "template-in-use",
+          label:
+            "A relationship was created from this template, so it is archived rather than destroyed.",
+        },
+        {
+          id: "template-published",
+          label:
+            "This template has a published version — its history is what the catalogue offered. Archive it.",
+        },
       ],
     },
     {
