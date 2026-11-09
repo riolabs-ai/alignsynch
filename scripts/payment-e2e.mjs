@@ -245,6 +245,23 @@ async function setup(db) {
   const userId = await createAccount(email, password, "Avery E2E");
   const initiator = await signIn(email, password);
 
+  /*
+   * The payer needs a live membership before a relationship can be published: `membershipOf()`
+   * reads a `published`/`active` relationship with no trial and no subscription as **lapsed**, and
+   * the claim refuses it (`claim=lapsed`). That is the product's own rule, not this script's — a
+   * paid relationship is paid for — so the run buys a plan through the app's checkout route, on the
+   * keyless mock adapter, exactly as the pricing page does.
+   */
+  const checkout = await initiator.postJson("/api/billing/checkout", {
+    planId: "basic",
+    interval: "month",
+  });
+  check(
+    "the payer buys a plan through the app's checkout",
+    checkout.status === 200 && checkout.body?.completed === true,
+    `HTTP ${checkout.status}${checkout.body?.error ? ` (${checkout.body.error})` : ""}`,
+  );
+
   const items = await db.query(
     "SELECT item_id, prompt, left_value, right_value FROM item WHERE record_id = $1 ORDER BY position",
     [TEMPLATE_ID],
@@ -447,6 +464,9 @@ async function teardown(db, state) {
   ).catch(() => undefined);
   await db.query("DELETE FROM demo_account WHERE email = $1", [state.email]).catch(() => undefined);
   await db.query("DELETE FROM user_profile WHERE user_id = $1", [state.userId]).catch(() => undefined);
+  await db
+    .query("DELETE FROM billing_subscription WHERE user_id = $1", [state.userId])
+    .catch(() => undefined);
   if (base !== "") {
     // The auth user lives in `neon_auth`, which the app never migrates — the branch's own endpoint
     // is the supported way to remove it.

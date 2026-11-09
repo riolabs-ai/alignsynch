@@ -1281,42 +1281,20 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     }
 
     /*
-     * #619 — a method on file is required when the **initiator publishes their sheet**.
+     * #739 — **answering is not gated on a payment method. The Gap is.**
      *
-     * Publishing is the initiator's act (the counterparty's is accepting a seat), and #619 asks
-     * for a card at exactly this point — never before, and never as a gate on the invitation. The
-     * check is here, in the write, not on a button: a request that was open before the rule
-     * applied still reaches this line.
+     * This block used to refuse the Initiator's sheet with `payment-method-required` until a card
+     * was captured ("the fee is taken when the assessment is published"). That is the pre-#619
+     * model, and it contradicted the approved posture on two counts: the card is asked for at the
+     * invite as a *soft* prompt, and the hard gate is the fee at completion — the Gap (#619,
+     * `completionRefusalOf()`). Worse, it made the fee unreachable in practice: the completion
+     * needs **both sheets sealed**, and the party who owes the fee could not seal theirs until they
+     * had paid for a fee they could not be charged yet.
      *
-     * A relationship with **no obligation row** is not gated: it predates `relationship_payment`
-     * and was charged at creation under the model #619 retires, so `has_row` is false and the
-     * submit proceeds — the same "not measured" direction `paymentArmedOf()` takes.
+     * The rule lives at the completion now, where the money is: `completeRelationship()` refuses
+     * `payment-method-required` (with the capture's url) until a method is on file. Nothing here
+     * needed replacing — the gate was in the wrong place, not missing.
      */
-    if (role === "initiator") {
-      const obligation = await client.query<{
-        has_row: boolean;
-        method_captured_at: Date | null;
-        expired_at: Date | null;
-      }>(
-        `SELECT (rp.relationship_id IS NOT NULL) AS has_row,
-                rp.method_captured_at, rp.expired_at
-           FROM session s
-           LEFT JOIN relationship_payment rp ON rp.relationship_id = s.relationship_id
-          WHERE s.record_id = $1`,
-        [input.instanceRecordId],
-      );
-      const payment = obligation.rows[0];
-      if (payment !== undefined && payment.has_row && payment.method_captured_at === null) {
-        await client.query("ROLLBACK");
-        return {
-          ok: false,
-          code: "payment-method-required",
-          reason:
-            "publishing the initiator's sheet needs a payment method on file — the fee for this relationship is taken when the assessment is published, and no card is on the account yet",
-        };
-      }
-    }
-
     const aspects = await client.query<{ item_id: string }>(
       "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
       [input.instanceRecordId],
