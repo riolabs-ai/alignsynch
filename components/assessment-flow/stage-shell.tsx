@@ -89,15 +89,29 @@ export function StageShell({
       >
         <DialogPrimitive.Title className="sr-only">{title ?? null}</DialogPrimitive.Title>
         {/*
-          The shipped close, at the shipped corner (right-4/top-4), sized for a thumb: 44px at
-          every width, because the 390 sheet is where it is the only chrome a person can reach.
+          The close, in a chrome band of its own below 1024.
+
+          It used to be `absolute right-2 top-2`, floating over the stage — and at 390 that is
+          not chrome over a margin, it is chrome over the content: the sheet has no inset there,
+          the column pads by 16px, so the 44px control landed on the rail's sixth cell and
+          covered 35×35px of it (measured 2026-11-08, `docs/qa-modal-mobile/measurements.json`,
+          `closeOverlap`). At ≥1024 the panel is inset by 24px and padded by 32px, so the corner
+          has real margin and the control overlaps nothing — measured `hits: []` at 1440.
+
+          One control, two placements: in flow inside a band that sizes to it below 1024, and
+          absolutely where the band collapses to zero height at 1024. A second `<Close>` node
+          hidden by breakpoint would be a second accessible name to keep in sync; a `pt` reserve
+          on the scroller would let scrolled content slide under the control. This way the band
+          is the only thing that changes and nothing can sit beneath the control at any width.
         */}
-        <DialogPrimitive.Close
-          aria-label={closeLabel}
-          className="absolute right-2 top-2 z-10 grid h-11 w-11 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:right-4 lg:top-4 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-        >
-          <X className="h-5 w-5" aria-hidden="true" />
-        </DialogPrimitive.Close>
+        <div className="flex shrink-0 justify-end px-2 py-2 lg:h-0 lg:p-0">
+          <DialogPrimitive.Close
+            aria-label={closeLabel}
+            className="z-10 grid h-11 w-11 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:absolute lg:right-4 lg:top-4 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </DialogPrimitive.Close>
+        </div>
         {/*
           The one scroll container. `min-h-0` matters: a flex child defaults to `min-height:auto`,
           which lets a long stage (Aspects) push the panel taller than the viewport instead of
