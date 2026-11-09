@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.10.0",
+      "theme": "the capture moves into a frame — Stripe's form mounts inside the dialog, so paying never leaves the relationship, while the membership checkout stays hosted.",
+      "headline": "`feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) (#751)"
+    },
+    {
       "version": "1.9.0",
       "theme": "the payer can pay — a method is captured and a relationship completes, an invited counterparty answers inside the same modal, templates publish revisions instead of being destroyed, and paying still opens Stripe's own page rather than a frame.",
       "headline": "`feat(crud)` — templates publish revisions and are retired, never destroyed in use (#711) (#742)"
