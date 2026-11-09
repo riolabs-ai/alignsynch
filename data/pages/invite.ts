@@ -26,11 +26,19 @@
  * which is the string the store compares — so the post says out loud who it is joining.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { lifecycleStageSection } from "./lifecycle";
 
 export const invitePageCopy: PageCopy = zPageCopy.parse({
   heading: "You have been invited",
   subtitle: "{initiator} wants to compare notes with you on {template}.",
   sections: [
+    /**
+     * The six stage names, **referenced, never re-typed** (#710). The response path renders inside
+     * the flow's modal under the same rail every other stage draws, and `StageRail` asks for this
+     * section — so the invitation's fixture carries the one shared home rather than a second copy
+     * of `Details · Settings · Aspects · Invite · Connect · Align`.
+     */
+    lifecycleStageSection,
     {
       id: "viewer",
       heading: "You already have a seat in this instance",
@@ -49,25 +57,22 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     /**
-     * The onboarding wizard's three steps (#t_0aa81144).
+     * The onboarding wizard's three screens (#t_0aa81144).
      *
      * Before this, the claim dropped the Counterparty straight into the session: no sentence said
      * who had invited them, what was about to happen, or why they were suddenly being asked for
-     * scores. Each step is one screen with one question answered, and the `steps` band is the
-     * "where am I" rail above it — the same numbered, one-screen-per-step shape
-     * `components/create/quiz-editor.tsx` gives the template author.
+     * scores. Each step is one screen with one question answered, addressed by `?step=1|2|3`.
+     *
+     * **Their numbered progress band is gone (#710).** The response renders inside the flow's
+     * modal, under the six-stage rail, because it is stage 5 — Connect — of the *same* journey the
+     * Initiator started. The flow has one progress pattern (the cell rail), so this section now
+     * carries only the two controls the wizard keeps: Back and Continue.
      *
      * The copy never says the Counterparty pays, because they never do: `free` says who does.
      */
     {
       id: "steps",
       items: [
-        { id: "1", label: "What this is" },
-        { id: "2", label: "What happens next" },
-        { id: "3", label: "Your account" },
-        /** The rail's accessible name — a nav landmark among several on the screen. */
-        { id: "label", label: "Onboarding steps" },
-        { id: "count", label: "Step {step} of 3" },
         { id: "back", label: "Back" },
         { id: "next", label: "Continue" },
       ],

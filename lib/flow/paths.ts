@@ -447,3 +447,27 @@ export const SUBMITTED_QUERY_VALUE = "1";
 export function claimPath(token: string): string {
   return `${invitePath(token)}/claim`;
 }
+
+/**
+ * **Where a completed response sends the browser (#710).** The response path's counterparty has
+ * just joined the relationship, so the same rule the create's own completion follows applies: the
+ * modal closes onto the screen the joined relationship is listed on.
+ *
+ * - A **signed-in** claimer lands on **`/dashboard`**, where the relationship is now under My
+ *   relationships. That is the only shape the screens offer: step 3's claim form renders for a
+ *   signed-in viewer, and a signed-out one is offered sign-in and sign-up instead, both carrying
+ *   `?step=3` as `next` so the round trip returns to the claim.
+ * - A **signed-out** claim — reachable by posting the endpoint directly, which is what
+ *   `scripts/flow-e2e.mjs` does — lands on the **relationship**. It is not a lesser answer: the
+ *   claim set this browser's party cookie, so the relationship screen is readable, and
+ *   `/dashboard` would only bounce the browser to `/login` and lose the seat it just bound.
+ *
+ * Both targets are a *screen*, never a state: the relationship has no `Ongoing` surface
+ * (`docs/specs/flow-stages.md`), and completion is the relationship's own page.
+ */
+export function afterClaimTarget(input: {
+  viewerSignedIn: boolean;
+  instanceRecordId: string;
+}): string {
+  return input.viewerSignedIn ? OVERVIEW_PATH : instancePath(input.instanceRecordId);
+}

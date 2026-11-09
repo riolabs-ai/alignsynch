@@ -64,6 +64,24 @@ full-height sheet at 390. A stage URL still renders standalone — a deep link, 
 invitation link must never 404. The account gate is a step _inside_ the overlay, after Invite, not
 a page and not a stage.
 
+### The invitation is the response path, and it enters at Connect
+
+The counterparty opens `/invite/<token>` and gets the same overlay: `StageShell` frames it,
+`StageRail` draws the same six cells with **Connect** current (`Align` unavailable — nothing is
+shared yet), and closing leaves onto `/dashboard`. The three onboarding screens — _What this is_,
+_What happens next_, _Your account_ — are that stage's body, addressed by `?step=1|2|3` with the
+token in the path, so a refresh, a deep link and the sign-in round trip all land on the same
+screen. There is no second stepper: the flow has one progress pattern, the cell rail.
+
+A completed response exits onto `/dashboard` for a signed-in claimer — the relationship is under
+My relationships from that redirect on. A signed-out claim (postable, though the screens never
+offer it: step 3 asks for an account instead) stays on the relationship it just bound, because
+`/dashboard` would only bounce the browser to `/login` and lose the seat the claim set.
+
+The refusal bands — a spent, expired, withdrawn or lapsed link, and a browser that is already a
+party — are **not** the response path: there is nothing to respond to, so they keep their own
+surface and draw no rail.
+
 ## Stage 1, Details — the field inventory
 
 This is the part that has drifted before, so it is written out. The card head carries the template's
@@ -98,6 +116,9 @@ Two rules follow from the inventory:
   or a dropped fifth is red.
 - `data:check` E10 still holds every flow `href` to the route manifest, so a `/…/ongoing` route
   cannot quietly return.
+- `tests/invite-response-shell.test.tsx` renders the response stage through `StageShell` and fails
+  if it stops drawing the six-stage rail at Connect, drops off the shared stage column, gains a
+  second progress band, or exits onto anything but the screens `afterClaimTarget()` names.
 - The gate itself (`bash scripts/verify.sh`) runs those tests in every code lane. Nothing here is a
   convention a reviewer has to remember.
 
