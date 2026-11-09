@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.8.0",
+      "theme": "the flow conforms to its six-stage spec — Details · Settings · Aspects · Invite · Connect · Align — opens as one modal, and no action form asks for a Reason.",
+      "headline": "`feat(flow)` — conform to the six-stage spec — Details · Settings · Aspects · Invite · Connect · Align (#735) (#737)"
+    },
+    {
       "version": "1.7.0",
       "theme": "the review shelf goes live — every prototype grouped by the release it ships with, with the approved six-stage flow as its first artifact.",
       "headline": "`feat(admin)` — the /admin/review shelf: the review store, the release-grouped list and the writes, with the six-stage prototype as its v5 artifact (#670) (#673) (#677)"

@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.8.0](v1-8-0.md)
+
+- **Released** 2026-11-08
+- **Tag** [`v1.8.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.8.0)
+- **Pull requests named** 16
+- **Theme:** the flow conforms to its six-stage spec — Details · Settings · Aspects · Invite · Connect · Align — opens as one modal, and no action form asks for a Reason.
+- **Headline:** `feat(flow)` — conform to the six-stage spec — Details · Settings · Aspects · Invite · Connect · Align (#735) (#737)
+
 ### [v1.7.0](v1-7-0.md)
 
 - **Released** 2026-11-08
