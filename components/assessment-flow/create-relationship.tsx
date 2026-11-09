@@ -392,7 +392,10 @@ export function CreateRelationship({
         <StageColumn>
           <div className="space-y-6">
             <p>
-              <Link href={backHref} className="text-sm font-medium text-action hover:underline">
+              <Link
+                href={backHref}
+                className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
+              >
                 {itemLabel(empty, "back")}
               </Link>
             </p>
@@ -714,7 +717,7 @@ export function CreateRelationship({
                     <Link
                       href={PRICING_PATH}
                       data-create-plans-link="pricing"
-                      className="text-sm font-medium text-action hover:underline"
+                      className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
                     >
                       {itemLabel(plans, "add-method")}
                     </Link>
