@@ -355,6 +355,10 @@
     .stage-foot .foot-left .btn{flex:1 1 0; min-width:0; min-height:48px}
     .stage-foot .btn.primary{order:1; flex:1 1 100%; margin-left:0; width:auto; min-height:48px}
   }
+  /* Stage 4's payment flow swaps the left card step by step; each step fades in so the change of
+     surface reads as a transition rather than a redraw (owner, comment 3). */
+  .pfade{animation:pfade .22s ease both}
+  @keyframes pfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body data-editing="off">
@@ -578,6 +582,21 @@ const DEFAULT_COPY = {
   "s8.methodOnFile":"Payment method on file · Visa ending 4242",
   "s8.skip":"Skip for now — I'll pay when I submit the assessment",
   "s8.reassure":"You can resend, edit the title, or withdraw the invitation at any point.",
+  "s8.continue":"Continue",
+  "s8.stepAccount":"Create your account",
+  "s8.accountNote":"The relationship comes back to you, so this is where it is kept. It is one step, and nothing here blocks the invitation.",
+  "s8.stepMethod":"Add a payment method",
+  "s8.stepConfirm":"Confirm payment",
+  "s8.confirmPlan":"Plan",
+  "s8.confirmMethod":"Method",
+  "s8.methodValue":"Visa ending 4242",
+  "s8.confirmBody":"Nothing is charged today. The 7-day trial starts when you confirm, and the first charge lands only when you publish the assessment.",
+  "s8.confirmCta":"Confirm and pay",
+  "s8.changePlan":"Change plan",
+  "s8.confirmed":"Payment confirmed — nothing charged today.",
+  "s8.stepDone":"You're all set",
+  "s8.thanksBody":"The plan is active, the method is on file and the trial has started. Send the invitation when you are ready — the button on the right is now Complete and Connect.",
+  "s8.connect":"Complete and Connect",
 
   /* 9 — invite sent */
   "s9.heading":"Invitation sent",
@@ -736,6 +755,7 @@ let state = {
   /* null = every Aspect collapsed; the stage opens as a compact list, not a stack of forms */
   editingAspect: null,
   payPanel: false,
+  payStep: null,
   plan: (()=>{ try { return localStorage.getItem("alignsynch.prototype.plan") || "payg"; } catch(e){ return "payg"; } })(),
   /* stage 10 — the seat you are reading the relationship as, and the billing state behind it */
   seat: "payer", published: false, needsAction: false, approved: false,
@@ -1049,6 +1069,87 @@ function s6Aspects(){
 }
 
 /* ---------- 7: the conversion — this is the call to action, not a review page ---------- */
+/* ---------- Stage 4's left column: the payment flow, in place ----------
+   Owner, comment 3: choosing a plan must not bounce anyone to a Pricing page. The plan, the account,
+   the method, the confirmation and the thank-you all happen inside this card, one panel at a time and
+   each fading in; the right-hand CTA changes with them — "Keep as a draft" until the method is
+   confirmed, then "Complete and Connect". No step here is a separate stage, and nothing navigates. */
+function payFlowCard(){
+  const step = state.payStep || "plan";
+  const unlimited = state.plan === "unlimited";
+  const planName = c(unlimited ? "s8.planUnlimited" : "s8.planPayg");
+  const planPrice = c(unlimited ? "s8.priceUnlimited" : "s8.pricePayg") + c("s8.pricePer");
+  const head = (key, chip) => '<div class="head"><h2 data-copy="'+key+'">'+esc(c(key))+'</h2>'
+    + (chip ? '<span class="chip ok" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span>' : '') + '</div>';
+  const back = (to, key) => '<button class="btn ghost" data-paystep="'+to+'" data-copy="'+key+'">'+esc(c(key))+'</button>';
+
+  if (step === "account") {
+    /* the same account card Stage 1 uses, in place — this is the "fade to login/signup" step */
+    return '<div class="stack pfade" data-paystep-panel="account">'
+      + '<div class="row" style="justify-content:space-between;align-items:baseline">'
+        + '<h2 data-copy="s8.stepAccount">'+esc(c("s8.stepAccount"))+'</h2>'
+        + '<span class="chip ok" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span></div>'
+      + authCard()
+      + '<div class="card"><div class="body stack">'
+        + '<p class="mini" data-copy="s8.accountNote">'+esc(c("s8.accountNote"))+'</p>'
+        + '<div class="row" style="gap:8px">'+back("plan","s8.back")
+          + '<button class="btn primary" data-paystep="method" data-copy="s8.continue">'+esc(c("s8.continue"))+'</button></div>'
+      + '</div></div></div>';
+  }
+
+  if (step === "method") {
+    return '<div class="card pfade" data-paystep-panel="method">'+head("s8.stepMethod", true)
+      + '<div class="body stack">'
+        + '<p class="mini"><b>'+esc(planName)+'</b> · '+esc(planPrice)+'</p>'
+        + '<div class="emb"><div class="emb-bar"><span data-copy="s8.embBar">'+esc(c("s8.embBar"))+'</span>'
+            + '<span class="chip" data-copy="s8.embMode">'+esc(c("s8.embMode"))+'</span></div>'
+          + '<p class="mini" data-copy="s8.embBody">'+esc(c("s8.embBody"))+'</p>'
+          + '<div class="emb-frame"><b data-copy="s8.embFrame">'+esc(c("s8.embFrame"))+'</b>'
+            + '<span data-copy="s8.embFrameNote">'+esc(c("s8.embFrameNote"))+'</span></div></div>'
+        + '<div class="row" style="gap:8px">'+back("account","s8.back")
+          + '<button class="btn primary" data-savecard="1" data-copy="s8.embSave">'+esc(c("s8.embSave"))+'</button></div>'
+      + '</div></div>';
+  }
+
+  if (step === "confirm") {
+    return '<div class="card pfade" data-paystep-panel="confirm">'+head("s8.stepConfirm", false)
+      + '<div class="body stack">'
+        + '<dl class="kv">'
+          + '<dt data-copy="s8.confirmPlan">'+esc(c("s8.confirmPlan"))+'</dt><dd>'+esc(planName)+' · '+esc(planPrice)+'</dd>'
+          + '<dt data-copy="s8.confirmMethod">'+esc(c("s8.confirmMethod"))+'</dt><dd data-copy="s8.methodValue">'+esc(c("s8.methodValue"))+'</dd>'
+        + '</dl>'
+        + '<p class="mini" data-copy="s8.confirmBody">'+esc(c("s8.confirmBody"))+'</p>'
+        + '<div class="row" style="gap:8px">'+back("method","s8.changePlan")
+          + '<button class="btn primary" data-confirmpay="1" data-copy="s8.confirmCta">'+esc(c("s8.confirmCta"))+'</button></div>'
+      + '</div></div>';
+  }
+
+  if (step === "done") {
+    return '<div class="card pfade" data-paystep-panel="done">'+head("s8.stepDone", false)
+      + '<div class="body stack">'
+        + '<div class="row" style="gap:8px"><span class="chip ok">✓</span>'
+          + '<span class="mini" data-copy="s8.methodOnFile">'+esc(c("s8.methodOnFile"))+'</span></div>'
+        + '<p class="mini" data-copy="s8.thanksBody">'+esc(c("s8.thanksBody"))+'</p>'
+        + '<p class="mini">'+esc(planName)+' · '+esc(planPrice)+'</p>'
+      + '</div></div>';
+  }
+
+  return '<div class="card pfade" data-paystep-panel="plan">'+head("s8.plansHeading", true)
+    + '<div class="body stack">'
+      + '<p class="mini" data-copy="s8.payBody">'+esc(c("s8.payBody"))+'</p>'
+      + [["payg","s8.planPayg","s8.planPaygNote","s8.pricePayg"],
+          ["unlimited","s8.planUnlimited","s8.planUnlimitedNote","s8.priceUnlimited"]].map(([id,k,hk,pk])=>
+          '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.plan===id)+'" data-plan="'+id+'">'
+          + '<span class="dot"></span>'
+          + '<span style="flex:1;min-width:0"><b data-copy="'+k+'">'+esc(c(k))+'</b>'
+            + '<span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span>'
+          + '<span class="price"><span data-copy="'+pk+'">'+esc(c(pk))+'</span><i data-copy="s8.pricePer">'+esc(c("s8.pricePer"))+'</i></span>'
+          + '</div>').join("")
+      + '<p class="mini" data-copy="s8.trial">'+esc(c("s8.trial"))+'</p>'
+      + '<button class="btn primary" data-paystep="account" style="width:100%" data-copy="s8.continue">'+esc(c("s8.continue"))+'</button>'
+    + '</div></div>';
+}
+
 function s7Commit(){
   const tpl = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
   const rows = [
@@ -1074,41 +1175,15 @@ function s7Commit(){
       + '<span class="chip ok" style="align-self:flex-start" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span>'
       + '<p class="mini" data-copy="s8.ctaBody">'+esc(c("s8.ctaBody"))+'</p>'
       + '<button class="skip-link" data-goto="7" data-copy="s8.skip">'+esc(c("s8.skip"))+'</button>'
-      + '<button class="btn secondary" data-goto="0" data-copy="s8.draft" style="width:100%">'+esc(c("s8.draft"))+'</button>'
+      + (state.payStep === "done"
+          ? '<button class="btn primary" data-goto="7" data-copy="s8.connect" style="width:100%">'+esc(c("s8.connect"))+'</button>'
+          : '<button class="btn secondary" data-goto="0" data-copy="s8.draft" style="width:100%">'+esc(c("s8.draft"))+'</button>')
       + '<p class="mini" data-copy="s8.reassure">'+esc(c("s8.reassure"))+'</p>'
     + '</div></div>';
 
-  /* LEFT column: the plans, always. The account form is not here — it is the step after Stage 4
-     (sAuthGate), because that is where the relationship needs to be claimed. */
-  const plansCard = '<div class="card"><div class="head"><h2 data-copy="s8.plansHeading">'+esc(c("s8.plansHeading"))+'</h2>'
-      + '<span class="chip ok" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span></div>'
-    + '<div class="body stack">'
-      + '<p class="mini" data-copy="s8.payBody">'+esc(c("s8.payBody"))+'</p>'
-      + [["payg","s8.planPayg","s8.planPaygNote","s8.pricePayg"],
-          ["unlimited","s8.planUnlimited","s8.planUnlimitedNote","s8.priceUnlimited"]].map(([id,k,hk,pk])=>
-          '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.plan===id)+'" data-plan="'+id+'">'
-          + '<span class="dot"></span>'
-          + '<span style="flex:1;min-width:0"><b data-copy="'+k+'">'+esc(c(k))+'</b>'
-            + '<span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span>'
-          + '<span class="price"><span data-copy="'+pk+'">'+esc(c(pk))+'</span><i data-copy="s8.pricePer">'+esc(c("s8.pricePer"))+'</i></span>'
-          + '</div>').join("")
-      + '<p class="mini" data-copy="s8.trial">'+esc(c("s8.trial"))+'</p>'
-      + (state.hasMethod
-          ? '<div class="row" style="gap:8px"><span class="chip ok">✓</span><span class="mini" data-copy="s8.methodOnFile">'+esc(c("s8.methodOnFile"))+'</span></div>'
-          : state.payPanel
-            ? '<div class="emb"><div class="emb-bar"><span data-copy="s8.embBar">'+esc(c("s8.embBar"))+'</span>'
-                + '<span class="chip" data-copy="s8.embMode">'+esc(c("s8.embMode"))+'</span></div>'
-              + '<p class="mini" data-copy="s8.embBody">'+esc(c("s8.embBody"))+'</p>'
-              + '<div class="emb-frame"><b data-copy="s8.embFrame">'+esc(c("s8.embFrame"))+'</b>'
-                + '<span data-copy="s8.embFrameNote">'+esc(c("s8.embFrameNote"))+'</span></div>'
-              + '<div class="row" style="gap:8px"><button class="btn secondary" data-savecard="1" data-copy="s8.embSave" style="flex:1">'+esc(c("s8.embSave"))+'</button>'
-                + '<button class="btn ghost" data-closepay="1" data-copy="s8.embCancel">'+esc(c("s8.embCancel"))+'</button></div>'
-              + '</div>'
-            : '<button class="btn secondary" data-addmethod="1" data-copy="s8.addMethod" style="width:100%">'+esc(c("s8.addMethod"))+'</button>')
-    + '</div></div>';
-
-
-  const left = plansCard;
+  /* LEFT column: the payment flow that never leaves this screen (payFlowCard), and the right column
+     carrying the CTA that changes with it. */
+  const left = payFlowCard();
 
   return '<div class="stack">'
    + '<div><h1 data-copy="s8.heading">'+esc(c("s8.heading"))+'</h1>'
@@ -1486,7 +1561,10 @@ document.addEventListener("click", e => {
     } else { toast("A relationship needs at least one Aspect"); }
     return;
   }
-  const t = e.target.closest("[data-goto],[data-tpl],[data-mode],[data-setting],[data-method],[data-seat],[data-activate],[data-publish],[data-approve],[data-plan],[data-addmethod],[data-savecard],[data-closepay],#editToggle,#toggleNa,#saveJson,#loadJsonBtn,#resetCopy");
+  /* Every control the delegated handler answers MUST be listed here: a new attribute that is not in
+     this selector resolves to null and the click is dropped silently — measured by pressing Stage 4's
+     Continue and watching the panel not move. */
+  const t = e.target.closest("[data-goto],[data-tpl],[data-mode],[data-setting],[data-method],[data-seat],[data-activate],[data-publish],[data-approve],[data-plan],[data-paystep],[data-confirmpay],[data-addmethod],[data-savecard],[data-closepay],#editToggle,#toggleNa,#saveJson,#loadJsonBtn,#resetCopy");
   if (!t) return;
   if (t.dataset.goto !== undefined) e.preventDefault();   /* the hash is ours, not the anchor's */
   if (t.dataset.goto !== undefined) {
@@ -1502,11 +1580,19 @@ document.addEventListener("click", e => {
   if (t.dataset.method) { state.method = t.dataset.method; render(); return; }
   if (t.dataset.plan) { state.plan = t.dataset.plan;
     try { localStorage.setItem("alignsynch.prototype.plan", state.plan); } catch(e){} render(); return; }
+  if (t.dataset.paystep !== undefined) { state.payStep = t.dataset.paystep || null; render(); return; }
+  if (t.dataset.confirmpay) {
+    /* the last step: the method is saved, the trial is running, and the CTA becomes Complete and Connect */
+    state.hasMethod = true; state.payStep = "done"; persist(); render();
+    toast(c("s8.confirmed"));
+    return;
+  }
   if (t.dataset.addmethod) { state.payPanel = true; render(); return; }
   if (t.dataset.closepay) { state.payPanel = false; render(); return; }
   if (t.dataset.savecard) {
-    /* what the return_url lands on: the session completed, so the method exists and the trial starts */
-    state.hasMethod = true; state.payPanel = false; persist(); render();
+    /* what the return_url lands on: the method is saved, so the next panel is the confirmation —
+       still in this card, still on this screen */
+    state.hasMethod = true; state.payPanel = false; state.payStep = "confirm"; persist(); render();
     toast(c("s8.embReturn"));
     return;
   }
