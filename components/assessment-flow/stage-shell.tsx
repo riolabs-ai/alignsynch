@@ -12,8 +12,9 @@
  * parallel-route interception was needed (the issue measured 0 interception points under
  * `@modal` and 0 `(.)`-prefixed segments, and this card adds none).
  *
- * **Two presentations, one tree.** At ≥1024 the panel is inset by 24px on the shipped
- * `DialogOverlay` (`bg-black/80`), which is the approved v6 shape. Below 1024 it is `inset-0` with
+ * **Two presentations, one tree.** At ≥1024 the panel is a centred, bordered, rounded dialog
+ * capped at `min(100% - 48px, 880px)` on the shipped `DialogOverlay` (`bg-black/80`) — the shape
+ * the v7 artifact draws (#760). Below 1024 it is `inset-0` with
  * no radius and no side borders: a full-height sheet, which is what `components/ui/sheet.tsx`
  * draws on the same Radix primitive (`sheet.tsx` imports `@radix-ui/react-dialog`, so there is no
  * second dialog implementation to drift). The breakpoint is **CSS**, not a `matchMedia` read: a
@@ -83,8 +84,13 @@ export function StageShell({
         aria-describedby={undefined}
         className={cn(
           "fixed inset-0 z-50 flex min-h-0 flex-col overflow-hidden bg-background",
-          // ≥1024 — the approved v6 fullscreen dialog: inset, bordered, rounded, no shadow.
-          "lg:inset-6 lg:rounded-lg lg:border",
+          // ≥1024 — the approved v7 dialog: inset by 24px, bordered, rounded, no shadow, and
+          // **capped at 880px and centred** (#760). `inset-6` supplies the two 24px gutters, so
+          // the box is `min(100% - 48px, 880px)`: below 928px wide it is the gutters that decide,
+          // above it `max-w` does and the auto margins centre what is left. The artifact measures
+          // 880px at 1024, 1440, 1920 and 3400 — a wizard is read as one column, and a panel that
+          // keeps growing puts a field's label a screen away from its input.
+          "lg:inset-6 lg:mx-auto lg:max-w-[880px] lg:rounded-lg lg:border",
         )}
       >
         <DialogPrimitive.Title className="sr-only">{title ?? null}</DialogPrimitive.Title>

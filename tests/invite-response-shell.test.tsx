@@ -118,8 +118,14 @@ describe("the response path renders in the flow's one modal", () => {
 
   it("renders on the shared stage column, not a centred column of its own", () => {
     const html = responseHtml(1);
-    expect(html).toContain("max-w-[1126px]");
-    expect(html).not.toContain("mx-auto");
+    // The column itself is still left-flush inside whatever frames it (#687): a max width, and no
+    // centring of its own.
+    const column = /class="([^"]*max-w-\[1126px\][^"]*)"/.exec(html)?.[1] ?? "";
+    expect(column).toContain("w-full");
+    expect(column).not.toContain("mx-auto");
+    // Since #760 the *panel* is centred, because the artifact caps it at 880px — that is the
+    // shell's box, not the column's, and the two are asserted separately on purpose.
+    expect(panelOf(html)).toContain("lg:mx-auto");
   });
 
   it("has exactly one progress band — the six-stage rail, not a second step rail", () => {

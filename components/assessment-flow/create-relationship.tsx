@@ -149,6 +149,161 @@ function FieldHelp({ children }: { children: ReactNode }) {
 const INPUT_CLASSES =
   "rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950";
 
+/**
+ * The commit form's id (#760). The stage foot's primary sits outside the form — the artifact
+ * draws the one advancing act in the foot, not in the card — so it submits by id. A constant
+ * rather than a literal in two places: E23 counts a string attribute as copy, and a form id is
+ * technical, not a word a reader sees.
+ */
+const COMMIT_FORM_ID = "create-commit-form";
+
+/** The secondary action: `Back` in the foot's left group, and the shipped outline shape. */
+const SECONDARY_CLASSES =
+  "inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800";
+
+/**
+ * The advancing act. Full width below 560 so it owns a row of its own under the thumb, and its
+ * own label's width above it — the artifact never stretches the primary to fill the row
+ * (`docs/review/artifacts/prototype-relationship-lifecycle-v7.html`, `.stage-foot .btn.primary`).
+ */
+const ADVANCE_CLASSES =
+  "inline-flex h-11 w-full items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action-hover min-[560px]:w-auto";
+
+/**
+ * **The stage foot** (#760) — one shape on stages 1–4, as the artifact draws it.
+ *
+ * Two acts leave the flow and they sit left as one pair; the act that advances it sits flush
+ * right. The pairing is structural, so it survives every width: below 560px the row cannot hold
+ * three controls, so the advancing act takes its own full-width row on top (thumb reach first)
+ * and `[Back][Cancel]` split the row beneath it. Above 560 it is one row, `space-between`.
+ *
+ * `Cancel` leaves the flow — it goes to the same address the shell's close does, because a
+ * dismissal is a page change and not a step backwards — while `Back` is the stage before. The
+ * labels arrive from the fixture (E23): `back` from the stage's own section, `cancel` from the
+ * one shared `foot` section.
+ */
+function StageFoot({
+  backHref,
+  backLabel,
+  cancelHref,
+  cancelLabel,
+  advance,
+}: {
+  backHref: string;
+  backLabel: string;
+  cancelHref: string;
+  cancelLabel: string;
+  /** The control that moves the person forward: a submit on 1, 2 and 4, a link on 3. */
+  advance: ReactNode;
+}) {
+  return (
+    <div
+      data-stage-foot="true"
+      className="flex flex-col gap-2 border-t border-gray-200 pt-4 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between dark:border-gray-700"
+    >
+      <div className="order-2 flex items-center gap-2 min-[560px]:order-none">
+        <Link
+          href={backHref}
+          data-create-back="true"
+          className={`${SECONDARY_CLASSES} flex-1 min-[560px]:flex-none min-[560px]:min-w-[132px]`}
+        >
+          {backLabel}
+        </Link>
+        <Link
+          href={cancelHref}
+          data-create-cancel="true"
+          className={`${SECONDARY_CLASSES} flex-1 min-[560px]:flex-none min-[560px]:min-w-[132px]`}
+        >
+          {cancelLabel}
+        </Link>
+      </div>
+      <div className="order-1 flex min-[560px]:order-none min-[560px]:ml-auto">{advance}</div>
+    </div>
+  );
+}
+
+/** One option of a single-select group: the value stored, the word, and what it does. */
+interface ChoiceOption {
+  readonly value: string;
+  readonly label: string;
+  readonly help: string;
+}
+
+/**
+ * **One single-select group**, drawn twice on Settings (#760).
+ *
+ * Opinions Mode and Alignment Setting are two dimensions of equal weight, so they are the same
+ * control and not a control and a toolbar: a `fieldset` with the live legend, one bordered cell
+ * per option, a native `required` radio (the browser's own single-choice contract — arrow keys
+ * move within one `name`) and the option's one-line glossary help. The peers sit side by side
+ * from `sm` up, one column below it.
+ *
+ * `badge` is the "Fixed at creation" chip beside the Opinions Mode legend; `intro` and `note` are
+ * the Alignment Setting's sentence above the cells and its threshold line under them.
+ */
+function ChoiceFieldset({
+  name,
+  legend,
+  options,
+  selected,
+  badge,
+  intro,
+  note,
+}: {
+  name: string;
+  legend: string;
+  options: readonly ChoiceOption[];
+  selected: string | undefined;
+  badge?: string;
+  intro?: string;
+  note?: string;
+}) {
+  return (
+    <fieldset
+      data-choice-group={name}
+      className="grid content-start gap-2 rounded-lg border border-gray-200 p-4 text-sm dark:border-gray-700"
+    >
+      <legend className="font-medium text-gray-800 dark:text-gray-100">
+        {legend}
+        {badge === undefined ? null : (
+          <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 align-middle text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            {badge}
+          </span>
+        )}
+      </legend>
+      {intro === undefined ? null : (
+        <p className="text-xs text-gray-500 dark:text-gray-400">{intro}</p>
+      )}
+      <div className="grid gap-2">
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={option.value}
+              required
+              defaultChecked={selected === option.value}
+              className="mt-1"
+            />
+            <span>
+              <span className="font-medium text-gray-800 dark:text-gray-100">{option.label}</span>
+              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+                {option.help}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {note === undefined ? null : (
+        <p className="text-xs text-gray-500 dark:text-gray-400">{note}</p>
+      )}
+    </fieldset>
+  );
+}
+
 export function CreateRelationship({
   copy,
   stage,
@@ -186,6 +341,10 @@ export function CreateRelationship({
   const review = sectionOf(copy, "review");
   const plans = sectionOf(copy, "plans");
   const problems = sectionOf(copy, "problems");
+  // The foot's one shared word (#760): `Cancel` is the same act on all four stages, so it has
+  // one row in the fixture rather than four copies that could drift.
+  const foot = sectionOf(copy, "foot");
+  const cancelLabel = itemLabel(foot, "cancel");
   // The shell's one own control (#709). The six stage names are the section's other items; this
   // word is here because the rail and the modal are drawn by the same shell.
   const stages = sectionOf(copy, "stages");
@@ -207,6 +366,23 @@ export function CreateRelationship({
         : stage === 3
           ? aspectsSection.heading
           : commit.heading;
+
+  /**
+   * Settings' two option lists (#760), built from the model's own vocabulary — `MODE_LABELS` and
+   * `SETTING_DEFINITIONS` are authored once in `content/assessment.ts`, so this screen cannot
+   * describe a Mode or a Setting differently from the answer sheet that asks it. Only the
+   * *headings* and the two Mode helps are fixture copy.
+   */
+  const modeOptions: ChoiceOption[] = ASSESSMENT_MODES.map((option) => ({
+    value: option,
+    label: MODE_LABELS[option],
+    help: itemLabel(mode, option === "basic" ? "mode-basic-help" : "mode-advanced-help"),
+  }));
+  const settingOptions: ChoiceOption[] = ALIGNMENT_SETTINGS.map((option) => ({
+    value: option,
+    label: SETTING_LABELS[option],
+    help: SETTING_DEFINITIONS[option],
+  }));
 
   // The refusal that leaves nothing to copy: still a page, never a 404 that loses the sentence.
   if (template === null) {
@@ -240,22 +416,11 @@ export function CreateRelationship({
       <StageColumn>
         <div className="space-y-6">
           {/*
-           * Stages 2–4 keep their back link at the top of the column; stage 1 draws its own
-           * `Back` in the form's action row instead, because that is the artifact's stage foot
-           * (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`, `s4.back` beside
-           * `s4.next`) — one back affordance per screen, and on Details it is half of the pair.
+           * **One back affordance per screen, and it lives in the foot** (#760). Stages 2–4 used
+           * to draw a bare `Back` link at the top of the column while stage 1 drew its own in the
+           * form's action row — three shapes for one act, and none of them the pair the artifact
+           * draws. The foot below is now the only place it appears, on all four stages.
            */}
-          {stage === 1 ? null : (
-            <p>
-              <Link href={backHref} className="text-sm font-medium text-action hover:underline">
-                {stage === 2
-                  ? itemLabel(mode, "back")
-                  : stage === 3
-                    ? itemLabel(aspectsSection, "back")
-                    : itemLabel(commit, "back")}
-              </Link>
-            </p>
-          )}
 
           {/*
            * Where the person is in the six stages (#687, renamed by #735): Details, Settings,
@@ -405,28 +570,18 @@ export function CreateRelationship({
                   </label>
                 </div>
 
-                {/*
-                The stage foot: the secondary action, then the primary one, as the artifact
-                draws it (`s4.back` beside `s4.next`). There is no note under the pair — the
-                sentence that used to sit there is not in the artifact, and a step that says
-                what the next step does before doing it is the one thing the spec's inventory
-                has no line for.
-              */}
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Link
-                    href={backHref}
-                    data-create-back="true"
-                    className="inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
-                  >
-                    {itemLabel(who, "back")}
-                  </Link>
-                  <button
-                    type="submit"
-                    className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action-hover"
-                  >
-                    {itemLabel(who, "submit")}
-                  </button>
-                </div>
+                {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
+                <StageFoot
+                  backHref={backHref}
+                  backLabel={itemLabel(who, "back")}
+                  cancelHref={shell.closeHref}
+                  cancelLabel={cancelLabel}
+                  advance={
+                    <button type="submit" className={ADVANCE_CLASSES}>
+                      {itemLabel(who, "submit")}
+                    </button>
+                  }
+                />
               </form>
             </>
           ) : stage === 2 ? (
@@ -442,93 +597,49 @@ export function CreateRelationship({
               >
                 {mode.heading}
               </h2>
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">
-                {itemLabel(mode, "mode-fixed")}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(mode)}</p>
 
               {/* The template is the route's own fact; the form carries it so the POST names it. */}
               <input type="hidden" name="templateRecordId" value={template.recordId} />
 
-              {/* Mode — fixed at creation, and said so on the form. */}
-              <fieldset className="grid gap-2 text-sm">
-                <legend className="font-medium text-gray-700 dark:text-gray-200">
-                  {itemLabel(mode, "mode-label")}
-                </legend>
-                {ASSESSMENT_MODES.map((option) => (
-                  <label
-                    key={option}
-                    className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
-                  >
-                    <input
-                      type="radio"
-                      name="mode"
-                      value={option}
-                      required
-                      defaultChecked={draft.mode === option}
-                      className="mt-1"
-                    />
-                    <span>
-                      <span className="font-medium text-gray-800 dark:text-gray-100">
-                        {MODE_LABELS[option]}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                        {option === "basic"
-                          ? itemLabel(mode, "mode-basic-help")
-                          : itemLabel(mode, "mode-advanced-help")}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {itemLabel(mode, "mode-fixed-note")}
-                </p>
-              </fieldset>
-
-              {/* Setting — the bar the report is judged against, and the one choice a party may change. */}
-              <fieldset className="grid gap-2 text-sm">
-                <legend className="font-medium text-gray-700 dark:text-gray-200">
-                  {itemLabel(mode, "setting-label")}
-                </legend>
-                {ALIGNMENT_SETTINGS.map((option) => (
-                  <label
-                    key={option}
-                    className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
-                  >
-                    <input
-                      type="radio"
-                      name="alignmentSetting"
-                      value={option}
-                      required
-                      defaultChecked={draft.alignmentSetting === option}
-                      className="mt-1"
-                    />
-                    <span>
-                      <span className="font-medium text-gray-800 dark:text-gray-100">
-                        {SETTING_LABELS[option]}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                        {SETTING_DEFINITIONS[option]}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {itemLabel(mode, "setting-changeable")}
-                </p>
-              </fieldset>
-
-              {/* The point of action: the control, enabled, with what it will do beside it. */}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button
-                  type="submit"
-                  className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground"
-                >
-                  {itemLabel(mode, "submit")}
-                </button>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {itemLabel(mode, "submit-note")}
-                </p>
+              {/*
+               * **Two peers, not two stacks** (#760). Opinions Mode and Alignment Setting are two
+               * independent dimensions of equal weight — the Mode decides how many Opinion
+               * questions an Aspect asks, the Setting decides how strictly the Gap is judged — so
+               * they are drawn with one control, side by side from `sm` up and one column below
+               * it. The badge is the one sentence Mode needs ("Fixed at creation"); the Setting
+               * carries its own lens line above and its threshold line below.
+               */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ChoiceFieldset
+                  name="mode"
+                  legend={itemLabel(mode, "mode-label")}
+                  badge={itemLabel(mode, "mode-fixed")}
+                  options={modeOptions}
+                  selected={draft.mode}
+                />
+                <ChoiceFieldset
+                  name="alignmentSetting"
+                  legend={itemLabel(mode, "setting-label")}
+                  intro={itemLabel(mode, "setting-help")}
+                  note={itemLabel(mode, "setting-note")}
+                  options={settingOptions}
+                  selected={draft.alignmentSetting}
+                />
               </div>
+
+              {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
+              <StageFoot
+                backHref={backHref}
+                backLabel={itemLabel(mode, "back")}
+                cancelHref={shell.closeHref}
+                cancelLabel={cancelLabel}
+                advance={
+                  <button type="submit" className={ADVANCE_CLASSES}>
+                    {itemLabel(mode, "submit")}
+                  </button>
+                }
+              />
             </form>
           ) : stage === 3 ? (
             <div className="space-y-5">
@@ -550,170 +661,192 @@ export function CreateRelationship({
               flow puts the review, the plans and the conversion after the list, so this is a plain
               link to the last stage — a GET, because going to a screen must never write.
             */}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Link
-                  href={createCommitPath(template.recordId)}
-                  data-create-next="commit"
-                  className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover"
-                >
-                  {itemLabel(aspectsSection, "submit")}
-                </Link>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {itemLabel(aspectsSection, "submit-note")}
-                </p>
-              </div>
+              {/* The stage foot (#760): `[Back][Cancel]` left, the hand-over flush right. */}
+              <StageFoot
+                backHref={backHref}
+                backLabel={itemLabel(aspectsSection, "back")}
+                cancelHref={shell.closeHref}
+                cancelLabel={cancelLabel}
+                advance={
+                  <Link
+                    href={createCommitPath(template.recordId)}
+                    data-create-next="commit"
+                    className={ADVANCE_CLASSES}
+                  >
+                    {itemLabel(aspectsSection, "submit")}
+                  </Link>
+                }
+              />
             </div>
           ) : (
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-              {/*
+            <>
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+                {/*
               LEFT — the two plans, as the soft half of the payment decision (#690). Nothing here
               is charged and nothing here blocks: the create posts without a plan, and the hard
               gate is at publish (`components/dashboard/relationship-detail.tsx`).
             */}
-              <section
-                aria-labelledby="create-plans-heading"
-                data-create-plans="true"
-                className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2
-                    id="create-plans-heading"
-                    className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                  >
-                    {plans.heading}
-                  </h2>
-                  <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
-                    {itemLabel(plans, "trial-short")}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(plans)}</p>
-                <PlanChoices copy={copy} />
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {itemLabel(plans, "trial")}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {itemLabel(plans, "add-method-note")}
-                </p>
-                <p>
-                  <Link
-                    href={PRICING_PATH}
-                    data-create-plans-link="pricing"
-                    className="text-sm font-medium text-action hover:underline"
-                  >
-                    {itemLabel(plans, "add-method")}
-                  </Link>
-                </p>
-              </section>
+                <section
+                  aria-labelledby="create-plans-heading"
+                  data-create-plans="true"
+                  className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2
+                      id="create-plans-heading"
+                      className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                    >
+                      {plans.heading}
+                    </h2>
+                    <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
+                      {itemLabel(plans, "trial-short")}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(plans)}</p>
+                  <PlanChoices copy={copy} />
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    {itemLabel(plans, "trial")}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    {itemLabel(plans, "add-method-note")}
+                  </p>
+                  <p>
+                    <Link
+                      href={PRICING_PATH}
+                      data-create-plans-link="pricing"
+                      className="text-sm font-medium text-action hover:underline"
+                    >
+                      {itemLabel(plans, "add-method")}
+                    </Link>
+                  </p>
+                </section>
 
-              <aside className="space-y-5">
-                {/*
+                <aside className="space-y-5">
+                  {/*
                 The conversion. A plain form posting to the create endpoint: the draft already
                 carries who, mode, setting and the list, so the post names the template and nothing
                 else, and a reload of the refusal cannot create a second relationship.
               */}
-                <form
-                  action={CREATE_INSTANCE_PATH}
-                  method="post"
-                  aria-labelledby="create-commit-heading"
-                  data-create-commit="true"
-                  className="space-y-3 rounded-lg border border-action bg-white p-4 dark:bg-gray-900"
-                >
-                  <h2
-                    id="create-commit-heading"
-                    className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                  <form
+                    id={COMMIT_FORM_ID}
+                    action={CREATE_INSTANCE_PATH}
+                    method="post"
+                    aria-labelledby="create-commit-heading"
+                    data-create-commit="true"
+                    className="space-y-3 rounded-lg border border-action bg-white p-4 dark:bg-gray-900"
                   >
-                    {itemLabel(commit, "cta-heading")}
-                  </h2>
-                  <input type="hidden" name="templateRecordId" value={template.recordId} />
-                  <button
-                    type="submit"
-                    className="inline-flex h-11 w-full items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover"
-                  >
-                    {itemLabel(commit, "submit")}
-                  </button>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    {itemLabel(commit, "cta-body")}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    {itemLabel(commit, "reassure")}
-                  </p>
-                </form>
+                    <h2
+                      id="create-commit-heading"
+                      className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                    >
+                      {itemLabel(commit, "cta-heading")}
+                    </h2>
+                    <input type="hidden" name="templateRecordId" value={template.recordId} />
+                    {/*
+                     * The write itself lives in the stage foot (#760), as it does on every other
+                     * stage: the foot's primary carries `form="create-commit-form"`, so it submits
+                     * this form from outside it and the card keeps the sentences rather than a
+                     * second control that can only agree with the first one.
+                     */}
+                    <p className="text-xs text-gray-600 dark:text-gray-300">
+                      {itemLabel(commit, "cta-body")}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">
+                      {itemLabel(commit, "reassure")}
+                    </p>
+                  </form>
 
-                {/*
+                  {/*
                 The six facts stages 1–3 decided, printed back for one last read — the template
                 (with its own Aspect count), both seats, the title, the Mode and the Setting. The
                 Aspect *count* rather than the list: the list is stage 3, one link back.
               */}
-                <section
-                  aria-labelledby="create-review-heading"
-                  data-create-review="true"
-                  className="space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-                >
-                  <h2
-                    id="create-review-heading"
-                    className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                  <section
+                    aria-labelledby="create-review-heading"
+                    data-create-review="true"
+                    className="space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
                   >
-                    {review.heading}
-                  </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(review)}</p>
-                  <dl className="mt-2 space-y-1.5 text-sm">
-                    <div className="flex justify-between gap-3" data-create-fact="true">
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {itemLabel(review, "template")}
-                      </dt>
-                      <dd className="text-right text-gray-900 dark:text-gray-100">
-                        {template.title}
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">
-                          {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
-                        </span>
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3" data-create-fact="true">
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {itemLabel(review, "initiator")}
-                      </dt>
-                      <dd className="text-right text-gray-900 dark:text-gray-100">
-                        {orNone(review, draft.initiatorName)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3" data-create-fact="true">
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {itemLabel(review, "counterparty")}
-                      </dt>
-                      <dd className="text-right text-gray-900 dark:text-gray-100">
-                        {orNone(review, draft.counterpartyName)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3" data-create-fact="true">
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {itemLabel(review, "title")}
-                      </dt>
-                      <dd className="text-right text-gray-900 dark:text-gray-100">
-                        {orNone(review, draft.title)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3" data-create-fact="true">
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {itemLabel(review, "mode")}
-                      </dt>
-                      <dd className="text-right text-gray-900 dark:text-gray-100">
-                        {MODE_LABELS[draft.mode as keyof typeof MODE_LABELS] ??
-                          itemLabel(review, "none")}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3" data-create-fact="true">
-                      <dt className="text-gray-500 dark:text-gray-400">
-                        {itemLabel(review, "setting")}
-                      </dt>
-                      <dd className="text-right text-gray-900 dark:text-gray-100">
-                        {SETTING_LABELS[draft.alignmentSetting as keyof typeof SETTING_LABELS] ??
-                          itemLabel(review, "none")}
-                      </dd>
-                    </div>
-                  </dl>
-                </section>
-              </aside>
-            </div>
+                    <h2
+                      id="create-review-heading"
+                      className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                    >
+                      {review.heading}
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {sectionBody(review)}
+                    </p>
+                    <dl className="mt-2 space-y-1.5 text-sm">
+                      <div className="flex justify-between gap-3" data-create-fact="true">
+                        <dt className="text-gray-500 dark:text-gray-400">
+                          {itemLabel(review, "template")}
+                        </dt>
+                        <dd className="text-right text-gray-900 dark:text-gray-100">
+                          {template.title}
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">
+                            {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3" data-create-fact="true">
+                        <dt className="text-gray-500 dark:text-gray-400">
+                          {itemLabel(review, "initiator")}
+                        </dt>
+                        <dd className="text-right text-gray-900 dark:text-gray-100">
+                          {orNone(review, draft.initiatorName)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3" data-create-fact="true">
+                        <dt className="text-gray-500 dark:text-gray-400">
+                          {itemLabel(review, "counterparty")}
+                        </dt>
+                        <dd className="text-right text-gray-900 dark:text-gray-100">
+                          {orNone(review, draft.counterpartyName)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3" data-create-fact="true">
+                        <dt className="text-gray-500 dark:text-gray-400">
+                          {itemLabel(review, "title")}
+                        </dt>
+                        <dd className="text-right text-gray-900 dark:text-gray-100">
+                          {orNone(review, draft.title)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3" data-create-fact="true">
+                        <dt className="text-gray-500 dark:text-gray-400">
+                          {itemLabel(review, "mode")}
+                        </dt>
+                        <dd className="text-right text-gray-900 dark:text-gray-100">
+                          {MODE_LABELS[draft.mode as keyof typeof MODE_LABELS] ??
+                            itemLabel(review, "none")}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3" data-create-fact="true">
+                        <dt className="text-gray-500 dark:text-gray-400">
+                          {itemLabel(review, "setting")}
+                        </dt>
+                        <dd className="text-right text-gray-900 dark:text-gray-100">
+                          {SETTING_LABELS[draft.alignmentSetting as keyof typeof SETTING_LABELS] ??
+                            itemLabel(review, "none")}
+                        </dd>
+                      </div>
+                    </dl>
+                  </section>
+                </aside>
+              </div>
+
+              {/* The stage foot (#760): `[Back][Cancel]` left, the create flush right. */}
+              <StageFoot
+                backHref={backHref}
+                backLabel={itemLabel(commit, "back")}
+                cancelHref={shell.closeHref}
+                cancelLabel={cancelLabel}
+                advance={
+                  <button type="submit" form={COMMIT_FORM_ID} className={ADVANCE_CLASSES}>
+                    {itemLabel(commit, "submit")}
+                  </button>
+                }
+              />
+            </>
           )}
         </div>
       </StageColumn>
