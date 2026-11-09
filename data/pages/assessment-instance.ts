@@ -436,6 +436,26 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "not-a-party", label: "This instance is not yours to answer." },
         { id: "no-such-instance", label: "No instance answers to that link." },
+        // #752 — the two write refusals a *state* produces, each with its own sentence because
+        // the reader's next move differs: a voided session was ended by an operator and has no
+        // way back, a lapsed one was ended by the money and comes back with a payment. The union
+        // in `lib/flow/state.ts` names both; without this row the route threw instead of
+        // printing either, so a refusal became a 500.
+        {
+          id: "voided",
+          label: "An operator ended this session, so no answer can be changed.",
+        },
+        {
+          id: "lapsed",
+          label:
+            "The membership behind this relationship ended, so both sheets are read-only until the initiator's payment lands.",
+        },
+        // #619's code: the fee is taken when the sheets are published, and this is the sentence a
+        // reader gets when the account that started the relationship has no method on file.
+        {
+          id: "payment-method-required",
+          label: "This relationship needs a payment method before its sheets can be published.",
+        },
         // #478 — the Steps endpoint's two codes. A tick can name a row this relationship does not
         // hold (`no-such-step`), and a party can write a status the model does not allow (`invalid`).
         { id: "no-such-step", label: "That Step is not on this relationship." },
