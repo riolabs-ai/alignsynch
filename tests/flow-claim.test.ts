@@ -17,7 +17,7 @@
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
 import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
 import { InviteView } from "@/components/assessment-flow/invite-view";
@@ -43,6 +43,14 @@ import type { FlowScreen } from "@/lib/flow/screen";
 import { partyTokensFrom } from "@/lib/flow/session";
 import type { InvitePreview } from "@/lib/flow/store";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
+
+/**
+ * #710 — the response renders inside `StageShell`, whose only Next dependency is `useRouter`.
+ * No render here navigates: the stub keeps a render a render.
+ */
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+}));
 
 /* ------------------------------------------------------------------ *\
  * The pure rules
@@ -230,7 +238,8 @@ describe("the counterparty wizard", () => {
       viewerName: null,
     });
     expect(html).toContain("Avery invited you to answer Relationship Basics.");
-    expect(html).toContain("Step 1 of 3");
+    // #710 — the rail is the flow's six stages, and this screen is Connect (stage 5).
+    expect(html).toContain("Stage 5 of 6");
     expect(html).toContain('data-step-state="current"');
     expect(html).not.toContain('name="confirm"');
     expect(html).toContain('href="/invite/token-1?step=2"');
@@ -244,7 +253,7 @@ describe("the counterparty wizard", () => {
       step: 2,
       viewerName: null,
     });
-    expect(html).toContain("Step 2 of 3");
+    expect(html).toContain("Stage 5 of 6");
     expect(html).toContain("You can change any opinion until you accept the session.");
     expect(html).toContain('href="/invite/token-1"');
     expect(html).toContain('href="/invite/token-1?step=3"');
@@ -258,7 +267,7 @@ describe("the counterparty wizard", () => {
       step: 3,
       viewerName: null,
     });
-    expect(html).toContain("Step 3 of 3");
+    expect(html).toContain("Stage 5 of 6");
     expect(html).toContain("Accepting costs you nothing");
     expect(html).toContain(
       'href="/login?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',
