@@ -6,6 +6,50 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.11.0] - 2026-11-09
+
+### Added
+
+- `feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) ([#761](https://github.com/riolabs-ai/alignsynch/pull/761))
+
+### Fixed
+
+- `fix(answer-sheet)` — a refusal code with no sentence 500s, and `lapsed` answers 404 (#752) ([#755](https://github.com/riolabs-ai/alignsynch/pull/755))
+
+### Maintenance
+
+- `docs(review)` — fold the owner's prototype review pass into the v7 artifact ([#759](https://github.com/riolabs-ai/alignsynch/pull/759))
+- `chore(health)` — re-record the platform record at 1.10.0 ([#758](https://github.com/riolabs-ai/alignsynch/pull/758))
+
+### Known limits
+
+- **The build matches the artifact on four screens; the artifact is still the reference.** The v7
+  file (`docs/review/artifacts/prototype-relationship-lifecycle-v7.html`) is what the review approved,
+  and it keeps being revised on its own. A revision to the artifact does not reach the product until a
+  card lands, so the two can diverge between releases by design — this release closes the gap that was
+  open, it does not close the mechanism.
+- **Settings agrees on the question and still differs on the shape.** The build draws the two
+  dimensions as two peer fieldsets side by side (`components/assessment-flow/create-relationship.tsx`);
+  the artifact stacks two cards with a two-up option row inside each. Same two choices — **Basic** /
+  **Advanced** and **Soft** / **Full** — different layout. Recorded in #761 rather than quietly
+  reconciled.
+- **The 44px tap floor is measured on stage 1 and inherited by the rest.** Measured in this release at
+  1440 and 390: the Details foot's `Back`, `Cancel` and advance are 44, 44 and 44px tall. Stages 2–4 use
+  the same `StageFoot` component, so they hold by construction; there is no per-stage measurement for
+  them in this release.
+- **The stage-3 exit now reads `Continue to Stage 4`, not the spec's older `Continue to invite`.** The
+  approved artifact replaced that whole family of exits, and `docs/specs/flow-stages.md` was amended in
+  the same change so the spec and the artifact do not contradict each other. A reader who learned the
+  older wording will find a different label on the button.
+- **Copy lives in the fixtures, and the artifact's `Edit copy` tool is not in the build.** Every string
+  the flow renders comes from `data/pages/assessment-create.ts` (E23 forbids a literal in a component).
+  The artifact's browser-side override tool is a review device and does not exist in the product.
+- **`Align` is still drawn unavailable from the create flow.** The relationship this flow creates has no
+  shared assessment until somebody claims the invitation and answers, which is unchanged by this
+  release and is what the spec requires.
+- **No database, auth or API change.** `db/migrations/`, `lib/auth/` and `lib/db/` are untouched; this
+  release is the create flow's markup, its fixture copy, the spec table, and the tests that pin them.
+
 ## [1.10.0] - 2026-11-09
 
 ### Added

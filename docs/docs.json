@@ -474,6 +474,11 @@
           "path": "changelog/v1-10-0.md",
           "title": "v1.10.0",
           "question": "The release where paying stopped leaving the page."
+        },
+        {
+          "path": "changelog/v1-11-0.md",
+          "title": "v1.11.0",
+          "question": "The release where the build drew what the review approved."
         }
       ]
     },

@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.11.0",
+      "theme": "the build draws what the review approved — the create flow's panel stops at 880px, one stage foot carries [Back][Cancel] and the advance, Settings asks its two questions side by side, and an Aspect row reads 01 · grip · name · opinions · edit.",
+      "headline": "`feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) (#761)"
+    },
+    {
       "version": "1.10.0",
       "theme": "the capture moves into a frame — Stripe's form mounts inside the dialog, so paying never leaves the relationship, while the membership checkout stays hosted.",
       "headline": "`feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) (#751)"
