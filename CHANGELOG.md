@@ -6,6 +6,46 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.10.0] - 2026-11-09
+
+### Added
+
+- `feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) ([#751](https://github.com/riolabs-ai/alignsynch/pull/751))
+
+### Known limits
+
+- **Paying happens in a frame inside our page, not a navigation.** `presentation: "embedded"` asks the
+  provider for `ui_mode: embedded_page` with a `return_url` instead of a `success_url`, and the
+  session answers a `client_secret` the dialog mounts (`lib/billing/adapters/stripe.ts`,
+  `components/dashboard/payment-capture-dialog.tsx`). The **hosted** presentation is still the
+  default, and `/pricing`'s membership checkout still uses it — the relationship fee and the
+  membership are two different checkout shapes on purpose.
+- **One case still leaves the page: an SCA challenge.** The embedded frame has no `success_url` to
+  return to, so the single path that must navigate is the bank's own check, and it comes back
+  through `return_url`. Every other capture completes without the flow being left.
+- **Only Stripe test keys are configured.** The adapter reads `STRIPE_TEST_SECRET_KEY`, so a method
+  is captured in test mode and this release cannot take a real charge.
+- **The artifact's frame caption says `ui_mode: embedded`, and this build does not send that word.**
+  Stripe refuses it — "The ui_mode value `embedded` is no longer supported. Use `embedded_page`" —
+  so the code sends `embedded_page` and an embedded session also carries `currency`. The caption in
+  the artifact is the artifact's copy and was left alone; the deviation is recorded on `#748`
+  rather than silently rewritten.
+- **A lapsed membership still answers 500 instead of the read-only screen.** A trial or subscription
+  that ends is exactly the state this release's payment work makes reachable, and
+  `POST /assessment/instances/<id>/answers` asks the `problems` section for an item named `lapsed`
+  that the fixture does not carry (`data/pages/assessment-instance.ts`), so the request fails rather
+  than rendering the sentence written for it in `data/pages/assessment-answer.ts`. Named in this
+  block because shipping payment without saying so would be the dishonest half; `#753` fixes it.
+- **The hard gate sits at completion, and it is the only gate.** With no method on file a
+  relationship reports `awaiting_payment` and opinions stay withheld (`lib/flow/state.ts`);
+  answering, sharing and inviting are never gated, and there is still no login wall to reach them.
+- **The conformance slices C3, C4 and C5 are not in this release.** The admin console's left edge
+  (`#717`), the marketing content cards' shadows (`#718`) and the right-aligned numbers and explicit
+  empty states (`#719`) sit in the `v1.11.0` milestone, not here.
+- **One payment path still carries a known risk, unchanged.** Publishing can start a trial or
+  checkout while completion also writes a `relationship_payment` obligation (ADR-1), so a
+  double-created obligation is possible; reachable only with test keys today.
+
 ## [1.9.0] - 2026-11-09
 
 ### Added
