@@ -179,7 +179,9 @@ describe("S2 — one foot on every stage", () => {
   });
 
   it("stacks below 560 and holds one row above it — a structural pair, not an order", () => {
-    const source = code("components/assessment-flow/create-relationship.tsx");
+    /* #771 lifted the foot out of `create-relationship.tsx` into `stage-foot.tsx`, because stage 4's
+       client walk draws it too. The markup is the same; only the file that owns it moved. */
+    const source = code("components/assessment-flow/stage-foot.tsx");
     // Three controls in one row cannot fit at 390: the advance takes its own full-width row on
     // top (`order-1`) and the pair splits the row beneath (`order-2`).
     expect(source).toContain("min-[560px]:flex-row");

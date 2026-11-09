@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **89** — 55 static, 34 dynamic, from `app/**/page.tsx`
-- component domains: **42** — 314 files under `components/`, 307 of them `.tsx`
+- component domains: **42** — 316 files under `components/`, 309 of them `.tsx`
 - route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 67 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 42 · AlignSynch 45 · QuizHub 42 · No template yet 2
@@ -504,7 +504,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
-  - files (27): `accept-session.tsx`, `account-gate.tsx`, `alignment-view.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-column.tsx`, `stage-rail.tsx`, `stage-shell.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
+  - files (29): `accept-session.tsx`, `account-gate.tsx`, `alignment-view.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-column.tsx`, `stage-foot.tsx`, `stage-four.tsx`, `stage-rail.tsx`, `stage-shell.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
   - routes (25): `/admin/templates/[id]`, `/assessment`, `/assessment/[slug]`, `/assessment/demo/[type]`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/assessment/templates`, `/assessment/templates/[templateId]`, `/assessment/templates/[templateId]/create`, `/assessment/templates/[templateId]/create/account`, `/assessment/templates/[templateId]/create/aspects`, `/assessment/templates/[templateId]/create/commit`, `/assessment/templates/[templateId]/create/mode`, `/assessment/templates/new`, `/dashboard`, `/dashboard/templates/[id]`, `/dashboard/user`, `/invite/[token]`, `/profile/[username]`, `/settings`, `/support`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
