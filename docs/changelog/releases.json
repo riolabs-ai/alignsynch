@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.11.0",
+      "theme": "the flow's build matches its artifact — the panel is capped and centred, stages 1–4 share one foot, Settings draws two peers of one control, and an Aspect row is a single line.",
+      "headline": "`feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) (#761)"
+    },
+    {
       "version": "1.10.0",
       "theme": "the capture moves into a frame — Stripe's form mounts inside the dialog, so paying never leaves the relationship, while the membership checkout stays hosted.",
       "headline": "`feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) (#751)"

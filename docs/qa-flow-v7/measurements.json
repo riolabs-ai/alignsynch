@@ -1,0 +1,218 @@
+[
+  {
+    "stage": "details",
+    "width": 1440,
+    "file": "/home/jadenblack/.hermes/profiles/alignsynch/cache/scratch/v7-stills/details-1440.png",
+    "innerWidth": 1440,
+    "innerHeight": 900,
+    "scrollWidth": 1440,
+    "panelW": 880,
+    "panelLeft": 280,
+    "panelRight": 280,
+    "foot": {
+      "top": 973,
+      "left": 330,
+      "width": 780
+    },
+    "advance": {
+      "w": 165,
+      "h": 44,
+      "left": 945,
+      "right": 330
+    },
+    "back": {
+      "h": 44,
+      "left": 330
+    },
+    "headings": [
+      "Recent Messages",
+      "Notifications",
+      "Relationship Details",
+      "Relationship Details",
+      "The template you are copying",
+      "Relationship Details"
+    ],
+    "aspectRows": []
+  },
+  {
+    "stage": "details",
+    "width": 390,
+    "file": "/home/jadenblack/.hermes/profiles/alignsynch/cache/scratch/v7-stills/details-390.png",
+    "innerWidth": 390,
+    "innerHeight": 844,
+    "scrollWidth": 390,
+    "panelW": 390,
+    "panelLeft": 0,
+    "panelRight": 0,
+    "foot": {
+      "top": 1300,
+      "left": 33,
+      "width": 324
+    },
+    "advance": {
+      "w": 324,
+      "h": 44,
+      "left": 33,
+      "right": 33
+    },
+    "back": {
+      "h": 44,
+      "left": 33
+    },
+    "headings": [
+      "Recent Messages",
+      "Notifications",
+      "Relationship Details",
+      "Relationship Details",
+      "The template you are copying",
+      "Relationship Details"
+    ],
+    "aspectRows": []
+  },
+  {
+    "stage": "settings",
+    "width": 1440,
+    "file": "/home/jadenblack/.hermes/profiles/alignsynch/cache/scratch/v7-stills/settings-1440.png",
+    "innerWidth": 1440,
+    "innerHeight": 900,
+    "scrollWidth": 1440,
+    "panelW": 880,
+    "panelLeft": 280,
+    "panelRight": 280,
+    "foot": {
+      "top": 642,
+      "left": 330,
+      "width": 780
+    },
+    "advance": {
+      "w": 165,
+      "h": 44,
+      "left": 945,
+      "right": 330
+    },
+    "back": {
+      "h": 44,
+      "left": 330
+    },
+    "headings": [
+      "Recent Messages",
+      "Notifications",
+      "Relationship Settings",
+      "Relationship Settings",
+      "Relationship Settings",
+      "Opinions ModeFixed at creation",
+      "Alignment Setting"
+    ],
+    "aspectRows": []
+  },
+  {
+    "stage": "settings",
+    "width": 390,
+    "file": "/home/jadenblack/.hermes/profiles/alignsynch/cache/scratch/v7-stills/settings-390.png",
+    "innerWidth": 390,
+    "innerHeight": 844,
+    "scrollWidth": 390,
+    "panelW": 390,
+    "panelLeft": 0,
+    "panelRight": 0,
+    "foot": {
+      "top": 922,
+      "left": 33,
+      "width": 324
+    },
+    "advance": {
+      "w": 324,
+      "h": 44,
+      "left": 33,
+      "right": 33
+    },
+    "back": {
+      "h": 44,
+      "left": 33
+    },
+    "headings": [
+      "Recent Messages",
+      "Notifications",
+      "Relationship Settings",
+      "Relationship Settings",
+      "Relationship Settings",
+      "Opinions ModeFixed at creation",
+      "Alignment Setting"
+    ],
+    "aspectRows": []
+  },
+  {
+    "stage": "aspects",
+    "width": 1440,
+    "file": "/home/jadenblack/.hermes/profiles/alignsynch/cache/scratch/v7-stills/aspects-1440.png",
+    "innerWidth": 1440,
+    "innerHeight": 900,
+    "scrollWidth": 1440,
+    "panelW": 880,
+    "panelLeft": 280,
+    "panelRight": 280,
+    "foot": {
+      "top": 650,
+      "left": 313,
+      "width": 814
+    },
+    "advance": {
+      "w": 166,
+      "h": 44,
+      "left": 961,
+      "right": 313
+    },
+    "back": {
+      "h": 44,
+      "left": 313
+    },
+    "headings": [
+      "Recent Messages",
+      "Notifications",
+      "Relationship Aspects",
+      "Relationship Aspects"
+    ],
+    "aspectRows": [
+      "01 ⠿ How much time do you spend together in a normal week? Rare ↔ Constant ✎",
+      "02 ⠿ How is the work of the household divided? All mine ↔ Evenly split ✎",
+      "03 ⠿ How are money and the decisions about it handled? Kept separate ↔ Fully shared ✎"
+    ]
+  },
+  {
+    "stage": "aspects",
+    "width": 390,
+    "file": "/home/jadenblack/.hermes/profiles/alignsynch/cache/scratch/v7-stills/aspects-390.png",
+    "innerWidth": 390,
+    "innerHeight": 844,
+    "scrollWidth": 390,
+    "panelW": 390,
+    "panelLeft": 0,
+    "panelRight": 0,
+    "foot": {
+      "top": 769,
+      "left": 16,
+      "width": 358
+    },
+    "advance": {
+      "w": 358,
+      "h": 44,
+      "left": 16,
+      "right": 16
+    },
+    "back": {
+      "h": 44,
+      "left": 16
+    },
+    "headings": [
+      "Recent Messages",
+      "Notifications",
+      "Relationship Aspects",
+      "Relationship Aspects"
+    ],
+    "aspectRows": [
+      "01 ⠿ How much time do you spend together in a normal week? Rare ↔ Constant ✎",
+      "02 ⠿ How is the work of the household divided? All mine ↔ Evenly split ✎",
+      "03 ⠿ How are money and the decisions about it handled? Kept separate ↔ Fully shared ✎"
+    ]
+  }
+]

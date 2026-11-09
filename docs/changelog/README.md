@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.11.0](v1-11-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.11.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.11.0)
+- **Pull requests named** 4
+- **Theme:** the flow's build matches its artifact — the panel is capped and centred, stages 1–4 share one foot, Settings draws two peers of one control, and an Aspect row is a single line.
+- **Headline:** `feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) (#761)
+
 ### [v1.10.0](v1-10-0.md)
 
 - **Released** 2026-11-09

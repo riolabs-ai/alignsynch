@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-09T13:41:48.363Z",
+  "recordedAt": "2026-11-09T15:02:23.827Z",
   "recorder": "pnpm health:record",
   "dbVerify": {
     "command": "pnpm db:verify",
-    "ranAt": "2026-11-08T05:31:18.686Z",
+    "ranAt": "2026-11-09T15:00:53.619Z",
     "database": "demo branch (NEON_BRANCH=demo, neondb) · host ep-crimson-truth-b4ppwxrp.c-6.us-east-2.aws.neon.tech",
     "exitCode": 0,
     "result": "pass",
-    "summary": "✓ db:verify — 5 instance(s) checked, 5 template(s) resolved, 3 template version(s) parsed with every relationship bound to one, no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 443 source file(s) (a scored session is immutable), 0 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded instance(s) complete, no party is bound to an account yet, 1 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (0 live subscription(s)), 3 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 5 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 0 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 1 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
+    "summary": "✓ db:verify — 16 instance(s) checked, 16 template(s) resolved, 3 template version(s) parsed with every relationship bound to one, no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 450 source file(s) (a scored session is immutable), 2 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded instance(s) complete, 2 party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows), 3 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (1 live subscription(s)), 3 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 18 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 0 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 2 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
     "violations": []
   },
   "gate": {
     "lane": "code",
-    "seconds": 95.2,
-    "measuredAt": "2026-11-08T05:29:43.502Z",
+    "seconds": 127.9,
+    "measuredAt": "2026-11-09T14:58:45.757Z",
     "command": "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
     "yield": {
       "window": "2026-11-07",
@@ -30,17 +30,17 @@
   "production": {
     "state": "answering",
     "version": "1.10.0",
-    "commit": "bb810348d2096323f18e26f512c531e2b9da4f9d",
+    "commit": "0ebd0aa08b5972aa681f43360c25db4b03e2c572",
     "status": 200,
-    "measuredAt": "2026-11-09T13:41:48.363Z",
+    "measuredAt": "2026-11-09T14:58:45.756Z",
     "source": "GET https://alignsynch.com/api/version",
-    "behindMain": 0
+    "behindMain": 1
   },
   "tree": {
-    "packageVersion": "1.10.0",
+    "packageVersion": "1.11.0",
     "latestTag": "v1.10.0",
-    "headSha": "bb810348d2096323f18e26f512c531e2b9da4f9d",
-    "mainSha": "bb810348d2096323f18e26f512c531e2b9da4f9d",
-    "measuredAt": "2026-11-09T13:41:46.491Z"
+    "headSha": "0ebd0aa08b5972aa681f43360c25db4b03e2c572",
+    "mainSha": "0ebd0aa08b5972aa681f43360c25db4b03e2c572",
+    "measuredAt": "2026-11-09T14:58:43.435Z"
   }
 }

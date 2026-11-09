@@ -6,6 +6,54 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.11.0] - 2026-11-09
+
+### Added
+
+- `feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) ([#761](https://github.com/riolabs-ai/alignsynch/pull/761))
+
+### Fixed
+
+- `fix(answer-sheet)` — a refusal code with no sentence 500s, and `lapsed` answers 404 (#752) ([#755](https://github.com/riolabs-ai/alignsynch/pull/755))
+
+### Maintenance
+
+- `docs(review)` — fold the owner's prototype review pass into the v7 artifact ([#759](https://github.com/riolabs-ai/alignsynch/pull/759))
+- `chore(health)` — re-record the platform record at 1.10.0 ([#758](https://github.com/riolabs-ai/alignsynch/pull/758))
+
+### Known limits
+
+- **The 880px panel is a desktop-only measurement.** The cap is `min(100% - 48px, 880px)` from
+  `lg` up (`components/assessment-flow/stage-shell.tsx`), and it was measured at 1024, 1440, 1920
+  and 3400. Below 1024 the flow is a full-height sheet with no inset and no border, so a screen
+  between 560px and 1023px gets the sheet, not the narrower dialog.
+- **Settings draws the two peer fieldsets side by side, which is not what the artifact draws.** The
+  v7 artifact stacks `Opinions Mode` and `Alignment Setting` as two cards with their options
+  two-up; this build makes them two peers in one row from `sm` up (one column below it), with each
+  fieldset's options on one row. The deviation is the card's shape and is recorded on `#760` rather
+  than silently resolved in the artifact's favour — the artifact is never edited to match the build.
+- **The create flow's copy is a fixture, not an edit surface.** Every label, help line and button
+  the stages 1–3 screens render lives in `data/pages/assessment-create.ts` and reaches the
+  components already resolved, which is what `data:check` E23 holds. Nothing in the product lets a
+  member reword it: the owner's v7 Edit-copy pass is a commit to that fixture.
+- **An Aspect row still closes only through Save or Cancel, and that is deliberate.** There is no
+  click-outside dismissal and no Escape handler on an open row; Cancel with unsaved words asks
+  first instead of discarding them (`components/assessment-flow/aspect-list.tsx`). A reader
+  expecting a row to collapse on blur will read the prompt as a second step.
+- **The conformance slices C3, C4 and C5 are still not in this release.** The admin console's left
+  edge (`#717`), the marketing content cards' shadows (`#718`) and the right-aligned numbers and
+  explicit empty states (`#719`) remain open in the `v1.11.0` milestone. This cut ships the flow
+  conformance alone (`#760`); the milestone's other three slices are not claimed by it.
+- **Only Stripe test keys are configured.** The adapter reads `STRIPE_TEST_SECRET_KEY`
+  (`lib/billing/adapters/stripe.ts`), so a payment method is captured in test mode and this release
+  cannot take a real charge.
+- **The hard gate sits at completion, and it is the only gate.** With no method on file a
+  relationship reports `awaiting_payment` and opinions stay withheld (`lib/flow/state.ts`);
+  answering, sharing and inviting are never gated, and there is still no login wall to reach them.
+- **One payment path still carries a known risk, unchanged.** Publishing can start a trial or
+  checkout while completion also writes a `relationship_payment` obligation (ADR-1), so a
+  double-created obligation is possible; reachable only with test keys today.
+
 ## [1.10.0] - 2026-11-09
 
 ### Added

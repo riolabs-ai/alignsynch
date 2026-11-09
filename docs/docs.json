@@ -474,6 +474,11 @@
           "path": "changelog/v1-10-0.md",
           "title": "v1.10.0",
           "question": "The release where paying stopped leaving the page."
+        },
+        {
+          "path": "changelog/v1-11-0.md",
+          "title": "v1.11.0",
+          "question": "The release where the flow's build matched its artifact."
         }
       ]
     },
@@ -506,6 +511,11 @@
           "path": "qa-flow-stages/README.md",
           "title": "Six flow stages",
           "question": "Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?"
+        },
+        {
+          "path": "qa-flow-v7/README.md",
+          "title": "Flow conformance, v7",
+          "question": "Does the shipped flow match the v7 artifact — panel cap, one foot, Settings peers, Aspect rows?"
         },
         {
           "path": "qa-flow-validation/2026-11-07.md",

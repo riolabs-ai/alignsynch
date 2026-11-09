@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**102 documents in 9 sections.** Every page carries the same nav block, generated
+**104 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -35,8 +35,8 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Operations](#operations) — 8 documents
 - [Reference](#reference) — 9 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 13 documents
-- [Records & QA](#records-qa) — 18 documents
+- [Release notes](#release-notes) — 14 documents
+- [Records & QA](#records-qa) — 19 documents
 
 ## Start here
 
@@ -161,6 +161,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-8-0.md`](changelog/v1-8-0.md) — **v1.8.0** — The release where the flow conformed to its six-stage spec.
 - [`changelog/v1-9-0.md`](changelog/v1-9-0.md) — **v1.9.0** — The release where the payer could finally pay.
 - [`changelog/v1-10-0.md`](changelog/v1-10-0.md) — **v1.10.0** — The release where paying stopped leaving the page.
+- [`changelog/v1-11-0.md`](changelog/v1-11-0.md) — **v1.11.0** — The release where the flow's build matched its artifact.
 
 ## Records & QA
 
@@ -171,6 +172,7 @@ What was measured, on which tree, and what the migration changed.
 - [`V1-RETIREMENT.md`](V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
+- [`qa-flow-v7/README.md`](qa-flow-v7/README.md) — **Flow conformance, v7** — Does the shipped flow match the v7 artifact — panel cap, one foot, Settings peers, Aspect rows?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
