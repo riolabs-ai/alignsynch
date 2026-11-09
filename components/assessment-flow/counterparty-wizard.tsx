@@ -22,23 +22,50 @@
  *                                     the one sentence about payment says who pays — never that
  *                                     the Counterparty does
  *
+ * **It runs in the flow's one modal, on the flow's one rail** (#710). The invitation link is the
+ * Counterparty's half of the same journey the Initiator started, so it gets the same presentation:
+ * `StageShell` frames it (a fullscreen dialog at ≥1024, a full-height sheet at 390, close onto an
+ * address) and `StageRail` draws the six stages above it. Nothing here is a second flow — the
+ * three onboarding screens are this stage's body, and their action set is props.
+ *
+ * **`current` is Connect — stage 5 — and never 6.** `connect` is where the spec puts this screen
+ * (`docs/specs/flow-stages.md`: the two seats exist and are connected, waiting on the
+ * Counterparty), and `Align` is drawn unavailable because nothing is shared until both sheets are
+ * sealed: `alignHref` is `null`, which is the rail's own conditional sixth cell rather than a
+ * second rail that could disagree with it.
+ *
+ * **The three onboarding screens stay addressed, and the six-stage rail replaces their own.** The
+ * step is `?step=1|2|3` with the token in the path (`inviteStepPath`), so a refresh, a deep link
+ * and the sign-in round trip all land on the same screen. Their numbered progress band is gone on
+ * purpose: the flow has **one** progress pattern (the cell rail, #716), and a screen that drew a
+ * second one above it would say `Stage 5 of 6` and `Step 2 of 3` at the same time.
+ *
  * A server component: the only interaction is a link or a form post, so nothing here needs
  * `"use client"` and the wizard ships no JavaScript of its own.
  */
 import type { PageCopy } from "@/content/pages";
 import { claimConfirmationValue, isTokenStateRefusal, type ClaimRefusal } from "@/lib/flow/claim";
-import { claimPath, inviteAuthPath, inviteStepPath, type InviteWizardStep } from "@/lib/flow/paths";
+import {
+  OVERVIEW_PATH,
+  claimPath,
+  inviteAuthPath,
+  inviteStepPath,
+  type InviteWizardStep,
+} from "@/lib/flow/paths";
 import type { InvitePreview } from "@/lib/flow/store";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
 import { StageColumn } from "./stage-column";
-import { WizardSteps } from "./wizard-steps";
+import { StageRail } from "./stage-rail";
+import { StageShell } from "./stage-shell";
 
-const RAIL: readonly { readonly step: InviteWizardStep; readonly item: string }[] = [
-  { step: 1, item: "1" },
-  { step: 2, item: "2" },
-  { step: 3, item: "3" },
-];
+/**
+ * The stage this screen is — **Connect**, the fifth of the six (`data/pages/lifecycle.ts`).
+ *
+ * The invitation has gone out and both seats exist; what is left is the Counterparty saying yes.
+ * A number, not a word: `StageRail` compares `current` against the fixture's item ids.
+ */
+const CONNECT_STAGE = 5;
 
 export function CounterpartyWizard({
   copy,
@@ -58,6 +85,7 @@ export function CounterpartyWizard({
   refusal?: ClaimRefusal;
 }) {
   const rail = sectionOf(copy, "steps");
+  const stages = sectionOf(copy, "stages");
   const first = sectionOf(copy, "step-1");
   const second = sectionOf(copy, "step-2");
   const third = sectionOf(copy, "step-3");
@@ -78,117 +106,118 @@ export function CounterpartyWizard({
       : undefined;
 
   return (
-    <StageColumn>
-      <WizardSteps
-        label={itemLabel(rail, "label")}
-        count={fillLabel(itemLabel(rail, "count"), values)}
-        current={step}
-        steps={RAIL.map((entry) => ({ step: entry.step, label: itemLabel(rail, entry.item) }))}
-      />
-      <h1 className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{band.heading}</h1>
-      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
+    <StageShell
+      title={band.heading}
+      closeLabel={itemLabel(stages, "close")}
+      closeHref={OVERVIEW_PATH}
+    >
+      <StageColumn>
+        <StageRail copy={copy} current={CONNECT_STAGE} alignHref={null} />
+        <h1 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">{band.heading}</h1>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
 
-      {refusalLabel === undefined ? null : (
-        <p
-          role="alert"
-          className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
-        >
-          {fillLabel(refusalLabel, values)}
-        </p>
-      )}
+        {refusalLabel === undefined ? null : (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+          >
+            {fillLabel(refusalLabel, values)}
+          </p>
+        )}
 
-      <ul className="mt-6 space-y-3 text-sm text-gray-700 dark:text-gray-200">
-        {step === 1 ? (
-          <>
-            <li className="font-medium text-gray-900 dark:text-gray-100">
-              {fillLabel(itemLabel(first, "invited-by"), values)}
-            </li>
-            <li>{fillLabel(itemLabel(first, "they-see"), values)}</li>
-            <li>{fillLabel(itemLabel(first, "you-see"), values)}</li>
-          </>
-        ) : null}
-        {step === 2 ? (
-          <>
-            <li>{fillLabel(itemLabel(second, "you-answer"), values)}</li>
-            <li>{fillLabel(itemLabel(second, "they-answer"), values)}</li>
-            <li>{fillLabel(itemLabel(second, "report"), values)}</li>
-            <li className="font-medium text-gray-900 dark:text-gray-100">
-              {fillLabel(itemLabel(second, "editable"), values)}
-            </li>
-          </>
-        ) : null}
-        {step === 3 ? (
-          <>
-            {viewerName === null ? null : (
+        <ul className="mt-6 space-y-3 text-sm text-gray-700 dark:text-gray-200">
+          {step === 1 ? (
+            <>
               <li className="font-medium text-gray-900 dark:text-gray-100">
-                {fillLabel(itemLabel(third, "signed-in"), values)}
+                {fillLabel(itemLabel(first, "invited-by"), values)}
               </li>
-            )}
-            <li>{fillLabel(itemLabel(third, "free"), values)}</li>
-          </>
+              <li>{fillLabel(itemLabel(first, "they-see"), values)}</li>
+              <li>{fillLabel(itemLabel(first, "you-see"), values)}</li>
+            </>
+          ) : null}
+          {step === 2 ? (
+            <>
+              <li>{fillLabel(itemLabel(second, "you-answer"), values)}</li>
+              <li>{fillLabel(itemLabel(second, "they-answer"), values)}</li>
+              <li>{fillLabel(itemLabel(second, "report"), values)}</li>
+              <li className="font-medium text-gray-900 dark:text-gray-100">
+                {fillLabel(itemLabel(second, "editable"), values)}
+              </li>
+            </>
+          ) : null}
+          {step === 3 ? (
+            <>
+              {viewerName === null ? null : (
+                <li className="font-medium text-gray-900 dark:text-gray-100">
+                  {fillLabel(itemLabel(third, "signed-in"), values)}
+                </li>
+              )}
+              <li>{fillLabel(itemLabel(third, "free"), values)}</li>
+            </>
+          ) : null}
+        </ul>
+
+        {step !== 3 || viewerName !== null ? null : (
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href={inviteAuthPath("login", token, 3, preview.initiatorName ?? "")}
+              className="inline-flex items-center justify-center rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+            >
+              {fillLabel(itemLabel(third, "sign-in"), values)}
+            </Link>
+            <Link
+              href={inviteAuthPath("register", token, 3, preview.initiatorName ?? "")}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
+            >
+              {itemLabel(third, "register")}
+            </Link>
+          </div>
+        )}
+
+        {step === 3 && viewerName !== null ? (
+          <form action={claimPath(token)} method="post" className="mt-8">
+            <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
+              <input
+                type="checkbox"
+                name="confirm"
+                value={claimConfirmationValue(values.counterparty)}
+                required
+                className="mt-0.5"
+              />
+              <span>{fillLabel(itemLabel(third, "confirm"), values)}</span>
+            </label>
+            <button
+              type="submit"
+              className="mt-4 rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+            >
+              {itemLabel(third, "accept")}
+            </button>
+          </form>
         ) : null}
-      </ul>
 
-      {step !== 3 || viewerName !== null ? null : (
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href={inviteAuthPath("login", token, 3, preview.initiatorName ?? "")}
-            className="inline-flex items-center justify-center rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
-          >
-            {fillLabel(itemLabel(third, "sign-in"), values)}
-          </Link>
-          <Link
-            href={inviteAuthPath("register", token, 3, preview.initiatorName ?? "")}
-            className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
-          >
-            {itemLabel(third, "register")}
-          </Link>
+        <div className="mt-10 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
+          {step === 1 ? (
+            <span />
+          ) : (
+            <Link
+              href={inviteStepPath(token, step === 3 ? 2 : 1)}
+              className="text-sm font-medium text-gray-700 underline dark:text-gray-200"
+            >
+              {itemLabel(rail, "back")}
+            </Link>
+          )}
+          {step === 3 ? (
+            <span />
+          ) : (
+            <Link
+              href={inviteStepPath(token, step === 1 ? 2 : 3)}
+              className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+            >
+              {itemLabel(rail, "next")}
+            </Link>
+          )}
         </div>
-      )}
-
-      {step === 3 && viewerName !== null ? (
-        <form action={claimPath(token)} method="post" className="mt-8">
-          <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
-            <input
-              type="checkbox"
-              name="confirm"
-              value={claimConfirmationValue(values.counterparty)}
-              required
-              className="mt-0.5"
-            />
-            <span>{fillLabel(itemLabel(third, "confirm"), values)}</span>
-          </label>
-          <button
-            type="submit"
-            className="mt-4 rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
-          >
-            {itemLabel(third, "accept")}
-          </button>
-        </form>
-      ) : null}
-
-      <div className="mt-10 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
-        {step === 1 ? (
-          <span />
-        ) : (
-          <Link
-            href={inviteStepPath(token, step === 3 ? 2 : 1)}
-            className="text-sm font-medium text-gray-700 underline dark:text-gray-200"
-          >
-            {itemLabel(rail, "back")}
-          </Link>
-        )}
-        {step === 3 ? (
-          <span />
-        ) : (
-          <Link
-            href={inviteStepPath(token, step === 1 ? 2 : 3)}
-            className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
-          >
-            {itemLabel(rail, "next")}
-          </Link>
-        )}
-      </div>
-    </StageColumn>
+      </StageColumn>
+    </StageShell>
   );
 }
