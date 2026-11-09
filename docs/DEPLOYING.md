@@ -410,6 +410,39 @@ This is not a gate step. `scripts/env-sync.mjs` is a `scripts/**` change, so `pn
 it: the gate is network-free and has no credentials, by contract. A write is also not a deploy —
 the run ends with `a new deployment is required on <target> for these to take effect`.
 
+## 4. Function Storage: deployments accumulate, so prune them
+
+Vercel's **Function Storage** is the sum of every retained deployment's serverless functions,
+across the project's production deployments and its one preview branch. It is not traffic, not
+runtime memory and not bandwidth — nothing the running app does moves it. Deployments do, and the
+free tier prunes none of them.
+
+Measured on 2026-11-08, when the team hit **100 % of the 10 GB allowance**: **454 deployments in
+9.6 days**, 360 of them on `main` — 10 GB ÷ 454 ≈ 22 MB a deployment. The deploy rule in §1 is why:
+production builds on every merge, and this repo merges many times a day. A full Function Storage
+quota is not a slow site, it is a **release that cannot deploy**, so the prune belongs before the
+next merge rather than after the next failure.
+
+```bash
+pnpm deploy:prune                            # the plan — lists what would go, deletes nothing
+pnpm deploy:prune -- --apply                 # delete the candidates
+pnpm deploy:prune -- --apply --keep-days 7   # a week of rollbacks kept instead of a day
+```
+
+`scripts/vercel-prune.mjs` protects three things, and takes no argument that overrides them:
+
+- **every deployment a domain is aliased to** — `alignsynch.com`, `demo.alignsynch.com` and the
+  per-branch preview aliases. The alias table is read first, so a live URL cannot be deleted.
+- **the newest three deployments** (`--keep-latest`) — the rollback buffer.
+- **anything younger than a day** (`--keep-days`) — yesterday's cut is still there to roll back to.
+
+Its first run, on 2026-11-08, took the project from 454 deployments to 69: all 46 aliases still
+resolved and production kept serving the same commit. Its credential is `VERCEL_TOKEN`, or the
+Vercel CLI's own `auth.json`; the script prints neither and refuses with the variable name to set.
+
+This is not a gate step — it wants the network and a credential, and the gate has neither by
+contract. Run it when Function Storage passes roughly 70 %, or before a release cut.
+
 <!-- docs-nav:begin -->
 
 [Docs hub](README.md) › **Operations** › Deploying · next [Releasing](RELEASING.md)
