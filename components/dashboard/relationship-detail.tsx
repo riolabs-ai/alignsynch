@@ -648,14 +648,19 @@ export function RelationshipDetail({
         </Card>
       ) : null}
 
-      {relationship.isInitiator && !relationship.closed && gate !== null ? (
+      {relationship.isInitiator &&
+      gate !== null &&
+      (!relationship.closed || gate.phase === "charged") ? (
         /*
          * #739 — the payer's two acts, and the only place either is reachable.
          *
          * Initiator only: `isInitiator` is the payer (`initiator_user_id`), and the server action
          * re-asks under a row lock (`not-the-payer`), so this band is a courtesy and not the rule.
          * Nothing is drawn for a relationship with no session (`completion === null`) or a closed
-         * one — both would be an affordance the transaction refuses.
+         * one — both would be an affordance the transaction refuses. The exception is a closed
+         * relationship whose fee was taken: the payer keeps the receipt sentence ("the $8.95 was
+         * charged on …"), because the alternative is a screen that says nothing at all about money
+         * that moved.
          *
          * The four outcomes that are not success each draw a sentence: `payment-method-required`
          * carries a url the person can click, a decline names the ladder that is already running,

@@ -584,12 +584,18 @@ export async function createInstanceFromTemplate(
     // transition, so the payer's completion was refused `not-ready-to-complete` on every
     // relationship created through the flow. `published → active` is the claim's own write
     // (`claimInvite`), which is where the pair becomes live.
+    //
+    // **And `published_at` with it.** 0030's `relationship_completed_after_published` refuses a
+    // completion on a row whose `published_at` is NULL, so writing the status alone moved the
+    // failure one step later: the payer's completion reached Postgres and died on the check, a 500
+    // on the only screen that can take the fee. Same instant as `created_at` — the publish and the
+    // create are this one transaction, and 0030's comparisons are `>=` for exactly that case.
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
          (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
-          purchased_at, plan, created_at, status)
-       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5, 'published')`,
+          purchased_at, plan, created_at, status, published_at)
+       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5, 'published', $5)`,
       [relationshipId, found.id, version.id, initiatorUserId, now.toISOString()],
     );
 

@@ -116,7 +116,8 @@ class Jar {
 
 async function createAccount(email, password, name) {
   const base = (process.env.NEON_AUTH_BASE_URL ?? "").replace(/\/+$/, "");
-  if (base === "") throw new Error("NEON_AUTH_BASE_URL is not set — the run needs this branch's auth");
+  if (base === "")
+    throw new Error("NEON_AUTH_BASE_URL is not set — the run needs this branch's auth");
   const response = await fetch(`${base}/sign-up/email`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: BASE_URL },
@@ -277,7 +278,7 @@ async function setup(db) {
   const committed = await createRelationship(initiator, aspects, `pay-${stamp}`);
   // A signed-in creator closes onto the dashboard, so the id is the row, not the address.
   const newest = await db.query(
-    `SELECT rel.id, s.record_id, rel.status
+    `SELECT rel.id, s.record_id, rel.status, rel.published_at
        FROM relationship rel
        JOIN session s ON s.relationship_id = rel.id
       WHERE rel.initiator_user_id = $1
@@ -288,9 +289,23 @@ async function setup(db) {
   check(
     "the relationship is bound to the signed-in payer, not to a cookie",
     relationship !== undefined,
-    relationship === undefined ? `no row after ${committed.status} ${committed.location}` : relationship.id,
+    relationship === undefined
+      ? `no row after ${committed.status} ${committed.location}`
+      : relationship.id,
   );
-  if (relationship === undefined) throw new Error("the create wrote no relationship for this account");
+  if (relationship === undefined)
+    throw new Error("the create wrote no relationship for this account");
+  /*
+   * 0030's `relationship_completed_after_published` refuses a completion on a row whose
+   * `published_at` is NULL — so a create that writes the status and forgets the instant hands the
+   * payer a 500 at the last step, on the only screen that can take the fee. The status check below
+   * cannot see that; this one can, and it fails here rather than in a browser.
+   */
+  check(
+    "and records the instant it was published",
+    relationship.published_at !== null && relationship.published_at !== undefined,
+    `published_at=${relationship.published_at}`,
+  );
 
   const instancePath = `/assessment/instances/${relationship.record_id}`;
   const inviteScreen = await initiator.get(instancePath);
@@ -307,7 +322,11 @@ async function setup(db) {
     `${claim.status} ${claim.location}`,
   );
 
-  await seal({ initiator, counterparty }, instancePath, items.rows.map((row) => row.item_id));
+  await seal(
+    { initiator, counterparty },
+    instancePath,
+    items.rows.map((row) => row.item_id),
+  );
 
   const sealed = await db.query(
     `SELECT rel.status,
@@ -321,8 +340,11 @@ async function setup(db) {
   const facts = sealed.rows[0];
   check(
     "both sheets are sealed and nothing is on file",
-    facts?.status === "active" && facts.accepted === 2 && facts.opinions > 0 &&
-      facts.method_captured_at === null && facts.charged_at === null,
+    facts?.status === "active" &&
+      facts.accepted === 2 &&
+      facts.opinions > 0 &&
+      facts.method_captured_at === null &&
+      facts.charged_at === null,
     `status=${facts?.status} accepted=${facts?.accepted} opinions=${facts?.opinions} method=${facts?.method_captured_at}`,
   );
 
@@ -422,7 +444,8 @@ async function verify(db, state) {
   const screen = await jar.get(`/dashboard/relationships/${state.relationshipId}`);
   check(
     "the screen reports the fee it took",
-    screen.html.includes('data-completion-gate="charged"') || screen.html.includes("data-completion-charged"),
+    screen.html.includes('data-completion-gate="charged"') ||
+      screen.html.includes("data-completion-charged"),
     `gate=${/data-completion-gate="([a-z-]+)"/.exec(screen.html)?.[1] ?? "absent"}`,
   );
 
@@ -446,10 +469,13 @@ async function verify(db, state) {
 
 async function teardown(db, state) {
   const base = (process.env.NEON_AUTH_BASE_URL ?? "").replace(/\/+$/, "");
-  await db.query("DELETE FROM admin_action WHERE target_table = 'relationship' AND target_id = $1", [
+  await db.query(
+    "DELETE FROM admin_action WHERE target_table = 'relationship' AND target_id = $1",
+    [state.relationshipId],
+  );
+  await db.query("DELETE FROM relationship_payment WHERE relationship_id = $1", [
     state.relationshipId,
   ]);
-  await db.query("DELETE FROM relationship_payment WHERE relationship_id = $1", [state.relationshipId]);
   await db.query("DELETE FROM session_invite WHERE session_record_id = $1", [state.instanceId]);
   await db.query("DELETE FROM opinion WHERE session_record_id = $1", [state.instanceId]);
   await db.query("DELETE FROM party WHERE session_record_id = $1", [state.instanceId]);
@@ -458,12 +484,16 @@ async function teardown(db, state) {
   await db.query("DELETE FROM session WHERE record_id = $1", [state.instanceId]);
   await db.query("DELETE FROM record WHERE id = $1", [state.instanceId]);
   await db.query("DELETE FROM relationship WHERE id = $1", [state.relationshipId]);
-  await db.query(
-    "DELETE FROM record WHERE id IN (SELECT template_id FROM relationship WHERE initiator_user_id = $1)",
-    [state.userId],
-  ).catch(() => undefined);
+  await db
+    .query(
+      "DELETE FROM record WHERE id IN (SELECT template_id FROM relationship WHERE initiator_user_id = $1)",
+      [state.userId],
+    )
+    .catch(() => undefined);
   await db.query("DELETE FROM demo_account WHERE email = $1", [state.email]).catch(() => undefined);
-  await db.query("DELETE FROM user_profile WHERE user_id = $1", [state.userId]).catch(() => undefined);
+  await db
+    .query("DELETE FROM user_profile WHERE user_id = $1", [state.userId])
+    .catch(() => undefined);
   await db
     .query("DELETE FROM billing_subscription WHERE user_id = $1", [state.userId])
     .catch(() => undefined);

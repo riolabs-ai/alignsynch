@@ -260,6 +260,46 @@ describe("pressing add a payment method", () => {
   });
 });
 
+describe("a relationship the fee already moved", () => {
+  it("keeps the receipt once the relationship is complete — a paid, closed row still says so", () => {
+    mount(
+      viewOf({
+        gate: gateOf({
+          hasMethod: true,
+          phase: "charged",
+          awaitingPayment: false,
+          chargedAt: "2026-11-09T10:00:00.000Z",
+        }),
+        closed: true,
+      }),
+    );
+    // `closed` is what hides the band, so a receipt that renders only while the relationship is
+    // open would be invisible exactly when it is true: the payer would be told nothing about money
+    // that moved. The band survives the completion and the two acts do not.
+    const band = container.querySelector("[data-completion-gate]");
+    expect(band?.getAttribute("data-completion-gate")).toBe("charged");
+    expect(container.querySelector("[data-completion-charged]")?.textContent).toContain("$19.00");
+    expect(container.querySelector("[data-capture-method]")).toBeNull();
+    expect(container.querySelector("[data-complete-relationship]")).toBeNull();
+  });
+
+  it("draws nothing on a closed relationship whose fee never landed", () => {
+    mount(viewOf({ gate: gateOf({ phase: "expired" }), closed: true }));
+    expect(container.querySelector("[data-completion-gate]")).toBeNull();
+  });
+
+  it("draws nothing of the payer's on the Counterparty's screen, charged or not", () => {
+    mount(
+      viewOf({
+        gate: gateOf({ hasMethod: true, phase: "charged", chargedAt: "2026-11-09T10:00:00.000Z" }),
+        isInitiator: false,
+        closed: true,
+      }),
+    );
+    expect(container.querySelector("[data-completion-gate]")).toBeNull();
+  });
+});
+
 describe("pressing complete", () => {
   it("charges through the action and reports the amount and the status it answered", async () => {
     const complete = vi.fn(async () => ({
