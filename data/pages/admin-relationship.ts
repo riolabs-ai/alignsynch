@@ -204,6 +204,16 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
         { id: "add", label: "Add an Aspect" },
         { id: "remove", label: "Remove" },
         { id: "pin", label: "Version" },
+        /**
+         * #711 — which version this relationship was answered under. The revision flow is safe
+         * because publishing N+1 never reaches a bound row; this is the line that proves it on the
+         * screen, not just in the audit log.
+         */
+        { id: "version", label: "Answered under version {version}" },
+        {
+          id: "version-none",
+          label: "No published version is bound to this relationship.",
+        },
         { id: "pin-current", label: "Keep the bound version" },
         { id: "pin-option", label: "Move to version {version}, saved {instant}" },
         {

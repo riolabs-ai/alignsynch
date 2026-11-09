@@ -177,6 +177,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-help-two-column/README.md`](qa-help-two-column/README.md) — **Help two-column** — Did `/help` get its two-column layout?
 - [`qa-home-polish/README.md`](qa-home-polish/README.md) — **Home hero polish** — Were the six hero defects fixed, before and after?
 - [`qa-lockup-2rem/README.md`](qa-lockup-2rem/README.md) — **Lockup 2rem** — Is the lockup 2rem in every expanded-header viewport?
+- [`qa-noun-crud/README.md`](qa-noun-crud/README.md) — **Templates and relationships after creation** — Can a template be revised and retired, and does a bound relationship keep the version it was answered under?
 - [`qa-recharts-3/README.md`](qa-recharts-3/README.md) — **recharts 3** — Do the pie labels still render after the recharts 3 bump?
 - [`qa-swiper-12/README.md`](qa-swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa-template-catalogue/README.md`](qa-template-catalogue/README.md) — **Template catalogue** — What do the catalogue pages look like from the AlignSynch build?

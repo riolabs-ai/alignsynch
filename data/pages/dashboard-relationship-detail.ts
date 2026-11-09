@@ -210,6 +210,18 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "add", label: "Add an Aspect" },
         { id: "remove", label: "Remove" },
         { id: "pin", label: "Version" },
+        /**
+         * #711 — the sentence that says which version this relationship was answered under.
+         *
+         * It is the fact the revision flow exists to protect: publishing version N+1 never moves a
+         * relationship, so a screen that stayed silent about the binding would let an operator
+         * assume the new words reached a live one. Printed whether or not the pin control is drawn.
+         */
+        { id: "version", label: "Answered under version {version}" },
+        {
+          id: "version-none",
+          label: "No published version is bound to this relationship.",
+        },
         { id: "pin-current", label: "Keep the version this relationship is on" },
         { id: "pin-option", label: "Move to version {version}, saved {instant}" },
         {

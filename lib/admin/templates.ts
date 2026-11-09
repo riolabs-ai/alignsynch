@@ -56,8 +56,12 @@ export { ADMIN_TEMPLATES_PATH, adminTemplatePath } from "@/lib/admin/paths";
  * Permissions are `act()`'s (`ActRefused`), decided before the mutation.
  *
  *   no-such-template  the id is not a template record (or it is an instance)
- *   not-editable      the row is archived — unarchive it before editing
+ *   not-editable      the row is archived — restore it before editing
  *   not-published     unpublish asked for a row that offers nothing
+ *   already-archived  archive asked for a row that is already retired (#711)
+ *   not-archived      restore asked for a row that is not retired (#711)
+ *   template-in-use   a relationship was created from it — archive it, never destroy it (#711)
+ *   template-published it has a published version — archive it, never destroy its history (#711)
  *   slug-taken        another record already answers to this id or slug
  *   invalid-draft     `zAssessment` refused the assembled record; `problems` names every field
  *   version-conflict  another publish took the next number; nothing was written
@@ -66,6 +70,10 @@ export const TEMPLATE_REFUSALS = [
   "no-such-template",
   "not-editable",
   "not-published",
+  "already-archived",
+  "not-archived",
+  "template-in-use",
+  "template-published",
   "slug-taken",
   "invalid-draft",
   "version-conflict",
@@ -556,6 +564,174 @@ export async function unpublishTemplate(
         return {
           before: { ...before, version },
           after: { ...before, status: "draft", version },
+        };
+      },
+    },
+    runner,
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Retire, restore, destroy (#711)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Retire a template: offered nowhere, edited nowhere, every fact about it intact.
+ *
+ * **A status write, like unpublish, and it is the *only* correct ending for most rows.** The
+ * versions stay queryable and every relationship bound to one keeps drawing the questions it was
+ * given, which is exactly why `delete` below refuses a row that has either. Archiving a published
+ * template also withdraws it — `record.status` is one column and `published` is one of its three
+ * values — and restoring lands the row on `draft` rather than back on `published`, so the operator
+ * has to publish to offer it again and a retired template can never silently reappear in the
+ * catalogue.
+ *
+ * `already-archived` is a refusal and not a no-op, for the reason `unpublish` refuses a draft: an
+ * operator who asked for something and got "nothing happened" cannot tell a mistake from a success.
+ */
+export async function archiveTemplate(
+  request: TemplateVersionRequest,
+  runner?: ActTransactionRunner,
+): Promise<ActResult<TemplateVersionAudit>> {
+  return act<TemplateVersionAudit>(
+    {
+      actorUserId: request.actorUserId,
+      action: "template.archive" satisfies AdminAction,
+      target: { table: "record", id: request.templateId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const before = await lockTemplate(sql, request.templateId);
+        const version = await latestVersionNumber(sql, before.id);
+        if (before.status === "archived") {
+          throw new TemplateRefused(
+            "already-archived",
+            `"${before.slug}" is already archived: there is nothing to retire`,
+          );
+        }
+
+        await sql.query("UPDATE record SET status = 'archived' WHERE id = $1", [before.id]);
+
+        return {
+          before: { ...before, version },
+          after: { ...before, status: "archived", version },
+        };
+      },
+    },
+    runner,
+  );
+}
+
+/**
+ * Put an archived template back in hand — as a **working copy**, never as an offer.
+ *
+ * Restoring to `draft` rather than to the status it was retired from is the deliberate half: the
+ * operator who wants it offered again publishes, which writes a fresh version of whatever the
+ * working copy now says. Restoring straight to `published` would re-offer words nobody re-read,
+ * and the version a new relationship copies would be one the operator assumed rather than chose.
+ */
+export async function restoreTemplate(
+  request: TemplateVersionRequest,
+  runner?: ActTransactionRunner,
+): Promise<ActResult<TemplateVersionAudit>> {
+  return act<TemplateVersionAudit>(
+    {
+      actorUserId: request.actorUserId,
+      action: "template.restore" satisfies AdminAction,
+      target: { table: "record", id: request.templateId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const before = await lockTemplate(sql, request.templateId);
+        const version = await latestVersionNumber(sql, before.id);
+        if (before.status !== "archived") {
+          throw new TemplateRefused(
+            "not-archived",
+            `"${before.slug}" is ${before.status}: there is nothing to restore`,
+          );
+        }
+
+        await sql.query("UPDATE record SET status = 'draft' WHERE id = $1", [before.id]);
+
+        return {
+          before: { ...before, version },
+          after: { ...before, status: "draft", version },
+        };
+      },
+    },
+    runner,
+  );
+}
+
+/**
+ * Destroy a template that no reader can reach, and refuse every row that has one.
+ *
+ * **The referential rule, in the order a reader asks it:**
+ *
+ *   1. **A relationship was created from it** (`template-in-use`). Every relationship reads a
+ *      version of its template, so a template in use is *archived, never destroyed* — this is the
+ *      rule the card and the issue both state, and the mutation is where it is enforced. The
+ *      message carries the count and the first few relationship ids, because the operator's next
+ *      question is "which ones".
+ *   2. **It has a published version** (`template-published`). Its versions are the history of what
+ *      the catalogue offered, and a version row cannot outlive its record. Archive it.
+ *   3. Otherwise — a draft nobody ever published and nobody ever started a relationship from — the
+ *      row and its Aspects go in one statement: `item` and `response_option` cascade from `record`
+ *      (`0001_content_model.sql`), so the delete is the record row alone and no orphan can survive
+ *      it.
+ *
+ * The `before` payload is the whole bounded template (`auditPayload`), because after this commit
+ * the audit row is the only copy of it that exists. `after` is `null`, which is what "there was
+ * something here and now there is nothing" means in this log's vocabulary.
+ */
+export async function deleteTemplate(
+  request: TemplateVersionRequest,
+  runner?: ActTransactionRunner,
+): Promise<ActResult<TemplateVersionAudit>> {
+  return act<TemplateVersionAudit>(
+    {
+      actorUserId: request.actorUserId,
+      action: "template.delete" satisfies AdminAction,
+      target: { table: "record", id: request.templateId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const before = await lockTemplate(sql, request.templateId);
+        const rows = await readTemplateRowsWithin(sql, request.templateId);
+        if (rows === undefined) {
+          throw new TemplateRefused(
+            "no-such-template",
+            `"${before.id}" is not a template record (it is an instance, or a non-assessment)`,
+          );
+        }
+
+        const relationships = await sql.query<{ id: string }>(
+          "SELECT id FROM relationship WHERE template_id = $1 ORDER BY id LIMIT 5",
+          [before.id],
+        );
+        const countRows = await sql.query<{ count: number }>(
+          "SELECT count(*)::int AS count FROM relationship WHERE template_id = $1",
+          [before.id],
+        );
+        const bound = Number(countRows.rows[0]?.count ?? 0);
+        if (bound > 0) {
+          const first = relationships.rows.map((row) => row.id).join(", ");
+          throw new TemplateRefused(
+            "template-in-use",
+            `"${before.slug}" was used by ${bound} relationship(s) (first: ${first}) — archive it. A template somebody answered under is never destroyed`,
+          );
+        }
+
+        const published = await latestVersionNumber(sql, before.id);
+        if (published !== null) {
+          throw new TemplateRefused(
+            "template-published",
+            `"${before.slug}" has published version ${published}: its history is what the catalogue offered — archive it`,
+          );
+        }
+
+        await sql.query("DELETE FROM record WHERE id = $1", [before.id]);
+
+        return {
+          before: auditPayload(assessmentTemplateFromRows(rows)),
+          after: { ...before, status: "deleted", version: 0 },
         };
       },
     },

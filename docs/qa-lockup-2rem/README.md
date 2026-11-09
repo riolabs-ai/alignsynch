@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [recharts 3](../qa-recharts-3/README.md)
+[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [Templates and relationships after creation](../qa-noun-crud/README.md)
 
 <!-- docs-nav:end -->
 
@@ -80,6 +80,6 @@ Identical, and `git status public/brand` is empty.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [recharts 3](../qa-recharts-3/README.md)
+[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [Templates and relationships after creation](../qa-noun-crud/README.md)
 
 <!-- docs-nav:end -->

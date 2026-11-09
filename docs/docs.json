@@ -538,6 +538,11 @@
           "question": "Is the lockup 2rem in every expanded-header viewport?"
         },
         {
+          "path": "qa-noun-crud/README.md",
+          "title": "Templates and relationships after creation",
+          "question": "Can a template be revised and retired, and does a bound relationship keep the version it was answered under?"
+        },
+        {
           "path": "qa-recharts-3/README.md",
           "title": "recharts 3",
           "question": "Do the pie labels still render after the recharts 3 bump?"
