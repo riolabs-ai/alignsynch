@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.9.0](v1-9-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.9.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.9.0)
+- **Pull requests named** 5
+- **Theme:** the payer can pay — a method is captured and a relationship completes, an invited counterparty answers inside the same modal, templates publish revisions instead of being destroyed, and paying still opens Stripe's own page rather than a frame.
+- **Headline:** `feat(crud)` — templates publish revisions and are retired, never destroyed in use (#711) (#742)
+
 ### [v1.8.0](v1-8-0.md)
 
 - **Released** 2026-11-08

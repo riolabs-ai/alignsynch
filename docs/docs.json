@@ -464,6 +464,11 @@
           "path": "changelog/v1-8-0.md",
           "title": "v1.8.0",
           "question": "The release where the flow conformed to its six-stage spec."
+        },
+        {
+          "path": "changelog/v1-9-0.md",
+          "title": "v1.9.0",
+          "question": "The release where the payer could finally pay."
         }
       ]
     },

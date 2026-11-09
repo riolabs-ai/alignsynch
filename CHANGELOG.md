@@ -6,6 +6,58 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.9.0] - 2026-11-09
+
+### Added
+
+- `feat(crud)` — templates publish revisions and are retired, never destroyed in use (#711) ([#742](https://github.com/riolabs-ai/alignsynch/pull/742))
+- `feat(flow)` — the invite-response path runs in the same modal and ends on /dashboard (#710) ([#740](https://github.com/riolabs-ai/alignsynch/pull/740))
+
+### Fixed
+
+- `fix(payment)` — a member can pay — capture a method and complete a relationship (#739) ([#747](https://github.com/riolabs-ai/alignsynch/pull/747))
+- `fix(flow)` — the modal shell clears the close at 390, and the walk is pinned (#713) ([#741](https://github.com/riolabs-ai/alignsynch/pull/741))
+
+### Maintenance
+
+- `chore(deploy)` — prune stale Vercel deployments, and make it a command ([#746](https://github.com/riolabs-ai/alignsynch/pull/746))
+
+### Known limits
+
+- **A payer can pay, but paying still leaves the modal.** This release wires the two acts that
+  were built and unreachable (`#739`): `capturePaymentMethodAction` and `completeRelationshipAction`
+  now run from `app/(mainlayout)/dashboard/relationships/[id]/page.tsx`, and the controls that
+  shipped visibly disabled no longer are. What it does not do is pay **inside** the flow: the
+  adapter creates hosted sessions only (`lib/billing/adapters/stripe.ts`), so `Add a payment method`
+  opens Stripe's page rather than the artifact's in-frame `Secure payment` frame. That frame is
+  `#749`, not this release.
+- **Only Stripe test keys are configured.** The adapter reads `STRIPE_TEST_SECRET_KEY`, so a method
+  is captured in test mode and this release cannot take a real charge. Nothing in the product
+  depends on test mode to work — the path is the same one live keys would drive.
+- **The hard gate sits at completion, and it is the only gate.** With no method on file the
+  relationship reports `awaiting_payment` and opinions are withheld (`lib/flow/state.ts`); answering,
+  sharing and inviting are never gated, and no screen asks for a login to get that far. The artifact
+  draws the same lock at _publish_; the code enforces it at _complete_. One gate, not two.
+- **The conformance slices C3, C4 and C5 are not in this release.** The admin console's left edge
+  (`#717`), the marketing content cards' shadows (`#718`) and the right-aligned numbers and explicit
+  empty states (`#719`) moved to the `v1.10.0` milestone rather than being claimed here.
+- **Template revisions are published, never destroyed.** Retiring a template keeps every published
+  revision readable (`#711`); there is no hard delete, by design, so a relationship that points at an
+  older revision keeps a document to point at.
+- **Invite-response runs in the same modal and ends on `/dashboard`** (`#710`), and the modal is
+  measured at 390×844 and 390×500 (`#713`). The measurement is a walk that a test pins, not a
+  continuous check — a later screen added outside the six stages is not covered by it.
+- **Deployment retention is a command, not a policy.** `pnpm deploy:prune` (dry run by default) is
+  what stops Vercel's Function Storage filling with old builds (`#746`); nothing prunes on a
+  schedule, so the quota grows with merges until someone runs it.
+- **One payment path still carries a known risk, unchanged.** Publishing can start a trial or
+  checkout while completion also writes a `relationship_payment` obligation (ADR-1), so a
+  double-created obligation is possible; it is reachable only with test keys today.
+- **`pnpm db:seed` still refuses on the demo branch.** Demo carries assessment rows the demo dataset
+  does not author, and the seed fails rather than clobber them; the documented recovery is
+  `pnpm demo:reset`, destructive to demo only. The gate never opens a connection, so local and CI
+  are unaffected.
+
 ## [1.8.0] - 2026-11-08
 
 ### Added
