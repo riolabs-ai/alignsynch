@@ -839,8 +839,7 @@ function render(){
 function s1Gallery(){
   const isGallery = state.tab === "gallery";
   return '<div class="stack">'
-   + '<div><div class="row"><span class="chip" data-copy="pre.chip">'+esc(c("pre.chip"))+'</span></div>'
-     + '<h1 data-copy="s1.heading">'+esc(c("s1.heading"))+'</h1><p class="muted" data-copy="s1.body">'+esc(c("s1.body"))+'</p></div>'
+   + '<div><h1 data-copy="s1.heading">'+esc(c("s1.heading"))+'</h1><p class="muted" data-copy="s1.body">'+esc(c("s1.body"))+'</p></div>'
    + '<div class="card"><div class="head" style="padding-bottom:0;border-bottom:0">'
      + '<div class="tabs" role="tablist">'
        + '<button role="tab" aria-selected="'+isGallery+'" data-tab="gallery" data-copy="s1.tabGallery">'+esc(c("s1.tabGallery"))+'</button>'
@@ -1618,7 +1617,7 @@ render();
   wrap.id = "crWrap";
   wrap.innerHTML =
     '<style>'
-    + '#crBar{position:fixed;right:18px;bottom:18px;z-index:99999;font:500 12px/1.4 ui-sans-serif,system-ui,sans-serif}'
+    + '#crBar{position:fixed;left:18px;bottom:18px;z-index:99999;font:500 12px/1.4 ui-sans-serif,system-ui,sans-serif}'
     + '#crBar button{background:#111827;color:#fff;border:0;border-radius:6px;padding:9px 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.22)}'
     + '#crBar .n{display:inline-block;min-width:16px;padding:0 4px;margin-left:6px;border-radius:8px;background:#37474f;text-align:center}'
     + '#crPanel{position:fixed;right:18px;bottom:60px;z-index:99999;width:360px;max-height:70vh;overflow:auto;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.18);font:400 12px/1.5 ui-sans-serif,system-ui,sans-serif;display:none}'
