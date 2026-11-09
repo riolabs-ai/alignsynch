@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.10.0](v1-10-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.10.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.10.0)
+- **Pull requests named** 1
+- **Theme:** the capture moves into a frame — Stripe's form mounts inside the dialog, so paying never leaves the relationship, while the membership checkout stays hosted.
+- **Headline:** `feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) (#751)
+
 ### [v1.9.0](v1-9-0.md)
 
 - **Released** 2026-11-09

@@ -469,6 +469,11 @@
           "path": "changelog/v1-9-0.md",
           "title": "v1.9.0",
           "question": "The release where the payer could finally pay."
+        },
+        {
+          "path": "changelog/v1-10-0.md",
+          "title": "v1.10.0",
+          "question": "The release where paying stopped leaving the page."
         }
       ]
     },
