@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-08T05:32:35.197Z",
+  "recordedAt": "2026-11-09T13:41:48.363Z",
   "recorder": "pnpm health:record",
   "dbVerify": {
     "command": "pnpm db:verify",
@@ -29,18 +29,18 @@
   },
   "production": {
     "state": "answering",
-    "version": "1.6.0",
-    "commit": "00dc43a3397a2aeb713bf7086f474407854273cf",
+    "version": "1.10.0",
+    "commit": "bb810348d2096323f18e26f512c531e2b9da4f9d",
     "status": 200,
-    "measuredAt": "2026-11-08T05:29:43.502Z",
+    "measuredAt": "2026-11-09T13:41:48.363Z",
     "source": "GET https://alignsynch.com/api/version",
     "behindMain": 0
   },
   "tree": {
-    "packageVersion": "1.7.0",
-    "latestTag": "v1.6.0",
-    "headSha": "00dc43a3397a2aeb713bf7086f474407854273cf",
-    "mainSha": "00dc43a3397a2aeb713bf7086f474407854273cf",
-    "measuredAt": "2026-11-08T05:29:43.151Z"
+    "packageVersion": "1.10.0",
+    "latestTag": "v1.10.0",
+    "headSha": "bb810348d2096323f18e26f512c531e2b9da4f9d",
+    "mainSha": "bb810348d2096323f18e26f512c531e2b9da4f9d",
+    "measuredAt": "2026-11-09T13:41:46.491Z"
   }
 }
