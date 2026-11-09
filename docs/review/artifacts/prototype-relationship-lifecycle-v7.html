@@ -1559,10 +1559,33 @@ document.addEventListener("input", e => {
   const sub = document.getElementById("s4Sub");
   if (sub) sub.textContent = el.value.trim() || c("s4.body");
 }, true);
-function saveJson(){
+/* Save writes INTO the repository, not to a download (owner, 2026-11-09). A browser cannot write
+   to a repo, and a `file://` page's download lands nowhere in an embedded pane — so `pnpm
+   prototype:save` runs a sink on 127.0.0.1 that rewrites this page's own DEFAULT_COPY (value by
+   value, keeping the comments), writes a `.copy.json` snapshot beside it, and appends a dated entry
+   to PROTOTYPE-CHANGES.md with every changed key, old beside new. That log is the record the
+   implementation works from. If the sink is not running, the button still exports the JSON and the
+   toast says which of the two happened. */
+const SAVE_SINK = "http://127.0.0.1:8791/copy";
+const SAVE_PAGE = "prototype-relationship-lifecycle-v7.html";
+async function saveJson(){
+  try {
+    const res = await fetch(SAVE_SINK, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({page: SAVE_PAGE, copy: copy, aspects: state.aspects}),
+    });
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error || "refused");
+    toast("Saved to the repo — " + out.changes + " change(s) at " + out.savedAt + " · PROTOTYPE-CHANGES.md");
+    return;
+  } catch (e) {
+    /* fall through: a reviewer with no sink running still gets the JSON */
+  }
   const blob = new Blob([JSON.stringify(copy,null,2)],{type:"application/json"});
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "alignsynch-copy.json"; a.click();
-  URL.revokeObjectURL(a.href); toast("Saved alignsynch-copy.json — "+Object.keys(copy).length+" strings");
+  URL.revokeObjectURL(a.href);
+  toast("Sink not running — exported alignsynch-copy.json instead ("+Object.keys(copy).length+" strings). Start it with: pnpm prototype:save");
 }
 document.getElementById("loadJson").addEventListener("change", ev => {
   const f = ev.target.files && ev.target.files[0]; if(!f) return;

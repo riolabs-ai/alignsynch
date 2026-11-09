@@ -370,6 +370,11 @@
           "path": "V1-PROTOTYPE.md",
           "title": "V1 prototype",
           "question": "What is the clickable `/v1/**` prototype, and who is it for?"
+        },
+        {
+          "path": "PROTOTYPE-SAVE.md",
+          "title": "Prototype copy saves",
+          "question": "Where a reviewer's in-page copy edits go when they press Save, and what the implementation reads from them?"
         }
       ]
     },

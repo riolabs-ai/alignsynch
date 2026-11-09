@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**103 documents in 9 sections.** Every page carries the same nav block, generated
+**104 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -33,7 +33,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Code wiki](#code-wiki) — 15 documents
 - [Product](#product) — 19 documents
 - [Operations](#operations) — 8 documents
-- [Reference](#reference) — 9 documents
+- [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 14 documents
 - [Records & QA](#records-qa) — 18 documents
@@ -133,6 +133,7 @@ The generated tables, the owner's own material, and the records nothing else own
 - [`PROTOTYPE-WIRING.md`](PROTOTYPE-WIRING.md) — **Prototype wiring** — What of the one prototype screen moves into the build, and in what order?
 - [`P2-INVENTORY.md`](P2-INVENTORY.md) — **P2 inventory** — Which hardcoded strings and media paths does templatisation have to cover?
 - [`V1-PROTOTYPE.md`](V1-PROTOTYPE.md) — **V1 prototype** — What is the clickable `/v1/**` prototype, and who is it for?
+- [`PROTOTYPE-SAVE.md`](PROTOTYPE-SAVE.md) — **Prototype copy saves** — Where a reviewer's in-page copy edits go when they press Save, and what the implementation reads from them?
 
 ## Diagrams
 
