@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**100 documents in 9 sections.** Every page carries the same nav block, generated
+**101 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -35,7 +35,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Operations](#operations) — 8 documents
 - [Reference](#reference) — 9 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 11 documents
+- [Release notes](#release-notes) — 12 documents
 - [Records & QA](#records-qa) — 18 documents
 
 ## Start here
@@ -159,6 +159,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-6-0.md`](changelog/v1-6-0.md) — **v1.6.0** — The release where the fee moved to completion.
 - [`changelog/v1-7-0.md`](changelog/v1-7-0.md) — **v1.7.0** — The release where the review shelf went live.
 - [`changelog/v1-8-0.md`](changelog/v1-8-0.md) — **v1.8.0** — The release where the flow conformed to its six-stage spec.
+- [`changelog/v1-9-0.md`](changelog/v1-9-0.md) — **v1.9.0** — The release where the payer could finally pay.
 
 ## Records & QA
 
