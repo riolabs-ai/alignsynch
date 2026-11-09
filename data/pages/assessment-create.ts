@@ -188,6 +188,61 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
+       * The walk (#771) — plan → account → method → confirm → done, drawn inside stage 4.
+       *
+       * The owner's rule: choosing a plan must not leave the screen, and a relationship nobody has
+       * paid for yet is **saved as a draft** rather than blocked. So the method panel defers the
+       * capture to publish, where the hard gate already lives
+       * (`components/dashboard/relationship-detail.tsx`, #690), and the last panel is what flips the
+       * stage's own control to `connect-cta`.
+       *
+       * `confirm-method-draft` is the honest half of that: the confirmation says the method will be
+       * asked for at publish, because no card is taken on this screen.
+       */
+      id: "payment-flow",
+      items: [
+        { id: "continue", label: "Continue" },
+        { id: "back", label: "Back" },
+        { id: "account-heading", label: "Create your account" },
+        {
+          id: "account-note",
+          label:
+            "The relationship comes back to you, so this is where it is kept. The account is created when this stage finishes, and nothing here blocks the invitation.",
+        },
+        { id: "method-heading", label: "Add a payment method" },
+        {
+          id: "method-note",
+          label:
+            "The method is captured inside this page when your relationship is published — no card detail touches our code.",
+        },
+        { id: "method-defer", label: "Pay when I publish" },
+        {
+          id: "method-defer-note",
+          label:
+            "Nothing is charged today. Your relationship is saved as a draft, and the method is asked for once, when you publish your opinions for the other person to answer.",
+        },
+        { id: "confirm-heading", label: "Confirm payment" },
+        { id: "confirm-plan", label: "Plan" },
+        { id: "confirm-method", label: "Method" },
+        { id: "confirm-method-draft", label: "Asked for at publish" },
+        {
+          id: "confirm-body",
+          label:
+            "Nothing is charged today. The 7-day trial starts when the method is saved, and the first charge lands only when you publish the assessment.",
+        },
+        { id: "confirm-cta", label: "Confirm" },
+        { id: "change-plan", label: "Change plan" },
+        { id: "done-heading", label: "You're all set" },
+        {
+          id: "done-body",
+          label:
+            "Your relationship is ready to create. Nothing has been charged, and the method is asked for when you publish.",
+        },
+        { id: "connect-cta", label: "Complete and Connect" },
+      ],
+    },
+    {
+      /**
        * The account gate (#690) — **after** stage 4, never before it.
        *
        * Until this card the gate sat on stage 1 and a signed-out visitor could not fill in the

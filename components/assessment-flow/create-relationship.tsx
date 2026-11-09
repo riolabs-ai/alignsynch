@@ -66,7 +66,6 @@ import type { AspectDraft } from "@/lib/flow/aspects";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_INSTANCE_PATH,
-  PRICING_PATH,
   SAVE_MODE_PATH,
   SAVE_WHO_PATH,
   TEMPLATE_LIBRARY_PATH,
@@ -75,6 +74,8 @@ import {
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { PlanChoices } from "./plan-choices";
+import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
+import { StageFour } from "./stage-four";
 import { StageColumn } from "./stage-column";
 import { StageRail } from "./stage-rail";
 import { StageShell } from "./stage-shell";
@@ -156,71 +157,6 @@ const INPUT_CLASSES =
  * technical, not a word a reader sees.
  */
 const COMMIT_FORM_ID = "create-commit-form";
-
-/** The secondary action: `Back` in the foot's left group, and the shipped outline shape. */
-const SECONDARY_CLASSES =
-  "inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800";
-
-/**
- * The advancing act. Full width below 560 so it owns a row of its own under the thumb, and its
- * own label's width above it — the artifact never stretches the primary to fill the row
- * (`docs/review/artifacts/prototype-relationship-lifecycle-v7.html`, `.stage-foot .btn.primary`).
- */
-const ADVANCE_CLASSES =
-  "inline-flex h-11 w-full items-center justify-center rounded-md bg-action px-4 text-sm font-semibold text-action-foreground hover:bg-action-hover min-[560px]:w-auto";
-
-/**
- * **The stage foot** (#760) — one shape on stages 1–4, as the artifact draws it.
- *
- * Two acts leave the flow and they sit left as one pair; the act that advances it sits flush
- * right. The pairing is structural, so it survives every width: below 560px the row cannot hold
- * three controls, so the advancing act takes its own full-width row on top (thumb reach first)
- * and `[Back][Cancel]` split the row beneath it. Above 560 it is one row, `space-between`.
- *
- * `Cancel` leaves the flow — it goes to the same address the shell's close does, because a
- * dismissal is a page change and not a step backwards — while `Back` is the stage before. The
- * labels arrive from the fixture (E23): `back` from the stage's own section, `cancel` from the
- * one shared `foot` section.
- */
-function StageFoot({
-  backHref,
-  backLabel,
-  cancelHref,
-  cancelLabel,
-  advance,
-}: {
-  backHref: string;
-  backLabel: string;
-  cancelHref: string;
-  cancelLabel: string;
-  /** The control that moves the person forward: a submit on 1, 2 and 4, a link on 3. */
-  advance: ReactNode;
-}) {
-  return (
-    <div
-      data-stage-foot="true"
-      className="flex flex-col gap-2 border-t border-gray-200 pt-4 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between dark:border-gray-700"
-    >
-      <div className="order-2 flex items-center gap-2 min-[560px]:order-none">
-        <Link
-          href={backHref}
-          data-create-back="true"
-          className={`${SECONDARY_CLASSES} flex-1 min-[560px]:flex-none min-[560px]:min-w-[132px]`}
-        >
-          {backLabel}
-        </Link>
-        <Link
-          href={cancelHref}
-          data-create-cancel="true"
-          className={`${SECONDARY_CLASSES} flex-1 min-[560px]:flex-none min-[560px]:min-w-[132px]`}
-        >
-          {cancelLabel}
-        </Link>
-      </div>
-      <div className="order-1 flex min-[560px]:order-none min-[560px]:ml-auto">{advance}</div>
-    </div>
-  );
-}
 
 /** One option of a single-select group: the value stored, the word, and what it does. */
 interface ChoiceOption {
@@ -682,174 +618,20 @@ export function CreateRelationship({
               />
             </div>
           ) : (
-            <>
-              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-                {/*
-              LEFT — the two plans, as the soft half of the payment decision (#690). Nothing here
-              is charged and nothing here blocks: the create posts without a plan, and the hard
-              gate is at publish (`components/dashboard/relationship-detail.tsx`).
-            */}
-                <section
-                  aria-labelledby="create-plans-heading"
-                  data-create-plans="true"
-                  className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2
-                      id="create-plans-heading"
-                      className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                    >
-                      {plans.heading}
-                    </h2>
-                    <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
-                      {itemLabel(plans, "trial-short")}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(plans)}</p>
-                  <PlanChoices copy={copy} />
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    {itemLabel(plans, "trial")}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    {itemLabel(plans, "add-method-note")}
-                  </p>
-                  <p>
-                    <Link
-                      href={PRICING_PATH}
-                      data-create-plans-link="pricing"
-                      className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
-                    >
-                      {itemLabel(plans, "add-method")}
-                    </Link>
-                  </p>
-                </section>
-
-                <aside className="space-y-5">
-                  {/*
-                The conversion. A plain form posting to the create endpoint: the draft already
-                carries who, mode, setting and the list, so the post names the template and nothing
-                else, and a reload of the refusal cannot create a second relationship.
-              */}
-                  <form
-                    id={COMMIT_FORM_ID}
-                    action={CREATE_INSTANCE_PATH}
-                    method="post"
-                    aria-labelledby="create-commit-heading"
-                    data-create-commit="true"
-                    className="space-y-3 rounded-lg border border-action bg-white p-4 dark:bg-gray-900"
-                  >
-                    <h2
-                      id="create-commit-heading"
-                      className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                    >
-                      {itemLabel(commit, "cta-heading")}
-                    </h2>
-                    <input type="hidden" name="templateRecordId" value={template.recordId} />
-                    {/*
-                     * The write itself lives in the stage foot (#760), as it does on every other
-                     * stage: the foot's primary carries `form="create-commit-form"`, so it submits
-                     * this form from outside it and the card keeps the sentences rather than a
-                     * second control that can only agree with the first one.
-                     */}
-                    <p className="text-xs text-gray-600 dark:text-gray-300">
-                      {itemLabel(commit, "cta-body")}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-300">
-                      {itemLabel(commit, "reassure")}
-                    </p>
-                  </form>
-
-                  {/*
-                The six facts stages 1–3 decided, printed back for one last read — the template
-                (with its own Aspect count), both seats, the title, the Mode and the Setting. The
-                Aspect *count* rather than the list: the list is stage 3, one link back.
-              */}
-                  <section
-                    aria-labelledby="create-review-heading"
-                    data-create-review="true"
-                    className="space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-                  >
-                    <h2
-                      id="create-review-heading"
-                      className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                    >
-                      {review.heading}
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {sectionBody(review)}
-                    </p>
-                    <dl className="mt-2 space-y-1.5 text-sm">
-                      <div className="flex justify-between gap-3" data-create-fact="true">
-                        <dt className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(review, "template")}
-                        </dt>
-                        <dd className="text-right text-gray-900 dark:text-gray-100">
-                          {template.title}
-                          <span className="block text-xs text-gray-500 dark:text-gray-400">
-                            {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
-                          </span>
-                        </dd>
-                      </div>
-                      <div className="flex justify-between gap-3" data-create-fact="true">
-                        <dt className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(review, "initiator")}
-                        </dt>
-                        <dd className="text-right text-gray-900 dark:text-gray-100">
-                          {orNone(review, draft.initiatorName)}
-                        </dd>
-                      </div>
-                      <div className="flex justify-between gap-3" data-create-fact="true">
-                        <dt className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(review, "counterparty")}
-                        </dt>
-                        <dd className="text-right text-gray-900 dark:text-gray-100">
-                          {orNone(review, draft.counterpartyName)}
-                        </dd>
-                      </div>
-                      <div className="flex justify-between gap-3" data-create-fact="true">
-                        <dt className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(review, "title")}
-                        </dt>
-                        <dd className="text-right text-gray-900 dark:text-gray-100">
-                          {orNone(review, draft.title)}
-                        </dd>
-                      </div>
-                      <div className="flex justify-between gap-3" data-create-fact="true">
-                        <dt className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(review, "mode")}
-                        </dt>
-                        <dd className="text-right text-gray-900 dark:text-gray-100">
-                          {MODE_LABELS[draft.mode as keyof typeof MODE_LABELS] ??
-                            itemLabel(review, "none")}
-                        </dd>
-                      </div>
-                      <div className="flex justify-between gap-3" data-create-fact="true">
-                        <dt className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(review, "setting")}
-                        </dt>
-                        <dd className="text-right text-gray-900 dark:text-gray-100">
-                          {SETTING_LABELS[draft.alignmentSetting as keyof typeof SETTING_LABELS] ??
-                            itemLabel(review, "none")}
-                        </dd>
-                      </div>
-                    </dl>
-                  </section>
-                </aside>
-              </div>
-
-              {/* The stage foot (#760): `[Back][Cancel]` left, the create flush right. */}
-              <StageFoot
-                backHref={backHref}
-                backLabel={itemLabel(commit, "back")}
-                cancelHref={shell.closeHref}
-                cancelLabel={cancelLabel}
-                advance={
-                  <button type="submit" form={COMMIT_FORM_ID} className={ADVANCE_CLASSES}>
-                    {itemLabel(commit, "submit")}
-                  </button>
-                }
-              />
-            </>
+            <StageFour
+              copy={copy}
+              draft={draft}
+              template={{
+                recordId: template.recordId,
+                title: template.title,
+                aspectCount: template.aspectCount,
+              }}
+              backHref={backHref}
+              cancelHref={shell.closeHref}
+              cancelLabel={cancelLabel}
+              advanceClasses={ADVANCE_CLASSES}
+              commitFormId={COMMIT_FORM_ID}
+            />
           )}
         </div>
       </StageColumn>

@@ -179,12 +179,15 @@ describe("stage 4 — the plans", () => {
     for (const plan of PLAN_IDS) expect(html).toContain(`value="${plan}"`);
   });
 
-  it("leaves the create open and points the method door at the page that sells a tier", () => {
+  it("leaves the create open and keeps the payment decision on this screen (#771)", () => {
+    /* #771 replaced the `PRICING_PATH` door with the in-place walk: choosing a plan must not leave
+       the stage. The old assertions were exactly the flow the owner called wrong. */
     const html = stage4Html();
-    expect(html).toContain(`href="${PRICING_PATH}"`);
-    expect(html).toContain('data-create-plans-link="pricing"');
-    expect(html).toContain(itemLabel(plans, "add-method"));
+    expect(html).not.toContain(`href="${PRICING_PATH}"`);
+    expect(html).not.toContain('data-create-plans-link="pricing"');
+    expect(html).toContain(itemLabel(plans, "add-method-note"));
     expect(html).toContain(itemLabel(plans, "trial"));
+    expect(html).toContain('data-pay-step="plan"');
   });
 });
 
