@@ -55,14 +55,14 @@ database's, and the panel's `blocked` refusal names it (`mode-fixed`).
 
 ## What is asserted where
 
-| Claim                                                              | Where                                                |
-| ------------------------------------------------------------------ | ---------------------------------------------------- |
-| A publish writes `max+1`, supersedes the rest, never re-binds anyone | `tests/admin-template-publish.test.ts`               |
-| Archive / restore / delete each leave exactly one audit row         | `tests/admin-template-crud.test.ts`                  |
-| A template with a relationship or a version is refused, not deleted | `tests/admin-template-crud.test.ts`                  |
-| `mode`/`setting` stay locked, with a named reason                  | `tests/relationship-edit.test.ts` (#623, unchanged)  |
-| The panel prints the bound version, pin control or not              | `tests/relationship-edit-panel.test.tsx`             |
-| Every flow `href` still resolves, no new surface copy literal       | `pnpm data:check` (E10, E23)                         |
+| Claim                                                                | Where                                               |
+| -------------------------------------------------------------------- | --------------------------------------------------- |
+| A publish writes `max+1`, supersedes the rest, never re-binds anyone | `tests/admin-template-publish.test.ts`              |
+| Archive / restore / delete each leave exactly one audit row          | `tests/admin-template-crud.test.ts`                 |
+| A template with a relationship or a version is refused, not deleted  | `tests/admin-template-crud.test.ts`                 |
+| `mode`/`setting` stay locked, with a named reason                    | `tests/relationship-edit.test.ts` (#623, unchanged) |
+| The panel prints the bound version, pin control or not               | `tests/relationship-edit-panel.test.tsx`            |
+| Every flow `href` still resolves, no new surface copy literal        | `pnpm data:check` (E10, E23)                        |
 
 <!-- docs-nav:begin -->
 
