@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**99 documents in 9 sections.** Every page carries the same nav block, generated
+**100 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 9 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 11 documents
-- [Records & QA](#records-qa) — 17 documents
+- [Records & QA](#records-qa) — 18 documents
 
 ## Start here
 
@@ -170,6 +170,7 @@ What was measured, on which tree, and what the migration changed.
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
+- [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa-brand-lockup/README.md`](qa-brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa-contact-land/README.md`](qa-contact-land/README.md) — **Contact landing** — What do the contact pages look like?

@@ -37,6 +37,10 @@ vi.mock("@/lib/db/billing", () => ({ readActiveSubscription }));
 vi.mock("@/lib/db/relationship-payment", () => ({
   readRelationshipPayment,
   openPaymentObligation: vi.fn(),
+  // #739 — the completion gate reads the obligation by session; this fixture has no payment facts,
+  // which is the "not measured" branch (`readCompletionGate` answers `undefined`).
+  readPaymentForSession: vi.fn(async () => undefined),
+  paymentFactsOf: vi.fn(() => null),
 }));
 
 import { listMyRelationships, readMyRelationship } from "@/lib/member/relationships";

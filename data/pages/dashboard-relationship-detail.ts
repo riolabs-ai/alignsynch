@@ -309,6 +309,52 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * #739 — the payer's two acts.
+       *
+       * The band this sells nothing in: the fee is the relationship's, taken once, and the page
+       * says what it is and by when before anyone clicks. `method-missing` is the refusal the
+       * server answers `payment-method-required` for, and `pay` is the link that comes back with
+       * it — the sentence and the way out are the same fixture row pair, so a dead end cannot
+       * render without its door.
+       */
+      id: "completion",
+      heading: "Complete and open the Gap",
+      body: "The fee is taken once, when you complete the relationship — not per round and not at the invitation. Completing it charges the card on file and opens the Gap to both of you; putting a card on file charges nothing and unlocks nothing.",
+      items: [
+        { id: "amount", label: "The fee is {amount}, charged once for this relationship." },
+        { id: "deadline", label: "It has to be paid by {instant}, or the relationship expires." },
+        {
+          id: "method-missing",
+          label:
+            "No payment method is on file yet. Adding one charges nothing — the fee is taken when you complete.",
+        },
+        { id: "method-on-file", label: "A payment method is on file. Nothing has been charged." },
+        {
+          id: "not-sealed",
+          label:
+            "The fee is only taken once both of you have answered every Aspect and accepted the other's answers.",
+        },
+        { id: "capture", label: "Add a payment method" },
+        { id: "capturing", label: "Opening…" },
+        { id: "captured", label: "The method is on file. Nothing was charged." },
+        { id: "capture-continue", label: "Continue to the payment page" },
+        { id: "complete", label: "Complete and open the Gap" },
+        { id: "completing", label: "Completing…" },
+        {
+          id: "completed",
+          label: "Complete — {amount} was charged and the Gap is open to both of you ({status}).",
+        },
+        { id: "charged", label: "{amount} was charged {instant}. The Gap is open to both of you." },
+        {
+          id: "expired",
+          label:
+            "This relationship expired before the fee was paid. A new relationship is the way to try again — a payment cannot reopen it.",
+        },
+        { id: "pay", label: "Add a payment method to continue" },
+      ],
+    },
+    {
       id: "closed",
       heading: "This relationship is closed",
       body: "Nothing more happens to a relationship in this state. Starting a new one is a new relationship with its own invitation.",
@@ -333,6 +379,42 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label: "The invitation link is still live — there is nothing to reissue.",
         },
         { id: "checkout-required", label: "A checkout has to complete first." },
+        /* #739 — the completion band's own dead ends, one sentence each. */
+        {
+          id: "payment-method-required",
+          label:
+            "Completing needs a payment method on file first. Nothing was charged — add one and complete again.",
+        },
+        {
+          id: "charge-declined",
+          label:
+            "The card was declined and the retry ladder for this relationship is spent. Adding a new method does not restart it; support can reopen the obligation.",
+        },
+        {
+          id: "already-charged",
+          label: "This fee has already been paid — the relationship is complete.",
+        },
+        {
+          id: "not-the-payer",
+          label:
+            "The relationship fee belongs to the person who started the relationship, every round. Only they can complete it.",
+        },
+        {
+          id: "not-ready-to-complete",
+          label:
+            "The fee is only taken once both of you have answered every Aspect and accepted each other's answers.",
+        },
+        {
+          id: "payment-expired",
+          label:
+            "This relationship expired before the fee was paid. A new relationship is the way to try again.",
+        },
+        {
+          id: "invalid-plan",
+          label:
+            "That tier cannot carry a relationship fee. Free is a relationship limit, not a payment exemption.",
+        },
+        { id: "not-configured", label: "Billing is not configured on this deployment yet." },
         /* #623 — the edit surface's own dead ends, one sentence each. */
         {
           id: "unconfirmed-invalidation",

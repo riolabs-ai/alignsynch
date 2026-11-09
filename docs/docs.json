@@ -503,6 +503,11 @@
           "question": "Does the assessment flow work end to end with two real identities?"
         },
         {
+          "path": "qa-payment/README.md",
+          "title": "Payment capture & completion",
+          "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
+        },
+        {
           "path": "qa-542-phase2/README.md",
           "title": "#542 phase 2",
           "question": "Is the rail role-constrained data, with focused-flow chrome?"

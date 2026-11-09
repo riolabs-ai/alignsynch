@@ -53,6 +53,7 @@ import {
 } from "@/lib/member/payment";
 import type {
   AspectsOutcome,
+  CaptureOutcome,
   CompleteOutcome,
   EditOutcome,
   EditPreviewOutcome,
@@ -405,7 +406,7 @@ function previewFailure(error: unknown): EditPreviewOutcome {
 export async function capturePaymentMethodAction(payload: {
   relationshipId?: string;
   reason?: string;
-}): Promise<{ ok: true; url: string | null } | { ok: false; code: string; message?: string }> {
+}): Promise<CaptureOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 

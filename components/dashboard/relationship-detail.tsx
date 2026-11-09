@@ -39,16 +39,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { buildTemplateRecord } from "@/lib/admin/template-draft";
-import { formatDate } from "@/content/core";
+import { formatCurrency, formatDate } from "@/content/core";
 import {
   refusalSentence,
   type AspectsOutcome,
+  type CaptureOutcome,
+  type CompleteOutcome,
   type PublishOutcome,
   type RepublishOutcome,
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 import { PRICING_PATH } from "@/lib/flow/paths";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 /** One Aspect while it is being edited. `id` is absent only for a row added in this edit. */
@@ -79,6 +82,8 @@ export function RelationshipDetail({
   onSaveAspects,
   onPublish,
   onRepublish,
+  onCapture,
+  onComplete,
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
@@ -97,6 +102,17 @@ export function RelationshipDetail({
     setting?: string;
   }) => Promise<PublishOutcome>;
   onRepublish: (payload: { relationshipId?: string; reason?: string }) => Promise<RepublishOutcome>;
+  /**
+   * #739 — the payer's two acts, as callbacks. The screen cannot import the server actions
+   * (a `"use client"` module that reaches `lib/db/**` is E34's failure mode), so they arrive as
+   * props from the page, and the page is the only place that decides which action is which.
+   */
+  onCapture: (payload: { relationshipId?: string; reason?: string }) => Promise<CaptureOutcome>;
+  onComplete: (payload: {
+    relationshipId?: string;
+    planId?: string;
+    reason?: string;
+  }) => Promise<CompleteOutcome>;
 }) {
   const viewCopy = sectionOf(copy, "view");
   const statusCopy = sectionOf(copy, "status");
@@ -107,7 +123,9 @@ export function RelationshipDetail({
   const linkCopy = sectionOf(copy, "link");
   const closedCopy = sectionOf(copy, "closed");
   const refusals = sectionOf(copy, "refusals");
+  const completionCopy = sectionOf(copy, "completion");
 
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [aspects, setAspects] = useState<AspectState[]>(
     relationship.template.items.map((item) => ({
@@ -127,6 +145,8 @@ export function RelationshipDetail({
   const [publishOutcome, setPublishOutcome] = useState<PublishOutcome | null>(null);
 
   const [republishOutcome, setRepublishOutcome] = useState<RepublishOutcome | null>(null);
+  const [captureOutcome, setCaptureOutcome] = useState<CaptureOutcome | null>(null);
+  const [completeOutcome, setCompleteOutcome] = useState<CompleteOutcome | null>(null);
 
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
@@ -207,6 +227,43 @@ export function RelationshipDetail({
     });
   }
 
+  /**
+   * #739 — **put a method on file.** Nothing is charged and nothing is unlocked; the completion is
+   * still the payer's own click.
+   *
+   * Two adapters, one handler: the inline one (the keyless mock) writes the method inside this
+   * request and answers `url: null`, so the band is re-read and the person sees the fact; a hosted
+   * one answers with the page the browser has to visit, which the band draws as a link — following
+   * it is the second half, and the return path records the method and lands the payer back here.
+   * Nothing navigates from under a reader: the url arrives as an anchor, the same way the publish
+   * band's checkout does.
+   */
+  function capture(): void {
+    setCaptureOutcome(null);
+    startTransition(async () => {
+      const answer = await onCapture({ relationshipId: relationship.id });
+      setCaptureOutcome(answer);
+      if (answer.ok && answer.url === null) router.refresh();
+    });
+  }
+
+  /**
+   * #739 — **complete and open the Gap.** One click: the fee is taken against the method on file
+   * and both parties can read the report.
+   *
+   * `payment-method-required` is not a dead end and not an error: it carries the capture's url, so
+   * the screen prints the sentence and a working link rather than a button the person cannot get
+   * past. A decline is a sentence too — the retry ladder is already running on the server.
+   */
+  function complete(): void {
+    setCompleteOutcome(null);
+    startTransition(async () => {
+      const answer = await onComplete({ relationshipId: relationship.id });
+      setCompleteOutcome(answer);
+      if (answer.ok) router.refresh();
+    });
+  }
+
   const aspectsRefusal =
     aspectsOutcome !== null && !aspectsOutcome.ok ? sentenceFor(refusals, aspectsOutcome) : null;
   const publishRefusal =
@@ -223,6 +280,13 @@ export function RelationshipDetail({
       : republishOutcome?.ok === true
         ? { url: republishOutcome.inviteLink, expiresAt: republishOutcome.inviteExpiresAt }
         : null;
+
+  /* #739 — the payer's band, and the four sentences it can print. */
+  const gate = relationship.completion;
+  const captureRefusal =
+    captureOutcome !== null && !captureOutcome.ok ? sentenceFor(refusals, captureOutcome) : null;
+  const completeRefusal =
+    completeOutcome !== null && !completeOutcome.ok ? sentenceFor(refusals, completeOutcome) : null;
 
   return (
     <div className="space-y-6">
@@ -580,6 +644,160 @@ export function RelationshipDetail({
                 </p>
               )}
             </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {relationship.isInitiator &&
+      gate !== null &&
+      (!relationship.closed || gate.phase === "charged") ? (
+        /*
+         * #739 — the payer's two acts, and the only place either is reachable.
+         *
+         * Initiator only: `isInitiator` is the payer (`initiator_user_id`), and the server action
+         * re-asks under a row lock (`not-the-payer`), so this band is a courtesy and not the rule.
+         * Nothing is drawn for a relationship with no session (`completion === null`) or a closed
+         * one — both would be an affordance the transaction refuses. The exception is a closed
+         * relationship whose fee was taken: the payer keeps the receipt sentence ("the $8.95 was
+         * charged on …"), because the alternative is a screen that says nothing at all about money
+         * that moved.
+         *
+         * The four outcomes that are not success each draw a sentence: `payment-method-required`
+         * carries a url the person can click, a decline names the ladder that is already running,
+         * `already-charged` says the fee landed, and `not-the-payer` says whose fee it is.
+         */
+        <Card
+          data-completion-gate={gate.phase}
+          data-completion-sealed={gate.sealed ? "true" : "false"}
+        >
+          <CardHeader>
+            <CardTitle>{completionCopy.heading}</CardTitle>
+            <CardDescription>{sectionBody(completionCopy)}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p data-completion-amount={gate.amountCents} className="text-sm text-muted-foreground">
+              {fillLabel(itemLabel(completionCopy, "amount"), {
+                amount: formatCurrency(gate.amountCents),
+              })}
+            </p>
+            {gate.deadlineAt === null ? null : (
+              <p className="text-sm text-muted-foreground">
+                {fillLabel(itemLabel(completionCopy, "deadline"), {
+                  instant: formatDate(gate.deadlineAt),
+                })}
+              </p>
+            )}
+            {gate.phase === "charged" ? (
+              <p data-completion-charged={gate.chargedAt ?? "true"} className="text-sm font-medium">
+                {fillLabel(itemLabel(completionCopy, "charged"), {
+                  amount: formatCurrency(gate.amountCents),
+                  instant:
+                    gate.chargedAt === null
+                      ? pageItemOf(copy, "none").label
+                      : formatDate(gate.chargedAt),
+                })}
+              </p>
+            ) : gate.phase === "expired" ? (
+              <p data-completion-expired="true" className="text-sm">
+                {itemLabel(completionCopy, "expired")}
+              </p>
+            ) : (
+              <>
+                <p
+                  data-completion-method={gate.hasMethod ? "on-file" : "missing"}
+                  className="text-sm"
+                >
+                  {gate.hasMethod
+                    ? itemLabel(completionCopy, "method-on-file")
+                    : itemLabel(completionCopy, "method-missing")}
+                </p>
+                {gate.sealed ? null : (
+                  <p data-completion-seal="open" className="text-sm text-muted-foreground">
+                    {itemLabel(completionCopy, "not-sealed")}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  {gate.hasMethod ? null : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={capture}
+                      disabled={pending}
+                      data-capture-method="true"
+                    >
+                      {pending
+                        ? itemLabel(completionCopy, "capturing")
+                        : itemLabel(completionCopy, "capture")}
+                    </Button>
+                  )}
+                  {gate.sealed ? (
+                    <Button
+                      type="button"
+                      onClick={complete}
+                      disabled={pending}
+                      data-complete-relationship="true"
+                    >
+                      {pending
+                        ? itemLabel(completionCopy, "completing")
+                        : itemLabel(completionCopy, "complete")}
+                    </Button>
+                  ) : null}
+                </div>
+                {captureOutcome?.ok === true ? (
+                  <p data-capture-method-recorded="true" className="text-sm">
+                    {itemLabel(completionCopy, "captured")}
+                  </p>
+                ) : null}
+                {captureOutcome?.ok === true && captureOutcome.url !== null ? (
+                  <p className="text-sm">
+                    <a
+                      className="text-action underline underline-offset-4"
+                      href={captureOutcome.url}
+                      data-capture-link="hosted"
+                    >
+                      {itemLabel(completionCopy, "capture-continue")}
+                    </a>
+                  </p>
+                ) : null}
+                {captureRefusal === null ? null : (
+                  <p
+                    data-capture-refusal={captureOutcome?.ok === false ? captureOutcome.code : ""}
+                    className="text-sm"
+                  >
+                    {captureRefusal}
+                  </p>
+                )}
+                {completeOutcome?.ok === true ? (
+                  <p data-completion-done={completeOutcome.status} className="text-sm font-medium">
+                    {fillLabel(itemLabel(completionCopy, "completed"), {
+                      amount: formatCurrency(completeOutcome.amountCents),
+                      status: completeOutcome.status,
+                    })}
+                  </p>
+                ) : null}
+                {completeRefusal === null ? null : (
+                  <p
+                    data-completion-refusal={
+                      completeOutcome?.ok === false ? completeOutcome.code : ""
+                    }
+                    className="text-sm"
+                  >
+                    {completeRefusal}
+                  </p>
+                )}
+                {completeOutcome?.ok === false && completeOutcome.url !== undefined ? (
+                  <p className="text-sm">
+                    <a
+                      className="text-action underline underline-offset-4"
+                      href={completeOutcome.url}
+                      data-completion-link="capture"
+                    >
+                      {itemLabel(completionCopy, "pay")}
+                    </a>
+                  </p>
+                ) : null}
+              </>
+            )}
           </CardContent>
         </Card>
       ) : null}

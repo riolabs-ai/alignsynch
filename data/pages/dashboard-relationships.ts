@@ -75,9 +75,12 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     /**
-     * #620 — the card's own words. The four actions are the owner's labels, verbatim, and the
-     * note under them says out loud why two of the four are disabled: a person should be able to
-     * read that completion is coming rather than find four buttons where two do nothing.
+     * #620 — the card's own words. The three actions are the owner's labels, verbatim.
+     *
+     * #739 removed the two controls #620 shipped disabled (`Activate Relationship`, `Gap
+     * Analysis`) and the note under them: the acts exist now, on the relationship's own screen,
+     * and a card that cannot read the seal is the wrong place to draw them. `complete-relationship`
+     * is the initiator's primary once the relationship has a session.
      */
     {
       id: "card",
@@ -100,13 +103,8 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
          * the same screen; only the verb is honest for a reader who will not be writing.
          */
         { id: "open-relationship", label: "View Relationship" },
-        { id: "activate", label: "Activate Relationship" },
-        { id: "gap", label: "Gap Analysis" },
-        {
-          id: "disabled-note",
-          label:
-            "Payment is not built yet, so Activate Relationship stays disabled. Gap Analysis opens once both people have accepted the assessment.",
-        },
+        /** #739 — the initiator's primary once there is a session: the screen with the two acts. */
+        { id: "complete-relationship", label: "Complete & open the Gap" },
         { id: "last-session", label: "Started {when}" },
       ],
     },
