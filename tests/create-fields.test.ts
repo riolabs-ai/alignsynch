@@ -1,10 +1,11 @@
 /**
- * Stage 1 — **Details** — has exactly five fields, and this file pins them (#735).
+ * Stage 1 — **Details** — has exactly five fields, and this file pins them (#735, copy replaced
+ * by the owner's saved pass in #760).
  *
  * `docs/specs/flow-stages.md` → *Stage 1, Details* writes the inventory out because it is the
  * part that has drifted: four fields on a 6/6 grid, the description across all twelve, one help
  * line per field where the artifact draws one, and the stage foot's `Back` beside
- * "Continue to mode and setting". The card's acceptance is therefore a count and an order, not a
+ * "Continue to Stage 2". The card's acceptance is therefore a count and an order, not a
  * screenshot a reviewer has to compare by eye:
  *
  *   fixture   the section's ids and labels, in order, exactly — a silent sixth field, a dropped
@@ -14,8 +15,11 @@
  *   deleted   `email-help` and `submit-note` are gone (the artifact draws neither), and `back` is
  *             the label the secondary action carries.
  *
- * The artifact is the reference the spec was written from
- * (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`, `s4.*`), and the spec — not
+ * **Every string below is the v7 artifact's `s4.*` value**, character for character: #760 replaced
+ * five of these labels and the advance action with the owner's saved copy, and a test that kept
+ * the old wording would have been a second, stale source for the same screen. The artifact is the
+ * reference the spec is written from
+ * (`docs/review/artifacts/prototype-relationship-lifecycle-v7.html`, `s4.*`), and the spec — not
  * this file, and not the build — is what a rename has to change first.
  */
 import { createElement } from "react";
@@ -25,6 +29,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** `StageFoot` links through `next/link`, whose router lives in a request the test has not got. */
 vi.mock("next/navigation", () => ({
@@ -36,26 +41,23 @@ vi.mock("next/navigation", () => ({
  * label. Every string is the artifact's `s4.*` value, and the spec is string-for-string from it.
  */
 const INVENTORY = [
-  ["initiator-label", "Your name — the Initiator"],
+  ["initiator-label", "Your Name as the Relationship Initiator"],
   ["initiator-help", "The seat this relationship is created from."],
-  ["counterparty-label", "Who you are asking"],
+  ["counterparty-label", "Counterparty's Name as Seen on the Invite"],
   ["counterparty-placeholder", "Their name"],
-  [
-    "counterparty-help",
-    "Display only: the seat is filled when they claim the invitation. A name typed here is not a party.",
-  ],
-  ["email-label", "Their email address"],
+  ["counterparty-help", "They will complete their name preference when they claim the invitation."],
+  ["email-label", "Email Address used to send the Counterparty Invite"],
   ["email-placeholder", "name@example.com"],
-  ["title-label", "What are you in the middle of"],
+  ["title-label", "Your Personalized Relationship Title"],
   ["title-placeholder", "Relationship Basics"],
-  ["title-help", "The card title both of you see."],
-  ["description-label", "Description"],
+  ["title-help", "The personalized name of the created Relationship."],
+  ["description-label", "Personalized Relationship Description"],
   [
     "description-placeholder",
     "A sentence on why you are doing this — both of you read it on the card.",
   ],
   ["description-help", "Optional. Shown to both parties, never scored."],
-  ["submit", "Continue to mode and setting"],
+  ["submit", "Continue to Stage 2"],
   ["back", "Back"],
 ] as const;
 
@@ -96,7 +98,7 @@ describe("stage 1 — Details", () => {
       INVENTORY.map(([id, label]) => [id, label]),
     );
     // The heading and body are the artifact's too (`s4.heading`, `s4.body`).
-    expect(WHO?.heading).toBe("Who and how");
+    expect(WHO?.heading).toBe("Relationship Details");
     expect(WHO?.body).toBe(
       "One template, two seats, and the facts that shape every screen after this one.",
     );
@@ -140,11 +142,15 @@ describe("stage 1 — Details", () => {
     expect(html.match(/sm:col-span-/g)?.length).toBe(5);
   });
 
-  it("puts `Back` beside the primary action, and nowhere else on the stage", () => {
+  it("puts `Back` in the foot's left group, beside `Cancel` and nowhere else", () => {
     const html = stageOne();
+    expect(html).toContain('data-stage-foot="true"');
     expect(html).toContain('data-create-back="true"');
+    expect(html).toContain('data-create-cancel="true"');
     expect(html).toContain(">Back</a>");
-    // One back affordance on Details: the top link the other stages draw is not here.
+    expect(html).toContain(`>${itemLabel(sectionOf(assessmentCreatePageCopy, "foot"), "cancel")}<`);
+    // One back affordance on Details: the top link the other stages drew is gone from all four,
+    // and Details never had one (#760).
     expect(html.match(/>Back</g)?.length).toBe(1);
   });
 });
