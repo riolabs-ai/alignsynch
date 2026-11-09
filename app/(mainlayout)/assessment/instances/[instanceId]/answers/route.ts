@@ -1,3 +1,4 @@
+import { assessmentAnswerPageCopy } from "@/data/pages/assessment-answer";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { opinionKindsFor } from "@/content/assessment";
 import { authConfigured } from "@/lib/auth/config";
@@ -52,8 +53,9 @@ async function viewerUserId(): Promise<string | null> {
  * The refusal page is assembled here as HTML rather than rendered from a component, for
  * one mechanical reason: this Next version refuses `react-dom/server` inside `app/` (it
  * wants a Server Component, and a route handler that must return a status is not one). The
- * words are still the fixture's — `problems` in `data/pages/assessment-instance.ts` — plus
- * the store's own reason line, which says which role this session actually answers as.
+ * words are still the fixtures': a one-line refusal from `problems` in
+ * `data/pages/assessment-instance.ts`, a state from the band that draws it (`lapsed`, #753), and
+ * always the store's own reason line, which says which role this session actually answers as.
  *
  * **The unlock notice no longer fires here (#R2).** Submission stopped being the completion hinge:
  * the session completes at the second *acceptance*, so the notice moved to the accept endpoint
@@ -96,14 +98,46 @@ export async function POST(
     return NextResponse.redirect(new URL(submittedPath(instanceId), request.url), 303);
   }
 
+  // A refusal is a status about the *request*, so each code names the fact a client reads:
+  // `409` — the instance takes no write from this request (its sheet is sealed, the post was
+  // short, or the membership behind it has lapsed and the relationship is read-only); `403` —
+  // this browser holds no seat; `404` — there is no such instance.
+  //
+  // `lapsed` used to fall through to `404` (#753), which said the opposite of the page it now
+  // prints: the relationship exists and the reader can still read it. It is a state conflict, the
+  // same shape as `frozen`, because that is what the store answered.
   const status =
-    result.code === "frozen" || result.code === "incomplete"
+    result.code === "frozen" || result.code === "incomplete" || result.code === "lapsed"
       ? 409
       : result.code === "not-a-party"
         ? 403
         : 404;
 
   return refusal(instanceId, status, result.code, result.reason, result.problems);
+}
+
+/**
+ * The title a refusal page is given, for a code the **store** answered.
+ *
+ * Most codes are one-line refusals and live in the `problems` section of this route's own fixture.
+ * A **state** is different: `lapsed` is drawn by the answer sheet as a band (#533 phase 3,
+ * `data/pages/assessment-answer.ts` — `This relationship is read-only`), and asking `problems` for
+ * an item it has never carried is what made this endpoint a 500 (#753). The band's heading is read
+ * from the fixture that authors it, so the state still has one sentence and not two.
+ *
+ * The last branch is a guarantee rather than a state: a code nothing has written words for still
+ * answers a page under the route's own heading, because the store's `reason` sentence — which every
+ * refusal carries — names the fact, and a refusal is the last place a 500 belongs.
+ */
+function refusalTitle(code: string): string {
+  const problems = sectionOf(assessmentInstancePageCopy, "problems");
+  const item = problems.items?.find((candidate) => candidate.id === code);
+  if (item !== undefined) return item.label;
+
+  const band = (assessmentAnswerPageCopy.sections ?? []).find((candidate) => candidate.id === code);
+  if (band?.heading !== undefined) return band.heading;
+
+  return assessmentInstancePageCopy.heading;
 }
 
 /**
@@ -119,7 +153,7 @@ function refusal(
   problems: readonly string[] = [],
 ): Response {
   const section = sectionOf(assessmentInstancePageCopy, "problems");
-  const label = itemLabel(section, code);
+  const label = refusalTitle(code);
   const back = itemLabel(section, "back");
   const href = escapeHtml(instancePath(instanceId));
   const detail =
