@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.12.0](v1-12-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.12.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.12.0)
+- **Pull requests named** 6
+- **Theme:** the payment decision moves into the stage that asks for it, and the create saves a draft that pays when its opinions publish.
+- **Headline:** `feat(flow)` — stage 4 walks the payment in place, and the create is a draft that pays at publish (#771)
+
 ### [v1.11.0](v1-11-0.md)
 
 - **Released** 2026-11-09

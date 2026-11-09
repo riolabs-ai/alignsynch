@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**104 documents in 9 sections.** Every page carries the same nav block, generated
+**105 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -35,7 +35,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Operations](#operations) — 8 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 14 documents
+- [Release notes](#release-notes) — 15 documents
 - [Records & QA](#records-qa) — 18 documents
 
 ## Start here
@@ -163,6 +163,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-9-0.md`](changelog/v1-9-0.md) — **v1.9.0** — The release where the payer could finally pay.
 - [`changelog/v1-10-0.md`](changelog/v1-10-0.md) — **v1.10.0** — The release where paying stopped leaving the page.
 - [`changelog/v1-11-0.md`](changelog/v1-11-0.md) — **v1.11.0** — The release where the build drew what the review approved.
+- [`changelog/v1-12-0.md`](changelog/v1-12-0.md) — **v1.12.0** — Which release moved the payment decision into the create flow, and what does it defer?
 
 ## Records & QA
 

@@ -6,6 +6,42 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.12.0] - 2026-11-09
+
+### Added
+
+- `feat(flow)` — stage 4 walks the payment in place, and the create is a draft that pays at publish ([#771](https://github.com/riolabs-ai/alignsynch/pull/771))
+- `feat(review)` — the prototype's Save writes its copy into the repository (#767) ([#768](https://github.com/riolabs-ai/alignsynch/pull/768))
+
+### Fixed
+
+- `fix(review)` — Stage 4's payment runs in place, and the CTA becomes Complete and Connect ([#770](https://github.com/riolabs-ai/alignsynch/pull/770))
+- `fix(review)` — the pre-stage loses its duplicate chip, and the change-request bar moves left ([#769](https://github.com/riolabs-ai/alignsynch/pull/769))
+- `fix(flow)` — every in-card control reaches the 44px floor, and the floor is pinned (#745) ([#765](https://github.com/riolabs-ai/alignsynch/pull/765))
+
+### Maintenance
+
+- `chore(health)` — re-record platform health for 1.11.0 ([#766](https://github.com/riolabs-ai/alignsynch/pull/766))
+### Known limits
+
+- **The create screen takes no card.** Stage 4's walk defers the capture by design: the method is
+  asked for once, when the relationship's opinions are published. The confirmation says "Asked for
+  at publish" rather than drawing a field that would take nothing.
+- **`/pricing` is no longer linked from stage 4.** Choosing a plan commits nothing and buys nothing;
+  a tier is still sold on `/pricing` and from the account screens.
+- **The account panel names the account, it does not collect it.** The shipped gate
+  (`components/assessment-flow/account-gate.tsx`) still follows the commit, and the walk's panel
+  only says what happens.
+- **Publishing still needs a method on file** — the hard gate is unchanged
+  (`components/dashboard/relationship-detail.tsx`, `lib/flow/payment.ts`). A draft created without
+  one asks for it at publish; nothing about the charge moved.
+- **Stripe is still test-mode on the demo deployment.** No real charge is possible from any screen
+  in this release, and `BILLING_HOST` is unset in the local checkout, so a checkout attempt there
+  answers `503 not-configured`.
+- **The walk is a client component.** Stage 4 moved to `components/assessment-flow/stage-four.tsx`
+  and the foot to `components/assessment-flow/stage-foot.tsx`; stages 1–3 are unchanged in
+  `components/assessment-flow/create-relationship.tsx`.
+
 ## [1.11.0] - 2026-11-09
 
 ### Added
