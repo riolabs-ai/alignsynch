@@ -43,6 +43,7 @@
     "flow:e2e": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flow-e2e.mjs",
     "objstore:smoke": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/objstore-smoke.mjs",
     "env:sync": "node scripts/env-sync.mjs",
+    "deploy:prune": "node scripts/vercel-prune.mjs",
     "lint": "biome check && node scripts/lint-brand-classes.mjs",
     "lint:fix": "biome check --write && node scripts/lint-brand-classes.mjs",
     "format": "biome format --write .",
