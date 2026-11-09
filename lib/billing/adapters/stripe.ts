@@ -115,9 +115,10 @@ export interface StripeCredentials {
    * `pk_test_…`, when the deployment has one.
    *
    * Hosted Checkout does not need it in the browser — the server creates the session and the
-   * browser is redirected to the provider's own page — so nothing reads this today. It is carried
-   * because an operator who set it deserves an honest answer about whether the adapter saw it, and
-   * because a later card that builds embedded Elements would otherwise invent a second name.
+   * browser is redirected to the provider's own page — so the hosted path never reads it. The
+   * **embedded** capture does (#748): the frame is initialised with `loadStripe(publishableKey)`,
+   * and this adapter refuses an embedded capture that has none by name, because a frame that
+   * cannot start is worse than a sentence naming the variable.
    */
   readonly publishableKey: string | null;
 }
@@ -262,6 +263,12 @@ export function verifyStripeSignature(input: {
 interface StripeCheckoutSessionObject {
   readonly id: string;
   readonly url?: string | null;
+  /**
+   * Embedded Checkout's mount secret (#748) — present only for a session created with
+   * `ui_mode: embedded`. It is a per-session token, not a credential: it authorises mounting this
+   * one frame, and it is never written to a row or a log.
+   */
+  readonly client_secret?: string | null;
   readonly mode?: string | null;
   readonly status?: string | null;
   readonly subscription?: string | { readonly id?: string } | null;
@@ -484,12 +491,25 @@ export class StripeBillingAdapter implements BillingPort {
   }
 
   /**
-   * Capture a payment method, charging nothing (#619).
+   * Capture a payment method, charging nothing (#619), hosted or embedded (#748).
    *
-   * `mode: "setup"` is the point: the hosted page saves a card to a customer and takes no money,
-   * which is exactly #619's "a method on file, the fee later". The browser returns to the caller's
-   * URL with the session id appended (`{CHECKOUT_SESSION_ID}` is substituted by the provider), and
-   * `resolveMethodCapture()` reads the ids back — nothing the return URL *claims* is trusted.
+   * `mode: "setup"` is the point: the session saves a card to a customer and takes no money, which
+   * is exactly #619's "a method on file, the fee later".
+   *
+   * **Two presentations, one session.** The default (`hosted`, and what every caller before #748
+   * asked for) sends the browser to the provider's own page: `success_url` / `cancel_url`, and
+   * `{CHECKOUT_SESSION_ID}` comes back in the return URL so `resolveMethodCapture()` can read the
+   * ids back — nothing the return URL *claims* is trusted. `presentation: "embedded"` asks for
+   * `ui_mode: embedded` instead: the provider draws the same form in a frame **inside our page**,
+   * so there is no `success_url` to leave for, only a `return_url` for the one case that must
+   * navigate (an SCA challenge). The session then answers a `client_secret`, which is what the
+   * browser's `initEmbeddedCheckout()` needs — and a session that completed in the frame is
+   * resolved through exactly the same `resolveMethodCapture()` the hosted path uses, keyed by `id`.
+   *
+   * The publishable key is required for embedded and refused by name when it is absent: the
+   * browser's loader cannot initialise a frame without it, and a capture that "started" and then
+   * rendered nothing is worse than a sentence naming the variable to set. It is not needed by the
+   * hosted path, which is why it stayed unread until now.
    *
    * `metadata.host` rides on the session **and** on the setup intent, for the same reason every
    * subscription event carries it: the two hosts share one test sandbox, so a capture that did not
@@ -502,11 +522,19 @@ export class StripeBillingAdapter implements BillingPort {
         "a capture needs a success URL and a cancel URL to send the browser back to",
       );
     }
+    const embedded = request.presentation === "embedded";
+    const publishableKey = this.credentials.publishableKey;
+    if (embedded && (publishableKey === null || publishableKey === "")) {
+      throw new BillingRefusal(
+        "not-configured",
+        "STRIPE_TEST_PUBLISHABLE_KEY is not set — the in-page capture has no key to load the " +
+          "provider's frame with. The hosted capture does not need it; this one does",
+      );
+    }
+
     const separator = request.successUrl.includes("?") ? "&" : "?";
     const form = new URLSearchParams({
       mode: "setup",
-      success_url: `${request.successUrl}${separator}capture={CHECKOUT_SESSION_ID}`,
-      cancel_url: request.cancelUrl,
       client_reference_id: request.userId,
       "metadata[user_id]": request.userId,
       "metadata[relationship_id]": request.relationshipId,
@@ -514,11 +542,52 @@ export class StripeBillingAdapter implements BillingPort {
       "setup_intent_data[metadata][host]": this.host,
       "setup_intent_data[metadata][relationship_id]": request.relationshipId,
     });
+    if (embedded) {
+      // `ui_mode: embedded_page` + `return_url` is the provider's embedded Checkout: the form is
+      // drawn in a frame on our own screen, and `if_required` means a normal save never navigates
+      // while an SCA challenge still can — the one case a frame cannot show.
+      //
+      // The value was `embedded` until the provider renamed it; a request carrying the old word is
+      // refused at the API with "The ui_mode value `embedded` is no longer supported. Use
+      // `embedded_page` instead." (measured 2026-11-08 against the test keys). The approved
+      // artifact's frame caption still reads `ui_mode: embedded` — that is the artifact's copy and
+      // this adapter does not edit copy — but the request has to carry the word the API accepts.
+      form.set("ui_mode", "embedded_page");
+      form.set("return_url", request.successUrl);
+      form.set("redirect_on_completion", "if_required");
+      // An embedded page renders the session's own amount line, so the provider requires the
+      // currency even in `setup` mode where nothing is charged — measured as "Missing required
+      // param: currency" (2026-11-08). `STRIPE_CURRENCY` is this adapter's one authored answer.
+      form.set("currency", STRIPE_CURRENCY);
+    } else {
+      form.set("success_url", `${request.successUrl}${separator}capture={CHECKOUT_SESSION_ID}`);
+      form.set("cancel_url", request.cancelUrl);
+    }
     if (request.email !== undefined && request.email !== "") {
       form.set("customer_email", request.email);
     }
 
     const session = await this.post<StripeCheckoutSessionObject>("/checkout/sessions", form);
+
+    if (embedded) {
+      if (typeof session.client_secret !== "string" || session.client_secret === "") {
+        throw new BillingRefusal(
+          "not-configured",
+          `the provider returned an embedded capture session (${session.id}) with no client secret — ` +
+            "nothing could mount the frame, and no method was saved",
+        );
+      }
+      return {
+        id: session.id,
+        // Nobody leaves the page: the frame is drawn inside it, and completion is resolved by id.
+        url: null,
+        provider: "stripe",
+        completed: false,
+        clientSecret: session.client_secret,
+        publishableKey,
+      };
+    }
+
     if (typeof session.url !== "string" || session.url === "") {
       throw new Error(`stripe returned a setup session (${session.id}) with no URL to redirect to`);
     }

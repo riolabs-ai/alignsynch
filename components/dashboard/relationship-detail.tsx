@@ -32,6 +32,7 @@
  * courtesy; `saveAspects` refuses `not-editable` inside its transaction, and a counterparty who
  * posts at it gets `not-yours` — #533's "enforce in the server action, not by hiding a button".
  */
+import { PaymentCaptureDialog } from "@/components/dashboard/payment-capture-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,6 +84,7 @@ export function RelationshipDetail({
   onPublish,
   onRepublish,
   onCapture,
+  onResolve,
   onComplete,
 }: {
   copy: PageCopy;
@@ -107,7 +109,19 @@ export function RelationshipDetail({
    * (a `"use client"` module that reaches `lib/db/**` is E34's failure mode), so they arrive as
    * props from the page, and the page is the only place that decides which action is which.
    */
-  onCapture: (payload: { relationshipId?: string; reason?: string }) => Promise<CaptureOutcome>;
+  onCapture: (payload: {
+    relationshipId?: string;
+    presentation?: string;
+  }) => Promise<CaptureOutcome>;
+  /**
+   * #748 — the frame's completion. The embedded capture has no return URL to carry the provider's
+   * session id, so the dialog hands it back here and the server resolves the method from the
+   * session itself (never from anything the caller claims).
+   */
+  onResolve: (payload: {
+    relationshipId?: string;
+    captureSessionId?: string;
+  }) => Promise<CaptureOutcome>;
   onComplete: (payload: {
     relationshipId?: string;
     planId?: string;
@@ -124,6 +138,8 @@ export function RelationshipDetail({
   const closedCopy = sectionOf(copy, "closed");
   const refusals = sectionOf(copy, "refusals");
   const completionCopy = sectionOf(copy, "completion");
+  /** #748 — the capture dialog's own copy, and the sentence a failure in it draws. */
+  const captureCopy = sectionOf(copy, "capture");
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -146,6 +162,8 @@ export function RelationshipDetail({
 
   const [republishOutcome, setRepublishOutcome] = useState<RepublishOutcome | null>(null);
   const [captureOutcome, setCaptureOutcome] = useState<CaptureOutcome | null>(null);
+  /** #748 — the capture dialog; the band's button opens it, and every outcome closes it. */
+  const [captureOpen, setCaptureOpen] = useState(false);
   const [completeOutcome, setCompleteOutcome] = useState<CompleteOutcome | null>(null);
 
   const editable = relationship.aspectsEditable;
@@ -231,20 +249,25 @@ export function RelationshipDetail({
    * #739 — **put a method on file.** Nothing is charged and nothing is unlocked; the completion is
    * still the payer's own click.
    *
-   * Two adapters, one handler: the inline one (the keyless mock) writes the method inside this
-   * request and answers `url: null`, so the band is re-read and the person sees the fact; a hosted
-   * one answers with the page the browser has to visit, which the band draws as a link — following
-   * it is the second half, and the return path records the method and lands the payer back here.
-   * Nothing navigates from under a reader: the url arrives as an anchor, the same way the publish
-   * band's checkout does.
+   * #748 — **the capture is a dialog, not a page.** The button opens `PaymentCaptureDialog`, which
+   * draws the plan card the artifact approves and asks the server for an **embedded** session. The
+   * dialog answers every outcome itself: an inline capture (the keyless mock) lands here as a fact
+   * with no frame at all, the embedded one mounts the provider's form in place, and a hosted url —
+   * the path that shipped before this card, still working — is drawn below as the link it always
+   * was. Nothing navigates from under a reader on the embedded path, which is the whole point.
    */
-  function capture(): void {
+  function openCapture(): void {
     setCaptureOutcome(null);
-    startTransition(async () => {
-      const answer = await onCapture({ relationshipId: relationship.id });
-      setCaptureOutcome(answer);
-      if (answer.ok && answer.url === null) router.refresh();
-    });
+    setCaptureOpen(true);
+  }
+
+  /** What the dialog did: the band re-reads the row, and a failure draws its own sentence. */
+  function captureAnswered(answer: CaptureOutcome): void {
+    setCaptureOutcome(answer);
+    if (answer.ok && answer.url === null) {
+      setCaptureOpen(false);
+      router.refresh();
+    }
   }
 
   /**
@@ -721,13 +744,10 @@ export function RelationshipDetail({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={capture}
-                      disabled={pending}
+                      onClick={openCapture}
                       data-capture-method="true"
                     >
-                      {pending
-                        ? itemLabel(completionCopy, "capturing")
-                        : itemLabel(completionCopy, "capture")}
+                      {itemLabel(completionCopy, "capture")}
                     </Button>
                   )}
                   {gate.sealed ? (
@@ -796,6 +816,25 @@ export function RelationshipDetail({
                     </a>
                   </p>
                 ) : null}
+                {/*
+                  #748 — the capture itself. Rendered inside this band because the band is the only
+                  place the control exists, and the dialog is inert until it is opened.
+
+                  It is a dialog rather than a route: the artifact draws the provider's card fields
+                  in a frame on this page, and the payer's method is recorded without the screen
+                  changing under them. The hosted path (a `url` in the outcome) is still drawn above
+                  as the link it was — a deployment whose adapter answers a page keeps working.
+                */}
+                <PaymentCaptureDialog
+                  copy={captureCopy}
+                  refusalFallback={itemLabel(refusals, "not-configured")}
+                  relationshipId={relationship.id}
+                  open={captureOpen}
+                  onOpenChange={setCaptureOpen}
+                  onCapture={onCapture}
+                  onResolve={onResolve}
+                  onCaptured={captureAnswered}
+                />
               </>
             )}
           </CardContent>

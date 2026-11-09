@@ -121,6 +121,19 @@ export interface CheckoutSession {
  * ------------------------------------------------------------------ */
 
 /**
+ * How a capture is presented (#748).
+ *
+ * `hosted` is the shipped shape: the server creates a session and answers a URL the browser leaves
+ * the page for. `embedded` draws the provider's own form in a frame **inside this page** — the
+ * artifact's `ui_mode: embedded` — and answers a client secret instead of a URL. It is a per-call
+ * choice, not a deployment flag: the same adapter carries both, and a caller that does not say
+ * which it wants gets `hosted`, which is why nothing that shipped before this existed changed.
+ */
+export const CAPTURE_PRESENTATIONS = ["hosted", "embedded"] as const;
+
+export type CapturePresentation = (typeof CAPTURE_PRESENTATIONS)[number];
+
+/**
  * What capturing a payment method asks for.
  *
  * No amount: the fee is decided at **completion**, from the plan the initiator chooses then. A
@@ -137,21 +150,37 @@ export interface MethodCaptureRequest {
   readonly successUrl: string;
   readonly cancelUrl: string;
   readonly email?: string;
+  /** `hosted` (the default) or `embedded`. See `CAPTURE_PRESENTATIONS`. */
+  readonly presentation?: CapturePresentation;
 }
 
-/** Where to send the browser to capture a method. `completed` is `true` only for an offline adapter. */
+/**
+ * What starting a capture answered.
+ *
+ * Two presentations, one shape, and only one of `url` / `clientSecret` is populated:
+ *
+ *   hosted    `url` is where the browser goes; `completed` is `false` and the ids arrive through
+ *             `resolveMethodCapture()` when it comes back
+ *   embedded  `clientSecret` is what the browser mounts the provider's frame with; `url` is `null`
+ *             because nobody leaves the page, and the session id travels as `id` so the method can
+ *             be resolved the same way once the frame reports completion
+ *   inline    `completed` is `true` (the offline adapter) and neither is needed
+ */
 export interface MethodCaptureSession {
   readonly id: string;
-  readonly url: string;
+  readonly url: string | null;
   readonly provider: BillingProvider;
   /**
    * `true` when the method is already on file by the time this returns (the mock captures inline).
-   * A hosted provider returns `false`, and the ids arrive through `resolveMethodCapture()` when the
-   * browser comes back.
+   * A hosted provider returns `false`, and the ids arrive through `resolveMethodCapture()`.
    */
   readonly completed: boolean;
   readonly customerId?: string;
   readonly paymentMethodId?: string;
+  /** Embedded only: the secret the browser's frame is initialised with. Never logged. */
+  readonly clientSecret?: string;
+  /** Embedded only: the publishable key the loader needs. `null` when none is configured. */
+  readonly publishableKey?: string | null;
 }
 
 /** A capture, resolved from the provider after the browser returned. */

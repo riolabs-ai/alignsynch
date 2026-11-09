@@ -98,6 +98,7 @@ function html(view: MemberRelationshipView): string {
       onPublish: noop,
       onRepublish: noop,
       onCapture: noop,
+      onResolve: noop,
       onComplete: noop,
     }),
   );

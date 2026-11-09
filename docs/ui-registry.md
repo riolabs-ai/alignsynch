@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **89** — 55 static, 34 dynamic, from `app/**/page.tsx`
-- component domains: **42** — 313 files under `components/`, 306 of them `.tsx`
+- component domains: **42** — 314 files under `components/`, 307 of them `.tsx`
 - route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 67 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 42 · AlignSynch 45 · QuizHub 42 · No template yet 2
@@ -84,13 +84,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/dashboard/relationships` — **db**
   - capability: The relationships this member started: a table of their own initiator rows with the stored status on each, and the create band that copies one of their templates into a new relationship's own record.
   - components: `components/dashboard`, `components/ui`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/member/payment.ts`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `app/(mainlayout)/dashboard/relationships/actions.ts`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/member/payment.ts`
   - notes: Reads `relationship.initiator_user_id = $1` and nothing else, so the list cannot show a counterparty's row. The status column is the stored `relationship.status` (0029/0030) — never derived from the parties — because phase 3's expiry sweep needs one column to move. Create is the only write on the page; Aspects belong to the detail screen.
 
 - `/dashboard/relationships/[id]` — **db**
   - capability: One relationship the member initiated: its status, its Aspects editor while `draft`/`pending`, save-as-pending, publish through a trial or a checkout, and the one-click re-publish that replaces an expired invite link.
   - components: `components/dashboard`, `components/relationship`, `components/ui`
-  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/member/payment.ts`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `app/(mainlayout)/dashboard/relationships/actions.ts`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/member/payment.ts`
   - notes: Reuses `components/admin/template-editor.tsx` in its `band="private"` shape for Aspects (`template-ancestor:` on the header), so there is one editor and not two. Every write is a server action over `act()`; the ownership refusal (`not-yours`) is decided in the action, not by hiding the form — the counterparty reaching this URL gets the same refusal a crafted POST gets.
 
 - `/dashboard/support` — **db**
@@ -709,7 +709,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (14): `affiliate-dashboard.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - files (15): `affiliate-dashboard.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `payment-capture-dialog.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
   - routes (3): `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 
