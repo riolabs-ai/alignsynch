@@ -31,12 +31,15 @@
  * Nothing on this route reads a clock, a session or a database.
  *
  * **The box under the report prices the plan, never the relationship (#805).** This page used to
- * quote `RELATIONSHIP_PRICE_CENTS` — "One relationship costs $9.99" — and that sentence was false
- * the day #619 retired the per-relationship model: a plan is chosen when a relationship is ready
- * to complete, one plan runs unlimited relationships, and `/pricing` is the only place a figure is
- * sold. The sentence here states that claim in the demo's own words and hands the reader the
- * pricing page. `/pricing` is a sibling public route, so that link is ordinary in-tree navigation
- * and stays in the tab — unlike the dashboard's cards, which must open this page in a new tab.
+ * quote `RELATIONSHIP_PRICE_CENTS` and print it as a per-relationship monthly price, and that
+ * sentence was false the day #619 retired the per-relationship model: a plan is chosen when a
+ * relationship is ready to complete, one plan runs unlimited relationships, and `/pricing` is the
+ * only place a figure is sold. The retired sentence is described here rather than quoted, so this
+ * file carries no amount of its own to grep for.
+ *
+ * The box states that claim in the demo's own words and hands the reader the pricing page.
+ * `/pricing` is a sibling public route, so that link is ordinary in-tree navigation and stays in
+ * the tab — unlike the dashboard's cards, which must open this page in a new tab.
  */
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import { assessmentDemo } from "@/lib/assessment-demo";
