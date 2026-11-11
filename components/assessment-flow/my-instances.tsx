@@ -31,6 +31,7 @@
 import Link from "next/link";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
+import { Chip } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
 import { STAGE_LABELS } from "@/content/stages";
 import type { RelationshipCard } from "@/lib/db/assessments";
@@ -44,8 +45,6 @@ const CARD =
   "flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
 const MUTED = "text-sm text-gray-600 dark:text-gray-300";
 const STRONG = "font-semibold text-gray-900 dark:text-gray-100";
-const CHIP =
-  "inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200";
 
 /**
  * The stage a `?stage=` value names, or `null` for "every relationship".
@@ -356,10 +355,10 @@ export function MyInstances({
                       carries a template, a stage and two names, not a thumbnail. */}
                   <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={CHIP}>{rel.templateTitle}</span>
-                      <span data-stage-badge={rel.stage} className={CHIP}>
+                      <Chip variant="tint">{rel.templateTitle}</Chip>
+                      <Chip variant="tint" data-stage-badge={rel.stage}>
                         {rel.stageLabel}
-                      </span>
+                      </Chip>
                     </div>
                     <Link
                       href={model.detail.href}
@@ -378,11 +377,11 @@ export function MyInstances({
                     </dl>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={CHIP}>{rel.mode}</span>
+                      <Chip variant="neutral">{rel.mode}</Chip>
                       {rel.invite === null ? null : (
-                        <span data-invite-state={rel.invite.state} className={CHIP}>
+                        <Chip variant="soft" data-invite-state={rel.invite.state}>
                           {rel.invite.label}
-                        </span>
+                        </Chip>
                       )}
                     </div>
 
