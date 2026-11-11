@@ -160,17 +160,20 @@ export function relationshipTypePath(typeId: string): string {
 }
 
 /**
- * `/assessment/demo/[type]` — the worked example's own segment (#478, the `release` demo row).
+ * One relationship type's worked example — `/relationship-types/<id>/demo`.
  *
- * Not `/assessment/templates/demo/<type>`: `[templateId]` already owns
- * `/assessment/templates/<id>`, and Next refuses two dynamic segment names at one level. A
- * sibling segment keeps the address stable and the manifest's dynamic rows unambiguous.
+ * A **child of the type's public page**, not a segment of its own: the example is the taxonomy
+ * row's own finished report, so a reader who lands on the example is one address below the type
+ * they were reading, and the breadcrumb back is the page it belongs to (#794's catalogue noun,
+ * and the IA decision on the demo's own card).
+ *
+ * The parent has been `/assessment/demo/<type>` and `assessmentDemoPath` is **deleted rather than
+ * aliased** (the #794 doctrine): the segment named a record *kind* the example is not, and an
+ * alias would let a new caller keep spelling the retired noun. `record.id` never appears in this
+ * address either — the taxonomy id is already its slug, so there is no id↔slug mapping here.
  */
-export const ASSESSMENT_DEMO_PATH = "/assessment/demo";
-
-/** One type's finished example report — the only page a stranger may read a report on. */
-export function assessmentDemoPath(typeId: string): string {
-  return `${ASSESSMENT_DEMO_PATH}/${typeId}`;
+export function relationshipTypeDemoPath(typeId: string): string {
+  return `${relationshipTypePath(typeId)}/demo`;
 }
 
 /**

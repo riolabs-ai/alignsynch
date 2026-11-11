@@ -55,6 +55,7 @@ import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
 import { StepsPanel } from "@/components/assessment-flow/steps-panel";
 import { SubmissionConfirmation } from "@/components/assessment-flow/submission-confirmation";
+import { Chip } from "@/components/ui/badge";
 import { MODE_LABELS } from "@/content/assessment";
 import type { Step } from "@/content/steps";
 import { formatDate } from "@/content/core";
@@ -272,12 +273,9 @@ export function AssessmentInstanceView({
               attribute — the stage is said once in words and once as a badge, and neither is a
               progress bar (#274). A voided session (#503) has no rung to name, so the badge is
               the operator's own word and the ladder is not drawn at all. */}
-          <span
-            data-stage-badge={stage ?? "voided"}
-            className="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
-          >
+          <Chip variant="tint" data-stage-badge={stage ?? "voided"}>
             {stage === null ? itemLabel(stageBand, "voided-badge") : STAGE_LABELS[stage]}
-          </span>
+          </Chip>
         </div>
         <p
           data-mode={screen.mode}
@@ -285,12 +283,9 @@ export function AssessmentInstanceView({
         >
           {MODE_LABELS[screen.mode]}
           {isCoach ? (
-            <span
-              data-coach-badge="true"
-              className="ml-2 inline-block rounded-full border border-gray-300 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
-            >
+            <Chip variant="neutral" className="ml-2" data-coach-badge="true">
               {itemLabel(viewerBand, "coach-badge")}
-            </span>
+            </Chip>
           ) : null}
         </p>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>

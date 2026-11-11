@@ -41,7 +41,7 @@ import {
 import { alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { templatesDetailPageCopy } from "@/data/pages/templates-detail";
 import { templatesPageCopy } from "@/data/pages/templates";
-import { assessmentDemoPath } from "@/lib/flow/paths";
+import { relationshipTypeDemoPath } from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 import { CATALOGUE_PATH, START_PATH, templateCards } from "@/lib/template-catalogue";
 import { templateDetail, templateSlugs } from "@/lib/template-detail";
@@ -230,7 +230,7 @@ test("offers the worked example only where the fixture holds one", () => {
   for (const type of withDemo) {
     const { model, html } = renderTemplate(type.id);
     assert.ok(model.example !== undefined, `"${type.id}" has a demo but no example link`);
-    assert.equal(model.example.href, assessmentDemoPath(type.id));
+    assert.equal(model.example.href, relationshipTypeDemoPath(type.id));
     assert.ok(html.includes(`href="${model.example.href}"`));
   }
 
@@ -241,7 +241,7 @@ test("offers the worked example only where the fixture holds one", () => {
   for (const type of withoutDemo.slice(0, 3)) {
     const { model, html } = renderTemplate(type.id);
     assert.equal(model.example, undefined);
-    assert.equal(html.includes(assessmentDemoPath(type.id)), false);
+    assert.equal(html.includes(relationshipTypeDemoPath(type.id)), false);
   }
 });
 

@@ -40,7 +40,7 @@ import {
 } from "@/data/relationship-types";
 import {
   createRelationshipPath,
-  assessmentDemoPath,
+  relationshipTypeDemoPath,
   relationshipTemplatePath,
 } from "@/lib/flow/paths";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
@@ -253,7 +253,7 @@ describe("the rendered catalogue", () => {
     for (const type of purchasableRelationshipTypes) {
       const card = cardOf(html, type.id);
       if (demoAnswersForType(type.id)) {
-        expect(card).toContain(`href="${assessmentDemoPath(type.id)}"`);
+        expect(card).toContain(`href="${relationshipTypeDemoPath(type.id)}"`);
       } else {
         expect(card).not.toContain("/demo");
         expect(wordsOf(card)).not.toContain("example");

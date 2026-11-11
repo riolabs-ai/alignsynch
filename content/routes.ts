@@ -101,7 +101,6 @@ const DYNAMIC_ROUTES = [
   // #504 — that relationship's Gap report: the operations screen, and the audited export beneath it.
   "/admin/instances/[id]/report",
   "/assessment/[slug]",
-  "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",
   "/assessment/instances/[instanceId]/report",
   // R1-E (#409): the two write screens sit one segment below the instance, beside the
@@ -147,6 +146,10 @@ const DYNAMIC_ROUTES = [
   // One relationship *type*'s public page — the card title on `/relationship-types` links here,
   // and every purchasable type is a static param of it.
   "/relationship-types/[slug]",
+  // #794 · the worked example, one level below the type it belongs to. It used to be
+  // `/assessment/demo/[type]`, under the record *kind* a type is not; the segment is the
+  // taxonomy id, like its parent, because a type is a fixture row and not a record handle.
+  "/relationship-types/[slug]/demo",
   "/reset/[token]",
   "/support/articles/[slug]",
   "/tournaments/[id]",

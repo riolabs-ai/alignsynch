@@ -335,6 +335,16 @@ describe("routePatterns", () => {
       "/support/articles/*",
     ]);
   });
+
+  it("widens a page nested under a dynamic segment to the same prefix, once", () => {
+    // `/relationship-types/[slug]/demo` is a marketing page one level below a dynamic one. It has
+    // to reach the table, and it can only reach it as the prefix its parent already owns: a
+    // literal row would name a URL no reader can be at.
+    assert.deepEqual(
+      routePatterns(["/", "/relationship-types/[slug]", "/relationship-types/[slug]/demo"]),
+      ["/", "/relationship-types/*"],
+    );
+  });
 });
 
 /* ================================================================== *
@@ -378,6 +388,9 @@ describe("the real tree", () => {
       // directory, and the library lives at `/templates/relationship` inside the app shell.
       "/relationship-types",
       "/relationship-types/[slug]",
+      // The worked example, one segment below the type it belongs to — a public page, so it has
+      // to appear here or `routePatterns` would never widen it into the table.
+      "/relationship-types/[slug]/demo",
       "/support/articles/[slug]",
       "/terms",
       "/welcome",
