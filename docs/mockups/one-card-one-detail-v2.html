@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One card, one detail — #795</title>
+<!--
+  ARTIFACT: docs/mockups/one-card-one-detail-v2.html   (issue #795, card t_d659848d)
+
+  v2 — §0 only (2026-11-11). Every provenance row is re-derived by reading the source at 89beff68 and
+  cited by symbol first, with each literal quoted byte-complete; §1–§5 are byte-identical to v1. What
+  moved, and why, is stated at the head of §0. A new revision rather than an edit in place because v1
+  is already linked from issue #795 and from the card comment.
+
+  What this is. The approval artifact for the pattern move in #795: the template surfaces are the
+  precedent, and the relationship surfaces adopt them. It is drawn ENTIRELY from class constants
+  that already ship — `CARD`, `COVER`, `MONOGRAM`, `CHIP`, `CHIP_TEMPLATE`, `TITLE`, `MUTED`,
+  `OUTLINE`, `PRIMARY`, `FACT_LABEL` and the shadcn `Card`/`Badge` primitives. The provenance table
+  in §0 names the file each constant comes from, and the CSS block below implements those
+  utility declarations one-to-one (values read from app/globals.css + tailwind.config.ts).
+
+  One deliberate deviation, and it is harness, not design: Tailwind's `sm:` / `lg:` breakpoints
+  read the *viewport*, and this page shows a 390 px render and a 1126 px render side by side, so
+  the four responsive containers are re-expressed as CSS container queries on the frame
+  (`.q-grid`, `.q-detail`, `.q-seat`, `.q-pad`). Every declaration inside them is the one Tailwind
+  emits at the same breakpoint. Nothing else about the visual language moves.
+
+  Links are drawn as <span>, not <a href="#">: this is a picture of four screens, not a page,
+  and the repo lints the HTML it can reach (`a11y/useValidAnchor` fails on a placeholder href).
+
+  Light mode only. Neither build renders `class="dark"` today (app/globals.css says so), so a dark
+  render here would be a drawing of a sheet nothing paints.
+
+  Copy is the shipped fixture copy, not invented: data/assessments.ts (titles, summaries, the five
+  Staff & Manager Aspects), data/relationship-types.ts (type, roles, descriptor, $9.99) and
+  data/pages/*.ts (every heading, label and sentence quoted).
+-->
+<style>
+/* ─────────────────────────────────────────────────────────────────────────────
+   THE TOKEN LAYER — resolved for the AlignSynch build.
+   app/globals.css `:root` + the properties `lib/brand-theme.ts` paints inline on <html> from
+   data/brands/alignsynch.ts: background #ffffff, foreground #363d49, primary #37474f,
+   accent #08add5 (a surface, never an ink), action #37474f, actionHover #2a373e.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root{
+  --background:#ffffff; --foreground:#363d49; --card:#ffffff; --card-foreground:#03080e;
+  --primary:#37474f; --primary-foreground:#ffffff;
+  --accent:#08add5; --accent-foreground:#363d49;
+  --action:#37474f; --action-hover:#2a373e; --action-foreground:#ffffff;
+  --border:hsl(30 16% 84%);
+  --muted:hsl(210 40% 96.1%);
+  --muted-foreground:hsl(215 21% 44%);
+  --secondary:hsl(210 40% 96.1%);
+  /* tailwind.config.ts: lg = var(--radius), md = calc(- 2px), sm = calc(- 4px), --radius 5px */
+  --radius:5px; --radius-md:3px; --radius-sm:1px;
+  /* the neutral steps the two shipped card files name directly */
+  --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb; --gray-300:#d1d5db;
+  --gray-500:#6b7280; --gray-600:#4b5563; --gray-700:#374151; --gray-900:#111827;
+  --amber-50:#fffbeb; --amber-300:#fcd34d; --amber-800:#92400e; --amber-900:#78350f;
+}
+
+/* ── this page's own furniture. Never inside a frame: `.doc-*` is the artifact, not the product. ── */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+.doc{max-width:1640px;margin:0 auto;padding:42px 20px 120px}
+.doc-eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5b6b7a;margin:0 0 10px}
+.doc > h1{font-size:2.1rem;line-height:1.15;font-weight:700;margin:0 0 12px;letter-spacing:-.01em}
+.doc-lede{font-size:1.0625rem;line-height:1.55;color:#3d4c5a;max-width:78ch;margin:0 0 22px}
+.doc-claims{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:0 0 34px;padding:0;list-style:none}
+.doc-claims li{background:#fff;border:1px solid #d9dee3;border-radius:6px;padding:14px 16px}
+.doc-claims b{display:block;font-size:.9375rem;margin-bottom:3px}
+.doc-claims span{font-size:.875rem;color:#54636f}
+.doc h2.sec{font-size:1.3125rem;font-weight:700;margin:52px 0 6px;padding-top:22px;border-top:1px solid #d3d9de}
+.doc h2.sec .num{color:#93a1ad;font-weight:600;margin-right:10px;font-variant-numeric:tabular-nums}
+.doc h3.sub{font-size:.9375rem;font-weight:700;margin:26px 0 8px;letter-spacing:.01em}
+.doc p.note{font-size:.875rem;line-height:1.6;color:#4b5b68;max-width:92ch;margin:8px 0}
+.doc code{font:.82em ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef1f4;border:1px solid #dde2e7;border-radius:3px;padding:1px 4px}
+.doc pre{font:.78rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#20272e;color:#e6edf3;padding:14px 16px;border-radius:6px;overflow:auto;margin:10px 0 0}
+.doc table{border-collapse:collapse;width:100%;font-size:.8125rem;margin:10px 0 0;background:#fff}
+.doc th,.doc td{border:1px solid #d9dee3;padding:7px 9px;text-align:left;vertical-align:top}
+.doc th{background:#f4f6f8;font-weight:600;font-size:.75rem;letter-spacing:.02em;text-transform:uppercase;color:#4b5b68}
+.doc td code{white-space:nowrap}
+.doc .ok{color:#15803d;font-weight:600}
+.doc .no{color:#b91c1c;font-weight:600}
+.doc .pair{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;margin:16px 0 0}
+.doc .frame-wrap{margin:0}
+.doc .cap{font-size:.75rem;letter-spacing:.04em;text-transform:uppercase;color:#5b6b7a;margin:0 0 6px;font-weight:600}
+.doc .cap em{font-style:normal;color:#8b98a4;text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px}
+.doc .annot{font-size:.8125rem;color:#4b5b68;border-left:3px solid #c4cdd4;padding:2px 0 2px 12px;margin:14px 0 0;max-width:92ch}
+.doc :is(p.note,.annot) b{color:#1f2933}
+
+/* ── the frame: one "viewport". Container queries stand in for sm:/lg: because both widths are here. ── */
+.vp{container-name:vp;container-type:inline-size;background:var(--background);border:1px solid #c9d1d8;border-radius:6px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.q-pad{padding:1rem}
+@container vp (min-width:640px){ .q-pad{padding:2rem} }          /* sm:p-8 */
+
+/* ── preflight, scoped to a frame. `:where()` keeps specificity at 0 so the utility
+      classes the components spell always win — Tailwind's own preflight is element-only for
+      the same reason. ── */
+.vp *{box-sizing:border-box}
+:where(.vp) :where(h1,h2,h3,p,dl,dd,dt,ul,ol,figure){margin:0;font-size:inherit;font-weight:inherit}
+:where(.vp) :where(ul,ol){list-style:none;padding:0}
+:where(.vp) :where(a){color:inherit;text-decoration:inherit}
+:where(.vp) :where(button,input){font:inherit;color:inherit}
+:where(.vp) :where(button){background:none;border:0;padding:0}
+:where(.vp) :where(img){display:block;max-width:100%}
+
+/* ── utilities, one-to-one with the Tailwind classes the shipped components spell ── */
+.flex{display:flex} .inline-flex{display:inline-flex} .grid{display:grid}
+.flex-col{flex-direction:column} .flex-wrap{flex-wrap:wrap} .flex-1{flex:1 1 0%}
+.items-center{align-items:center} .items-start{align-items:flex-start}
+.justify-between{justify-content:space-between} .justify-center{justify-content:center}
+.shrink-0{flex-shrink:0} .min-w-0{min-width:0} .mt-auto{margin-top:auto} .w-full{width:100%}
+.max-w-3xl{max-width:48rem}
+.gap-1{gap:.25rem} .gap-2{gap:.5rem} .gap-3{gap:.75rem} .gap-4{gap:1rem} .gap-6{gap:1.5rem}
+.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.p-2{padding:.5rem} .p-3{padding:.75rem} .p-4{padding:1rem} .p-5{padding:1.25rem} .p-6{padding:1.5rem}
+.px-2{padding-left:.5rem;padding-right:.5rem} .px-2\.5{padding-left:.625rem;padding-right:.625rem}
+.px-3{padding-left:.75rem;padding-right:.75rem} .px-4{padding-left:1rem;padding-right:1rem}
+.px-6{padding-left:1.5rem;padding-right:1.5rem}
+.py-0\.5{padding-top:.125rem;padding-bottom:.125rem} .py-1\.5{padding-top:.375rem;padding-bottom:.375rem}
+.py-2{padding-top:.5rem;padding-bottom:.5rem} .py-3{padding-top:.75rem;padding-bottom:.75rem}
+.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
+.mt-1{margin-top:.25rem} .mt-2{margin-top:.5rem} .mt-3{margin-top:.75rem} .mt-4{margin-top:1rem} .mt-6{margin-top:1.5rem}
+.mb-1{margin-bottom:.25rem} .mb-2{margin-bottom:.5rem} .mb-3{margin-bottom:.75rem}
+.space-y-1>*+*{margin-top:.25rem} .space-y-2>*+*{margin-top:.5rem}
+.space-y-3>*+*{margin-top:.75rem} .space-y-4>*+*{margin-top:1rem} .space-y-6>*+*{margin-top:1.5rem}
+.border{border:1px solid var(--border)} .border-b{border-bottom:1px solid var(--border)}
+.border-t{border-top:1px solid var(--border)} .border-l{border-left:1px solid var(--border)}
+.border-transparent{border-color:transparent}
+.border-gray-200{border-color:var(--gray-200)} .border-gray-300{border-color:var(--gray-300)}
+.border-border{border-color:var(--border)} .border-amber-300{border-color:var(--amber-300)}
+.rounded-lg{border-radius:var(--radius)} .rounded-md{border-radius:var(--radius-md)} .rounded-full{border-radius:9999px}
+.bg-white{background:#fff} .bg-gray-50{background:var(--gray-50)} .bg-gray-100{background:var(--gray-100)}
+.bg-amber-50{background:var(--amber-50)} .bg-card{background:var(--card)} .bg-foreground{background:var(--foreground)}
+.bg-action{background:var(--action)} .bg-secondary{background:var(--secondary)} .bg-muted{background:var(--muted)}
+.text-xs{font-size:.75rem;line-height:1rem} .text-sm{font-size:.875rem;line-height:1.25rem}
+.text-base{font-size:1rem;line-height:1.5rem} .text-lg{font-size:1.125rem;line-height:1.75rem}
+.text-xl{font-size:1.25rem;line-height:1.75rem} .text-2xl{font-size:1.5rem;line-height:2rem}
+.text-3xl{font-size:1.875rem;line-height:2.25rem}
+.text-\[10px\]{font-size:10px;line-height:1.1}
+.font-medium{font-weight:500} .font-semibold{font-weight:600} .font-bold{font-weight:700}
+.text-center{text-align:center} .uppercase{text-transform:uppercase}
+.tracking-wide{letter-spacing:.025em} .tracking-\[0\.06em\]{letter-spacing:.06em}
+.tabular-nums{font-variant-numeric:tabular-nums} .leading-none{line-height:1}
+.text-gray-500{color:var(--gray-500)} .text-gray-600{color:var(--gray-600)}
+.text-gray-700{color:var(--gray-700)} .text-gray-800{color:#1f2937} .text-gray-900{color:var(--gray-900)}
+.text-gray-900\/\[\.34\]{color:rgba(17,24,39,.34)}
+.block{display:block}
+.bg-background{background:var(--background)}
+.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}
+.text-muted-foreground{color:var(--muted-foreground)} .text-foreground{color:var(--foreground)}
+.text-background{color:var(--background)} .text-amber-900{color:var(--amber-900)}
+.text-action{color:var(--action)} .text-action-foreground{color:var(--action-foreground)}
+.text-card-foreground{color:var(--card-foreground)} .text-white{color:#fff}
+.text-background\/80{color:rgba(255,255,255,.8)}
+.border-background\/30{border-color:rgba(255,255,255,.3)}
+.border-action\/45{border-color:rgba(55,71,79,.45)} .bg-action\/5{background:rgba(55,71,79,.05)}
+.h-9{height:2.25rem} .h-10{height:2.5rem} .h-11{height:2.75rem} .h-\[104px\]{height:104px}
+.overflow-hidden{overflow:hidden}
+.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.underline{text-decoration:underline}
+.hover\:underline:hover{text-decoration:underline}
+.hover\:bg-gray-50:hover{background:var(--gray-50)}
+.hover\:bg-action-hover:hover{background:var(--action-hover)}
+.hover\:text-action:hover{color:var(--action)}
+.animate-pulse{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}
+@keyframes pulse{50%{opacity:.55}}
+
+/* the four responsive containers (harness): same declarations Tailwind emits at the breakpoint */
+.q-grid{display:grid;gap:1.5rem}
+@container vp (min-width:640px){ .q-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@container vp (min-width:1024px){ .q-grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.q-detail{display:grid;gap:1.5rem;margin-top:1.5rem}
+@container vp (min-width:1024px){
+  .q-detail{grid-template-columns:320px minmax(0,1fr); align-items:start}
+  .q-sticky{position:sticky;top:1.5rem;align-self:start}
+}
+.q-seat{display:grid;gap:.5rem}
+@container vp (min-width:640px){ .q-seat{grid-template-columns:repeat(2,minmax(0,1fr))} }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <p class="doc-eyebrow">AlignSynch · pattern audit #795 · approval artifact v2 · branch <code>docs/mockup-795-one-card-one-detail-v2</code></p>
+  <h1>One card, one detail</h1>
+  <p class="doc-lede">
+    The template surfaces are the precedent the owner approved. The relationship surfaces adopt them,
+    and vary on <b>exactly two declared axes</b>: the cover slot, and the working panels. Below, each of
+    the four surfaces is drawn twice — at 390 px and at the 1126 px column (<code>StageColumn</code>, #687) —
+    side by side, using only class constants that already ship.
+  </p>
+
+  <ul class="doc-claims">
+    <li><b>One shell</b><span>Both detail pages render identity band → facts → content → actions, one <code>&lt;h1&gt;</code>, a back link to their own list.</span></li>
+    <li><b>One card</b><span>Same frame, same cover slot, same chip, same title, same meta line, one primary action row — for a template and for a relationship.</span></li>
+    <li><b>Two axes</b><span>Cover = muted wash + monogram (template) vs stage word on the same wash (relationship). Working panels exist on the relationship only.</span></li>
+  </ul>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── §0 -->
+  <h2 class="sec"><span class="num">§0</span>Provenance — nothing here is a new visual language</h2>
+  <p class="note" style="border-left:3px solid var(--border);padding-left:0.75rem">
+    <b>What changed in v2 — §0, and only §0.</b> v1 measured against a tree from before <code>9b4b70c3</code>
+    (#791 deleted the browse rail, its <code>RAIL</code> constant and its import the same day), so eight rows
+    pointed at a blank line, an import, or a different statement; one row named a file this repo does not have
+    (<code>components/assessment-flow/relationship-detail.tsx</code> — the page is
+    <code>components/dashboard/relationship-detail.tsx</code>); one row printed the gray read-only band's literal
+    for what is an amber lapse band; and four rows printed half a declaration while the table promised the
+    literal. Every row below was re-derived by reading the file at <code>89beff68</code>, is cited <b>by symbol
+    first</b>, and quotes the literal <b>byte-complete</b>, <code>dark:</code> variants included.
+    <b>§1–§5 are byte-identical to v1</b> — no surface, axis, chip decision or word moved.
+  </p>
+  <p class="note">
+    The citation is the file plus the symbol, because a symbol does not rot; the line is a convenience measured
+    at <code>89beff68</code> and it will move again — grep the symbol, not the number. Two tables, because the
+    honest split is what this artifact <em>draws</em> and what it merely <em>cites</em>: the second is the thing
+    this pattern removes, kept auditable instead of quietly dropped.
+  </p>
+  <h3 class="sub">Drawn in this artifact</h3>
+  <table>
+    <tr><th>Constant</th><th>Source — file · symbol · line at <code>89beff68</code></th><th>Literal, byte-complete</th></tr>
+    <tr><td><code>CARD</code></td><td>components/dashboard/template-shelf.tsx · <code>const CARD</code> · L33–34<br>components/assessment-flow/my-instances.tsx · <code>const CARD</code> · L55–56 (byte-identical)</td><td><code>flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900</code></td></tr>
+    <tr><td><code>COVER</code></td><td>components/dashboard/template-shelf.tsx · <code>const COVER</code> · L35</td><td><code>flex h-[104px] items-center justify-center border-b border-gray-200</code></td></tr>
+    <tr><td><code>MONOGRAM</code></td><td>components/dashboard/template-shelf.tsx · <code>const MONOGRAM</code> · L36–37</td><td><code>text-3xl font-bold tracking-[0.06em] text-gray-900/[.34] dark:text-gray-100/[.34]</code></td></tr>
+    <tr><td><code>CHIP</code></td><td>components/dashboard/template-shelf.tsx · <code>const CHIP</code> · L38–39</td><td><code>inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200</code></td></tr>
+    <tr><td><code>CHIP_TEMPLATE</code></td><td>components/dashboard/template-shelf.tsx · <code>const CHIP_TEMPLATE</code> · L41–42</td><td><code>inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action</code></td></tr>
+    <tr><td><code>TITLE</code></td><td>components/dashboard/template-shelf.tsx · <code>const TITLE</code> · L43–44</td><td><code>line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100</code></td></tr>
+    <tr><td><code>MUTED</code></td><td>components/dashboard/template-shelf.tsx · <code>const MUTED</code> · L45</td><td><code>text-xs text-gray-500 dark:text-gray-400</code></td></tr>
+    <tr><td><code>OUTLINE</code></td><td>components/dashboard/template-shelf.tsx · <code>const OUTLINE</code> · L46–47</td><td><code>inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800</code></td></tr>
+    <tr><td><code>PRIMARY</code> (card)</td><td>components/dashboard/template-shelf.tsx · <code>const PRIMARY</code> · L48–49</td><td><code>inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover</code></td></tr>
+    <tr><td><code>CARD</code> (detail)</td><td>components/assessment-flow/template-detail.tsx · <code>const CARD</code> · L58</td><td><code>rounded-lg border border-border bg-card p-6</code></td></tr>
+    <tr><td><code>CHIP</code> (band)</td><td>components/assessment-flow/template-detail.tsx · <code>const CHIP</code> · L60</td><td><code>rounded-md border border-background/30 px-2 py-0.5 text-xs text-background/80</code></td></tr>
+    <tr><td><code>FACT_LABEL</code></td><td>components/assessment-flow/template-detail.tsx · <code>const FACT_LABEL</code> · L61</td><td><code>text-xs uppercase tracking-wide text-muted-foreground</code></td></tr>
+    <tr><td><code>PRIMARY</code> (page)</td><td>components/assessment-flow/template-detail.tsx · <code>const PRIMARY</code> · L62–63</td><td><code>inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover</code></td></tr>
+    <tr><td>identity band</td><td>components/assessment-flow/template-detail.tsx · the <code>&lt;header&gt;</code> · L122–150, <code>className</code> L125; <code>h1</code> L140</td><td><code>rounded-lg bg-foreground px-6 py-6 text-background</code>, h1 <code>mt-2 text-3xl font-bold</code></td></tr>
+    <tr><td><code>Badge</code> (shadcn)</td><td>components/ui/badge.tsx · <code>badgeVariants</code> base string · L7; <code>secondary</code> variant · L12</td><td><code>inline-flex items-center text-white rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2</code> · <code>border-transparent bg-secondary hover:bg-secondary/80</code></td></tr>
+    <tr><td><code>Card</code> / <code>CardHeader</code> / <code>CardTitle</code></td><td>components/ui/card.tsx · <code>const Card</code> L5, className L9 · <code>const CardHeader</code> L16, className L18 · <code>const CardTitle</code> L23, className L27</td><td><code>rounded-lg border bg-card text-card-foreground</code> · <code>flex flex-col space-y-1.5 p-4 xl:p-6</code> · <code>text-2xl font-semibold leading-none tracking-tight</code></td></tr>
+    <tr><td>stage band (relationship card)</td><td>components/assessment-flow/my-instances.tsx · the card's cover block, <code>&lt;div&gt;</code> at L399</td><td><code>flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40</code></td></tr>
+  </table>
+
+  <h3 class="sub">Cited, not drawn</h3>
+  <table>
+    <tr><th>Constant</th><th>Source — file · symbol · line at <code>89beff68</code></th><th>Literal, byte-complete</th><th>Why it is here</th></tr>
+    <tr><td>metric tile</td><td>components/assessment-flow/my-instances.tsx · <code>MetricTile</code> · L131; div L133, dt L134, dd L135, <code>STRONG</code> L58</td><td><code>rounded-md bg-gray-50 p-2 dark:bg-gray-800</code> · <code>mb-1 text-xs text-gray-500 dark:text-gray-400</code> · <code>text-base ${STRONG}</code>, where <code>STRONG</code> is <code>font-semibold text-gray-900 dark:text-gray-100</code></td><td>The control §3 collapses into one meta line — the one loss this artifact trades away. Drawn again only under option B.</td></tr>
+    <tr><td>read-only band</td><td>components/dashboard/relationship-detail.tsx · counterparty band <code>className</code> · L443</td><td><code>rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200</code></td><td>The counterparty's view of §5. This artifact draws the initiator's; the band is unchanged by this pattern.</td></tr>
+    <tr><td>lapse band</td><td>components/dashboard/relationship-detail.tsx · membership sentence <code>className</code> · L402</td><td><code>rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200</code></td><td>A status hue, outside the two axes, and no lapsed relationship is drawn here. v1 named this row <code>:402</code> but printed the gray literal above.</td></tr>
+  </table>
+  <p class="annot">
+    <b>The one thing that moves across all six surfaces is the chip radius.</b> <code>CHIP</code> in
+    <code>components/assessment-flow/template-card.tsx</code> (<code>const CHIP</code>, L57) is
+    <code>rounded-md</code>; the shelf, the list and the shadcn <code>Badge</code> are
+    <code>rounded-full</code>. Three primitives render “a small label about a record” today. This artifact
+    uses <b>one</b> primitive at <b>rounded-full</b> — the radius three of the four shipped chips already
+    use, and the one the design system's own <code>Badge</code> already carries. The tone is the variant,
+    never the geometry.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── §1 -->
+  <h2 class="sec"><span class="num">§1</span>The two declared axes — and the list of things that are <em>not</em> axes</h2>
+  <table>
+    <tr><th>Axis</th><th>Template</th><th>Relationship</th><th>Why it is an axis</th></tr>
+    <tr><td><b>1 · Cover</b></td><td>muted wash + monogram, 104 px</td><td>stage word on the same wash, 104 px</td><td>A template has no stage; a relationship always has one. Same slot, same height, same rhythm.</td></tr>
+    <tr><td><b>2 · Working panels</b></td><td>one actions card: Create Relationship, plans note, duplicate, archive</td><td>three panels in the same slot: Edit, Publish, Pay</td><td>A template is read and copied; a relationship is edited, published and paid for. The slot is the same.</td></tr>
+  </table>
+  <p class="note">
+    <b>Not axes</b>, and therefore identical on both: the card frame, the chip, the title, the meta line,
+    the action row, the identity band, the facts card, the back link, the section order, the page column.
+    Nothing else is allowed to vary silently.
+  </p>
+
+  <h3 class="sub">The chip, one primitive, four tones</h3>
+  <div class="vp" style="width:100%;max-width:1126px">
+    <div class="q-pad" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center">
+      <span class="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700">Template</span>
+      <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Office</span>
+      <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Sharing</span>
+      <span class="inline-flex items-center rounded-full border border-transparent bg-secondary px-2.5 py-0.5 text-xs font-semibold text-card-foreground">Ready to publish</span>
+      <span style="background:var(--foreground);padding:8px 10px;border-radius:var(--radius)">
+        <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Business</span>
+        <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Office</span>
+        <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Staff–Manager</span>
+      </span>
+    </div>
+  </div>
+  <p class="annot">
+    Tones: <b>neutral</b> (white, gray-300 border — the shelf's chip), <b>brand</b> (action tint — the
+    template mark and the stage), <b>soft</b> (secondary fill, semibold — a state), <b>on-band</b>
+    (white at 30/80% on the graphite band). One radius, one padding, one type step.
+    <b>Both the band's <code>rounded-md</code> and <code>template-card.tsx</code>'s <code>rounded-md</code> move to this one primitive.</b>
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── §2 -->
+  <h2 class="sec"><span class="num">§2</span>Surface 1 — the template shelf card <em>(the precedent)</em></h2>
+  <p class="note">
+    Unchanged. The relationship card in §3 is this card with the cover slot's content swapped and the
+    action row reduced to the one action a relationship has. Grid: <code>grid gap-6 sm:grid-cols-2 lg:grid-cols-3</code>.
+  </p>
+  <div class="doc pair">
+
+    <figure class="frame-wrap">
+      <p class="cap">390 px <em>one card per column</em></p>
+      <div class="vp" style="width:390px"><div class="q-pad">
+        <ul class="grid grid-cols-1 gap-6" style="display:grid;gap:1.5rem">
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200" style="background-image:linear-gradient(137deg,hsl(213 22% 86%) 0%,hsl(228 24% 74%) 100%)">
+              <span class="text-3xl font-bold tracking-[0.06em] text-gray-900/[.34]" style="color:rgba(17,24,39,.34)">S&amp;M</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Template</span>
+                <span class="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700">Office</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Staff &amp; Manager</span>
+              <p class="line-clamp-2 text-sm text-gray-600">Relationship Type: Business — the glossary's Staff / Manager descriptor, Realm: Office. Five Aspects of a working relationship — priorities, feedback, workload, decisions and development — each answered from how it feels now to how you wish it to change.</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>5 Aspects</span>
+                <span class="border-l border-gray-300" style="padding-left:.5rem">$9.99 per relationship</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50">View Details</span>
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Create Relationship</span>
+            </div>
+          </li>
+        </ul>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <p class="cap">1126 px <em>the StageColumn width, three per row</em></p>
+      <div class="vp" style="width:1126px"><div class="q-pad">
+        <ul class="q-grid" style="padding:0">
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200" style="background-image:linear-gradient(137deg,hsl(213 22% 86%) 0%,hsl(228 24% 74%) 100%)">
+              <span class="text-3xl font-bold tracking-[0.06em]" style="color:rgba(17,24,39,.34)">S&amp;M</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Template</span>
+                <span class="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700">Office</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Staff &amp; Manager</span>
+              <p class="line-clamp-2 text-sm text-gray-600">Relationship Type: Business — the glossary's Staff / Manager descriptor, Realm: Office. Five Aspects of a working relationship — priorities, feedback, workload, decisions and development.</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>5 Aspects</span>
+                <span class="border-l border-gray-300" style="padding-left:.5rem">$9.99 per relationship</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50">View Details</span>
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Create Relationship</span>
+            </div>
+          </li>
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200" style="background-image:linear-gradient(45deg,hsl(28 22% 86%) 0%,hsl(41 24% 74%) 100%)">
+              <span class="text-3xl font-bold tracking-[0.06em]" style="color:rgba(17,24,39,.34)">P&amp;C</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Template</span>
+                <span class="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700">Home</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Parent &amp; Child</span>
+              <p class="line-clamp-2 text-sm text-gray-600">Relationship Type: Personal — the glossary's Parent / Child descriptor, Realm: Home. Five Aspects of raising a child together — check-ins, house rules, trust, one-to-one time and privacy.</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>5 Aspects</span>
+                <span class="border-l border-gray-300" style="padding-left:.5rem">$9.99 per relationship</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50">View Details</span>
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Create Relationship</span>
+            </div>
+          </li>
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200" style="background-image:linear-gradient(92deg,hsl(190 22% 86%) 0%,hsl(208 24% 74%) 100%)">
+              <span class="text-3xl font-bold tracking-[0.06em]" style="color:rgba(17,24,39,.34)">RB</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Template</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Relationship Basics</span>
+              <p class="line-clamp-2 text-sm text-gray-600">Five Aspects of a relationship — time, housework, money, conflict and affection — each answered from how it feels now to how you wish it to change.</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>5 Aspects</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50">View Details</span>
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Create Relationship</span>
+            </div>
+          </li>
+        </ul>
+      </div></div>
+    </figure>
+  </div>
+  <p class="annot">
+    The third card is the no-type case, kept on purpose: <code>relationshipType("relationship-basics")</code>
+    is <code>undefined</code>, so it carries no realm chip and no price line rather than a figure nobody wrote down.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── §3 -->
+  <h2 class="sec"><span class="num">§3</span>Surface 2 — the relationship list card <em>(axis 1: the cover slot)</em></h2>
+  <p class="note">
+    Same frame, same padding, same chips, same title, same meta line, same action row — the cover slot
+    carries the <b>stage word</b> exactly where the template carries its <b>monogram</b>, at the same
+    104 px and in the same 34%-ink type. One primary action, because a relationship has one.
+  </p>
+  <div class="doc pair">
+
+    <figure class="frame-wrap">
+      <p class="cap">390 px <em>one card per column</em></p>
+      <div class="vp" style="width:390px"><div class="q-pad">
+        <ul style="display:grid;gap:1.5rem;padding:0">
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200 bg-gray-50">
+              <span class="text-3xl font-bold tracking-[0.06em]" style="color:rgba(17,24,39,.34)">Sharing</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Staff &amp; Manager</span>
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Sharing</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Staff &amp; Manager</span>
+              <p class="line-clamp-2 text-sm text-gray-600">with Rowan · Initiator · 5 Aspects · Basic Mode</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>3 of 4 sessions</span>
+                <span class="border-l border-gray-300" style="padding-left:.5rem">Avg alignment 2.4</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Open relationship</span>
+            </div>
+          </li>
+        </ul>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <p class="cap">1126 px <em>three per row, three stages</em></p>
+      <div class="vp" style="width:1126px"><div class="q-pad">
+        <ul class="q-grid" style="padding:0">
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200 bg-gray-50">
+              <span class="text-3xl font-bold tracking-[0.06em]" style="color:rgba(17,24,39,.34)">Sharing</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Staff &amp; Manager</span>
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Sharing</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Staff &amp; Manager</span>
+              <p class="line-clamp-2 text-sm text-gray-600">with Rowan · Initiator · 5 Aspects · Basic Mode</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>3 of 4 sessions</span>
+                <span class="border-l border-gray-300" style="padding-left:.5rem">Avg alignment 2.4</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Open relationship</span>
+            </div>
+          </li>
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200 bg-gray-50">
+              <span class="text-3xl font-bold tracking-[0.06em]" style="color:rgba(17,24,39,.34)">Invited</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Parent &amp; Child</span>
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Invited</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Parent &amp; Child</span>
+              <p class="line-clamp-2 text-sm text-gray-600">with Iris · Initiator · 5 Aspects · Basic Mode</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>— sessions</span>
+                <span class="border-l border-gray-300" style="padding-left:.5rem">No scored session yet</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Open relationship</span>
+            </div>
+          </li>
+          <li class="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <div class="flex h-[104px] items-center justify-center border-b border-gray-200 bg-gray-50">
+              <span class="text-3xl font-bold tracking-[0.06em]" style="color:rgba(17,24,39,.34)">Draft</span>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action">Relationship Basics</span>
+                <span class="inline-flex items-center rounded-full border border-transparent bg-secondary px-2.5 py-0.5 text-xs font-semibold text-card-foreground">Draft</span>
+              </div>
+              <span class="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline">Relationship Basics</span>
+              <p class="line-clamp-2 text-sm text-gray-600">Not claimed yet · Initiator · 5 Aspects · Basic Mode</p>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                <span>— sessions</span>
+                <span class="border-l border-gray-300" style="padding-left:.5rem">No scored session yet</span>
+              </div>
+            </div>
+            <div class="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3">
+              <span class="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover">Open relationship</span>
+            </div>
+          </li>
+        </ul>
+      </div></div>
+    </figure>
+  </div>
+  <p class="annot">
+    <b>This removes the four metric tiles.</b> Sessions, completion, Avg alignment and Aspects become the
+    one meta line (<code>3 of 4 sessions · Avg alignment 2.4</code>), formatted in
+    <code>lib/member/relationships.ts</code> — the F4 fix. If the owner prefers the tiles, that is a third
+    declared axis (<code>metaDensity: line | tiles</code>) and a one-line change to the projection; it is
+    <b>not</b> expressed here so the two axes stay two.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── §4 -->
+  <h2 class="sec"><span class="num">§4</span>Surface 3 — the template detail page <em>(the shell, as it ships)</em></h2>
+  <p class="note">
+    Band → facts → content → actions. The band carries the group chip (<b>Business</b>), the realm
+    (<b>Office</b>) and the type (<b>Staff–Manager</b>), then exactly one <code>&lt;h1&gt;</code>, the
+    roles sentence and the summary. The aside is 320 px and holds facts, then the actions card —
+    <b>“What you can do with it”</b>, the slot §5 puts the relationship's panels in.
+  </p>
+  <div class="doc pair">
+
+    <figure class="frame-wrap">
+      <p class="cap">390 px <em>one column; the aside stacks over the content</em></p>
+      <div class="vp" style="width:390px"><div class="q-pad">
+        <nav style="margin-bottom:.75rem"><span class="text-sm font-medium text-action hover:underline">All templates</span></nav>
+        <header class="rounded-lg bg-foreground px-6 py-6 text-background">
+          <p class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Business</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Office</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Staff–Manager</span>
+          </p>
+          <h1 class="mt-2 text-3xl font-bold">Staff &amp; Manager</h1>
+          <p class="mt-2 text-sm text-background/80">Staff / Manager</p>
+          <p class="mt-3 text-sm text-background/80">Relationship Type: Business — the glossary's Staff / Manager descriptor, Realm: Office. Five Aspects of a working relationship.</p>
+        </header>
+        <div class="q-detail">
+          <aside class="space-y-4">
+            <section class="space-y-3 rounded-lg border border-border bg-card p-6">
+              <dl class="grid grid-cols-2 gap-3">
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Aspects</dt><dd class="text-lg font-semibold tabular-nums text-foreground">5</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Relationships made</dt><dd class="text-lg font-semibold tabular-nums text-foreground">2</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Status</dt><dd class="text-sm text-muted-foreground">Published</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Created</dt><dd class="text-sm text-muted-foreground">Oct 26, 2026</dd></div>
+              </dl>
+              <p class="text-xs text-muted-foreground">Built-in — the platform wrote it</p>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">What you can do with it</h2>
+              <div class="space-y-2">
+                <span class="inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover">Create Relationship</span>
+                <p class="text-sm text-muted-foreground">No price is shown here: a relationship's cost depends on the plan chosen when it is ready to complete, and the plan prices are on the pricing page.</p>
+                <span class="text-sm font-medium text-action hover:underline">See plans and prices</span>
+              </div>
+              <form><button type="submit" class="text-sm underline">Duplicate into your templates</button></form>
+            </section>
+          </aside>
+          <div class="min-w-0 space-y-6">
+            <section class="space-y-3">
+              <h2 class="text-xl font-semibold text-foreground">Staff–Manager</h2>
+              <dl class="q-seat">
+                <div class="rounded-md border border-border bg-background p-3"><dt class="text-xs uppercase tracking-wide text-muted-foreground">Initiator</dt><dd class="text-sm font-medium text-foreground">Staff</dd></div>
+                <div class="rounded-md border border-border bg-background p-3"><dt class="text-xs uppercase tracking-wide text-muted-foreground">Counterparty</dt><dd class="text-sm font-medium text-foreground">Manager</dd></div>
+              </dl>
+              <div class="space-y-2 rounded-lg border border-border bg-card p-6">
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-muted-foreground">Who it is for</p>
+                  <p class="mt-1 text-sm text-foreground">A staff member and their manager, checking how the working relationship actually works.</p>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-muted-foreground">Who it is not for</p>
+                  <p class="mt-1 text-sm text-foreground">Anyone in a dispute that should go through HR, or looking for a performance review rather than a conversation.</p>
+                </div>
+              </div>
+            </section>
+            <section>
+              <h2 class="text-xl font-semibold text-foreground">Aspects</h2>
+              <p class="mt-2 text-sm text-muted-foreground">Each Aspect asks two things: how it feels now, and how you wish it to be.</p>
+              <ol class="mt-4 grid gap-3">
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How are the week's priorities agreed?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Set for me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Agreed together</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How is feedback on the work given?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never said</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Said directly</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How is the workload split between the two of you?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> All on me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Evenly shared</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How are the decisions about the work made?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Manager decides</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Decided together</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How much do you talk about growth and what comes next?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Every review</p></li>
+              </ol>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-xl font-semibold text-foreground">Mode and Setting</h2>
+              <p class="text-sm text-muted-foreground">Every relationship run on this template records two things before either party answers. They are fixed at creation, and the report is read under them.</p>
+              <dl class="space-y-3">
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Mode</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Basic</span> — Basic Mode asks Feel and Wish on every Aspect.</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Setting</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Soft</span> — a large Gap is a conversation to have.</dd>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Full</span> — a large Gap is the finding itself.</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+        </div>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <p class="cap">1126 px <em>320 px aside + content, the shipped grid</em></p>
+      <div class="vp" style="width:1126px"><div class="q-pad">
+        <nav style="margin-bottom:.75rem"><span class="text-sm font-medium text-action hover:underline">All templates</span></nav>
+        <header class="rounded-lg bg-foreground px-6 py-6 text-background">
+          <p class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Business</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Office</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Staff–Manager</span>
+          </p>
+          <h1 class="mt-2 text-3xl font-bold">Staff &amp; Manager</h1>
+          <p class="mt-2 text-sm text-background/80">Staff / Manager</p>
+          <p class="mt-3 text-sm text-background/80">Relationship Type: Business — the glossary's Staff / Manager descriptor, Realm: Office. Five Aspects of a working relationship — priorities, feedback, workload, decisions and development — each answered from how it feels now to how you wish it to change.</p>
+        </header>
+        <div class="q-detail">
+          <aside class="q-sticky space-y-4">
+            <section class="space-y-3 rounded-lg border border-border bg-card p-6">
+              <dl class="grid grid-cols-2 gap-3">
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Aspects</dt><dd class="text-lg font-semibold tabular-nums text-foreground">5</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Relationships made</dt><dd class="text-lg font-semibold tabular-nums text-foreground">2</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Status</dt><dd class="text-sm text-muted-foreground">Published</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Created</dt><dd class="text-sm text-muted-foreground">Oct 26, 2026</dd></div>
+              </dl>
+              <p class="text-xs text-muted-foreground">Built-in — the platform wrote it</p>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">What you can do with it</h2>
+              <div class="space-y-2">
+                <span class="inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover">Create Relationship</span>
+                <p class="text-sm text-muted-foreground">No price is shown here: a relationship's cost depends on the plan chosen when it is ready to complete, and the plan prices are on the pricing page.</p>
+                <span class="text-sm font-medium text-action hover:underline">See plans and prices</span>
+              </div>
+              <form><button type="submit" class="text-sm underline">Duplicate into your templates</button></form>
+              <form><button type="submit" class="text-sm underline">Archive</button></form>
+            </section>
+          </aside>
+          <div class="min-w-0 space-y-6">
+            <section class="space-y-3">
+              <h2 class="text-xl font-semibold text-foreground">Staff–Manager</h2>
+              <dl class="q-seat">
+                <div class="rounded-md border border-border bg-background p-3"><dt class="text-xs uppercase tracking-wide text-muted-foreground">Initiator</dt><dd class="text-sm font-medium text-foreground">Staff</dd></div>
+                <div class="rounded-md border border-border bg-background p-3"><dt class="text-xs uppercase tracking-wide text-muted-foreground">Counterparty</dt><dd class="text-sm font-medium text-foreground">Manager</dd></div>
+              </dl>
+              <div class="space-y-2 rounded-lg border border-border bg-card p-6">
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-muted-foreground">Who it is for</p>
+                  <p class="mt-1 text-sm text-foreground">A staff member and their manager, checking how the working relationship actually works.</p>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-muted-foreground">Who it is not for</p>
+                  <p class="mt-1 text-sm text-foreground">Anyone in a dispute that should go through HR, or looking for a performance review rather than a conversation.</p>
+                </div>
+              </div>
+            </section>
+            <section>
+              <h2 class="text-xl font-semibold text-foreground">Aspects</h2>
+              <p class="mt-2 text-sm text-muted-foreground">Each Aspect asks two things: how it feels now, and how you wish it to be.</p>
+              <ol class="mt-4 grid gap-3">
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How are the week's priorities agreed?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Set for me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Agreed together</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How is feedback on the work given?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never said</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Said directly</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How is the workload split between the two of you?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> All on me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Evenly shared</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How are the decisions about the work made?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Manager decides</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Decided together</p></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How much do you talk about growth and what comes next?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Every review</p></li>
+              </ol>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-xl font-semibold text-foreground">Mode and Setting</h2>
+              <p class="text-sm text-muted-foreground">Every relationship run on this template records two things before either party answers. They are fixed at creation, and the report is read under them.</p>
+              <dl class="space-y-3">
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Mode</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Basic</span> — Basic Mode asks Feel and Wish on every Aspect.</dd>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Advanced</span> — the two above, plus how you each predict the other answers.</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Setting</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Soft</span> — a large Gap is a conversation to have.</dd>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Full</span> — a large Gap is the finding itself.</dd>
+                  <dd class="mt-2 text-sm text-muted-foreground">The Setting decides how the two sheets are read, never what they say. It is written at publish, like the mode.</dd>
+                </div>
+              </dl>
+              <p class="text-xs text-muted-foreground">No price is shown here: a relationship's cost depends on the plan chosen when it is ready to complete, and the plan prices are on the pricing page.</p>
+            </section>
+          </div>
+        </div>
+      </div></div>
+    </figure>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── §5 -->
+  <h2 class="sec"><span class="num">§5</span>Surface 4 — the relationship detail page <em>(same shell, axis 2: the panels)</em></h2>
+  <p class="note">
+    Identical band, identical facts card, identical aside geometry, identical back link, identical
+    section order. The relationship's one difference: <b>where the template draws “What you can do with
+    it”, this page draws Edit, Publish and Complete.</b> The panels keep the working anatomy they have
+    (a field, a sentence, one button) and take the shell's panel heading — the only type step that moves
+    is <code>CardTitle</code>'s <code>text-2xl</code>, which becomes the template's
+    <code>text-base font-semibold</code> <code>h2</code>, because a 24 px heading in a 320 px rail is the
+    size that made the two pages read as two products.
+  </p>
+  <div class="doc pair">
+
+    <figure class="frame-wrap">
+      <p class="cap">390 px <em>one column; facts, then the three panels, then content</em></p>
+      <div class="vp" style="width:390px"><div class="q-pad">
+        <nav style="margin-bottom:.75rem"><span class="text-sm font-medium text-action hover:underline">All relationships</span></nav>
+        <header class="rounded-lg bg-foreground px-6 py-6 text-background">
+          <p class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Business</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Office</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Staff–Manager</span>
+          </p>
+          <h1 class="mt-2 text-3xl font-bold">Staff &amp; Manager</h1>
+          <p class="mt-2 text-sm text-background/80">Staff / Manager</p>
+          <p class="mt-3 text-sm text-background/80">Relationship Type: Business — the glossary's Staff / Manager descriptor, Realm: Office. Five Aspects of a working relationship.</p>
+        </header>
+        <div class="q-detail">
+          <aside class="space-y-4">
+            <section class="space-y-3 rounded-lg border border-border bg-card p-6">
+              <dl class="grid grid-cols-2 gap-3">
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">State</dt><dd class="flex flex-wrap gap-2" style="margin-top:.25rem"><span class="inline-flex items-center rounded-full border border-transparent bg-secondary px-2.5 py-0.5 text-xs font-semibold text-card-foreground">Ready to publish</span></dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Started</dt><dd class="text-sm text-muted-foreground">Nov 9, 2026</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Published</dt><dd class="text-sm text-muted-foreground">—</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Invited</dt><dd class="text-sm text-muted-foreground">—</dd></div>
+              </dl>
+              <p class="text-xs text-muted-foreground">Initiator — you started this relationship</p>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Edit this relationship</h2>
+              <p class="text-sm text-muted-foreground">Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first.</p>
+              <button type="button" class="text-sm underline">Check the cost</button>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Publish</h2>
+              <p class="text-sm text-muted-foreground">The invitation needs the other person's name — it is what they are asked to confirm — and an address to send it to.</p>
+              <label for="publish-1" class="block text-xs uppercase tracking-wide text-muted-foreground">Their name</label>
+              <input id="publish-1"class="h-10 w-full rounded-md border border-border bg-background px-3 text-sm" value="Rowan">
+              <label for="publish-2" class="block text-xs uppercase tracking-wide text-muted-foreground">Their email</label>
+              <input id="publish-2"class="h-10 w-full rounded-md border border-border bg-background px-3 text-sm" value="rowan@example.com">
+              <div class="mt-3"><span class="inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover">Publish and invite</span></div>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Complete and open the Gap</h2>
+              <p class="text-sm text-muted-foreground">The fee is taken once, when you complete the relationship — not per round and not at the invitation.</p>
+              <p class="text-sm text-muted-foreground">The fee is $9.99, charged once for this relationship.</p>
+              <p class="text-sm text-muted-foreground">No payment method is on file yet. Adding one charges nothing — the fee is taken when you complete.</p>
+              <button type="button" class="text-sm underline">Add a payment method</button>
+            </section>
+          </aside>
+          <div class="min-w-0 space-y-6">
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Where this stands</h2>
+              <p class="text-sm text-muted-foreground">Not sent yet — nothing has been invited or charged.</p>
+            </section>
+            <section>
+              <h2 class="text-xl font-semibold text-foreground">Aspects</h2>
+              <p class="mt-2 text-sm text-muted-foreground">Each Aspect asks two things: how it feels now, and how you wish it to be.</p>
+              <ol class="mt-4 grid gap-3">
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How are the week's priorities agreed?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Set for me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Agreed together</p><button type="button" class="mt-2 text-sm underline">Edit this Aspect</button></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How is feedback on the work given?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never said</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Said directly</p><button type="button" class="mt-2 text-sm underline">Edit this Aspect</button></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How is the workload split between the two of you?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> All on me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Evenly shared</p><button type="button" class="mt-2 text-sm underline">Edit this Aspect</button></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How are the decisions about the work made?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Manager decides</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Decided together</p><button type="button" class="mt-2 text-sm underline">Edit this Aspect</button></li>
+                <li class="rounded-lg border border-border bg-card p-6"><p class="text-sm font-semibold text-foreground">How much do you talk about growth and what comes next?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Every review</p><button type="button" class="mt-2 text-sm underline">Edit this Aspect</button></li>
+              </ol>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button type="button" class="text-sm underline">Add an Aspect</button>
+              </div>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-xl font-semibold text-foreground">Mode and Setting</h2>
+              <dl class="space-y-3">
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Mode</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Basic</span> — how you feel and how you wish it were.</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Setting</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Soft</span> — a large Gap is a conversation to have.</dd>
+                  <dd class="mt-2 text-sm text-muted-foreground">The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten.</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+        </div>
+      </div></div>
+    </figure>
+
+    <figure class="frame-wrap">
+      <p class="cap">1126 px <em>same band, same aside, the panels in the actions slot</em></p>
+      <div class="vp" style="width:1126px"><div class="q-pad">
+        <nav style="margin-bottom:.75rem"><span class="text-sm font-medium text-action hover:underline">All relationships</span></nav>
+        <header class="rounded-lg bg-foreground px-6 py-6 text-background">
+          <p class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Business</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Office</span>
+            <span class="inline-flex items-center rounded-full border border-background/30 px-2 py-0.5 text-xs text-background/80">Staff–Manager</span>
+          </p>
+          <h1 class="mt-2 text-3xl font-bold">Staff &amp; Manager</h1>
+          <p class="mt-2 text-sm text-background/80">Staff / Manager</p>
+          <p class="mt-3 text-sm text-background/80">Relationship Type: Business — the glossary's Staff / Manager descriptor, Realm: Office. Five Aspects of a working relationship — priorities, feedback, workload, decisions and development — each answered from how it feels now to how you wish it to change.</p>
+        </header>
+        <div class="q-detail">
+          <aside class="q-sticky space-y-4">
+            <section class="space-y-3 rounded-lg border border-border bg-card p-6">
+              <dl class="grid grid-cols-2 gap-3">
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">State</dt><dd class="flex flex-wrap gap-2" style="margin-top:.25rem"><span class="inline-flex items-center rounded-full border border-transparent bg-secondary px-2.5 py-0.5 text-xs font-semibold text-card-foreground">Ready to publish</span></dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Started</dt><dd class="text-sm text-muted-foreground">Nov 9, 2026</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Published</dt><dd class="text-sm text-muted-foreground">—</dd></div>
+                <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Invited</dt><dd class="text-sm text-muted-foreground">—</dd></div>
+              </dl>
+              <p class="text-xs text-muted-foreground">Initiator — you started this relationship</p>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Edit this relationship</h2>
+              <p class="text-sm text-muted-foreground">Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first.</p>
+              <button type="button" class="text-sm underline">Check the cost</button>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Publish</h2>
+              <p class="text-sm text-muted-foreground">The invitation needs the other person's name — it is what they are asked to confirm — and an address to send it to.</p>
+              <label for="publish-3" class="block text-xs uppercase tracking-wide text-muted-foreground">Their name</label>
+              <input id="publish-3"class="h-10 w-full rounded-md border border-border bg-background px-3 text-sm" value="Rowan">
+              <label for="publish-4" class="block text-xs uppercase tracking-wide text-muted-foreground">Their email</label>
+              <input id="publish-4"class="h-10 w-full rounded-md border border-border bg-background px-3 text-sm" value="rowan@example.com">
+              <div class="mt-3"><span class="inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover">Publish and invite</span></div>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Complete and open the Gap</h2>
+              <p class="text-sm text-muted-foreground">The fee is taken once, when you complete the relationship — not per round and not at the invitation.</p>
+              <p class="text-sm text-muted-foreground">The fee is $9.99, charged once for this relationship.</p>
+              <p class="text-sm text-muted-foreground">No payment method is on file yet. Adding one charges nothing — the fee is taken when you complete.</p>
+              <button type="button" class="text-sm underline">Add a payment method</button>
+            </section>
+          </aside>
+          <div class="min-w-0 space-y-6">
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-base font-semibold text-foreground">Where this stands</h2>
+              <p class="text-sm text-muted-foreground">Not sent yet — nothing has been invited or charged.</p>
+            </section>
+            <section>
+              <h2 class="text-xl font-semibold text-foreground">Aspects</h2>
+              <p class="mt-2 text-sm text-muted-foreground">Each Aspect asks two things: how it feels now, and how you wish it to be.</p>
+              <ol class="mt-4 grid gap-3">
+                <li class="rounded-lg border border-border bg-card p-6"><div class="flex items-start justify-between gap-3"><div><p class="text-sm font-semibold text-foreground">How are the week's priorities agreed?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Set for me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Agreed together</p></div><button type="button" class="shrink-0 text-sm underline">Edit this Aspect</button></div></li>
+                <li class="rounded-lg border border-border bg-card p-6"><div class="flex items-start justify-between gap-3"><div><p class="text-sm font-semibold text-foreground">How is feedback on the work given?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never said</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Said directly</p></div><button type="button" class="shrink-0 text-sm underline">Edit this Aspect</button></div></li>
+                <li class="rounded-lg border border-border bg-card p-6"><div class="flex items-start justify-between gap-3"><div><p class="text-sm font-semibold text-foreground">How is the workload split between the two of you?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> All on me</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Evenly shared</p></div><button type="button" class="shrink-0 text-sm underline">Edit this Aspect</button></div></li>
+                <li class="rounded-lg border border-border bg-card p-6"><div class="flex items-start justify-between gap-3"><div><p class="text-sm font-semibold text-foreground">How are the decisions about the work made?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Manager decides</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Decided together</p></div><button type="button" class="shrink-0 text-sm underline">Edit this Aspect</button></div></li>
+                <li class="rounded-lg border border-border bg-card p-6"><div class="flex items-start justify-between gap-3"><div><p class="text-sm font-semibold text-foreground">How much do you talk about growth and what comes next?</p><p class="mt-2 text-sm text-muted-foreground"><span class="font-medium text-foreground">Left Value</span> <span style="margin:0 .375rem">—</span> Never</p><p class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Right Value</span> <span style="margin:0 .375rem">—</span> Every review</p></div><button type="button" class="shrink-0 text-sm underline">Edit this Aspect</button></div></li>
+              </ol>
+              <p class="mt-4 text-sm"><button type="button" class="underline">Add an Aspect</button></p>
+            </section>
+            <section class="space-y-2 rounded-lg border border-border bg-card p-6">
+              <h2 class="text-xl font-semibold text-foreground">Mode and Setting</h2>
+              <dl class="space-y-3">
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Mode</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Basic</span> — how you feel and how you wish it were.</dd>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Advanced</span> — the two above, plus how you each predict the other answers.</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-semibold text-foreground">Setting</dt>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Soft</span> — a large Gap is a conversation to have.</dd>
+                  <dd class="text-sm text-muted-foreground"><span class="font-medium text-foreground">Full</span> — a large Gap is the finding itself.</dd>
+                  <dd class="mt-2 text-sm text-muted-foreground">The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship.</dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+        </div>
+      </div></div>
+    </figure>
+  </div>
+  <p class="annot">
+    <b>What this page gains, beyond the paint.</b> A back link to <code>All relationships</code> (F5 — the
+    template has had one all along), one <code>&lt;h1&gt;</code> instead of a page heading above a card
+    title, the group/realm/type chips the template band already draws, and the same facts card in the same
+    place. What it does <b>not</b> gain is a second visual language: no shadcn <code>Card</code> header
+    stack, no <code>text-2xl</code> panel titles, no <code>Badge</code> beside a <code>CHIP</code>.
+  </p>
+
+  <!-- ─────────────────────────────────────────────────────────────────────── §6 -->
+  <h2 class="sec"><span class="num">§6</span>What approving this approves</h2>
+  <table>
+    <tr><th>#</th><th>Decision</th><th>Consequence in the tree</th></tr>
+    <tr><td>1</td><td>The template anatomy is the shared detail shell</td><td>A <code>DetailBand</code> + <code>DetailFacts</code> + the section order live once; both pages render them.</td></tr>
+    <tr><td>2</td><td>One chip primitive, <code>rounded-full</code>, four tones</td><td><code>template-card.tsx</code>'s <code>rounded-md</code> <code>CHIP</code>, the band's <code>rounded-md</code> <code>CHIP</code> and every ad-hoc <code>Badge</code> move to it. This is card <b>t_252f94e3</b>.</td></tr>
+    <tr><td>3</td><td>One card projection for both shelves</td><td><code>ShelfCard</code>-shaped, built in <code>lib/member/**</code>; <code>my-instances.tsx</code> loses every <code>toFixed</code>/<code>Math.round</code> (F4).</td></tr>
+    <tr><td>4</td><td>Two axes, declared in each file's ancestor header</td><td>cover (wash+monogram | stage word) and working panels (template: one actions card | relationship: Edit/Publish/Complete).</td></tr>
+    <tr><td>5</td><td>The relationship's working panels sit in the actions slot</td><td>Edit, Publish and Complete render in the 320 px aside where “What you can do with it” sits, at the shell's panel heading size.</td></tr>
+    <tr><td>6</td><td>Both sheets keep their <code>data-*</code> hooks</td><td><code>data-template-detail-*</code>, <code>data-instance-*</code>, <code>data-relationship-*</code>, <code>data-stage-badge</code> survive the move, or each asserting suite is updated in the same change.</td></tr>
+  </table>
+
+  <h3 class="sub">Explicitly out of scope here</h3>
+  <p class="note">
+    <b>#796</b> — the money sentence: the shelf card still prints <code>$9.99 per relationship</code> while
+    the template page prints “no price is shown here”. This artifact draws both as they ship, so the
+    contradiction stays visible; it is a promise defect and lands on its own card.
+    <b>#794</b> — the URL move (<code>/assessment/templates/&lt;id&gt;</code> → the slug) lands as a move,
+    not inside this refactor.
+    <b>/admin</b> and <b>/admin/console</b> adopt the shared card only after this is approved.
+    <b>Copy rewrites</b> are not in scope — every sentence here is a shipped fixture string.
+  </p>
+
+  <h3 class="sub">How it will be proven after approval</h3>
+  <p class="note">
+    <code>bash scripts/verify.sh</code> on the exact head, plus the two suites that already assert on these
+    surfaces' <code>data-*</code> hooks, plus <code>pnpm parity</code>: seven routes change HTML under both
+    brands, so the manifest moves with <code>pnpm parity:update --reason</code> and the PR names which
+    routes moved. The screenshot at 390 and at 1126 is re-taken from the built app and compared to this
+    artifact — the artifact leads, the build follows.
+  </p>
+
+  <p class="note" style="margin-top:34px;padding-top:18px;border-top:1px solid #d3d9de">
+    This file is <b>docs/mockups/one-card-one-detail-v1.html</b> — versioned, outside
+    <code>docs/review/artifacts/</code>, and self-contained (one file, no network, no build step).
+    A revision is <code>-v2</code>, never an edit to this one: what was approved has to stay readable.
+  </p>
+
+</div>
+</body>
+</html>
