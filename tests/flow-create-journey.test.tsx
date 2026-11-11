@@ -129,11 +129,20 @@ describe("stage 2 — the product page", () => {
     expect(html).not.toMatch(/\$\d/);
   });
 
-  it("draws the journey rail with this page as step 2 of 3", () => {
+  /**
+   * #791 — the browse rail is gone from this page. It numbered the reader `Step 2 of 3` of a
+   * journey that the create step downstream prints as `Stage 1 of 6`, and this screen is a
+   * pre-stage view of that flow rather than a stage of it (the same finding as the assertion at
+   * the foot of this file). One numbering, on the screen that actually has stages.
+   */
+  it("draws no browse rail — a template is a pre-stage view, not step 2 of 3 (#791)", () => {
     const html = landerHtml();
-    expect(html).toContain('data-wizard-rail="2"');
-    expect(html).toContain('aria-current="step"');
-    expect(html).toContain("Step 2 of 3");
+    expect(html).not.toContain("data-wizard-rail");
+    expect(html).not.toContain("Step 2 of 3");
+    expect(html).not.toContain("This product");
+    expect(html).not.toContain("Create the relationship");
+    // The deletion is the band only: the way back to the library the reader came from stays.
+    expect(html).toContain("All templates");
   });
 });
 

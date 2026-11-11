@@ -17,23 +17,6 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Template",
   sections: [
     {
-      /**
-       * The journey's three stages, named for the rail (#618). The rail is the one piece of chrome
-       * this card adds, and it is the shape `components/create/quiz-editor.tsx` established and
-       * `counterparty-wizard.tsx` already varies: numbered steps, the current one marked, a count
-       * above the band. A person on the product page is on step 2 of 3, and the rail says so
-       * instead of leaving the two hops before and after it invisible.
-       */
-      id: "steps",
-      items: [
-        { id: "1", label: "Products" },
-        { id: "2", label: "This product" },
-        { id: "3", label: "Create the relationship" },
-        { id: "count", label: "Step {step} of 3" },
-        { id: "label", label: "Creating a relationship" },
-      ],
-    },
-    {
       id: "back",
       items: [{ id: "all", label: "All templates" }],
     },
