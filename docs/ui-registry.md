@@ -21,11 +21,11 @@ How a template picks from this page — the order a new surface is decided in �
 
 ## Summary
 
-- routes: **89** — 55 static, 34 dynamic, from `app/**/page.tsx`
-- component domains: **42** — 316 files under `components/`, 309 of them `.tsx`
+- routes: **90** — 55 static, 35 dynamic, from `app/**/page.tsx`
+- component domains: **42** — 317 files under `components/`, 310 of them `.tsx`
 - route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
-- status: **mock** 15 · **fixture** 67 · **db** 40 · **live** 8 · **prototype** 1
-- templates: Both templates 42 · AlignSynch 45 · QuizHub 42 · No template yet 2
+- status: **mock** 15 · **fixture** 68 · **db** 40 · **live** 8 · **prototype** 1
+- templates: Both templates 43 · AlignSynch 45 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -188,6 +188,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: 2 record fixtures — `data/relationship-types.ts`, `data/template-shelf.ts`
   - notes: The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. The catalogue is derived (`lib/template-catalogue.ts` over `data/relationship-types.ts`), so the count sentence above the shelf and the cards under it cannot disagree, and a type the shop will not sell throws instead of rendering a card nobody can buy. The front page shows six of these cards, curated in `data/template-shelf.ts`, with no per-card actions — one CTA there, the full shelf here.
 
+- `/templates/[slug]` — **fixture**
+  - capability: One Relationship Template, in full: who it is for and who it is not for, every Aspect it asks — the question and its two named ends — the price, one action to start it, and a worked example where the fixture holds one. No session, no clock and no database.
+  - components: `components/templates`
+  - reads: 1 record fixture — `data/relationship-types.ts`
+  - notes: The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` emits one prerendered page per purchasable type and `notFound()` answers any other slug.
+
 - `/terms` — **fixture**
   - capability: The draft terms of service: the rules for using the product, its liability and dispute clauses, and a draft notice that cannot be dismissed.
   - components: `components/legal`
@@ -267,8 +273,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/templates` — **fixture**
   - capability: The public catalogue's two files: one template card (name, realm, the two roles, the Aspect count and the price, with the two actions optional) and the page that draws four bands over it — hero, what a template is, what buying one gets you, the catalogue grouped by realm, and the closing action.
-  - files (2): `template-card.tsx`, `templates-page.tsx`
-  - routes (2): `/`, `/templates`
+  - files (3): `template-card.tsx`, `template-detail.tsx`, `templates-page.tsx`
+  - routes (3): `/`, `/templates`, `/templates/[slug]`
   - notes: Imported by `/` (the front page's capped shelf, six cards with no per-card actions and one View-all) and by `/templates` (every purchasable type, each card linked to `/register` and to its worked example where one exists). A variation of `components/explore/explore-quiz-list.tsx` for the page and `components/home/featured-quizzes.tsx` for the shelf, both stated in the files' own `template-ancestor:` headers. Holds no words: E23 attributes the domain to `data/pages/templates.ts` at budget 0, and the cards are records from `lib/template-catalogue.ts`.
 
 - `components/ui` — **mock**

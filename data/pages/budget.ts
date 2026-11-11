@@ -438,6 +438,22 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/templates",
     budget: 0,
   },
+  /**
+   * `/templates/[slug]` — one template, the page the directory's card titles link to.
+   *
+   * Budget 0 from the first commit, like every surface this tree adds: the hero's heading frame,
+   * the two descriptor headings, the Aspects band's heading and legend, the price line and the
+   * three link labels are all `data/pages/templates-detail.ts`. The name, the realm, the roles,
+   * the descriptor sentences and every Aspect come from `data/relationship-types.ts` through
+   * `lib/template-detail.ts` — records, not words. Attribution is reachability, so this row
+   * counts `components/templates/template-detail.tsx` and nothing else in the directory.
+   */
+  "/templates/[slug]": {
+    page: "app/(marketing)/templates/[slug]/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates-detail",
+    budget: 0,
+  },
   shell: {
     page: "app/(mainlayout)/layout.tsx",
     mounts: ["components/layout/footer.tsx"],

@@ -182,11 +182,17 @@ describe("every action on the page is public", () => {
         expect(pattern.test(href), `the page links ${href}`).toBe(false);
       }
     }
-    // And the public destinations really are what it carries: the hero's action and every card's,
-    // with the two demo sheets the only other destinations on the page.
+    // And the public destinations really are what it carries: the hero's action, every card's
+    // own detail page and start action, with the two demo sheets the only other destinations on
+    // the page.
     expect(hrefs).toContain(START_PATH);
     for (const href of hrefs) {
-      expect(href === START_PATH || /^\/assessment\/demo\/[a-z-]+$/.test(href), href).toBe(true);
+      expect(
+        href === START_PATH ||
+          /^\/assessment\/demo\/[a-z-]+$/.test(href) ||
+          /^\/templates\/[a-z-]+$/.test(href),
+        href,
+      ).toBe(true);
     }
   });
 
