@@ -17,9 +17,11 @@
  * relationship card carries it filled.
  *
  * **The nulls are deliberate, and they are not all one axis.** Keeping one type means each shelf's
- * card has to answer for the other's fields: a relationship card reports `summary: null` and
- * `meta: []` because a summary and a facts line are the template card's expression, and a template
- * card reports `relationship: null` for the mirror reason. That is a real cost — a third shelf
+ * card has to answer for the other's fields: a relationship card reports `summary: null` because a
+ * summary under the title is the template card's expression (the relationship's line there is the
+ * other party), and a template card reports `relationship: null` for the mirror reason. The `meta`
+ * line is **not** one of those nulls: both cards end in the same one-line facts row, built here,
+ * which is what replaced the relationship list's four metric tiles (#795 F4). That is a real cost — a third shelf
  * adopting this type is the moment to split it into a discriminated `kind` rather than widen it a
  * second time — and the two narrowings below are where the cost is paid: `RelationshipShelfCard`
  * and `TemplateShelfCard` each pin the fields their own shelf renders, so a component cannot be
@@ -51,14 +53,47 @@ import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
  */
 export const CARD_ABSENT = "—";
 
-/** One labelled figure: the label above the value, and the line under it that says what it is. */
-export interface CardFact {
-  readonly label: string;
-  /** The figure itself, formatted here — the only place a card's arithmetic happens. */
-  readonly value: string;
-  /** `completed of opened`, `mean Gap`, `No scored session yet`; `null` for a bare count. */
-  readonly hint: string | null;
-}
+/**
+ * The card's chrome — one frame, one cover, one title, one meta line, shared by both shelves.
+ *
+ * **The class strings live here because there is one card.** Before this module owned them, each
+ * shelf held its own copy of the frame and the title, and the "same frame, same padding" claim in
+ * the artifact was a sentence in a comment with nothing enforcing it — the same drift the chip
+ * primitive closed (#808). Two consumers, one constant: a card that changes here changes on both
+ * shelves, and a component cannot quietly grow a second look.
+ *
+ * **What is *not* here is the axis.** `CARD_COVER` is the slot's geometry only (the 104 px band and
+ * its hairline) because the fill is the declared difference: a template paints
+ * `mutedGradientFor(slug)` and draws its monogram, a relationship paints the muted wash and draws
+ * its stage word. `CARD_COVER_WORD` is the type both of those words share.
+ */
+export const CARD_FRAME =
+  "flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
+
+/** The 104 px cover slot, geometry only — the fill is the axis, and the caller paints it. */
+export const CARD_COVER =
+  "flex h-[104px] items-center justify-center border-b border-gray-200 dark:border-gray-700";
+
+/**
+ * The one word in the cover: the template's monogram, the relationship's stage.
+ *
+ * Ink at ~34%, not white: the wash behind it is an 86%-lightness tint, and the artifact measured
+ * that white type on it is invisible — the same derivation `lib/category-gradient.ts` documents.
+ */
+export const CARD_COVER_WORD =
+  "text-3xl font-bold tracking-[0.06em] text-gray-900/[.34] dark:text-gray-100/[.34]";
+
+/** The card's one title link — the same two-line clamp on both shelves. */
+export const CARD_TITLE =
+  "line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100";
+
+/** The one facts line: the segments `meta` carries, separated by a hairline, never a tile grid. */
+export const CARD_META =
+  "flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400";
+
+/** The action row: where both cards' links sit, under the same hairline. */
+export const CARD_ACTIONS =
+  "mt-auto flex flex-wrap items-center gap-2 border-t border-gray-200 px-4 py-3 dark:border-gray-700";
 
 /**
  * Everything only a relationship card can say. `null` on a template card.
@@ -83,8 +118,6 @@ export interface RelationshipMemberCard {
   readonly mode: string;
   /** The latest session's invitation, or `null` when the read did not hand one. */
   readonly invite: { readonly state: InviteDisplayState; readonly label: string } | null;
-  /** The metric row: four labelled figures, every one of them formatted in this module. */
-  readonly facts: readonly CardFact[];
   /** The row's own sentence: `You have both accepted — the Gap is open`, or who is still to answer. */
   readonly sentence: string;
   /** The #252 line, on a complete row this reader has not opened since; `null` otherwise. */
@@ -113,7 +146,14 @@ export interface MemberCard {
    */
   readonly summary: string | null;
   readonly chips: readonly string[];
-  /** The one facts line. A relationship card's figures are `relationship.facts` instead. */
+  /**
+   * The one facts line, and it is the same line on both shelves (#795 F4).
+   *
+   * A relationship card fills it (`3 of 4 sessions`, `Avg alignment 2.4`, `5 Aspects`) instead of
+   * drawing a four-tile grid, and every segment's arithmetic happened here — the component prints
+   * the segments and joins nothing. `meta: []` is a card with nothing to count, which is not a
+   * state either builder produces today.
+   */
   readonly meta: readonly string[];
   readonly detail: { readonly href: string; readonly label: string };
   readonly create: { readonly href: string; readonly label: string } | null;
@@ -181,43 +221,34 @@ function sessionsValue(row: RelationshipCard): string {
     : `${row.sessionsCompleted} of ${row.sessionsOpened}`;
 }
 
-/** `50%` — the same two counts, as a proportion. Rounded to whole percent: a third is not 33.3%. */
-function completionValue(row: RelationshipCard): string {
-  return row.sessionsOpened === 0
-    ? CARD_ABSENT
-    : `${Math.round((row.sessionsCompleted / row.sessionsOpened) * 100)}%`;
-}
-
 /** `2.4` — the mean Gap, to one decimal; `—` until a session is complete and scored. */
 function alignmentValue(row: RelationshipCard): string {
   return row.alignment === null ? CARD_ABSENT : row.alignment.toFixed(1);
 }
 
 /**
- * The card's four figures, in the order the shelf draws them.
+ * The card's one meta line — the same row the template card prints, built here (#795 F4).
  *
- * The hints are the difference between a figure and a claim: `1 of 2` under `Sessions` says
- * nothing about which two, and `completed of opened` is the sentence that makes the ratio
- * readable. `No scored session yet` is why the alignment is a dash rather than a zero.
+ * The artifact approved option A: the relationship's four metric tiles **are** this line, drawn
+ * `3 of 4 Sessions`, `Avg alignment 2.4`, `5 Aspects` instead of a 2×2 grid of labelled boxes. Every
+ * figure is still derived in this module and nowhere else, and the segments are strings a component
+ * can only print — joining them with a hairline is markup, not arithmetic.
+ *
+ * **What the line carries, and why.** The ratio is the artifact's first segment; the alignment says
+ * `No scored session yet` rather than `—` where the tiles used to hang that sentence under a dash,
+ * because a bare dash in a run of words reads as a typo. The completion percentage the tiles also
+ * drew is **gone**: `3 of 4` already states it, and two ways of saying one count is how the two
+ * surfaces drifted before. The Aspect count stays — it is the count the template card's line also
+ * opens with, and dropping it would be a fact the approved drawing keeps.
  */
-function factsOf(row: RelationshipCard, copy: PageCopy): readonly CardFact[] {
+function metaOf(row: RelationshipCard, copy: PageCopy): readonly string[] {
   const metric = sectionOf(copy, "metric");
   return [
-    {
-      label: itemLabel(metric, "sessions"),
-      value: sessionsValue(row),
-      hint:
-        row.sessionsOpened === 0
-          ? itemLabel(metric, "none-opened")
-          : itemLabel(metric, "completed-of-opened"),
-    },
-    { label: itemLabel(metric, "completion"), value: completionValue(row), hint: null },
-    {
-      label: itemLabel(metric, "alignment"),
-      value: alignmentValue(row),
-      hint: row.alignment === null ? itemLabel(metric, "unscored") : itemLabel(metric, "mean-gap"),
-    },
-    { label: itemLabel(metric, "aspects"), value: String(row.aspectCount), hint: null },
+    `${sessionsValue(row)} ${itemLabel(metric, "sessions")}`,
+    row.alignment === null
+      ? itemLabel(metric, "unscored")
+      : `${itemLabel(metric, "alignment")} ${alignmentValue(row)}`,
+    `${row.aspectCount} ${itemLabel(metric, "aspects")}`,
   ];
 }
 
@@ -272,7 +303,7 @@ export function relationshipCard(copy: PageCopy, row: RelationshipCard): Relatio
     summary: null,
     chips: [row.templateTitle],
 
-    meta: [],
+    meta: metaOf(row, copy),
     detail: { href: instancePath(row.instanceRecordId), label: itemLabel(card, "view") },
     create: null,
     relationship: {
@@ -290,7 +321,6 @@ export function relationshipCard(copy: PageCopy, row: RelationshipCard): Relatio
       }`,
       mode: MODE_LABELS[row.mode],
       invite,
-      facts: factsOf(row, copy),
       sentence: fillLabel(itemLabel(states, row.state), { name: other }),
       marker: row.unlock === "unseen" ? itemLabel(sectionOf(copy, "marker"), "unseen") : null,
       paid: paidOf(row, copy),
