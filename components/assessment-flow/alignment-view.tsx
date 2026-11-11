@@ -53,8 +53,8 @@
  * vocabulary — `Aligned`, the four Opinion names, the eight Gap names, `Soft`/`Full` — is
  * `content/`'s, exactly as `report-view.tsx` carries "Aspect" and "Gap".
  */
-import type { PageCopy } from "@/content/pages";
 import { Chip } from "@/components/ui/badge";
+import type { PageCopy } from "@/content/pages";
 import type { OpinionKind } from "@/content/assessment";
 import { OPINION_LABELS, SETTING_LABELS, opinionKindsFor } from "@/content/assessment";
 import type { GapSource } from "@/content/gaps";

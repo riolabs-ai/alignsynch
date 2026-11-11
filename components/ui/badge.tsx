@@ -43,23 +43,25 @@ const badgeVariants = cva(
          *
          * The geometry is the primitive's now and it is `rounded-full`, the radius three of the
          * four already carried. **The tone is the variant; the radius is never a variant.** The
-         * four are the approved artifact's (`docs/mockups/one-card-one-detail-v2.html` §1):
+         * four are the approved artifact's (`docs/mockups/one-card-one-detail-v2.html` §1), and
+         * they are a closed set: `Chip` accepts these four and nothing else, so the filled
+         * `Badge` variants below cannot be handed to a label by accident.
          *
-         *   neutral  a fact on a white card — the shelf's chip, unchanged
-         *   tint     the template mark, so a card is never read as the wrong noun
+         *   neutral  a fact — the shelf's chip, unchanged
+         *   tint     the template mark and the stage, so a card is never read as the wrong noun
          *   soft     a state, on the `secondary` fill the design system already has
-         *   band     any chip on the dark identity band, where the neutral pair would vanish
+         *   onBand   any chip on the dark identity band, where the neutral pair would vanish
          *
          * None of them hovers: a chip is a label, not a control. A tone that repaints light type
          * over a coloured fill has to carry its own `text-*`, because the base string's
-         * `text-white` is what the *filled* variants below rely on and `cn`'s merge order is
-         * what lets these four drop it.
+         * `text-white` is what the *filled* variants depend on and `cn`'s merge order is what
+         * lets these four drop it.
          */
         neutral:
           "border-gray-300 bg-white font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200",
         tint: "border-action/45 bg-action/5 font-medium text-action",
         soft: "border-transparent bg-secondary font-semibold text-card-foreground",
-        band: "border-background/30 px-2 font-normal text-background/80",
+        onBand: "border-background/30 px-2 font-normal text-background/80",
       },
     },
     defaultVariants: {
@@ -82,20 +84,24 @@ function Badge({ className, variant, ...props }: BadgeProps) {
  * `span` almost everywhere, because a chip sits inside a sentence, a `<p>` or a flex row. The
  * console library card is the one surface that needs another: its chips are `<dd>` rows in a
  * `<dl>`, and a `<span>` there would leave a list whose children are not terms or definitions.
- * A `<div>` is here for the state a caller is already rendering into one (the detail header
- * rows), so a migration never has to nest a chip inside a chip to keep its markup valid.
+ * Two tags, not a free string: a third would be a markup decision somebody has to justify here.
  *
- * Exported as a constant rather than left to the caller to type: the tag is markup, and a page
- * component that spells `as="dd"` spends one leaf literal of its copy budget (E23) on a word no
- * reader ever sees.
+ * Exported as a constant rather than left to the caller to type: a tag is markup, and E23 counts
+ * a string attribute value in a route's import closure as copy, so `as="dd"` would spend a leaf
+ * literal of that route's budget on a word no reader ever sees.
  */
-export const CHIP_TAG = { span: "span", dd: "dd", div: "div" } as const;
+export const CHIP_TAG = { span: "span", dd: "dd" } as const;
 
 export type ChipTag = (typeof CHIP_TAG)[keyof typeof CHIP_TAG];
 
-export interface ChipProps
-  extends React.HTMLAttributes<HTMLElement>,
-    VariantProps<typeof badgeVariants> {
+/** The four tones, as a closed set — `Chip` takes these and never a filled `Badge` variant. */
+const CHIP_TONES = ["neutral", "tint", "soft", "onBand"] as const;
+
+export type ChipTone = (typeof CHIP_TONES)[number];
+
+export interface ChipProps extends React.HTMLAttributes<HTMLElement> {
+  /** The tone. Defaults to `neutral` — a fact, which is what most labels are. */
+  variant?: ChipTone;
   /** The element to draw. Defaults to `span`; see {@link CHIP_TAG}. */
   as?: ChipTag;
 }
@@ -104,14 +110,15 @@ export interface ChipProps
  * A small label about a record — the one primitive (#795).
  *
  * One geometry (`rounded-full`, the base string), one padding, one type step, and a tone chosen
- * by `variant`: `neutral` for a fact, `tint` for the template mark, `soft` for a state, `band`
- * for anything on the dark identity band. It is the same `badgeVariants` the filled `Badge`
- * uses, so the two can never drift into two scales — `Chip` only adds the element choice a
- * label needs and `Badge` does not.
+ * by `variant`: `neutral` for a fact, `tint` for the template mark and the stage, `soft` for a
+ * state, `onBand` for anything on the dark identity band. It is the same `badgeVariants` the
+ * filled `Badge` uses, so the two can never drift into two scales — `Chip` adds only the tone
+ * set and the element choice a label needs, which is also why `<Chip variant="secondary">` does
+ * not compile: that fill carries the base string's `text-white` and is for a filled badge.
  *
  * `cn` runs the merged class list through `tailwind-merge`, not the class attribute through the
  * cascade: the base string's `text-white` / `font-semibold` / `px-2.5` are dropped by the later
- * tone classes here, and a caller's `className` is dropped-by/overrides theirs in turn.
+ * tone classes here, and a caller's `className` overrides theirs in turn.
  */
 function Chip({ className, variant = "neutral", as = "span", ...props }: ChipProps) {
   const Tag = as as "span";

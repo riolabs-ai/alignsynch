@@ -10,20 +10,22 @@
  * Four claims, each one a test:
  *
  *   1. the four tones share **one** geometry — the base string is `rounded-full`, `text-xs`, one
- *      padding — and differ only in ink, fill and border;
- *   2. **no surface declares a chip of its own**: every file that draws one imports the primitive
- *      and carries no `const CHIP` constant, which is what stops a fifth definition appearing the
- *      next time someone needs a label;
- *   3. the two card surfaces **render** through it — the markup the shelf and the relationship
- *      list actually emit is the primitive's class list, tone for tone;
- *   4. the detail band renders through it too, and it is the band tone, because a neutral chip on
- *      the graphite band would be light-on-dark text with a light border.
+ *      padding — and each paints exactly its own ink, fill and border, with the artifact's own
+ *      literals read off the artifact rather than retyped;
+ *   2. **no surface declares a chip of its own**: the audited files import the primitive and carry
+ *      no `const CHIP`, and a scan of every `.ts`/`.tsx` under `components/` and `app/` proves the
+ *      constant is gone from the tree — the hand-written list alone missed one on the first pass;
+ *   3. three surfaces **render** through it — the template shelf, the relationship list card and
+ *      the template detail band — with their `data-*` hooks and the tone each datum carries;
+ *   4. the band is the `onBand` tone, because a neutral chip on the graphite band would be
+ *      light-on-dark text with a light border.
  *
- * The `data-*` hooks are untouched by the move and are asserted here anyway: a chip that loses
- * its handle silently breaks someone else's suite, and `#795` names that as the way this refactor
- * would fail.
+ * What it does not render is `my-instances.tsx`, `relationship-detail.tsx` and `instance-view.tsx`
+ * — two are client components behind server actions and one needs a whole session screen. Their
+ * chips are proved by claim 2 (the source) and by their own suites, which assert the hooks this
+ * file checks by name.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -48,11 +50,28 @@ import { catalogueCard } from "@/lib/member/shelf";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
 import { cn } from "@/lib/utils";
 
-const TONES = ["neutral", "tint", "soft", "band"] as const;
+const TONES = ["neutral", "tint", "soft", "onBand"] as const;
 
 /** One rendered chip, as the markup a browser would receive. */
 function chipMarkup(variant?: (typeof TONES)[number], props: Record<string, unknown> = {}): string {
   return renderToStaticMarkup(createElement(Chip, { variant, ...props }, "Label"));
+}
+
+/** A rendered chip's classes, as a sorted list. */
+function classesOf(markup: string): string[] {
+  return (/class="([^"]*)"/.exec(markup)?.[1] ?? "").split(" ").sort();
+}
+
+/** Only the classes that paint ink, fill or a border — what a tone is allowed to decide. */
+function paintOf(variant: (typeof TONES)[number]): string[] {
+  return (
+    classesOf(chipMarkup(variant))
+      .filter((token) => /^(dark:)?(text|bg|border)-(?!0$|transparent$)/.test(token))
+      // `border` alone is a width, not a colour; `border-l`/`border-t` etc. are sides.
+      .filter((token) => !/^(dark:)?border(-[xtblr])?$/.test(token))
+      // `text-xs` and friends are the type step, which every tone shares — not paint.
+      .filter((token) => !/^(dark:)?text-(xs|sm|base|lg|xl|\d?xl|\[)/.test(token))
+  );
 }
 
 /** The class list the primitive emits for a tone — the string a surface must carry. */
@@ -61,14 +80,17 @@ function toneClasses(variant: (typeof TONES)[number]): string {
 }
 
 /**
- * The files that draw a chip about a record. Six surfaces from the audit, plus the dashboard's
- * own relationship list and the two flow screens that carried the same `rounded-md` constant.
+ * The audited surfaces, by file: the issue's six, plus the dashboard's own relationship list and
+ * the flow screens that carried the same chip literal. `instance-view.tsx` is here because it
+ * held a byte-identical copy of the shelf's `neutral` chip under its own `data-stage-badge`, and
+ * a file list that skipped it is exactly how a fifth definition survives a refactor.
  */
 const CHIP_SURFACES = [
   "components/dashboard/template-shelf.tsx",
   "components/dashboard/relationship-cards.tsx",
   "components/dashboard/relationship-detail.tsx",
   "components/assessment-flow/my-instances.tsx",
+  "components/assessment-flow/instance-view.tsx",
   "components/assessment-flow/template-detail.tsx",
   "components/assessment-flow/template-card.tsx",
   "components/assessment-flow/report-view.tsx",
@@ -165,24 +187,35 @@ describe("one primitive, one geometry", () => {
     }
   });
 
-  it("keeps the four tones distinguishable, and tone is the only difference", () => {
-    expect(chipMarkup("neutral")).toContain("border-gray-300");
-    expect(chipMarkup("neutral")).toContain("bg-white");
+  it("paints each tone with exactly its own ink, fill and border", () => {
+    /**
+     * Exact sets, not "contains": a tone that quietly added a second ink, a fill of its own or a
+     * palette step would pass a `toContain` and fail here. This is the assertion that keeps a
+     * fifth tone from arriving as an extra class on an existing one.
+     */
+    expect(paintOf("neutral")).toEqual([
+      "bg-white",
+      "border-gray-300",
+      "dark:bg-gray-900",
+      "dark:border-gray-600",
+      "dark:text-gray-200",
+      "text-gray-700",
+    ]);
+    expect(paintOf("tint")).toEqual(["bg-action/5", "border-action/45", "text-action"]);
+    expect(paintOf("soft")).toEqual(["bg-secondary", "text-card-foreground"]);
+    expect(paintOf("onBand")).toEqual(["border-background/30", "text-background/80"]);
+  });
+
+  it("keeps the weight and the padding the shipped chips had", () => {
     expect(chipMarkup("neutral")).toContain("font-medium");
+    expect(chipMarkup("tint")).toContain("font-medium");
+    expect(chipMarkup("soft")).toContain("font-semibold");
 
-    expect(chipMarkup("tint")).toContain("border-action/45");
-    expect(chipMarkup("tint")).toContain("bg-action/5");
-    expect(chipMarkup("tint")).toContain("text-action");
-
-    expect(chipMarkup("soft")).toContain("bg-secondary");
-    expect(chipMarkup("soft")).toContain("text-card-foreground");
-
-    // The band tone is the shipped band chip's pair, at the primitive's radius.
-    expect(chipMarkup("band")).toContain("border-background/30");
-    expect(chipMarkup("band")).toContain("text-background/80");
-    // The band draws one step tighter, as the artifact's §4 band does.
-    expect(chipMarkup("band")).toContain("px-2 ");
-    expect(chipMarkup("band")).not.toContain("px-2.5");
+    // The band draws one step tighter, as the artifact's §4 band does; `cn`'s merge is what
+    // drops the base `px-2.5` rather than the cascade deciding it.
+    expect(classesOf(chipMarkup("onBand"))).toContain("px-2");
+    expect(classesOf(chipMarkup("onBand"))).not.toContain("px-2.5");
+    expect(chipMarkup("onBand")).toContain("font-normal");
   });
 
   it("defaults to the neutral tone, so a fact chip needs no variant at all", () => {
@@ -193,7 +226,7 @@ describe("one primitive, one geometry", () => {
     /**
      * The contract, read from the file the owner approved rather than from a copy of it (§1,
      * "The chip, one primitive, four tones"). Every class the artifact writes on a chip must be
-     * on the rendered one; the primitive may add the base string's own furniture, it may never
+     * on the rendered one — the primitive may add the base string's own furniture, it may never
      * repaint a tone's ink, fill, border or type step.
      */
     const artifact = readFileSync(join(ROOT, "docs/mockups/one-card-one-detail-v2.html"), "utf8");
@@ -210,7 +243,7 @@ describe("one primitive, one geometry", () => {
     expect(drawn.length, "four tones are drawn in §1").toBe(4);
 
     for (const tone of TONES) {
-      const rendered = /class="([^"]*)"/.exec(chipMarkup(tone))?.[1].split(" ") ?? [];
+      const rendered = classesOf(chipMarkup(tone));
       const source = drawn.find((tokens) => tokens.every((token) => rendered.includes(token)));
       expect(source, `${tone} matches a drawn tone`).toBeDefined();
     }
@@ -235,14 +268,29 @@ describe("no surface declares a chip of its own", () => {
       expect(text, "the primitive is imported").toMatch(
         /import \{[^}]*\bChip\b[^}]*\} from "@\/components\/ui\/badge"/,
       );
-      // The retired shape: a local class constant named CHIP. `CHIP_SURFACES` itself is the
-      // thing that would grow a sixth entry if someone added one back.
       expect(text, "no local chip constant").not.toMatch(/\bconst CHIP\b/);
       expect(text, "no rounded-md chip literal").not.toMatch(
         /rounded-md border border-(border|background\/30)[^"]*px-2 py-0\.5/,
       );
     });
   }
+
+  it("and neither does any other component: the constant is gone from the tree", () => {
+    /**
+     * The list above is the audited surfaces and it is hand-written, which is precisely how
+     * `instance-view.tsx` kept a byte-identical copy through the first pass. This is the
+     * self-maintaining half: a shared chip constant named `CHIP` may not exist anywhere under
+     * `components/` or `app/` — the primitive is the only home for that class list.
+     */
+    const offenders = ["components", "app"]
+      .flatMap((dir) =>
+        readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" })
+          .filter((name) => name.endsWith(".ts") || name.endsWith(".tsx"))
+          .map((name) => join(dir, name)),
+      )
+      .filter((file) => /\bconst CHIP\b/.test(source(file)));
+    expect(offenders).toEqual([]);
+  });
 });
 
 describe("the surfaces render through it", () => {
@@ -265,20 +313,23 @@ describe("the surfaces render through it", () => {
         unreadable: null,
       }),
     );
+    // The template mark is the brand tint; a state is soft; the facts stay neutral.
     expect(html).toContain(toneClasses("tint"));
+    expect(html).toContain(toneClasses("soft"));
     expect(html).toContain(toneClasses("neutral"));
     // The card stamps `data-relationship-status` on the `<li>`; the three below are on the chips.
     expect(html).toContain('data-relationship-status="active"');
-    for (const hook of ["data-viewer-role", "data-invite-view", "data-membership-state"]) {
-      expect(elementWith(html, hook), hook).toContain("rounded-full");
+    for (const hook of ["data-invite-view", "data-membership-state"]) {
+      expect(elementWith(html, hook), hook).toContain(toneClasses("soft"));
     }
+    expect(elementWith(html, "data-viewer-role")).toContain(toneClasses("neutral"));
   });
 
-  it("the detail band draws the band tone, and keeps its three hooks", () => {
+  it("the detail band draws the on-band tone, and keeps its three hooks", () => {
     const html = renderToStaticMarkup(
       createElement(TemplateDetail, { copy: templateDetailPageCopy, detail }),
     );
-    expect(html).toContain(toneClasses("band"));
+    expect(html).toContain(toneClasses("onBand"));
     for (const hook of [
       "data-template-detail-group",
       "data-template-detail-realm",

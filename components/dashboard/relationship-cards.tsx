@@ -40,8 +40,8 @@
  * what holds this file at zero copy literals (E23); the status and invitation words are the same
  * fixtures the table drew them from.
  */
-import type { PageCopy, PageCopySection } from "@/content/pages";
 import { Chip } from "@/components/ui/badge";
+import type { PageCopy, PageCopySection } from "@/content/pages";
 import { formatDate } from "@/content/core";
 import { instancePath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
@@ -143,9 +143,9 @@ export function RelationshipCards({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Chip variant="tint">{itemLabel(card, "template")}</Chip>
                     <span className="flex flex-wrap items-center gap-2">
-                      <Chip variant="neutral">{statusLabel(statusCopy, row.status)}</Chip>
+                      <Chip variant="soft">{statusLabel(statusCopy, row.status)}</Chip>
                       {row.membership.state === "lapsed" ? (
-                        <Chip variant="neutral" data-membership-state="lapsed">
+                        <Chip variant="soft" data-membership-state="lapsed">
                           {statusLabel(statusCopy, "read-only")}
                         </Chip>
                       ) : null}
@@ -173,7 +173,7 @@ export function RelationshipCards({
                     <Chip variant="neutral">
                       {fillLabel(itemLabel(card, "aspects"), { count: String(row.aspectCount) })}
                     </Chip>
-                    <Chip variant="neutral" data-invite-view={row.view}>
+                    <Chip variant="soft" data-invite-view={row.view}>
                       {viewLabel(viewCopy, row.view)}
                     </Chip>
                   </div>

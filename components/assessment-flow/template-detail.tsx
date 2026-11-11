@@ -126,13 +126,13 @@ export function TemplateDetail({
       >
         {type === undefined ? null : (
           <p className="flex flex-wrap items-center gap-2">
-            <Chip variant="band" data-template-detail-group={REALM_GROUP[type.realm]}>
+            <Chip variant="onBand" data-template-detail-group={REALM_GROUP[type.realm]}>
               {itemLabel(groups, REALM_GROUP[type.realm].toLowerCase())}
             </Chip>
-            <Chip variant="band" data-template-detail-realm={type.realm}>
+            <Chip variant="onBand" data-template-detail-realm={type.realm}>
               {type.realm}
             </Chip>
-            <Chip variant="band" data-template-detail-short-name={type.id}>
+            <Chip variant="onBand" data-template-detail-short-name={type.id}>
               {type.shortName}
             </Chip>
           </p>

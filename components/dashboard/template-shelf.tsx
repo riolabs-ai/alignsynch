@@ -19,8 +19,8 @@
  * outline button hovers to `bg-gray-50` with its text unchanged and the primary to
  * `bg-action-hover`, so no rule paints light text without also painting a coloured fill.
  */
-import type { PageCopy, PageCopySection } from "@/content/pages";
 import { Chip } from "@/components/ui/badge";
+import type { PageCopy, PageCopySection } from "@/content/pages";
 import { mutedGradientFor, monogramOf } from "@/lib/category-gradient";
 import {
   type ShelfCard,

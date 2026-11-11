@@ -34,11 +34,11 @@
 import Link from "next/link";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
+import { Chip } from "@/components/ui/badge";
 import { MODE_LABELS } from "@/content/assessment";
 import { DEMO_NOW_ISO, formatDate, formatRelative } from "@/content/core";
 import { STAGE_LABELS } from "@/content/stages";
 import type { PageCopy } from "@/content/pages";
-import { Chip } from "@/components/ui/badge";
 import type { RelationshipCard } from "@/lib/db/assessments";
 import { type OverviewFilter, matchesOverviewFilter } from "@/lib/flow/overview";
 import { MY_INSTANCES_PATH, instancePath } from "@/lib/flow/paths";
@@ -397,8 +397,8 @@ export function MyInstances({
                       carries a template, a stage and two names, not a thumbnail. */}
                   <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
                     <div className="flex items-center justify-between gap-2">
-                      <Chip variant="neutral">{instance.templateTitle}</Chip>
-                      <Chip variant="neutral" data-stage-badge={instance.stage}>
+                      <Chip variant="tint">{instance.templateTitle}</Chip>
+                      <Chip variant="tint" data-stage-badge={instance.stage}>
                         {STAGE_LABELS[instance.stage]}
                       </Chip>
                     </div>
@@ -446,7 +446,7 @@ export function MyInstances({
                     <div className="flex flex-wrap items-center gap-2">
                       <Chip variant="neutral">{MODE_LABELS[instance.mode]}</Chip>
                       {instance.inviteState === null ? null : (
-                        <Chip variant="neutral" data-invite-state={instance.inviteState}>
+                        <Chip variant="soft" data-invite-state={instance.inviteState}>
                           {itemLabel(inviteCopy, instance.inviteState)}
                         </Chip>
                       )}

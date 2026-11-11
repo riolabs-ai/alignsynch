@@ -35,8 +35,8 @@
  * No client code: a screen that only reads has no handlers. The words are
  * `data/pages/assessment-relationship-report.ts` (E23, budget 0).
  */
-import type { OpinionKind } from "@/content/assessment";
 import { Chip } from "@/components/ui/badge";
+import type { OpinionKind } from "@/content/assessment";
 import {
   MODE_LABELS,
   OPINION_DEFINITIONS,

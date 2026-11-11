@@ -36,8 +36,8 @@
  * fixture — which is what using any type here actually costs. No people, no rating and no "N
  * people use this": nothing here measures one.
  */
-import type { PublishStatus } from "@/content/core";
 import { Chip, CHIP_TAG } from "@/components/ui/badge";
+import type { PublishStatus } from "@/content/core";
 import { billingPlan } from "@/data/billing-plans";
 import type { BillingPlan } from "@/data/billing-plans";
 import {

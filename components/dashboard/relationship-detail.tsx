@@ -376,7 +376,7 @@ export function RelationshipDetail({
                 return known?.label ?? relationship.status;
               })()}
             </Chip>
-            <Chip variant="neutral" data-relationship-invite={relationship.view}>
+            <Chip variant="soft" data-relationship-invite={relationship.view}>
               {viewSentence(relationship.view)}
             </Chip>
             {/* #706 — the viewer's own seat, from their party row. The card says it too; the
@@ -388,7 +388,7 @@ export function RelationshipDetail({
             </Chip>
             {/* #533 phase 3 — the derived membership, beside the stored status. */}
             {relationship.membership.state === "lapsed" ? (
-              <Chip variant="neutral" data-membership-state="lapsed">
+              <Chip variant="soft" data-membership-state="lapsed">
                 {pageItemOf(copy, "read-only").label}
               </Chip>
             ) : null}
