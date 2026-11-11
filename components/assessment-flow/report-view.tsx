@@ -35,6 +35,7 @@
  * No client code: a screen that only reads has no handlers. The words are
  * `data/pages/assessment-relationship-report.ts` (E23, budget 0).
  */
+import { Chip } from "@/components/ui/badge";
 import type { OpinionKind } from "@/content/assessment";
 import {
   MODE_LABELS,
@@ -60,7 +61,6 @@ const SOURCE_BY_KIND = new Map<GapSource["kind"], GapSource>(
 
 const CARD = "rounded-lg border border-border bg-card p-4";
 const MUTED = "text-sm text-muted-foreground";
-const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground";
 const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 const COLUMN =
@@ -455,12 +455,12 @@ export function RelationshipReport({
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">{report.title}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2">
-          <span className={CHIP} data-report-mode={report.mode}>
+          <Chip variant="neutral" data-report-mode={report.mode}>
             {MODE_LABELS[report.mode]}
-          </span>
-          <span className={CHIP} data-report-setting={report.setting}>
+          </Chip>
+          <Chip variant="neutral" data-report-setting={report.setting}>
             {fillLabel(itemLabel(header, "setting"), { setting })}
-          </span>
+          </Chip>
           <span className="text-xs text-muted-foreground" data-report-viewer={screen.viewer.role}>
             {fillLabel(itemLabel(header, "viewer"), {
               name:

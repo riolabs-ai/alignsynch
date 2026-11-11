@@ -140,6 +140,7 @@ function mount(view: MemberRelationshipView, press: Press = {}): void {
       createElement(RelationshipDetail, {
         copy: dashboardRelationshipDetailPageCopy,
         relationship: view,
+        backHref: "/dashboard/relationships",
         onSaveAspects: async () => ({ ok: false as const, code: "failed" }),
         onPublish: async () => ({ ok: false as const, code: "failed" }),
         onRepublish: async () => ({ ok: false as const, code: "failed" }),

@@ -37,6 +37,7 @@
  * people use this": nothing here measures one.
  */
 import { LeavingLink } from "@/components/layout/leaving-link";
+import { Chip, CHIP_TAG } from "@/components/ui/badge";
 import type { PublishStatus } from "@/content/core";
 import { billingPlan } from "@/data/billing-plans";
 import type { BillingPlan } from "@/data/billing-plans";
@@ -59,7 +60,6 @@ import type { ReactNode } from "react";
  * neighbours' action rows floating halfway up the row. The actions sit on `mt-auto` below.
  */
 const SHELL = "flex h-full flex-col rounded-lg border border-border bg-card p-5";
-const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground";
 const MUTED = "text-sm text-muted-foreground";
 const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
@@ -247,17 +247,17 @@ export function TemplateCard<T extends CatalogueTemplate>({
        */}
       <dl className="mt-3 flex flex-wrap items-center gap-2">
         {type === undefined ? (
-          <dd className={CHIP} data-template-card-unnamed="true">
+          <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-unnamed="true">
             {copy.unnamedType}
-          </dd>
+          </Chip>
         ) : (
-          <dd className={CHIP} data-template-card-roles="true">
+          <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-roles="true">
             {copy.rolesOf(type)}
-          </dd>
+          </Chip>
         )}
-        <dd className={CHIP} data-template-card-aspects={template.aspectCount}>
+        <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-aspects={template.aspectCount}>
           {copy.aspectsOf(template.aspectCount)}
-        </dd>
+        </Chip>
         <div className="flex items-center gap-1.5">
           <dt className="sr-only">{copy.priceLabel}</dt>
           {/*
@@ -265,9 +265,9 @@ export function TemplateCard<T extends CatalogueTemplate>({
            * is in the visible chip, because "$8.95/mo" alone beside nine cards reads as nine
            * subscriptions.
            */}
-          <dd className={CHIP} data-template-card-price={CATALOGUE_PRICE_CENTS}>
+          <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-price={CATALOGUE_PRICE_CENTS}>
             {copy.priceOf(CATALOGUE_PLAN.name, CATALOGUE_PRICE_CENTS)}
-          </dd>
+          </Chip>
         </div>
       </dl>
 
@@ -328,12 +328,15 @@ export function TemplateCatalogueGrid<T extends CatalogueTemplate>({
            */}
           <h2 className="flex items-baseline gap-2 border-b border-border pb-2 text-lg font-semibold text-foreground">
             {groupLabelOf(group.id)}
-            <span
-              className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+            {/* The count beside a heading — a category label, like the catalogue eyebrow, so it
+                takes the soft fill and the muted ink a heading's annotation has always had. */}
+            <Chip
+              variant="soft"
+              className="border-0 font-medium text-muted-foreground"
               data-template-group-count={group.templates.length}
             >
               {group.templates.length}
-            </span>
+            </Chip>
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {group.templates.map((template) => (

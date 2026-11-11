@@ -1,27 +1,29 @@
 /**
- * template-ancestor: components/marketing/marketing-landing.tsx   (variation: facts from one Postgres template record and the catalogue type its slug names, POST-form CTAs, no price drawn)
+ * template-ancestor: components/assessment-flow/record-detail-shell.tsx   (variation: facts from one Postgres template record and the catalogue type its slug names, POST-form CTAs, no price drawn — the band, the facts card and the section order are the shell's)
  *
  * `/templates/relationship/[slug]` — one template, read-only, in the v1 landing's shape (#794)
- * (#console 5/5, reshaped by #409).
+ * (#console 5/5, reshaped by #409, re-cast onto the shared detail shell by #795).
  *
- * "Open" has to open something, and the spec keeps template *editing* for a later card: the
- * editor will extend this route, not replace it. So this page reads, in the order a person
- * deciding asks:
+ * **This page is the shell's precedent, not a second layout.** The approved artifact
+ * (`docs/mockups/one-card-one-detail-v2.html` §4) draws it as "the shell, as it ships", and since
+ * #795 that shell is `components/assessment-flow/record-detail-shell.tsx`: identity band → facts →
+ * content → actions, with the 320 px aside / content grid. What stays local is only what a
+ * *template* says:
  *
- *   1. a header band naming the **type** — the group, the realm, the Relationship Type and the two
- *      roles — then the single `h1`;
- *   2. the descriptor the catalogue authored for that type: **who it is for, and who it is not
+ *   1. the descriptor the catalogue authored for the type — **who it is for, and who it is not
  *      for**. Those two sentences are the type's own copy (`data/relationship-types.ts`); a
- *      template whose slug names no catalogue type says so instead, and no descriptor is written
- *      for it here;
- *   3. the Aspects, in authored order, each with **both named ends of the scale** — notch 1 and
+ *      template whose slug names no catalogue type says so in the band instead. No descriptor is
+ *      invented for it here;
+ *   2. the Aspects, in authored order, each with **both named ends of the scale** — notch 1 and
  *      notch 5 are the words a party actually answers against;
- *   4. what a Mode and a Setting are, because the person reading this page will choose both when
+ *   3. what a Mode and a Setting are, because the person reading this page will choose both when
  *      they start an instance;
- *   5. the two write actions the list already offers (duplicate, archive) plus the product's one
- *      primary action — **"Create Relationship"**, which opens this template's own create step
- *      (#618). It used to read "Start an instance" and point back at the library, which was
- *      instance language on a product page and a link to where the reader came from.
+ *   4. the actions card — the two write actions the list already offers (duplicate, archive) plus
+ *      the product's one primary action, **"Create Relationship"**, which opens this template's own
+ *      create step (#618). It used to read "Start an instance" and point back at the library, which
+ *      was instance language on a product page and a link to where the reader came from. This is
+ *      also the slot the relationship page draws its Edit/Publish/Complete panels in — the
+ *      artifact's second declared axis, and the only difference between the two pages' asides.
  *
  * **What this page must not say.** No person's name: a template holds Aspects, and the seats are
  * the type's roles (`Staff / Manager`), never a participant — a name here would be invented social
@@ -33,6 +35,17 @@
  * The archived state is drawn as a band, not as a hidden control: an archived template still
  * opens, because its instances copied their Aspects at creation and nothing joins back to it.
  */
+import {
+  DetailBand,
+  DetailFacts,
+  DetailPanel,
+  DetailSection,
+  DETAIL_CARD,
+  DETAIL_FACT_LABEL,
+  DETAIL_MUTED,
+  RecordDetailShell,
+  type DetailFact,
+} from "@/components/assessment-flow/record-detail-shell";
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
 import { formatDate } from "@/content/core";
@@ -55,10 +68,6 @@ import {
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { relationshipTypeOf } from "./template-card";
 
-const CARD = "rounded-lg border border-border bg-card p-6";
-const MUTED = "text-sm text-muted-foreground";
-const CHIP = "rounded-md border border-background/30 px-2 py-0.5 text-xs text-background/80";
-const FACT_LABEL = "text-xs uppercase tracking-wide text-muted-foreground";
 const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 
@@ -73,11 +82,11 @@ function SeatList({ type, copy }: { type: RelationshipType; copy: PageCopy }) {
   return (
     <dl className="grid gap-2 sm:grid-cols-2">
       <div className="rounded-md border border-border bg-background p-3">
-        <dt className={FACT_LABEL}>{itemLabel(identity, "initiator")}</dt>
+        <dt className={DETAIL_FACT_LABEL}>{itemLabel(identity, "initiator")}</dt>
         <dd className="text-sm font-medium text-foreground">{type.roles.initiator}</dd>
       </div>
       <div className="rounded-md border border-border bg-background p-3">
-        <dt className={FACT_LABEL}>{itemLabel(identity, "counterparty")}</dt>
+        <dt className={DETAIL_FACT_LABEL}>{itemLabel(identity, "counterparty")}</dt>
         <dd className="text-sm font-medium text-foreground">{type.roles.counterparty}</dd>
       </div>
     </dl>
@@ -104,94 +113,85 @@ export function TemplateDetail({
   const type = relationshipTypeOf(template.slug);
   const archivedTemplate = template.status === "archived";
 
+  /** The band's two copy-resolved strings; a type-less template says so in words instead. */
+  const groupLabel =
+    type === undefined ? "" : itemLabel(groups, REALM_GROUP[type.realm].toLowerCase());
+  const rolesLine =
+    type === undefined
+      ? itemLabel(identity, "no-type")
+      : fillLabel(itemLabel(identity, "roles"), {
+          initiator: type.roles.initiator,
+          counterparty: type.roles.counterparty,
+        });
+
+  const factRows: readonly DetailFact[] = [
+    {
+      id: "aspects",
+      label: itemLabel(facts, "aspects"),
+      value: template.aspectCount,
+      figure: true,
+    },
+    {
+      id: "instances",
+      label: itemLabel(facts, "instances"),
+      value: template.instanceCount,
+      figure: true,
+    },
+    {
+      id: "status",
+      label: itemLabel(facts, "status"),
+      value: itemLabel(facts, archivedTemplate ? "status-archived" : "status-published"),
+      hooks: { "data-template-detail-status": template.status },
+    },
+    {
+      id: "created",
+      label: itemLabel(facts, "created"),
+      value: formatDate(template.createdAt),
+    },
+  ];
+
   return (
     <StageColumn>
-      <nav aria-label={itemLabel(back, "all")} className="mb-3">
-        <a className="text-sm font-medium text-action hover:underline" href={TEMPLATE_LIBRARY_PATH}>
-          {itemLabel(back, "all")}
-        </a>
-      </nav>
-
       {/* No journey rail here (#791). It numbered this page `Step 2 of 3` of a browse journey, but
           the create flow downstream prints `Stage 1 of 6` and this screen is a pre-stage view of
           that flow, not a stage of it — two numberings for one journey, the wrong one on the
           wrong screen. The six-stage rail lives where the stages are. */}
-
-      {/* The header band — the v1 landing's cover, text-only: a template has no photograph, and an
-          invented one would be the first thing on the page a reader could not trust. */}
-      <header
-        data-template-detail-band="true"
-        data-template-detail-type={type?.id ?? "none"}
-        className="rounded-lg bg-foreground px-6 py-6 text-background"
-      >
-        {type === undefined ? null : (
-          <p className="flex flex-wrap items-center gap-2">
-            <span className={CHIP} data-template-detail-group={REALM_GROUP[type.realm]}>
-              {itemLabel(groups, REALM_GROUP[type.realm].toLowerCase())}
-            </span>
-            <span className={CHIP} data-template-detail-realm={type.realm}>
-              {type.realm}
-            </span>
-            <span className={CHIP} data-template-detail-short-name={type.id}>
-              {type.shortName}
-            </span>
-          </p>
-        )}
-        <h1 className="mt-2 text-3xl font-bold">{template.title}</h1>
-        <p className="mt-2 text-sm text-background/80">
-          {type === undefined
-            ? itemLabel(identity, "no-type")
-            : fillLabel(itemLabel(identity, "roles"), {
-                initiator: type.roles.initiator,
-                counterparty: type.roles.counterparty,
-              })}
-        </p>
-        <p className="mt-3 text-sm text-background/80">{template.summary}</p>
-      </header>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
-        {/* The rail: what this template is, what running it involves, and the one action a visitor
-            came to take. Sticky on `lg` so the decision stays in view while the Aspect list
-            scrolls — the v1 landing's own CSS variation (#404 §5). */}
-        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <section className={`space-y-3 ${CARD}`} data-template-detail-facts="true">
-            <dl className="grid grid-cols-2 gap-3">
-              <div>
-                <dt className={FACT_LABEL}>{itemLabel(facts, "aspects")}</dt>
-                <dd className="text-lg font-semibold tabular-nums text-foreground">
-                  {template.aspectCount}
-                </dd>
-              </div>
-              <div>
-                <dt className={FACT_LABEL}>{itemLabel(facts, "instances")}</dt>
-                <dd className="text-lg font-semibold tabular-nums text-foreground">
-                  {template.instanceCount}
-                </dd>
-              </div>
-              <div>
-                <dt className={FACT_LABEL}>{itemLabel(facts, "status")}</dt>
-                <dd className={MUTED} data-template-detail-status={template.status}>
-                  {itemLabel(facts, archivedTemplate ? "status-archived" : "status-published")}
-                </dd>
-              </div>
-              <div>
-                <dt className={FACT_LABEL}>{itemLabel(facts, "created")}</dt>
-                <dd className={MUTED}>{formatDate(template.createdAt)}</dd>
-              </div>
-            </dl>
-            <p
-              className="text-xs text-muted-foreground"
-              data-template-detail-authorship={template.authorship}
-            >
-              {itemLabel(
-                facts,
-                template.authorship === "mine" ? "authorship-mine" : "authorship-built-in",
-              )}
-            </p>
-          </section>
-
-          <section className={`space-y-2 ${CARD}`} data-template-detail-actions="true">
-            <h2 className="text-base font-semibold text-foreground">{actions.heading}</h2>
+      <RecordDetailShell
+        scope="template"
+        back={{ href: TEMPLATE_LIBRARY_PATH, label: itemLabel(back, "all") }}
+        band={
+          /* The header band — the v1 landing's cover, text-only: a template has no photograph, and
+             an invented one would be the first thing on the page a reader could not trust. */
+          <DetailBand
+            scope="template"
+            type={type}
+            title={template.title}
+            summary={template.summary}
+            groupLabel={groupLabel}
+            rolesLine={rolesLine}
+          />
+        }
+        facts={
+          <DetailFacts
+            facts={factRows}
+            hooks={{ "data-template-detail-facts": "true" }}
+            footnote={
+              <p
+                className="text-xs text-muted-foreground"
+                data-template-detail-authorship={template.authorship}
+              >
+                {itemLabel(
+                  facts,
+                  template.authorship === "mine" ? "authorship-mine" : "authorship-built-in",
+                )}
+              </p>
+            }
+          />
+        }
+        /* The rail's second card: what a visitor came to take. The relationship page draws its
+           three working panels in this same slot — the artifact's second declared axis. */
+        actions={
+          <DetailPanel title={actions.heading} hooks={{ "data-template-detail-actions": "true" }}>
             {archivedTemplate ? null : (
               <div className="space-y-2">
                 {/* The product's one primary action (#618): the create step for THIS template, not
@@ -203,7 +203,7 @@ export function TemplateDetail({
                 >
                   {itemLabel(actions, "create")}
                 </a>
-                <p className={MUTED}>{itemLabel(actions, "plans-note")}</p>
+                <p className={DETAIL_MUTED}>{itemLabel(actions, "plans-note")}</p>
                 <a
                   className="text-sm font-medium text-action hover:underline"
                   data-template-detail-cta="plans"
@@ -230,100 +230,98 @@ export function TemplateDetail({
                 </button>
               </form>
             )}
-          </section>
-        </aside>
-
-        <div className="min-w-0 space-y-6">
-          {type === undefined ? null : (
-            <section className="space-y-3" data-template-detail-descriptor="true">
-              <h2 className="text-xl font-semibold text-foreground">{type.name}</h2>
-              <SeatList type={type} copy={copy} />
-              <div className={`space-y-2 ${CARD}`}>
-                <div>
-                  <p className={FACT_LABEL}>{itemLabel(identity, "who-its-for")}</p>
-                  <p className="mt-1 text-sm text-foreground">{type.descriptor.whoItsFor}</p>
-                </div>
-                <div>
-                  <p className={FACT_LABEL}>{itemLabel(identity, "who-its-not-for")}</p>
-                  <p className="mt-1 text-sm text-foreground">{type.descriptor.whoItsNotFor}</p>
-                </div>
+          </DetailPanel>
+        }
+      >
+        {type === undefined ? null : (
+          <section className="space-y-3" data-template-detail-descriptor="true">
+            <h2 className="text-xl font-semibold text-foreground">{type.name}</h2>
+            <SeatList type={type} copy={copy} />
+            <div className={`space-y-2 ${DETAIL_CARD}`}>
+              <div>
+                <p className={DETAIL_FACT_LABEL}>{itemLabel(identity, "who-its-for")}</p>
+                <p className="mt-1 text-sm text-foreground">{type.descriptor.whoItsFor}</p>
               </div>
-            </section>
+              <div>
+                <p className={DETAIL_FACT_LABEL}>{itemLabel(identity, "who-its-not-for")}</p>
+                <p className="mt-1 text-sm text-foreground">{type.descriptor.whoItsNotFor}</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <DetailSection
+          title={aspectsSection.heading}
+          body={sectionBody(aspectsSection)}
+          hooks={{ "data-template-detail-aspects": "true" }}
+        >
+          {aspects.length === 0 ? (
+            <p className={`mt-4 ${DETAIL_MUTED}`}>{itemLabel(aspectsSection, "empty")}</p>
+          ) : (
+            <ol className="mt-4 grid gap-3">
+              {aspects.map((aspect) => (
+                <li key={aspect.id} data-template-aspect={aspect.id} className={DETAIL_CARD}>
+                  <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
+                  <p className={`mt-2 ${DETAIL_MUTED}`}>
+                    <span className="font-medium text-foreground">
+                      {itemLabel(aspectsSection, "left")}
+                    </span>
+                    <span aria-hidden className="mx-1.5">
+                      —
+                    </span>
+                    <span data-template-aspect-left={aspect.leftValue}>{aspect.leftValue}</span>
+                  </p>
+                  <p className={DETAIL_MUTED}>
+                    <span className="font-medium text-foreground">
+                      {itemLabel(aspectsSection, "right")}
+                    </span>
+                    <span aria-hidden className="mx-1.5">
+                      —
+                    </span>
+                    <span data-template-aspect-right={aspect.rightValue}>{aspect.rightValue}</span>
+                  </p>
+                </li>
+              ))}
+            </ol>
           )}
+        </DetailSection>
 
-          <section data-template-detail-aspects="true">
-            <h2 className="text-xl font-semibold text-foreground">{aspectsSection.heading}</h2>
-            <p className={`mt-2 ${MUTED}`}>{sectionBody(aspectsSection)}</p>
-
-            {aspects.length === 0 ? (
-              <p className={`mt-4 ${MUTED}`}>{itemLabel(aspectsSection, "empty")}</p>
-            ) : (
-              <ol className="mt-4 grid gap-3">
-                {aspects.map((aspect) => (
-                  <li key={aspect.id} data-template-aspect={aspect.id} className={CARD}>
-                    <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
-                    <p className={`mt-2 ${MUTED}`}>
-                      <span className="font-medium text-foreground">
-                        {itemLabel(aspectsSection, "left")}
-                      </span>
-                      <span aria-hidden className="mx-1.5">
-                        —
-                      </span>
-                      <span data-template-aspect-left={aspect.leftValue}>{aspect.leftValue}</span>
-                    </p>
-                    <p className={MUTED}>
-                      <span className="font-medium text-foreground">
-                        {itemLabel(aspectsSection, "right")}
-                      </span>
-                      <span aria-hidden className="mx-1.5">
-                        —
-                      </span>
-                      <span data-template-aspect-right={aspect.rightValue}>
-                        {aspect.rightValue}
-                      </span>
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-
-          <section className={`space-y-2 ${CARD}`} data-template-detail-shape="true">
-            <h2 className="text-xl font-semibold text-foreground">{shape.heading}</h2>
-            <p className={MUTED}>{sectionBody(shape)}</p>
-            <dl className="space-y-3">
-              <div>
-                <dt className="text-sm font-semibold text-foreground">
-                  {itemLabel(shape, "mode")}
-                </dt>
-                {ASSESSMENT_MODES.map((mode) => (
-                  <dd key={mode} className={MUTED} data-template-mode={mode}>
-                    <span className="font-medium text-foreground">{MODE_LABELS[mode]}</span>
-                    <span aria-hidden className="mx-1.5" />
-                    {itemLabel(shape, mode === "basic" ? "mode-basic" : "mode-advanced")}
-                  </dd>
-                ))}
-              </div>
-              <div>
-                <dt className="text-sm font-semibold text-foreground">
-                  {itemLabel(shape, "setting")}
-                </dt>
-                {SETTINGS.map((setting) => (
-                  <dd key={setting} className={MUTED} data-template-setting={setting}>
-                    <span className="font-medium text-foreground">{SETTING_LABELS[setting]}</span>
-                    <span aria-hidden className="mx-1.5" />
-                    {SETTING_DEFINITIONS[setting]}
-                  </dd>
-                ))}
-                <dd className={`mt-2 ${MUTED}`}>{itemLabel(shape, "setting-note")}</dd>
-              </div>
-            </dl>
-            <p className="text-xs text-muted-foreground" data-template-detail-money="none">
-              {itemLabel(shape, "no-money")}
-            </p>
-          </section>
-        </div>
-      </div>
+        <DetailSection
+          title={shape.heading}
+          body={sectionBody(shape)}
+          framed
+          hooks={{ "data-template-detail-shape": "true" }}
+        >
+          <dl className="space-y-3">
+            <div>
+              <dt className="text-sm font-semibold text-foreground">{itemLabel(shape, "mode")}</dt>
+              {ASSESSMENT_MODES.map((mode) => (
+                <dd key={mode} className={DETAIL_MUTED} data-template-mode={mode}>
+                  <span className="font-medium text-foreground">{MODE_LABELS[mode]}</span>
+                  <span aria-hidden className="mx-1.5" />
+                  {itemLabel(shape, mode === "basic" ? "mode-basic" : "mode-advanced")}
+                </dd>
+              ))}
+            </div>
+            <div>
+              <dt className="text-sm font-semibold text-foreground">
+                {itemLabel(shape, "setting")}
+              </dt>
+              {SETTINGS.map((setting) => (
+                <dd key={setting} className={DETAIL_MUTED} data-template-setting={setting}>
+                  <span className="font-medium text-foreground">{SETTING_LABELS[setting]}</span>
+                  <span aria-hidden className="mx-1.5" />
+                  {SETTING_DEFINITIONS[setting]}
+                </dd>
+              ))}
+              <dd className={`mt-2 ${DETAIL_MUTED}`}>{itemLabel(shape, "setting-note")}</dd>
+            </div>
+          </dl>
+          <p className="text-xs text-muted-foreground" data-template-detail-money="none">
+            {itemLabel(shape, "no-money")}
+          </p>
+        </DetailSection>
+      </RecordDetailShell>
 
       {archivedTemplate ? (
         <section

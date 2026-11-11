@@ -53,6 +53,7 @@
  * vocabulary — `Aligned`, the four Opinion names, the eight Gap names, `Soft`/`Full` — is
  * `content/`'s, exactly as `report-view.tsx` carries "Aspect" and "Gap".
  */
+import { Chip } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
 import type { OpinionKind } from "@/content/assessment";
 import { OPINION_LABELS, SETTING_LABELS, opinionKindsFor } from "@/content/assessment";
@@ -74,7 +75,6 @@ const ABSENT = "—";
 
 const CARD = "rounded-lg border border-border bg-card p-4";
 const MUTED = "text-sm text-muted-foreground";
-const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground";
 const LINK = "text-sm font-medium text-action hover:underline";
 const LABEL = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
 const COLUMN =
@@ -330,9 +330,9 @@ export function AlignmentView({ screen, copy }: { screen: FlowScreen; copy: Page
     <section data-alignment="true" className="mb-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl font-semibold text-foreground">{alignment.heading}</h2>
-        <span className={CHIP} data-alignment-scope="dashboard">
+        <Chip variant="neutral" data-alignment-scope="dashboard">
           {itemLabel(alignment, "scope")}
-        </span>
+        </Chip>
       </div>
       <p className={`mt-1 ${MUTED}`}>{sectionBody(alignment)}</p>
       <p
