@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.13.0](v1-13-0.md)
+
+- **Released** 2026-11-11
+- **Tag** [`v1.13.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.13.0)
+- **Pull requests named** 9
+- **Theme:** the templates directory becomes a directory — every one of the twenty-seven relationship templates gets a public page, My Templates lists only the templates a member owns, and the copy stops calling a session an instance.
+- **Headline:** `feat(templates)` — every template has a page, not just a card (#782) (#782)
+
 ### [v1.12.0](v1-12-0.md)
 
 - **Released** 2026-11-09

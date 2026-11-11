@@ -6,6 +6,56 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.13.0] - 2026-11-11
+
+### Added
+
+- `feat(templates)` — every template has a page, not just a card (#782) ([#782](https://github.com/riolabs-ai/alignsynch/pull/782))
+- `feat(templates)` — the directory, not the pitch — /templates drops its three explainer bands (#781) ([#781](https://github.com/riolabs-ai/alignsynch/pull/781))
+- `feat(ui)` — one Aspect editor for the modal and the dashboard (#774) ([#775](https://github.com/riolabs-ai/alignsynch/pull/775))
+
+### Fixed
+
+- `fix(copy)` — a relationship has sessions, a template has neither (#783) ([#787](https://github.com/riolabs-ai/alignsynch/pull/787))
+- `fix(templates)` — a relationship does not make a template yours (#783) ([#784](https://github.com/riolabs-ai/alignsynch/pull/784))
+
+### Maintenance
+
+- `docs(review)` — v8 — the draft path is "Continue as Draft" (#780) ([#780](https://github.com/riolabs-ai/alignsynch/pull/780))
+- `docs(review)` — v8 — membership heading, the two invitation states, and a plainer plan note (#779) ([#779](https://github.com/riolabs-ai/alignsynch/pull/779))
+- `docs(review)` — prototype v8 — Stage 4 condensed, drawn as the release draws it (#777) ([#778](https://github.com/riolabs-ai/alignsynch/pull/778))
+- `chore(health)` — re-record platform health for 1.12.0 ([#773](https://github.com/riolabs-ai/alignsynch/pull/773))
+
+### Known limits
+
+- **A relationship does not put its template in your library, and no action adds it yet.** My
+  Templates lists the templates a member owns: `lib/member/library.ts::listMemberLibrary` reads
+  `r.owner_user_id = $1`, and the party-join branch that pulled in every template one of their
+  relationships had been copied from is deleted. The explicit door the owner asked for — take a
+  template from a relationship I am in, and make it mine — is not in this release: #785 needs an
+  approved mockup first, and with the old predicate gone there is no route that clones a template.
+- **Twenty-five of the twenty-seven template pages show no worked example.** The page draws one only
+  where the fixture holds a demo sheet — two types today, `staff-manager` and `co-founders`
+  (`data/relationship-types.ts::demoAnswersFor`). A link that would 404 is worse than none, so the
+  other twenty-five pages end at the Start action.
+- **The template pages are built from the fixture, not from the database.** All twenty-seven are
+  prerendered by `app/(marketing)/templates/[slug]/page.tsx::generateStaticParams` over
+  `data/relationship-types.ts`, so a template that exists only in the tenant store an imported
+  bundle writes (`data/generated/`) has no public page until the next build.
+- **Three templates are deliberately absent.** The public pages are the purchasable types only; a
+  slug that names a dating type the owner excluded, or nothing at all, answers 404.
+- **The terminology rename is copy, not schema: the code handles still say `instance`.** The
+  `{instances}` view token, the fixture module named `data/pages/assessment-instance.ts` and the
+  `flow_invite_<id>` cookie names are handles rather than words a reader sees, and they are left
+  alone. What changed is the copy, guarded by `tests/terminology.test.ts`, which fails on a
+  reader-visible _instance_ in a `data/pages` fixture.
+- **URLs are unchanged.** `/assessment/instances/<id>/…` still serves the relationship workspace;
+  the route rename to `/relationships/<id>/sessions/…` needs redirects and its own pass, and it is
+  not in a minor.
+- **A template cannot be authored from the public site.** `/templates` and `/templates/<slug>` are
+  read-only projections: starting a relationship from one copies it into a relationship, and
+  creating a template of your own is still the dashboard's editor.
+
 ## [1.12.0] - 2026-11-09
 
 ### Added

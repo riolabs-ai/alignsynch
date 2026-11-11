@@ -1,6 +1,6 @@
 {
   "name": "quizhub",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "engines": {
