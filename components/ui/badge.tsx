@@ -34,6 +34,32 @@ const badgeVariants = cva(
          */
         action: "border-transparent bg-action text-action-foreground hover:bg-action-hover",
         muted: "border-transparent bg-muted text-foreground hover:bg-muted/80",
+        /**
+         * The four record tones (#795, card t_252f94e3). A chip says one thing about a record —
+         * who it is, what it is made of, what state it is in — and until this primitive existed
+         * that one concept was drawn by three constants at three radii
+         * (`components/assessment-flow/template-card.tsx`'s `rounded-md` CHIP, the shelf's
+         * `rounded-full` CHIP/CHIP_TEMPLATE, and this file's `Badge`).
+         *
+         * The geometry is the primitive's now and it is `rounded-full`, the radius three of the
+         * four already carried. **The tone is the variant; the radius is never a variant.** The
+         * four are the approved artifact's (`docs/mockups/one-card-one-detail-v2.html` §1):
+         *
+         *   neutral  a fact on a white card — the shelf's chip, unchanged
+         *   tint     the template mark, so a card is never read as the wrong noun
+         *   soft     a state, on the `secondary` fill the design system already has
+         *   band     any chip on the dark identity band, where the neutral pair would vanish
+         *
+         * None of them hovers: a chip is a label, not a control. A tone that repaints light type
+         * over a coloured fill has to carry its own `text-*`, because the base string's
+         * `text-white` is what the *filled* variants below rely on and `cn`'s merge order is
+         * what lets these four drop it.
+         */
+        neutral:
+          "border-gray-300 bg-white font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200",
+        tint: "border-action/45 bg-action/5 font-medium text-action",
+        soft: "border-transparent bg-secondary font-semibold text-secondary-foreground",
+        band: "border-background/30 px-2 font-normal text-background/80",
       },
     },
     defaultVariants: {
@@ -50,4 +76,40 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
-export { Badge, badgeVariants };
+/**
+ * The tags a chip may be drawn as.
+ *
+ * `span` almost everywhere, because a chip sits inside a sentence, a `<p>` or a flex row. The
+ * console library card is the one surface that needs another: its chips are `<dd>` rows in a
+ * `<dl>`, and a `<span>` there would leave a list whose children are not terms or definitions.
+ * A `<div>` is here for the state a caller is already rendering into one (the detail header
+ * rows), so a migration never has to nest a chip inside a chip to keep its markup valid.
+ */
+type ChipTag = "span" | "dd" | "div";
+
+export interface ChipProps
+  extends React.HTMLAttributes<HTMLElement>,
+    VariantProps<typeof badgeVariants> {
+  /** The element to draw. Defaults to `span`; see {@link ChipTag}. */
+  as?: ChipTag;
+}
+
+/**
+ * A small label about a record — the one primitive (#795).
+ *
+ * One geometry (`rounded-full`, the base string), one padding, one type step, and a tone chosen
+ * by `variant`: `neutral` for a fact, `tint` for the template mark, `soft` for a state, `band`
+ * for anything on the dark identity band. It is the same `badgeVariants` the filled `Badge`
+ * uses, so the two can never drift into two scales — `Chip` only adds the element choice a
+ * label needs and `Badge` does not.
+ *
+ * `cn` runs the merged class list through `tailwind-merge`, not the class attribute through the
+ * cascade: the base string's `text-white` / `font-semibold` / `px-2.5` are dropped by the later
+ * tone classes here, and a caller's `className` is dropped-by/overrides theirs in turn.
+ */
+function Chip({ className, variant = "neutral", as = "span", ...props }: ChipProps) {
+  const Tag = as as "span";
+  return <Tag className={cn(badgeVariants({ variant }), className)} {...props} />;
+}
+
+export { Badge, Chip, badgeVariants };

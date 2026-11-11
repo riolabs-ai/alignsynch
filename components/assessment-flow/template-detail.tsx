@@ -34,6 +34,7 @@
  * opens, because its instances copied their Aspects at creation and nothing joins back to it.
  */
 import { StageColumn } from "@/components/assessment-flow/stage-column";
+import { Chip } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
 import { formatDate } from "@/content/core";
 import {
@@ -57,7 +58,6 @@ import { relationshipTypeOf } from "./template-card";
 
 const CARD = "rounded-lg border border-border bg-card p-6";
 const MUTED = "text-sm text-muted-foreground";
-const CHIP = "rounded-md border border-background/30 px-2 py-0.5 text-xs text-background/80";
 const FACT_LABEL = "text-xs uppercase tracking-wide text-muted-foreground";
 const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
@@ -126,15 +126,15 @@ export function TemplateDetail({
       >
         {type === undefined ? null : (
           <p className="flex flex-wrap items-center gap-2">
-            <span className={CHIP} data-template-detail-group={REALM_GROUP[type.realm]}>
+            <Chip variant="band" data-template-detail-group={REALM_GROUP[type.realm]}>
               {itemLabel(groups, REALM_GROUP[type.realm].toLowerCase())}
-            </span>
-            <span className={CHIP} data-template-detail-realm={type.realm}>
+            </Chip>
+            <Chip variant="band" data-template-detail-realm={type.realm}>
               {type.realm}
-            </span>
-            <span className={CHIP} data-template-detail-short-name={type.id}>
+            </Chip>
+            <Chip variant="band" data-template-detail-short-name={type.id}>
               {type.shortName}
-            </span>
+            </Chip>
           </p>
         )}
         <h1 className="mt-2 text-3xl font-bold">{template.title}</h1>

@@ -33,7 +33,7 @@
  * posts at it gets `not-yours` — #533's "enforce in the server action, not by hiding a button".
  */
 import { PaymentCaptureDialog } from "@/components/dashboard/payment-capture-dialog";
-import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -368,29 +368,29 @@ export function RelationshipDetail({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <Badge variant="secondary" data-relationship-status={relationship.status}>
+            <Chip variant="soft" data-relationship-status={relationship.status}>
               {(() => {
                 const known = (statusCopy.items ?? []).find(
                   (item) => item.id === relationship.status,
                 );
                 return known?.label ?? relationship.status;
               })()}
-            </Badge>
-            <Badge variant="outline" data-relationship-invite={relationship.view}>
+            </Chip>
+            <Chip variant="neutral" data-relationship-invite={relationship.view}>
               {viewSentence(relationship.view)}
-            </Badge>
+            </Chip>
             {/* #706 — the viewer's own seat, from their party row. The card says it too; the
                 detail screen repeats it because this is where the absent controls would be. */}
-            <Badge variant="outline" data-viewer-role={relationship.viewerRole}>
+            <Chip variant="neutral" data-viewer-role={relationship.viewerRole}>
               {relationship.viewerRole === "initiator"
                 ? pageItemOf(copy, "role-initiator").label
                 : pageItemOf(copy, "role-counterparty").label}
-            </Badge>
+            </Chip>
             {/* #533 phase 3 — the derived membership, beside the stored status. */}
             {relationship.membership.state === "lapsed" ? (
-              <Badge variant="outline" data-membership-state="lapsed">
+              <Chip variant="neutral" data-membership-state="lapsed">
                 {pageItemOf(copy, "read-only").label}
-              </Badge>
+              </Chip>
             ) : null}
           </div>
           {/* #533 phase 3 — the sentence both parties read. It names the initiator's membership

@@ -1,6 +1,7 @@
 // template-ancestor: components/explore/explore-quiz-list.tsx   (variation: one catalogue card — the name, the two roles, the Aspect count and the price in one block, with no cover image, no progress ring and no badge, because the record it projects carries none)
 
 import type { TemplateCard as TemplateCardModel } from "@/lib/template-catalogue";
+import { Chip } from "@/components/ui/badge";
 import Link from "next/link";
 
 /**
@@ -45,9 +46,15 @@ export function TemplateCard({
             card.name
           )}
         </h3>
-        <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
+        <Chip
+          variant="soft"
+          /* The one chip that is an eyebrow rather than a fact: 11px, uppercase, tracked, and
+             muted. The type step and the muted ink are the card's, the geometry is the
+             primitive's (#795) — `border-0` because this label never had a hairline. */
+          className="shrink-0 border-0 text-[11px] uppercase tracking-[0.04em] text-muted-foreground"
+        >
           {card.realm}
-        </span>
+        </Chip>
       </div>
       <p className="mt-1 text-[12px] font-medium text-muted-foreground">{card.roles}</p>
       <p className="mt-3 flex items-center gap-2 text-[12px] text-muted-foreground">

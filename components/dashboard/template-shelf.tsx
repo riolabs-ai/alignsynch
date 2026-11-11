@@ -20,6 +20,7 @@
  * `bg-action-hover`, so no rule paints light text without also painting a coloured fill.
  */
 import type { PageCopy, PageCopySection } from "@/content/pages";
+import { Chip } from "@/components/ui/badge";
 import { mutedGradientFor, monogramOf } from "@/lib/category-gradient";
 import {
   type ShelfCard,
@@ -35,11 +36,6 @@ const CARD =
 const COVER = "flex h-[104px] items-center justify-center border-b border-gray-200";
 const MONOGRAM =
   "text-3xl font-bold tracking-[0.06em] text-gray-900/[.34] dark:text-gray-100/[.34]";
-const CHIP =
-  "inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200";
-/** The template mark, tinted so a shelf card is never read as a relationship. */
-const CHIP_TEMPLATE =
-  "inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action";
 const TITLE =
   "line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100";
 const MUTED = "text-xs text-gray-500 dark:text-gray-400";
@@ -94,9 +90,9 @@ export function TemplateShelf({ cards }: { cards: readonly ShelfCard[] }) {
           <div className="flex flex-1 flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center gap-2">
               {card.chips.map((chip, index) => (
-                <span key={chip} className={index === 0 ? CHIP_TEMPLATE : CHIP}>
+                <Chip key={chip} variant={index === 0 ? "tint" : "neutral"}>
                   {chip}
-                </span>
+                </Chip>
               ))}
             </div>
             <Link href={card.detail.href} className={TITLE}>

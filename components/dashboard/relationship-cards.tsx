@@ -41,6 +41,7 @@
  * fixtures the table drew them from.
  */
 import type { PageCopy, PageCopySection } from "@/content/pages";
+import { Chip } from "@/components/ui/badge";
 import { formatDate } from "@/content/core";
 import { instancePath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
@@ -50,10 +51,6 @@ import Link from "next/link";
 
 const CARD =
   "flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
-const CHIP =
-  "inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200";
-const CHIP_TEMPLATE =
-  "inline-flex items-center rounded-full border border-action/45 bg-action/5 px-2.5 py-0.5 text-xs font-medium text-action";
 const ACTION =
   "inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800";
 const ACTION_PRIMARY =
@@ -144,20 +141,20 @@ export function RelationshipCards({
               >
                 <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className={CHIP_TEMPLATE}>{itemLabel(card, "template")}</span>
+                    <Chip variant="tint">{itemLabel(card, "template")}</Chip>
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className={CHIP}>{statusLabel(statusCopy, row.status)}</span>
+                      <Chip variant="neutral">{statusLabel(statusCopy, row.status)}</Chip>
                       {row.membership.state === "lapsed" ? (
-                        <span data-membership-state="lapsed" className={CHIP}>
+                        <Chip variant="neutral" data-membership-state="lapsed">
                           {statusLabel(statusCopy, "read-only")}
-                        </span>
+                        </Chip>
                       ) : null}
                       {/* #706 — whose seat this is, from the viewer's own party row. */}
-                      <span data-viewer-role={row.viewerRole} className={CHIP}>
+                      <Chip variant="neutral" data-viewer-role={row.viewerRole}>
                         {row.viewerRole === "initiator"
                           ? itemLabel(card, "role-initiator")
                           : itemLabel(card, "role-counterparty")}
-                      </span>
+                      </Chip>
                     </span>
                   </div>
                   <Link
@@ -173,12 +170,12 @@ export function RelationshipCards({
 
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={CHIP}>
+                    <Chip variant="neutral">
                       {fillLabel(itemLabel(card, "aspects"), { count: String(row.aspectCount) })}
-                    </span>
-                    <span data-invite-view={row.view} className={CHIP}>
+                    </Chip>
+                    <Chip variant="neutral" data-invite-view={row.view}>
                       {viewLabel(viewCopy, row.view)}
-                    </span>
+                    </Chip>
                   </div>
                   <p className="mt-auto text-xs text-gray-500 dark:text-gray-400">
                     {fillLabel(itemLabel(card, "last-session"), {

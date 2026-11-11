@@ -37,6 +37,7 @@
  * people use this": nothing here measures one.
  */
 import type { PublishStatus } from "@/content/core";
+import { Chip } from "@/components/ui/badge";
 import { billingPlan } from "@/data/billing-plans";
 import type { BillingPlan } from "@/data/billing-plans";
 import {
@@ -54,7 +55,6 @@ import type { ReactNode } from "react";
  * neighbours' action rows floating halfway up the row. The actions sit on `mt-auto` below.
  */
 const SHELL = "flex h-full flex-col rounded-lg border border-border bg-card p-5";
-const CHIP = "rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground";
 const MUTED = "text-sm text-muted-foreground";
 const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
@@ -242,17 +242,17 @@ export function TemplateCard<T extends CatalogueTemplate>({
        */}
       <dl className="mt-3 flex flex-wrap items-center gap-2">
         {type === undefined ? (
-          <dd className={CHIP} data-template-card-unnamed="true">
+          <Chip as="dd" variant="neutral" data-template-card-unnamed="true">
             {copy.unnamedType}
-          </dd>
+          </Chip>
         ) : (
-          <dd className={CHIP} data-template-card-roles="true">
+          <Chip as="dd" variant="neutral" data-template-card-roles="true">
             {copy.rolesOf(type)}
-          </dd>
+          </Chip>
         )}
-        <dd className={CHIP} data-template-card-aspects={template.aspectCount}>
+        <Chip as="dd" variant="neutral" data-template-card-aspects={template.aspectCount}>
           {copy.aspectsOf(template.aspectCount)}
-        </dd>
+        </Chip>
         <div className="flex items-center gap-1.5">
           <dt className="sr-only">{copy.priceLabel}</dt>
           {/*
@@ -260,9 +260,9 @@ export function TemplateCard<T extends CatalogueTemplate>({
            * is in the visible chip, because "$8.95/mo" alone beside nine cards reads as nine
            * subscriptions.
            */}
-          <dd className={CHIP} data-template-card-price={CATALOGUE_PRICE_CENTS}>
+          <Chip as="dd" variant="neutral" data-template-card-price={CATALOGUE_PRICE_CENTS}>
             {copy.priceOf(CATALOGUE_PLAN.name, CATALOGUE_PRICE_CENTS)}
-          </dd>
+          </Chip>
         </div>
       </dl>
 
