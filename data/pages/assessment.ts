@@ -24,7 +24,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
         // The authoring form (#255). A `cta` and not a bare href in the view: the path is then
         // resolved against `content/routes.ts` by E23, so a moved form is a red build and not a 404.
         label: "Write your own template",
-        href: "/assessment/templates/new",
+        href: "/templates/relationship/new",
       },
       items: [
         { id: "mode-label", label: "Which mode?" },
@@ -51,7 +51,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The catalogue card (#409), the same one `/assessment/templates` draws. The picker needs
+       * The catalogue card (#409), the same one `/templates/relationship` draws. The picker needs
        * two words of its own only because its card carries the create form: the link out, and the
        * type/realm the template's summary names.
        */
@@ -65,7 +65,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
         { id: "unnamed-realm", label: "Not stated" },
         { id: "roles", label: "{initiator} / {counterparty}" },
         /**
-         * The same four words `/assessment/templates` draws, in this surface's own voice: the
+         * The same four words `/templates/relationship` draws, in this surface's own voice: the
          * price is the plan's (`CATALOGUE_PRICE_CENTS`), the primary action is the create screen
          * this page links to, and the exemplar link appears only where a finished sheet exists.
          */

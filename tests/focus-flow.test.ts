@@ -35,8 +35,9 @@ describe("the focused flows", () => {
     for (const pathname of [
       "/dashboard/relationships/abc123",
       "/dashboard/templates/abc123",
-      "/assessment/templates/new",
-      "/assessment/templates/abc123/create",
+      // #794 — the template author's screens moved under the template noun.
+      "/templates/relationship/new",
+      "/templates/relationship/abc123/create",
     ]) {
       expect(isFocusedFlow(pathname), pathname).toBe(true);
     }
@@ -49,7 +50,7 @@ describe("the focused flows", () => {
       "/dashboard/templates",
       "/dashboard/help",
       "/dashboard/support",
-      "/assessment/templates",
+      "/templates/relationship",
       "/assessment/instances/abc123",
       "/admin/console",
     ]) {
@@ -61,7 +62,7 @@ describe("the focused flows", () => {
     // `/dashboard/relationships/<id>/anything` is not one of the card's flows; a prefix rule
     // would quietly adopt every future child of the editor as one.
     expect(isFocusedFlow("/dashboard/relationships/abc123/report")).toBe(false);
-    expect(isFocusedFlow("/assessment/templates/abc123")).toBe(false);
+    expect(isFocusedFlow("/templates/relationship/abc123")).toBe(false);
   });
 
   it("ignores a trailing slash, and does not read a query into the path", () => {

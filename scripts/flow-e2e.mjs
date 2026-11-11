@@ -63,6 +63,8 @@ import { Client } from "pg";
 
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const TEMPLATE_ID = "assessment-relationship-basics";
+/** The same fixture row's `slug` — what every stage's URL carries since #794. */
+const TEMPLATE_SLUG = "relationship-basics";
 const TIME = "aspect-time-together";
 const MONEY = "aspect-money";
 
@@ -237,9 +239,15 @@ class Jar {
  * The four-stage create (#688 → #690), driven like a person drives it
  * ------------------------------------------------------------------ */
 
-/** `/assessment/templates/<id>/create` — the stem every create stage hangs off (#688). */
-function createStem(templateRecordId) {
-  return `/assessment/templates/${templateRecordId}/create`;
+/**
+ * `/templates/relationship/<slug>/create` — the stem every create stage hangs off (#688, #794).
+ *
+ * The segment is the template's **slug**, because that is what the app redirects with: stage 1's
+ * handler resolves the posted id to the slug before it answers, so an assertion built from the id
+ * would be asserting the address the app deliberately does not use.
+ */
+function createStem() {
+  return `/templates/relationship/${TEMPLATE_SLUG}/create`;
 }
 
 /**
@@ -287,7 +295,7 @@ async function createThroughStages(
     aspects,
   },
 ) {
-  const stem = createStem(templateRecordId);
+  const stem = createStem();
 
   /* stage 1 — Who ---------------------------------------------------- */
   const who = await jar.post("/assessment/new/who", {

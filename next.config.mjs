@@ -246,6 +246,99 @@ const nextConfig = {
         destination: "/support/articles/:slug",
         permanent: true,
       },
+      /**
+       * #794 — `assessment` is a record **kind**, and a template is not an assessment: it is the
+       * thing an assessment is copied from. Every row below moves a template's address under
+       * `/templates/relationship`, and the public catalogue out of the template noun entirely.
+       *
+       * **Enumerated, no `:path*`, and one row per real screen.** A wildcard would 308
+       * `/assessment/templates/<anything>/junk` into a 404, which is worse than the 404 — the same
+       * judgment that removed `/testimonials/jessica.png` above. The create tree is therefore five
+       * exact rows (`create`, `create/mode`, `create/aspects`, `create/commit`, `create/account`)
+       * rather than one over a `:stage` segment, because `:stage` is any one segment and the set
+       * that exists is four literals plus the bare stage 1.
+       *
+       * **The segment is `:slug`, and the destination carries whatever it was given.** A
+       * bookmarked id-shaped URL 308s with the id still in it: a redirect row cannot look a row up,
+       * so `[slug]`'s read matches `slug OR id` and the page itself answers a 307 to the slug form.
+       * That is the one canonicalisation this migration needs, and it lives in the page because it
+       * needs a query.
+       *
+       * **`/templates` is a redirect, not a page.** `tests/route-redirects.test.ts` fails a
+       * `permanent: true` row whose *static* source is also a route pattern — a redirect runs
+       * before the filesystem route, so a page kept there would be built and unreachable. The
+       * catalogue that owned this address moved to `/relationship-types` in the same commit as this
+       * row (`content/routes.ts`, `lib/marketing-routes.ts`, `data/pages/budget.ts`).
+       */
+      { source: "/assessment/templates", destination: "/templates/relationship", permanent: true },
+      {
+        source: "/assessment/templates/new",
+        destination: "/templates/relationship/new",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/save",
+        destination: "/templates/relationship/save",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug",
+        destination: "/templates/relationship/:slug",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/status",
+        destination: "/templates/relationship/:slug/status",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/duplicate",
+        destination: "/templates/relationship/:slug/duplicate",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create",
+        destination: "/templates/relationship/:slug/create",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create/mode",
+        destination: "/templates/relationship/:slug/create/mode",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create/aspects",
+        destination: "/templates/relationship/:slug/create/aspects",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create/commit",
+        destination: "/templates/relationship/:slug/create/commit",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create/account",
+        destination: "/templates/relationship/:slug/create/account",
+        permanent: true,
+      },
+      // #794 — the public catalogue stops owning the template noun. One row per page: the
+      // directory and one type.
+      { source: "/templates", destination: "/relationship-types", permanent: true },
+      //
+      // **The type row excludes `relationship`, and that exclusion is load-bearing.** `/templates`
+      // is no longer a page but a namespace, and the library now lives one segment inside it
+      // (`/templates/relationship`). A bare `:typeId` would match that segment — redirects are
+      // checked *before* the filesystem route, so the library page would be a 308 to
+      // `/relationship-types/relationship`, a 404, with `next build` still listing the route. The
+      // negative lookahead is the shape the Next docs use for exactly this (`/:path((?!page$).*)`),
+      // `[^/]+` keeps it a single segment so no child of the library is caught either, and
+      // `tests/route-redirects.test.ts` compiles every source against every live route so a future
+      // edit to this row cannot reintroduce the shadow silently.
+      {
+        source: "/templates/:typeId((?!relationship(?:/|$))[^/]+)",
+        destination: "/relationship-types/:typeId",
+        permanent: true,
+      },
     ];
   },
 };

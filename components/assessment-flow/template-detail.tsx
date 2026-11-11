@@ -1,7 +1,7 @@
 /**
  * template-ancestor: components/marketing/marketing-landing.tsx   (variation: facts from one Postgres template record and the catalogue type its slug names, POST-form CTAs, no price drawn)
  *
- * `/assessment/templates/[templateId]` — one template, read-only, in the v1 landing's shape
+ * `/templates/relationship/[slug]` — one template, read-only, in the v1 landing's shape (#794)
  * (#console 5/5, reshaped by #409).
  *
  * "Open" has to open something, and the spec keeps template *editing* for a later card: the

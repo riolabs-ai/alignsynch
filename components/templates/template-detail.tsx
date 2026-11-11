@@ -4,7 +4,7 @@ import type { TemplateDetailModel } from "@/lib/template-detail";
 import Link from "next/link";
 
 /**
- * `/templates/[slug]` — one relationship template, drawn for a stranger.
+ * `/relationship-types/[slug]` — one relationship type, drawn for a stranger (#794).
  *
  * The order is the order a reader deciding asks in: which relationship this is (name, realm,
  * the two roles), whether it is meant for them (the descriptor pair), what it actually asks

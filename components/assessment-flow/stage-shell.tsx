@@ -5,7 +5,7 @@
 /**
  * `StageShell` — the create flow's one shell, drawn over the stage route underneath it (#709).
  *
- * **The route stays the route.** `/assessment/templates/[templateId]/create` and its three
+ * **The route stays the route.** `/templates/relationship/[slug]/create` and its three
  * siblings are still pages: they read the draft, the template and the refusal from the server, and
  * they answer a plain GET with 200. This component only decides how that render is *framed* — one
  * modal instead of four documents — which is why no stage was re-implemented and no

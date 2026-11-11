@@ -39,8 +39,6 @@ const STATIC_ROUTES = [
   "/affiliate",
   "/assessment",
   "/assessment/instances",
-  "/assessment/templates",
-  "/assessment/templates/new",
   "/battle",
   "/categories",
   "/chat",
@@ -74,14 +72,20 @@ const STATIC_ROUTES = [
   "/privacy",
   "/quiz-discussions",
   "/register",
+  // The public Relationship Types catalogue — the header's `Templates` row and the front page
+  // band's one call to action. The taxonomy, not the templates: it used to own `/templates`, and
+  // #794 moved it here so the template noun means the template records.
+  "/relationship-types",
   "/reset/complete",
   "/search",
   "/settings",
   "/support",
+  // #794 — the template library and its authoring form. The library used to sit under
+  // `/assessment/templates`, which named a record *kind* a template is not; `/templates` itself is
+  // **not** a route any more (it 308s to `/relationship-types`), so only its children are listed.
+  "/templates/relationship",
+  "/templates/relationship/new",
   "/terms",
-  // The public Relationship Templates catalogue — the header's `Templates` row and the front
-  // page band's one call to action. Added with the page (#templates card).
-  "/templates",
   "/tournaments",
   "/welcome",
 ] as const;
@@ -109,19 +113,21 @@ const DYNAMIC_ROUTES = [
   // the `create` tree, because the invitation's row is what it draws and the template is a fact on
   // the session by the time it renders.
   "/assessment/instances/[instanceId]/sent",
-  "/assessment/templates/[templateId]",
-  "/assessment/templates/[templateId]/create",
+  // #794 — the template library and its six-stage create flow, under the template's own noun. The
+  // segment is `record.slug`; `record.id` stays the storage handle and leaves the URL.
+  "/templates/relationship/[slug]",
+  "/templates/relationship/[slug]/create",
   // #688 — stage 2 of the create flow. A page, not a query switch: each stage has its own
   // address, so a person can reload on Mode and the draft still puts them there.
-  "/assessment/templates/[templateId]/create/mode",
+  "/templates/relationship/[slug]/create/mode",
   // #689 — stage 3, the sibling the docstring above predicted. Same reason: an address that can be
   // reloaded, and the draft is what puts the person back on it.
-  "/assessment/templates/[templateId]/create/aspects",
+  "/templates/relationship/[slug]/create/aspects",
   // #690 — stage 4, Create: the review, the two plans and the conversion.
-  "/assessment/templates/[templateId]/create/commit",
+  "/templates/relationship/[slug]/create/commit",
   // #690 — the account gate *after* stage 4. Not a stage (the spec is explicit), and the only
   // screen in the flow that sits behind the create.
-  "/assessment/templates/[templateId]/create/account",
+  "/templates/relationship/[slug]/create/account",
   // #542 phase 2 — the member's own CRUD detail pages, moved here from `STATIC_ROUTES` where
   // #533 phase 2 had filed them: a `[id]` pattern in the static list matches one literal string
   // and nothing else, so the list's own links were invisible to the route matcher.
@@ -138,11 +144,11 @@ const DYNAMIC_ROUTES = [
   "/quiz/[id]",
   "/quiz/[id]/discussion",
   "/quiz/[id]/play",
+  // One relationship *type*'s public page — the card title on `/relationship-types` links here,
+  // and every purchasable type is a static param of it.
+  "/relationship-types/[slug]",
   "/reset/[token]",
   "/support/articles/[slug]",
-  // One relationship template's public page — the card title on `/templates` links here, and
-  // every purchasable type is a static param of it.
-  "/templates/[slug]",
   "/tournaments/[id]",
 ] as const;
 
@@ -167,9 +173,9 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/affiliate", title: "Affiliate Page" },
   { path: "/help", title: "Help" },
   { path: "/pricing", title: "Pricing Plan" },
-  // The public catalogue. Indexable because it is the page a reader looking for a template is
-  // actually looking for; the route is in `(marketing)` and needs no session.
-  { path: "/templates", title: "Relationship Templates" },
+  // The public catalogue. Indexable because it is the page a reader looking for a relationship
+  // type is actually looking for; the route is in `(marketing)` and needs no session.
+  { path: "/relationship-types", title: "Relationship Templates" },
 ];
 
 export const routeManifest: RouteManifest = zRouteManifest.parse({

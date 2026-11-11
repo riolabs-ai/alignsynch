@@ -98,7 +98,7 @@ function createHtml(input: {
       stage: 1,
       template: CREATE_TEMPLATE,
       draft: EMPTY_CREATE_DRAFT,
-      backHref: `/assessment/templates/${TEMPLATE_ID}`,
+      backHref: `/templates/relationship/${TEMPLATE_ID}`,
       problem: input.problem ?? null,
       problemLink: input.problemLink ?? null,
     }),

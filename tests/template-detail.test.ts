@@ -1,7 +1,7 @@
 /**
- * `/templates/[slug]` — one relationship template's public page.
+ * `/relationship-types/[slug]` — one relationship type's public page (#794).
  *
- * The directory (`/templates`) listed twenty-seven templates and let a stranger inspect none of
+ * The directory (`/relationship-types`) listed twenty-seven types and let a stranger inspect none of
  * them. This file proves the page that fixes that, and it proves it against the fixture rather
  * than against a copy of it:
  *
@@ -11,7 +11,8 @@
  *   2. the price and the one start action (`/register`) are printed;
  *   3. a slug that is not a purchasable type resolves to no page, and `generateStaticParams()`
  *      covers **exactly** the purchasable set — the three excluded dating rows produce no URL;
- *   4. every catalogue card carries `detail === "/templates/<id>"` and the directory renders it;
+ *   4. every catalogue card carries `detail === "/relationship-types/<id>"` and the directory
+ *      renders it;
  *   5. the worked example appears where `demoAnswersFor()` holds a sheet and is absent where it
  *      does not, which is what keeps a link to a 404 off the page.
  *
@@ -24,7 +25,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { test } from "vitest";
 
-import { generateStaticParams } from "@/app/(marketing)/templates/[slug]/page";
+import { generateStaticParams } from "@/app/(marketing)/relationship-types/[slug]/page";
 import { TemplateDetail } from "@/components/templates/template-detail";
 import { TemplatesPageView } from "@/components/templates/templates-page";
 import {
@@ -154,7 +155,9 @@ test("every catalogue card carries its own detail href, and the directory render
   for (const card of cards) {
     assert.equal(card.slug, card.id);
     assert.equal(card.detail, `${CATALOGUE_PATH}/${card.id}`);
-    assert.equal(card.detail, `/templates/${card.id}`);
+    // #794 — the public catalogue moved out of the template noun: `/templates` is the template
+    // namespace now (and a 308 to `/relationship-types`), so a card's address is a *type*'s.
+    assert.equal(card.detail, `/relationship-types/${card.id}`);
     assert.ok(html.includes(`href="${card.detail}"`), `the directory does not link ${card.detail}`);
   }
 });

@@ -79,7 +79,7 @@ describe("the rail", () => {
        * The quiz rail still carries public rows (`/`, `/pricing`, `/support`), so the marking rule
        * is exercised on something. The alignment rail carries **none** since #542 phase 1 moved
        * Support, Help and the library to `/dashboard/*` and the catalogue's `#templates` anchor to
-       * `/assessment/templates` — so an empty list is that brand's claim, not a missing row.
+       * `/templates/relationship` — so an empty list is that brand's claim, not a missing row.
        */
       it("draws the public rows this brand has, and no others", () => {
         const leaving = anchors.filter((anchor) => leavesApp(anchor.href));

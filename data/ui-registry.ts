@@ -405,7 +405,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates",
+    surface: "/templates/relationship",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -415,7 +415,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]",
+    surface: "/templates/relationship/[slug]",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -425,7 +425,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create",
+    surface: "/templates/relationship/[slug]/create",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -435,7 +435,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/mode",
+    surface: "/templates/relationship/[slug]/create/mode",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -445,7 +445,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/aspects",
+    surface: "/templates/relationship/[slug]/create/aspects",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -455,7 +455,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/commit",
+    surface: "/templates/relationship/[slug]/create/commit",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -465,7 +465,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/account",
+    surface: "/templates/relationship/[slug]/create/account",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -475,13 +475,13 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/new",
+    surface: "/templates/relationship/new",
     status: "fixture",
     templates: ["alignsynch"],
     capability:
       "Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.",
     notes:
-      '`fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/save/route.ts` (moved one segment deeper when `/assessment/templates` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/assessment/templates`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app\'s only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.',
+      '`fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/templates/relationship/save/route.ts` (moved one segment deeper when `/templates/relationship` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/templates/relationship`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app\'s only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.',
   },
   {
     kind: "route",
@@ -624,7 +624,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "One destination with two tabs (#620): Relationship Templates is the product shelf a member can start a relationship from, each card carrying the price of the relationship and the two owner-named actions (View Details, Create Relationship); My Templates is what they own or adopted, plus the blank and clone bands that create a new one.",
     notes:
-      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/assessment/templates/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
+      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/templates/relationship/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
   },
   {
     kind: "route",
@@ -893,7 +893,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates",
+    surface: "/relationship-types",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
@@ -903,7 +903,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/[slug]",
+    surface: "/relationship-types/[slug]",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:

@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates/[templateId]` — one template, read-only (#console 5/5).
+ * `/templates/relationship/[templateId]` — one template, read-only (#console 5/5).
  *
  * The "open" action has to open something. Editing is a separate decision (the spec puts the
  * editor at this same route later), so what this page does is *show* the template: its Aspects in

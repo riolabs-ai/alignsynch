@@ -29,7 +29,7 @@
  *
  * Both card actions are **public destinations**: `/register` creates the account that buys the
  * relationship, and `template-example` opens `/assessment/demo/<type>` only where the fixture
- * holds a worked example. A marketing page that linked `/assessment/templates/<id>/create`
+ * holds a worked example. A marketing page that linked `/templates/relationship/<id>/create`
  * would hand a signed-out visitor a sign-in wall, which is the defect this page exists to
  * remove.
  */

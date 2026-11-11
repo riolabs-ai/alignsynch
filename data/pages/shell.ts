@@ -189,7 +189,7 @@ export function shellCopy(brand: Brand): PageCopy {
        *                                           actions). The surface you *answer* from,
        *                                           `/assessment/instances`, reads **Your
        *                                           relationships** since #706: two screens, two names.
-       *   Library        `/assessment/templates`  the template catalogue: built-ins plus this
+       *   Library        `/templates/relationship`  the template catalogue: built-ins plus this
        *                                             account's
        *   Templates      `/templates`              the public Relationship Templates catalogue:
        *                                             every type the shop will sell, by realm
@@ -260,7 +260,7 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "my-relationships", label: "My Relationships" },
           /**
            * #542 phase 2 — the member's own templates, beside their own relationships. Two rows
-           * that used to read "Templates" (the public catalogue at `/assessment/templates`) and
+           * that used to read "Templates" (the public catalogue at `/templates/relationship`) and
            * "Library" now name the three different shelves honestly: `my-templates` is the set a
            * member owns (`/dashboard/templates`), `templates` is what the catalogue offers, and
            * `template-library` is the library the console has always had.

@@ -54,9 +54,14 @@
       "redirect": "/login"
     },
     {
-      "path": "/assessment/templates",
+      "path": "/templates/relationship",
       "status": 307,
       "redirect": "/login"
+    },
+    {
+      "path": "/assessment/templates",
+      "status": 308,
+      "redirect": "/templates/relationship"
     },
     {
       "path": "/assessment/instances",

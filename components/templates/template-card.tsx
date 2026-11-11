@@ -18,8 +18,9 @@ import Link from "next/link";
  * taxonomy's, so a card in the markup can be joined back to `data/relationship-types.ts`.
  *
  * **The title is the detail link**, exactly as the dashboard card's title is: a reader who wants
- * to know what a template actually asks clicks its name, and `/templates/<slug>` is where that is
- * answered. It is drawn under the same condition as the two actions (`linked`), because the front
+ * to know what a template actually asks clicks its name, and `/relationship-types/<slug>` is
+ * where that is answered (#794 — the catalogue type, not a database template). It is drawn under
+ * the same condition as the two actions (`linked`), because the front
  * page's band is a signpost with one call to action — a shelf of six titles that each carried a
  * destination would be six links competing with the band's "View all".
  */
