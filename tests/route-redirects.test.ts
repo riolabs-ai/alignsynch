@@ -27,6 +27,7 @@ import { join, relative, sep } from "node:path";
 
 import { matchRoute } from "@/content/route-manifest";
 import { ROUTE_PATTERNS, routeManifest } from "@/content/routes";
+import { relationshipTypes } from "@/data/relationship-types";
 import nextConfig from "@/next.config.mjs";
 
 /**
@@ -321,6 +322,122 @@ describe("the legacy redirects", () => {
 
     const caught: string[] = [];
     for (const pattern of [...NEW_PAGES, ...NEW_HANDLERS]) {
+      const live = samplePathOf(pattern);
+      for (const entry of redirects) {
+        if (matcherFor(entry.source)(live) !== false) {
+          caught.push(`${entry.source} → ${entry.destination} catches ${live}`);
+        }
+      }
+    }
+
+    expect(caught).toEqual([]);
+  });
+
+  /**
+   * The worked example's old address — the last surface #794 left hanging off the record *kind*.
+   *
+   * `assessmentDemoPath()` is gone and the report lives at `/relationship-types/[slug]/demo`, so
+   * the only thing keeping a bookmark, an external link or cached markup working is the redirect
+   * row. The two rules above say nothing about it: `:type` is a *param* source, so the static
+   * comparison cannot see it, and "destination resolves" does not ask whether the old address still
+   * answers. A dropped row, a `permanent: false` row and a row pointed one segment short all leave
+   * those two rules green.
+   *
+   * The row is **one segment wide on purpose**. `/assessment/demo/<type>/junk` has never answered
+   * anything, and a `:path*` row would 308 it into a 404 — the judgment that removed
+   * `/testimonials/jessica.png`. The same width is what keeps `/assessment/instances/**` out of it:
+   * a row written one segment up (`/assessment/:kind/:type`) would catch the instance pages, and
+   * they do not move in this pass.
+   */
+  const DEMO_OLD_ROOT = "/assessment/demo";
+
+  /** The row Next takes for an old demo address, or undefined — first match wins, as Next does. */
+  function demoRedirectFor(oldPath: string): RedirectRow | undefined {
+    return redirects.find((entry) => matcherFor(entry.source)(oldPath) !== false);
+  }
+
+  /** The address a matched row sends a browser to, params substituted. */
+  function redirectedTo(entry: RedirectRow, oldPath: string): string {
+    const matched = matcherFor(entry.source)(oldPath);
+    return destinationOf(entry, matched === false ? {} : matched.params);
+  }
+
+  it("answers the old worked-example address with a permanent 308 to the new one", () => {
+    // Not one spelling: every type in the catalogue, because the row is a param and a matching
+    // count of one would prove nothing about the other 34. The ids come from the fixture, so a
+    // type added there is exercised without editing this table.
+    expect(relationshipTypes.length).toBeGreaterThan(1);
+    const failures: string[] = [];
+
+    for (const type of relationshipTypes) {
+      const oldPath = `${DEMO_OLD_ROOT}/${type.id}`;
+      const expected = `/relationship-types/${type.id}/demo`;
+      const entry = demoRedirectFor(oldPath);
+
+      if (!entry) {
+        failures.push(`${oldPath} → no row matches`);
+        continue;
+      }
+      if (statusOf(entry) !== 308) {
+        failures.push(`${oldPath} answers ${statusOf(entry)}, not 308 (${entry.source})`);
+      }
+      if (redirectedTo(entry, oldPath) !== expected) {
+        failures.push(`${oldPath} → ${redirectedTo(entry, oldPath)}, expected ${expected}`);
+      }
+    }
+
+    expect(failures).toEqual([]);
+  });
+
+  /**
+   * And the destination is a page, not a hop to a 404: the report's own address has to be in the
+   * tree the redirect points into. `content/routes.ts` is the manifest `data:check` holds equal to
+   * `app/`, so asserting the pattern here is asserting the page exists.
+   */
+  it("points the old demo address at a live page", () => {
+    expect(ROUTE_PATTERNS).toContain("/relationship-types/[slug]/demo");
+    expect(matchRoute(routeManifest, "/relationship-types/staff-manager/demo")).toBeTruthy();
+  });
+
+  it("does not catch a path below the old demo address — the row is one segment", () => {
+    // Nothing lives under `/assessment/demo`, so nothing is owed a redirect below it. A wildcard
+    // would answer a 404 with a 308 to a second 404.
+    for (const path of ["/assessment/demo", "/assessment/demo/staff-manager/junk"]) {
+      expect(demoRedirectFor(path)).toBeUndefined();
+    }
+  });
+
+  it("exercises every /assessment/demo redirect row — the table is not a sample", () => {
+    const unproven = redirects
+      .filter((entry) => entry.source.startsWith(DEMO_OLD_ROOT))
+      .filter(
+        (entry) =>
+          !relationshipTypes.some(
+            (type) => matcherFor(entry.source)(`${DEMO_OLD_ROOT}/${type.id}`) !== false,
+          ),
+      )
+      .map((entry) => `${entry.source} → ${entry.destination}`);
+
+    expect(unproven).toEqual([]);
+  });
+
+  /**
+   * `/assessment/instances/**` is the part of the `assessment` tree that stays — it is a record
+   * page, not a template and not a taxonomy, so the demo move has no business touching it. Its
+   * patterns are read out of the manifest rather than listed, so a page added under it is covered
+   * without editing this case.
+   */
+  it("leaves every /assessment/instances address to the tree", () => {
+    const instances = ROUTE_PATTERNS.filter(
+      (pattern) =>
+        pattern === "/assessment/instances" || pattern.startsWith("/assessment/instances/"),
+    );
+    // The family is two static addresses and a dynamic one; a filter that silently matched nothing
+    // would make the loop below vacuous.
+    expect(instances.length).toBeGreaterThan(1);
+
+    const caught: string[] = [];
+    for (const pattern of instances) {
       const live = samplePathOf(pattern);
       for (const entry of redirects) {
         if (matcherFor(entry.source)(live) !== false) {
