@@ -77,20 +77,26 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 /**
- * The tags a chip may be drawn as.
+ * The tags a chip may be drawn as, as a value a component can ask for.
  *
  * `span` almost everywhere, because a chip sits inside a sentence, a `<p>` or a flex row. The
  * console library card is the one surface that needs another: its chips are `<dd>` rows in a
  * `<dl>`, and a `<span>` there would leave a list whose children are not terms or definitions.
  * A `<div>` is here for the state a caller is already rendering into one (the detail header
  * rows), so a migration never has to nest a chip inside a chip to keep its markup valid.
+ *
+ * Exported as a constant rather than left to the caller to type: the tag is markup, and a page
+ * component that spells `as="dd"` spends one leaf literal of its copy budget (E23) on a word no
+ * reader ever sees.
  */
-type ChipTag = "span" | "dd" | "div";
+export const CHIP_TAG = { span: "span", dd: "dd", div: "div" } as const;
+
+export type ChipTag = (typeof CHIP_TAG)[keyof typeof CHIP_TAG];
 
 export interface ChipProps
   extends React.HTMLAttributes<HTMLElement>,
     VariantProps<typeof badgeVariants> {
-  /** The element to draw. Defaults to `span`; see {@link ChipTag}. */
+  /** The element to draw. Defaults to `span`; see {@link CHIP_TAG}. */
   as?: ChipTag;
 }
 

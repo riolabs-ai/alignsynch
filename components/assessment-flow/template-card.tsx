@@ -37,7 +37,7 @@
  * people use this": nothing here measures one.
  */
 import type { PublishStatus } from "@/content/core";
-import { Chip } from "@/components/ui/badge";
+import { Chip, CHIP_TAG } from "@/components/ui/badge";
 import { billingPlan } from "@/data/billing-plans";
 import type { BillingPlan } from "@/data/billing-plans";
 import {
@@ -246,15 +246,15 @@ export function TemplateCard<T extends CatalogueTemplate>({
        */}
       <dl className="mt-3 flex flex-wrap items-center gap-2">
         {type === undefined ? (
-          <Chip as="dd" variant="neutral" data-template-card-unnamed="true">
+          <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-unnamed="true">
             {copy.unnamedType}
           </Chip>
         ) : (
-          <Chip as="dd" variant="neutral" data-template-card-roles="true">
+          <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-roles="true">
             {copy.rolesOf(type)}
           </Chip>
         )}
-        <Chip as="dd" variant="neutral" data-template-card-aspects={template.aspectCount}>
+        <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-aspects={template.aspectCount}>
           {copy.aspectsOf(template.aspectCount)}
         </Chip>
         <div className="flex items-center gap-1.5">
@@ -264,7 +264,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
            * is in the visible chip, because "$8.95/mo" alone beside nine cards reads as nine
            * subscriptions.
            */}
-          <Chip as="dd" variant="neutral" data-template-card-price={CATALOGUE_PRICE_CENTS}>
+          <Chip as={CHIP_TAG.dd} variant="neutral" data-template-card-price={CATALOGUE_PRICE_CENTS}>
             {copy.priceOf(CATALOGUE_PLAN.name, CATALOGUE_PRICE_CENTS)}
           </Chip>
         </div>
