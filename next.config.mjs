@@ -339,6 +339,34 @@ const nextConfig = {
         destination: "/relationship-types/:typeId",
         permanent: true,
       },
+      /**
+       * #794 follow-up — the worked example was the last surface left hanging off the record
+       * *kind*. `/assessment/demo/[type]` is the public report for one relationship type, so it
+       * moved under the catalogue noun: `/relationship-types/[slug]/demo`. The page is gone (not
+       * hidden behind this row — a `permanent: true` source runs before the filesystem route, so a
+       * page left in `app/` would be built and unreachable), and a bookmark, an external link or
+       * cached markup lands on the report instead of a 404.
+       *
+       * **One segment, no `:path*`, no lookahead.** Nothing else lives under `/assessment/demo` and
+       * nothing ever lived below it: `/assessment/demo/<type>/junk` has always been a plain 404,
+       * and a wildcard here would answer it with a 308 into a second 404 — the judgment that
+       * removed `/testimonials/jessica.png`. The same width is why the row can sit under
+       * `/assessment` at all: it is pinned to the literal `demo`, so `/assessment/instances/**`
+       * (which does not move in this pass) is untouchable by it, and `tests/route-redirects.test.ts`
+       * asserts both halves — the old address 308s for every type in
+       * `data/relationship-types.ts`, and no instance address is caught.
+       *
+       * A type with no worked example (`/relationship-types/<type>/demo` answers a 404 — the report
+       * needs the type's demo answers) still gets the 308 from its *old* address: the row maps an
+       * address family to its canonical shape and cannot look a record up, exactly as
+       * `/assessment/templates/:slug` cannot. The destination is the type's own page, so a reader
+       * one hop later is on the catalogue rather than on a stale URL.
+       */
+      {
+        source: "/assessment/demo/:type",
+        destination: "/relationship-types/:type/demo",
+        permanent: true,
+      },
     ];
   },
 };
