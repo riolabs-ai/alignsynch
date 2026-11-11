@@ -81,6 +81,9 @@ body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystem
 .doc th,.doc td{border:1px solid #d9dee3;padding:7px 9px;text-align:left;vertical-align:top}
 .doc th{background:#f4f6f8;font-weight:600;font-size:.75rem;letter-spacing:.02em;text-transform:uppercase;color:#4b5b68}
 .doc td code{white-space:nowrap}
+/* §0 quotes literals byte-complete, so the provenance cells wrap instead of setting the page
+   width. Doc furniture only: no surface, no utility class, nothing inside a frame. */
+.doc table.prov td code{white-space:normal;overflow-wrap:anywhere}
 .doc .ok{color:#15803d;font-weight:600}
 .doc .no{color:#b91c1c;font-weight:600}
 .doc .pair{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;margin:16px 0 0}
@@ -184,7 +187,7 @@ body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystem
 <body>
 <div class="doc">
 
-  <p class="doc-eyebrow">AlignSynch · pattern audit #795 · approval artifact v2 · branch <code>docs/mockup-795-one-card-one-detail-v2</code></p>
+  <p class="doc-eyebrow">AlignSynch · pattern audit #795 · approval artifact v2 · provenance re-derived at <code>89beff68</code></p>
   <h1>One card, one detail</h1>
   <p class="doc-lede">
     The template surfaces are the precedent the owner approved. The relationship surfaces adopt them,
@@ -202,15 +205,22 @@ body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystem
   <!-- ─────────────────────────────────────────────────────────────────────── §0 -->
   <h2 class="sec"><span class="num">§0</span>Provenance — nothing here is a new visual language</h2>
   <p class="note" style="border-left:3px solid var(--border);padding-left:0.75rem">
-    <b>What changed in v2 — §0, and only §0.</b> v1 measured against a tree from before <code>9b4b70c3</code>
-    (#791 deleted the browse rail, its <code>RAIL</code> constant and its import the same day), so eight rows
-    pointed at a blank line, an import, or a different statement; one row named a file this repo does not have
+    <b>What changed in v2 — §0, and only §0.</b> v1 was measured against a tree from before
+    <code>9b4b70c3</code> (#791 deleted the browse rail, its <code>RAIL</code> constant and its import the
+    same day), and sixteen of its nineteen rows cite a line that no longer holds the statement:
+    <code>template-shelf.tsx</code>'s nine constants by fourteen to eighteen lines,
+    <code>template-detail.tsx</code>'s four by four, the identity band by ten, the stage band
+    <code>:396</code> against <code>:399</code>. The other three quoted a fragment — the
+    <code>Badge</code>, <code>metric tile</code> and <code>Card*</code> rows — while the header promised
+    the literal, and one of those (<code>:402</code>) printed the gray read-only band's literal for the
+    amber lapse band beside it. One row named a file this repo does not have
     (<code>components/assessment-flow/relationship-detail.tsx</code> — the page is
-    <code>components/dashboard/relationship-detail.tsx</code>); one row printed the gray read-only band's literal
-    for what is an amber lapse band; and four rows printed half a declaration while the table promised the
-    literal. Every row below was re-derived by reading the file at <code>89beff68</code>, is cited <b>by symbol
-    first</b>, and quotes the literal <b>byte-complete</b>, <code>dark:</code> variants included.
-    <b>§1–§5 are byte-identical to v1</b> — no surface, axis, chip decision or word moved.
+    <code>components/dashboard/relationship-detail.tsx</code>). Every row below was re-derived by reading
+    the file at <code>89beff68</code>, is cited <b>by symbol first</b>, and quotes the literal
+    <b>byte-complete</b>, <code>dark:</code> variants included. The provenance cells wrap
+    (<code>table.prov</code>) so a long literal cannot set the page width — a doc-furniture rule, outside
+    every frame. <b>§1–§5 are byte-identical to v1</b> — no surface, axis, chip decision or word moved;
+    the only other difference in the file is §6's own filename, and this paragraph.
   </p>
   <p class="note">
     The citation is the file plus the symbol, because a symbol does not rot; the line is a convenience measured
@@ -219,7 +229,7 @@ body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystem
     this pattern removes, kept auditable instead of quietly dropped.
   </p>
   <h3 class="sub">Drawn in this artifact</h3>
-  <table>
+  <table class="prov">
     <tr><th>Constant</th><th>Source — file · symbol · line at <code>89beff68</code></th><th>Literal, byte-complete</th></tr>
     <tr><td><code>CARD</code></td><td>components/dashboard/template-shelf.tsx · <code>const CARD</code> · L33–34<br>components/assessment-flow/my-instances.tsx · <code>const CARD</code> · L55–56 (byte-identical)</td><td><code>flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900</code></td></tr>
     <tr><td><code>COVER</code></td><td>components/dashboard/template-shelf.tsx · <code>const COVER</code> · L35</td><td><code>flex h-[104px] items-center justify-center border-b border-gray-200</code></td></tr>
@@ -241,7 +251,7 @@ body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystem
   </table>
 
   <h3 class="sub">Cited, not drawn</h3>
-  <table>
+  <table class="prov">
     <tr><th>Constant</th><th>Source — file · symbol · line at <code>89beff68</code></th><th>Literal, byte-complete</th><th>Why it is here</th></tr>
     <tr><td>metric tile</td><td>components/assessment-flow/my-instances.tsx · <code>MetricTile</code> · L131; div L133, dt L134, dd L135, <code>STRONG</code> L58</td><td><code>rounded-md bg-gray-50 p-2 dark:bg-gray-800</code> · <code>mb-1 text-xs text-gray-500 dark:text-gray-400</code> · <code>text-base ${STRONG}</code>, where <code>STRONG</code> is <code>font-semibold text-gray-900 dark:text-gray-100</code></td><td>The control §3 collapses into one meta line — the one loss this artifact trades away. Drawn again only under option B.</td></tr>
     <tr><td>read-only band</td><td>components/dashboard/relationship-detail.tsx · counterparty band <code>className</code> · L443</td><td><code>rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200</code></td><td>The counterparty's view of §5. This artifact draws the initiator's; the band is unchanged by this pattern.</td></tr>
@@ -253,8 +263,11 @@ body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystem
     <code>rounded-md</code>; the shelf, the list and the shadcn <code>Badge</code> are
     <code>rounded-full</code>. Three primitives render “a small label about a record” today. This artifact
     uses <b>one</b> primitive at <b>rounded-full</b> — the radius three of the four shipped chips already
-    use, and the one the design system's own <code>Badge</code> already carries. The tone is the variant,
-    never the geometry.
+    use, and the one the design system's own <code>Badge</code> already carries. The band chip
+    (<code>L60</code> above) is the second <code>rounded-md</code> and rounds with the rest here: on a
+    filled band the corner is still geometry, so the tone is the variant there too. v1's paragraph
+    counted four chips and left the band one out; the decision it states does not change. The tone is the
+    variant, never the geometry.
   </p>
 
   <!-- ─────────────────────────────────────────────────────────────────────── §1 -->
@@ -922,9 +935,9 @@ body{background:#eceff2;color:#1f2933;font:15px/1.6 -apple-system,BlinkMacSystem
   </p>
 
   <p class="note" style="margin-top:34px;padding-top:18px;border-top:1px solid #d3d9de">
-    This file is <b>docs/mockups/one-card-one-detail-v1.html</b> — versioned, outside
+    This file is <b>docs/mockups/one-card-one-detail-v2.html</b> — versioned, outside
     <code>docs/review/artifacts/</code>, and self-contained (one file, no network, no build step).
-    A revision is <code>-v2</code>, never an edit to this one: what was approved has to stay readable.
+    A revision is <code>-v3</code>, never an edit to this one: what was approved has to stay readable.
   </p>
 
 </div>
