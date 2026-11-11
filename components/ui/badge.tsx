@@ -58,7 +58,7 @@ const badgeVariants = cva(
         neutral:
           "border-gray-300 bg-white font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200",
         tint: "border-action/45 bg-action/5 font-medium text-action",
-        soft: "border-transparent bg-secondary font-semibold text-secondary-foreground",
+        soft: "border-transparent bg-secondary font-semibold text-card-foreground",
         band: "border-background/30 px-2 font-normal text-background/80",
       },
     },

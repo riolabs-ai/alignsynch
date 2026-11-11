@@ -175,7 +175,7 @@ describe("one primitive, one geometry", () => {
     expect(chipMarkup("tint")).toContain("text-action");
 
     expect(chipMarkup("soft")).toContain("bg-secondary");
-    expect(chipMarkup("soft")).toContain("text-secondary-foreground");
+    expect(chipMarkup("soft")).toContain("text-card-foreground");
 
     // The band tone is the shipped band chip's pair, at the primitive's radius.
     expect(chipMarkup("band")).toContain("border-background/30");
@@ -187,6 +187,33 @@ describe("one primitive, one geometry", () => {
 
   it("defaults to the neutral tone, so a fact chip needs no variant at all", () => {
     expect(chipMarkup()).toBe(chipMarkup("neutral"));
+  });
+
+  it("draws the approved artifact's four tone literals, token for token", () => {
+    /**
+     * The contract, read from the file the owner approved rather than from a copy of it (§1,
+     * "The chip, one primitive, four tones"). Every class the artifact writes on a chip must be
+     * on the rendered one; the primitive may add the base string's own furniture, it may never
+     * repaint a tone's ink, fill, border or type step.
+     */
+    const artifact = readFileSync(join(ROOT, "docs/mockups/one-card-one-detail-v2.html"), "utf8");
+    const drawn = [
+      ...artifact.matchAll(/<span class="(inline-flex items-center rounded-full[^"]*)"/g),
+    ]
+      .map((match) => match[1].split(" "))
+      // The three band chips (§1's graphite swatch) repeat one literal: keep it once.
+      .filter(
+        (tokens, index, all) =>
+          all.findIndex((other) => other.join(" ") === tokens.join(" ")) === index,
+      );
+
+    expect(drawn.length, "four tones are drawn in §1").toBe(4);
+
+    for (const tone of TONES) {
+      const rendered = /class="([^"]*)"/.exec(chipMarkup(tone))?.[1].split(" ") ?? [];
+      const source = drawn.find((tokens) => tokens.every((token) => rendered.includes(token)));
+      expect(source, `${tone} matches a drawn tone`).toBeDefined();
+    }
   });
 
   it("renders the caller's tag, because the library card's chips are `<dd>` rows", () => {
