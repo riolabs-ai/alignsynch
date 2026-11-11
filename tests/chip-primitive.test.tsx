@@ -94,7 +94,13 @@ const CHIP_SURFACES = [
   "components/dashboard/relationship-detail.tsx",
   "components/assessment-flow/my-instances.tsx",
   "components/assessment-flow/instance-view.tsx",
-  "components/assessment-flow/template-detail.tsx",
+  /**
+   * #795 — the band's three chips left `template-detail.tsx` for the shared shell, so the surface
+   * that draws them is now `record-detail-shell.tsx`. Both detail pages render it, which is the
+   * point: a file list that kept naming the template page would audit a file that no longer holds
+   * a chip and skip the one both surfaces actually use.
+   */
+  "components/assessment-flow/record-detail-shell.tsx",
   "components/assessment-flow/template-card.tsx",
   "components/assessment-flow/report-view.tsx",
   "components/assessment-flow/alignment-view.tsx",

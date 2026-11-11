@@ -61,6 +61,28 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   ],
   sections: [
     {
+      /**
+       * #795 — the way back, which this screen did not have (the template page has had
+       * `All templates` all along). The shell renders it above the identity band on both pages.
+       */
+      id: "back",
+      items: [{ id: "all", label: "All relationships" }],
+    },
+    {
+      /**
+       * #795 — the identity band's two words. A relationship's band is the template page's band,
+       * drawn by one component, so the group chip and the roles line are the same two strings the
+       * template page resolves — declared here because this route's fixture owns this route's copy
+       * (E23 resolves every id against the fixture of the surface that asks for it).
+       */
+      id: "identity",
+      items: [
+        { id: "business", label: "Business" },
+        { id: "personal", label: "Personal" },
+        { id: "roles", label: "{initiator} / {counterparty}" },
+      ],
+    },
+    {
       id: "status",
       heading: "State",
       items: [
