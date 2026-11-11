@@ -43,7 +43,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/` — **fixture**
   - capability: The front page: QuizHub leads with category, latest and featured shelves, top players and live winners; AlignSynch leads with the practice a coach runs — a template of their own, a blind two-sided answer and the Gap as the session's agenda — and backs it with the four assessment templates, the counted relationship scope and the three seats on a relationship.
   - components: `components/categories`, `components/home`, `components/media`, `components/templates`, `components/ui`
-  - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
+  - reads: an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/admin/audit` — **db**
   - capability: The audit log: every audited admin write, newest first — when, who and the rung they held at the moment they acted, the action, the row it touched, the reason and both sides of the change — filterable by actor, action, target table and date range, with the filter in the URL so a view is a link.
@@ -157,13 +157,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/relationship-types` — **fixture**
   - capability: The public Relationship Templates catalogue: what a template is, what buying one gets you (both sides answering blind, the Gap by Aspect, the session agenda), and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count, its price and — where a demo sheet exists — a worked example. Both card actions are public: `/register`, and `/assessment/demo/<type>`. No session, no clock and no database, so the page prerenders.
   - components: `components/templates`
-  - reads: 2 record fixtures — `data/relationship-types.ts`, `data/template-shelf.ts`
+  - reads: an `/api` path — `data/billing-plans.ts`
   - notes: The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. The catalogue is derived (`lib/template-catalogue.ts` over `data/relationship-types.ts`), so the count sentence above the shelf and the cards under it cannot disagree, and a type the shop will not sell throws instead of rendering a card nobody can buy. The front page shows six of these cards, curated in `data/template-shelf.ts`, with no per-card actions — one CTA there, the full shelf here.
 
 - `/relationship-types/[slug]` — **fixture**
   - capability: One Relationship Template, in full: who it is for and who it is not for, every Aspect it asks — the question and its two named ends — the price, one action to start it, and a worked example where the fixture holds one. No session, no clock and no database.
   - components: `components/templates`
-  - reads: 1 record fixture — `data/relationship-types.ts`
+  - reads: an `/api` path — `data/billing-plans.ts`
   - notes: The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` emits one prerendered page per purchasable type and `notFound()` answers any other slug.
 
 - `/reset/[token]` — **db**
