@@ -36,6 +36,7 @@
  * fixture — which is what using any type here actually costs. No people, no rating and no "N
  * people use this": nothing here measures one.
  */
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { PublishStatus } from "@/content/core";
 import { billingPlan } from "@/data/billing-plans";
 import type { BillingPlan } from "@/data/billing-plans";
@@ -47,9 +48,9 @@ import {
   type RelationshipType,
 } from "@/data/relationship-types";
 import {
-  assessmentDemoPath,
   createRelationshipPath,
   relationshipTemplatePath,
+  relationshipTypeDemoPath,
 } from "@/lib/flow/paths";
 import type { ReactNode } from "react";
 
@@ -280,9 +281,18 @@ export function TemplateCard<T extends CatalogueTemplate>({
           {copy.viewDetails}
         </a>
         {type !== undefined && demoAnswersFor(type.id) !== undefined ? (
-          <a className={SECONDARY} href={assessmentDemoPath(type.id)}>
-            {copy.seeExample}
-          </a>
+          /*
+           * A departure, not in-app navigation: the worked example is a public page
+           * (`/relationship-types/<type>/demo`, in `(marketing)`), and every surface that mounts
+           * this card — the library and the picker — is inside the app shell. `LeavingLink` is
+           * the one markup that opens one in a new tab and says so; a plain `<a>` would throw
+           * away the shelf the reader was on.
+           */
+          <LeavingLink
+            className={SECONDARY}
+            href={relationshipTypeDemoPath(type.id)}
+            label={copy.seeExample}
+          />
         ) : null}
         {actions}
       </div>

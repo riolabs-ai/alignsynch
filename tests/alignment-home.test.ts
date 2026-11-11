@@ -45,7 +45,7 @@ import {
   relationshipScope,
   relationshipTypeOf,
 } from "@/lib/alignment-home";
-import { assessmentDemoPath } from "@/lib/flow/paths";
+import { relationshipTypeDemoPath } from "@/lib/flow/paths";
 import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
 import { CATALOGUE_PATH } from "@/lib/template-catalogue";
 import { leafLiterals } from "@/scripts/copy-refs";
@@ -180,7 +180,7 @@ describe("the templates band: a capped shelf, one call to action", () => {
       // session — that is the sign-in wall this page exists to remove.
       expect(card.start).toBe("/register");
       if (card.example === undefined) continue;
-      expect(card.example).toBe(assessmentDemoPath(card.id));
+      expect(card.example).toBe(relationshipTypeDemoPath(card.id));
       expect(demoAnswersByType[card.id]).toBeDefined();
     }
     // Exactly the fixture's demo sheets among the six, and no third claim.
