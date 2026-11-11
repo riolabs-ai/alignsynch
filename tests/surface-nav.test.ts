@@ -76,8 +76,9 @@ describe("a pending nav row", () => {
   });
 
   it("leaves a live destination a link, unchanged", () => {
-    const html = renderRow("/assessment/templates");
-    expect(hrefsOf(html)).toEqual(["/assessment/templates"]);
+    // #794 — the template library's address, under the template noun.
+    const html = renderRow("/templates/relationship");
+    expect(hrefsOf(html)).toEqual(["/templates/relationship"]);
     expect(html).not.toContain("aria-disabled");
   });
 });

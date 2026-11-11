@@ -81,7 +81,7 @@ const PUBLIC_MENU: Anchor[] = [
   { href: "/", text: "Home" },
   // The public catalogue page, not the front page's `#templates` band: the header row is a
   // destination, and a section you are already scrolling past is not one.
-  { href: "/templates", text: "Templates" },
+  { href: "/relationship-types", text: "Templates" },
   // Title Case: the owner's rule for menu and button labels (`How It Works`, not `How it works`).
   { href: "/#questions", text: "How It Works" },
   { href: "/pricing", text: "Pricing" },

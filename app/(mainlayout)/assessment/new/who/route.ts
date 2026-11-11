@@ -6,6 +6,11 @@
  * That separation is the point of the slice — "Continue" cannot half-create something, and a
  * reload of stage 2 reads the same object stage 1 wrote.
  *
+ * **Two handles (#794).** The form posts `templateRecordId` and the cookie is keyed by it, but
+ * every stage's address carries the template's **slug** — so the redirect below resolves one from
+ * the other rather than sending the browser to an id-shaped URL that is not the address the app
+ * writes. An unresolvable id falls back to the library, never to a 500.
+ *
  * **A refusal is a redirect that names the field.** `?problem=<reason>&field=<field>` goes back
  * to the Who screen, which composes the sentence from the fixture with that field's own label
  * (`lib/flow/create-copy.ts`). Nothing anybody typed travels in the URL: the draft is in the
@@ -16,13 +21,18 @@
  */
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { templateSlugOf } from "@/lib/db/template-library";
 import { serializeCreateDraft, whoDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_DRAFT_COOKIE_MAX_AGE,
   createDraftCookieName,
   flowCookieOptions,
 } from "@/lib/flow/session";
-import { createModePath, createRelationshipPath, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
+import {
+  createModePath,
+  createRelationshipPath,
+  RELATIONSHIP_TEMPLATES_PATH,
+} from "@/lib/flow/paths";
 
 export async function POST(request: Request): Promise<Response> {
   const form = await request.formData();
@@ -30,11 +40,14 @@ export async function POST(request: Request): Promise<Response> {
   const templateRecordId = value("templateRecordId").trim();
   const step = whoDraft(value);
 
+  // #794 — the screen is addressed by the template's slug; the post and the cookie carry its id.
+  const templateSlug = await templateSlugOf(templateRecordId);
+
   if (!step.ok) {
     // A post that named no template has no screen to return to; the library lists what can be
     // copied, which is the honest answer to "start over".
     const back =
-      templateRecordId === "" ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(templateRecordId);
+      templateSlug === "" ? RELATIONSHIP_TEMPLATES_PATH : createRelationshipPath(templateSlug);
     const target = new URL(back, request.url);
     target.searchParams.set("problem", step.problem.reason);
     target.searchParams.set("field", step.problem.field);
@@ -42,7 +55,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (templateRecordId === "") {
-    return NextResponse.redirect(new URL(TEMPLATE_LIBRARY_PATH, request.url), 303);
+    return NextResponse.redirect(new URL(RELATIONSHIP_TEMPLATES_PATH, request.url), 303);
   }
 
   const jar = await cookies();
@@ -52,5 +65,11 @@ export async function POST(request: Request): Promise<Response> {
     flowCookieOptions(CREATE_DRAFT_COOKIE_MAX_AGE),
   );
 
-  return NextResponse.redirect(new URL(createModePath(templateRecordId), request.url), 303);
+  return NextResponse.redirect(
+    new URL(
+      templateSlug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(templateSlug),
+      request.url,
+    ),
+    303,
+  );
 }

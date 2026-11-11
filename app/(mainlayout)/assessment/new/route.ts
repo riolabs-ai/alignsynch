@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
+import { templateSlugOf } from "@/lib/db/template-library";
 import { modeDraft, parseCreateDraft } from "@/lib/flow/create-draft";
 import {
   createInstanceFromTemplate,
@@ -15,7 +16,7 @@ import {
   createModePath,
   createRelationshipPath,
   instancePath,
-  TEMPLATE_LIBRARY_PATH,
+  RELATIONSHIP_TEMPLATES_PATH,
 } from "@/lib/flow/paths";
 import {
   createDraftCookieName,
@@ -38,20 +39,23 @@ import {
  * last screen before the create since #690 — so the refusal belongs there, above the review card
  * the person just pressed. A post that never went through the draft — `scripts/flow-e2e.mjs`, a
  * `curl`, the pre-#688 form — is returned to the Who screen, which is the only stage it ever saw.
+ *
+ * **The target is built from the slug (#794).** An empty slug — no template named, or a row this
+ * build could not resolve — is the library.
  */
 function refusalTarget(
   request: Request,
-  templateRecordId: string,
+  templateSlug: string,
   code: FlowErrorCode,
   fromDraft: boolean,
 ): URL {
-  const id = templateRecordId.trim();
+  const slug = templateSlug.trim();
   const back =
-    id === ""
-      ? TEMPLATE_LIBRARY_PATH
+    slug === ""
+      ? RELATIONSHIP_TEMPLATES_PATH
       : fromDraft
-        ? createCommitPath(id)
-        : createRelationshipPath(id);
+        ? createCommitPath(slug)
+        : createRelationshipPath(slug);
   const target = new URL(back, request.url);
   target.searchParams.set("problem", code);
   return target;
@@ -62,15 +66,15 @@ function refusalTarget(
  *
  * The person is on the Mode screen, so the band is drawn there: `mode` or `setting` for a value
  * the form did not offer, never a store code. `lib/flow/create-copy.ts` turns the pair into the
- * sentence with the field's own label.
+ * sentence with the field's own label. The address is built from the slug (#794); an unresolvable
+ * template falls back to the library rather than a path with an empty segment.
  */
-function fieldTarget(
-  request: Request,
-  templateRecordId: string,
-  field: string,
-  reason: string,
-): URL {
-  const target = new URL(createModePath(templateRecordId.trim()), request.url);
+function fieldTarget(request: Request, templateSlug: string, field: string, reason: string): URL {
+  const slug = templateSlug.trim();
+  const target = new URL(
+    slug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(slug),
+    request.url,
+  );
   target.searchParams.set("problem", reason);
   target.searchParams.set("field", field);
   return target;
@@ -121,6 +125,10 @@ export async function POST(request: Request): Promise<Response> {
       ? null
       : parseCreateDraft(jar.get(createDraftCookieName(templateRecordId))?.value);
 
+  // #794 — the screen a refusal names is addressed by the template's **slug**, while the post and
+  // the draft cookie carry its **id**. Resolved once, before anything can refuse.
+  const templateSlug = await templateSlugOf(templateRecordId);
+
   // Stage 2's own validation, before the store is asked anything: the Mode and the Setting are
   // the only two fields that step owns, so a refusal names which one is wrong.
   //
@@ -134,7 +142,7 @@ export async function POST(request: Request): Promise<Response> {
     const choice = modeDraft(fromDraft, draft);
     if (!choice.ok) {
       return NextResponse.redirect(
-        fieldTarget(request, templateRecordId, choice.problem.field, choice.problem.reason),
+        fieldTarget(request, templateSlug, choice.problem.field, choice.problem.reason),
         303,
       );
     }
@@ -188,7 +196,7 @@ export async function POST(request: Request): Promise<Response> {
       // the template it refused; a post that named no template at all has no screen to return to
       // and goes to the library, which lists what can be copied.
       return NextResponse.redirect(
-        refusalTarget(request, templateRecordId, error.code, draft !== null),
+        refusalTarget(request, templateSlug, error.code, draft !== null),
         303,
       );
     }
@@ -236,7 +244,7 @@ export async function POST(request: Request): Promise<Response> {
   // The decision itself is `afterCreateTarget`, so it is a test rather than a claim.
   const destination = afterCreateTarget({
     viewerSignedIn: viewer !== null,
-    templateRecordId,
+    templateSlug,
     instanceRecordId: created.instanceRecordId,
   });
   if (destination !== instancePath(created.instanceRecordId)) {

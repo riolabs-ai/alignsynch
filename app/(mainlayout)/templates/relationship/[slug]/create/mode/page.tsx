@@ -1,11 +1,15 @@
 /**
- * `/assessment/templates/[templateId]/create/mode` — the create flow's stage 2, **Mode** (#688).
+ * `/templates/relationship/[slug]/create/mode` — the create flow's stage 2, **Mode** (#688, #794).
  *
  * The second step reads the draft stage 1 wrote and asks the last two questions before anything
  * is created: which Mode both parties answer, and which Setting the report is judged against.
  * It is a page rather than a panel on stage 1 so that it can be reloaded, linked and cached by
  * its own address — and because stage 3 (`…/create/aspects`) and slice 4's create are siblings,
  * which is the shape the approved flow describes.
+ *
+ * **The draft is keyed by the record id, not by the slug in the address.** The template read
+ * happens first for exactly that reason: it is what turns `[slug]` into `record.id`, and a page
+ * that keyed the cookie on the slug would look for a draft nobody wrote (§#794, trap 1).
  *
  * **It saves; it does not create (#689).** Until stage 3 existed, this screen's form posted to
  * `POST /assessment/new` and the second of six stages created the relationship. The approved flow
@@ -58,23 +62,28 @@ export default async function TemplateCreateModePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ templateId: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<ModeParams>;
 }) {
-  const { templateId } = await params;
+  const { slug } = await params;
   const query = await searchParams;
-  const whoPath = createRelationshipPath(templateId);
-
-  const jar = await cookies();
-  const draft = parseCreateDraft(jar.get(createDraftCookieName(templateId))?.value);
-  if (draft === null) redirect(whoPath);
+  const whoPath = createRelationshipPath(slug);
 
   const viewer = await currentUserIfConfigured();
   const viewerUserId = viewer?.userId ?? null;
 
   const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
-  const detail = await readLibraryTemplate(templateId, viewerUserId);
+  const detail = await readLibraryTemplate(slug, viewerUserId);
   if (detail === undefined && refusal === null) notFound();
+
+  // #794 — the cookie is the record's, the address is the row's slug. No readable template means
+  // no id to look up, so the screen sends the person to the stage that starts the flow.
+  const jar = await cookies();
+  const draft =
+    detail === undefined
+      ? null
+      : parseCreateDraft(jar.get(createDraftCookieName(detail.template.id))?.value);
+  if (draft === null) redirect(whoPath);
 
   return (
     <CreateRelationship
@@ -84,7 +93,7 @@ export default async function TemplateCreateModePage({
         detail === undefined
           ? null
           : {
-              recordId: templateId,
+              recordId: detail.template.id,
               title: detail.template.title,
               summary: detail.template.summary,
               aspectCount: detail.aspects.length,

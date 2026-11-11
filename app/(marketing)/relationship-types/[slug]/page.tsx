@@ -5,13 +5,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 /**
- * `/templates/[slug]` — one relationship template's public page, prerendered.
+ * `/relationship-types/[slug]` — one relationship type's public page, prerendered (#794).
  *
  * Every purchasable type is a static param (`data/relationship-types.ts` through the same
  * `isPurchasable()` gate the catalogue and the shop read), so the twenty-seven pages are built
- * ahead of the request and a stranger can read a template without touching the database. A slug
+ * ahead of the request and a stranger can read a type without touching the database. A slug
  * that names no purchasable type — a typo, or one of the three dating rows the owner excluded —
  * is `notFound()`: absence is the honest answer, and it is the same 404 either way.
+ *
+ * The segment is the **taxonomy id**, never a record handle: a type is a row in a fixture, and
+ * the templates that implement it are a different noun at `/templates/relationship/<slug>`.
  *
  * **Nothing here is dynamic.** No clock, no cookie, no session, no store read: the page is a
  * projection of `data/relationship-types.ts` through `data/pages/templates-detail.ts`, which is

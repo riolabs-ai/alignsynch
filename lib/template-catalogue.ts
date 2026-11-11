@@ -1,6 +1,6 @@
 /**
  * One catalogue card, projected — the join between `data/relationship-types.ts` and the two
- * public surfaces that list templates (`/templates` and the front page's `#templates` band).
+ * public surfaces that list them (`/relationship-types` and the front page's `#templates` band).
  *
  * A **projection**, not the record: the card needs five strings and two destinations, and the
  * record's Aspects, descriptor and demo sheet belong to the report, not to a shelf. Every string
@@ -31,7 +31,11 @@ import type { PageCopy } from "@/content/pages";
 import { formatCurrency } from "@/content/core";
 import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { demoAnswersFor, isPurchasable, type RelationshipType } from "@/data/relationship-types";
-import { assessmentDemoPath } from "@/lib/flow/paths";
+import {
+  assessmentDemoPath,
+  RELATIONSHIP_TYPES_PATH,
+  relationshipTypePath,
+} from "@/lib/flow/paths";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
 
 /**
@@ -72,21 +76,22 @@ export const START_PATH = "/register";
 /**
  * The catalogue page's own route — the one a "View all" points at.
  *
- * Exported rather than spelled where it is used for the reason `lib/flow/paths.ts` gives: a path
- * in a component is a second copy of the route manifest, and E23 counts a literal written in a
- * counted component. `content/routes.ts` owns the pattern; this is the handle.
+ * **Imported, not spelled (#794).** `lib/flow/paths.ts::RELATIONSHIP_TYPES_PATH` is the module
+ * that authors every URL in this flow, and this one used to be a second copy of it. Both
+ * destinations are now that module's, so a rename is one edit. `CATALOGUE_PATH` stays exported
+ * because the home band and `lib/template-detail.ts` read it.
  */
-export const CATALOGUE_PATH = "/templates";
+export const CATALOGUE_PATH = RELATIONSHIP_TYPES_PATH;
 
 /**
- * One template's public page — `/templates/<id>`.
+ * One type's public page — `/relationship-types/<id>`.
  *
  * The directory's cards, the detail page's own route and its metadata all read this, so a route
- * rename is one edit rather than three literals that drift. The id is the slug, exactly as
- * `data/relationship-types.ts` spells it.
+ * rename is one edit rather than three literals that drift. The id is the taxonomy's own, exactly
+ * as `data/relationship-types.ts` spells it.
  */
 export function catalogueDetailPath(id: string): string {
-  return `${CATALOGUE_PATH}/${id}`;
+  return relationshipTypePath(id);
 }
 
 /** One template, as a card: what it is called, who it is between, what it costs, where to go. */

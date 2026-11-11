@@ -525,7 +525,7 @@ export async function publishTemplate(
  *
  * **A status write and nothing else.** No version row is touched, so every relationship bound to
  * v1 or v2 keeps reading what it was created from and the whole publishing history stays
- * queryable; `record.status = 'draft'` is what stops `/assessment/templates` offering it (the
+ * queryable; `record.status = 'draft'` is what stops `/templates/relationship` offering it (the
  * library's read filters drafts out, for its author as much as for anybody else). Publishing again
  * writes N+1.
  *

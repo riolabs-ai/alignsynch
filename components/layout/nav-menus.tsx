@@ -10,6 +10,7 @@ import { surfaceFor } from "@/data/surface-registry";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { leavesApp } from "@/lib/marketing-routes";
+import { RELATIONSHIP_TYPES_PATH } from "@/lib/flow/paths";
 import { type NavIconName, menuFor } from "@/lib/nav-menu";
 import { type NavViewer, sees } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -694,7 +695,7 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/">
         {itemLabel(nav, "home")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/templates">
+      <Link className={PUBLIC_ROW_CLASS} href={RELATIONSHIP_TYPES_PATH}>
         {itemLabel(nav, "templates")}
       </Link>
       <Link className={PUBLIC_ROW_CLASS} href="/#questions">

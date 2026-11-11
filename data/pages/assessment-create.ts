@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates/[templateId]/create` and `…/create/mode` — the create flow's two steps
+ * `/templates/relationship/[templateId]/create` and `…/create/mode` — the create flow's two steps
  * (#409, wired by #427, split by #688).
  *
  * One fixture for both stages, because they are one flow: the rail, the refusals and the

@@ -1,7 +1,7 @@
 /**
- * `/assessment/templates/new` — the form that authors a template (#255).
+ * `/templates/relationship/new` — the form that authors a template (#255).
  *
- * The route's surface is `app/(mainlayout)/assessment/templates/new/page.tsx` plus
+ * The route's surface is `app/(mainlayout)/templates/relationship/new/page.tsx` plus
  * `components/assessment-flow/template-form.tsx`; the words are here so the component holds none
  * (E23). The refusals live here too, for the same reason: `lib/flow/template-draft.ts` decides
  * *whether* a draft can be saved and answers with a code, and these are the sentences a person

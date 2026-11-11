@@ -11,7 +11,7 @@
  * price of its own, and no type is sold on its own: `data/billing-plans.ts` sells Basic at a
  * monthly figure with unlimited relationships, and which plan an account holds is chosen when a
  * relationship is ready to complete, never on this shelf (#619, #796). So the card's one number is
- * **one month of Basic**, read from that fixture — the same chip `/assessment/templates` prints
+ * **one month of Basic**, read from that fixture — the same chip `/templates/relationship` prints
  * (`components/assessment-flow/template-card.tsx::CATALOGUE_PRICE_CENTS`), so the two shelves
  * cannot disagree about the figure. `data/relationship-types.ts::RELATIONSHIP_PRICE_CENTS` ($9.99)
  * predates the pricing rewrite and is never quoted: a per-relationship price is a promise the
@@ -28,7 +28,7 @@ import { formatCurrency } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { relationshipType } from "@/data/relationship-types";
-import { createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
+import { createRelationshipPath, relationshipTemplatePath } from "@/lib/flow/paths";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 import type { LibraryRow } from "@/lib/member/library";
 import { MEMBER_TEMPLATES_PATH } from "@/lib/member/templates";
@@ -97,9 +97,9 @@ function aspectsLabel(card: PageCopySection, count: number): string {
 /**
  * A catalogue card: what this account may start a relationship from.
  *
- * `View Details` opens the template's own screen (`/assessment/templates/<id>`), which is the
+ * `View Details` opens the template's own screen (`/templates/relationship/<slug>`), which is the
  * page that lists its Aspects and its instances; `Create Relationship` opens the create step
- * under the same id (`/assessment/templates/<id>/create`), which is the shipped flow — the
+ * under the same handle (`/templates/relationship/<slug>/create`), which is the shipped flow — the
  * catalogue never says "start an instance", because a relationship is what a person starts and
  * a session is what a published relationship opens.
  *
@@ -121,8 +121,8 @@ export function catalogueCard(copy: PageCopy, row: LibraryTemplate): ShelfCard {
         ? [itemLabel(card, "template")]
         : [itemLabel(card, "template"), type.realm],
     meta: [aspectsLabel(card, row.aspectCount), planPriceLabel(card)],
-    detail: { href: templateDetailPath(row.id), label: words.detail },
-    create: { href: createRelationshipPath(row.id), label: words.create },
+    detail: { href: relationshipTemplatePath(row.slug), label: words.detail },
+    create: { href: createRelationshipPath(row.slug), label: words.create },
   };
 }
 

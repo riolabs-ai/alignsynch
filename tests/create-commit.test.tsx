@@ -52,6 +52,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 const TEMPLATE_ID = "template-relationship-basics";
+/** The same row's slug — what a create-flow URL carries (#794); the id stays the cookie key. */
+const TEMPLATE_SLUG = "relationship-basics";
 const INSTANCE_ID = "assessment-instance-audit-ready";
 
 const TEMPLATE = {
@@ -94,7 +96,7 @@ function stage3Html(): string {
       template: TEMPLATE,
       draft: DRAFT,
       aspects: [],
-      backHref: `/assessment/templates/${TEMPLATE_ID}/create/mode`,
+      backHref: `/templates/relationship/${TEMPLATE_ID}/create/mode`,
       problem: null,
       problemLink: null,
     }),
@@ -196,17 +198,17 @@ describe("where the create sends the browser", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: false,
-        templateRecordId: TEMPLATE_ID,
+        templateSlug: TEMPLATE_SLUG,
         instanceRecordId: INSTANCE_ID,
       }),
-    ).toBe(createAccountForPath(TEMPLATE_ID, INSTANCE_ID));
+    ).toBe(createAccountForPath(TEMPLATE_SLUG, INSTANCE_ID));
   });
 
   it("sends a signed-in creator to the dashboard, and Sent is no longer a destination (#709)", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: true,
-        templateRecordId: TEMPLATE_ID,
+        templateSlug: TEMPLATE_SLUG,
         instanceRecordId: INSTANCE_ID,
       }),
     ).toBe(OVERVIEW_PATH);
@@ -216,7 +218,7 @@ describe("where the create sends the browser", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: false,
-        templateRecordId: "",
+        templateSlug: "",
         instanceRecordId: INSTANCE_ID,
       }),
     ).toBe(`/assessment/instances/${INSTANCE_ID}`);
@@ -235,7 +237,7 @@ describe("stage 3 hands over to stage 4", () => {
 describe("the account gate after stage 4", () => {
   const account = sectionOf(assessmentCreatePageCopy, "account");
   const backHref = `/assessment/instances/${INSTANCE_ID}`;
-  const signInHref = `/login?next=${encodeURIComponent(createAccountForPath(TEMPLATE_ID, INSTANCE_ID))}`;
+  const signInHref = `/login?next=${encodeURIComponent(createAccountForPath(TEMPLATE_SLUG, INSTANCE_ID))}`;
 
   const html = renderToStaticMarkup(
     createElement(AccountGate, {
@@ -270,7 +272,7 @@ describe("the account gate after stage 4", () => {
     expect(html).toContain('data-account-gate-tab="sign-in"');
     // The sign-in tab returns to this gate, so signing in lands on the relationship.
     expect(signInHref).toContain(
-      encodeURIComponent(createAccountForPath(TEMPLATE_ID, INSTANCE_ID)),
+      encodeURIComponent(createAccountForPath(TEMPLATE_SLUG, INSTANCE_ID)),
     );
   });
 

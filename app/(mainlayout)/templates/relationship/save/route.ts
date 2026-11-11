@@ -6,7 +6,7 @@ import { readTemplateDraft, type AspectRowInput } from "@/lib/flow/template-draf
 import { createAssessmentTemplate } from "@/lib/flow/templates";
 
 /**
- * `POST /assessment/templates/save` — save an authored template, then redirect (#255).
+ * `POST /templates/relationship/save` — save an authored template, then redirect (#255).
  *
  * **The path moved one segment deeper when `/assessment/templates` became the library page**
  * (#console 5/5). Next refuses a `page.tsx` and a `route.ts` in one segment — the app loader
