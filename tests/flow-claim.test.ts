@@ -199,7 +199,7 @@ describe("the invitation's refusal bands", () => {
       preview: preview({ viewerRole: "initiator" }),
     });
     expect(html).toContain("You are answering as Avery, the Initiator.");
-    expect(html).toContain("You already have a seat in this instance");
+    expect(html).toContain("You already have a seat in this relationship");
     expect(html).toContain("Nothing was claimed");
     expect(html).not.toContain("You are joining as");
   });

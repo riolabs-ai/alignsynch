@@ -44,7 +44,7 @@ export const assessmentTemplatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "copy-note",
       heading: "What a template is",
-      body: "A template is a copy, not a live source. An instance takes its own copy of these Aspects when it is created, so nothing you save here can ever change a question somebody has already answered — which is also why a saved template cannot be edited.",
+      body: "A template is a copy, not a live source. A relationship takes its own copy of these Aspects when it is created, so nothing you save here can ever change a question somebody has already answered — which is also why a saved template cannot be edited.",
     },
     {
       id: "problems",
