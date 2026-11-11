@@ -10,7 +10,7 @@
  *               record does **not** own (realm, price, roles)
  *   aspects     the Aspect editor: its three fields, and the row controls
  *   preview     the party's sheet, rendered from the draft and never from a saved row
- *   save        the reason field, the button and the two notices
+ *   save        the button and the two notices
  *   publish     the version band (#502b): the live state, the live version, publish, unpublish and
  *               their notices. Unpublishing is a status write — the versions it names stay
  *   refusals    one sentence per code, so a refusal is a sentence and never a driver diagnostic
@@ -32,7 +32,7 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
   heading: "Draft a template",
   subtitle:
-    "Edit the record, its Aspects and its words. Every save carries a reason and lands in the audit log in the same transaction as the change. The preview draws the draft you are editing, not a saved row.",
+    "Edit the record, its Aspects and its words. Every save lands in the audit log in the same transaction as the change. The preview draws the draft you are editing, not a saved row.",
   items: [
     { id: "editable", label: "Editable" },
     { id: "locked", label: "Read-only" },
@@ -84,7 +84,7 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "save",
       heading: "Save",
-      body: "A save lands in the audit log in the same transaction as the change. The sentence it carries is written for you — it names this template and the console — because a reason is only worth asking a person for when the action is on someone else's data; editing a draft is not.",
+      body: "A save lands in the audit log in the same transaction as the change. The sentence it carries is written for you — it names this template and the console — and no screen asks you to type one.",
       items: [
         { id: "submit", label: "Save the draft" },
         { id: "saving", label: "Saving…" },
@@ -109,7 +109,6 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "live", label: "Live version {version}" },
         { id: "history", label: "Highest version {version} — not offered" },
         { id: "never", label: "Never published" },
-        { id: "reason", label: "Why" },
         { id: "publish", label: "Publish a version" },
         { id: "unpublish", label: "Unpublish" },
         { id: "working", label: "Working…" },
@@ -128,7 +127,6 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "live", label: "Live version {version}" },
         { id: "history", label: "Highest version {version} — not offered" },
         { id: "never", label: "Never published" },
-        { id: "reason", label: "Why" },
         { id: "publish", label: "Publish a version" },
         { id: "unpublish", label: "Unpublish" },
         { id: "working", label: "Working…" },
@@ -137,6 +135,42 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
           id: "unpublished",
           label:
             "Unpublished. Version {version} and its history remain in the catalogue of records.",
+        },
+        /**
+         * #711 — the retire band, in the band that draws it (`band="catalogue"` reads `publish`).
+         * Archiving is not deleting and the words say which is which, in the operator's own voice,
+         * because the difference is the referential rule and not a preference: a template somebody
+         * answered under is archived, never destroyed.
+         */
+        { id: "retire", label: "Retire" },
+        {
+          id: "retire-body",
+          label:
+            "Archive a template to take it out of use and keep everything — its versions, and every relationship created from them.",
+        },
+        { id: "archive", label: "Archive the template" },
+        { id: "restore", label: "Restore the template" },
+        { id: "delete", label: "Delete permanently" },
+        { id: "delete-title", label: "Delete {title} permanently?" },
+        {
+          id: "delete-body",
+          label:
+            "This destroys the template and its Aspects. It is refused, and nothing is written, if any relationship was created from it or any version of it was published — archive those instead.",
+        },
+        { id: "delete-confirm", label: "Delete it" },
+        { id: "cancel", label: "Cancel" },
+        {
+          id: "archived",
+          label:
+            "Archived. Every relationship keeps the version it was created from. Audit action {actionId}.",
+        },
+        {
+          id: "restored",
+          label: "Restored as a working copy. Publish to offer it again. Audit action {actionId}.",
+        },
+        {
+          id: "deleted",
+          label: "Deleted. The audit log holds the last copy of it. Audit action {actionId}.",
         },
       ],
     },
@@ -155,10 +189,25 @@ export const adminTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "slug-taken", label: "Another template already uses that slug." },
         { id: "no-such-template", label: "That template is not in this database." },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "role-too-low", label: "Your role may not author a template." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The save did not go through." },
+        // #711 — retiring a template, and the two referential refusals a delete answers with.
+        { id: "already-archived", label: "That template is already archived." },
+        {
+          id: "not-archived",
+          label: "That template is not archived, so there is nothing to restore.",
+        },
+        {
+          id: "template-in-use",
+          label:
+            "A relationship was created from this template, so it is archived rather than destroyed.",
+        },
+        {
+          id: "template-published",
+          label:
+            "This template has a published version — its history is what the catalogue offered. Archive it.",
+        },
       ],
     },
     {

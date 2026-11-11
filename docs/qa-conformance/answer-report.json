@@ -1,0 +1,143 @@
+{
+  "base": "http://localhost:3199",
+  "route": "/assessment/instances/[instanceId]/answer",
+  "note": "captured from a locally built production server (BRAND=alignsynch) against the demo branch, on a relationship created by the capture run itself and deleted afterwards",
+  "shot": [
+    {
+      "url": "/assessment/instances/a08d0082-fac5-4348-836a-d9ce9b704a9f/answer",
+      "status": 200,
+      "form": 2,
+      "heading": "Answer your side",
+      "innerWidth": 1440,
+      "scrollWidth": 1425,
+      "columnLeft": 274,
+      "columnRight": 1400,
+      "progressElements": 1,
+      "progressKinds": ["cell-rail"],
+      "railCount": 1,
+      "railCurrent": "6",
+      "railLabel": "Relationship lifecycle",
+      "bandHeight": 39,
+      "bandWidth": 1062,
+      "cells": [
+        {
+          "label": "Who",
+          "state": "done",
+          "width": 177,
+          "clipped": false
+        },
+        {
+          "label": "Mode",
+          "state": "done",
+          "width": 177,
+          "clipped": false
+        },
+        {
+          "label": "Aspects",
+          "state": "done",
+          "width": 177,
+          "clipped": false
+        },
+        {
+          "label": "Create",
+          "state": "done",
+          "width": 177,
+          "clipped": false
+        },
+        {
+          "label": "Sent",
+          "state": "done",
+          "width": 177,
+          "clipped": false
+        },
+        {
+          "label": "Ongoing",
+          "state": "current",
+          "width": 177,
+          "clipped": false
+        }
+      ],
+      "currentFill": "rgb(55, 71, 79)",
+      "currentLabel": "rgb(255, 255, 255)",
+      "currentAria": "step",
+      "countLine": "Stage 6 of 6",
+      "bars": 0,
+      "numericLists": 0,
+      "numberedCircles": 0,
+      "notchCount": 50,
+      "notchMinHeight": 44,
+      "notchMinWidth": 202,
+      "shot": "docs/qa-conformance/answer-1440.png",
+      "viewport": "1440",
+      "instance": "a08d0082-fac5-4348-836a-d9ce9b704a9f"
+    },
+    {
+      "url": "/assessment/instances/a08d0082-fac5-4348-836a-d9ce9b704a9f/answer",
+      "status": 200,
+      "form": 2,
+      "heading": "Answer your side",
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "columnLeft": 12,
+      "columnRight": 378,
+      "progressElements": 1,
+      "progressKinds": ["cell-rail"],
+      "railCount": 1,
+      "railCurrent": "6",
+      "railLabel": "Relationship lifecycle",
+      "bandHeight": 39,
+      "bandWidth": 334,
+      "cells": [
+        {
+          "label": "Who",
+          "state": "done",
+          "width": 55,
+          "clipped": false
+        },
+        {
+          "label": "Mode",
+          "state": "done",
+          "width": 55,
+          "clipped": false
+        },
+        {
+          "label": "Aspects",
+          "state": "done",
+          "width": 55,
+          "clipped": false
+        },
+        {
+          "label": "Create",
+          "state": "done",
+          "width": 55,
+          "clipped": false
+        },
+        {
+          "label": "Sent",
+          "state": "done",
+          "width": 55,
+          "clipped": false
+        },
+        {
+          "label": "Ongoing",
+          "state": "current",
+          "width": 55,
+          "clipped": false
+        }
+      ],
+      "currentFill": "rgb(55, 71, 79)",
+      "currentLabel": "rgb(255, 255, 255)",
+      "currentAria": "step",
+      "countLine": "Stage 6 of 6",
+      "bars": 0,
+      "numericLists": 0,
+      "numberedCircles": 0,
+      "notchCount": 50,
+      "notchMinHeight": 44,
+      "notchMinWidth": 57,
+      "shot": "docs/qa-conformance/answer-390.png",
+      "viewport": "390",
+      "instance": "a08d0082-fac5-4348-836a-d9ce9b704a9f"
+    }
+  ]
+}

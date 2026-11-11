@@ -58,9 +58,14 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "details", label: "View Details" },
         { id: "create", label: "Create Relationship" },
         { id: "owned", label: "Yours" },
-        { id: "adopted", label: "Adopted" },
         { id: "aspects", label: "{count} Aspects" },
-        { id: "price", label: "{price} per relationship" },
+        /**
+         * The card's one price (#796) — the *plan's*, never a per-relationship charge. It is the
+         * same chip `/assessment/templates` prints (`{plan} · {price}/mo`, Basic's monthly figure
+         * from `data/billing-plans.ts`), and the name is in the line because a bare `$8.95/mo`
+         * beside nine cards reads as nine subscriptions. `{price}` is `formatCurrency`.
+         */
+        { id: "price", label: "{plan} · {price}/mo" },
         { id: "unused", label: "Not used yet" },
         { id: "relationship-one", label: "used in 1 relationship" },
         { id: "relationships", label: "used in {count} relationships" },
@@ -69,7 +74,7 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "catalogue",
       heading: "Relationship Templates",
-      body: "The templates this account can start a relationship from. Each card carries the price of the relationship it opens; View Details shows the Aspects, and Create Relationship copies them into a relationship you configure.",
+      body: "The templates this account can start a relationship from. Each card carries the price of the plan that includes it — one monthly figure, never a per-relationship charge. View Details shows the Aspects, and Create Relationship copies them into a relationship you configure.",
     },
     {
       id: "catalogue-empty",
@@ -79,12 +84,12 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "mine",
       heading: "My Templates",
-      body: "The templates you own and the ones your relationships were built from. Opening one you own edits its words and its Aspects; starting a relationship from it copies those Aspects, so editing here never changes a relationship you have already configured.",
+      body: "The templates you own. Opening one edits its words and its Aspects; starting a relationship from it copies those Aspects into that relationship, so editing here never changes one you have already configured. Starting a relationship from the catalogue does not put that template here — the relationship uses the template, it does not make one.",
     },
     {
       id: "mine-empty",
       heading: "No templates yet",
-      body: "Start one below — blank, or cloned from the catalogue. A relationship starts from a template, so this is where the work begins.",
+      body: "Start one below — blank, or cloned from the catalogue. Templates you started a relationship from are not listed here: a relationship uses a template, it does not make one yours.",
     },
     {
       id: "list",

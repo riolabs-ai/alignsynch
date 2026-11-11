@@ -34,10 +34,13 @@ import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import {
+  capturePaymentMethodAction,
+  completeRelationshipAction,
   editRelationshipAction,
   previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
+  resolveCaptureAction,
   saveAspectsAction,
 } from "../actions";
 
@@ -112,6 +115,9 @@ export default async function MemberRelationshipPage({
         onSaveAspects={saveAspectsAction}
         onPublish={publishRelationshipAction}
         onRepublish={republishInviteAction}
+        onCapture={capturePaymentMethodAction}
+        onResolve={resolveCaptureAction}
+        onComplete={completeRelationshipAction}
       />
       {editState === undefined || editState.closed ? null : (
         <RelationshipEditPanel

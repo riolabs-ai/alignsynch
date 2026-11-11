@@ -18,13 +18,13 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
   sections: [
     {
       id: "create",
-      heading: "Start an instance",
+      heading: "Start a relationship",
       body: "You answer first. They see none of it until they have answered too — and you see none of theirs.",
       cta: {
         // The authoring form (#255). A `cta` and not a bare href in the view: the path is then
         // resolved against `content/routes.ts` by E23, so a moved form is a red build and not a 404.
         label: "Write your own template",
-        href: "/assessment/templates/new",
+        href: "/templates/relationship/new",
       },
       items: [
         { id: "mode-label", label: "Which mode?" },
@@ -33,7 +33,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "mode-help",
           label:
-            "The mode is chosen now and fixed for this instance: both of you answer the same sheet, and it cannot be switched later.",
+            "The mode is chosen now and fixed for this relationship: both of you answer the same sheet, and it cannot be switched later.",
         },
         { id: "initiator-name", label: "Your name" },
         { id: "initiator-placeholder", label: "Avery" },
@@ -47,11 +47,11 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "templates",
       heading: "Published templates",
-      body: "An instance copies the template's Aspects when it is created. Editing a template later never touches an instance someone has answered.",
+      body: "A relationship copies the template's Aspects when it is created. Editing a template later never touches a session someone has answered.",
     },
     {
       /**
-       * The catalogue card (#409), the same one `/assessment/templates` draws. The picker needs
+       * The catalogue card (#409), the same one `/templates/relationship` draws. The picker needs
        * two words of its own only because its card carries the create form: the link out, and the
        * type/realm the template's summary names.
        */
@@ -65,7 +65,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
         { id: "unnamed-realm", label: "Not stated" },
         { id: "roles", label: "{initiator} / {counterparty}" },
         /**
-         * The same four words `/assessment/templates` draws, in this surface's own voice: the
+         * The same four words `/templates/relationship` draws, in this surface's own voice: the
          * price is the plan's (`CATALOGUE_PRICE_CENTS`), the primary action is the create screen
          * this page links to, and the exemplar link appears only where a finished sheet exists.
          */
@@ -84,7 +84,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "empty",
       heading: "No published template",
-      body: "A template has to be published before an instance can be created from it.",
+      body: "A template has to be published before a relationship can be created from it.",
     },
     {
       // The notice a save draws here (#255). `{title}` is the template that was just saved, filled
@@ -92,7 +92,7 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
       // and never the words somebody typed.
       id: "created",
       heading: "Template saved",
-      body: "“{title}” is published. It is in the list below, and you can start an instance from it now.",
+      body: "“{title}” is published. It is in the list below, and you can start a relationship from it now.",
     },
   ],
 });

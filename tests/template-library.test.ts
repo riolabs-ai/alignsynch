@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates` — built-in vs authored, per account (#console 5/5).
+ * `/templates/relationship` — built-in vs authored, per account (#console 5/5, #794).
  *
  * The card's four claims, each one a test:
  *
@@ -25,7 +25,11 @@ import { routeManifest } from "@/content/routes";
 import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
 import { templateLibraryPageCopy } from "@/data/pages/assessment-templates";
 import type { LibraryTemplateDetail } from "@/lib/db/template-library";
-import { TEMPLATE_LIBRARY_PATH, templateDetailPath } from "@/lib/flow/paths";
+import {
+  RELATIONSHIP_TEMPLATES_PATH,
+  TEMPLATE_LIBRARY_PATH,
+  relationshipTemplatePath,
+} from "@/lib/flow/paths";
 import {
   authorshipOf,
   archiveTargetOf,
@@ -60,8 +64,8 @@ vi.mock("next/navigation", () => ({ redirect, notFound }));
 vi.mock("@/lib/auth/session", () => ({ currentUser }));
 vi.mock("@/lib/db/template-library", () => ({ listLibraryTemplates, readLibraryTemplate }));
 
-import TemplateLibraryPage from "@/app/(mainlayout)/assessment/templates/page";
-import TemplateDetailPage from "@/app/(mainlayout)/assessment/templates/[templateId]/page";
+import TemplateLibraryPage from "@/app/(mainlayout)/templates/relationship/page";
+import TemplateDetailPage from "@/app/(mainlayout)/templates/relationship/[slug]/page";
 
 const ACCOUNT_A = "account-a-avery";
 const ACCOUNT_B = "account-b-rowan";
@@ -110,10 +114,8 @@ async function renderLibrary(params: Record<string, string> = {}): Promise<strin
   return renderToStaticMarkup(await TemplateLibraryPage({ searchParams: Promise.resolve(params) }));
 }
 
-async function renderDetail(templateId: string): Promise<string> {
-  return renderToStaticMarkup(
-    await TemplateDetailPage({ params: Promise.resolve({ templateId }) }),
-  );
+async function renderDetail(slug: string): Promise<string> {
+  return renderToStaticMarkup(await TemplateDetailPage({ params: Promise.resolve({ slug }) }));
 }
 
 /** The cards the render drew, by the ids the shared card stamped on them (#409). */
@@ -209,14 +211,19 @@ describe("the tabs are filters over the rows the account may use", () => {
 
 describe("the page", () => {
   it("registers a path the manifest can match, in both directions", () => {
-    expect(TEMPLATE_LIBRARY_PATH).toBe("/assessment/templates");
+    // #794 — the library is under the template noun, and `[slug]` is the segment: `record.slug`
+    // is what a URL carries, `record.id` stays the storage handle.
+    expect(TEMPLATE_LIBRARY_PATH).toBe("/templates/relationship");
+    expect(TEMPLATE_LIBRARY_PATH).toBe(RELATIONSHIP_TEMPLATES_PATH);
     expect(matchRoute(routeManifest, TEMPLATE_LIBRARY_PATH)?.kind).toBe("static");
-    expect(matchRoute(routeManifest, templateDetailPath("assessment-x"))?.kind).toBe("dynamic");
+    expect(matchRoute(routeManifest, relationshipTemplatePath("assessment-x"))?.kind).toBe(
+      "dynamic",
+    );
   });
 
   it("sends a signed-out visitor to /login with this path preserved", async () => {
     await expect(renderLibrary()).rejects.toThrow(
-      "NEXT_REDIRECT:/login?next=%2Fassessment%2Ftemplates",
+      "NEXT_REDIRECT:/login?next=%2Ftemplates%2Frelationship",
     );
     expect(listLibraryTemplates).not.toHaveBeenCalled();
   });
@@ -334,10 +341,31 @@ describe("the detail page", () => {
     expect(readLibraryTemplate).toHaveBeenCalledWith(authoredByA.id, ACCOUNT_B);
   });
 
+  /**
+   * #794 — the address carries the slug, and the read still answers an id.
+   *
+   * A bookmarked `/assessment/templates/<id>` 308s with the id still in the segment (a redirect row
+   * cannot look a row up), so the page resolves either handle and then sends the browser to the
+   * slug form: the address bar ends on the address the app itself writes, and the storage handle
+   * never becomes the app's own link.
+   */
+  it("canonicalises an id-shaped address to the slug, one 307 and no second entry point", async () => {
+    asSignedIn(ACCOUNT_A);
+    readLibraryTemplate.mockResolvedValue(detail);
+
+    await expect(renderDetail(authoredByA.id)).rejects.toThrow(
+      `NEXT_REDIRECT:${relationshipTemplatePath(authoredByA.slug)}`,
+    );
+    expect(readLibraryTemplate).toHaveBeenCalledWith(authoredByA.id, ACCOUNT_A);
+    expect(relationshipTemplatePath(authoredByA.slug)).toBe(
+      `/templates/relationship/${authoredByA.slug}`,
+    );
+  });
+
   it("draws a template's Aspects with their Values", async () => {
     asSignedIn(ACCOUNT_A);
     readLibraryTemplate.mockResolvedValue(detail);
-    const html = await renderDetail(authoredByA.id);
+    const html = await renderDetail(authoredByA.slug);
 
     expect(html).toContain('data-template-aspect="aspect-1"');
     expect(html).toContain("How much of the load do I carry at home?");
@@ -354,7 +382,7 @@ describe("the detail page", () => {
       template: { ...authoredByA, status: "archived" },
       aspects: detail.aspects,
     });
-    const html = await renderDetail(authoredByA.id);
+    const html = await renderDetail(authoredByA.slug);
 
     expect(html).toContain("data-template-detail-archived");
     expect(html).toContain("keeps its own copy of the Aspects");

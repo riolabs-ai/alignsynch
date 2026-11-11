@@ -1,5 +1,6 @@
 /**
- * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Sent** (#691).
+ * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Connect** (#691,
+ * named by #735).
  *
  * The screen `POST /assessment/new` lands on: the commit already happened, the invitation is out,
  * and what is left is the state of that invitation, what happens next and the way into the
@@ -28,9 +29,11 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SentState, sentNoticeOf } from "@/components/assessment-flow/sent-state";
+import { StageShell } from "@/components/assessment-flow/stage-shell";
 import { assessmentSentPageCopy } from "@/data/pages/assessment-sent";
 import { currentUserIfConfigured } from "@/lib/auth/session";
-import { instancePath, reinvitePath } from "@/lib/flow/paths";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { OVERVIEW_PATH, instancePath, reinvitePath } from "@/lib/flow/paths";
 import { resendRefusalOf } from "@/lib/flow/resend";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
@@ -73,16 +76,23 @@ export default async function AssessmentSentPage({
 
   const inviteNotice = sentNoticeOf(query.invite);
   const resendRefusal = resendRefusalOf(query.resend);
+  const stages = sectionOf(assessmentSentPageCopy, "stages");
 
   return (
-    <SentState
-      copy={assessmentSentPageCopy}
-      screen={screen}
-      {...(inviteNotice === undefined ? {} : { inviteNotice })}
-      {...(resendRefusal === undefined ? {} : { resendRefusal })}
-      resendAction={reinvitePath(screen.instanceRecordId)}
-      openHref={instancePath(screen.instanceRecordId)}
-      signedIn={viewer !== null}
-    />
+    <StageShell
+      title={assessmentSentPageCopy.heading}
+      closeLabel={itemLabel(stages, "close")}
+      closeHref={OVERVIEW_PATH}
+    >
+      <SentState
+        copy={assessmentSentPageCopy}
+        screen={screen}
+        {...(inviteNotice === undefined ? {} : { inviteNotice })}
+        {...(resendRefusal === undefined ? {} : { resendRefusal })}
+        resendAction={reinvitePath(screen.instanceRecordId)}
+        openHref={instancePath(screen.instanceRecordId)}
+        signedIn={viewer !== null}
+      />
+    </StageShell>
   );
 }

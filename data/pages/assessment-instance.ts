@@ -106,7 +106,7 @@ export const inviteBandSection: PageCopySection = {
     {
       id: "cap-reached",
       label:
-        "This invitation has been sent three times, which is as many as this app allows. Start a new instance with {counterparty} instead.",
+        "This invitation has been sent three times, which is as many as this app allows. Start a new relationship with {counterparty} instead.",
     },
     {
       id: "already-claimed",
@@ -123,12 +123,12 @@ export const inviteBandSection: PageCopySection = {
       label: "That is not an address a message can be sent to. Check it and send again.",
     },
     { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
-    { id: "no-invite", label: "This instance has no invitation to send again." },
+    { id: "no-invite", label: "This relationship has no invitation to send again." },
   ],
 };
 
 export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
-  heading: "Your instance",
+  heading: "Your session",
   sections: [
     {
       id: "viewer",
@@ -223,7 +223,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
     },
     /**
-     * #692 — stage 6, **Ongoing**: the Alignment, Aspect by Aspect.
+     * #692 — stage 6, **Align**: the Alignment, Aspect by Aspect.
      *
      * The artifact of record (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`,
      * `s10.*`) draws this as the relationship's own Gap card: one row per Aspect, both sheets
@@ -434,13 +434,33 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Every Aspect needs a score for every opinion this mode asks — Feel and Wish in Basic Mode, all four in Advanced Mode.",
         },
-        { id: "not-a-party", label: "This instance is not yours to answer." },
-        { id: "no-such-instance", label: "No instance answers to that link." },
+        { id: "not-a-party", label: "This session is not yours to answer." },
+        { id: "no-such-instance", label: "No session answers to that link." },
+        // #752 — the two write refusals a *state* produces, each with its own sentence because
+        // the reader's next move differs: a voided session was ended by an operator and has no
+        // way back, a lapsed one was ended by the money and comes back with a payment. The union
+        // in `lib/flow/state.ts` names both; without this row the route threw instead of
+        // printing either, so a refusal became a 500.
+        {
+          id: "voided",
+          label: "An operator ended this session, so no answer can be changed.",
+        },
+        {
+          id: "lapsed",
+          label:
+            "The membership behind this relationship ended, so both sheets are read-only until the initiator's payment lands.",
+        },
+        // #619's code: the fee is taken when the sheets are published, and this is the sentence a
+        // reader gets when the account that started the relationship has no method on file.
+        {
+          id: "payment-method-required",
+          label: "This relationship needs a payment method before its sheets can be published.",
+        },
         // #478 — the Steps endpoint's two codes. A tick can name a row this relationship does not
         // hold (`no-such-step`), and a party can write a status the model does not allow (`invalid`).
         { id: "no-such-step", label: "That Step is not on this relationship." },
         { id: "invalid", label: "That change is not one a Step allows." },
-        { id: "back", label: "Back to the instance" },
+        { id: "back", label: "Back to the session" },
       ],
     },
   ],

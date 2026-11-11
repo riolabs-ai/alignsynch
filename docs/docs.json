@@ -243,6 +243,11 @@
           "question": "What happens when an invitation expires — and why not a void?"
         },
         {
+          "path": "specs/flow-stages.md",
+          "title": "The six flow stages (binding spec)",
+          "question": "What are the stages, which fields does stage 1 carry, and where does the flow end?"
+        },
+        {
           "path": "specs/maintenance-fields.md",
           "title": "Maintenance fields",
           "question": "Which fields does the relationship-maintenance form carry?"
@@ -365,6 +370,11 @@
           "path": "V1-PROTOTYPE.md",
           "title": "V1 prototype",
           "question": "What is the clickable `/v1/**` prototype, and who is it for?"
+        },
+        {
+          "path": "PROTOTYPE-SAVE.md",
+          "title": "Prototype copy saves",
+          "question": "Where a reviewer's in-page copy edits go when they press Save, and what the implementation reads from them?"
         }
       ]
     },
@@ -454,6 +464,36 @@
           "path": "changelog/v1-7-0.md",
           "title": "v1.7.0",
           "question": "The release where the review shelf went live."
+        },
+        {
+          "path": "changelog/v1-8-0.md",
+          "title": "v1.8.0",
+          "question": "The release where the flow conformed to its six-stage spec."
+        },
+        {
+          "path": "changelog/v1-9-0.md",
+          "title": "v1.9.0",
+          "question": "The release where the payer could finally pay."
+        },
+        {
+          "path": "changelog/v1-10-0.md",
+          "title": "v1.10.0",
+          "question": "The release where paying stopped leaving the page."
+        },
+        {
+          "path": "changelog/v1-11-0.md",
+          "title": "v1.11.0",
+          "question": "The release where the build drew what the review approved."
+        },
+        {
+          "path": "changelog/v1-12-0.md",
+          "title": "v1.12.0",
+          "question": "Which release moved the payment decision into the create flow, and what does it defer?"
+        },
+        {
+          "path": "changelog/v1-13-0.md",
+          "title": "v1.13.0",
+          "question": "Which release turned the templates page into a directory, and gave every template a page?"
         }
       ]
     },
@@ -483,9 +523,19 @@
           "question": "Did every route answer, on a production build?"
         },
         {
+          "path": "qa-flow-stages/README.md",
+          "title": "Six flow stages",
+          "question": "Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?"
+        },
+        {
           "path": "qa-flow-validation/2026-11-07.md",
           "title": "Flow validation, 2026-11-07",
           "question": "Does the assessment flow work end to end with two real identities?"
+        },
+        {
+          "path": "qa-payment/README.md",
+          "title": "Payment capture & completion",
+          "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
         },
         {
           "path": "qa-542-phase2/README.md",
@@ -521,6 +571,11 @@
           "path": "qa-lockup-2rem/README.md",
           "title": "Lockup 2rem",
           "question": "Is the lockup 2rem in every expanded-header viewport?"
+        },
+        {
+          "path": "qa-noun-crud/README.md",
+          "title": "Templates and relationships after creation",
+          "question": "Can a template be revised and retired, and does a bound relationship keep the version it was answered under?"
         },
         {
           "path": "qa-recharts-3/README.md",

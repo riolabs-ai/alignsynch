@@ -6,6 +6,286 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.13.0] - 2026-11-11
+
+### Added
+
+- `feat(templates)` — every template has a page, not just a card (#782) ([#782](https://github.com/riolabs-ai/alignsynch/pull/782))
+- `feat(templates)` — the directory, not the pitch — /templates drops its three explainer bands (#781) ([#781](https://github.com/riolabs-ai/alignsynch/pull/781))
+- `feat(ui)` — one Aspect editor for the modal and the dashboard (#774) ([#775](https://github.com/riolabs-ai/alignsynch/pull/775))
+
+### Fixed
+
+- `fix(copy)` — a relationship has sessions, a template has neither (#783) ([#787](https://github.com/riolabs-ai/alignsynch/pull/787))
+- `fix(templates)` — a relationship does not make a template yours (#783) ([#784](https://github.com/riolabs-ai/alignsynch/pull/784))
+
+### Maintenance
+
+- `docs(review)` — v8 — the draft path is "Continue as Draft" (#780) ([#780](https://github.com/riolabs-ai/alignsynch/pull/780))
+- `docs(review)` — v8 — membership heading, the two invitation states, and a plainer plan note (#779) ([#779](https://github.com/riolabs-ai/alignsynch/pull/779))
+- `docs(review)` — prototype v8 — Stage 4 condensed, drawn as the release draws it (#777) ([#778](https://github.com/riolabs-ai/alignsynch/pull/778))
+- `chore(health)` — re-record platform health for 1.12.0 ([#773](https://github.com/riolabs-ai/alignsynch/pull/773))
+
+### Known limits
+
+- **A relationship does not put its template in your library, and no action adds it yet.** My
+  Templates lists the templates a member owns: `lib/member/library.ts::listMemberLibrary` reads
+  `r.owner_user_id = $1`, and the party-join branch that pulled in every template one of their
+  relationships had been copied from is deleted. The explicit door the owner asked for — take a
+  template from a relationship I am in, and make it mine — is not in this release: #785 needs an
+  approved mockup first, and with the old predicate gone there is no route that clones a template.
+- **Twenty-five of the twenty-seven template pages show no worked example.** The page draws one only
+  where the fixture holds a demo sheet — two types today, `staff-manager` and `co-founders`
+  (`data/relationship-types.ts::demoAnswersFor`). A link that would 404 is worse than none, so the
+  other twenty-five pages end at the Start action.
+- **The template pages are built from the fixture, not from the database.** All twenty-seven are
+  prerendered by `app/(marketing)/relationship-types/[slug]/page.tsx::generateStaticParams` over
+  `data/relationship-types.ts`, so a template that exists only in the tenant store an imported
+  bundle writes (`data/generated/`) has no public page until the next build. _(The page moved in
+  #794, when the catalogue left the template noun: at this tag the file was
+  ~~`app/(marketing)/templates/[slug]/page.tsx::generateStaticParams`~~, and its address is
+  `/relationship-types/<slug>` now.)_
+- **Three templates are deliberately absent.** The public pages are the purchasable types only; a
+  slug that names a dating type the owner excluded, or nothing at all, answers 404.
+- **The terminology rename is copy, not schema: the code handles still say `instance`.** The
+  `{instances}` view token, the fixture module named `data/pages/assessment-instance.ts` and the
+  `flow_invite_<id>` cookie names are handles rather than words a reader sees, and they are left
+  alone. What changed is the copy, guarded by `tests/terminology.test.ts`, which fails on a
+  reader-visible _instance_ in a `data/pages` fixture.
+- **URLs are unchanged.** `/assessment/instances/<id>/…` still serves the relationship workspace;
+  the route rename to `/relationships/<id>/sessions/…` needs redirects and its own pass, and it is
+  not in a minor.
+- **A template cannot be authored from the public site.** `/templates` and `/templates/<slug>` are
+  read-only projections: starting a relationship from one copies it into a relationship, and
+  creating a template of your own is still the dashboard's editor.
+
+## [1.12.0] - 2026-11-09
+
+### Added
+
+- `feat(flow)` — stage 4 walks the payment in place, and the create is a draft that pays at publish ([#771](https://github.com/riolabs-ai/alignsynch/pull/771))
+- `feat(review)` — the prototype's Save writes its copy into the repository (#767) ([#768](https://github.com/riolabs-ai/alignsynch/pull/768))
+
+### Fixed
+
+- `fix(review)` — Stage 4's payment runs in place, and the CTA becomes Complete and Connect ([#770](https://github.com/riolabs-ai/alignsynch/pull/770))
+- `fix(review)` — the pre-stage loses its duplicate chip, and the change-request bar moves left ([#769](https://github.com/riolabs-ai/alignsynch/pull/769))
+- `fix(flow)` — every in-card control reaches the 44px floor, and the floor is pinned (#745) ([#765](https://github.com/riolabs-ai/alignsynch/pull/765))
+
+### Maintenance
+
+- `chore(health)` — re-record platform health for 1.11.0 ([#766](https://github.com/riolabs-ai/alignsynch/pull/766))
+### Known limits
+
+- **The create screen takes no card.** Stage 4's walk defers the capture by design: the method is
+  asked for once, when the relationship's opinions are published. The confirmation says "Asked for
+  at publish" rather than drawing a field that would take nothing.
+- **`/pricing` is no longer linked from stage 4.** Choosing a plan commits nothing and buys nothing;
+  a tier is still sold on `/pricing` and from the account screens.
+- **The account panel names the account, it does not collect it.** The shipped gate
+  (`components/assessment-flow/account-gate.tsx`) still follows the commit, and the walk's panel
+  only says what happens.
+- **Publishing still needs a method on file** — the hard gate is unchanged
+  (`components/dashboard/relationship-detail.tsx`, `lib/flow/payment.ts`). A draft created without
+  one asks for it at publish; nothing about the charge moved.
+- **Stripe is still test-mode on the demo deployment.** No real charge is possible from any screen
+  in this release, and `BILLING_HOST` is unset in the local checkout, so a checkout attempt there
+  answers `503 not-configured`.
+- **The walk is a client component.** Stage 4 moved to `components/assessment-flow/stage-four.tsx`
+  and the foot to `components/assessment-flow/stage-foot.tsx`; stages 1–3 are unchanged in
+  `components/assessment-flow/create-relationship.tsx`.
+
+## [1.11.0] - 2026-11-09
+
+### Added
+
+- `feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) ([#761](https://github.com/riolabs-ai/alignsynch/pull/761))
+
+### Fixed
+
+- `fix(answer-sheet)` — a refusal code with no sentence 500s, and `lapsed` answers 404 (#752) ([#755](https://github.com/riolabs-ai/alignsynch/pull/755))
+
+### Maintenance
+
+- `docs(review)` — fold the owner's prototype review pass into the v7 artifact ([#759](https://github.com/riolabs-ai/alignsynch/pull/759))
+- `chore(health)` — re-record the platform record at 1.10.0 ([#758](https://github.com/riolabs-ai/alignsynch/pull/758))
+
+### Known limits
+
+- **The build matches the artifact on four screens; the artifact is still the reference.** The v7
+  file (`docs/review/artifacts/prototype-relationship-lifecycle-v7.html`) is what the review approved,
+  and it keeps being revised on its own. A revision to the artifact does not reach the product until a
+  card lands, so the two can diverge between releases by design — this release closes the gap that was
+  open, it does not close the mechanism.
+- **Settings agrees on the question and still differs on the shape.** The build draws the two
+  dimensions as two peer fieldsets side by side (`components/assessment-flow/create-relationship.tsx`);
+  the artifact stacks two cards with a two-up option row inside each. Same two choices — **Basic** /
+  **Advanced** and **Soft** / **Full** — different layout. Recorded in #761 rather than quietly
+  reconciled.
+- **The 44px tap floor is measured on stage 1 and inherited by the rest.** Measured in this release at
+  1440 and 390: the Details foot's `Back`, `Cancel` and advance are 44, 44 and 44px tall. Stages 2–4 use
+  the same `StageFoot` component, so they hold by construction; there is no per-stage measurement for
+  them in this release.
+- **The stage-3 exit now reads `Continue to Stage 4`, not the spec's older `Continue to invite`.** The
+  approved artifact replaced that whole family of exits, and `docs/specs/flow-stages.md` was amended in
+  the same change so the spec and the artifact do not contradict each other. A reader who learned the
+  older wording will find a different label on the button.
+- **Copy lives in the fixtures, and the artifact's `Edit copy` tool is not in the build.** Every string
+  the flow renders comes from `data/pages/assessment-create.ts` (E23 forbids a literal in a component).
+  The artifact's browser-side override tool is a review device and does not exist in the product.
+- **`Align` is still drawn unavailable from the create flow.** The relationship this flow creates has no
+  shared assessment until somebody claims the invitation and answers, which is unchanged by this
+  release and is what the spec requires.
+- **No database, auth or API change.** `db/migrations/`, `lib/auth/` and `lib/db/` are untouched; this
+  release is the create flow's markup, its fixture copy, the spec table, and the tests that pin them.
+
+## [1.10.0] - 2026-11-09
+
+### Added
+
+- `feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) ([#751](https://github.com/riolabs-ai/alignsynch/pull/751))
+
+### Known limits
+
+- **Paying happens in a frame inside our page, not a navigation.** `presentation: "embedded"` asks the
+  provider for `ui_mode: embedded_page` with a `return_url` instead of a `success_url`, and the
+  session answers a `client_secret` the dialog mounts (`lib/billing/adapters/stripe.ts`,
+  `components/dashboard/payment-capture-dialog.tsx`). The **hosted** presentation is still the
+  default, and `/pricing`'s membership checkout still uses it — the relationship fee and the
+  membership are two different checkout shapes on purpose.
+- **One case still leaves the page: an SCA challenge.** The embedded frame has no `success_url` to
+  return to, so the single path that must navigate is the bank's own check, and it comes back
+  through `return_url`. Every other capture completes without the flow being left.
+- **Only Stripe test keys are configured.** The adapter reads `STRIPE_TEST_SECRET_KEY`, so a method
+  is captured in test mode and this release cannot take a real charge.
+- **The artifact's frame caption says `ui_mode: embedded`, and this build does not send that word.**
+  Stripe refuses it — "The ui_mode value `embedded` is no longer supported. Use `embedded_page`" —
+  so the code sends `embedded_page` and an embedded session also carries `currency`. The caption in
+  the artifact is the artifact's copy and was left alone; the deviation is recorded on `#748`
+  rather than silently rewritten.
+- **A lapsed membership still answers 500 instead of the read-only screen.** A trial or subscription
+  that ends is exactly the state this release's payment work makes reachable, and
+  `POST /assessment/instances/<id>/answers` asks the `problems` section for an item named `lapsed`
+  that the fixture does not carry (`data/pages/assessment-instance.ts`), so the request fails rather
+  than rendering the sentence written for it in `data/pages/assessment-answer.ts`. Named in this
+  block because shipping payment without saying so would be the dishonest half; `#752` fixes it,
+  and that fix landed on `main` as `#755` after this tag was cut.
+- **The hard gate sits at completion, and it is the only gate.** With no method on file a
+  relationship reports `awaiting_payment` and opinions stay withheld (`lib/flow/state.ts`);
+  answering, sharing and inviting are never gated, and there is still no login wall to reach them.
+- **The conformance slices C3, C4 and C5 are not in this release.** The admin console's left edge
+  (`#717`), the marketing content cards' shadows (`#718`) and the right-aligned numbers and explicit
+  empty states (`#719`) sit in the `v1.11.0` milestone, not here.
+- **One payment path still carries a known risk, unchanged.** Publishing can start a trial or
+  checkout while completion also writes a `relationship_payment` obligation (ADR-1), so a
+  double-created obligation is possible; reachable only with test keys today.
+
+## [1.9.0] - 2026-11-09
+
+### Added
+
+- `feat(crud)` — templates publish revisions and are retired, never destroyed in use (#711) ([#742](https://github.com/riolabs-ai/alignsynch/pull/742))
+- `feat(flow)` — the invite-response path runs in the same modal and ends on /dashboard (#710) ([#740](https://github.com/riolabs-ai/alignsynch/pull/740))
+
+### Fixed
+
+- `fix(payment)` — a member can pay — capture a method and complete a relationship (#739) ([#747](https://github.com/riolabs-ai/alignsynch/pull/747))
+- `fix(flow)` — the modal shell clears the close at 390, and the walk is pinned (#713) ([#741](https://github.com/riolabs-ai/alignsynch/pull/741))
+
+### Maintenance
+
+- `chore(deploy)` — prune stale Vercel deployments, and make it a command ([#746](https://github.com/riolabs-ai/alignsynch/pull/746))
+
+### Known limits
+
+- **A payer can pay, but paying still leaves the modal.** This release wires the two acts that
+  were built and unreachable (`#739`): `capturePaymentMethodAction` and `completeRelationshipAction`
+  now run from `app/(mainlayout)/dashboard/relationships/[id]/page.tsx`, and the controls that
+  shipped visibly disabled no longer are. What it does not do is pay **inside** the flow: the
+  adapter creates hosted sessions only (`lib/billing/adapters/stripe.ts`), so `Add a payment method`
+  opens Stripe's page rather than the artifact's in-frame `Secure payment` frame. That frame is
+  `#749`, not this release.
+- **Only Stripe test keys are configured.** The adapter reads `STRIPE_TEST_SECRET_KEY`, so a method
+  is captured in test mode and this release cannot take a real charge. Nothing in the product
+  depends on test mode to work — the path is the same one live keys would drive.
+- **The hard gate sits at completion, and it is the only gate.** With no method on file the
+  relationship reports `awaiting_payment` and opinions are withheld (`lib/flow/state.ts`); answering,
+  sharing and inviting are never gated, and no screen asks for a login to get that far. The artifact
+  draws the same lock at _publish_; the code enforces it at _complete_. One gate, not two.
+- **The conformance slices C3, C4 and C5 are not in this release.** The admin console's left edge
+  (`#717`), the marketing content cards' shadows (`#718`) and the right-aligned numbers and explicit
+  empty states (`#719`) moved to the `v1.10.0` milestone rather than being claimed here.
+- **Template revisions are published, never destroyed.** Retiring a template keeps every published
+  revision readable (`#711`); there is no hard delete, by design, so a relationship that points at an
+  older revision keeps a document to point at.
+- **Invite-response runs in the same modal and ends on `/dashboard`** (`#710`), and the modal is
+  measured at 390×844 and 390×500 (`#713`). The measurement is a walk that a test pins, not a
+  continuous check — a later screen added outside the six stages is not covered by it.
+- **Deployment retention is a command, not a policy.** `pnpm deploy:prune` (dry run by default) is
+  what stops Vercel's Function Storage filling with old builds (`#746`); nothing prunes on a
+  schedule, so the quota grows with merges until someone runs it.
+- **One payment path still carries a known risk, unchanged.** Publishing can start a trial or
+  checkout while completion also writes a `relationship_payment` obligation (ADR-1), so a
+  double-created obligation is possible; it is reachable only with test keys today.
+- **`pnpm db:seed` still refuses on the demo branch.** Demo carries assessment rows the demo dataset
+  does not author, and the seed fails rather than clobber them; the documented recovery is
+  `pnpm demo:reset`, destructive to demo only. The gate never opens a connection, so local and CI
+  are unaffected.
+
+## [1.8.0] - 2026-11-08
+
+### Added
+
+- `feat(flow)` — conform to the six-stage spec — Details · Settings · Aspects · Invite · Connect · Align (#735) ([#737](https://github.com/riolabs-ai/alignsynch/pull/737))
+- `feat(admin)` — ADMIN_EMAILS is enforced at seed time, not only at sign-in ([#730](https://github.com/riolabs-ai/alignsynch/pull/730))
+- `feat(admin)` — a reason is optional on every action form, and no screen asks for one (#732) ([#736](https://github.com/riolabs-ai/alignsynch/pull/736))
+- `feat(ui)` — the answer flow shows one progress pattern — the cell rail (#716) ([#733](https://github.com/riolabs-ai/alignsynch/pull/733))
+- `feat(flow)` — the create flow opens as one modal and closes onto the dashboard (#709) ([#728](https://github.com/riolabs-ai/alignsynch/pull/728))
+- `feat(ui)` — the member console is left-justified on the shared StageColumn (C1) (#715) ([#722](https://github.com/riolabs-ai/alignsynch/pull/722))
+- `feat(onboarding)` — stage 6 Ongoing — the Alignment, aspect by aspect (#692) ([#703](https://github.com/riolabs-ai/alignsynch/pull/703))
+- `feat(onboarding)` — stage 5 Sent — the invitation's state, what happens next (#691) ([#702](https://github.com/riolabs-ai/alignsynch/pull/702))
+- `feat(onboarding)` — stage 4 Create and the post-stage-4 account gate (#690) ([#701](https://github.com/riolabs-ai/alignsynch/pull/701))
+
+### Fixed
+
+- `fix(review)` — v6's capture is dated after v5's, so the console lists it first (#708) ([#727](https://github.com/riolabs-ai/alignsynch/pull/727))
+- `fix(ui)` — a hover shade is painted as a color the parser accepts, not a bare triple ([#726](https://github.com/riolabs-ai/alignsynch/pull/726))
+- `fix(member)` — a Counterparty sees their relationship, and writes stay initiator-only (#706) ([#720](https://github.com/riolabs-ai/alignsynch/pull/720))
+- `fix(e2e)` — drive the four-stage create and register the instance before it throws (#704) ([#705](https://github.com/riolabs-ai/alignsynch/pull/705))
+
+### Maintenance
+
+- `docs(specs)` — the flow is six stages, and the spec is binding ([#734](https://github.com/riolabs-ai/alignsynch/pull/734))
+- `docs(review)` — v6 — the flow as a modal, the dashboard it closes onto, and both viewports (#708) ([#725](https://github.com/riolabs-ai/alignsynch/pull/725))
+- `docs(agents)` — Card carries no shadow — elevation is a border, not the primitive's default ([#724](https://github.com/riolabs-ai/alignsynch/pull/724))
+
+### Known limits
+
+- **`Align` is conditional, so a brand-new relationship shows five live stages.** The flow
+  conformed to the spec in this release (#735): the rail prints `Stage {n} of 6`, the words are
+  `Details · Settings · Aspects · Invite · Connect · Align`, `Ongoing` is gone, and completion
+  lands on the relationship detail page in the dashboard. `Align` goes live only once one or more
+  assessments are shared, so the sixth stage is visible but not enterable before then.
+- **Prototype text and content revisions are not in this release.** The owner is preparing them for
+  the next one; the `/admin/review/ia` rail proposal (#731) is parked and part of no release.
+- **`pnpm db:seed` refuses on the demo branch.** Demo carries assessment rows the demo dataset does
+  not author (eight at the time of writing), and the seed fails rather than clobber them. The
+  documented recovery is `pnpm demo:reset`, which is destructive to demo only. Local and CI are
+  unaffected: the gate never opens a connection.
+- **`ADMIN_EMAILS` is enforced at seed time, not by the platform.** `pnpm admin:ensure` and
+  `pnpm db:seed` create or promote the profile for any allowlisted address that already has an
+  account; an address with no account on the branch is reported `pending sign-in` and is promoted
+  the first time it signs in. Nothing creates an account.
+- **A reason is now optional, but the column is kept.** No screen asks for one and `act()` writes
+  NULL when none arrives; `admin_action.reason` stays nullable so an operator's stated reason is
+  still recorded when they give one. The audit history before this release keeps its reasons.
+- **The review artifacts are documents, not the product.** `/admin/review` serves the prototype
+  HTML behind the admin gate; it draws the proposal and ships none of the behaviour it shows.
+- **One payment path still carries a known risk.** Publishing can start a trial or checkout at
+  creation while completion also writes a `relationship_payment` obligation (ADR-1). Unchanged by
+  this release, and only reachable with test keys today.
+
+
 ## [1.7.0] - 2026-11-08
 
 ### Added
@@ -1035,3 +1315,4 @@ The admin console, and relationship templates become products.
 [1.2.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.1.0-rc1...v1.2.0
 [1.3.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.2.0...v1.3.0
 [1.7.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.6.0...v1.7.0
+[1.8.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.7.0...v1.8.0

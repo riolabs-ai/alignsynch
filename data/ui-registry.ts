@@ -369,7 +369,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The screen both parties share: answer blind while the other has not, then — stage 6, Ongoing — read the Alignment Aspect by Aspect once both have answered **and both have accepted**.",
+      "The screen both parties share: answer blind while the other has not, then — stage 6, Align — read the Alignment Aspect by Aspect once both have answered **and both have accepted**.",
     notes:
       "The viewer is resolved from the party cookie in Postgres, never from the URL — a browser with no token for the instance gets a 404. The id may name either the relationship or its latest session, so both URL shapes open the same screen. The two seats are named in their own band; the paid band is drawn from the plan and purchase instant and is handed to the Initiator alone (`paid: null` for every other viewer), and every answer value comes from `visibleRoles()` — the viewer's own until both seats have accepted, both afterwards. While the invitation is unclaimed the link is drawn as selectable text with a copy control beside it, and a refused clipboard selects that text and says so (#257). The completed state is the relationship's Alignment (`components/assessment-flow/alignment-view.tsx`, #692): one row per Aspect with both sheets, both Opinions behind every difference, and a per-Aspect verdict, linked to the per-Gap report at `…/report`. It draws no total and no composite score, and the status sentence above it stays a sentence — the stages here are not the viewer's to drive (`docs/specs/ux-stages.md`).",
   },
@@ -401,7 +401,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "Answer the Aspect sheet: every Aspect's prompt, both named Values, and one row per seat asking the Opinion kinds the instance's Mode defines.",
     notes:
-      "The gated sheet (#427, R2-2), and singular `answer` on purpose: `/answers` in the same segment is the POST-only endpoint the form submits to, and Next refuses a `page.tsx` beside a `route.ts`. The viewer is resolved by `readFlowScreen()` from the party cookie's token hash, then the signed-in account, then a relationship membership, and a request that is none of those gets a 404 — the sheet does not exist for it. `lib/flow/answer-gate.ts` picks one of three shapes: the live form for a seat that may answer (prefilled from that seat's own `opinion` rows), the viewer's own sheet drawn disabled once the answers are sealed, and a coach band with no form at all. The form posts no identity field; the submit is written by `submitAnswers()` under the role the cookie resolves inside its transaction. Pre-completion the other party's rows never leave Postgres — the only opinion query the read runs is filtered by `visibleRoles()` — so the blindness is the shape of the projection, not a conditional in this page.",
+      "The gated sheet (#427, R2-2), and singular `answer` on purpose: `/answers` in the same segment is the POST-only endpoint the form submits to, and Next refuses a `page.tsx` beside a `route.ts`. The viewer is resolved by `readFlowScreen()` from the party cookie's token hash, then the signed-in account, then a relationship membership, and a request that is none of those gets a 404 — the sheet does not exist for it. `lib/flow/answer-gate.ts` picks one of three shapes: the live form for a seat that may answer (prefilled from that seat's own `opinion` rows), the viewer's own sheet drawn disabled once the answers are sealed, and a coach band with no form at all. The form posts no identity field; the submit is written by `submitAnswers()` under the role the cookie resolves inside its transaction. Pre-completion the other party's rows never leave Postgres — the only opinion query the read runs is filtered by `visibleRoles()` — so the blindness is the shape of the projection, not a conditional in this page. **Pattern conformance (C2, #716):** the page renders inside the shared `StageColumn` (left edge at 274, no `mx-auto` — it drew `mx-auto max-w-3xl` until this card) and mounts the shipped 39px cell rail at stage 6, `Align`, in every one of the four states, because answering is the counterparty's half of the same six-stage journey the create and sent screens draw. The rail is the surface's **only** progress pattern — no bar, no numbered list, no second stepper — and the words are `data/pages/lifecycle.ts`'s six names, referenced from the answer fixture rather than re-typed.",
   },
   {
     kind: "route",
@@ -415,7 +415,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates",
+    surface: "/templates/relationship",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -425,7 +425,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]",
+    surface: "/templates/relationship/[slug]",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -435,7 +435,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create",
+    surface: "/templates/relationship/[slug]/create",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -445,7 +445,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/mode",
+    surface: "/templates/relationship/[slug]/create/mode",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -455,7 +455,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/aspects",
+    surface: "/templates/relationship/[slug]/create/aspects",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -465,7 +465,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/commit",
+    surface: "/templates/relationship/[slug]/create/commit",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -475,7 +475,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/[templateId]/create/account",
+    surface: "/templates/relationship/[slug]/create/account",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -485,13 +485,13 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/templates/new",
+    surface: "/templates/relationship/new",
     status: "fixture",
     templates: ["alignsynch"],
     capability:
       "Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.",
     notes:
-      '`fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/assessment/templates/save/route.ts` (moved one segment deeper when `/assessment/templates` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/assessment/templates`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app\'s only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.',
+      '`fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/templates/relationship/save/route.ts` (moved one segment deeper when `/templates/relationship` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/templates/relationship`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app\'s only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.',
   },
   {
     kind: "route",
@@ -634,7 +634,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "One destination with two tabs (#620): Relationship Templates is the product shelf a member can start a relationship from, each card carrying the price of the relationship and the two owner-named actions (View Details, Create Relationship); My Templates is what they own or adopted, plus the blank and clone bands that create a new one.",
     notes:
-      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/assessment/templates/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
+      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/templates/relationship/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
   },
   {
     kind: "route",
@@ -903,13 +903,23 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates",
+    surface: "/relationship-types",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
       "The public Relationship Templates catalogue: what a template is, what buying one gets you (both sides answering blind, the Gap by Aspect, the session agenda), and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count, its price and — where a demo sheet exists — a worked example. Both card actions are public: `/register`, and `/assessment/demo/<type>`. No session, no clock and no database, so the page prerenders.",
     notes:
       "The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. The catalogue is derived (`lib/template-catalogue.ts` over `data/relationship-types.ts`), so the count sentence above the shelf and the cards under it cannot disagree, and a type the shop will not sell throws instead of rendering a card nobody can buy. The front page shows six of these cards, curated in `data/template-shelf.ts`, with no per-card actions — one CTA there, the full shelf here.",
+  },
+  {
+    kind: "route",
+    surface: "/relationship-types/[slug]",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One Relationship Template, in full: who it is for and who it is not for, every Aspect it asks — the question and its two named ends — the price, one action to start it, and a worked example where the fixture holds one. No session, no clock and no database.",
+    notes:
+      "The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` emits one prerendered page per purchasable type and `notFound()` answers any other slug.",
   },
   {
     kind: "route",

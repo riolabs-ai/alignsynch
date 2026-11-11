@@ -100,27 +100,64 @@ export const DASHBOARD_HELP_PATH = "/dashboard/help";
 export const PUBLIC_HELP_PATH = "/help";
 
 /**
- * `/assessment/templates/new` — the form that authors a template (#255).
+ * `/templates` — the template **namespace**, not a page.
  *
- * Registered in `content/routes.ts` (E7 checks it in both directions) because it is a page. It is
- * a child of `/assessment` rather than a sibling (`/assessment/new` is already taken by the
- * instance-creating POST), and it is not `/assessment/templates/[slug]/edit`: a template is never
- * edited once saved — instances copy their Aspects at creation, so a mutable source would rewrite
- * the questions under answers somebody already gave.
+ * It answers a permanent 308 to `/relationship-types` (`next.config.mjs`): the public catalogue
+ * that used to own this address is a *taxonomy* and has moved to its own noun (#794), and the
+ * library that does belong under this one sits a level in at `RELATIONSHIP_TEMPLATES_PATH`.
+ * `tests/route-redirects.test.ts` fails any `permanent: true` row whose static `source` is also a
+ * route pattern, so this constant is never the address of a `page.tsx`. Do not give it one back.
  */
-export const NEW_TEMPLATE_PATH = "/assessment/templates/new";
+export const TEMPLATES_PATH = "/templates";
 
 /**
- * `/assessment/templates` — the template library: the built-ins this account can use plus the
- * templates it wrote (#console 5/5).
+ * `/templates/relationship` — the template library: the built-ins this account can use plus its
+ * own (#console 5/5).
  *
- * A page now, not a POST endpoint: the route handler that saves a template used to live at this
- * exact path, and Next refuses a `page.tsx` and a `route.ts` in one segment (they are two
- * parallel pages for the same URL, and the app loader throws E28). The save moved to
- * `CREATE_TEMPLATE_PATH` below — one segment deeper, same handler, same redirect — so the
- * screen the console asked for could exist at the address it asked for.
+ * A child of `TEMPLATES_PATH` because a template **is** a thing, and `assessment` is a record
+ * *kind* a template is not (#794): the URL's parent now names what the child is. A page, not a
+ * POST endpoint — the route handler that saves a template lives one segment deeper, at
+ * `CREATE_TEMPLATE_PATH`, and Next refuses a `page.tsx` and a `route.ts` in one segment (they are
+ * two parallel pages for the same URL, and the app loader throws).
  */
-export const TEMPLATE_LIBRARY_PATH = "/assessment/templates";
+export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
+
+/**
+ * The library, under its long-standing name.
+ *
+ * Kept as an alias because the budget rows, the copy fixtures and the components have called it
+ * this since #console 5/5, and "the template library" is still what the screen is. Nothing new
+ * should be spelled with it; a new caller names `RELATIONSHIP_TEMPLATES_PATH`.
+ */
+export const TEMPLATE_LIBRARY_PATH = RELATIONSHIP_TEMPLATES_PATH;
+
+/**
+ * `/templates/relationship/new` — the form that authors a template (#255).
+ *
+ * Registered in `content/routes.ts` (E7 checks it in both directions) because it is a page. It is
+ * not `…/[slug]/edit`: a template is never edited once saved — instances copy their Aspects at
+ * creation, so a mutable source would rewrite the questions under answers somebody already gave.
+ */
+export const NEW_TEMPLATE_PATH = `${RELATIONSHIP_TEMPLATES_PATH}/new`;
+
+/**
+ * `/relationship-types` — the public catalogue (#794).
+ *
+ * The reachable half of `TEMPLATES_PATH`: the *taxonomy* of relationship types the shop sells,
+ * one page per purchasable type, and no session needed. It is in `(marketing)` — wordmark, no
+ * sidebar — because a stranger is who it is for.
+ */
+export const RELATIONSHIP_TYPES_PATH = "/relationship-types";
+
+/**
+ * One relationship type's public page — `/relationship-types/<id>`.
+ *
+ * Addressed by the taxonomy's own `id` (`data/relationship-types.ts`), never by a record handle:
+ * a type is a row in a fixture, not a record in the database.
+ */
+export function relationshipTypePath(typeId: string): string {
+  return `${RELATIONSHIP_TYPES_PATH}/${typeId}`;
+}
 
 /**
  * `/assessment/demo/[type]` — the worked example's own segment (#478, the `release` demo row).
@@ -136,32 +173,42 @@ export function assessmentDemoPath(typeId: string): string {
   return `${ASSESSMENT_DEMO_PATH}/${typeId}`;
 }
 
-/** One template, read-only: its Aspects, its instances and whether it is archived. */
-export function templateDetailPath(recordId: string): string {
-  return `${TEMPLATE_LIBRARY_PATH}/${recordId}`;
+/**
+ * One template, read-only: its Aspects, its instances and whether it is archived.
+ *
+ * **Takes `record.slug`.** `record.id` is the storage handle and leaves the URL (#794): every
+ * caller holds a `LibraryTemplate`, which carries both, and the id-shaped predecessor of this
+ * function is **deleted rather than aliased** so nothing can pass an id by mistake.
+ *
+ * > `[slug]` is a **URL** fact; `record.id` is a **storage** fact. This function writes the
+ * > address; `createDraftCookieName(record.id)` names the jar; `POST /assessment/new` carries
+ * > `record.id` in `templateRecordId`. Never pass one where the other belongs.
+ */
+export function relationshipTemplatePath(slug: string): string {
+  return `${RELATIONSHIP_TEMPLATES_PATH}/${slug}`;
 }
 
 /** The archive/unarchive endpoint — a POST, so a GET never changes a template's state. */
-export function templateStatusPath(recordId: string): string {
-  return `${templateDetailPath(recordId)}/status`;
+export function templateStatusPath(slug: string): string {
+  return `${relationshipTemplatePath(slug)}/status`;
 }
 
 /** The duplicate endpoint — a POST, so a GET never writes a copy. */
-export function templateDuplicatePath(recordId: string): string {
-  return `${templateDetailPath(recordId)}/duplicate`;
+export function templateDuplicatePath(slug: string): string {
+  return `${relationshipTemplatePath(slug)}/duplicate`;
 }
 
 /**
  * The template-saving endpoint — a POST-only route handler, so it is not a page and the manifest
  * does not list it (the same split as `/assessment/new`).
  *
- * `/assessment/templates/save` and not `/assessment/templates`: that address is the library page
- * now (`TEMPLATE_LIBRARY_PATH`), and a segment cannot hold both. The form posts here and the
- * handler redirects: a save is a POST followed by a GET of either the form (refused, with the
+ * `/templates/relationship/save` and not `/templates/relationship`: that address is the library
+ * page (`RELATIONSHIP_TEMPLATES_PATH`), and a segment cannot hold both. The form posts here and
+ * the handler redirects: a save is a POST followed by a GET of either the form (refused, with the
  * reason) or `/assessment` (saved, where the new template is listed). That is what keeps a reload
  * from saving a second copy.
  */
-export const CREATE_TEMPLATE_PATH = `${TEMPLATE_LIBRARY_PATH}/save`;
+export const CREATE_TEMPLATE_PATH = `${RELATIONSHIP_TEMPLATES_PATH}/save`;
 
 /**
  * `/dashboard/relationships/[id]` — one relationship's own screen (#619).
@@ -214,40 +261,42 @@ export function reportPath(instanceRecordId: string): string {
 }
 
 /**
- * `/assessment/templates/[templateId]/create` — the create step (#409, R1-E).
+ * `/templates/relationship/[slug]/create` — the create step (#409, R1-E).
  *
  * A child of the template's own address rather than a sibling, so the template being copied is
- * the route's own fact and the form's payload cannot name a different one.
+ * the route's own fact and the form's payload cannot name a different one. The segment is the
+ * record's **slug** (#794); the form still posts the record's **id** in `templateRecordId`,
+ * because that is what the writer keys on.
  */
-export function createRelationshipPath(templateRecordId: string): string {
-  return `${templateDetailPath(templateRecordId)}/create`;
+export function createRelationshipPath(templateSlug: string): string {
+  return `${relationshipTemplatePath(templateSlug)}/create`;
 }
 
 /**
- * `/assessment/templates/[templateId]/create/mode` — stage 2 of the create flow (#688).
+ * `/templates/relationship/[slug]/create/mode` — stage 2 of the create flow (#688).
  *
  * A child of the create path rather than a query parameter (`?step=mode`) because the flow is
  * a sequence of stages, not one screen with a switch: slice 3 adds `…/create/aspects` and
  * slice 4 `…/create/commit` the same way, and a stage that can be deep-linked, reloaded and
  * cached by its own address is what makes each of them a page rather than a state.
  */
-export function createModePath(templateRecordId: string): string {
-  return `${createRelationshipPath(templateRecordId)}/mode`;
+export function createModePath(templateSlug: string): string {
+  return `${createRelationshipPath(templateSlug)}/mode`;
 }
 
 /**
- * `/assessment/templates/[templateId]/create/aspects` — stage 3 of the create flow (#689).
+ * `/templates/relationship/[slug]/create/aspects` — stage 3 of the create flow (#689).
  *
  * The third sibling, exactly as the docstring above predicted: a stage that can be deep-linked,
  * reloaded and cached by its own address. It reads the draft stages 1 and 2 wrote, so opening it
  * cold sends the person back to Who rather than showing a list with no relationship behind it.
  */
-export function createAspectsPath(templateRecordId: string): string {
-  return `${createRelationshipPath(templateRecordId)}/aspects`;
+export function createAspectsPath(templateSlug: string): string {
+  return `${createRelationshipPath(templateSlug)}/aspects`;
 }
 
 /**
- * `/assessment/templates/[templateId]/create/commit` — stage 4 of the create flow (#690).
+ * `/templates/relationship/[slug]/create/commit` — stage 4 of the create flow (#690).
  *
  * The fourth sibling, exactly as the docstring above predicted. **Create** is the stage that
  * reviews the six facts, offers the two plans and holds the conversion, so it is the last screen
@@ -255,12 +304,12 @@ export function createAspectsPath(templateRecordId: string): string {
  * sends the invitation. It is a page for the same reason the three before it are — it can be
  * reloaded, linked and gone back to, and the draft is what it renders.
  */
-export function createCommitPath(templateRecordId: string): string {
-  return `${createRelationshipPath(templateRecordId)}/commit`;
+export function createCommitPath(templateSlug: string): string {
+  return `${createRelationshipPath(templateSlug)}/commit`;
 }
 
 /**
- * `/assessment/templates/[templateId]/create/account` — the account gate **after** stage 4 (#690).
+ * `/templates/relationship/[slug]/create/account` — the account gate **after** stage 4 (#690).
  *
  * The one surface in the flow that is not a stage: it follows the commit, it is never in front of
  * the create, and the spec says so explicitly ("Account is not a stage", #659). `instance` is the
@@ -268,13 +317,18 @@ export function createCommitPath(templateRecordId: string): string {
  * initiator token before it draws a form, which is what makes the address unreachable before
  * stage 4 — a relationship id alone is not enough, because it is not a secret.
  */
-export function createAccountPath(templateRecordId: string): string {
-  return `${createRelationshipPath(templateRecordId)}/account`;
+export function createAccountPath(templateSlug: string): string {
+  return `${createRelationshipPath(templateSlug)}/account`;
 }
 
-/** The gate for one committed relationship: the template's gate, naming the relationship. */
-export function createAccountForPath(templateRecordId: string, instanceRecordId: string): string {
-  return `${createAccountPath(templateRecordId)}?instance=${encodeURIComponent(instanceRecordId)}`;
+/**
+ * The gate for one committed relationship: the template's gate, naming the relationship.
+ *
+ * Two handles on purpose (#794): the path segment is the template's **slug**, the `?instance=`
+ * value is the relationship's **id**. Never pass one where the other belongs.
+ */
+export function createAccountForPath(templateSlug: string, instanceRecordId: string): string {
+  return `${createAccountPath(templateSlug)}?instance=${encodeURIComponent(instanceRecordId)}`;
 }
 
 /**
@@ -305,29 +359,32 @@ export function sentPath(instanceRecordId: string): string {
 export const SENT_RETURN_VALUE = "sent";
 
 /**
- * **Where the create sends the browser (#690, #691).** The one decision `POST /assessment/new` makes
- * about the screen, kept here so it is a test rather than a claim about a route handler.
+ * **Where the create sends the browser (#690, #691, #709).** The one decision `POST /assessment/new`
+ * makes about the screen, kept here so it is a test rather than a claim about a route handler.
  *
  * - A **signed-out** creator lands on the gate. Their relationship exists — the endpoint has always
  *   accepted a post with no initiator (#146/#213) — and the gate is the screen that offers the
  *   account *after* the fact, which is the whole of #659: the account is not a stage, so nothing
  *   makes a person sign up before they have something to sign up for.
- * - A **signed-in** creator lands on **Sent** (#691), which is stage 5: the invitation's state, what
- *   happens next and the way into the relationship. It is no longer the relationship screen itself,
- *   because that is stage 6 and the card's whole point is that the two are different screens.
+ * - A **signed-in** creator lands on **the dashboard** (#709). Until this card it was Sent, stage 5
+ *   — a page the flow navigated to, which made the commit a fifth page load and left the finished
+ *   relationship one screen away from the list it belongs in. The approved v6 artifact closes the
+ *   modal onto `/dashboard`, where the new relationship is under My relationships from that
+ *   redirect on. **Sent is no longer a destination**: it still answers on its own address (stage 5
+ *   renders when asked for by URL), and nothing in the flow sends anybody there.
  * - A post naming **no template** never came through the flow (`scripts/flow-e2e.mjs`, a `curl`),
  *   so there is no gate and no flow stage to send it to: it goes to the relationship like any other
  *   committed create.
  */
 export function afterCreateTarget(input: {
   viewerSignedIn: boolean;
-  templateRecordId: string;
+  templateSlug: string;
   instanceRecordId: string;
 }): string {
-  if (input.templateRecordId !== "") {
+  if (input.templateSlug !== "") {
     return input.viewerSignedIn
-      ? sentPath(input.instanceRecordId)
-      : createAccountForPath(input.templateRecordId, input.instanceRecordId);
+      ? OVERVIEW_PATH
+      : createAccountForPath(input.templateSlug, input.instanceRecordId);
   }
   return instancePath(input.instanceRecordId);
 }
@@ -443,4 +500,28 @@ export const SUBMITTED_QUERY_VALUE = "1";
 /** The claim endpoint — a POST, so a GET never spends the single-use token. */
 export function claimPath(token: string): string {
   return `${invitePath(token)}/claim`;
+}
+
+/**
+ * **Where a completed response sends the browser (#710).** The response path's counterparty has
+ * just joined the relationship, so the same rule the create's own completion follows applies: the
+ * modal closes onto the screen the joined relationship is listed on.
+ *
+ * - A **signed-in** claimer lands on **`/dashboard`**, where the relationship is now under My
+ *   relationships. That is the only shape the screens offer: step 3's claim form renders for a
+ *   signed-in viewer, and a signed-out one is offered sign-in and sign-up instead, both carrying
+ *   `?step=3` as `next` so the round trip returns to the claim.
+ * - A **signed-out** claim — reachable by posting the endpoint directly, which is what
+ *   `scripts/flow-e2e.mjs` does — lands on the **relationship**. It is not a lesser answer: the
+ *   claim set this browser's party cookie, so the relationship screen is readable, and
+ *   `/dashboard` would only bounce the browser to `/login` and lose the seat it just bound.
+ *
+ * Both targets are a *screen*, never a state: the relationship has no `Ongoing` surface
+ * (`docs/specs/flow-stages.md`), and completion is the relationship's own page.
+ */
+export function afterClaimTarget(input: {
+  viewerSignedIn: boolean;
+  instanceRecordId: string;
+}): string {
+  return input.viewerSignedIn ? OVERVIEW_PATH : instancePath(input.instanceRecordId);
 }

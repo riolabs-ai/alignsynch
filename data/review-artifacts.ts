@@ -24,6 +24,22 @@
 import type { ReviewArtifact } from "@/content/review";
 
 export const reviewArtifacts: readonly ReviewArtifact[] = [
+  /**
+   * v7 — the six stages in the owner's words (#735). v5/v6 drew `Who · Mode · Aspects · Create ·
+   * Sent · Ongoing`; the spec in `docs/specs/flow-stages.md` names them `Details · Settings ·
+   * Aspects · Invite · Connect · Align`, with Align live only once an assessment is shared and no
+   * `Ongoing` at all. Only the stage words and the counter moved: Details keeps the five fields,
+   * Back, Close and Continue the artifact already had.
+   */
+  {
+    id: "review-relationship-lifecycle-v7",
+    slug: "prototype-relationship-lifecycle-v7",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v7",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v7.html",
+    capturedAt: "2026-11-08T00:00:00.000Z",
+  },
   {
     id: "review-relationship-lifecycle-v4",
     slug: "prototype-relationship-lifecycle-v4",
@@ -67,11 +83,17 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     capturedAt: "2026-11-07T00:00:00.000Z",
   },
   /**
-   * v5 — **the approved flow.** Six stages (Who · Mode · Aspects · Create · Sent · Ongoing), templates
-   * as pre-stage views, the invite account-free with payment a soft prompt at the invite and a hard
-   * gate at publish, the account step after Stage 4, and the two priced plans. It supersedes v1–v4
-   * for the next cut; those stay as the record of how the flow got here. Appended rather than
-   * prepended so every existing row — and the assertions written around them — keep their place.
+   * v5 — **the approved flow.** The ten screens the flow was built from, six of them numbered
+   * stages, templates as pre-stage views, the invite account-free with payment a soft prompt at
+   * the invite and a hard gate at publish, the account step after the invite stage, and the two
+   * priced plans. It supersedes v1–v4 for the next cut; those stay as the record of how the flow
+   * got here. Appended rather than prepended so every existing row — and the assertions written
+   * around them — keep their place.
+   *
+   * **The rail's words are the spec's, not this file's.** `docs/specs/flow-stages.md` names the
+   * six stages (`Details · Settings · Aspects · Invite · Connect · Align`) and is binding on the
+   * build; the artifact keeps the words it was drawn with, because an approved artifact is never
+   * edited to match the code. Read the spec for what the build must say.
    */
   {
     id: "review-relationship-lifecycle-v5",
@@ -81,5 +103,30 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     version: "v5",
     path: "docs/review/artifacts/prototype-relationship-lifecycle-v5.html",
     capturedAt: "2026-11-08T00:00:00.000Z",
+  },
+  /**
+   * v6 — **the flow as a modal** (#708, the approval gate for release #707 / v1.8.0).
+   *
+   * v5, unchanged, plus four things: the six stages run inside one fullscreen dialog (`Dialog` at
+   * >=1024, a full-height `Sheet` at 390) with the six-word rail inside it; the member dashboard the
+   * flow closes onto, with the new relationship under My Relationships; the invite-response path in
+   * the same shell; and both viewports drawn. The owner's model is untouched — six stages, no
+   * seventh, no renames, templates still the pre-stage, the account gate still the step after Create
+   * inside the modal, Alignment still dashboard functionality. Appended rather than prepended for
+   * the same reason as v5: the rows before it keep their place.
+   *
+   * `capturedAt` is a distinct instant from v5's. The console lists `ORDER BY captured_at DESC,
+   * a.id`, so two rows sharing v5's midnight capture sort v5 first — the newest artifact would be
+   * listed under the one it supersedes. It is the capture, not a sort trick: this one was taken
+   * that afternoon.
+   */
+  {
+    id: "review-relationship-lifecycle-v6",
+    slug: "prototype-relationship-lifecycle-v6",
+    title: "Relationship lifecycle prototype",
+    kind: "prototype",
+    version: "v6",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v6.html",
+    capturedAt: "2026-11-08T18:00:00.000Z",
   },
 ];

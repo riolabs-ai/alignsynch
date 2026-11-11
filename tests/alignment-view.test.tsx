@@ -1,5 +1,5 @@
 /**
- * Stage 6, **Ongoing** — the Alignment, Aspect by Aspect (#692).
+ * Stage 6, **Align** — the Alignment, Aspect by Aspect (#692, named by #735).
  *
  * The issue's acceptance is a claim about a surface a person reaches, so the cases below render the
  * real `AssessmentInstanceView` over a real `projectScreen()` projection and read the markup:

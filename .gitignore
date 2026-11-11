@@ -22,6 +22,10 @@ yarn-error.log*
 # variable is documented by the change that adds it.
 !.env.example
 
+# `pnpm payment:e2e setup` writes the browser pass's handoff here (#739): relationship ids and a
+# live session cookie. It is read by the run and deleted by `teardown`, never committed.
+.payment-e2e.json
+
 # vercel
 .vercel
 

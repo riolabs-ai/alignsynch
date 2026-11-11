@@ -44,7 +44,7 @@ export function ProfileHeader({
   const joinedDate = detail?.joinedDate ? formatDate(detail.joinedDate) : undefined;
 
   return (
-    <div className="overflow-hidden rounded-xl shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-border">
       <ProfileCover handle={person.handle} />
       {/*
         The ground behind the identity row was a two-hue wash — two QuizHub colours under every

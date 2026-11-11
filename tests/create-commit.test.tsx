@@ -33,6 +33,7 @@ import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_INSTANCE_PATH,
+  OVERVIEW_PATH,
   PRICING_PATH,
   afterCreateTarget,
   createAccountForPath,
@@ -51,6 +52,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 const TEMPLATE_ID = "template-relationship-basics";
+/** The same row's slug — what a create-flow URL carries (#794); the id stays the cookie key. */
+const TEMPLATE_SLUG = "relationship-basics";
 const INSTANCE_ID = "assessment-instance-audit-ready";
 
 const TEMPLATE = {
@@ -93,7 +96,7 @@ function stage3Html(): string {
       template: TEMPLATE,
       draft: DRAFT,
       aspects: [],
-      backHref: `/assessment/templates/${TEMPLATE_ID}/create/mode`,
+      backHref: `/templates/relationship/${TEMPLATE_ID}/create/mode`,
       problem: null,
       problemLink: null,
     }),
@@ -178,12 +181,15 @@ describe("stage 4 — the plans", () => {
     for (const plan of PLAN_IDS) expect(html).toContain(`value="${plan}"`);
   });
 
-  it("leaves the create open and points the method door at the page that sells a tier", () => {
+  it("leaves the create open and keeps the payment decision on this screen (#771)", () => {
+    /* #771 replaced the `PRICING_PATH` door with the in-place walk: choosing a plan must not leave
+       the stage. The old assertions were exactly the flow the owner called wrong. */
     const html = stage4Html();
-    expect(html).toContain(`href="${PRICING_PATH}"`);
-    expect(html).toContain('data-create-plans-link="pricing"');
-    expect(html).toContain(itemLabel(plans, "add-method"));
+    expect(html).not.toContain(`href="${PRICING_PATH}"`);
+    expect(html).not.toContain('data-create-plans-link="pricing"');
+    expect(html).toContain(itemLabel(plans, "add-method-note"));
     expect(html).toContain(itemLabel(plans, "trial"));
+    expect(html).toContain('data-pay-step="plan"');
   });
 });
 
@@ -192,27 +198,27 @@ describe("where the create sends the browser", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: false,
-        templateRecordId: TEMPLATE_ID,
+        templateSlug: TEMPLATE_SLUG,
         instanceRecordId: INSTANCE_ID,
       }),
-    ).toBe(createAccountForPath(TEMPLATE_ID, INSTANCE_ID));
+    ).toBe(createAccountForPath(TEMPLATE_SLUG, INSTANCE_ID));
   });
 
-  it("sends a signed-in creator to Sent, which is stage 5 (#691)", () => {
+  it("sends a signed-in creator to the dashboard, and Sent is no longer a destination (#709)", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: true,
-        templateRecordId: TEMPLATE_ID,
+        templateSlug: TEMPLATE_SLUG,
         instanceRecordId: INSTANCE_ID,
       }),
-    ).toBe(`/assessment/instances/${INSTANCE_ID}/sent`);
+    ).toBe(OVERVIEW_PATH);
   });
 
   it("has no gate for a post that never came through the flow", () => {
     expect(
       afterCreateTarget({
         viewerSignedIn: false,
-        templateRecordId: "",
+        templateSlug: "",
         instanceRecordId: INSTANCE_ID,
       }),
     ).toBe(`/assessment/instances/${INSTANCE_ID}`);
@@ -231,7 +237,7 @@ describe("stage 3 hands over to stage 4", () => {
 describe("the account gate after stage 4", () => {
   const account = sectionOf(assessmentCreatePageCopy, "account");
   const backHref = `/assessment/instances/${INSTANCE_ID}`;
-  const signInHref = `/login?next=${encodeURIComponent(createAccountForPath(TEMPLATE_ID, INSTANCE_ID))}`;
+  const signInHref = `/login?next=${encodeURIComponent(createAccountForPath(TEMPLATE_SLUG, INSTANCE_ID))}`;
 
   const html = renderToStaticMarkup(
     createElement(AccountGate, {
@@ -266,7 +272,7 @@ describe("the account gate after stage 4", () => {
     expect(html).toContain('data-account-gate-tab="sign-in"');
     // The sign-in tab returns to this gate, so signing in lands on the relationship.
     expect(signInHref).toContain(
-      encodeURIComponent(createAccountForPath(TEMPLATE_ID, INSTANCE_ID)),
+      encodeURIComponent(createAccountForPath(TEMPLATE_SLUG, INSTANCE_ID)),
     );
   });
 

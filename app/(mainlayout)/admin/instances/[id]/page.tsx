@@ -31,7 +31,6 @@ import { RelationshipOperations } from "@/components/admin/relationship-operatio
 import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
 import { adminRelationshipPageCopy } from "@/data/pages/admin-relationship";
 import { ADMIN_INSTANCES_PATH } from "@/lib/admin/instance-registry";
-import { REASON_MIN_LENGTH } from "@/lib/admin/act";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -104,7 +103,6 @@ export default async function AdminRelationshipPage({
         copy={adminRelationshipPageCopy}
         detail={detail}
         action={performRepair}
-        reasonMin={REASON_MIN_LENGTH}
       />
       {editState === undefined || editState.closed ? null : (
         <RelationshipEditPanel

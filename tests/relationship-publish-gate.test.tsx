@@ -21,7 +21,14 @@
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// #739 — the detail screen refreshes the band after an inline capture, so it reads the router.
+// This file never presses a button; the stub exists only so a static render can reach `useRouter`.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: () => {}, push: () => {}, replace: () => {} }),
+}));
+
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
 import { assessments } from "@/data/assessments";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
@@ -67,6 +74,9 @@ function viewOf(input: {
     aspectsEditable: isInitiator && input.status === "draft",
     publishable: isInitiator && input.status === "draft",
     hasPaymentMethod: input.hasPaymentMethod,
+    // #739 — this file's fixture is publish-time: a relationship with no session has nothing to
+    // complete, which is exactly `completion: null`.
+    completion: null,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
     closed: false,
@@ -87,6 +97,9 @@ function html(view: MemberRelationshipView): string {
       onSaveAspects: noop,
       onPublish: noop,
       onRepublish: noop,
+      onCapture: noop,
+      onResolve: noop,
+      onComplete: noop,
     }),
   );
 }

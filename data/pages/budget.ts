@@ -436,7 +436,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/templates` — the public Relationship Templates catalogue.
+   * `/relationship-types` — the public Relationship Types catalogue (#794).
    *
    * Budget 0 from the first commit, like every surface this tree adds: the hero, the three bands'
    * chrome, the five strings a card repeats and the counted catalogue sentence are all
@@ -444,10 +444,26 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
    * page module is a red build. The cards themselves are `lib/template-catalogue.ts` over
    * `data/relationship-types.ts` — records, not words.
    */
-  "/templates": {
-    page: "app/(marketing)/templates/page.tsx",
+  "/relationship-types": {
+    page: "app/(marketing)/relationship-types/page.tsx",
     dirs: ["components/templates"],
     fixture: "data/pages/templates",
+    budget: 0,
+  },
+  /**
+   * `/relationship-types/[slug]` — one type, the page the directory's card titles link to.
+   *
+   * Budget 0 from the first commit, like every surface this tree adds: the hero's heading frame,
+   * the two descriptor headings, the Aspects band's heading and legend, the price line and the
+   * three link labels are all `data/pages/templates-detail.ts`. The name, the realm, the roles,
+   * the descriptor sentences and every Aspect come from `data/relationship-types.ts` through
+   * `lib/template-detail.ts` — records, not words. Attribution is reachability, so this row
+   * counts `components/templates/template-detail.tsx` and nothing else in the directory.
+   */
+  "/relationship-types/[slug]": {
+    page: "app/(marketing)/relationship-types/[slug]/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates-detail",
     budget: 0,
   },
   shell: {
@@ -576,8 +592,8 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-sent",
     budget: 0,
   },
-  "/assessment/templates/[templateId]/create": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/create/page.tsx",
+  "/templates/relationship/[slug]/create": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,
@@ -585,8 +601,8 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // #688 — stage 2 (Mode) of the same flow. Its own row because attribution is per surface, and
   // the fixture is shared on purpose: two stages that print different words for one relationship
   // would be the copy drift this table exists to stop. Budget 0, so the form's next literal is red.
-  "/assessment/templates/[templateId]/create/mode": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/create/mode/page.tsx",
+  "/templates/relationship/[slug]/create/mode": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,
@@ -594,8 +610,8 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // #689 — stage 3 (Aspects). The same row shape and the same fixture, for the same reason: the
   // list is one stage of one flow, and its words belong beside the two forms' words. Budget 0, so a
   // sentence typed into the list is a red build rather than a second vocabulary.
-  "/assessment/templates/[templateId]/create/aspects": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/create/aspects/page.tsx",
+  "/templates/relationship/[slug]/create/aspects": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/aspects/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,
@@ -605,14 +621,14 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // card's labels, the two prices and the gate's form copy are a red build if they are typed into
   // a component. The gate is not a stage and still reads the same fixture — the account step's
   // words are this flow's words, not a second create vocabulary.
-  "/assessment/templates/[templateId]/create/commit": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/create/commit/page.tsx",
+  "/templates/relationship/[slug]/create/commit": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
-  "/assessment/templates/[templateId]/create/account": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/create/account/page.tsx",
+  "/templates/relationship/[slug]/create/account": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/account/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,
@@ -624,20 +640,20 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // from the first commit: every word is in `data/pages/assessment-templates.ts` and
   // `data/pages/assessment-template-detail.ts`, so the next literal written in either component
   // is a red build.
-  "/assessment/templates": {
-    page: "app/(mainlayout)/assessment/templates/page.tsx",
+  "/templates/relationship": {
+    page: "app/(mainlayout)/templates/relationship/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-templates",
     budget: 0,
   },
-  "/assessment/templates/[templateId]": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/page.tsx",
+  "/templates/relationship/[slug]": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-template-detail",
     budget: 0,
   },
-  "/assessment/templates/new": {
-    page: "app/(mainlayout)/assessment/templates/new/page.tsx",
+  "/templates/relationship/new": {
+    page: "app/(mainlayout)/templates/relationship/new/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-template-new",
     budget: 0,

@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates/[templateId]` — one template, read-only (#console 5/5).
+ * `/templates/relationship/[templateId]` — one template, read-only (#console 5/5).
  *
  * The "open" action has to open something. Editing is a separate decision (the spec puts the
  * editor at this same route later), so what this page does is *show* the template: its Aspects in
@@ -17,23 +17,6 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Template",
   sections: [
     {
-      /**
-       * The journey's three stages, named for the rail (#618). The rail is the one piece of chrome
-       * this card adds, and it is the shape `components/create/quiz-editor.tsx` established and
-       * `counterparty-wizard.tsx` already varies: numbered steps, the current one marked, a count
-       * above the band. A person on the product page is on step 2 of 3, and the rail says so
-       * instead of leaving the two hops before and after it invisible.
-       */
-      id: "steps",
-      items: [
-        { id: "1", label: "Products" },
-        { id: "2", label: "This product" },
-        { id: "3", label: "Create the relationship" },
-        { id: "count", label: "Step {step} of 3" },
-        { id: "label", label: "Creating a relationship" },
-      ],
-    },
-    {
       id: "back",
       items: [{ id: "all", label: "All templates" }],
     },
@@ -42,7 +25,7 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
       heading: "About this template",
       items: [
         { id: "aspects", label: "Aspects" },
-        { id: "instances", label: "Instances made" },
+        { id: "instances", label: "Relationships made" },
         { id: "status", label: "Status" },
         { id: "created", label: "Created" },
         { id: "authorship-built-in", label: "Built-in — the platform wrote it" },
@@ -150,7 +133,7 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "archive-note",
       heading: "This template is archived",
-      body: "It no longer appears in the catalogue and no new instance can be started from it. Every instance already made from it keeps its own copy of the Aspects, so those still open and still read.",
+      body: "It no longer appears in the catalogue and no new relationship can be started from it. Every relationship already made from it keeps its own copy of the Aspects, so those still open and still read.",
     },
   ],
 });

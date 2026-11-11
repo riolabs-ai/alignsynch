@@ -66,13 +66,12 @@ export interface TemplateFormPayload {
 }
 
 /**
- * The console's **create-from-scratch**, which still names its reason (#625).
+ * The console's **create-from-scratch** (#625, #732).
  *
- * A create is a privileged act on the catalogue, so `act()` refuses it without a stated
- * justification, and the console's form keeps that field. A *save* does not: the sentence is
- * composed by `lib/member/template-reasons.ts` from the record's own facts. That is why `reason`
- * lives here and not on the base payload — a member write cannot carry a typed one, so no caller
- * can reintroduce the field the owner reported as a blocked form.
+ * `reason` is accepted and recorded when a caller has one, and no form asks for it any more: the
+ * owner removed the field from every action surface. It lives on this payload rather than the base
+ * one because a member write composes its sentence server-side (`lib/member/template-reasons.ts`),
+ * so there is no member path that can reintroduce a field.
  */
 export interface TemplateCreatePayload extends TemplateFormPayload {
   readonly reason?: string;
@@ -97,9 +96,20 @@ export interface TemplateVersionFormPayload {
   readonly reason?: string;
 }
 
-/** What a publish or an unpublish answers. `version` is the version this write landed on. */
+/**
+ * What a publish, an unpublish, an archive, a restore or a delete answers. `version` is the version
+ * the write landed on, or — for a delete — the highest one the row had before it went (`0` when it
+ * had none). The delete's row carries `id` too, because the record it names no longer exists and
+ * the audit row is the only place left to read what was destroyed.
+ */
 export type TemplateVersionOutcome =
-  | { readonly ok: true; readonly version: number; readonly actionId: string }
+  | {
+      readonly ok: true;
+      readonly version: number;
+      readonly actionId: string;
+      /** Set by a delete: the id of the record that no longer exists. */
+      readonly deletedId?: string;
+    }
   | {
       readonly ok: false;
       readonly code: TemplateRefusalCode;
@@ -120,10 +130,27 @@ export type TemplateRefusalCode =
    */
   | "not-yours"
   | "not-published"
+  /**
+   * #711 — retiring a template. `already-archived` is a refusal rather than a no-op, for the reason
+   * unpublishing is: an operator who asked to retire something and got "nothing happened" cannot
+   * tell a mistake from a success. `not-archived` is the same rule for the way back.
+   */
+  | "already-archived"
+  | "not-archived"
+  /**
+   * #711 — the referential rule, and the reason `delete` exists at all.
+   *
+   * `template-in-use` means a relationship was created from this template, so it is **archived,
+   * not destroyed**: every one of those relationships reads a version of it, and a version cannot
+   * outlive the record it belongs to. `template-published` means it was offered in the catalogue at
+   * least once, so its versions are the history of what customers saw — archive it instead. Only a
+   * row that is neither has no reader, and only that row may be deleted.
+   */
+  | "template-in-use"
+  | "template-published"
   | "slug-taken"
   | "invalid-draft"
   | "version-conflict"
-  | "reason-too-short"
   | "unknown-action"
   | "unknown-target-table"
   | "role-too-low"

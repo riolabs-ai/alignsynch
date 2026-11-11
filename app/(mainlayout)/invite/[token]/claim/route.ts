@@ -1,7 +1,7 @@
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimInvite } from "@/lib/flow/store";
 import { sendJoinNotice } from "@/lib/flow/join-notice";
-import { instancePath, inviteStepPath } from "@/lib/flow/paths";
+import { afterClaimTarget, inviteStepPath } from "@/lib/flow/paths";
 import {
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
@@ -32,11 +32,14 @@ import { NextResponse } from "next/server";
  *   the confirmation   `confirm`, the counterparty's name: the checkbox the page renders
  *                      beside "You are joining as Rowan, the Counterparty"
  *
- * Success binds the Counterparty's party row, sets their party cookie, and redirects (303) to the
- * instance screen — which since #t_0aa81144 is the **last** hop and is only reachable from step 3
- * of the onboarding wizard (`/invite/[token]?step=3`), the form this endpoint exists for. The
- * invitation itself no longer lands anybody in a session directly: `/invite/[token]` renders the
- * three steps, and `GET` still claims nothing.
+ * Success binds the Counterparty's party row, sets their party cookie, and redirects (303) —
+ * **onto `/dashboard` for a signed-in claimer** (#710: the flow's modal closes onto the console the
+ * joined relationship is listed on, the same exit the create takes) and onto the relationship for a
+ * signed-out one, who has a party cookie and no console to land in (`afterClaimTarget()` in
+ * `lib/flow/paths.ts` decides, so the target is a test rather than a claim about this handler). The
+ * form that posts here is step 3 of the onboarding wizard (`/invite/[token]?step=3`), which has
+ * rendered inside the flow's modal since #710. The invitation itself no longer lands anybody in a
+ * session directly: `/invite/[token]` renders the three steps, and `GET` still claims nothing.
  *
  * Every refusal — unknown, claimed, expired, already-a-party, already-bound, unconfirmed, lapsed
  * — redirects back to **step 3**, which draws the band that matches the code (a dead token falls
@@ -90,5 +93,14 @@ export async function POST(
     );
   });
 
-  return NextResponse.redirect(new URL(instancePath(result.instanceRecordId), request.url), 303);
+  return NextResponse.redirect(
+    new URL(
+      afterClaimTarget({
+        viewerSignedIn: viewer !== null,
+        instanceRecordId: result.instanceRecordId,
+      }),
+      request.url,
+    ),
+    303,
+  );
 }

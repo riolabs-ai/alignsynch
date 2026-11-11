@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**96 documents in 9 sections.** Every page carries the same nav block, generated
+**107 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,12 +31,12 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 4 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 18 documents
+- [Product](#product) — 19 documents
 - [Operations](#operations) — 8 documents
-- [Reference](#reference) — 9 documents
+- [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 10 documents
-- [Records & QA](#records-qa) — 16 documents
+- [Release notes](#release-notes) — 16 documents
+- [Records & QA](#records-qa) — 19 documents
 
 ## Start here
 
@@ -100,6 +100,7 @@ What the product promises, and the specifications behind it.
 - [`specs/catalogue.md`](specs/catalogue.md) — **Template catalogue** — How is the catalogue grouped, and what does each category mean?
 - [`specs/flow-emails.md`](specs/flow-emails.md) — **Transactional email lifecycle** — Which emails send, when, and to whom?
 - [`specs/flow-reinvite.md`](specs/flow-reinvite.md) — **Re-invite** — What happens when an invitation expires — and why not a void?
+- [`specs/flow-stages.md`](specs/flow-stages.md) — **The six flow stages (binding spec)** — What are the stages, which fields does stage 1 carry, and where does the flow end?
 - [`specs/maintenance-fields.md`](specs/maintenance-fields.md) — **Maintenance fields** — Which fields does the relationship-maintenance form carry?
 - [`specs/ux-input.md`](specs/ux-input.md) — **Answer input** — How does a person answer — scale, labels, semantics?
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
@@ -132,6 +133,7 @@ The generated tables, the owner's own material, and the records nothing else own
 - [`PROTOTYPE-WIRING.md`](PROTOTYPE-WIRING.md) — **Prototype wiring** — What of the one prototype screen moves into the build, and in what order?
 - [`P2-INVENTORY.md`](P2-INVENTORY.md) — **P2 inventory** — Which hardcoded strings and media paths does templatisation have to cover?
 - [`V1-PROTOTYPE.md`](V1-PROTOTYPE.md) — **V1 prototype** — What is the clickable `/v1/**` prototype, and who is it for?
+- [`PROTOTYPE-SAVE.md`](PROTOTYPE-SAVE.md) — **Prototype copy saves** — Where a reviewer's in-page copy edits go when they press Save, and what the implementation reads from them?
 
 ## Diagrams
 
@@ -157,6 +159,12 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-5-1.md`](changelog/v1-5-1.md) — **v1.5.1** — The patch where the gate stopped believing a stale record.
 - [`changelog/v1-6-0.md`](changelog/v1-6-0.md) — **v1.6.0** — The release where the fee moved to completion.
 - [`changelog/v1-7-0.md`](changelog/v1-7-0.md) — **v1.7.0** — The release where the review shelf went live.
+- [`changelog/v1-8-0.md`](changelog/v1-8-0.md) — **v1.8.0** — The release where the flow conformed to its six-stage spec.
+- [`changelog/v1-9-0.md`](changelog/v1-9-0.md) — **v1.9.0** — The release where the payer could finally pay.
+- [`changelog/v1-10-0.md`](changelog/v1-10-0.md) — **v1.10.0** — The release where paying stopped leaving the page.
+- [`changelog/v1-11-0.md`](changelog/v1-11-0.md) — **v1.11.0** — The release where the build drew what the review approved.
+- [`changelog/v1-12-0.md`](changelog/v1-12-0.md) — **v1.12.0** — Which release moved the payment decision into the create flow, and what does it defer?
+- [`changelog/v1-13-0.md`](changelog/v1-13-0.md) — **v1.13.0** — Which release turned the templates page into a directory, and gave every template a page?
 
 ## Records & QA
 
@@ -166,7 +174,9 @@ What was measured, on which tree, and what the migration changed.
 - [`p1-migration/MIGRATION.md`](p1-migration/MIGRATION.md) — **P1 migration** — What did the P1 content model change, field by field?
 - [`V1-RETIREMENT.md`](V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
+- [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
+- [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa-brand-lockup/README.md`](qa-brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa-contact-land/README.md`](qa-contact-land/README.md) — **Contact landing** — What do the contact pages look like?
@@ -174,6 +184,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-home-polish/README.md`](qa-home-polish/README.md) — **Home hero polish** — Were the six hero defects fixed, before and after?
 - [`qa-ia/README.md`](qa-ia/README.md) — **IA v2 — four operator groups** — Does the admin rail reduce to four groups with submenus, and does template authoring name create / clone / publish?
 - [`qa-lockup-2rem/README.md`](qa-lockup-2rem/README.md) — **Lockup 2rem** — Is the lockup 2rem in every expanded-header viewport?
+- [`qa-noun-crud/README.md`](qa-noun-crud/README.md) — **Templates and relationships after creation** — Can a template be revised and retired, and does a bound relationship keep the version it was answered under?
 - [`qa-recharts-3/README.md`](qa-recharts-3/README.md) — **recharts 3** — Do the pie labels still render after the recharts 3 bump?
 - [`qa-swiper-12/README.md`](qa-swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa-template-catalogue/README.md`](qa-template-catalogue/README.md) — **Template catalogue** — What do the catalogue pages look like from the AlignSynch build?

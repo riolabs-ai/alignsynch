@@ -13,7 +13,7 @@
  *   view      what the relationship is, and what its invitation is doing
  *   aspects   the initiator's editor, while `draft`/`pending` — `aspectsEditable()` decided that,
  *             and the server action re-decides it under a row lock
- *   publish   the counterparty's name and address, the reason, and one button that starts the trial
+ *   publish   the counterparty's name and address, and one button that starts the trial
  *             (or a checkout), publishes the relationship and mints the invitation
  *   republish one click, for a link that lapsed or was revoked — and only those two, because a
  *             claimed seat is not reissued and a live link has nothing to fix
@@ -32,6 +32,7 @@
  * courtesy; `saveAspects` refuses `not-editable` inside its transaction, and a counterparty who
  * posts at it gets `not-yours` — #533's "enforce in the server action, not by hiding a button".
  */
+import { PaymentCaptureDialog } from "@/components/dashboard/payment-capture-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,16 +40,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { buildTemplateRecord } from "@/lib/admin/template-draft";
-import { formatDate } from "@/content/core";
+import { formatCurrency, formatDate } from "@/content/core";
 import {
   refusalSentence,
   type AspectsOutcome,
+  type CaptureOutcome,
+  type CompleteOutcome,
   type PublishOutcome,
   type RepublishOutcome,
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
+import { AspectList, type AspectSaveResult } from "@/components/assessment-flow/aspect-list";
+import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detail";
+import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 import { PRICING_PATH } from "@/lib/flow/paths";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 /** One Aspect while it is being edited. `id` is absent only for a row added in this edit. */
@@ -79,6 +86,9 @@ export function RelationshipDetail({
   onSaveAspects,
   onPublish,
   onRepublish,
+  onCapture,
+  onResolve,
+  onComplete,
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
@@ -97,6 +107,29 @@ export function RelationshipDetail({
     setting?: string;
   }) => Promise<PublishOutcome>;
   onRepublish: (payload: { relationshipId?: string; reason?: string }) => Promise<RepublishOutcome>;
+  /**
+   * #739 — the payer's two acts, as callbacks. The screen cannot import the server actions
+   * (a `"use client"` module that reaches `lib/db/**` is E34's failure mode), so they arrive as
+   * props from the page, and the page is the only place that decides which action is which.
+   */
+  onCapture: (payload: {
+    relationshipId?: string;
+    presentation?: string;
+  }) => Promise<CaptureOutcome>;
+  /**
+   * #748 — the frame's completion. The embedded capture has no return URL to carry the provider's
+   * session id, so the dialog hands it back here and the server resolves the method from the
+   * session itself (never from anything the caller claims).
+   */
+  onResolve: (payload: {
+    relationshipId?: string;
+    captureSessionId?: string;
+  }) => Promise<CaptureOutcome>;
+  onComplete: (payload: {
+    relationshipId?: string;
+    planId?: string;
+    reason?: string;
+  }) => Promise<CompleteOutcome>;
 }) {
   const viewCopy = sectionOf(copy, "view");
   const statusCopy = sectionOf(copy, "status");
@@ -107,7 +140,11 @@ export function RelationshipDetail({
   const linkCopy = sectionOf(copy, "link");
   const closedCopy = sectionOf(copy, "closed");
   const refusals = sectionOf(copy, "refusals");
+  const completionCopy = sectionOf(copy, "completion");
+  /** #748 — the capture dialog's own copy, and the sentence a failure in it draws. */
+  const captureCopy = sectionOf(copy, "capture");
 
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [aspects, setAspects] = useState<AspectState[]>(
     relationship.template.items.map((item) => ({
@@ -117,19 +154,20 @@ export function RelationshipDetail({
       rightValue: item.rightValue,
     })),
   );
-  const [reason, setReason] = useState("");
   const [aspectsOutcome, setAspectsOutcome] = useState<AspectsOutcome | null>(null);
 
   const [counterpartyName, setCounterpartyName] = useState("");
   const [email, setEmail] = useState("");
-  const [publishReason, setPublishReason] = useState("");
   /** #623 — the two settings the session opens under; written once, at publish (V18). */
   const [mode, setMode] = useState("basic");
   const [setting, setSetting] = useState("soft");
   const [publishOutcome, setPublishOutcome] = useState<PublishOutcome | null>(null);
 
-  const [republishReason, setRepublishReason] = useState("");
   const [republishOutcome, setRepublishOutcome] = useState<RepublishOutcome | null>(null);
+  const [captureOutcome, setCaptureOutcome] = useState<CaptureOutcome | null>(null);
+  /** #748 — the capture dialog; the band's button opens it, and every outcome closes it. */
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [completeOutcome, setCompleteOutcome] = useState<CompleteOutcome | null>(null);
 
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
@@ -142,6 +180,17 @@ export function RelationshipDetail({
   const methodMissing = publishableNow && !relationship.hasPaymentMethod;
   const offersRepublish = relationship.offersRepublish;
   const trialAlone = relationship.trialWithoutLiveInvite;
+
+  /**
+   * The list the standard editor draws: the dashboard's own row type, with a stand-in id for a row
+   * added in this edit, so one component can hold a row the record does not have yet.
+   */
+  const aspectDrafts: AspectDraft[] = aspects.map((aspect, index) => ({
+    id: aspect.id ?? `new-${String(index + 1)}`,
+    prompt: aspect.prompt,
+    leftValue: aspect.leftValue,
+    rightValue: aspect.rightValue,
+  }));
 
   /** The refusal line for the view's own sentence — one id per state, from the fixture. */
   const viewSentence = (view: string): string => {
@@ -173,19 +222,52 @@ export function RelationshipDetail({
     startTransition(async () => {
       const answer = await onSaveAspects({
         relationshipId: relationship.id,
-        record: buildTemplateRecord({
-          id: relationship.templateId,
-          slug: relationship.template.slug,
-          title: relationship.template.title,
-          summary: relationship.template.summary,
-          status: relationship.template.status,
-          date: relationship.template.date,
-          aspects,
-        }),
-        reason,
+        record: buildRecord(aspects),
         saveAs,
       });
       setAspectsOutcome(answer);
+    });
+  }
+
+  /**
+   * The standard editor's writer: one row, saved through the same action the status buttons use.
+   *
+   * A row with a `new-` id is one this screen added and the record does not hold yet, so it is sent
+   * without an id and the server creates it. `saveAs` stays `draft`: saving a row is not a decision
+   * to publish, and "Save and mark ready" is still the control that makes that decision.
+   */
+  async function persistAspects(next: readonly AspectDraft[]): Promise<AspectSaveResult> {
+    const answer = await onSaveAspects({
+      relationshipId: relationship.id,
+      record: buildRecord(next),
+      saveAs: "draft",
+    });
+    setAspectsOutcome(answer);
+    return answer.ok ? { ok: true } : { ok: false, problem: answer.code };
+  }
+
+  /** The rows the person is looking at, kept so a status change writes them rather than the mount. */
+  function mirrorAspects(next: readonly AspectDraft[]): void {
+    setAspects(
+      next.map((row) => ({
+        id: row.id.startsWith("new-") ? undefined : row.id,
+        prompt: row.prompt,
+        leftValue: row.leftValue,
+        rightValue: row.rightValue,
+      })),
+    );
+  }
+
+  /** The relationship's template record with this list on it — one builder for both writers. */
+  function buildRecord(list: readonly AspectState[]) {
+    return buildTemplateRecord({
+      id: relationship.templateId,
+      slug: relationship.template.slug,
+      title: relationship.template.title,
+      summary: relationship.template.summary,
+      status: relationship.template.status,
+      date: relationship.template.date,
+      aspects: list,
     });
   }
 
@@ -196,7 +278,6 @@ export function RelationshipDetail({
         relationshipId: relationship.id,
         counterpartyName,
         email,
-        reason: publishReason,
         mode,
         setting,
       });
@@ -207,11 +288,50 @@ export function RelationshipDetail({
   function republish(): void {
     setRepublishOutcome(null);
     startTransition(async () => {
-      const answer = await onRepublish({
-        relationshipId: relationship.id,
-        reason: republishReason,
-      });
+      const answer = await onRepublish({ relationshipId: relationship.id });
       setRepublishOutcome(answer);
+    });
+  }
+
+  /**
+   * #739 — **put a method on file.** Nothing is charged and nothing is unlocked; the completion is
+   * still the payer's own click.
+   *
+   * #748 — **the capture is a dialog, not a page.** The button opens `PaymentCaptureDialog`, which
+   * draws the plan card the artifact approves and asks the server for an **embedded** session. The
+   * dialog answers every outcome itself: an inline capture (the keyless mock) lands here as a fact
+   * with no frame at all, the embedded one mounts the provider's form in place, and a hosted url —
+   * the path that shipped before this card, still working — is drawn below as the link it always
+   * was. Nothing navigates from under a reader on the embedded path, which is the whole point.
+   */
+  function openCapture(): void {
+    setCaptureOutcome(null);
+    setCaptureOpen(true);
+  }
+
+  /** What the dialog did: the band re-reads the row, and a failure draws its own sentence. */
+  function captureAnswered(answer: CaptureOutcome): void {
+    setCaptureOutcome(answer);
+    if (answer.ok && answer.url === null) {
+      setCaptureOpen(false);
+      router.refresh();
+    }
+  }
+
+  /**
+   * #739 — **complete and open the Gap.** One click: the fee is taken against the method on file
+   * and both parties can read the report.
+   *
+   * `payment-method-required` is not a dead end and not an error: it carries the capture's url, so
+   * the screen prints the sentence and a working link rather than a button the person cannot get
+   * past. A decline is a sentence too — the retry ladder is already running on the server.
+   */
+  function complete(): void {
+    setCompleteOutcome(null);
+    startTransition(async () => {
+      const answer = await onComplete({ relationshipId: relationship.id });
+      setCompleteOutcome(answer);
+      if (answer.ok) router.refresh();
     });
   }
 
@@ -231,6 +351,13 @@ export function RelationshipDetail({
       : republishOutcome?.ok === true
         ? { url: republishOutcome.inviteLink, expiresAt: republishOutcome.inviteExpiresAt }
         : null;
+
+  /* #739 — the payer's band, and the four sentences it can print. */
+  const gate = relationship.completion;
+  const captureRefusal =
+    captureOutcome !== null && !captureOutcome.ok ? sentenceFor(refusals, captureOutcome) : null;
+  const completeRefusal =
+    completeOutcome !== null && !completeOutcome.ok ? sentenceFor(refusals, completeOutcome) : null;
 
   return (
     <div className="space-y-6">
@@ -328,87 +455,15 @@ export function RelationshipDetail({
             <CardDescription>{sectionBody(aspectCopy)}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ul data-aspect-editor className="space-y-3">
-              {aspects.map((aspect, index) => (
-                <li key={aspect.id ?? `new-${index}`} className="space-y-2 rounded-lg border p-3">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor={`aspect-prompt-${index}`}>
-                      {itemLabel(aspectCopy, "prompt")}
-                    </Label>
-                    <Input
-                      id={`aspect-prompt-${index}`}
-                      value={aspect.prompt}
-                      onChange={(event) => patchAspect(index, { prompt: event.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor={`aspect-left-${index}`}>
-                        {itemLabel(aspectCopy, "left")}
-                      </Label>
-                      <Input
-                        id={`aspect-left-${index}`}
-                        value={aspect.leftValue}
-                        onChange={(event) => patchAspect(index, { leftValue: event.target.value })}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor={`aspect-right-${index}`}>
-                        {itemLabel(aspectCopy, "right")}
-                      </Label>
-                      <Input
-                        id={`aspect-right-${index}`}
-                        value={aspect.rightValue}
-                        onChange={(event) => patchAspect(index, { rightValue: event.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => moveAspect(index, -1)}
-                    >
-                      {itemLabel(aspectCopy, "up")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => moveAspect(index, 1)}
-                    >
-                      {itemLabel(aspectCopy, "down")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        setAspects((current) => current.filter((_, at) => at !== index))
-                      }
-                    >
-                      {itemLabel(aspectCopy, "remove")}
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setAspects((current) => [...current, BLANK_ASPECT])}
-            >
-              {itemLabel(aspectCopy, "add")}
-            </Button>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="aspects-reason">{itemLabel(aspectCopy, "reason")}</Label>
-              <Input
-                id="aspects-reason"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </div>
+            <AspectList
+              copy={copy}
+              wordsSection={ASPECT_EDITOR_SECTION}
+              validationSection={null}
+              aspects={aspectDrafts}
+              addRemove
+              onChange={mirrorAspects}
+              save={persistAspects}
+            />
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
@@ -536,14 +591,6 @@ export function RelationshipDetail({
                 {itemLabel(publishCopy, "setting-help")}
               </p>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="publish-reason">{itemLabel(publishCopy, "reason")}</Label>
-              <Input
-                id="publish-reason"
-                value={publishReason}
-                onChange={(event) => setPublishReason(event.target.value)}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="button" onClick={publish} disabled={pending}>
                 {pending ? itemLabel(publishCopy, "publishing") : itemLabel(publishCopy, "submit")}
@@ -582,14 +629,6 @@ export function RelationshipDetail({
             <CardDescription>{sectionBody(republishCopy)}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="republish-reason">{itemLabel(republishCopy, "reason")}</Label>
-              <Input
-                id="republish-reason"
-                value={republishReason}
-                onChange={(event) => setRepublishReason(event.target.value)}
-              />
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="button" onClick={republish} disabled={pending}>
                 {pending ? itemLabel(republishCopy, "working") : itemLabel(republishCopy, "submit")}
@@ -612,6 +651,176 @@ export function RelationshipDetail({
                 </p>
               )}
             </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {relationship.isInitiator &&
+      gate !== null &&
+      (!relationship.closed || gate.phase === "charged") ? (
+        /*
+         * #739 — the payer's two acts, and the only place either is reachable.
+         *
+         * Initiator only: `isInitiator` is the payer (`initiator_user_id`), and the server action
+         * re-asks under a row lock (`not-the-payer`), so this band is a courtesy and not the rule.
+         * Nothing is drawn for a relationship with no session (`completion === null`) or a closed
+         * one — both would be an affordance the transaction refuses. The exception is a closed
+         * relationship whose fee was taken: the payer keeps the receipt sentence ("the $8.95 was
+         * charged on …"), because the alternative is a screen that says nothing at all about money
+         * that moved.
+         *
+         * The four outcomes that are not success each draw a sentence: `payment-method-required`
+         * carries a url the person can click, a decline names the ladder that is already running,
+         * `already-charged` says the fee landed, and `not-the-payer` says whose fee it is.
+         */
+        <Card
+          data-completion-gate={gate.phase}
+          data-completion-sealed={gate.sealed ? "true" : "false"}
+        >
+          <CardHeader>
+            <CardTitle>{completionCopy.heading}</CardTitle>
+            <CardDescription>{sectionBody(completionCopy)}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p data-completion-amount={gate.amountCents} className="text-sm text-muted-foreground">
+              {fillLabel(itemLabel(completionCopy, "amount"), {
+                amount: formatCurrency(gate.amountCents),
+              })}
+            </p>
+            {gate.deadlineAt === null ? null : (
+              <p className="text-sm text-muted-foreground">
+                {fillLabel(itemLabel(completionCopy, "deadline"), {
+                  instant: formatDate(gate.deadlineAt),
+                })}
+              </p>
+            )}
+            {gate.phase === "charged" ? (
+              <p data-completion-charged={gate.chargedAt ?? "true"} className="text-sm font-medium">
+                {fillLabel(itemLabel(completionCopy, "charged"), {
+                  amount: formatCurrency(gate.amountCents),
+                  instant:
+                    gate.chargedAt === null
+                      ? pageItemOf(copy, "none").label
+                      : formatDate(gate.chargedAt),
+                })}
+              </p>
+            ) : gate.phase === "expired" ? (
+              <p data-completion-expired="true" className="text-sm">
+                {itemLabel(completionCopy, "expired")}
+              </p>
+            ) : (
+              <>
+                <p
+                  data-completion-method={gate.hasMethod ? "on-file" : "missing"}
+                  className="text-sm"
+                >
+                  {gate.hasMethod
+                    ? itemLabel(completionCopy, "method-on-file")
+                    : itemLabel(completionCopy, "method-missing")}
+                </p>
+                {gate.sealed ? null : (
+                  <p data-completion-seal="open" className="text-sm text-muted-foreground">
+                    {itemLabel(completionCopy, "not-sealed")}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  {gate.hasMethod ? null : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openCapture}
+                      data-capture-method="true"
+                    >
+                      {itemLabel(completionCopy, "capture")}
+                    </Button>
+                  )}
+                  {gate.sealed ? (
+                    <Button
+                      type="button"
+                      onClick={complete}
+                      disabled={pending}
+                      data-complete-relationship="true"
+                    >
+                      {pending
+                        ? itemLabel(completionCopy, "completing")
+                        : itemLabel(completionCopy, "complete")}
+                    </Button>
+                  ) : null}
+                </div>
+                {captureOutcome?.ok === true ? (
+                  <p data-capture-method-recorded="true" className="text-sm">
+                    {itemLabel(completionCopy, "captured")}
+                  </p>
+                ) : null}
+                {captureOutcome?.ok === true && captureOutcome.url !== null ? (
+                  <p className="text-sm">
+                    <a
+                      className="text-action underline underline-offset-4"
+                      href={captureOutcome.url}
+                      data-capture-link="hosted"
+                    >
+                      {itemLabel(completionCopy, "capture-continue")}
+                    </a>
+                  </p>
+                ) : null}
+                {captureRefusal === null ? null : (
+                  <p
+                    data-capture-refusal={captureOutcome?.ok === false ? captureOutcome.code : ""}
+                    className="text-sm"
+                  >
+                    {captureRefusal}
+                  </p>
+                )}
+                {completeOutcome?.ok === true ? (
+                  <p data-completion-done={completeOutcome.status} className="text-sm font-medium">
+                    {fillLabel(itemLabel(completionCopy, "completed"), {
+                      amount: formatCurrency(completeOutcome.amountCents),
+                      status: completeOutcome.status,
+                    })}
+                  </p>
+                ) : null}
+                {completeRefusal === null ? null : (
+                  <p
+                    data-completion-refusal={
+                      completeOutcome?.ok === false ? completeOutcome.code : ""
+                    }
+                    className="text-sm"
+                  >
+                    {completeRefusal}
+                  </p>
+                )}
+                {completeOutcome?.ok === false && completeOutcome.url !== undefined ? (
+                  <p className="text-sm">
+                    <a
+                      className="text-action underline underline-offset-4"
+                      href={completeOutcome.url}
+                      data-completion-link="capture"
+                    >
+                      {itemLabel(completionCopy, "pay")}
+                    </a>
+                  </p>
+                ) : null}
+                {/*
+                  #748 — the capture itself. Rendered inside this band because the band is the only
+                  place the control exists, and the dialog is inert until it is opened.
+
+                  It is a dialog rather than a route: the artifact draws the provider's card fields
+                  in a frame on this page, and the payer's method is recorded without the screen
+                  changing under them. The hosted path (a `url` in the outcome) is still drawn above
+                  as the link it was — a deployment whose adapter answers a page keeps working.
+                */}
+                <PaymentCaptureDialog
+                  copy={captureCopy}
+                  refusalFallback={itemLabel(refusals, "not-configured")}
+                  relationshipId={relationship.id}
+                  open={captureOpen}
+                  onOpenChange={setCaptureOpen}
+                  onCapture={onCapture}
+                  onResolve={onResolve}
+                  onCaptured={captureAnswered}
+                />
+              </>
+            )}
           </CardContent>
         </Card>
       ) : null}

@@ -6,6 +6,7 @@ import { answersFrom } from "@/lib/flow/answers";
 import { instancePath, submittedPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { readInstanceMode, submitAnswers } from "@/lib/flow/store";
+import type { SubmissionRejection } from "@/lib/flow/state";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -24,6 +25,27 @@ async function viewerUserId(): Promise<string | null> {
 }
 
 /**
+ * The HTTP status each refusal code deserves, in one table so no branch can invent one.
+ *
+ * Per code rather than a chain of ternaries, because the old chain's fall-through was the bug
+ * (#752): every code it did not name became a 404, which claimed the relationship was gone when
+ * the truth was that its sheet is not writable. A `Record` over the union also makes a new code a
+ * type error here instead of a silent guess.
+ */
+const REFUSAL_STATUS: Record<SubmissionRejection, number> = {
+  "not-a-party": 403,
+  "no-such-instance": 404,
+  // The relationship exists and the sheet is not writable: a conflict, never "gone".
+  frozen: 409,
+  incomplete: 409,
+  voided: 409,
+  lapsed: 409,
+  // #619's fee code. `submitAnswers` has not returned it since #739 moved the gate to publishing,
+  // but the union still names it, so it carries a status and a sentence rather than a fall-through.
+  "payment-method-required": 409,
+};
+
+/**
  * `POST /assessment/instances/[instanceId]/answers` — one party's whole sheet, or a refusal.
  *
  * **The freeze is per party, and it is a status code (#R2).** A submit is answered **409** once
@@ -33,6 +55,14 @@ async function viewerUserId(): Promise<string | null> {
  * review, and it is why the freeze is no longer "both parties have submitted". A browser that is
  * not a party to the instance gets **403**; an unknown instance **404**. An edit after the freeze
  * is an error, and a test reads the status.
+ *
+ * **Every code in `SubmissionRejection` has a status *and* a sentence (#752).** `REFUSAL_STATUS`
+ * is a `Record` over the union, so a code the store adds is a type error here rather than a
+ * refusal that falls through to a guess — and each code also has an item in the fixture's
+ * `problems` section, walked by `tests/answer-sheet-refusal.test.ts`. The status is per code, not
+ * "anything that is not one of three is a 404": a `lapsed` or `voided` relationship **exists**, and
+ * its sheet is simply not writable, which is 409 — answering 404 there told the reader their
+ * session was gone.
  *
  * **The sheet is the instance's mode's sheet (#213).** The field names are read against
  * `opinionKindsFor(mode)` — `feel`/`wish` for Basic, all four for Advanced — and the mode
@@ -96,25 +126,28 @@ export async function POST(
     return NextResponse.redirect(new URL(submittedPath(instanceId), request.url), 303);
   }
 
-  const status =
-    result.code === "frozen" || result.code === "incomplete"
-      ? 409
-      : result.code === "not-a-party"
-        ? 403
-        : 404;
-
-  return refusal(instanceId, status, result.code, result.reason, result.problems);
+  return refusal(
+    instanceId,
+    REFUSAL_STATUS[result.code],
+    result.code,
+    result.reason,
+    result.problems,
+  );
 }
 
 /**
  * The refusal page: the fixture's sentence for the code, the reason beneath it, and — when
  * the refusal was a parse — the per-Aspect problems, so a reader (and a test) can see *which*
  * rule stopped the sheet rather than only "incomplete".
+ *
+ * `code` is the union, not a `string`: a code with no item in the fixture's `problems` section
+ * throws out of `itemLabel` and a refusal becomes a 500 (#752), so the signature is what stops a
+ * caller handing this function a word the fixture does not carry.
  */
 function refusal(
   instanceId: string,
   status: number,
-  code: string,
+  code: SubmissionRejection,
   reason: string,
   problems: readonly string[] = [],
 ): Response {

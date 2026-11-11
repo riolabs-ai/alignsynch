@@ -15,13 +15,20 @@ import Link from "next/link";
  *
  * `data-template-card` is the handle a structural check reads a card by; the id is the
  * taxonomy's, so a card in the markup can be joined back to `data/relationship-types.ts`.
+ *
+ * **The title is the detail link**, exactly as the dashboard card's title is: a reader who wants
+ * to know what a template actually asks clicks its name, and `/relationship-types/<slug>` is
+ * where that is answered (#794 — the catalogue type, not a database template). It is drawn under
+ * the same condition as the two actions (`linked`), because the front
+ * page's band is a signpost with one call to action — a shelf of six titles that each carried a
+ * destination would be six links competing with the band's "View all".
  */
 export function TemplateCard({
   card,
   linked = true,
 }: {
   card: TemplateCardModel;
-  /** Whether the card carries its two actions. The front page's shelf passes `false`. */
+  /** Whether the card carries its actions and its detail link. The front page's shelf passes `false`. */
   linked?: boolean;
 }) {
   return (
@@ -30,7 +37,15 @@ export function TemplateCard({
       data-template-card={card.id}
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-[15px] font-bold text-foreground">{card.name}</h3>
+        <h3 className="text-[15px] font-bold text-foreground">
+          {linked ? (
+            <Link className="hover:text-action hover:underline" href={card.detail}>
+              {card.name}
+            </Link>
+          ) : (
+            card.name
+          )}
+        </h3>
         <span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
           {card.realm}
         </span>

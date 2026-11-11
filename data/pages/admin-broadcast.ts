@@ -13,7 +13,7 @@
  *     11 is the drift the shared audience function exists to prevent, and a fixture that hardcoded
  *     either would reintroduce it in the copy.
  *   - **`refusals` has a row per code.** `lib/admin/broadcast.ts::BROADCAST_REFUSALS` and `act()`'s
- *     own `role-too-low` / `reason-too-short` / `signed-out` each need a sentence a person can act
+ *     own `role-too-low` / `signed-out` each need a sentence a person can act
  *     on; `E23` fails the build if the component asks for an id this file does not carry, so a new
  *     refusal cannot ship as a bare code.
  *
@@ -69,8 +69,6 @@ export const adminBroadcastPageCopy: PageCopy = zPageCopy.parse({
         { id: "segment-all", label: "Everyone who has consented" },
         { id: "segment-since", label: "Signed up since a date" },
         { id: "since", label: "Since" },
-        { id: "reason", label: "Why this is being sent" },
-        { id: "reason-placeholder", label: "Audited with the send — at least {min} characters" },
         { id: "dry-run", label: "Dry run" },
         { id: "sending", label: "Sending…" },
         { id: "send", label: "Send the notice" },
@@ -197,10 +195,6 @@ export const adminBroadcastPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "role-too-low",
           label: "Your role cannot send a broadcast. A send needs an admin or the owner.",
-        },
-        {
-          id: "reason-too-short",
-          label: "The reason is too short to audit. Write at least {min} characters.",
         },
         { id: "signed-out", label: "You are not signed in any more. Sign in and try again." },
         {

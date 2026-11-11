@@ -19,7 +19,7 @@
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import {
@@ -39,6 +39,14 @@ import {
   createRelationshipPath,
 } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
+
+/**
+ * #709 — every stage renders inside `StageShell`, whose only Next dependency is `useRouter`.
+ * No render in this file navigates: the stub keeps a render a render.
+ */
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+}));
 
 const TEMPLATE_ID = "template-relationship-basics";
 

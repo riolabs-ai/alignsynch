@@ -1,7 +1,7 @@
 /**
  * template-ancestor: components/assessment-flow/accept-session.tsx   (variation: the same single-outcome shape — a status sentence over a next-step list — for a screen whose outcome is already committed; what a decision screen draws as two seats, this one draws as the invitation's own timeline)
  *
- * `SentState` — stage 5, **Sent** (#691).
+ * `SentState` — stage 5, **Connect** (#691, named by #735).
  *
  * The screen `POST /assessment/new` lands on. The relationship exists and the invitation has gone
  * out; what is left to draw is *what happens next*, *who was invited*, *where the invitation
@@ -44,6 +44,7 @@ import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { SENT_RETURN_VALUE } from "@/lib/flow/paths";
+import { alignAvailableOf } from "@/lib/flow/stage";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { InviteLink } from "./invite-link";
 import { ReinviteForm } from "./reinvite-form";
@@ -79,7 +80,7 @@ export function SentState({
   resendRefusal?: string;
   /** The instance's re-invite endpoint (`reinvitePath()`). */
   resendAction: string;
-  /** The relationship itself — stage 6, one click away. */
+  /** The relationship itself — stage 6, `Align`, one click away. */
   openHref: string;
   /** Whether this request carries a session, which decides which `go` note is drawn. */
   signedIn: boolean;
@@ -181,8 +182,17 @@ export function SentState({
   return (
     <StageColumn>
       <div className="space-y-6">
-        {/* Where the person is in the six stages: the invitation is out, so this is stage 5. */}
-        <StageRail copy={copy} current={5} />
+        {/*
+          Where the person is in the six stages: the relationship exists and its invitation is
+          out, so this is stage 5 — **Connect**. `Align` is live only when something is shared
+          on this relationship, and the status the read handed down is the one fact that says so
+          (`alignAvailableOf()`).
+        */}
+        <StageRail
+          copy={copy}
+          current={5}
+          alignHref={alignAvailableOf(screen.status) ? openHref : null}
+        />
 
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">

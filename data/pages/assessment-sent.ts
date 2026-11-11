@@ -1,5 +1,6 @@
 /**
- * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Sent** (#691).
+ * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Connect** (#691,
+ * named by #735).
  *
  * The screen the commit lands on: what happens next, who was invited, the invitation's own state,
  * and the way into the relationship. Every word is here, and the two bands the screen shares with

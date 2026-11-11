@@ -30,7 +30,11 @@ export const howItWorksPageCopy: PageCopy = zPageCopy.parse({
   heading: "How it works",
   subtitle:
     "One relationship, six moves. This page is the order of operations — what you do at each step, and what the product does with it — so nothing about the next screen is a guess.",
-  cta: { label: "Start with a template", href: "/assessment/templates" },
+  // #794 (D2) — this CTA pointed at `/assessment/templates`, a signed-in screen: a marketing page
+  // deep-linking a stranger into a login wall. It points at the public catalogue instead, which is
+  // the page that actually sells a relationship type. The *words* are unchanged; only the
+  // destination moved, from a door nobody could open to the one that is open.
+  cta: { label: "Start with a template", href: "/relationship-types" },
   secondaryCta: { label: "See my relationships", href: "/assessment/instances" },
   sections: [
     {

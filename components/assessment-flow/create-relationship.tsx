@@ -1,8 +1,8 @@
 /**
  * template-ancestor: components/create/quiz-editor.tsx   (variation: a server component on the app's own route, posting to the route handler — the layout survives, the disabled submit and its "not wired" note do not)
  *
- * `CreateRelationship` — the create flow's four stages, **Who**, **Mode**, **Aspects** and
- * **Create** (#427, #688, #689, #690).
+ * `CreateRelationship` — the create flow's four stages, **Details**, **Settings**, **Aspects** and
+ * **Invite** (#427, #688, #689, #690; named by #735).
  *
  * **One form split into four steps, one draft behind all of them.** Until #688 this was a single
  * form: the names, the address, the Mode and the Setting, submitted together or lost together. The
@@ -66,16 +66,19 @@ import type { AspectDraft } from "@/lib/flow/aspects";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_INSTANCE_PATH,
-  PRICING_PATH,
   SAVE_MODE_PATH,
   SAVE_WHO_PATH,
+  TEMPLATE_LIBRARY_PATH,
   createCommitPath,
 } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { PlanChoices } from "./plan-choices";
+import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
+import { StageFour } from "./stage-four";
 import { StageColumn } from "./stage-column";
 import { StageRail } from "./stage-rail";
+import { StageShell } from "./stage-shell";
 
 /** Which of the create flow's four steps this render is (#688, #689, #690). */
 export type CreateStage = 1 | 2 | 3 | 4;
@@ -147,6 +150,96 @@ function FieldHelp({ children }: { children: ReactNode }) {
 const INPUT_CLASSES =
   "rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950";
 
+/**
+ * The commit form's id (#760). The stage foot's primary sits outside the form — the artifact
+ * draws the one advancing act in the foot, not in the card — so it submits by id. A constant
+ * rather than a literal in two places: E23 counts a string attribute as copy, and a form id is
+ * technical, not a word a reader sees.
+ */
+const COMMIT_FORM_ID = "create-commit-form";
+
+/** One option of a single-select group: the value stored, the word, and what it does. */
+interface ChoiceOption {
+  readonly value: string;
+  readonly label: string;
+  readonly help: string;
+}
+
+/**
+ * **One single-select group**, drawn twice on Settings (#760).
+ *
+ * Opinions Mode and Alignment Setting are two dimensions of equal weight, so they are the same
+ * control and not a control and a toolbar: a `fieldset` with the live legend, one bordered cell
+ * per option, a native `required` radio (the browser's own single-choice contract — arrow keys
+ * move within one `name`) and the option's one-line glossary help. The peers sit side by side
+ * from `sm` up, one column below it.
+ *
+ * `badge` is the "Fixed at creation" chip beside the Opinions Mode legend; `intro` and `note` are
+ * the Alignment Setting's sentence above the cells and its threshold line under them.
+ */
+function ChoiceFieldset({
+  name,
+  legend,
+  options,
+  selected,
+  badge,
+  intro,
+  note,
+}: {
+  name: string;
+  legend: string;
+  options: readonly ChoiceOption[];
+  selected: string | undefined;
+  badge?: string;
+  intro?: string;
+  note?: string;
+}) {
+  return (
+    <fieldset
+      data-choice-group={name}
+      className="grid content-start gap-2 rounded-lg border border-gray-200 p-4 text-sm dark:border-gray-700"
+    >
+      <legend className="font-medium text-gray-800 dark:text-gray-100">
+        {legend}
+        {badge === undefined ? null : (
+          <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 align-middle text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+            {badge}
+          </span>
+        )}
+      </legend>
+      {intro === undefined ? null : (
+        <p className="text-xs text-gray-500 dark:text-gray-400">{intro}</p>
+      )}
+      <div className="grid gap-2">
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={option.value}
+              required
+              defaultChecked={selected === option.value}
+              className="mt-1"
+            />
+            <span>
+              <span className="font-medium text-gray-800 dark:text-gray-100">{option.label}</span>
+              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+                {option.help}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {note === undefined ? null : (
+        <p className="text-xs text-gray-500 dark:text-gray-400">{note}</p>
+      )}
+    </fieldset>
+  );
+}
+
 export function CreateRelationship({
   copy,
   stage,
@@ -158,7 +251,7 @@ export function CreateRelationship({
   problemLink,
 }: {
   copy: PageCopy;
-  /** 1 = Who, 2 = Mode, 3 = Aspects, 4 = Create. The rail and the body both read it. */
+  /** 1 = Details, 2 = Settings, 3 = Aspects, 4 = Invite. The rail and the body both read it. */
   stage: CreateStage;
   /** The template to copy, or `null` when the refusal means there is none to read. */
   template: CreateTemplate | null;
@@ -184,480 +277,365 @@ export function CreateRelationship({
   const review = sectionOf(copy, "review");
   const plans = sectionOf(copy, "plans");
   const problems = sectionOf(copy, "problems");
+  // The foot's one shared word (#760): `Cancel` is the same act on all four stages, so it has
+  // one row in the fixture rather than four copies that could drift.
+  const foot = sectionOf(copy, "foot");
+  const cancelLabel = itemLabel(foot, "cancel");
+  // The shell's one own control (#709). The six stage names are the section's other items; this
+  // word is here because the rail and the modal are drawn by the same shell.
+  const stages = sectionOf(copy, "stages");
+  const shell = {
+    closeLabel: itemLabel(stages, "close"),
+    // Leaving the flow goes back to the library the flow was started from — the gallery the
+    // approved artifact closes onto. Stages 2–4 pass through it too: a dismissal is not a
+    // "previous step", and a close that walked backwards would leave four ways out of one modal.
+    closeHref: TEMPLATE_LIBRARY_PATH,
+  };
+
+  // The stage's heading, computed once: it is both the screen's `<h1>` and the dialog's
+  // accessible name (#709), so the two can never name the screen differently.
+  const heading =
+    stage === 1
+      ? copy.heading
+      : stage === 2
+        ? mode.heading
+        : stage === 3
+          ? aspectsSection.heading
+          : commit.heading;
+
+  /**
+   * Settings' two option lists (#760), built from the model's own vocabulary — `MODE_LABELS` and
+   * `SETTING_DEFINITIONS` are authored once in `content/assessment.ts`, so this screen cannot
+   * describe a Mode or a Setting differently from the answer sheet that asks it. Only the
+   * *headings* and the two Mode helps are fixture copy.
+   */
+  const modeOptions: ChoiceOption[] = ASSESSMENT_MODES.map((option) => ({
+    value: option,
+    label: MODE_LABELS[option],
+    help: itemLabel(mode, option === "basic" ? "mode-basic-help" : "mode-advanced-help"),
+  }));
+  const settingOptions: ChoiceOption[] = ALIGNMENT_SETTINGS.map((option) => ({
+    value: option,
+    label: SETTING_LABELS[option],
+    help: SETTING_DEFINITIONS[option],
+  }));
 
   // The refusal that leaves nothing to copy: still a page, never a 404 that loses the sentence.
   if (template === null) {
     const empty = sectionOf(copy, "refused");
     return (
-      <StageColumn>
-        <div className="space-y-6">
-          <p>
-            <Link href={backHref} className="text-sm font-medium text-action hover:underline">
-              {itemLabel(empty, "back")}
-            </Link>
-          </p>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-              {empty.heading}
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-              {sectionBody(empty)}
+      <StageShell title={empty.heading} {...shell}>
+        <StageColumn>
+          <div className="space-y-6">
+            <p>
+              <Link
+                href={backHref}
+                className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
+              >
+                {itemLabel(empty, "back")}
+              </Link>
             </p>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                {empty.heading}
+              </h1>
+              <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+                {sectionBody(empty)}
+              </p>
+            </div>
+            <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
           </div>
-          <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
-        </div>
-      </StageColumn>
+        </StageColumn>
+      </StageShell>
     );
   }
 
   return (
-    <StageColumn>
-      <div className="space-y-6">
-        <p>
-          <Link href={backHref} className="text-sm font-medium text-action hover:underline">
-            {stage === 1
-              ? itemLabel(band, "back")
-              : stage === 2
-                ? itemLabel(mode, "back")
-                : stage === 3
-                  ? itemLabel(aspectsSection, "back")
-                  : itemLabel(commit, "back")}
-          </Link>
-        </p>
+    <StageShell title={heading} {...shell}>
+      <StageColumn>
+        <div className="space-y-6">
+          {/*
+           * **One back affordance per screen, and it lives in the foot** (#760). Stages 2–4 used
+           * to draw a bare `Back` link at the top of the column while stage 1 drew its own in the
+           * form's action row — three shapes for one act, and none of them the pair the artifact
+           * draws. The foot below is now the only place it appears, on all four stages.
+           */}
 
-        {/* Where the person is in the six stages (#687): Who, Mode, Aspects and Create are the first four. */}
-        <StageRail copy={copy} current={stage} />
+          {/*
+           * Where the person is in the six stages (#687, renamed by #735): Details, Settings,
+           * Aspects and Invite are the first four. `Align` is drawn unavailable here — the
+           * relationship this flow creates has no shared assessment until somebody has claimed
+           * the invitation and answered.
+           */}
+          <StageRail copy={copy} current={stage} alignHref={null} />
 
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {stage === 1
-              ? copy.heading
-              : stage === 2
-                ? mode.heading
-                : stage === 3
-                  ? aspectsSection.heading
-                  : commit.heading}
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-            {stage === 1
-              ? copy.subtitle
-              : stage === 2
-                ? sectionBody(mode)
-                : stage === 3
-                  ? sectionBody(aspectsSection)
-                  : sectionBody(commit)}
-          </p>
-        </div>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+              {heading}
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+              {stage === 1
+                ? copy.subtitle
+                : stage === 2
+                  ? sectionBody(mode)
+                  : stage === 3
+                    ? sectionBody(aspectsSection)
+                    : sectionBody(commit)}
+            </p>
+          </div>
 
-        <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
+          <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
 
-        {stage === 1 ? (
-          <>
-            {/* What is being copied — its name, its words and its size, all from the record. */}
-            <section
-              aria-labelledby="create-template-heading"
-              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-            >
-              <h2
-                id="create-template-heading"
-                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+          {stage === 1 ? (
+            <>
+              {/* What is being copied — its name, its words and its size, all from the record. */}
+              <section
+                aria-labelledby="create-template-heading"
+                className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
               >
-                {band.heading}
-              </h2>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
-              <div className="mt-3 rounded-md border border-gray-200 px-3 py-2.5 dark:border-gray-700">
-                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                  {template.title}
+                <h2
+                  id="create-template-heading"
+                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                >
+                  {band.heading}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
+                <div className="mt-3 rounded-md border border-gray-200 px-3 py-2.5 dark:border-gray-700">
+                  <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                    {template.title}
+                  </p>
+                  <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
+                    {template.summary}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
+                  </p>
+                </div>
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                  {itemLabel(band, "seats")}
                 </p>
-                <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
-                  {template.summary}
-                </p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
-                </p>
-              </div>
-              <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                {itemLabel(band, "seats")}
-              </p>
-            </section>
+              </section>
 
+              <form
+                action={SAVE_WHO_PATH}
+                method="post"
+                aria-labelledby="create-who-heading"
+                className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+              >
+                <h2
+                  id="create-who-heading"
+                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                >
+                  {who.heading}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(who)}</p>
+
+                {/* The template is the route's own fact; the form carries it so the POST names it. */}
+                <input type="hidden" name="templateRecordId" value={template.recordId} />
+
+                {/*
+                The inventory the spec fixes (`docs/specs/flow-stages.md` → *Stage 1, Details*):
+                initiator and counterparty on row 1, email and title on row 2, the description
+                across row 3 — four 6-span fields and one 12-span, in that order, and nothing else.
+                `tests/create-fields.test.ts` asserts the order and the spans, so a sixth field or
+                a moved one is red rather than a reviewer's memory.
+              */}
+                <div className="grid gap-3 sm:grid-cols-12">
+                  <label
+                    className="grid gap-1 text-sm sm:col-span-6"
+                    htmlFor="create-initiator-name"
+                  >
+                    <FieldLabel>{itemLabel(who, "initiator-label")}</FieldLabel>
+                    <input
+                      id="create-initiator-name"
+                      name="initiatorName"
+                      defaultValue={draft.initiatorName}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "initiator-help")}</FieldHelp>
+                  </label>
+
+                  <label
+                    className="grid gap-1 text-sm sm:col-span-6"
+                    htmlFor="create-counterparty-name"
+                  >
+                    <FieldLabel>{itemLabel(who, "counterparty-label")}</FieldLabel>
+                    <input
+                      id="create-counterparty-name"
+                      name="counterpartyName"
+                      defaultValue={draft.counterpartyName}
+                      placeholder={itemLabel(who, "counterparty-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "counterparty-help")}</FieldHelp>
+                  </label>
+
+                  {/* No help line: the artifact draws none under the address (`email-help` is gone). */}
+                  <label className="grid gap-1 text-sm sm:col-span-6" htmlFor="create-email">
+                    <FieldLabel>{itemLabel(who, "email-label")}</FieldLabel>
+                    <input
+                      id="create-email"
+                      name="email"
+                      type="email"
+                      defaultValue={draft.email}
+                      placeholder={itemLabel(who, "email-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                  </label>
+
+                  <label className="grid gap-1 text-sm sm:col-span-6" htmlFor="create-title">
+                    <FieldLabel>{itemLabel(who, "title-label")}</FieldLabel>
+                    <input
+                      id="create-title"
+                      name="title"
+                      defaultValue={draft.title}
+                      placeholder={itemLabel(who, "title-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "title-help")}</FieldHelp>
+                  </label>
+
+                  <label className="grid gap-1 text-sm sm:col-span-12" htmlFor="create-description">
+                    <FieldLabel>{itemLabel(who, "description-label")}</FieldLabel>
+                    <textarea
+                      id="create-description"
+                      name="description"
+                      rows={3}
+                      defaultValue={draft.description}
+                      placeholder={itemLabel(who, "description-placeholder")}
+                      className={INPUT_CLASSES}
+                    />
+                    <FieldHelp>{itemLabel(who, "description-help")}</FieldHelp>
+                  </label>
+                </div>
+
+                {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
+                <StageFoot
+                  backHref={backHref}
+                  backLabel={itemLabel(who, "back")}
+                  cancelHref={shell.closeHref}
+                  cancelLabel={cancelLabel}
+                  advance={
+                    <button type="submit" className={ADVANCE_CLASSES}>
+                      {itemLabel(who, "submit")}
+                    </button>
+                  }
+                />
+              </form>
+            </>
+          ) : stage === 2 ? (
             <form
-              action={SAVE_WHO_PATH}
+              action={SAVE_MODE_PATH}
               method="post"
-              aria-labelledby="create-who-heading"
+              aria-labelledby="create-mode-heading"
               className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
             >
               <h2
-                id="create-who-heading"
+                id="create-mode-heading"
                 className="text-lg font-semibold text-gray-900 dark:text-gray-100"
               >
-                {who.heading}
+                {mode.heading}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(who)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(mode)}</p>
 
               {/* The template is the route's own fact; the form carries it so the POST names it. */}
               <input type="hidden" name="templateRecordId" value={template.recordId} />
 
-              <label className="grid gap-1 text-sm" htmlFor="create-initiator-name">
-                <FieldLabel>{itemLabel(who, "initiator-label")}</FieldLabel>
-                <input
-                  id="create-initiator-name"
-                  name="initiatorName"
-                  defaultValue={draft.initiatorName}
-                  className={INPUT_CLASSES}
-                />
-                <FieldHelp>{itemLabel(who, "initiator-help")}</FieldHelp>
-              </label>
-
+              {/*
+               * **Two peers, not two stacks** (#760). Opinions Mode and Alignment Setting are two
+               * independent dimensions of equal weight — the Mode decides how many Opinion
+               * questions an Aspect asks, the Setting decides how strictly the Gap is judged — so
+               * they are drawn with one control, side by side from `sm` up and one column below
+               * it. The badge is the one sentence Mode needs ("Fixed at creation"); the Setting
+               * carries its own lens line above and its threshold line below.
+               */}
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-sm" htmlFor="create-counterparty-name">
-                  <FieldLabel>{itemLabel(who, "counterparty-label")}</FieldLabel>
-                  <input
-                    id="create-counterparty-name"
-                    name="counterpartyName"
-                    defaultValue={draft.counterpartyName}
-                    placeholder={itemLabel(who, "counterparty-placeholder")}
-                    className={INPUT_CLASSES}
-                  />
-                  <FieldHelp>{itemLabel(who, "counterparty-help")}</FieldHelp>
-                </label>
-
-                <label className="grid gap-1 text-sm" htmlFor="create-email">
-                  <FieldLabel>{itemLabel(who, "email-label")}</FieldLabel>
-                  <input
-                    id="create-email"
-                    name="email"
-                    type="email"
-                    defaultValue={draft.email}
-                    placeholder={itemLabel(who, "email-placeholder")}
-                    className={INPUT_CLASSES}
-                  />
-                  <FieldHelp>{itemLabel(who, "email-help")}</FieldHelp>
-                </label>
+                <ChoiceFieldset
+                  name="mode"
+                  legend={itemLabel(mode, "mode-label")}
+                  badge={itemLabel(mode, "mode-fixed")}
+                  options={modeOptions}
+                  selected={draft.mode}
+                />
+                <ChoiceFieldset
+                  name="alignmentSetting"
+                  legend={itemLabel(mode, "setting-label")}
+                  intro={itemLabel(mode, "setting-help")}
+                  note={itemLabel(mode, "setting-note")}
+                  options={settingOptions}
+                  selected={draft.alignmentSetting}
+                />
               </div>
 
-              <label className="grid gap-1 text-sm" htmlFor="create-title">
-                <FieldLabel>{itemLabel(who, "title-label")}</FieldLabel>
-                <input
-                  id="create-title"
-                  name="title"
-                  defaultValue={draft.title}
-                  placeholder={itemLabel(who, "title-placeholder")}
-                  className={INPUT_CLASSES}
-                />
-                <FieldHelp>{itemLabel(who, "title-help")}</FieldHelp>
-              </label>
-
-              <label className="grid gap-1 text-sm" htmlFor="create-description">
-                <FieldLabel>{itemLabel(who, "description-label")}</FieldLabel>
-                <textarea
-                  id="create-description"
-                  name="description"
-                  rows={3}
-                  defaultValue={draft.description}
-                  placeholder={itemLabel(who, "description-placeholder")}
-                  className={INPUT_CLASSES}
-                />
-                <FieldHelp>{itemLabel(who, "description-help")}</FieldHelp>
-              </label>
-
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button
-                  type="submit"
-                  className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground"
-                >
-                  {itemLabel(who, "submit")}
-                </button>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {itemLabel(who, "submit-note")}
-                </p>
-              </div>
+              {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
+              <StageFoot
+                backHref={backHref}
+                backLabel={itemLabel(mode, "back")}
+                cancelHref={shell.closeHref}
+                cancelLabel={cancelLabel}
+                advance={
+                  <button type="submit" className={ADVANCE_CLASSES}>
+                    {itemLabel(mode, "submit")}
+                  </button>
+                }
+              />
             </form>
-          </>
-        ) : stage === 2 ? (
-          <form
-            action={SAVE_MODE_PATH}
-            method="post"
-            aria-labelledby="create-mode-heading"
-            className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-          >
-            <h2
-              id="create-mode-heading"
-              className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-            >
-              {mode.heading}
-            </h2>
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">
-              {itemLabel(mode, "mode-fixed")}
-            </p>
-
-            {/* The template is the route's own fact; the form carries it so the POST names it. */}
-            <input type="hidden" name="templateRecordId" value={template.recordId} />
-
-            {/* Mode — fixed at creation, and said so on the form. */}
-            <fieldset className="grid gap-2 text-sm">
-              <legend className="font-medium text-gray-700 dark:text-gray-200">
-                {itemLabel(mode, "mode-label")}
-              </legend>
-              {ASSESSMENT_MODES.map((option) => (
-                <label
-                  key={option}
-                  className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
-                >
-                  <input
-                    type="radio"
-                    name="mode"
-                    value={option}
-                    required
-                    defaultChecked={draft.mode === option}
-                    className="mt-1"
-                  />
-                  <span>
-                    <span className="font-medium text-gray-800 dark:text-gray-100">
-                      {MODE_LABELS[option]}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                      {option === "basic"
-                        ? itemLabel(mode, "mode-basic-help")
-                        : itemLabel(mode, "mode-advanced-help")}
-                    </span>
-                  </span>
-                </label>
-              ))}
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {itemLabel(mode, "mode-fixed-note")}
-              </p>
-            </fieldset>
-
-            {/* Setting — the bar the report is judged against, and the one choice a party may change. */}
-            <fieldset className="grid gap-2 text-sm">
-              <legend className="font-medium text-gray-700 dark:text-gray-200">
-                {itemLabel(mode, "setting-label")}
-              </legend>
-              {ALIGNMENT_SETTINGS.map((option) => (
-                <label
-                  key={option}
-                  className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
-                >
-                  <input
-                    type="radio"
-                    name="alignmentSetting"
-                    value={option}
-                    required
-                    defaultChecked={draft.alignmentSetting === option}
-                    className="mt-1"
-                  />
-                  <span>
-                    <span className="font-medium text-gray-800 dark:text-gray-100">
-                      {SETTING_LABELS[option]}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                      {SETTING_DEFINITIONS[option]}
-                    </span>
-                  </span>
-                </label>
-              ))}
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {itemLabel(mode, "setting-changeable")}
-              </p>
-            </fieldset>
-
-            {/* The point of action: the control, enabled, with what it will do beside it. */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <button
-                type="submit"
-                className="rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground"
-              >
-                {itemLabel(mode, "submit")}
-              </button>
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                {itemLabel(mode, "submit-note")}
-              </p>
-            </div>
-          </form>
-        ) : stage === 3 ? (
-          <div className="space-y-5">
-            {/*
+          ) : stage === 3 ? (
+            <div className="space-y-5">
+              {/*
               The list itself (#689). It is the one client component in this stage: a row opens in
               place, saves itself and collapses again, and the order is dragged — none of which a
               page navigation can do. It writes the list into the same draft cookie the two stages
               above wrote, so a reload renders what the person left behind.
             */}
-            <AspectList copy={copy} templateRecordId={template.recordId} aspects={aspects ?? []} />
+              <AspectList
+                copy={copy}
+                templateRecordId={template.recordId}
+                aspects={aspects ?? []}
+              />
 
-            {/*
+              {/*
               Stage 3 hands over; it does not create (#690). Until stage 4 existed the create sat
               on this control, which made the Aspects the last word on a relationship. The approved
               flow puts the review, the plans and the conversion after the list, so this is a plain
               link to the last stage — a GET, because going to a screen must never write.
             */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Link
-                href={createCommitPath(template.recordId)}
-                data-create-next="commit"
-                className="inline-flex h-11 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover"
-              >
-                {itemLabel(aspectsSection, "submit")}
-              </Link>
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                {itemLabel(aspectsSection, "submit-note")}
-              </p>
+              {/* The stage foot (#760): `[Back][Cancel]` left, the hand-over flush right. */}
+              <StageFoot
+                backHref={backHref}
+                backLabel={itemLabel(aspectsSection, "back")}
+                cancelHref={shell.closeHref}
+                cancelLabel={cancelLabel}
+                advance={
+                  <Link
+                    href={createCommitPath(template.recordId)}
+                    data-create-next="commit"
+                    className={ADVANCE_CLASSES}
+                  >
+                    {itemLabel(aspectsSection, "submit")}
+                  </Link>
+                }
+              />
             </div>
-          </div>
-        ) : (
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-            {/*
-              LEFT — the two plans, as the soft half of the payment decision (#690). Nothing here
-              is charged and nothing here blocks: the create posts without a plan, and the hard
-              gate is at publish (`components/dashboard/relationship-detail.tsx`).
-            */}
-            <section
-              aria-labelledby="create-plans-heading"
-              data-create-plans="true"
-              className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2
-                  id="create-plans-heading"
-                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                >
-                  {plans.heading}
-                </h2>
-                <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
-                  {itemLabel(plans, "trial-short")}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(plans)}</p>
-              <PlanChoices copy={copy} />
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                {itemLabel(plans, "trial")}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                {itemLabel(plans, "add-method-note")}
-              </p>
-              <p>
-                <Link
-                  href={PRICING_PATH}
-                  data-create-plans-link="pricing"
-                  className="text-sm font-medium text-action hover:underline"
-                >
-                  {itemLabel(plans, "add-method")}
-                </Link>
-              </p>
-            </section>
-
-            <aside className="space-y-5">
-              {/*
-                The conversion. A plain form posting to the create endpoint: the draft already
-                carries who, mode, setting and the list, so the post names the template and nothing
-                else, and a reload of the refusal cannot create a second relationship.
-              */}
-              <form
-                action={CREATE_INSTANCE_PATH}
-                method="post"
-                aria-labelledby="create-commit-heading"
-                data-create-commit="true"
-                className="space-y-3 rounded-lg border border-action bg-white p-4 dark:bg-gray-900"
-              >
-                <h2
-                  id="create-commit-heading"
-                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                >
-                  {itemLabel(commit, "cta-heading")}
-                </h2>
-                <input type="hidden" name="templateRecordId" value={template.recordId} />
-                <button
-                  type="submit"
-                  className="inline-flex h-11 w-full items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover"
-                >
-                  {itemLabel(commit, "submit")}
-                </button>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {itemLabel(commit, "cta-body")}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  {itemLabel(commit, "reassure")}
-                </p>
-              </form>
-
-              {/*
-                The six facts stages 1–3 decided, printed back for one last read — the template
-                (with its own Aspect count), both seats, the title, the Mode and the Setting. The
-                Aspect *count* rather than the list: the list is stage 3, one link back.
-              */}
-              <section
-                aria-labelledby="create-review-heading"
-                data-create-review="true"
-                className="space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-              >
-                <h2
-                  id="create-review-heading"
-                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                >
-                  {review.heading}
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(review)}</p>
-                <dl className="mt-2 space-y-1.5 text-sm">
-                  <div className="flex justify-between gap-3" data-create-fact="true">
-                    <dt className="text-gray-500 dark:text-gray-400">
-                      {itemLabel(review, "template")}
-                    </dt>
-                    <dd className="text-right text-gray-900 dark:text-gray-100">
-                      {template.title}
-                      <span className="block text-xs text-gray-500 dark:text-gray-400">
-                        {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
-                      </span>
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3" data-create-fact="true">
-                    <dt className="text-gray-500 dark:text-gray-400">
-                      {itemLabel(review, "initiator")}
-                    </dt>
-                    <dd className="text-right text-gray-900 dark:text-gray-100">
-                      {orNone(review, draft.initiatorName)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3" data-create-fact="true">
-                    <dt className="text-gray-500 dark:text-gray-400">
-                      {itemLabel(review, "counterparty")}
-                    </dt>
-                    <dd className="text-right text-gray-900 dark:text-gray-100">
-                      {orNone(review, draft.counterpartyName)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3" data-create-fact="true">
-                    <dt className="text-gray-500 dark:text-gray-400">
-                      {itemLabel(review, "title")}
-                    </dt>
-                    <dd className="text-right text-gray-900 dark:text-gray-100">
-                      {orNone(review, draft.title)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3" data-create-fact="true">
-                    <dt className="text-gray-500 dark:text-gray-400">
-                      {itemLabel(review, "mode")}
-                    </dt>
-                    <dd className="text-right text-gray-900 dark:text-gray-100">
-                      {MODE_LABELS[draft.mode as keyof typeof MODE_LABELS] ??
-                        itemLabel(review, "none")}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3" data-create-fact="true">
-                    <dt className="text-gray-500 dark:text-gray-400">
-                      {itemLabel(review, "setting")}
-                    </dt>
-                    <dd className="text-right text-gray-900 dark:text-gray-100">
-                      {SETTING_LABELS[draft.alignmentSetting as keyof typeof SETTING_LABELS] ??
-                        itemLabel(review, "none")}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-            </aside>
-          </div>
-        )}
-      </div>
-    </StageColumn>
+          ) : (
+            <StageFour
+              copy={copy}
+              draft={draft}
+              template={{
+                recordId: template.recordId,
+                title: template.title,
+                aspectCount: template.aspectCount,
+              }}
+              backHref={backHref}
+              cancelHref={shell.closeHref}
+              cancelLabel={cancelLabel}
+              advanceClasses={ADVANCE_CLASSES}
+              commitFormId={COMMIT_FORM_ID}
+            />
+          )}
+        </div>
+      </StageColumn>
+    </StageShell>
   );
 }
 

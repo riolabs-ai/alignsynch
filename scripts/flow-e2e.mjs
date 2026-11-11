@@ -18,6 +18,11 @@
  *   3. claim       the Counterparty confirms joining as their own name; a claim that
  *                  confirms nothing, or the wrong name, is refused with `unconfirmed` and
  *                  spends nothing; the successful claim happens once (#202)
+ *   3a. response  the invitation renders inside the flow's modal (#710): the server's own HTML
+ *                  carries the shell, the six-stage rail reads Connect, a `?step=2` deep link
+ *                  lands on the same shell, and the completed claim leaves onto a screen that
+ *                  is never an `Ongoing` surface — `/dashboard` signed in, the relationship
+ *                  signed out
  *   3b. named      the instance screen names the answering party on every visit (#202)
  *   3c. cross-post a session bound as the Initiator that POSTs `role=counterparty` is
  *                  refused 403 and writes no Counterparty opinion (#202)
@@ -58,6 +63,8 @@ import { Client } from "pg";
 
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const TEMPLATE_ID = "assessment-relationship-basics";
+/** The same fixture row's `slug` — what every stage's URL carries since #794. */
+const TEMPLATE_SLUG = "relationship-basics";
 const TIME = "aspect-time-together";
 const MONEY = "aspect-money";
 
@@ -232,9 +239,15 @@ class Jar {
  * The four-stage create (#688 → #690), driven like a person drives it
  * ------------------------------------------------------------------ */
 
-/** `/assessment/templates/<id>/create` — the stem every create stage hangs off (#688). */
-function createStem(templateRecordId) {
-  return `/assessment/templates/${templateRecordId}/create`;
+/**
+ * `/templates/relationship/<slug>/create` — the stem every create stage hangs off (#688, #794).
+ *
+ * The segment is the template's **slug**, because that is what the app redirects with: stage 1's
+ * handler resolves the posted id to the slug before it answers, so an assertion built from the id
+ * would be asserting the address the app deliberately does not use.
+ */
+function createStem() {
+  return `/templates/relationship/${TEMPLATE_SLUG}/create`;
 }
 
 /**
@@ -282,7 +295,7 @@ async function createThroughStages(
     aspects,
   },
 ) {
-  const stem = createStem(templateRecordId);
+  const stem = createStem();
 
   /* stage 1 — Who ---------------------------------------------------- */
   const who = await jar.post("/assessment/new/who", {
@@ -409,10 +422,11 @@ async function main() {
   const stranger = new Jar("stranger");
 
   /* 1. create — the four stages: Who, Mode, Aspects, Create (#688 → #690) --- */
-  // #704 — the create is four screens, and its redirect has two shapes: a signed-in creator is
-  // sent on to Sent (stage 5, #691) and a signed-out one to the account gate, which names the
-  // relationship stage 4 just committed. This run is signed out, so the gate is the shape it
-  // should meet; the id is in the address either way, and that is where the flow continues.
+  // #704 — the create is four screens, and its redirect has three shapes (#709): a signed-in
+  // creator is closed onto the dashboard, a signed-out one to the account gate, which names the
+  // relationship stage 4 just committed, and a post that named no template to the relationship
+  // itself. This run is signed out, so the gate is the shape it should meet; the id is in the
+  // address either way, and that is where the flow continues.
   const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorName: "Avery E2E",
@@ -428,9 +442,13 @@ async function main() {
   const instancePath = `/assessment/instances/${instanceId}`;
   const destination = new URL(firstCreate.location, BASE_URL);
   const onTheGate = destination.pathname.endsWith("/create/account");
+  // #709 — the signed-in shape is the dashboard now: the flow closes onto it and the new
+  // relationship is listed there. This run is signed out, so it meets the gate; the other two
+  // shapes are still accepted so the check describes the endpoint rather than this one journey.
   check(
-    "the create sends the creator to one of the two screens it has: the gate, or Sent",
+    "the create sends the creator to one of the three screens it has: the gate, the dashboard, or Sent",
     (onTheGate && destination.searchParams.get("instance") === instanceId) ||
+      destination.pathname === "/dashboard" ||
       destination.pathname === `${instancePath}/sent`,
     `${destination.pathname}${destination.search}`,
   );
@@ -618,19 +636,41 @@ async function main() {
   check("it names the Initiator", invitePage.html.includes("Avery E2E"));
   check("it names the Template", invitePage.html.includes("Relationship Basics"));
   // #t_0aa81144 — the invitation lands on step 1 of the onboarding wizard, not on a claim button.
+  // #710 — and that wizard now renders inside the flow's modal, under the six-stage rail at
+  // Connect, closing onto the dashboard. Three facts, because a shell that only *looks* modal
+  // (a client overlay that mounts after hydration) would still 404 the deep link.
   check(
     "it opens on step 1 of the wizard",
-    invitePage.html.includes("Step 1 of 3") &&
-      invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+    invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+  );
+  check(
+    "the response renders inside the flow's modal, in the server's own HTML",
+    invitePage.html.includes('data-stage-shell="true"') &&
+      invitePage.html.includes('role="dialog"') &&
+      invitePage.html.includes('data-stage-close="/dashboard"'),
+  );
+  check(
+    "and under the six-stage rail, at Connect — stage 5 of 6",
+    invitePage.html.includes("Stage 5 of 6") &&
+      ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"].every((name) =>
+        invitePage.html.includes(name),
+      ),
   );
   const stepTwo = await counterparty.get(`/invite/${token}?step=2`);
-  check("step 2 keeps the token and explains the order", stepTwo.html.includes("Step 2 of 3"));
+  check(
+    "a ?step=2 deep link survives a refresh and lands on the same shell",
+    stepTwo.status === 200 &&
+      stepTwo.html.includes("You can change any opinion until you accept the session.") &&
+      stepTwo.html.includes('data-stage-shell="true"') &&
+      stepTwo.html.includes("Stage 5 of 6"),
+    `status ${stepTwo.status}`,
+  );
   const stepThree = await counterparty.get(`/invite/${token}?step=3`);
   check(
     "step 3 is the account gate and claims nothing on a GET",
-    stepThree.html.includes("Step 3 of 3") &&
+    stepThree.html.includes("Accepting costs you nothing") &&
       stepThree.html.includes("You are joining as Rowan E2E, the Counterparty.") === false &&
-      stepThree.html.includes("Accepting costs you nothing"),
+      stepThree.html.includes('data-stage-shell="true"'),
   );
   check(
     "it does not name an answering party for a browser that is not one",
@@ -672,10 +712,19 @@ async function main() {
   );
 
   const claim = await counterparty.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  // #710 — the exit is `afterClaimTarget()`: a signed-in claimer closes onto `/dashboard`, and a
+  // signed-out one (this run — it posted the endpoint directly, which the screens never offer
+  // because step 3 asks for an account) stays on the relationship it just bound, where the party
+  // cookie it was given is what makes the screen readable.
   check(
-    "claiming answers 303 to the instance screen",
-    claim.status === 303 && (claim.location ?? "").includes(instancePath),
+    "claiming answers 303 to the relationship for a signed-out claimer",
+    claim.status === 303 && (claim.location ?? "").endsWith(instancePath),
     `${claim.status} ${claim.location}`,
+  );
+  check(
+    "and the exit is never an `Ongoing` surface",
+    !/ongoing/i.test(claim.location ?? ""),
+    claim.location ?? "",
   );
   check(
     "the Counterparty's party cookie is set",

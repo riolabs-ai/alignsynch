@@ -76,6 +76,7 @@ import {
 import { emailLooksDeliverable } from "@/lib/flow/resend";
 import { invitationLink } from "@/lib/flow/email";
 import { hashToken, mintToken } from "@/lib/flow/tokens";
+import { readCompletionGate, type CompletionGate } from "@/lib/member/payment";
 import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
@@ -417,6 +418,16 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
    * create (stage 4's plans); this is the half that is not optional.
    */
   readonly hasPaymentMethod: boolean;
+  /**
+   * #739 — **the completion gate, as facts.** The payer's two acts live on this screen: put a
+   * method on file, and complete and open the Gap. This is what the band draws from — the sheets'
+   * seal, the obligation's phase, whether a card is already on file, what the fee is and by when.
+   *
+   * `null` for a relationship with no session (a draft, or a publish that never opened one): there
+   * is nothing to complete yet, and a band that offered completion would be offering a write the
+   * transaction refuses with `no-such-relationship`.
+   */
+  readonly completion: CompletionGate | null;
   /** Does the invitation's state offer the one-click reissue? `republishable()` — `expired`/`revoked`. */
   readonly offersRepublish: boolean;
   /**
@@ -507,6 +518,19 @@ export async function readMyRelationship(
   const payment = await readRelationshipPayment(row.id);
   const hasPaymentMethod =
     payment?.method_captured_at !== null && payment?.method_captured_at !== undefined;
+  /*
+   * #739 — the completion gate, read beside the method fact.
+   *
+   * Two reads rather than one because they answer two different questions: `hasPaymentMethod`
+   * above is the publish gate's (#690 — a draft has no session, so nothing here could answer it),
+   * and this is the payer's band once a session exists. Both come from
+   * `relationship_payment.method_captured_at`, so they cannot disagree about the card; what this
+   * adds is the seal, the phase and the deadline, none of which the relationship row carries.
+   */
+  const completion =
+    base.sessionRecordId === null
+      ? null
+      : ((await readCompletionGate(base.sessionRecordId, now)) ?? null);
   // #533 phase 3 — derived at the instant the page was handed, never written here (a render may
   // not write). The same function the claim and the answer submit refuse with, so the band and the
   // refusal can never disagree about whether this relationship may be written to.
@@ -528,6 +552,7 @@ export async function readMyRelationship(
     // #690 — a method on file, or nothing to click at publish. `publishable` stays the status
     // question the transaction re-asks; this is the second half the screen must not guess.
     hasPaymentMethod,
+    completion,
     offersRepublish: base.isInitiator && republishable(base.view) && membership.state !== "lapsed",
     trialWithoutLiveInvite: base.isInitiator && trialRunningWithoutLiveInvite(trial, base.view),
     closed: isClosed(base.status),

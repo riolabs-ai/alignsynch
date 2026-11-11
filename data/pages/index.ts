@@ -76,7 +76,8 @@ import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
-// The public catalogue — the page the header's `Templates` row names.
+// The public catalogue — the page the header's `Templates` row names, and one template's page.
+import { templatesDetailPageCopy } from "./templates-detail";
 import { templatesPageCopy } from "./templates";
 import { tourPageCopy } from "./tour";
 import { tournamentDetailPageCopy } from "./tournament-detail";
@@ -115,19 +116,6 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // screen, and the two bands it shares (the six stage names, one invitation's vocabulary) are
   // referenced from their own homes rather than copied here.
   "/assessment/instances/[instanceId]/sent": assessmentSentPageCopy,
-  "/assessment/templates": templateLibraryPageCopy,
-  "/assessment/templates/[templateId]": templateDetailPageCopy,
-  "/assessment/templates/[templateId]/create": assessmentCreatePageCopy,
-  // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
-  // drift into two vocabularies.
-  "/assessment/templates/[templateId]/create/mode": assessmentCreatePageCopy,
-  // #689 — stage 3, the third register of the same fixture.
-  "/assessment/templates/[templateId]/create/aspects": assessmentCreatePageCopy,
-  // #690 — stage 4 (Create) and the account gate behind it: the same fixture again, because the
-  // gate's words are this flow's words and a second copy of them is how a flow grows two dialects.
-  "/assessment/templates/[templateId]/create/commit": assessmentCreatePageCopy,
-  "/assessment/templates/[templateId]/create/account": assessmentCreatePageCopy,
-  "/assessment/templates/new": assessmentTemplatePageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
   "/categories/[slug]": categoryDetailPageCopy,
@@ -173,7 +161,26 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
   "/terms": legalPages.terms,
-  "/templates": templatesPageCopy,
+  // #794 — the template library, one template and the six-stage create flow, under the template's
+  // own noun. The fixtures keep their names: `assessment-template-*` are the copy files for the
+  // screens, not the addresses, and renaming them would be a second rename inside a move.
+  "/templates/relationship": templateLibraryPageCopy,
+  "/templates/relationship/[slug]": templateDetailPageCopy,
+  "/templates/relationship/[slug]/create": assessmentCreatePageCopy,
+  // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
+  // drift into two vocabularies.
+  "/templates/relationship/[slug]/create/mode": assessmentCreatePageCopy,
+  // #689 — stage 3, the third register of the same fixture.
+  "/templates/relationship/[slug]/create/aspects": assessmentCreatePageCopy,
+  // #690 — stage 4 (Create) and the account gate behind it: the same fixture again, because the
+  // gate's words are this flow's words and a second copy of them is how a flow grows two dialects.
+  "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
+  "/templates/relationship/[slug]/create/account": assessmentCreatePageCopy,
+  "/templates/relationship/new": assessmentTemplatePageCopy,
+  // The public Relationship Types catalogue (#794) — the taxonomy the shop sells, addressed by
+  // `relationship-types.ts`'s own ids.
+  "/relationship-types": templatesPageCopy,
+  "/relationship-types/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,

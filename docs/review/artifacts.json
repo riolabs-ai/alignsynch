@@ -2,6 +2,16 @@
   "schemaVersion": 1,
   "artifacts": [
     {
+      "id": "review-relationship-lifecycle-v7",
+      "release": "1.7.0",
+      "lookFor": "The six stages in the owner's words — Details · Settings · Aspects · Invite · Connect · Align — with the rail printing Stage N of 6 and each stage name on the second line of its cell. Details carries five fields with their titles bolded and a description that mirrors into the stage subtitle; Continue reads Continue to Stage 2..6 and sits flush right with a [Back][Cancel] pair flush left. Settings draws two peer dimensions — Opinions Mode (Basic 2 / Advanced 4 questions per Aspect) and Alignment Setting (Soft / Full) — as the same single-select component side by side. Aspects lists five rows numbered 01–05 at the far left with a drag handle, no Copied-from-template chip, an edit icon at the far right, and an in-place editor that stays open until Save or Cancel. The sheet stops at 880px on every desktop width. Align is the sixth cell and is only live once one or more assessments are shared. There is no Ongoing stage."
+    },
+    {
+      "id": "review-relationship-lifecycle-v6",
+      "release": "1.7.0",
+      "lookFor": "The flow as a modal. The six stages — Who · Mode · Aspects · Create · Sent — run inside one fullscreen Dialog at 1440 (the six-word rail inside it, the account gate still the step after Create) and inside a full-height Sheet at 390; the flow then closes onto the member dashboard, where the new relationship sits under My Relationships. The second tab is the invite-response path: accept, the same six stages in the same shell, Sent, dashboard. Nothing was added to the model: no seventh stage, no renames, templates still the pre-stage, Alignment still dashboard functionality. Use the Viewport toggle to see the 390 drawing, and Viewing as to see the dialog over the dashboard rather than over the gradient page."
+    },
+    {
       "id": "review-relationship-lifecycle-v5",
       "release": "1.7.0",
       "lookFor": "The approved flow, six stages: Who · Mode · Aspects · Create · Sent · Ongoing. Templates are pre-stage views (the button is Create Relationship and it enters Stage 1), the invite is account-free, payment is a soft prompt at the invite ($9.95/mo one relationship, $19.85/mo unlimited) and a hard gate at publish, the account step comes after Stage 4, and the Aspects collapse to one row and reorder by drag."

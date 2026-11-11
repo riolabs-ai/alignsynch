@@ -22,8 +22,11 @@ export type InboxOperation = (typeof INBOX_OPERATIONS)[number];
 export interface InboxOperationInput {
   readonly operation: string;
   readonly messageId: string;
-  /** The operator's reason, for the audit row. Required by every operation. */
-  readonly reason: string;
+  /**
+   * The operator's reason, for the audit row, when they state one. Optional since #732: the thread
+   * no longer asks, and `act()` records `NULL` when nobody does.
+   */
+  readonly reason?: string;
   /** The reply's words (`reply`). */
   readonly body?: string;
   /** The status to move to (`status`). */

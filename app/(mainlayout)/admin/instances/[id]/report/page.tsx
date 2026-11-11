@@ -32,7 +32,6 @@ import { notFound } from "next/navigation";
 
 import { ReportOperations } from "@/components/admin/report-operations";
 import { adminReportPageCopy } from "@/data/pages/admin-report";
-import { REASON_MIN_LENGTH } from "@/lib/admin/act";
 import { adminReportExportPath, adminRelationshipPath } from "@/lib/admin/paths";
 import { atLeast } from "@/lib/admin/roles";
 import { requireRole } from "@/lib/auth/require-role";
@@ -90,7 +89,6 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
       copy={adminReportPageCopy}
       source={source}
       action={performReportOperation}
-      reasonMin={REASON_MIN_LENGTH}
       canRegenerate={atLeast(grant.role, "admin")}
       exportPaths={{
         json: adminReportExportPath(id, "json"),

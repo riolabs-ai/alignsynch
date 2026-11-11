@@ -47,8 +47,11 @@
  */
 import { ActRefused } from "@/lib/admin/act";
 import {
+  archiveTemplate,
   createTemplateDraft,
+  deleteTemplate,
   publishTemplate,
+  restoreTemplate,
   TemplateRefused,
   unpublishTemplate,
   updateTemplateDraft,
@@ -228,6 +231,74 @@ export async function unpublishTemplateVersion(
 
   try {
     const result = await unpublishTemplate({
+      actorUserId: user.userId,
+      reason: text(payload.reason),
+      templateId,
+    });
+    return { ok: true, version: result.after.version ?? 0, actionId: result.actionId };
+  } catch (error) {
+    return versionRefusalOf(error);
+  }
+}
+
+/**
+ * Retire a template (#711), or put it back with `restoreTemplateVersion`.
+ *
+ * **Two actions rather than one toggle**, because `/admin/audit` filters on `action` and "who
+ * retired this template" and "who brought it back" are different questions about the same row. It
+ * is also what makes `already-archived` / `not-archived` honest refusals: a toggle has no order and
+ * so cannot say which way round a click was.
+ *
+ * Neither carries a typed reason — no action form does since #732. The audit row records the
+ * sentence when a caller has one and `NULL` when it does not.
+ */
+export async function archiveTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return versionWrite(payload, archiveTemplate);
+}
+
+/** Bring an archived template back as a working copy — `draft`, never `published`. */
+export async function restoreTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return versionWrite(payload, restoreTemplate);
+}
+
+/**
+ * Destroy a template no reader can reach (#711).
+ *
+ * The destructive one, and the gate is not the button: `deleteTemplate` refuses a row with a
+ * version or with any relationship naming it, and writes nothing when it refuses. The screen's
+ * `AlertDialog` is a confirmation, not the rule.
+ */
+export async function destroyTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return versionWrite(payload, deleteTemplate);
+}
+
+/**
+ * The one body the three new version-writes share: signed out, gated, an id, `act()`, and a refusal
+ * mapped to its code. A copy per action is how the fourth one silently loses `requireAdmin`.
+ */
+async function versionWrite(
+  payload: TemplateVersionFormPayload,
+  write: (request: {
+    actorUserId: string;
+    reason?: string;
+    templateId: string;
+  }) => Promise<{ actionId: string; after: { version: number | null } }>,
+): Promise<TemplateVersionOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+  await requireAdmin({ next: ADMIN_TEMPLATES_PATH });
+
+  const templateId = text(payload.templateId);
+  if (templateId === "") return { ok: false, code: "no-such-template" };
+
+  try {
+    const result = await write({
       actorUserId: user.userId,
       reason: text(payload.reason),
       templateId,

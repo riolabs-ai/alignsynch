@@ -21,7 +21,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
@@ -29,8 +29,16 @@ import { lifecycleStageSection } from "@/data/pages/lifecycle";
 import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
 import { itemLabel } from "@/lib/page-copy";
 
-/** The six names the approved artifact numbers, in order. */
-const STAGE_NAMES = ["Who", "Mode", "Aspects", "Create", "Sent", "Ongoing"];
+/**
+ * #709 — every stage now renders inside `StageShell`, whose only Next dependency is `useRouter`.
+ * No render here navigates: the stub keeps a render a render.
+ */
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+}));
+
+/** The six names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #735). */
+const STAGE_NAMES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"];
 
 /** The three flow screens #687 names as centred, with the line each one centred on. */
 const FLOW_SCREENS = [
@@ -65,7 +73,7 @@ function createStepHtml(): string {
         aspectCount: 2,
       },
       draft: EMPTY_CREATE_DRAFT,
-      backHref: "/assessment/templates/template-relationship-basics",
+      backHref: "/templates/relationship/template-relationship-basics",
       problem: null,
       problemLink: null,
     }),
@@ -84,12 +92,15 @@ describe("the stage rail", () => {
 
   it("draws all six names on the stage that mounts it", () => {
     const html = createStepHtml();
-    // Scoped to the rail itself: "Who" also appears in the form's own headings, so a check
+    // Scoped to the rail itself: "Details" also appears in the form's own headings, so a check
     // against the whole document would pass on a rail that drew nothing.
     const start = html.indexOf("<nav");
     const rail = html.slice(start, html.indexOf("</nav>", start));
     expect(rail).toContain('aria-label="Relationship lifecycle"');
-    expect(rail.split("<li").length - 1).toBe(6);
+    // One cell per stage (#716): the rail is the measured cell band, so the count is cells and
+    // not list items — and there is no numbered list to count with.
+    expect(rail.split("data-step-cell=").length - 1).toBe(6);
+    expect(rail).not.toContain("<ol");
     for (const name of STAGE_NAMES) expect(rail).toContain(name);
   });
 

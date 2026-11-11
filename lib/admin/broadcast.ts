@@ -237,8 +237,8 @@ export async function previewBroadcast(
 /** One broadcast, as the action receives it. `actorUserId` comes from the session, never the body. */
 export interface BroadcastRequest extends BroadcastComposeInput {
   readonly actorUserId: string;
-  /** Why. `act()` requires at least eight characters, and the audit row stores it. */
-  readonly reason: string;
+  /** Why, when the caller has one. Optional since #732: the audit row records `NULL` otherwise. */
+  readonly reason?: string;
 }
 
 /** What a send answers. `sent` is what the transport accepted; the addresses are not in it. */
@@ -409,7 +409,6 @@ export function broadcastFailureOf(error: unknown): BroadcastFailure | null {
   if (error instanceof BroadcastRefused) return error.reason;
   if (error instanceof ActRefused) {
     if (error.reason === "role-too-low") return "role-too-low";
-    if (error.reason === "reason-too-short") return "reason-too-short";
   }
   return null;
 }

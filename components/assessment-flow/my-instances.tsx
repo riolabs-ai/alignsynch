@@ -11,7 +11,7 @@
  * `lib/db/**` or `pg` (#228, `data:check` E34). This file is the app's own expression of the same
  * variation: no `"use client"`, no state, no handler. The search and the stage tabs are plain
  * links and a GET form, so every state of the screen is a URL a `curl` can ask for — the same
- * reason `/assessment/templates` is built that way.
+ * reason `/templates/relationship` is built that way.
  *
  * **What a card may say is decided before it gets here.** `RelationshipCard` (`lib/db/
  * assessments.ts`) carries counts, a stage and — only when the latest session is complete — a
@@ -33,6 +33,7 @@
  */
 import Link from "next/link";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { MODE_LABELS } from "@/content/assessment";
 import { DEMO_NOW_ISO, formatDate, formatRelative } from "@/content/core";
 import { STAGE_LABELS } from "@/content/stages";
@@ -167,7 +168,7 @@ export function MyInstances({
   if (unreadable !== null) {
     const failure = sectionOf(copy, "unreadable");
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-10">
+      <StageColumn>
         <div
           data-my-instances-unreadable="true"
           role="alert"
@@ -182,7 +183,7 @@ export function MyInstances({
             </a>
           </p>
         </div>
-      </div>
+      </StageColumn>
     );
   }
 
@@ -219,7 +220,7 @@ export function MyInstances({
   };
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-10">
+    <StageColumn>
       {/* Title row, then the action — the ancestor's stacking: the heading answers "what am I in
           the middle of", the button answers "where does another one start". */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -514,6 +515,6 @@ export function MyInstances({
           </ul>
         </section>
       )}
-    </div>
+    </StageColumn>
   );
 }

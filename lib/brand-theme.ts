@@ -150,9 +150,18 @@ export function brandThemeVars(brand: Brand): Record<string, string> {
   }
   // A state shade is an override of a sheet default, so it is painted only when the record names
   // one — `undefined` is "keep the sheet's 90 % step", not "paint nothing readable".
+  //
+  // **The value is a complete `hsl()` function, not a bare triple**, and that is the one place this
+  // module's rule differs. Every other role is written as `H S% L%` because the Tailwind entry wraps
+  // it (`hsl(var(--action))`), but `--action-hover` is read **unwrapped** — `hover: "var(--action-hover)"`
+  // in `tailwind.config.ts`, because the sheet's default for it is already `hsl(var(--action) / 0.9)`.
+  // A triple painted here therefore produced `background-color: 201 19.2% 20.4%`, which no parser
+  // accepts: the declaration was dropped and the primary button lost its fill on hover while keeping
+  // its white label — a button that vanished into a white page (#723). Both shapes must agree, and
+  // the sheet's shape is the one Tailwind reads, so the painter meets it.
   for (const [key, token] of NAMED_STATES) {
     const value = brand.colors[key];
-    if (value !== undefined) vars[`--${token}`] = hslTriple(value);
+    if (value !== undefined) vars[`--${token}`] = `hsl(${hslTriple(value)})`;
   }
   return vars;
 }

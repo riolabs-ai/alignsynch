@@ -114,7 +114,6 @@ function adminMarkup(detail: AdminRelationshipDetail): string {
       copy: adminRelationshipPageCopy,
       detail,
       action: noAction,
-      reasonMin: 8,
     }),
   );
 }

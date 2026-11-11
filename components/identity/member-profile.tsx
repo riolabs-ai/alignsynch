@@ -1,5 +1,6 @@
 // template-ancestor: components/identity/account-home.tsx   (variation: another person's profile — cover, avatar, badges and follow actions, public cards only)
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { ProfileCover } from "@/components/profile/profile-cover";
 import { Badge } from "@/components/ui/badge";
@@ -38,75 +39,77 @@ export function MemberProfile({
   const stranger = sectionOf(copy, "stranger");
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-6 py-6">
-      <header className="overflow-hidden rounded-xl shadow-sm">
-        <ProfileCover handle={profile.handle} />
-        <div className="flex flex-col gap-4 bg-action/10 px-6 pb-6 sm:flex-row sm:items-start dark:bg-action/20">
-          <GeneratedAvatar
-            className="-mt-11 relative z-10 shrink-0 border-4 border-background"
-            name={profile.displayName}
-            seed={profile.handle}
-            size={88}
-          />
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold">{profile.displayName}</h1>
-              {isOwner && <Badge variant="secondary">{itemLabel(owner, "owner-note")}</Badge>}
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span>
-                {itemLabel(member, "handle-label")}: {itemLabel(member, "handle-prefix")}
-                {profile.handle}
-              </span>
-              <span>
-                {fillLabel(itemLabel(member, "joined-label"), {
-                  date: formatDate(profile.joinedAt),
-                })}
-              </span>
-              {profile.country !== undefined && <span>{profile.country}</span>}
+    <StageColumn>
+      <div className="space-y-6">
+        <header className="overflow-hidden rounded-lg border border-border">
+          <ProfileCover handle={profile.handle} />
+          <div className="flex flex-col gap-4 bg-action/10 px-6 pb-6 sm:flex-row sm:items-start dark:bg-action/20">
+            <GeneratedAvatar
+              className="-mt-11 relative z-10 shrink-0 border-4 border-background"
+              name={profile.displayName}
+              seed={profile.handle}
+              size={88}
+            />
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold">{profile.displayName}</h1>
+                {isOwner && <Badge variant="secondary">{itemLabel(owner, "owner-note")}</Badge>}
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <span>
+                  {itemLabel(member, "handle-label")}: {itemLabel(member, "handle-prefix")}
+                  {profile.handle}
+                </span>
+                <span>
+                  {fillLabel(itemLabel(member, "joined-label"), {
+                    date: formatDate(profile.joinedAt),
+                  })}
+                </span>
+                {profile.country !== undefined && <span>{profile.country}</span>}
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {profile.bio === undefined ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">{itemLabel(member, "bio-empty")}</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="whitespace-pre-line text-sm leading-relaxed">{profile.bio}</p>
-          </CardContent>
-        </Card>
-      )}
+        {profile.bio === undefined ? (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">{itemLabel(member, "bio-empty")}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="whitespace-pre-line text-sm leading-relaxed">{profile.bio}</p>
+            </CardContent>
+          </Card>
+        )}
 
-      {isOwner && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{owner.heading}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {owner.body !== undefined && (
-              <p className="text-sm text-muted-foreground">{owner.body}</p>
-            )}
-            {owner.cta !== undefined && (
-              <Button asChild size="sm">
-                <Link href={owner.cta.href}>
-                  <Pencil className="mr-2 h-3 w-3" />
-                  {owner.cta.label}
-                </Link>
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
+        {isOwner && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{owner.heading}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {owner.body !== undefined && (
+                <p className="text-sm text-muted-foreground">{owner.body}</p>
+              )}
+              {owner.cta !== undefined && (
+                <Button asChild size="sm">
+                  <Link href={owner.cta.href}>
+                    <Pencil className="mr-2 h-3 w-3" />
+                    {owner.cta.label}
+                  </Link>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-      {!isOwner && (
-        <p className="text-xs text-muted-foreground">{itemLabel(stranger, "stranger-note")}</p>
-      )}
-    </div>
+        {!isOwner && (
+          <p className="text-xs text-muted-foreground">{itemLabel(stranger, "stranger-note")}</p>
+        )}
+      </div>
+    </StageColumn>
   );
 }

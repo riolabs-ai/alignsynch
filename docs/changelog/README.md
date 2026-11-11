@@ -44,6 +44,54 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.13.0](v1-13-0.md)
+
+- **Released** 2026-11-11
+- **Tag** [`v1.13.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.13.0)
+- **Pull requests named** 9
+- **Theme:** the templates directory becomes a directory — every one of the twenty-seven relationship templates gets a public page, My Templates lists only the templates a member owns, and the copy stops calling a session an instance.
+- **Headline:** `feat(templates)` — every template has a page, not just a card (#782) (#782)
+
+### [v1.12.0](v1-12-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.12.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.12.0)
+- **Pull requests named** 6
+- **Theme:** the payment decision moves into the stage that asks for it, and the create saves a draft that pays when its opinions publish.
+- **Headline:** `feat(flow)` — stage 4 walks the payment in place, and the create is a draft that pays at publish (#771)
+
+### [v1.11.0](v1-11-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.11.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.11.0)
+- **Pull requests named** 4
+- **Theme:** the build draws what the review approved — the create flow's panel stops at 880px, one stage foot carries [Back][Cancel] and the advance, Settings asks its two questions side by side, and an Aspect row reads 01 · grip · name · opinions · edit.
+- **Headline:** `feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) (#761)
+
+### [v1.10.0](v1-10-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.10.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.10.0)
+- **Pull requests named** 1
+- **Theme:** the capture moves into a frame — Stripe's form mounts inside the dialog, so paying never leaves the relationship, while the membership checkout stays hosted.
+- **Headline:** `feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) (#751)
+
+### [v1.9.0](v1-9-0.md)
+
+- **Released** 2026-11-09
+- **Tag** [`v1.9.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.9.0)
+- **Pull requests named** 5
+- **Theme:** the payer can pay — a method is captured and a relationship completes, an invited counterparty answers inside the same modal, templates publish revisions instead of being destroyed, and paying still opens Stripe's own page rather than a frame.
+- **Headline:** `feat(crud)` — templates publish revisions and are retired, never destroyed in use (#711) (#742)
+
+### [v1.8.0](v1-8-0.md)
+
+- **Released** 2026-11-08
+- **Tag** [`v1.8.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.8.0)
+- **Pull requests named** 16
+- **Theme:** the flow conforms to its six-stage spec — Details · Settings · Aspects · Invite · Connect · Align — opens as one modal, and no action form asks for a Reason.
+- **Headline:** `feat(flow)` — conform to the six-stage spec — Details · Settings · Aspects · Invite · Connect · Align (#735) (#737)
+
 ### [v1.7.0](v1-7-0.md)
 
 - **Released** 2026-11-08

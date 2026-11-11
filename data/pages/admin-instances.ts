@@ -119,7 +119,7 @@ export const adminInstancesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "empty-all",
       heading: "No relationships yet",
-      body: "This database holds no instances at all, so there is nothing an operator can triage. A relationship appears here the moment somebody starts one from a template.",
+      body: "This database holds no relationships at all, so there is nothing an operator can triage. A relationship appears here the moment somebody starts one from a template.",
     },
     {
       id: "unreadable",

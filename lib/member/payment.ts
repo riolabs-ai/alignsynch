@@ -53,7 +53,7 @@ import {
   resolveMethodCapture,
   startMethodCapture,
 } from "@/lib/billing";
-import { BillingRefusal } from "@/lib/billing/port";
+import type { CapturePresentation } from "@/lib/billing/types";
 import { queryRows } from "@/lib/db/client";
 import {
   type PaymentSnapshot,
@@ -63,7 +63,14 @@ import {
   recordChargeResult,
   recordMethodCaptured,
 } from "@/lib/db/relationship-payment";
-import { completionRefusalOf, paymentArmedOf, type PaymentRefusal } from "@/lib/flow/payment";
+import {
+  completionRefusalOf,
+  paymentArmedOf,
+  paymentDeadlineOf,
+  paymentPhaseOf,
+  type PaymentPhase,
+  type PaymentRefusal,
+} from "@/lib/flow/payment";
 import { relationshipScreenPath } from "@/lib/flow/paths";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
 import { MemberRefused } from "@/lib/member/publish-basis";
@@ -222,12 +229,34 @@ export interface CaptureRequest {
   readonly returnUrl: string;
   readonly email?: string;
   readonly now?: Date;
+  /**
+   * How the provider should present the capture (#748).
+   *
+   * `hosted` (the default) sends the browser to the provider's page; `embedded` draws its form in
+   * a frame inside the screen that asked and answers a `clientSecret` instead of a `url`. The
+   * member write is identical either way — the method is recorded by `resolveCapturedMethod()`
+   * once the provider says it was saved.
+   */
+  readonly presentation?: CapturePresentation;
 }
 
 export interface CaptureResult {
-  /** Where the browser goes when the adapter is hosted; `null` when the capture completed inline. */
+  /** Where the browser goes when the adapter is hosted; `null` when nothing navigates. */
   readonly url: string | null;
   readonly captured: boolean;
+  /**
+   * Embedded only: the secret the client mounts the provider's frame with (#748). `null` for the
+   * hosted and inline paths. It is a per-session token, returned to the payer's own browser and
+   * never stored.
+   */
+  readonly clientSecret: string | null;
+  /** Embedded only: the publishable key the frame's loader needs. */
+  readonly publishableKey: string | null;
+  /**
+   * The provider's session id. Embedded completion has no return URL to carry it, so the client
+   * hands it back to `resolveCapturedMethod()` — the same resolution the hosted return route does.
+   */
+  readonly captureSessionId: string | null;
 }
 
 /**
@@ -261,12 +290,19 @@ export async function capturePaymentMethod(
     successUrl: request.returnUrl,
     cancelUrl: request.returnUrl,
     email: request.email,
+    ...(request.presentation === undefined ? {} : { presentation: request.presentation }),
   });
 
   if (!session.completed) {
-    // A hosted page. The method is recorded when the browser comes back and the route resolves the
-    // session — nothing is written on this side of the redirect.
-    return { url: session.url, captured: false };
+    // The method is recorded once the provider says it was saved: on the return URL for a hosted
+    // page, in the frame's own callback for an embedded one. Nothing is written on this side.
+    return {
+      url: session.url,
+      captured: false,
+      clientSecret: session.clientSecret ?? null,
+      publishableKey: session.publishableKey ?? null,
+      captureSessionId: session.id,
+    };
   }
 
   const method = {
@@ -296,7 +332,13 @@ export async function capturePaymentMethod(
     },
     runner,
   );
-  return { url: null, captured: true };
+  return {
+    url: null,
+    captured: true,
+    clientSecret: null,
+    publishableKey: null,
+    captureSessionId: session.id,
+  };
 }
 
 export interface ResolveCaptureRequest {
@@ -362,7 +404,14 @@ export async function resolveCapturedMethod(
     },
     runner,
   );
-  return { url: null, captured: true };
+  // Resolved: the provider's own session is the record, and the caller has nothing left to mount.
+  return {
+    url: null,
+    captured: true,
+    clientSecret: null,
+    publishableKey: null,
+    captureSessionId: request.captureSessionId,
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -644,6 +693,69 @@ export async function completeRelationship(
 /** The payment gate for a screen that has the facts but not the status. `false` means "not armed". */
 export function paymentArmedFor(snapshot: PaymentSnapshot): boolean | undefined {
   return paymentArmedOf(paymentFactsOf(snapshot));
+}
+
+/* ------------------------------------------------------------------ *
+ * #739 — the gate the relationship screen draws
+ * ------------------------------------------------------------------ */
+
+/**
+ * What the payer's screen needs to know, in one value (#739).
+ *
+ * The relationship detail is where the two acts live — put a method on file, and complete and open
+ * the Gap — and it was rendering neither, so the payment workflow was reachable from nothing but
+ * a test. This is the read behind the band that draws them, and it answers the four questions the
+ * band asks, never a fifth:
+ *
+ *   `sealed`          both sheets are in (every Aspect answered by both, both acceptances) — the
+ *                     condition the fee is gated on, and the one that makes the button honest
+ *   `phase`           `none` / `method-on-file` / `retrying` / `charged` / `expired`, from the same
+ *                     derivation the job reads, so the sentence and the write cannot disagree
+ *   `hasMethod`       a card is on file, so the amount is one click away rather than two
+ *   `awaitingPayment` sealed and not armed — the state the session status calls `awaiting_payment`
+ *
+ * **Read here, decided nowhere else.** The component draws from this record; the server actions
+ * re-read the row under a lock before they write, so a screen that says "you may complete" is a
+ * courtesy and a refusal is still the transaction's.
+ */
+export interface CompletionGate {
+  readonly sealed: boolean;
+  readonly phase: PaymentPhase;
+  readonly hasMethod: boolean;
+  readonly awaitingPayment: boolean;
+  /** What the fee will be, in cents: the attempt that was recorded, else the tier's own price. */
+  readonly amountCents: number;
+  /** When the unpaid window closes — `sealed + 14 days`, or `null` while the sheets are open. */
+  readonly deadlineAt: string | null;
+  /** When the fee landed, if it did. The band's sentence after a completion. */
+  readonly chargedAt: string | null;
+}
+
+/**
+ * The completion gate for one session, or `undefined` when the session does not exist.
+ *
+ * Three statements, no clock of its own beyond the `now` a caller hands down — the same discipline
+ * every write in this module keeps.
+ */
+export async function readCompletionGate(
+  sessionRecordId: string,
+  now: Date = new Date(),
+): Promise<CompletionGate | undefined> {
+  const snapshot = await readPaymentForSession(sessionRecordId);
+  if (snapshot === undefined) return undefined;
+  const seal = await sealFactsOf(sessionRecordId);
+  const sealed = sealedOf(seal);
+  const facts = paymentFactsOf(snapshot);
+  const row = snapshot.row;
+  return {
+    sealed,
+    phase: paymentPhaseOf(facts, now),
+    hasMethod: row?.method_captured_at !== null && row?.method_captured_at !== undefined,
+    awaitingPayment: sealed && paymentArmedOf(facts) === false,
+    amountCents: row?.charge_amount_cents ?? relationshipFeeCents(),
+    deadlineAt: instantIso(paymentDeadlineOf(snapshot.sealedAt)),
+    chargedAt: instantIso(row?.charged_at),
+  };
 }
 
 /** An instant from facts → ISO, or `null`. Kept here so a refusal's sentence cannot print `Invalid Date`. */

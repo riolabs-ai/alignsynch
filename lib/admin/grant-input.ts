@@ -18,8 +18,6 @@ export interface GrantFormInput {
   readonly interval: string;
   /** The first instant the granted tier covers, as the date input sent it. */
   readonly periodStart: string;
-  /** Required: the audit row's reason, at least `REASON_MIN_LENGTH` characters. */
-  readonly reason: string;
 }
 
 /**
@@ -45,7 +43,6 @@ export type GrantFormResult =
       readonly code:
         | "signed-out"
         | "role-too-low"
-        | "reason-too-short"
         | "unknown-action"
         | "unknown-target-table"
         | "no-such-relationship"

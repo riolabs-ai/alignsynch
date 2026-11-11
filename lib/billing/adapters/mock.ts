@@ -181,10 +181,14 @@ export class MockBillingAdapter implements BillingPort {
   }
 
   /**
-   * Capture a method, inline (#619).
+   * Capture a method, inline (#619) — whatever presentation was asked for (#748).
    *
-   * The mock has no hosted page, so the capture is immediate and the two ids are deterministic
-   * from the payer — a test can assert them, and a retried capture converges on the same pair.
+   * The mock has no page of any kind, so the capture is immediate and the two ids are
+   * deterministic from the payer — a test can assert them, and a retried capture converges on the
+   * same pair. `presentation: "embedded"` is answered the same way and for the same reason: there
+   * is no provider to draw a frame for, and an offline adapter that pretended to need one would
+   * make every keyless demo depend on a script tag. That is what keeps the screen's capture one
+   * click with the mock and a frame with a real key.
    */
   async startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession> {
     return {

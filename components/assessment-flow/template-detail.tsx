@@ -1,7 +1,7 @@
 /**
  * template-ancestor: components/marketing/marketing-landing.tsx   (variation: facts from one Postgres template record and the catalogue type its slug names, POST-form CTAs, no price drawn)
  *
- * `/assessment/templates/[templateId]` — one template, read-only, in the v1 landing's shape
+ * `/templates/relationship/[slug]` — one template, read-only, in the v1 landing's shape (#794)
  * (#console 5/5, reshaped by #409).
  *
  * "Open" has to open something, and the spec keeps template *editing* for a later card: the
@@ -33,6 +33,7 @@
  * The archived state is drawn as a band, not as a hidden control: an archived template still
  * opens, because its instances copied their Aspects at creation and nothing joins back to it.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
 import { formatDate } from "@/content/core";
 import {
@@ -53,9 +54,8 @@ import {
 } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { relationshipTypeOf } from "./template-card";
-import { WizardSteps } from "./wizard-steps";
 
-const CARD = "rounded-lg border border-border bg-card p-4";
+const CARD = "rounded-lg border border-border bg-card p-6";
 const MUTED = "text-sm text-muted-foreground";
 const CHIP = "rounded-md border border-background/30 px-2 py-0.5 text-xs text-background/80";
 const FACT_LABEL = "text-xs uppercase tracking-wide text-muted-foreground";
@@ -63,13 +63,6 @@ const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 
 const SETTINGS: readonly AlignmentSetting[] = ["soft", "full"];
-
-/** The rail's three steps, as fixture item ids (#618) — the shape `counterparty-wizard.tsx` uses. */
-const RAIL: readonly { readonly step: number; readonly item: string }[] = [
-  { step: 1, item: "1" },
-  { step: 2, item: "2" },
-  { step: 3, item: "3" },
-];
 
 /**
  * The two seats, as **roles**: the type's own words for who sits in each one. A template holds
@@ -107,26 +100,22 @@ export function TemplateDetail({
   const shape = sectionOf(copy, "shape");
   const actions = sectionOf(copy, "actions");
   const archived = sectionOf(copy, "archive-note");
-  const rail = sectionOf(copy, "steps");
 
   const type = relationshipTypeOf(template.slug);
   const archivedTemplate = template.status === "archived";
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8">
+    <StageColumn>
       <nav aria-label={itemLabel(back, "all")} className="mb-3">
         <a className="text-sm font-medium text-action hover:underline" href={TEMPLATE_LIBRARY_PATH}>
           {itemLabel(back, "all")}
         </a>
       </nav>
 
-      {/* Where the reader is in the journey (#618): products → this product → the relationship. */}
-      <WizardSteps
-        label={itemLabel(rail, "label")}
-        count={fillLabel(itemLabel(rail, "count"), { step: 2 })}
-        current={2}
-        steps={RAIL.map((entry) => ({ step: entry.step, label: itemLabel(rail, entry.item) }))}
-      />
+      {/* No journey rail here (#791). It numbered this page `Step 2 of 3` of a browse journey, but
+          the create flow downstream prints `Stage 1 of 6` and this screen is a pre-stage view of
+          that flow, not a stage of it — two numberings for one journey, the wrong one on the
+          wrong screen. The six-stage rail lives where the stages are. */}
 
       {/* The header band — the v1 landing's cover, text-only: a template has no photograph, and an
           invented one would be the first thing on the page a reader could not trust. */}
@@ -169,11 +158,15 @@ export function TemplateDetail({
             <dl className="grid grid-cols-2 gap-3">
               <div>
                 <dt className={FACT_LABEL}>{itemLabel(facts, "aspects")}</dt>
-                <dd className="text-lg font-semibold text-foreground">{template.aspectCount}</dd>
+                <dd className="text-lg font-semibold tabular-nums text-foreground">
+                  {template.aspectCount}
+                </dd>
               </div>
               <div>
                 <dt className={FACT_LABEL}>{itemLabel(facts, "instances")}</dt>
-                <dd className="text-lg font-semibold text-foreground">{template.instanceCount}</dd>
+                <dd className="text-lg font-semibold tabular-nums text-foreground">
+                  {template.instanceCount}
+                </dd>
               </div>
               <div>
                 <dt className={FACT_LABEL}>{itemLabel(facts, "status")}</dt>
@@ -341,6 +334,6 @@ export function TemplateDetail({
           <p className="mt-2 text-sm text-foreground">{sectionBody(archived)}</p>
         </section>
       ) : null}
-    </div>
+    </StageColumn>
   );
 }

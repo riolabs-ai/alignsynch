@@ -429,3 +429,21 @@
     width: auto;
   }
 }
+
+/* Stage 4's payment walk swaps one panel for the next in place (#771); the fade is what makes the
+   change of surface read as a transition rather than a redraw. Outside every media query, so it is
+   not part of the lockup rule's block. */
+@keyframes pay-flow-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pay-flow-panel {
+  animation: pay-flow-in 220ms ease both;
+}

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [Maintenance fields](maintenance-fields.md)
+[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The six flow stages (binding spec)](flow-stages.md)
 
 <!-- docs-nav:end -->
 
@@ -261,6 +261,6 @@ _is_ an invitation, and the `sent|unset|failed` outcome vocabulary and the redir
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [Maintenance fields](maintenance-fields.md)
+[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The six flow stages (binding spec)](flow-stages.md)
 
 <!-- docs-nav:end -->

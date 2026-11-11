@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates/[templateId]/create` and `…/create/mode` — the create flow's two steps
+ * `/templates/relationship/[templateId]/create` and `…/create/mode` — the create flow's two steps
  * (#409, wired by #427, split by #688).
  *
  * One fixture for both stages, because they are one flow: the rail, the refusals and the
@@ -33,7 +33,14 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 import { lifecycleStageSection } from "./lifecycle";
 
 export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
-  heading: "Create a relationship",
+  /**
+   * Stage 1's heading, and the dialog's accessible name (#709). The owner renamed it from
+   * "Create a relationship" to the artifact's own `s4.heading` (#760): the four stages are
+   * **Relationship Details · Relationship Settings · Relationship Aspects · Create the
+   * relationship**, and a stage heading that disagrees with the screen the artifact draws is the
+   * drift `docs/specs/flow-stages.md` exists to catch.
+   */
+  heading: "Relationship Details",
   subtitle: "One template, two seats, and the two choices that shape every screen after this one.",
   sections: [
     /**
@@ -56,12 +63,11 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Two seats: an Initiator and a Counterparty. Both answer the same sheet, and neither sees the other's answers until both accept.",
         },
-        { id: "back", label: "Back to the template" },
       ],
     },
     {
       /**
-       * Stage 4 — **Create** (#690).
+       * Stage 4 — **Invite** (#690, named by #735).
        *
        * The review card, the two plans and the conversion, in the words the owner settled on for
        * the approved prototype (`s8.*`). **Six facts, not a form**: the template (with its Aspect
@@ -119,8 +125,18 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "reassure",
           label: "You can resend, edit the title, or withdraw the invitation at any point.",
         },
-        { id: "back", label: "Back to aspects" },
+        { id: "back", label: "Back" },
       ],
+    },
+    {
+      /**
+       * The stage foot's one shared word (#760). Every stage 1–4 draws `[Back][Cancel]` as one
+       * left group before the advancing act, and `Cancel` is the same word on all four — one row
+       * here rather than four copies that could drift, the way `stages.close` is the shell's one
+       * close label.
+       */
+      id: "foot",
+      items: [{ id: "cancel", label: "Cancel" }],
     },
     {
       /**
@@ -168,6 +184,61 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Optional here. Publishing needs a method on file, and the plans page is where one is added.",
         },
+      ],
+    },
+    {
+      /**
+       * The walk (#771) — plan → account → method → confirm → done, drawn inside stage 4.
+       *
+       * The owner's rule: choosing a plan must not leave the screen, and a relationship nobody has
+       * paid for yet is **saved as a draft** rather than blocked. So the method panel defers the
+       * capture to publish, where the hard gate already lives
+       * (`components/dashboard/relationship-detail.tsx`, #690), and the last panel is what flips the
+       * stage's own control to `connect-cta`.
+       *
+       * `confirm-method-draft` is the honest half of that: the confirmation says the method will be
+       * asked for at publish, because no card is taken on this screen.
+       */
+      id: "payment-flow",
+      items: [
+        { id: "continue", label: "Continue" },
+        { id: "back", label: "Back" },
+        { id: "account-heading", label: "Create your account" },
+        {
+          id: "account-note",
+          label:
+            "The relationship comes back to you, so this is where it is kept. The account is created when this stage finishes, and nothing here blocks the invitation.",
+        },
+        { id: "method-heading", label: "Add a payment method" },
+        {
+          id: "method-note",
+          label:
+            "The method is captured inside this page when your relationship is published — no card detail touches our code.",
+        },
+        { id: "method-defer", label: "Pay when I publish" },
+        {
+          id: "method-defer-note",
+          label:
+            "Nothing is charged today. Your relationship is saved as a draft, and the method is asked for once, when you publish your opinions for the other person to answer.",
+        },
+        { id: "confirm-heading", label: "Confirm payment" },
+        { id: "confirm-plan", label: "Plan" },
+        { id: "confirm-method", label: "Method" },
+        { id: "confirm-method-draft", label: "Asked for at publish" },
+        {
+          id: "confirm-body",
+          label:
+            "Nothing is charged today. The 7-day trial starts when the method is saved, and the first charge lands only when you publish the assessment.",
+        },
+        { id: "confirm-cta", label: "Confirm" },
+        { id: "change-plan", label: "Change plan" },
+        { id: "done-heading", label: "You're all set" },
+        {
+          id: "done-body",
+          label:
+            "Your relationship is ready to create. Nothing has been charged, and the method is asked for when you publish.",
+        },
+        { id: "connect-cta", label: "Complete and Connect" },
       ],
     },
     {
@@ -220,81 +291,88 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * Stage 1 — **Who** (#688).
+       * Stage 1 — **Details** (#688, named by #735; copy replaced by the owner's saved pass, #760).
        *
        * The prototype's `s4.*` block, verbatim where the words are the owner's: two seats, the
        * counterparty's address, and the card title both of them read. The template band above the
        * form is the record's own facts, not copy.
+       *
+       * **The inventory is the spec's, field for field** (`docs/specs/flow-stages.md` → *Stage 1,
+       * Details*), and `tests/create-fields.test.ts` pins it: four fields on a 6/6 grid and the
+       * description across all twelve, `back` as the secondary action beside
+       * "Continue to Stage 2". Two lines the artifact does not draw were deleted here —
+       * `email-help` and `submit-note` — because an extra sentence is a spec change, not a copy
+       * improvement.
+       *
+       * **Every label is the owner's, not a clarified version of it** (#760). The v7 artifact's
+       * Edit-copy pass replaced five of them — the initiator's, the counterparty's, the address,
+       * the title and the description — and the build renders them character for character. The
+       * advance action is `Continue to Stage 2`: the stages are numbered on the rail, so the foot
+       * names the step it goes to rather than describing what that step asks.
        */
       id: "who",
-      heading: "Who and how",
+      heading: "Relationship Details",
       body: "One template, two seats, and the facts that shape every screen after this one.",
       items: [
-        { id: "initiator-label", label: "Your name — the Initiator" },
+        { id: "initiator-label", label: "Your Name as the Relationship Initiator" },
         { id: "initiator-help", label: "The seat this relationship is created from." },
-        { id: "counterparty-label", label: "Who you are asking" },
+        { id: "counterparty-label", label: "Counterparty's Name as Seen on the Invite" },
         { id: "counterparty-placeholder", label: "Their name" },
         {
           id: "counterparty-help",
-          label:
-            "Display only: the seat is filled when they claim the invitation. A name typed here is not a party.",
+          label: "They will complete their name preference when they claim the invitation.",
         },
-        { id: "email-label", label: "Their email address" },
+        { id: "email-label", label: "Email Address used to send the Counterparty Invite" },
         { id: "email-placeholder", label: "name@example.com" },
-        {
-          id: "email-help",
-          label:
-            "The invitation goes here. Without a mailer, the relationship page shows the link instead.",
-        },
-        { id: "title-label", label: "What are you in the middle of" },
+        { id: "title-label", label: "Your Personalized Relationship Title" },
         { id: "title-placeholder", label: "Relationship Basics" },
-        {
-          id: "title-help",
-          label: "The card title both of you see — the template's name is only the starting point.",
-        },
-        { id: "description-label", label: "Description" },
+        { id: "title-help", label: "The personalized name of the created Relationship." },
+        { id: "description-label", label: "Personalized Relationship Description" },
         {
           id: "description-placeholder",
           label: "A sentence on why you are doing this — both of you read it on the card.",
         },
         { id: "description-help", label: "Optional. Shown to both parties, never scored." },
-        { id: "submit", label: "Continue to mode and setting" },
-        { id: "submit-note", label: "Nothing is created yet. The next step fixes the Mode." },
+        { id: "submit", label: "Continue to Stage 2" },
+        /** The secondary action in the foot's left group — the artifact's `s4.back`. */
+        { id: "back", label: "Back" },
       ],
     },
     {
       /**
-       * Stage 2 — **Mode** (#688).
+       * Stage 2 — **Settings** (#688, named by #735; copy replaced by the owner's saved pass, #760).
        *
-       * The prototype's `s5.*` block. Mode is fixed at creation and the Setting is the one choice
-       * a party may move later; both sentences say so on the screen rather than leaving a person
-       * to learn it from a report.
+       * The prototype's `s5.*` block, and the v7 artifact's whole point about this stage: **two
+       * independent choices of equal weight**, drawn with one control. `mode-label` and
+       * `setting-label` are the two fieldset headings — `Opinions Mode` and `Alignment Setting` —
+       * and each option's help says what that option does in the model's own terms ("two Opinion
+       * questions per Aspect") rather than in an adjective a reader has to decode.
+       *
+       * `mode-fixed` is the chip beside the left heading: Mode is fixed at creation, so the line
+       * that used to explain that in a sentence is gone with it. `setting-help` and `setting-note`
+       * are the owner's: the first says what the Setting is a lens over, the second names the two
+       * thresholds exactly as `content/assessment.ts` defines them.
        */
       id: "mode",
-      heading: "Mode and setting",
-      body: "Mode is fixed at creation: both parties answer one shape, which is what makes two sheets comparable at all.",
+      heading: "Relationship Settings",
+      body: "Two independent choices: Mode decides how many Opinion questions each Aspect asks, and Setting decides how strictly the Gap analysis is judged.",
       items: [
-        { id: "mode-label", label: "Mode" },
+        { id: "mode-label", label: "Opinions Mode" },
         { id: "mode-fixed", label: "Fixed at creation" },
-        { id: "mode-basic-help", label: "Feel and Wish on every Aspect." },
-        { id: "mode-advanced-help", label: "Feel, Wish, Think and Guess on every Aspect." },
+        { id: "mode-basic-help", label: "Two Opinion questions per Aspect." },
+        { id: "mode-advanced-help", label: "Four Opinion questions per Aspect." },
+        { id: "setting-label", label: "Alignment Setting" },
         {
-          id: "mode-fixed-note",
-          label: "Mode cannot be changed after the relationship is created.",
-        },
-        { id: "setting-label", label: "Setting" },
-        {
-          id: "setting-changeable",
+          id: "setting-help",
           label:
-            "Setting is what a party may change later: it moves the bar the report is judged against, never a question.",
+            "How strictly the Gap analysis is judged — a lens over the Gaps, never a question.",
         },
-        { id: "submit", label: "Continue to aspects" },
         {
-          id: "submit-note",
-          label:
-            "Nothing is created yet. The next stage is the Aspects, and the create comes after them.",
+          id: "setting-note",
+          label: "Soft tolerates a Small Gap (1); Full accepts only In Synch.",
         },
-        { id: "back", label: "Back to who" },
+        { id: "submit", label: "Continue to Stage 3" },
+        { id: "back", label: "Back" },
       ],
     },
     {
@@ -311,14 +389,12 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * are edited by the person, and E23 counts what a component writes, not what a row says.
        */
       id: "aspects",
-      heading: "Aspects",
-      body: "Copied from the template. Each Aspect is one question, answered by both seats — and the two labels say what the ends of its scale mean.",
+      heading: "Relationship Aspects",
+      body: "Copied from the template. You can rename or reword an Aspect here, and add one — it is yours from the moment the relationship is created.",
       items: [
         { id: "count", label: "{count} Aspects" },
-        {
-          id: "tap-to-edit",
-          label: "Tap an Aspect to open it, then drag its handle to change the order.",
-        },
+        { id: "tap-to-edit", label: "Tap an Aspect to edit it in place." },
+        { id: "drag-hint", label: "Drag to Reorder Aspects" },
         { id: "prompt-label", label: "The question both seats answer" },
         { id: "left-label", label: "Left opinion label" },
         { id: "left-help", label: "The low end of the scale — what a 1 means." },
@@ -327,19 +403,26 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "edit", label: "Edit" },
         { id: "save", label: "Save Aspect" },
         { id: "cancel", label: "Cancel" },
+        /**
+         * The question the open row asks before it throws away what was typed (#760). The artifact
+         * repaired its own editor because a click into a field re-toggled the row shut and
+         * swallowed Save; the row now closes only on Save or Cancel, and Cancel with changes asks
+         * first. The sentence is copy, so it is here rather than in the component (E23).
+         */
+        { id: "unsaved", label: "Discard the changes to this Aspect?" },
         { id: "grip", label: "Reorder {name}" },
-        { id: "move-up", label: "Move {name} up" },
-        { id: "move-down", label: "Move {name} down" },
         { id: "saved", label: "Aspect saved." },
         { id: "reordered", label: "Order saved." },
         { id: "refused", label: "That Aspect was not saved." },
-        { id: "submit", label: "Continue to create" },
-        {
-          id: "submit-note",
-          label:
-            "Nothing is created yet. The last stage reviews the six facts and sends the invitation.",
-        },
-        { id: "back", label: "Back to mode" },
+        /**
+         * The shared editor's two list controls (#774). Stage 3 does not draw them — V4 keeps the
+         * template's list fixed until #699 — but `components/assessment-flow/aspect-list.tsx` names
+         * both ids, so they are declared here, where that component's copy is bound.
+         */
+        { id: "add", label: "Add an Aspect" },
+        { id: "remove", label: "Remove {name}" },
+        { id: "submit", label: "Continue to Stage 4" },
+        { id: "back", label: "Back" },
       ],
     },
     {

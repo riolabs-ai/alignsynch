@@ -145,7 +145,7 @@ export function serializeCreateDraft(draft: CreateDraft): string {
 }
 
 /**
- * Stage 1 — **Who**.
+ * Stage 1 — **Details**.
  *
  * The two seats, the counterpary's address and the card title. The store has always refused a
  * blank name or address (`required()` in `lib/flow/store.ts`), but that refusal is a code for
@@ -191,7 +191,7 @@ export function whoDraft(read: (name: string) => string): CreateDraftStep {
 }
 
 /**
- * Stage 2 — **Mode**.
+ * Stage 2 — **Settings**.
  *
  * Mode is fixed at creation; the Setting is what a party may move later. Neither is
  * pre-selected on the form, so both are refused-with-nothing-chosen here rather than defaulted

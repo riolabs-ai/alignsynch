@@ -37,11 +37,11 @@ links (7 unique, 8 total)
   /dashboard/support                                   1
   /dashboard/templates                                 1
   /settings                                            1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.7.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.13.0 2
 
 counts
   elements  1004
   images    2
   buttons   9
   inputs    1
-  classes   246 (sha bc32de170110)
+  classes   244 (sha 8e1e8c34eda4)

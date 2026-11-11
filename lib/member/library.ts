@@ -37,8 +37,6 @@ export interface LibraryRow {
   readonly title: string;
   readonly summary: string;
   readonly status: string;
-  /** `owner_user_id = viewer`: the row is the member's own template, not one they adopted. */
-  readonly owned: boolean;
   /** Aspects on the template, from its `item` rows. */
   readonly aspectCount: number;
   /** Relationships of this member's built from it. `0` is "not used yet". */
@@ -51,40 +49,30 @@ interface LibraryQueryRow {
   readonly title: string;
   readonly summary: string;
   readonly status: string;
-  readonly owned: boolean;
   readonly aspect_count: number;
   readonly relationship_count: number;
 }
 
 /**
- * The two halves, spelled once: owned by the viewer, or named by an instance session the viewer is
- * a party to.
+ * The library is **what the member owns**, and nothing else.
  *
- * `$1` is the viewer's id in both. **Membership is `party.user_id`, not `relationship.initiator…`**
- * — the same binding `lib/db/my-instances.ts` filters on, and the one the flow actually writes: an
- * instance's `session` row names the template it was copied from (`template_record_id`), and a
- * `party` row with this account's id on that session is what "one of my relationships" means. A
- * seeded instance whose parties have no account (`party.user_id IS NULL`) is therefore nobody's,
- * which is the honest answer rather than a row attributed by a column the seed leaves NULL.
+ * It used to be two halves: a row you own, *or* a row named by a session you are a party to. That
+ * second half was the defect — starting a relationship from a platform template put that template
+ * in **My Templates** as if it were yours. A template is not a thing a relationship creates; the
+ * relationship *uses* it. `party.user_id` is still how "one of my relationships" is spelled
+ * (`MY_RELATIONSHIPS_OF` below), but membership of a relationship is not authorship of a template.
  *
- * `voided_at IS NULL` is #503's rule, applied here for the same reason the instance list applies
- * it: an operator ended that relationship, so its template is not something the member is working
- * from any more.
+ * A member who wants the template their relationship was built from can still have it — by an
+ * explicit act, cloning it into a row they own, which is `listClonableTemplates`' door and not a
+ * side effect of creating the relationship.
+ *
+ * `record_type = 'assessment'` excludes a session's own record; `NOT EXISTS` on `session.record_id`
+ * keeps a row that is itself a session out for the same reason.
  */
 const IN_LIBRARY = `
   r.record_type = 'assessment'
   AND NOT EXISTS (SELECT 1 FROM session own WHERE own.record_id = r.id)
-  AND (
-    r.owner_user_id = $1
-    OR EXISTS (
-      SELECT 1
-        FROM session ai
-        JOIN party p ON p.session_record_id = ai.record_id
-       WHERE ai.template_record_id = r.id
-         AND p.user_id = $1
-         AND ai.voided_at IS NULL
-    )
-  )
+  AND r.owner_user_id = $1
 `;
 
 /** The viewer's live relationships built from one template — distinct, because a session is one. */
@@ -98,11 +86,10 @@ const MY_RELATIONSHIPS_OF = `
       AND ai.relationship_id IS NOT NULL)
 `;
 
-/** Every template in this member's library, A–Z. */
+/** Every template this member owns, A–Z. */
 export async function listMemberLibrary(userId: string): Promise<LibraryRow[]> {
   const rows = await queryRows<LibraryQueryRow>(
     `SELECT r.id, r.slug, r.title, r.summary, r.status,
-            (r.owner_user_id = $1) AS owned,
             (SELECT count(*)::int FROM item i WHERE i.record_id = r.id) AS aspect_count,
             ${MY_RELATIONSHIPS_OF} AS relationship_count
        FROM record r
@@ -116,7 +103,6 @@ export async function listMemberLibrary(userId: string): Promise<LibraryRow[]> {
     title: row.title,
     summary: row.summary,
     status: row.status,
-    owned: row.owned === true,
     aspectCount: Number(row.aspect_count),
     relationshipCount: Number(row.relationship_count),
   }));

@@ -111,13 +111,13 @@ export const surfaceRegistry: readonly Surface[] = [
     status: "live",
   },
   {
-    route: "/assessment/templates",
+    route: "/templates/relationship",
     label: "Template catalogue",
     area: "relationships",
     status: "live",
   },
   {
-    route: "/assessment/templates/[templateId]",
+    route: "/templates/relationship/[slug]",
     label: "Template",
     area: "relationships",
     status: "live",
@@ -131,7 +131,7 @@ export const surfaceRegistry: readonly Surface[] = [
 
   /* ---- live: the write surfaces R2 wired — create and answer (#427) ---------- */
   {
-    route: "/assessment/templates/[templateId]/create",
+    route: "/templates/relationship/[slug]/create",
     label: "Create a relationship",
     area: "relationships",
     // Live since R2 (#427, PR #429). The form posts `templateRecordId`, both seats, the Mode and

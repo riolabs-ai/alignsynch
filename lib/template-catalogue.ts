@@ -1,6 +1,6 @@
 /**
  * One catalogue card, projected — the join between `data/relationship-types.ts` and the two
- * public surfaces that list templates (`/templates` and the front page's `#templates` band).
+ * public surfaces that list them (`/relationship-types` and the front page's `#templates` band).
  *
  * A **projection**, not the record: the card needs six strings and two destinations, and the
  * record's Aspects, descriptor and demo sheet belong to the report, not to a shelf. Every string
@@ -20,7 +20,11 @@
 import type { PageCopy } from "@/content/pages";
 import { formatCurrency } from "@/content/core";
 import { demoAnswersFor, isPurchasable, type RelationshipType } from "@/data/relationship-types";
-import { assessmentDemoPath } from "@/lib/flow/paths";
+import {
+  assessmentDemoPath,
+  RELATIONSHIP_TYPES_PATH,
+  relationshipTypePath,
+} from "@/lib/flow/paths";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
 
 /** The public buy path. Not a plan: buying a relationship is what `/register` starts. */
@@ -29,15 +33,29 @@ export const START_PATH = "/register";
 /**
  * The catalogue page's own route — the one a "View all" points at.
  *
- * Exported rather than spelled where it is used for the reason `lib/flow/paths.ts` gives: a path
- * in a component is a second copy of the route manifest, and E23 counts a literal written in a
- * counted component. `content/routes.ts` owns the pattern; this is the handle.
+ * **Imported, not spelled (#794).** `lib/flow/paths.ts::RELATIONSHIP_TYPES_PATH` is the module
+ * that authors every URL in this flow, and this one used to be a second copy of it. Both
+ * destinations are now that module's, so a rename is one edit. `CATALOGUE_PATH` stays exported
+ * because the home band and `lib/template-detail.ts` read it.
  */
-export const CATALOGUE_PATH = "/templates";
+export const CATALOGUE_PATH = RELATIONSHIP_TYPES_PATH;
+
+/**
+ * One type's public page — `/relationship-types/<id>`.
+ *
+ * The directory's cards, the detail page's own route and its metadata all read this, so a route
+ * rename is one edit rather than three literals that drift. The id is the taxonomy's own, exactly
+ * as `data/relationship-types.ts` spells it.
+ */
+export function catalogueDetailPath(id: string): string {
+  return relationshipTypePath(id);
+}
 
 /** One template, as a card: what it is called, who it is between, what it costs, where to go. */
 export interface TemplateCard {
   readonly id: string;
+  /** The taxonomy id, named once — the `[slug]` segment of the template's own page. */
+  readonly slug: string;
   readonly name: string;
   readonly realm: string;
   /** `"Staff ↔ Manager"` — the two ends, joined by a fixture-owned frame. */
@@ -52,6 +70,8 @@ export interface TemplateCard {
   readonly example?: string;
   /** Where a reader starts this relationship: `/register`. */
   readonly start: string;
+  /** The template's public page: `/templates/<slug>`. The card's title links here. */
+  readonly detail: string;
   /** The words on the two links, from the surface's own fixture. */
   readonly useLabel: string;
   readonly exampleLabel: string;
@@ -83,6 +103,7 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
   const price = formatCurrency(type.price);
   return {
     id: type.id,
+    slug: type.id,
     name: type.name,
     realm: type.realm,
     roles: fillLabel(pageItemOf(copy, CARD_IDS.roles).label, {
@@ -94,6 +115,7 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
     priceNote: fillLabel(pageItemOf(copy, CARD_IDS.price).label, { price }),
     ...(demoAnswersFor(type.id) === undefined ? {} : { example: assessmentDemoPath(type.id) }),
     start: START_PATH,
+    detail: catalogueDetailPath(type.id),
     useLabel: pageItemOf(copy, CARD_IDS.use).label,
     exampleLabel: pageItemOf(copy, CARD_IDS.example).label,
   };

@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates` — the template library (#console 5/5).
+ * `/templates/relationship` — the template library (#console 5/5).
  *
  * **The heading is "Relationship Templates", and it is the page's title too.** "Your templates"
  * described a page it did not point at: the rail row is Templates (the catalogue a member starts
@@ -85,7 +85,7 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "title", label: "Template" },
         { id: "aspects", label: "Aspects" },
-        { id: "instances", label: "Instances" },
+        { id: "instances", label: "Relationships" },
         { id: "authorship", label: "Who wrote it" },
         { id: "status", label: "Status" },
         { id: "created", label: "Created" },
@@ -100,7 +100,7 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
         { id: "status-published", label: "Published" },
         { id: "status-archived", label: "Archived" },
         { id: "aspects", label: "{count} Aspects" },
-        { id: "instances", label: "{count} instances" },
+        { id: "instances", label: "{count} relationships" },
         { id: "created", label: "Created {date}" },
         { id: "open", label: "Open" },
         { id: "duplicate", label: "Duplicate" },
@@ -167,8 +167,8 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "create",
       heading: "Write one",
-      body: "A template is a title and up to eight Aspects, each with a Left and a Right Value. Instances copy those Aspects when they are created, so editing later never reaches an answer somebody already gave.",
-      cta: { label: "Write a template", href: "/assessment/templates/new" },
+      body: "A template is a title and up to eight Aspects, each with a Left and a Right Value. Relationships copy those Aspects when they are created, so editing later never reaches an answer somebody already gave.",
+      cta: { label: "Write a template", href: "/templates/relationship/new" },
     },
     {
       id: "legacy",
@@ -178,8 +178,8 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "empty",
       heading: "No template yet",
-      body: "This account can use no template: nothing built in, and nothing written. Write one to have something to start an instance from.",
-      cta: { label: "Write a template", href: "/assessment/templates/new" },
+      body: "This account can use no template: nothing built in, and nothing written. Write one to have something to start a relationship from.",
+      cta: { label: "Write a template", href: "/templates/relationship/new" },
     },
     {
       id: "no-match",
@@ -191,9 +191,12 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       items: [
         {
           id: "archived",
-          label: "“{title}” is archived. Instances already made from it are unaffected.",
+          label: "“{title}” is archived. Relationships already made from it are unaffected.",
         },
-        { id: "unarchived", label: "“{title}” is published again, and can start new instances." },
+        {
+          id: "unarchived",
+          label: "“{title}” is published again, and can start new relationships.",
+        },
         { id: "duplicated", label: "“{title}” was copied into your templates." },
         { id: "refused", label: "That template could not be changed from this account." },
         { id: "missing", label: "There is no such template here." },
