@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.13.0",
+      "theme": "the templates directory becomes a directory \u2014 every one of the twenty-seven relationship templates gets a public page, and My Templates lists only the templates a member actually owns.",
+      "headline": "`feat(templates)` \u2014 every template has a page, not just a card (#782) (#782)"
+    },
+    {
       "version": "1.12.0",
       "theme": "the payment decision moves into the stage that asks for it, and the create saves a draft that pays when its opinions publish.",
       "headline": "`feat(flow)` \u2014 stage 4 walks the payment in place, and the create is a draft that pays at publish (#771)"

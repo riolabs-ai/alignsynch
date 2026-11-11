@@ -489,6 +489,11 @@
           "path": "changelog/v1-12-0.md",
           "title": "v1.12.0",
           "question": "Which release moved the payment decision into the create flow, and what does it defer?"
+        },
+        {
+          "path": "changelog/v1-13-0.md",
+          "title": "v1.13.0",
+          "question": "Which release turned the templates page into a directory, and gave every template a page?"
         }
       ]
     },
