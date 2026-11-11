@@ -21,6 +21,11 @@
  * through `itemLabel` / `fillLabel` against `data/pages/dashboard-templates.ts`, which is what
  * holds `components/dashboard/template-shelf.tsx` at zero copy literals (E23).
  *
+ * **The card type is not this file's.** Both builders below return `MemberCard`
+ * (`lib/member/card.ts`), because the relationship shelf prints the same one (#795 F2): a template
+ * card is one expression of the shared shape, not a second card model, and `relationship: null` is
+ * the honest answer here — a template has no stage, no second party and nothing paid.
+ *
  * No React and no database: a node test drives both builders without a browser, and the page
  * stays the only module that reads a session.
  */
@@ -31,6 +36,7 @@ import { relationshipType } from "@/data/relationship-types";
 import { createRelationshipPath, relationshipTemplatePath } from "@/lib/flow/paths";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 import type { LibraryRow } from "@/lib/member/library";
+import type { TemplateShelfCard } from "@/lib/member/card";
 import { MEMBER_TEMPLATES_PATH } from "@/lib/member/templates";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -64,26 +70,8 @@ function planPriceLabel(card: PageCopySection): string {
 }
 
 /**
- * One card, in the shape the shelf draws it.
- *
- * `create` is `null` rather than an absent key: the component's branch is "is there a second
- * action", and a `?:` here would let a card that should offer one render nothing at all.
+ * The two buttons' words, resolved once so both builders and the test agree.
  */
-export interface ShelfCard {
-  readonly id: string;
-  /** The gradient's seed — the record's slug, the same field `gradientFor()` hashes. */
-  readonly slug: string;
-  readonly title: string;
-  readonly summary: string;
-  /** The pills above the title: the template mark, then what the card is (realm, or whose it is). */
-  readonly chips: readonly string[];
-  /** The one line under the summary: Aspects, then the plan's monthly price or the usage count. */
-  readonly meta: readonly string[];
-  readonly detail: { readonly href: string; readonly label: string };
-  readonly create: { readonly href: string; readonly label: string } | null;
-}
-
-/** The two buttons' words, resolved once so both builders and the test agree. */
 function actions(copy: PageCopy): { detail: string; create: string } {
   const card = sectionOf(copy, "card");
   return { detail: itemLabel(card, "details"), create: itemLabel(card, "create") };
@@ -107,7 +95,7 @@ function aspectsLabel(card: PageCopySection, count: number): string {
  * hand-authored `relationship-basics`, an operator's own row) is started on the same plan as a
  * taxonomy one, so the card that carries no realm chip still carries the figure that is true.
  */
-export function catalogueCard(copy: PageCopy, row: LibraryTemplate): ShelfCard {
+export function catalogueCard(copy: PageCopy, row: LibraryTemplate): TemplateShelfCard {
   const card = sectionOf(copy, "card");
   const type = relationshipType(row.slug);
   const words = actions(copy);
@@ -123,6 +111,7 @@ export function catalogueCard(copy: PageCopy, row: LibraryTemplate): ShelfCard {
     meta: [aspectsLabel(card, row.aspectCount), planPriceLabel(card)],
     detail: { href: relationshipTemplatePath(row.slug), label: words.detail },
     create: { href: createRelationshipPath(row.slug), label: words.create },
+    relationship: null,
   };
 }
 
@@ -134,7 +123,7 @@ export function catalogueCard(copy: PageCopy, row: LibraryTemplate): ShelfCard {
  * in it. What used to be the second case — a template a session named — was the defect, and is
  * gone rather than relabelled.
  */
-export function mineCard(copy: PageCopy, row: LibraryRow): ShelfCard {
+export function mineCard(copy: PageCopy, row: LibraryRow): TemplateShelfCard {
   const card = sectionOf(copy, "card");
   const words = actions(copy);
   const used =
@@ -156,6 +145,7 @@ export function mineCard(copy: PageCopy, row: LibraryRow): ShelfCard {
       label: words.detail,
     },
     create: { href: createRelationshipPath(row.id), label: words.create },
+    relationship: null,
   };
 }
 
