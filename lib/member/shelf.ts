@@ -7,13 +7,15 @@
  * in that list — it uses one — so the second read is authorship and not membership. A person sees one kind of
  * card, so the projection happens here — once — and the component prints what it is handed.
  *
- * **The price and the two roles belong to the type, not to the record.** `data/assessments.ts`
- * derives one template per purchasable type with `slug = type.id` and records no price on it, for
- * the reason its own docblock gives: the catalogue reads them from the taxonomy by slug
- * (`relationshipType(record.slug)`), so a price change is a change in one place. That is what
- * `catalogueCard()` does — and a template the taxonomy does not name (the hand-authored
- * `relationship-basics`, an operator's own row) simply carries no price line rather than a
- * figure nobody wrote down.
+ * **The price belongs to the plan, not to the record and not to the type.** A template carries no
+ * price of its own, and no type is sold on its own: `data/billing-plans.ts` sells Basic at a
+ * monthly figure with unlimited relationships, and which plan an account holds is chosen when a
+ * relationship is ready to complete, never on this shelf (#619, #796). So the card's one number is
+ * **one month of Basic**, read from that fixture — the same chip `/assessment/templates` prints
+ * (`components/assessment-flow/template-card.tsx::CATALOGUE_PRICE_CENTS`), so the two shelves
+ * cannot disagree about the figure. `data/relationship-types.ts::RELATIONSHIP_PRICE_CENTS` ($9.99)
+ * predates the pricing rewrite and is never quoted: a per-relationship price is a promise the
+ * completion step would not honour, and the template detail one click away says so in words.
  *
  * **Every word is the fixture's.** The chips, the two buttons and the count sentences resolve
  * through `itemLabel` / `fillLabel` against `data/pages/dashboard-templates.ts`, which is what
@@ -24,12 +26,42 @@
  */
 import { formatCurrency } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
+import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { relationshipType } from "@/data/relationship-types";
 import { createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 import type { LibraryRow } from "@/lib/member/library";
 import { MEMBER_TEMPLATES_PATH } from "@/lib/member/templates";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
+
+/**
+ * The plan that includes every catalogue type, and so the one price a card prints.
+ *
+ * `basic` cannot be missing — `billingPlanProblems()` in `data/billing-plans.ts` fails on a fixture
+ * that loses a tier — and a lookup that resolved to nothing here would be a card printing an
+ * invented `$0.00`, so this throws rather than guessing. The figure itself has one home: the
+ * fixture. This module names the plan; it never types a number.
+ */
+const CATALOGUE_PLAN: BillingPlan = (() => {
+  const plan = billingPlan("basic");
+  if (plan === undefined) {
+    throw new Error('data/billing-plans.ts has no "basic" plan to price the catalogue from');
+  }
+  return plan;
+})();
+
+/**
+ * `"Basic · $8.95/mo"` — the plan's name and its monthly figure, never a bare price.
+ *
+ * The name is in the sentence on purpose: `$8.95/mo` alone beside a shelf of templates reads as
+ * one subscription per template, and the card is not selling the template.
+ */
+function planPriceLabel(card: PageCopySection): string {
+  return fillLabel(itemLabel(card, "price"), {
+    plan: CATALOGUE_PLAN.name,
+    price: formatCurrency(CATALOGUE_PLAN.monthlyCents),
+  });
+}
 
 /**
  * One card, in the shape the shelf draws it.
@@ -45,7 +77,7 @@ export interface ShelfCard {
   readonly summary: string;
   /** The pills above the title: the template mark, then what the card is (realm, or whose it is). */
   readonly chips: readonly string[];
-  /** The one line under the summary: Aspects, then the price or the usage count. */
+  /** The one line under the summary: Aspects, then the plan's monthly price or the usage count. */
   readonly meta: readonly string[];
   readonly detail: { readonly href: string; readonly label: string };
   readonly create: { readonly href: string; readonly label: string } | null;
@@ -70,10 +102,13 @@ function aspectsLabel(card: PageCopySection, count: number): string {
  * under the same id (`/assessment/templates/<id>/create`), which is the shipped flow — the
  * catalogue never says "start an instance", because a relationship is what a person starts and
  * a session is what a published relationship opens.
+ *
+ * The price line is the plan's, on every card: a template the taxonomy does not name (the
+ * hand-authored `relationship-basics`, an operator's own row) is started on the same plan as a
+ * taxonomy one, so the card that carries no realm chip still carries the figure that is true.
  */
 export function catalogueCard(copy: PageCopy, row: LibraryTemplate): ShelfCard {
   const card = sectionOf(copy, "card");
-  const price = itemLabel(card, "price");
   const type = relationshipType(row.slug);
   const words = actions(copy);
   return {
@@ -85,13 +120,7 @@ export function catalogueCard(copy: PageCopy, row: LibraryTemplate): ShelfCard {
       type === undefined
         ? [itemLabel(card, "template")]
         : [itemLabel(card, "template"), type.realm],
-    meta:
-      type === undefined
-        ? [aspectsLabel(card, row.aspectCount)]
-        : [
-            aspectsLabel(card, row.aspectCount),
-            fillLabel(price, { price: formatCurrency(type.price) }),
-          ],
+    meta: [aspectsLabel(card, row.aspectCount), planPriceLabel(card)],
     detail: { href: templateDetailPath(row.id), label: words.detail },
     create: { href: createRelationshipPath(row.id), label: words.create },
   };

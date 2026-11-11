@@ -8,7 +8,9 @@
  *   1. **`?tab=mine` is the second tab and the bare path is the catalogue** — every state is a URL,
  *      and an unknown value must land on the catalogue rather than draw a list that filtered
  *      nothing (`templatesTabOf`, the same reading `flowStageOf` gives `?stage=`).
- *   2. **The catalogue card carries the price and the two owner-named actions**, and neither tab
+ *   2. **The catalogue card carries one price, and it is the plan's** — Basic's monthly figure read
+ *      from `data/billing-plans.ts`, never a per-relationship charge (#796) — plus the two
+ *      owner-named actions; neither tab
  *      says "instance": a relationship is what a person starts; an instance is what publishing one
  *      opens and is never a word on this screen.
  *   3. **"My Templates" says whose row it is** — the chip is `Yours` or `Adopted`, and the detail
@@ -26,11 +28,20 @@ vi.mock("next/link", () => ({
 }));
 
 import { TemplateShelf, TemplateTabs } from "@/components/dashboard/template-shelf";
+import { formatCurrency } from "@/content/core";
+import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
 import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
-import { relationshipType } from "@/data/relationship-types";
+import { billingPlan } from "@/data/billing-plans";
+import { RELATIONSHIP_PRICE_CENTS, relationshipType } from "@/data/relationship-types";
 import { catalogueCard, mineCard, templatesTabOf, templatesTabPath } from "@/lib/member/shelf";
+import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
 const copy = dashboardTemplatesPageCopy;
+
+/** The plan that includes every catalogue type — the card's one price (#796). */
+const basic = billingPlan("basic");
+if (basic === undefined) throw new Error('the pricing fixture has no "basic" plan');
+const PLAN_LINE = `${basic.name} · ${formatCurrency(basic.monthlyCents)}/mo`;
 
 /** A catalogue row: the shape `listLibraryTemplates()` hands the page. */
 const catalogueRow = {
@@ -84,13 +95,26 @@ describe("the tab is the URL", () => {
 describe("the catalogue card", () => {
   const card = catalogueCard(copy, catalogueRow);
 
-  it("carries the price of the relationship and the Aspect count", () => {
+  it("carries the plan's monthly price and the Aspect count — never a per-relationship charge", () => {
     const type = relationshipType(catalogueRow.slug);
     expect(type).toBeDefined();
     const html = renderToStaticMarkup(createElement(TemplateShelf, { cards: [card] }));
-    // The price is the taxonomy's, through the tree's one money formatter.
-    expect(html).toContain("$9.99 per relationship");
+    // The figure is the plan fixture's, through the tree's one money formatter (#796).
+    expect(html).toContain(PLAN_LINE);
     expect(html).toContain("5 Aspects");
+    // `RELATIONSHIP_PRICE_CENTS` predates the pricing rewrite that sells Basic at $8.95/month with
+    // unlimited relationships, so a card quoting it would be a second price model in one product —
+    // and a per-relationship quote the completion step (#619) will not honour.
+    expect(html).not.toContain("per relationship");
+    expect(html).not.toContain(formatCurrency(RELATIONSHIP_PRICE_CENTS));
+  });
+
+  it("prices a template the taxonomy does not name too — the plan is what costs money", () => {
+    // The plan does not change with the template, so the card's one price is not a property of the
+    // type: a hand-authored starter template costs the same plan as a taxonomy one.
+    const untaxonomied = catalogueCard(copy, { ...catalogueRow, slug: "relationship-basics" });
+    expect(untaxonomied.chips).toEqual(["Template"]);
+    expect(untaxonomied.meta).toContain(PLAN_LINE);
   });
 
   it("offers the owner's two actions, and never the word instance", () => {
@@ -111,6 +135,35 @@ describe("the catalogue card", () => {
     // The muted wash is an inline `linear-gradient` at the seed's hue, not a covered image.
     expect(html).toMatch(/background-image:linear-gradient\(/);
     expect(html).toContain("SM");
+  });
+});
+
+describe("one statement about money per screen, and they agree (#796)", () => {
+  it("builds the card's figure from the plan fixture, never from the type's own price", () => {
+    // The rule lives in `lib/member/shelf.ts`, so the check is on the source — the same shape the
+    // ownership predicate below is proved with. The module's docblock names
+    // `RELATIONSHIP_PRICE_CENTS` as provenance for why it is *not* used, so the scan is for a read
+    // of the type's price, and the rendered figure is proved against the plan fixture below.
+    const source = readFileSync(new URL("../lib/member/shelf.ts", import.meta.url), "utf8");
+    expect(source).not.toContain("type.price");
+    expect(source).not.toContain("per relationship");
+    expect(catalogueCard(copy, catalogueRow).meta.join(" ")).toContain(PLAN_LINE);
+  });
+
+  it("describes the card's figure as the plan's, not the relationship's", () => {
+    const body = sectionBody(sectionOf(copy, "catalogue"));
+    // The old sentence quoted the card as "the price of the relationship it opens", which is the
+    // claim the template detail refuses one click later.
+    expect(body).not.toContain("price of the relationship it opens");
+    expect(body).toContain("plan");
+  });
+
+  it("leaves the template detail's pay-later sentence byte-identical", () => {
+    // `docs/pay-to-complete/PAYER-PRESENT.md` records this as the only shipped statement of
+    // pay-later, and #619 is the decision it encodes: the plan is chosen at completion, not on a card.
+    expect(itemLabel(sectionOf(templateDetailPageCopy, "shape"), "no-money")).toBe(
+      "No price is shown here: a relationship's cost depends on the plan chosen when it is ready to complete, and the plan prices are on the pricing page.",
+    );
   });
 });
 
