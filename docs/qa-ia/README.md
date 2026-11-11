@@ -12,12 +12,25 @@ operator work reduces to **four groups** — Users · Templates · Billing · Sy
 whose pages are its submenu. `/admin/console` is no longer a destination; its pages are those
 submenus.
 
-Captured from a **local dev server of the branch** (`next dev --turbo -p 3100`, demo env), driven by
+Captured from a **local dev server of the branch** (`next dev --turbo`, demo env), driven by
 headless Chrome over the DevTools protocol: `Emulation.setDeviceMetricsOverride` per width and
 `Page.captureScreenshot`, with `Runtime.evaluate` reading the numbers back **before each shutter**.
 Port 3000 and the operator's review worktree were not touched.
 
 ## What each still is
+
+The **current** capture (`fcaf19ef`, port 4317) is the `ia-v2-*` set; it is the one
+`capture-report.json` beside it describes, number for number.
+
+| File                                    | Viewport  | What it shows                                                                                   |
+| --------------------------------------- | --------- | ----------------------------------------------------------------------------------------------- |
+| `ia-v2-1440.png`                        | 1440×5992 | the whole revised screen, full page: heading, the rail band, every group with Templates open    |
+| `ia-v2-390.png`                         | 390×8944  | the same screen at phone width, full page                                                       |
+| `ia-v2-templates-submenu-clip-1440.png` | 257×416   | **the Templates group, expanded** — its seven submenu rows, including the two authoring actions |
+| `ia-v2-templates-submenu-clip-390.png`  | 353×416   | the same crop at phone width                                                                    |
+
+The **first** capture (`8659e9d5`, port 3100) is kept as the earlier evidence: it frames the screen
+at viewport height rather than full page, so the diff table below the fold is not in it.
 
 | File                       | Viewport | What it shows                                                                                   |
 | -------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
@@ -30,23 +43,27 @@ The crop is taken from a full-page capture and cut at the group's measured recta
 `Page.captureScreenshot` with a `clip` returned a blank frame for a region below the fold (both with
 and without `captureBeyondViewport`).
 
+`capture-report.json`'s `file` fields name the workspace the capture ran in
+(`.worktrees/t_b8bb102c`), not this directory; the bytes are the same PNGs.
+
 ## Asserts made before every shutter
 
-| Check                           | 1440                                                                                         | 390        |
-| ------------------------------- | -------------------------------------------------------------------------------------------- | ---------- |
-| `innerWidth` == requested       | 1440                                                                                         | 390        |
-| `scrollWidth` == `innerWidth`   | 1440 — no horizontal overflow                                                                | 390 — none |
-| heading present                 | "Four operator groups, and one console inside them"                                          | same       |
-| Templates group `aria-expanded` | `true`                                                                                       | `true`     |
-| Templates submenu element       | present                                                                                      | present    |
-| proposed rows inside Templates  | `template-clone`, `template-publish`                                                         | same       |
-| Templates anchors               | `/admin/templates`, `/admin/console/templates`, `/admin/review`, `/assessment/templates/new` | same       |
-| Templates buttons               | `Clone → draft`, `Publish revision`                                                          | same       |
-| an anchor to `/admin/console`   | none                                                                                         | none       |
+| Check                           | 1440                                                                                           | 390        |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- | ---------- |
+| `innerWidth` == requested       | 1440                                                                                           | 390        |
+| `scrollWidth` == `innerWidth`   | 1440 — no horizontal overflow                                                                  | 390 — none |
+| heading present                 | "Four operator groups, and one console inside them"                                            | same       |
+| Templates group `aria-expanded` | `true`                                                                                         | `true`     |
+| Templates submenu element       | present                                                                                        | present    |
+| proposed rows inside Templates  | `template-clone`, `template-publish`                                                           | same       |
+| Templates anchors               | `/admin/templates`, `/admin/console/templates`, `/admin/review`, `/templates/relationship/new` | same       |
+| Templates buttons               | `Clone → draft`, `Publish revision`                                                            | same       |
+| an anchor to `/admin/console`   | none                                                                                           | none       |
 
 The last four rows are the acceptance criteria photographed: the group names create / clone /
 publish-revision, the two proposed actions are **buttons**, and the console hub is not a link
-anywhere.
+anywhere. `/templates/relationship/new` is the address authoring moved to in #794;
+`/assessment/templates/new` is only a `308` to it and the rail does not draw it.
 
 ## The session the stills were taken in
 
