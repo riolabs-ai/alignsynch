@@ -283,12 +283,9 @@ export function AssessmentInstanceView({
         >
           {MODE_LABELS[screen.mode]}
           {isCoach ? (
-            <span
-              data-coach-badge="true"
-              className="ml-2 inline-block rounded-full border border-gray-300 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
-            >
+            <Chip variant="neutral" className="ml-2" data-coach-badge="true">
               {itemLabel(viewerBand, "coach-badge")}
-            </span>
+            </Chip>
           ) : null}
         </p>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>

@@ -318,12 +318,15 @@ export function TemplateCatalogueGrid<T extends CatalogueTemplate>({
            */}
           <h2 className="flex items-baseline gap-2 border-b border-border pb-2 text-lg font-semibold text-foreground">
             {groupLabelOf(group.id)}
-            <span
-              className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+            {/* The count beside a heading — a category label, like the catalogue eyebrow, so it
+                takes the soft fill and the muted ink a heading's annotation has always had. */}
+            <Chip
+              variant="soft"
+              className="border-0 font-medium text-muted-foreground"
               data-template-group-count={group.templates.length}
             >
               {group.templates.length}
-            </span>
+            </Chip>
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {group.templates.map((template) => (

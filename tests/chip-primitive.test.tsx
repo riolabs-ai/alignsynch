@@ -37,13 +37,16 @@ vi.mock("next/link", () => ({
 }));
 
 import { TemplateDetail } from "@/components/assessment-flow/template-detail";
+import { MyInstances } from "@/components/assessment-flow/my-instances";
 import { RelationshipCards } from "@/components/dashboard/relationship-cards";
 import { TemplateShelf } from "@/components/dashboard/template-shelf";
 import { badgeVariants, Chip } from "@/components/ui/badge";
 import { assessments } from "@/data/assessments";
 import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
+import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
+import type { RelationshipCard } from "@/lib/db/assessments";
 import type { LibraryTemplateDetail } from "@/lib/db/template-library";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 import { catalogueCard } from "@/lib/member/shelf";
@@ -157,12 +160,34 @@ const detail: LibraryTemplateDetail = (() => {
   };
 })();
 
+/** The stage the relationship's session has reached, as the card draws it. */
+const myInstanceRow: RelationshipCard = {
+  relationshipId: relationshipRow.id,
+  instanceRecordId: "member-session-abc123",
+  slug: "staff-manager",
+  name: "Son Basics",
+  templateTitle: "Staff & Manager",
+  mode: "basic",
+  viewerRole: "initiator",
+  initiatorName: "Avery",
+  counterpartyName: "Junior",
+  stage: "sharing",
+  state: "awaiting-other",
+  unlock: "seen",
+  inviteState: "claimed",
+  aspectCount: 6,
+  sessionsOpened: 1,
+  sessionsCompleted: 1,
+  alignment: 2.4,
+  paid: null,
+  lastSessionAt: "2026-11-05T12:00:00.000Z",
+};
+
 /**
- * The chip that carries `attribute` — the **last** element with it.
+ * The opening tag of the element that carries `attribute` — the chip, found by its own hook.
  *
- * Last, not first, because a card stamps the same handle on its own `<li>` (`data-relationship-
- * status` is both the card's and the chip's), and the label is the innermost element that says
- * it. An attribute only the chip carries matches once either way.
+ * Last match, because a card stamps the card-level handle (`data-relationship-status`) on its
+ * own `<li>` as well, and the label is the innermost element that carries it.
  */
 function elementWith(html: string, attribute: string): string {
   const matches = [...html.matchAll(new RegExp(`<[a-z]+[^>]*\\b${attribute}[^>]*>`, "g"))];
@@ -279,17 +304,38 @@ describe("no surface declares a chip of its own", () => {
     /**
      * The list above is the audited surfaces and it is hand-written, which is precisely how
      * `instance-view.tsx` kept a byte-identical copy through the first pass. This is the
-     * self-maintaining half: a shared chip constant named `CHIP` may not exist anywhere under
-     * `components/` or `app/` — the primitive is the only home for that class list.
+     * self-maintaining half, in three shapes, because each one was a real escape:
+     *
+     *   - a shared constant — `CHIP`, `CHIP_TEMPLATE`, any `CHIP_*` — may not exist anywhere
+     *     under `components/` or `app/`; the primitive is its only home;
+     *   - the retired *neutral literal* may not be pasted into a component either, which is what
+     *     an inlined copy looks like (`instance-view.tsx`'s stage badge was exactly this);
+     *   - and the same for the retired band literal, which is where the detail header's chips
+     *     came from before the band tone existed.
      */
-    const offenders = ["components", "app"]
-      .flatMap((dir) =>
-        readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" })
-          .filter((name) => name.endsWith(".ts") || name.endsWith(".tsx"))
-          .map((name) => join(dir, name)),
-      )
-      .filter((file) => /\bconst CHIP\b/.test(source(file)));
-    expect(offenders).toEqual([]);
+    const sources = ["components", "app"].flatMap((dir) =>
+      readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" })
+        .filter((name) => name.endsWith(".ts") || name.endsWith(".tsx"))
+        .map((name) => join(dir, name)),
+    );
+
+    expect(sources.length, "the walk found the tree").toBeGreaterThan(300);
+    expect(
+      sources
+        // The primitive is where the one class list lives; `CHIP_TAG`/`CHIP_TONES` are its API.
+        .filter((file) => file !== "components/ui/badge.tsx")
+        .filter((file) => /\bconst CHIP(\b|_)/.test(source(file))),
+    ).toEqual([]);
+    expect(
+      sources.filter((file) =>
+        /border-gray-300 bg-white px-2\.5 py-0\.5 text-xs font-medium/.test(source(file)),
+      ),
+    ).toEqual([]);
+    expect(
+      sources.filter((file) =>
+        /rounded-md border border-background\/30 px-2 py-0\.5 text-xs/.test(source(file)),
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -303,6 +349,22 @@ describe("the surfaces render through it", () => {
     expect(html).toContain(toneClasses("tint"));
     expect(html).toContain(toneClasses("neutral"));
     expect(html).not.toContain("rounded-md border border-border px-2");
+  });
+
+  it("My Relationships draws the template mark and the stage tinted, a state soft", () => {
+    const html = renderToStaticMarkup(
+      createElement(MyInstances, {
+        copy: myInstancesPageCopy,
+        relationships: [myInstanceRow],
+        unreadable: null,
+      }),
+    );
+    // The one sentence this refactor exists to establish: the stage and the template mark are
+    // the brand tint, so reverting either to `neutral` fails here and not in six months.
+    expect(elementWith(html, "data-stage-badge"), "stage").toContain(toneClasses("tint"));
+    expect(html, "template mark").toContain(toneClasses("tint"));
+    expect(elementWith(html, "data-invite-state"), "invitation").toContain(toneClasses("soft"));
+    expect(html, "mode is a fact").toContain(toneClasses("neutral"));
   });
 
   it("the relationship list card does too, and keeps every data-* hook", () => {
