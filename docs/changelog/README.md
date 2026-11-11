@@ -48,7 +48,7 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 
 - **Released** 2026-11-11
 - **Tag** [`v1.14.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.14.0)
-- **Pull requests named** 16
+- **Pull requests named** 17
 - **Theme:** the public catalogue owns the relationship noun — /relationship-types replaces /templates and the worked example moves under it, every card prices the plan instead of the relationship, and one chip and one member card replace three constants and four tiles.
 - **Headline:** `feat(ia)` — the worked example lives at /relationship-types/<slug>/demo (#794 follow-up) (#809)
 

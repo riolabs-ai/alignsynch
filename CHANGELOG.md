@@ -24,6 +24,7 @@ with a **Known limits** block, because a release that does not say what it canno
 
 ### Maintenance
 
+- `docs(agents)` — the lint baseline is 221/37, and the file says how to measure it (#815) ([#816](https://github.com/riolabs-ai/alignsynch/pull/816))
 - `refactor(ui)` — the relationship card's tiles are the card's one meta line (#795 F4) ([#814](https://github.com/riolabs-ai/alignsynch/pull/814))
 - `refactor(ui)` — one chip primitive, rounded-full, four tones (#795) ([#808](https://github.com/riolabs-ai/alignsynch/pull/808))
 - `refactor(ui)` — one member card projection feeds both shelves (#795 F2) ([#811](https://github.com/riolabs-ai/alignsynch/pull/811))
