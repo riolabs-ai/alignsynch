@@ -35,7 +35,7 @@ import { join } from "node:path";
 const PORT = Number(process.env.PROTOTYPE_SAVE_PORT ?? 8791);
 const ROOT = join(import.meta.dirname, "..");
 const ARTIFACTS = join(ROOT, "docs", "review", "artifacts");
-const PAGE = "prototype-relationship-lifecycle-v7.html";
+const PAGE = "prototype-relationship-lifecycle-v8.html";
 const LOG = join(ARTIFACTS, "PROTOTYPE-CHANGES.md");
 
 /** The page this sink serves, refused unless it is a bare file name in the artifacts directory. */
