@@ -4,10 +4,14 @@
  * The templates shelf — one card per template, two tabs over it (#620).
  *
  * **The component holds no words and no paths.** Every chip, button label and count is a
- * `ShelfCard` field the page resolved from `data/pages/dashboard-templates.ts` through
+ * `MemberCard` field the page resolved from `data/pages/dashboard-templates.ts` through
  * `lib/member/shelf.ts`, so this file stays at zero copy literals (E23) and a rename is one
  * fixture edit. It is a server component for the same reason `my-instances.tsx` is: the cards are
  * links, every state of the screen is a URL, and there is nothing to hydrate.
+ *
+ * **`MemberCard` is the relationship list's type too.** One projection feeds both shelves (#795
+ * F2): the fields this card prints are the shared half, and the `relationship` half is `null` on
+ * every card here because a template has no stage, no second party and nothing paid.
  *
  * **The cover is the muted wash, not an image.** `mutedGradientFor(slug)` is the approved band
  * (`hsl(h 22% 86%) → hsl(h±12–23° 24% 74%)`): no white overlay, no white title band, and the
@@ -21,12 +25,8 @@
  */
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { mutedGradientFor, monogramOf } from "@/lib/category-gradient";
-import {
-  type ShelfCard,
-  TEMPLATE_TABS,
-  type TemplateTab,
-  templatesTabPath,
-} from "@/lib/member/shelf";
+import { TEMPLATE_TABS, type TemplateTab, templatesTabPath } from "@/lib/member/shelf";
+import type { TemplateShelfCard } from "@/lib/member/card";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
 
@@ -81,7 +81,7 @@ export function TemplateTabs({ copy, current }: { copy: PageCopy; current: Templ
 }
 
 /** Every card of one tab, in one grid. `cards.length === 0` is the caller's panel, not a hole. */
-export function TemplateShelf({ cards }: { cards: readonly ShelfCard[] }) {
+export function TemplateShelf({ cards }: { cards: readonly TemplateShelfCard[] }) {
   return (
     <ul data-template-shelf className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((card) => (
