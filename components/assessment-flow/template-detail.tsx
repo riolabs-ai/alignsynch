@@ -54,7 +54,6 @@ import {
 } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { relationshipTypeOf } from "./template-card";
-import { WizardSteps } from "./wizard-steps";
 
 const CARD = "rounded-lg border border-border bg-card p-6";
 const MUTED = "text-sm text-muted-foreground";
@@ -64,13 +63,6 @@ const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 
 const SETTINGS: readonly AlignmentSetting[] = ["soft", "full"];
-
-/** The rail's three steps, as fixture item ids (#618) — the shape `counterparty-wizard.tsx` uses. */
-const RAIL: readonly { readonly step: number; readonly item: string }[] = [
-  { step: 1, item: "1" },
-  { step: 2, item: "2" },
-  { step: 3, item: "3" },
-];
 
 /**
  * The two seats, as **roles**: the type's own words for who sits in each one. A template holds
@@ -108,7 +100,6 @@ export function TemplateDetail({
   const shape = sectionOf(copy, "shape");
   const actions = sectionOf(copy, "actions");
   const archived = sectionOf(copy, "archive-note");
-  const rail = sectionOf(copy, "steps");
 
   const type = relationshipTypeOf(template.slug);
   const archivedTemplate = template.status === "archived";
@@ -121,13 +112,10 @@ export function TemplateDetail({
         </a>
       </nav>
 
-      {/* Where the reader is in the journey (#618): products → this product → the relationship. */}
-      <WizardSteps
-        label={itemLabel(rail, "label")}
-        count={fillLabel(itemLabel(rail, "count"), { step: 2 })}
-        current={2}
-        steps={RAIL.map((entry) => ({ step: entry.step, label: itemLabel(rail, entry.item) }))}
-      />
+      {/* No journey rail here (#791). It numbered this page `Step 2 of 3` of a browse journey, but
+          the create flow downstream prints `Stage 1 of 6` and this screen is a pre-stage view of
+          that flow, not a stage of it — two numberings for one journey, the wrong one on the
+          wrong screen. The six-stage rail lives where the stages are. */}
 
       {/* The header band — the v1 landing's cover, text-only: a template has no photograph, and an
           invented one would be the first thing on the page a reader could not trust. */}
