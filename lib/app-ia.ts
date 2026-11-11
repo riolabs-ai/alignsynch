@@ -28,17 +28,19 @@
  * yet, so they carry `proposed: true`: they are drawn as controls, never as links, because a rail
  * must never point at a placeholder (the `isLinkableHref` rule the crash in #721 taught us).
  *
- * **One row shape, three renders.** A row is `{ id, href, icon, needs, note }` plus two flags:
+ * **One row shape, three renders.** A row is `{ id, href?, icon, needs, note }` plus one flag:
  *
- *   proposed: true      no route exists — drawn as a `<button>`, never an `<a>`
+ *   proposed: true      no route exists — **no `href` at all**, drawn as a `<button>`, never an `<a>`
  *   bracketed href      a route *pattern* (`/admin/templates/[id]`) — drawn as text, never a link
+ *   any other href      a destination — drawn as the shell's own `NavRow` link
  *
  * Everything else is a destination and links. The renderer (`components/admin/ia-rail-preview.tsx`)
- * decides from those two facts only, so the preview cannot disagree with the tests.
+ * decides from those facts only, so the preview cannot disagree with the tests.
  *
- * **Every `href` is an existing destination, unless it is marked proposed.** The test
- * `tests/app-ia.test.ts` resolves each one against `content/routes.ts`, and asserts a *proposed*
- * href resolves to nothing — a proposal that quietly became a route would otherwise look shipped.
+ * **Every `href` that exists is an existing destination.** The test `tests/app-ia.test.ts` resolves
+ * each one against `content/routes.ts`; a proposed action has nothing to resolve because the "no
+ * route/href, label only" rule is structural — there is no placeholder path for a rail to link by
+ * accident, and no proposed route that could quietly become real while still reading as proposed.
  *
  * **One product decision, recorded and not smuggled in.** Gap Analysis (`/admin/gaps`) is a
  * member's own alignment report, so the proposal draws it in Workspace for a `member` — but the
@@ -109,11 +111,11 @@ export interface AppIaRow {
   /** The copy id in `data/pages/admin-review-ia.ts`'s `nav-alignsynch` section. */
   readonly id: string;
   /**
-   * The destination. A literal, so a test (and a reviewer) can resolve it against the manifest.
-   * For a **proposed** action this is the route the action would live at — a pattern, because no
-   * page answers it yet, and the renderer refuses to link it.
+   * The destination — **absent for a proposed action.** A literal, so a test (and a reviewer) can
+   * resolve it against the manifest. A proposed action has no route at all, so it carries no href:
+   * the label is the whole of it, and there is no placeholder path for a rail to link by accident.
    */
-  readonly href: string;
+  readonly href?: string;
   readonly icon: AppIaIconName;
   /**
    * The rung this row is *proposed* for. Not a gate: the page behind a moved row keeps the floor
@@ -139,6 +141,15 @@ export interface AppIaRow {
  * structure the owner counted as "too many menu groups". One level is the whole point.
  */
 export interface AppIaGroup {
+  /**
+   * The group's name, as the owner asked for it: `workspace`, `do`, `support`, `users`,
+   * `templates`, `billing`, `system`. This is the identity a test counts.
+   *
+   * It is deliberately not the copy id: `templates` is also a **member row** id in the same
+   * `nav-alignsynch` section, so the copy id is namespaced (`group-templates`) while the key stays
+   * the plain noun a reader would say out loud.
+   */
+  readonly key: string;
   /** The copy id for the main item (`group-users` …). */
   readonly id: string;
   readonly audience: AppIaAudience;
@@ -171,9 +182,14 @@ export interface AppIaGroup {
  *
  * **Support is a band both rails draw** — the same two pages serve a member and an operator, so
  * counting it as either audience would make one of them a lie.
+ *
+ * **Seven entries, six groups in the card's arithmetic.** Workspace and Do are the member's two,
+ * Users · Templates · Billing · System the operator's four — six groups. Support is the seventh
+ * *entry* and not a seventh group: it is `audience: "shared"`, drawn under both rails.
  */
 export const APP_IA_GROUPS: readonly AppIaGroup[] = [
   {
+    key: "workspace",
     id: "group-workspace",
     audience: "member",
     icon: "overview",
@@ -218,6 +234,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
     actions: [],
   },
   {
+    key: "do",
     id: "group-do",
     audience: "member",
     icon: "invitations",
@@ -242,6 +259,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
     ],
   },
   {
+    key: "users",
     id: "group-users",
     audience: "admin",
     icon: "users",
@@ -272,6 +290,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
     actions: [],
   },
   {
+    key: "templates",
     id: "group-templates",
     audience: "admin",
     icon: "templates",
@@ -314,24 +333,23 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
       },
       {
         id: "template-clone",
-        href: "/admin/templates/[id]/clone",
         icon: "clone",
         needs: "admin",
-        note: "Clone an existing template into a draft. **Proposed** — no route answers this yet, so it is drawn as an action with a marker and never as a link.",
+        note: "Clone an existing template into a draft. **Proposed** — no route exists, so this row carries no href at all: it is a label drawn as an action with a marker, and there is no placeholder path for a rail to link.",
         proposed: true,
       },
       {
         id: "template-publish",
-        href: "/admin/templates/[id]/publish",
         icon: "publish",
         needs: "admin",
-        note: "Publish a revision of a template without forking it. **Proposed** — no route answers this yet, so it is drawn as an action with a marker and never as a link.",
+        note: "Publish a revision of a template without forking it. **Proposed** — no route exists, so this row carries no href at all: it is a label drawn as an action with a marker, never as a link.",
         proposed: true,
       },
     ],
     actions: [],
   },
   {
+    key: "billing",
     id: "group-billing",
     audience: "admin",
     icon: "billing",
@@ -348,6 +366,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
     actions: [],
   },
   {
+    key: "system",
     id: "group-system",
     audience: "admin",
     icon: "system",
@@ -385,6 +404,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
     actions: [],
   },
   {
+    key: "support",
     id: "group-support",
     audience: "shared",
     icon: "support",
@@ -434,8 +454,10 @@ export interface AppIaScreen {
  * back link at the top-left; every `tab-rail` screen the same tab strip its sibling draws.
  *
  * **The two proposed screens are the authoring flows' landing places**, not pages anyone can
- * visit: `/admin/templates/[id]/clone` and `/admin/templates/[id]/publish` are named so the map
- * says *what shape* each action opens, and marked `proposed` so nothing draws them as a link.
+ * visit: `/admin/templates/[id]/clone` and `/admin/templates/[id]/publish` are named here so the
+ * map says *what shape* each action opens. They are the only place those paths appear — the rail
+ * rows themselves carry no href (a proposed action is a label, not a destination) — and each is
+ * marked `proposed` so nothing draws it as a link.
  */
 export const APP_IA_SCREEN_MAP: readonly AppIaScreen[] = [
   {
@@ -816,4 +838,13 @@ export function isLinkableHref(href: string): boolean {
 /** The group headings in order — the assertion the group order is a fact, not a comment. */
 export function appIaGroupIds(): string[] {
   return APP_IA_GROUPS.map((group) => group.id);
+}
+
+/**
+ * The groups by the names the owner uses — `workspace`, `do`, `support`, `users`, `templates`,
+ * `billing`, `system`. Six groups and one shared band; see `AppIaGroup.key` for why the copy id
+ * carries a `group-` namespace and this does not.
+ */
+export function appIaGroupKeys(): string[] {
+  return APP_IA_GROUPS.map((group) => group.key);
 }

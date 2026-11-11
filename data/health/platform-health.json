@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-08T05:32:35.197Z",
+  "recordedAt": "2026-11-11T18:26:02.244Z",
   "recorder": "pnpm health:record",
   "dbVerify": {
     "command": "pnpm db:verify",
-    "ranAt": "2026-11-08T05:31:18.686Z",
+    "ranAt": "2026-11-11T18:24:32.823Z",
     "database": "demo branch (NEON_BRANCH=demo, neondb) · host ep-crimson-truth-b4ppwxrp.c-6.us-east-2.aws.neon.tech",
     "exitCode": 0,
     "result": "pass",
-    "summary": "✓ db:verify — 5 instance(s) checked, 5 template(s) resolved, 3 template version(s) parsed with every relationship bound to one, no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 443 source file(s) (a scored session is immutable), 0 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded instance(s) complete, no party is bound to an account yet, 1 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (0 live subscription(s)), 3 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 5 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 0 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 1 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
+    "summary": "✓ db:verify — 16 instance(s) checked, 16 template(s) resolved, 3 template version(s) parsed with every relationship bound to one, no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 453 source file(s) (a scored session is immutable), 2 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded instance(s) complete, 2 party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows), 3 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (1 live subscription(s)), 3 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 50 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 0 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 2 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
     "violations": []
   },
   "gate": {
     "lane": "code",
-    "seconds": 95.2,
-    "measuredAt": "2026-11-08T05:29:43.502Z",
+    "seconds": 165.4,
+    "measuredAt": "2026-11-11T18:21:31.101Z",
     "command": "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
     "yield": {
-      "window": "2026-11-07",
-      "measuredAt": "2026-11-08T03:55:14.750Z",
-      "command": "python3 docs/gate-baseline.py --window 2026-11-07",
-      "successes": 182,
-      "runs": 229,
-      "percent": 79.5,
-      "runP50Seconds": 112,
-      "runP95Seconds": 164
+      "window": "2026-11-11",
+      "measuredAt": "2026-11-11T18:24:16.514Z",
+      "command": "python3 docs/gate-baseline.py --window 2026-11-11",
+      "successes": 19,
+      "runs": 19,
+      "percent": 100,
+      "runP50Seconds": 173,
+      "runP95Seconds": 229
     }
   },
   "production": {
     "state": "answering",
-    "version": "1.6.0",
-    "commit": "00dc43a3397a2aeb713bf7086f474407854273cf",
+    "version": "1.13.0",
+    "commit": "bc92594a8d70842c296908a0b6f0cd972d272ba8",
     "status": 200,
-    "measuredAt": "2026-11-08T05:29:43.502Z",
+    "measuredAt": "2026-11-11T18:21:31.101Z",
     "source": "GET https://alignsynch.com/api/version",
     "behindMain": 0
   },
   "tree": {
-    "packageVersion": "1.7.0",
-    "latestTag": "v1.6.0",
-    "headSha": "00dc43a3397a2aeb713bf7086f474407854273cf",
-    "mainSha": "00dc43a3397a2aeb713bf7086f474407854273cf",
-    "measuredAt": "2026-11-08T05:29:43.151Z"
+    "packageVersion": "1.13.0",
+    "latestTag": "v1.13.0",
+    "headSha": "bc92594a8d70842c296908a0b6f0cd972d272ba8",
+    "mainSha": "bc92594a8d70842c296908a0b6f0cd972d272ba8",
+    "measuredAt": "2026-11-11T18:21:30.746Z"
   }
 }

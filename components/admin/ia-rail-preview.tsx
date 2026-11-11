@@ -18,11 +18,12 @@
  *
  * **Three row renders, decided by the row's own data — never by a flag in the markup.**
  *
- *   a link       `NavRow` with an href: the destination exists and the route has no id in it
+ *   an action    `proposed: true` and **no href at all**: `NavRow` with `onSelect`, so the DOM is a
+ *                `<button>` — a proposed action has no page behind it, and a rail must never link a
+ *                placeholder
  *   a pattern    an href carrying `[id]`: drawn as text, because a `Link` to a pattern is the
  *                dynamic-href error Next raises (and the client crash #721 fixed)
- *   an action    `proposed: true`: `NavRow` with `onSelect`, so the DOM is a `<button>` — a
- *                proposed action has no page behind it, and a rail must never link a placeholder
+ *   a link       any other href: `NavRow` with the destination, which exists and is concrete
  *
  * **A client component, because a row is a control.** `NavRow` is a `Link` and a group opens and
  * closes, so this is state: every group starts open, because a review artifact that hid its own
@@ -147,6 +148,7 @@ export function AppIaRailPreview({
   const renderRow = (row: AppIaRow) => {
     const Icon = IA_ICONS[row.icon];
     const label = itemLabel(nav, row.id);
+    const href = row.href;
 
     if (row.proposed) {
       return (
@@ -165,12 +167,17 @@ export function AppIaRailPreview({
       );
     }
 
-    if (!isLinkableHref(row.href)) {
+    /**
+     * A **pattern**, or a row carrying no destination at all. The `proposed` branch above is the
+     * only legitimate no-href row, so a missing href here is a descriptor defect — drawn as text
+     * rather than handed to `<Link>`, which is the one thing that must never happen.
+     */
+    if (href === undefined || !isLinkableHref(href)) {
       return (
-        <div key={row.id} className={PATTERN_ROW_CLASS} data-pattern-row={row.id} title={row.href}>
+        <div key={row.id} className={PATTERN_ROW_CLASS} data-pattern-row={row.id} title={href}>
           <Icon className="size-5 shrink-0" />
           <span className="truncate">{label}</span>
-          <code className="ml-auto truncate text-xs">{row.href}</code>
+          <code className="ml-auto truncate text-xs">{href}</code>
         </div>
       );
     }
@@ -178,10 +185,10 @@ export function AppIaRailPreview({
     return (
       <NavRow
         key={row.id}
-        href={row.href}
+        href={href}
         icon={<Icon className="size-5" />}
         label={label}
-        active={pathname === row.href}
+        active={pathname === href}
         labelled={labelled}
         onNavigate={() => undefined}
       />
