@@ -140,6 +140,9 @@ const DYNAMIC_ROUTES = [
   "/quiz/[id]/play",
   "/reset/[token]",
   "/support/articles/[slug]",
+  // One relationship template's public page — the card title on `/templates` links here, and
+  // every purchasable type is a static param of it.
+  "/templates/[slug]",
   "/tournaments/[id]",
 ] as const;
 

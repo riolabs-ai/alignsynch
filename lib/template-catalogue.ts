@@ -35,9 +35,22 @@ export const START_PATH = "/register";
  */
 export const CATALOGUE_PATH = "/templates";
 
+/**
+ * One template's public page — `/templates/<id>`.
+ *
+ * The directory's cards, the detail page's own route and its metadata all read this, so a route
+ * rename is one edit rather than three literals that drift. The id is the slug, exactly as
+ * `data/relationship-types.ts` spells it.
+ */
+export function catalogueDetailPath(id: string): string {
+  return `${CATALOGUE_PATH}/${id}`;
+}
+
 /** One template, as a card: what it is called, who it is between, what it costs, where to go. */
 export interface TemplateCard {
   readonly id: string;
+  /** The taxonomy id, named once — the `[slug]` segment of the template's own page. */
+  readonly slug: string;
   readonly name: string;
   readonly realm: string;
   /** `"Staff ↔ Manager"` — the two ends, joined by a fixture-owned frame. */
@@ -52,6 +65,8 @@ export interface TemplateCard {
   readonly example?: string;
   /** Where a reader starts this relationship: `/register`. */
   readonly start: string;
+  /** The template's public page: `/templates/<slug>`. The card's title links here. */
+  readonly detail: string;
   /** The words on the two links, from the surface's own fixture. */
   readonly useLabel: string;
   readonly exampleLabel: string;
@@ -83,6 +98,7 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
   const price = formatCurrency(type.price);
   return {
     id: type.id,
+    slug: type.id,
     name: type.name,
     realm: type.realm,
     roles: fillLabel(pageItemOf(copy, CARD_IDS.roles).label, {
@@ -94,6 +110,7 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
     priceNote: fillLabel(pageItemOf(copy, CARD_IDS.price).label, { price }),
     ...(demoAnswersFor(type.id) === undefined ? {} : { example: assessmentDemoPath(type.id) }),
     start: START_PATH,
+    detail: catalogueDetailPath(type.id),
     useLabel: pageItemOf(copy, CARD_IDS.use).label,
     exampleLabel: pageItemOf(copy, CARD_IDS.example).label,
   };

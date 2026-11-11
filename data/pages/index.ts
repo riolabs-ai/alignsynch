@@ -74,7 +74,8 @@ import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
-// The public catalogue — the page the header's `Templates` row names.
+// The public catalogue — the page the header's `Templates` row names, and one template's page.
+import { templatesDetailPageCopy } from "./templates-detail";
 import { templatesPageCopy } from "./templates";
 import { tourPageCopy } from "./tour";
 import { tournamentDetailPageCopy } from "./tournament-detail";
@@ -169,6 +170,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/support/articles/[slug]": supportArticlePageCopy,
   "/terms": legalPages.terms,
   "/templates": templatesPageCopy,
+  "/templates/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,

@@ -903,6 +903,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/templates/[slug]",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One Relationship Template, in full: who it is for and who it is not for, every Aspect it asks — the question and its two named ends — the price, one action to start it, and a worked example where the fixture holds one. No session, no clock and no database.",
+    notes:
+      "The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` emits one prerendered page per purchasable type and `notFound()` answers any other slug.",
+  },
+  {
+    kind: "route",
     surface: "/terms",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
