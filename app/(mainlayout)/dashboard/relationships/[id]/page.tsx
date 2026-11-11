@@ -98,20 +98,27 @@ export default async function MemberRelationshipPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {dashboardRelationshipDetailPageCopy.heading}
-        </p>
-        <h1 className="text-2xl font-semibold">{view.title}</h1>
-        {dashboardRelationshipDetailPageCopy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {dashboardRelationshipDetailPageCopy.subtitle}
-          </p>
-        )}
-      </header>
+      {/*
+        #795 — the page draws no heading of its own. The identity band the shell renders owns the
+        screen's one `<h1>` (the record's own title), so the kicker and the `text-2xl` title that
+        used to sit above the card are gone: two headings for one record is the defect the shared
+        shell exists to prevent, and the artifact draws the band in that position.
+      */}
       <RelationshipDetail
         copy={dashboardRelationshipDetailPageCopy}
         relationship={view}
+        backHref={MEMBER_RELATIONSHIPS_PATH}
+        editPanel={
+          editState === undefined || editState.closed ? undefined : (
+            <RelationshipEditPanel
+              copy={dashboardRelationshipDetailPageCopy}
+              state={editState}
+              variant="panel"
+              onPreview={previewRelationshipEditAction}
+              onEdit={editRelationshipAction}
+            />
+          )
+        }
         onSaveAspects={saveAspectsAction}
         onPublish={publishRelationshipAction}
         onRepublish={republishInviteAction}
@@ -119,14 +126,6 @@ export default async function MemberRelationshipPage({
         onResolve={resolveCaptureAction}
         onComplete={completeRelationshipAction}
       />
-      {editState === undefined || editState.closed ? null : (
-        <RelationshipEditPanel
-          copy={dashboardRelationshipDetailPageCopy}
-          state={editState}
-          onPreview={previewRelationshipEditAction}
-          onEdit={editRelationshipAction}
-        />
-      )}
     </div>
   );
 }

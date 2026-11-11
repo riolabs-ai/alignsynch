@@ -167,6 +167,7 @@ function mount(
       createElement(RelationshipDetail, {
         copy: dashboardRelationshipDetailPageCopy,
         relationship: viewOf(gateOf()),
+        backHref: "/dashboard/relationships",
         onSaveAspects: async () => ({ ok: false as const, code: "failed" }),
         onPublish: async () => ({ ok: false as const, code: "failed" }),
         onRepublish: async () => ({ ok: false as const, code: "failed" }),
