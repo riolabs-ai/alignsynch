@@ -494,6 +494,11 @@
           "path": "changelog/v1-13-0.md",
           "title": "v1.13.0",
           "question": "Which release turned the templates page into a directory, and gave every template a page?"
+        },
+        {
+          "path": "changelog/v1-14-0.md",
+          "title": "v1.14.0",
+          "question": "Which release moved the catalogue onto the relationship noun, and put the plan's price on every card?"
         }
       ]
     },

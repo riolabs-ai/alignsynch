@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.14.0",
+      "theme": "the public catalogue owns the relationship noun \u2014 /relationship-types replaces /templates and the worked example moves under it, every card prices the plan instead of the relationship, and one chip and one member card replace three constants and four tiles.",
+      "headline": "`feat(ia)` \u2014 the worked example lives at /relationship-types/<slug>/demo (#794 follow-up) (#809)"
+    },
+    {
       "version": "1.13.0",
       "theme": "the templates directory becomes a directory \u2014 every one of the twenty-seven relationship templates gets a public page, My Templates lists only the templates a member owns, and the copy stops calling a session an instance.",
       "headline": "`feat(templates)` \u2014 every template has a page, not just a card (#782) (#782)"

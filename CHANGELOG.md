@@ -6,6 +6,59 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.14.0] - 2026-11-11
+
+### Added
+
+- `feat(ia)` — the worked example lives at /relationship-types/<slug>/demo (#794 follow-up) ([#809](https://github.com/riolabs-ai/alignsynch/pull/809))
+- `feat(ia)` — a relationship template lives at /templates/relationship/<slug> (#794) ([#803](https://github.com/riolabs-ai/alignsynch/pull/803))
+
+### Fixed
+
+- `fix(db-verify)` — the summary stops calling a session an instance (#783) ([#813](https://github.com/riolabs-ai/alignsynch/pull/813))
+- `fix(routes)` — the worked example's old address answers a permanent 308 ([#810](https://github.com/riolabs-ai/alignsynch/pull/810))
+- `fix(copy)` — the demo report prices the plan, not the relationship (#805) ([#807](https://github.com/riolabs-ai/alignsynch/pull/807))
+- `fix(copy)` — the marketing template surfaces price the plan, not the relationship (#798) ([#804](https://github.com/riolabs-ai/alignsynch/pull/804))
+- `fix(copy)` — the template card prices the plan, not the relationship (#796) ([#799](https://github.com/riolabs-ai/alignsynch/pull/799))
+- `fix(ui)` — drop the browse rail from the template detail page (#791) ([#793](https://github.com/riolabs-ai/alignsynch/pull/793))
+
+### Maintenance
+
+- `docs(agents)` — the lint baseline is 221/37, and the file says how to measure it (#815) ([#816](https://github.com/riolabs-ai/alignsynch/pull/816))
+- `refactor(ui)` — the relationship card's tiles are the card's one meta line (#795 F4) ([#814](https://github.com/riolabs-ai/alignsynch/pull/814))
+- `refactor(ui)` — one chip primitive, rounded-full, four tones (#795) ([#808](https://github.com/riolabs-ai/alignsynch/pull/808))
+- `refactor(ui)` — one member card projection feeds both shelves (#795 F2) ([#811](https://github.com/riolabs-ai/alignsynch/pull/811))
+- `test(routes)` — prove every #794 old address answers a permanent 308 ([#806](https://github.com/riolabs-ai/alignsynch/pull/806))
+- `docs(mockup)` — #795 v2 — the provenance cells wrap, and three §0 claims get exact ([#802](https://github.com/riolabs-ai/alignsynch/pull/802))
+- `docs(mockup)` — re-derive §0 provenance at 89beff68 — one-card-one-detail-v2 (#795) ([#800](https://github.com/riolabs-ai/alignsynch/pull/800))
+- `docs(mockup)` — one card, one detail — the approval artifact for #795 ([#797](https://github.com/riolabs-ai/alignsynch/pull/797))
+- `chore(health)` — re-record the platform record at 1.13.0 ([#790](https://github.com/riolabs-ai/alignsynch/pull/790))
+
+### Known limits
+
+- **The redirects map address families, not records.** `/assessment/demo/:type` is one segment wide,
+  so `/assessment/demo/<type>/anything` is still a plain 404, and a type with no worked example
+  answers 404 at `/relationship-types/<type>/demo` even though its _old_ address still 308s — the
+  table cannot look a row up (`next.config.mjs`).
+- **The rename stops at the public noun.** The member routes still live at `/assessment/instances/**`
+  and the schema still spells `assessment_instance` / `instance_invite`. What changed is what
+  `db:verify`'s summary line _says_: `${instances.length} session(s) checked`. Renaming the tables and
+  the member routes is #783's remainder and needs a production snapshot and a restore plan
+  (`scripts/db-verify.mjs`, `db/migrations/0002_two_party_flow.sql`).
+- **IA v2 is not in this release.** The rail keeps the groups it has; the four-group rail is drawn
+  and pushed on `feat/app-ia` and waits for its review before it ships.
+- **A relationship's template cannot be saved as the member's own template** (#785). There is no
+  clone path, and nothing here adds one.
+- **The relationship's own amount still exists as data and is printed nowhere.**
+  `data/relationship-types.ts::RELATIONSHIP_PRICE_CENTS` keeps $9.99 for a future per-relationship
+  charge; the catalogue card, the member shelf and the template editor read the plan from
+  `data/billing-plans.ts` instead, which is why they read `Basic · $8.95/mo` and cannot disagree,
+  and the worked example's report names the plan and hands the reader `/pricing` rather than
+  quoting any figure of its own.
+- **One card type, two shelves, deliberate nulls.** `lib/member/card.ts::MemberCard` is a template
+  card with `relationship: null` and a relationship card with `summary: null`; a third shelf
+  adopting it is the moment to split it into a discriminated `kind` rather than widen it again.
+
 ## [1.13.0] - 2026-11-11
 
 ### Added
@@ -1316,3 +1369,4 @@ The admin console, and relationship templates become products.
 [1.3.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.2.0...v1.3.0
 [1.7.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.6.0...v1.7.0
 [1.8.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.7.0...v1.8.0
+[1.14.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.13.0...v1.14.0
