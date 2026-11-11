@@ -555,13 +555,13 @@ const DEFAULT_COPY = {
   "s8.whatHeading":"What gets created",
   "s8.ctaHeading":"Send the invitation",
   "s8.ctaBody":"Rowan gets one email with one link. The relationship waits at Invited until they accept — nothing is visible to them until they claim the seat.",
-  "s8.draft":"Keep as a draft",
+  "s8.draft":"Postpone Invitation",
 
   /* the walk, in the order the release draws it: plan, then account, then method, then confirm, then done */
-  "s8.stepPlan":"How you would pay",
+  "s8.stepPlan":"Add Membership to Invite",
   "s8.payBody":"Add a way to pay now and publishing is one click later — or skip it and pay when you submit the assessment.",
   "s8.planPayg":"One relationship",
-  "s8.planPaygNote":"One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
+  "s8.planPaygNote":"One relationship, unlimited assessments.",
   "s8.pricePayg":"$9.95",
   "s8.planUnlimited":"Unlimited relationships",
   "s8.planUnlimitedNote":"Every relationship you open, for as long as you keep the plan.",
@@ -584,7 +584,7 @@ const DEFAULT_COPY = {
   "s8.changePlan":"Change plan",
   "s8.stepDone":"You're all set",
   "s8.doneBody":"Your relationship is ready to create. The method is asked for when you publish.",
-  "s8.connect":"Complete and Connect",
+  "s8.connect":"Send Invite to Counterparty",
   "s8.back":"Back",
   "s8.continue":"Continue",
   "s8.submit":"Create relationship and send invite",
@@ -1161,11 +1161,17 @@ function s7Commit(){
       + rows.map(([k,v])=>'<dt data-copy="'+k+'">'+esc(c(k))+'</dt><dd>'+esc(v)+'</dd>').join("")
     + '</dl></div></div>';
 
-  const sendCard = '<div class="card" style="border-color:var(--action)">'
+  /* The right card changes WEIGHT with the decision, not just its label: postponing is the quiet
+     path (a plain card, a secondary control) and sending is the emphatic one (the action border, a
+     primary control). Two states, two contrasts — the person can tell which one they are about to
+     take without reading either button (#779). */
+  const sending = state.payStep === "done";
+  const sendCard = '<div class="card" data-invite-state="'+(sending ? "send" : "postpone")+'"'
+      + ' style="'+(sending ? "border-color:var(--action)" : "border-color:var(--line)")+'">'
     + '<div class="head"><h2 data-copy="s8.ctaHeading">'+esc(c("s8.ctaHeading"))+'</h2></div>'
     + '<div class="body stack">'
       + '<p class="mini" data-copy="s8.ctaBody">'+esc(c("s8.ctaBody"))+'</p>'
-      + (state.payStep === "done"
+      + (sending
           ? '<button class="btn primary" data-goto="7" data-copy="s8.connect" style="width:100%">'+esc(c("s8.connect"))+'</button>'
           : '<button class="btn secondary" data-goto="0" data-copy="s8.draft" style="width:100%">'+esc(c("s8.draft"))+'</button>')
     + '</div></div>';
