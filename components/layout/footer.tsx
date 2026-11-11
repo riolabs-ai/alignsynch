@@ -5,6 +5,7 @@ import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { brandMark } from "@/lib/brand-mark";
+import { RELATIONSHIP_TYPES_PATH } from "@/lib/flow/paths";
 import { leavesApp } from "@/lib/marketing-routes";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
@@ -531,7 +532,11 @@ function AlignSynchLinkColumn({
     <div className="space-y-5">
       <FooterColumnHeading>{links.heading}</FooterColumnHeading>
       <ul className="space-y-3">
-        <FooterLinkRow href="/templates" label={itemLabel(links, "templates")} leaving={leaving} />
+        <FooterLinkRow
+          href={RELATIONSHIP_TYPES_PATH}
+          label={itemLabel(links, "templates")}
+          leaving={leaving}
+        />
         <FooterLinkRow
           href="/#questions"
           label={itemLabel(links, "how-it-works")}

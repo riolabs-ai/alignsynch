@@ -2287,7 +2287,7 @@ export interface TemplateSummary {
  * built-ins and nothing else, because `author_user_id = NULL` matches no row.
  *
  * This is the catalogue's half of the author rule (#console 5/5). Without it a template one
- * person wrote would be listed, and startable, by every other account — the `/assessment/templates`
+ * person wrote would be listed, and startable, by every other account — the `/templates/relationship`
  * screen would filter correctly and the leak would simply be one route over.
  */
 export async function listPublishedTemplates(

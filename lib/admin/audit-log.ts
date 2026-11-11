@@ -381,7 +381,7 @@ function field(key: string, full: string): AuditChangeField {
  * the link opens the table that can show it.
  *
  * `record` deliberately has no entry. A `record` id is a quiz *or* a template, and the two live at
- * different routes (`/my-quizzes/[id]`, `/assessment/templates/[templateId]`); picking one for an
+ * different routes (`/my-quizzes/[id]`, `/templates/relationship/[slug]`); picking one for an
  * id of unknown kind is a link that sometimes lies, which is worse than a cell that does not link.
  * A table added here is a route somebody checked answers 200 for an admin.
  */

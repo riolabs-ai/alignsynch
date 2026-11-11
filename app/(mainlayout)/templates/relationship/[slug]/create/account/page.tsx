@@ -1,5 +1,6 @@
 /**
- * `/assessment/templates/[templateId]/create/account` — the account gate **after** stage 4 (#690).
+ * `/templates/relationship/[slug]/create/account` — the account gate **after** stage 4
+ * (#690, #794).
  *
  * Not a stage: the spec says so plainly ("Account is not a stage", #659), and the screen draws its
  * own three-step strip (`Relationship ready · Your account · Invitation sent`) rather than the
@@ -7,13 +8,17 @@
  * this card exists: before it, the account was demanded on stage 1 and a signed-out visitor could
  * not fill in a single field.
  *
- * **The address proves it was reached through the flow.** `?instance=<id>` names the relationship
- * stage 4 committed, and an id is not a secret — so the page reads the screen the way every other
- * flow surface does (`readFlowScreen`, with this browser's own party cookie) and sends the visitor
- * back to stage 1 when that read finds no party. A crafted URL, a dead instance id, another
- * person's relationship and a bookmarked gate all answer the same way: stage 1. That is the
- * "routing cannot reach it before stage 4" half of the acceptance, and it is a read rather than a
- * hidden field because a hidden field is a client's claim about its own past.
+ * **Two handles, and they are not interchangeable (#794).** The path segment is the template's
+ * **slug** — that is the address `afterCreateTarget()` hands a signed-out creator. `?instance=`
+ * is the relationship's **id**: the row stage 4 committed.
+ *
+ * **The address proves it was reached through the flow.** An instance id is not a secret — so the
+ * page reads the screen the way every other flow surface does (`readFlowScreen`, with this
+ * browser's own party cookie) and sends the visitor back to stage 1 when that read finds no party.
+ * A crafted URL, a dead instance id, another person's relationship and a bookmarked gate all
+ * answer the same way: stage 1. That is the "routing cannot reach it before stage 4" half of the
+ * acceptance, and it is a read rather than a hidden field because a hidden field is a client's
+ * claim about its own past.
  *
  * **Signed in already? This screen has nothing to say.** The gate exists to create or sign into an
  * account; a person who has one is forwarded to **Sent** (`…/instances/[id]/sent`, stage 5 — #691),
@@ -59,13 +64,13 @@ export default async function TemplateCreateAccountPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ templateId: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<GateParams>;
 }) {
-  const { templateId } = await params;
+  const { slug } = await params;
   const query = await searchParams;
   const instanceRecordId = (firstValue(query.instance) ?? "").trim();
-  const whoPath = createRelationshipPath(templateId);
+  const whoPath = createRelationshipPath(slug);
 
   // No relationship named: nothing was created by this browser in this flow.
   if (instanceRecordId === "") redirect(whoPath);
@@ -97,7 +102,7 @@ export default async function TemplateCreateAccountPage({
     >
       <AccountGate
         copy={assessmentCreatePageCopy}
-        signInHref={loginPathFor(createAccountForPath(templateId, screen.instanceRecordId))}
+        signInHref={loginPathFor(createAccountForPath(slug, screen.instanceRecordId))}
         backHref={instancePath(screen.instanceRecordId)}
         destination={OVERVIEW_PATH}
       />

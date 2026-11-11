@@ -5,7 +5,7 @@
  * #409).
  *
  * The **card** is not this file's: it is `TemplateCard` in `template-card.tsx`, shared with
- * `/assessment/templates`. This file owns what the picker adds — the create form per template, the
+ * `/templates/relationship`. This file owns what the picker adds — the create form per template, the
  * notice a save leaves, and the copy object the card draws with, resolved from
  * `data/pages/assessment.ts` (E23, budget 0) — so the two catalogue surfaces render one card and
  * two action rows rather than two cards that drift.

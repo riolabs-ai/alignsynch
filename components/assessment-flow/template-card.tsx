@@ -7,7 +7,7 @@
  * catalogue (`/v1/templates`) and the dashboard library (`/v1/[persona]/templates`) both draw it,
  * and the only difference between the two is the action row the surface owns. This module is the
  * same decision for the app's two catalogue surfaces — `/assessment` (pick a template, then create
- * an instance from it) and `/assessment/templates` (the catalogue: open, use, duplicate, archive) —
+ * an instance from it) and `/templates/relationship` (the catalogue: open, use, duplicate, archive) —
  * so a card looks the same wherever a person meets a template, and neither surface re-implements
  * one.
  *
@@ -46,7 +46,11 @@ import {
   type Realm,
   type RelationshipType,
 } from "@/data/relationship-types";
-import { assessmentDemoPath, createRelationshipPath, templateDetailPath } from "@/lib/flow/paths";
+import {
+  assessmentDemoPath,
+  createRelationshipPath,
+  relationshipTemplatePath,
+} from "@/lib/flow/paths";
 import type { ReactNode } from "react";
 
 /**
@@ -268,11 +272,11 @@ export function TemplateCard<T extends CatalogueTemplate>({
 
       <div className="mt-auto flex flex-wrap items-center gap-3 pt-4">
         {createable(template) ? (
-          <a className={PRIMARY} href={createRelationshipPath(template.id)}>
+          <a className={PRIMARY} href={createRelationshipPath(template.slug)}>
             {copy.useTemplate}
           </a>
         ) : null}
-        <a className={SECONDARY} href={templateDetailPath(template.id)}>
+        <a className={SECONDARY} href={relationshipTemplatePath(template.slug)}>
           {copy.viewDetails}
         </a>
         {type !== undefined && demoAnswersFor(type.id) !== undefined ? (

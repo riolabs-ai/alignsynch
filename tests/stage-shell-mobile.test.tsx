@@ -243,7 +243,7 @@ describe("the 44px control floor at 390 (#745)", () => {
         template: TEMPLATE,
         ...(stage === 3 ? { aspects: [] } : {}),
         draft: EMPTY_CREATE_DRAFT,
-        backHref: "/assessment/templates/template-relationship-basics",
+        backHref: "/templates/relationship/template-relationship-basics",
         problem: null,
         problemLink: null,
       }),
@@ -284,7 +284,7 @@ describe("the 44px control floor at 390 (#745)", () => {
   it("leaves one back affordance per screen, and it is the foot's", () => {
     for (const stage of [1, 2, 3, 4] as const) {
       const html = stageHtml(stage);
-      const backHref = "/assessment/templates/template-relationship-basics";
+      const backHref = "/templates/relationship/template-relationship-basics";
       // The link this replaced was a second route to the same address, drawn above the rail at
       // 17px. One address, one link.
       expect(html.split(`href="${backHref}"`).length - 1, `stage ${stage} links back once`).toBe(1);

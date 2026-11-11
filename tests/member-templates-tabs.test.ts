@@ -122,11 +122,10 @@ describe("the catalogue card", () => {
     expect(html).toContain("View Details");
     expect(html).toContain("Create Relationship");
     expect(html.toLowerCase()).not.toContain("instance");
-    // Both actions point into the shipped flow, under this template's own id.
-    expect(html).toContain('href="/assessment/templates/assessment-business-staff-manager"');
-    expect(card.create?.href).toBe(
-      "/assessment/templates/assessment-business-staff-manager/create",
-    );
+    // Both actions point into the shipped flow, under this template's own **slug** — `record.id`
+    // is the storage handle and never appears in a URL (#794).
+    expect(html).toContain('href="/templates/relationship/staff-manager"');
+    expect(card.create?.href).toBe("/templates/relationship/staff-manager/create");
   });
 
   it("marks the card as a template and seeds its cover from the slug", () => {

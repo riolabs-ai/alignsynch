@@ -115,9 +115,11 @@ describe("relationship types are read from the templates, not invented", () => {
  * The hero's two promises, and the band that used to be three tabs.
  *
  * The templates band is now a **shelf**: six curated cards and one call to action, pointing at
- * `/templates`. What it must never be again is what it was — a tablist whose third view was a
- * signed-in reader's own list, rendered on a page anyone can open. So the assertions here are
- * about a cap, a curation, a single action, and the absence of the two user-owned views.
+ * `/relationship-types` (#794 — the public catalogue; `/templates` is the template namespace and
+ * belongs to the signed-in library). What it must never be again is what it was — a tablist whose
+ * third view was a signed-in reader's own list, rendered on a page anyone can open. So the
+ * assertions here are about a cap, a curation, a single action, and the absence of the two
+ * user-owned views.
  */
 describe("the templates band: a capped shelf, one call to action", () => {
   it("says which relationship it leads with, and says it from the record", () => {
@@ -185,7 +187,8 @@ describe("the templates band: a capped shelf, one call to action", () => {
     // The action is in the served markup, and it is the only link the shelf draws: the cards are
     // not linked, so the band offers one destination instead of seven.
     expect(html).toContain('data-templates-view-all=""');
-    expect(html).toContain('href="/templates"');
+    // #794 — the band's one destination is the public catalogue's new noun.
+    expect(html).toContain('href="/relationship-types"');
     expect(html).not.toContain(model.templates.featured[0]?.useLabel ?? "\u0000");
   });
 
@@ -196,7 +199,10 @@ describe("the templates band: a capped shelf, one call to action", () => {
     expect(html).not.toContain('role="tablist"');
     // And the console's list is not reachable from the band: no link into the app's own lists.
     expect(html).not.toContain('href="/assessment/instances"');
+    // #794 — and no link into the signed-in template *library* either, under either of its
+    // addresses: the old one is a 308 now, the new one is a login wall.
     expect(html).not.toContain('href="/assessment/templates');
+    expect(html).not.toContain('href="/templates/relationship');
   });
 
   it("draws every featured card, joined back to the taxonomy by its own id", () => {
@@ -425,7 +431,7 @@ describe("the render", () => {
       expect(html).toContain(`data-template-card="${card.id}"`);
     }
     // The one action, and the proof link the hero still carries.
-    expect(html).toContain('href="/templates"');
+    expect(html).toContain('href="/relationship-types"');
     expect(html).toContain("/assessment/avery-rowan");
   });
 

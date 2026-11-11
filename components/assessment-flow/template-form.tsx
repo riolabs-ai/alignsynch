@@ -1,7 +1,7 @@
 /**
  * template-ancestor: components/create/quiz-editor.tsx   (variation: a plain POST form of eight blank Aspect rows — no edit, no delete, no reorder)
  *
- * `/assessment/templates/new`'s form: a title and eight Aspect rows (#255).
+ * `/templates/relationship/new`'s form: a title and eight Aspect rows (#255).
  *
  * Plain HTML — no `"use client"`, no state, no handler. `action` is the POST-only route handler
  * (`lib/flow/paths.ts`), every field is `name`d for `FormData`, and the browser does the rest, which

@@ -18,9 +18,14 @@
  *
  * **303, not 307.** Both outcomes are followed by a GET, so a reload of stage 3 cannot re-post
  * stage 2.
+ *
+ * **Two handles (#794).** The form posts `templateRecordId` and the draft cookie is keyed by it;
+ * every stage's address carries the template's **slug**. Each redirect below is built from the
+ * resolved slug, and an unresolvable id falls back to the library rather than a 500.
  */
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { templateSlugOf } from "@/lib/db/template-library";
 import { modeDraft, parseCreateDraft, serializeCreateDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_DRAFT_COOKIE_MAX_AGE,
@@ -28,7 +33,7 @@ import {
   flowCookieOptions,
 } from "@/lib/flow/session";
 import {
-  TEMPLATE_LIBRARY_PATH,
+  RELATIONSHIP_TEMPLATES_PATH,
   createAspectsPath,
   createModePath,
   createRelationshipPath,
@@ -39,9 +44,12 @@ export async function POST(request: Request): Promise<Response> {
   const value = (name: string) => String(form.get(name) ?? "");
   const templateRecordId = value("templateRecordId").trim();
 
+  // #794 — the screen is addressed by the template's slug; the post and the cookie carry its id.
+  const templateSlug = await templateSlugOf(templateRecordId);
+
   // A post that names no template has no stage to return to; the library lists what can be copied.
-  if (templateRecordId === "") {
-    return NextResponse.redirect(new URL(TEMPLATE_LIBRARY_PATH, request.url), 303);
+  if (templateRecordId === "" || templateSlug === "") {
+    return NextResponse.redirect(new URL(RELATIONSHIP_TEMPLATES_PATH, request.url), 303);
   }
 
   const jar = await cookies();
@@ -51,15 +59,12 @@ export async function POST(request: Request): Promise<Response> {
   // no relationship to name. The Who screen is where the flow starts, so that is where a lone
   // Mode post is sent.
   if (previous === null) {
-    return NextResponse.redirect(
-      new URL(createRelationshipPath(templateRecordId), request.url),
-      303,
-    );
+    return NextResponse.redirect(new URL(createRelationshipPath(templateSlug), request.url), 303);
   }
 
   const step = modeDraft(value, previous);
   if (!step.ok) {
-    const target = new URL(createModePath(templateRecordId), request.url);
+    const target = new URL(createModePath(templateSlug), request.url);
     target.searchParams.set("problem", step.problem.reason);
     target.searchParams.set("field", step.problem.field);
     return NextResponse.redirect(target, 303);
@@ -71,5 +76,5 @@ export async function POST(request: Request): Promise<Response> {
     flowCookieOptions(CREATE_DRAFT_COOKIE_MAX_AGE),
   );
 
-  return NextResponse.redirect(new URL(createAspectsPath(templateRecordId), request.url), 303);
+  return NextResponse.redirect(new URL(createAspectsPath(templateSlug), request.url), 303);
 }

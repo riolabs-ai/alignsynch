@@ -16,9 +16,9 @@ export const LEAVING_ROUTES: readonly string[] = [
   "/help",
   "/pricing",
   "/privacy",
+  "/relationship-types",
+  "/relationship-types/*",
   "/support/articles/*",
-  "/templates",
-  "/templates/*",
   "/terms",
   "/welcome",
 ];

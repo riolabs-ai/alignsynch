@@ -1,5 +1,7 @@
 /**
- * The catalogue at `/assessment/templates` — 27 purchasable types, seven realms, one price.
+ * The catalogue at `/templates/relationship` — 27 purchasable types, seven realms, one price
+ * (#794 — the library moved under the template noun; the *public* catalogue of these types is
+ * `/relationship-types`, which is a different screen and a different file).
  *
  * The card this file proves (#catalogue) is a *placement* card: the catalogue the prototype sold
  * (`/v1/initiator/templates`, 27 types across 7 realms, a price, the roles, an Aspects count, an
@@ -36,7 +38,11 @@ import {
   purchasableRelationshipTypes,
   relationshipType,
 } from "@/data/relationship-types";
-import { createRelationshipPath, assessmentDemoPath, templateDetailPath } from "@/lib/flow/paths";
+import {
+  createRelationshipPath,
+  assessmentDemoPath,
+  relationshipTemplatePath,
+} from "@/lib/flow/paths";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 
 const { redirect, currentUser, listLibraryTemplates, readLibraryTemplate } = vi.hoisted(() => ({
@@ -54,7 +60,7 @@ vi.mock("next/navigation", () => ({ redirect, notFound: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({ currentUser }));
 vi.mock("@/lib/db/template-library", () => ({ listLibraryTemplates, readLibraryTemplate }));
 
-import TemplateLibraryPage from "@/app/(mainlayout)/assessment/templates/page";
+import TemplateLibraryPage from "@/app/(mainlayout)/templates/relationship/page";
 
 const ACCOUNT = "account-a-avery";
 
@@ -232,8 +238,10 @@ describe("the rendered catalogue", () => {
       if (record === undefined) throw new Error(`no record for "${type.id}"`);
       const card = cardOf(html, type.id);
       expect(wordsOf(card)).toContain("Use this template");
-      expect(card).toContain(`href="${createRelationshipPath(record.id)}"`);
-      expect(card).toContain(`href="${templateDetailPath(record.id)}"`);
+      expect(card).toContain(`href="${createRelationshipPath(record.slug)}"`);
+      // #794 — the address carries the record's slug, not its id; `record.slug` is what the card
+      // writes and `record.id` never leaves the storage layer.
+      expect(card).toContain(`href="${relationshipTemplatePath(record.slug)}"`);
     }
   });
 

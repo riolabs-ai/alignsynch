@@ -1,7 +1,7 @@
 /**
  * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: Postgres template records grouped by the type each names, every action a plain POST form)
  *
- * `/assessment/templates` — the template library (#console 5/5, reshaped by #409).
+ * `/templates/relationship` — the template library (#console 5/5, reshaped by #409).
  *
  * A server component with no state and no handler: the page above it resolved the session, read
  * the rows and applied the tab/status/search, and this file decides only how a card reads and

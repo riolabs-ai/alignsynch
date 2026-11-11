@@ -73,7 +73,7 @@ function createStepHtml(): string {
         aspectCount: 2,
       },
       draft: EMPTY_CREATE_DRAFT,
-      backHref: "/assessment/templates/template-relationship-basics",
+      backHref: "/templates/relationship/template-relationship-basics",
       problem: null,
       problemLink: null,
     }),

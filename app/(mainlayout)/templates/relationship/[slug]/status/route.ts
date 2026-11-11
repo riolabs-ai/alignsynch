@@ -1,5 +1,10 @@
 /**
- * `POST /assessment/templates/[templateId]/status` — archive or unarchive a template.
+ * `POST /templates/relationship/[slug]/status` — archive or unarchive a template (#794).
+ *
+ * **The segment is the template's slug; the writer takes its id.** `resolveTemplateHandle()` is the
+ * one step between the two — the slug is what a URL carries, `record.id` is what `setTemplateStatus`
+ * keys on and what the notices below carry back to the library. An unknown handle refuses exactly
+ * as an unknown id did.
  *
  * **The body carries the target state, not a toggle.** `status=archived|published` is read and
  * validated here, so a stale form (the row was archived in another tab) sets the state it says
@@ -25,6 +30,7 @@
 import { NextResponse } from "next/server";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
+import { resolveTemplateHandle } from "@/lib/db/template-library";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import { setTemplateStatus } from "@/lib/flow/templates";
 import { parseRealmFilter } from "@/components/assessment-flow/template-card";
@@ -53,23 +59,27 @@ function libraryUrl(request: Request, form: FormData, extra?: Record<string, str
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ templateId: string }> },
+  context: { params: Promise<{ slug: string }> },
 ): Promise<Response> {
   const user = await currentUser();
   if (user === null) {
     return NextResponse.redirect(new URL(loginPathFor(TEMPLATE_LIBRARY_PATH), request.url), 303);
   }
 
-  const { templateId } = await context.params;
+  const { slug } = await context.params;
   const form = await request.formData();
   const wanted = form.get("status");
   const status = wanted === "archived" || wanted === "published" ? wanted : null;
 
-  if (status === null) {
+  // #794 — the address names the template by slug; the writer and the notice both key on its id.
+  // An unknown handle and an unknown state refuse the same way, which is what the two refusals
+  // already did separately.
+  const handle = await resolveTemplateHandle(slug);
+  if (status === null || handle === undefined) {
     return NextResponse.redirect(libraryUrl(request, form, { problem: "unknown-template" }), 303);
   }
 
-  const result = await setTemplateStatus(templateId, user.userId, status);
+  const result = await setTemplateStatus(handle.id, user.userId, status);
   if (!result.ok) {
     return NextResponse.redirect(libraryUrl(request, form, { problem: result.code }), 303);
   }

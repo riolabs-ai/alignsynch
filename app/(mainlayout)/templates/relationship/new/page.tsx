@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates/new` — author a template (#255).
+ * `/templates/relationship/new` — author a template (#255).
  *
  * Until this route existed a person could create an instance from the four seeded templates and
  * nothing else; the model already held what a template is (a record with items and no party rows),
@@ -9,7 +9,7 @@
  * request's own cookies before anything is read, and a request with no session is answered with
  * `redirect(/login?next=…)` — the same answer `/assessment/instances` gives — so the sign-in round
  * trip returns to this form. The POST endpoint asks the same question again
- * (`app/(mainlayout)/assessment/templates/route.ts`); hiding the form is not enforcement.
+ * (`app/(mainlayout)/templates/relationship/route.ts`); hiding the form is not enforcement.
  *
  * **The refusal is read off the URL and resolved here, not by the component.** `?problem=` carries
  * one of `lib/flow/template-draft.ts`'s codes and `?aspect=` a number, and this module turns them

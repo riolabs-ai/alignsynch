@@ -176,6 +176,8 @@ describe("every action on the page is public", () => {
       /^\/assessment\/instances/,
       /^\/settings/,
       /^\/admin/,
+      // #794 — the template *library* is a signed-in screen; this page is public.
+      /^\/templates/,
     ];
     for (const href of hrefs) {
       for (const pattern of forbidden) {
@@ -190,7 +192,7 @@ describe("every action on the page is public", () => {
       expect(
         href === START_PATH ||
           /^\/assessment\/demo\/[a-z-]+$/.test(href) ||
-          /^\/templates\/[a-z-]+$/.test(href),
+          /^\/relationship-types\/[a-z-]+$/.test(href),
         href,
       ).toBe(true);
     }
@@ -255,6 +257,9 @@ describe("the components write no words", () => {
   });
 
   it("keeps the catalogue route in one place", () => {
-    expect(CATALOGUE_PATH).toBe("/templates");
+    // #794 — one author for the address: `lib/flow/paths.ts` owns it and this module re-exports it,
+    // because the catalogue is a *taxonomy* (`relationship types`), not the template noun it used
+    // to sit under.
+    expect(CATALOGUE_PATH).toBe("/relationship-types");
   });
 });

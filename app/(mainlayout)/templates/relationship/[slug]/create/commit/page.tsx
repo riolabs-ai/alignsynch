@@ -1,12 +1,16 @@
 /**
- * `/assessment/templates/[templateId]/create/commit` — the create flow's stage 4, **Create**
- * (#690).
+ * `/templates/relationship/[slug]/create/commit` — the create flow's stage 4, **Create**
+ * (#690, #794).
  *
  * The stage that reviews the six facts, offers the two plans and holds the conversion: the one
  * control in the flow that writes. It reads the same draft stages 1–3 wrote — who, the address,
  * the title, the Mode, the Setting and the list — and hands it to `CreateRelationship` as
  * `stage={4}`; the form posts `templateRecordId` and nothing else, because everything else the
  * endpoint needs is already in the cookie.
+ *
+ * **The address carries the slug; the draft and the posted field carry the record id (#794).**
+ * The read comes first because it is what turns `[slug]` into `record.id` — the key stage 1 wrote
+ * the cookie under, and the value `POST /assessment/new` copies from.
  *
  * **No account is asked for here** (#690). The stage-1 gate that used to stand in front of the
  * form is gone: the endpoint has always accepted a signed-out post and written a null initiator
@@ -56,22 +60,26 @@ export default async function TemplateCreateCommitPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ templateId: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<CommitParams>;
 }) {
-  const { templateId } = await params;
+  const { slug } = await params;
   const query = await searchParams;
-  const whoPath = createRelationshipPath(templateId);
-  const aspectsPath = createAspectsPath(templateId);
-
-  const jar = await cookies();
-  const draft = parseCreateDraft(jar.get(createDraftCookieName(templateId))?.value);
-  if (draft === null) redirect(whoPath);
+  const whoPath = createRelationshipPath(slug);
+  const aspectsPath = createAspectsPath(slug);
 
   const viewer = await currentUserIfConfigured();
   const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
-  const detail = await readLibraryTemplate(templateId, viewer?.userId ?? null);
+  const detail = await readLibraryTemplate(slug, viewer?.userId ?? null);
   if (detail === undefined && refusal === null) notFound();
+
+  // #794 — the cookie is the record's, the address is the row's slug.
+  const jar = await cookies();
+  const draft =
+    detail === undefined
+      ? null
+      : parseCreateDraft(jar.get(createDraftCookieName(detail.template.id))?.value);
+  if (draft === null) redirect(whoPath);
 
   return (
     <CreateRelationship
@@ -81,7 +89,7 @@ export default async function TemplateCreateCommitPage({
         detail === undefined
           ? null
           : {
-              recordId: templateId,
+              recordId: detail.template.id,
               title: detail.template.title,
               summary: detail.template.summary,
               aspectCount: detail.aspects.length,

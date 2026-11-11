@@ -1,5 +1,5 @@
 /**
- * The template library's read path — the SQL behind `/assessment/templates` and its detail page.
+ * The template library's read path — the SQL behind `/templates/relationship` and its detail page.
  *
  * **The author column is the filter, and there is no second one.** `WHERE r.author_user_id IS
  * NULL OR r.author_user_id = $1` is "the platform's templates plus this account's"; a row
@@ -148,12 +148,18 @@ interface AspectRow {
 }
 
 /**
- * The template an id names, if this viewer may use it; `undefined` otherwise.
+ * The template a **slug** names, if this viewer may use it; `undefined` otherwise.
+ *
+ * The address carries `record.slug` since #794, and a bookmarked id-shaped URL that survived a
+ * 308 still carries the row's `id` — so the handle is matched against both columns. Both are
+ * indexed (`id` is the primary key, `slug` is `NOT NULL UNIQUE`), so this is one index lookup
+ * either way, and it is what lets a permanent redirect land on a page that resolves it without a
+ * second entry point in the app's own links.
  *
  * "Otherwise" covers all four misses with one answer — no such record, a record that is an
  * instance, a template somebody else wrote, and a withdrawn one — because the page turns every one
- * of them into `notFound()`. Distinguishing them in the response would tell a stranger that an id
- * exists, which is the one thing a 404 is for.
+ * of them into `notFound()`. Distinguishing them in the response would tell a stranger that a
+ * handle exists, which is the one thing a 404 is for.
  *
  * **A draft is readable only by its author**, which is the list's own rule and what makes
  * unpublishing withdraw the offer rather than merely hide a row: an unpublished template is
@@ -162,25 +168,26 @@ interface AspectRow {
  * with it — the versions and every relationship bound to one are untouched (#502b).
  */
 export async function readLibraryTemplate(
-  recordId: string,
+  handle: string,
   viewerUserId: string | null,
 ): Promise<LibraryTemplateDetail | undefined> {
   const [row] = await queryRows<LibraryRow & { readonly live_payload: unknown }>(
     `SELECT ${LIBRARY_COLUMNS}, live.payload AS live_payload
        FROM record r
        ${LIVE_VERSION_JOIN}
-      WHERE r.id = $1
+      WHERE (r.slug = $1 OR r.id = $1)
         AND r.record_type = 'assessment'
         AND (r.status <> 'draft' OR r.author_user_id = $2)
         AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
         AND (r.author_user_id IS NULL OR r.author_user_id = $2)`,
-    [recordId, viewerUserId],
+    [handle, viewerUserId],
   );
   if (row === undefined) return undefined;
 
   // The detail page shows what the catalogue offers: the published version's Aspects when there is
   // one, the working copy otherwise. Both are `zAssessment` items, so a version's payload is parsed
-  // exactly as the rows would be, and `position` is the version's own order.
+  // exactly as the rows would be, and `position` is the version's own order. The **id** is the
+  // storage handle here (`item.record_id`), which is why the read above returns it beside the slug.
   const aspects: readonly TemplateAspect[] =
     row.live_payload === null
       ? (
@@ -189,7 +196,7 @@ export async function readLibraryTemplate(
                FROM item
               WHERE record_id = $1
               ORDER BY position`,
-            [recordId],
+            [row.id],
           )
         ).map((aspect) => ({
           id: aspect.item_id,
@@ -213,4 +220,62 @@ export async function readLibraryTemplate(
     template: libraryTemplateOf(row, viewerUserId),
     aspects,
   };
+}
+
+/** The two handles a template row has, and which of them belongs in a URL (#794). */
+export interface TemplateHandle {
+  /** The primary key — the storage handle: `item.record_id`, the draft cookie, a POST body. */
+  readonly id: string;
+  /** The address — `[slug]` in `/templates/relationship/<slug>`. Never a storage key. */
+  readonly slug: string;
+}
+
+/**
+ * The row a **slug or an id** names, or `undefined` — the two POST endpoints' and the create
+ * endpoint's resolution step (#794).
+ *
+ * **Not an authorization read, deliberately.** The slug is in the URL and is not a secret, and the
+ * two writers this feeds (`setTemplateStatus`, `duplicateTemplate`) keep their own `WHERE` — that
+ * narrow clause *is* the permission, and a second copy of the rule here would be a second chance
+ * to get it wrong. So this answers "which row is this address about", and nothing else.
+ *
+ * A single `record_type = 'assessment'` + `NOT EXISTS (session)` predicate, for the reason
+ * `readLibraryTemplate` states: an instance must never be reachable as a template. Both columns
+ * are indexed and the match is one of them, so the `OR` costs no scan.
+ */
+export async function resolveTemplateHandle(handle: string): Promise<TemplateHandle | undefined> {
+  const [row] = await queryRows<{ readonly id: string; readonly slug: string }>(
+    `SELECT r.id, r.slug
+       FROM record r
+      WHERE (r.slug = $1 OR r.id = $1)
+        AND r.record_type = 'assessment'
+        AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
+      LIMIT 1`,
+    [handle],
+  );
+  return row === undefined ? undefined : { id: row.id, slug: row.slug };
+}
+
+/**
+ * The **slug** a record id addresses, or `""` — the flow handlers' redirect target (#794).
+ *
+ * Stage 1's form and the draft cookie both carry `record.id`, and every stage's address carries
+ * `record.slug`; a handler that redirects is therefore the one place the two meet. This is that
+ * crossing, and it is deliberately **total**: an empty handle, a row that is gone and a database
+ * that did not answer all return `""`, which every caller reads as "no template" and answers with
+ * the library — the screen that lists what can be copied.
+ *
+ * A refusal is a redirect, and a redirect to a screen that is not the one asked for is still a
+ * redirect. A 500 out of a refusal path is the one outcome worse than the refusal, so this
+ * function never throws; the failure is logged instead of raised.
+ */
+export async function templateSlugOf(recordId: string): Promise<string> {
+  const trimmed = recordId.trim();
+  if (trimmed === "") return "";
+  try {
+    return (await resolveTemplateHandle(trimmed))?.slug ?? "";
+  } catch (error) {
+    console.error("[flow] the template's slug could not be read; refusing to the library", error);
+    return "";
+  }
 }

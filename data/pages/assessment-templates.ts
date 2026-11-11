@@ -1,5 +1,5 @@
 /**
- * `/assessment/templates` — the template library (#console 5/5).
+ * `/templates/relationship` — the template library (#console 5/5).
  *
  * **The heading is "Relationship Templates", and it is the page's title too.** "Your templates"
  * described a page it did not point at: the rail row is Templates (the catalogue a member starts
@@ -168,7 +168,7 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       id: "create",
       heading: "Write one",
       body: "A template is a title and up to eight Aspects, each with a Left and a Right Value. Relationships copy those Aspects when they are created, so editing later never reaches an answer somebody already gave.",
-      cta: { label: "Write a template", href: "/assessment/templates/new" },
+      cta: { label: "Write a template", href: "/templates/relationship/new" },
     },
     {
       id: "legacy",
@@ -179,7 +179,7 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       id: "empty",
       heading: "No template yet",
       body: "This account can use no template: nothing built in, and nothing written. Write one to have something to start a relationship from.",
-      cta: { label: "Write a template", href: "/assessment/templates/new" },
+      cta: { label: "Write a template", href: "/templates/relationship/new" },
     },
     {
       id: "no-match",
