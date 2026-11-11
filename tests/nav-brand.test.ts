@@ -182,11 +182,11 @@ describe("the alignment brand's menu is alignment destinations", () => {
    * #542 phase 1 — the rail carries no marketing anchor any more, and every row is in-app.
    *
    * It used to carry exactly one anchor (`/#templates`), and the case here held it to an `id` the
-   * rendered front page emitted. That row reads the catalogue at `/assessment/templates` now, so
-   * the anchor rule moves to the footer — still scrolling the front page for `How it works` — and
-   * the rail is held to the stronger claim: **no row leaves the workspace**. That is what E39
-   * reads from the other side (a dashboard file linking to `app/(marketing)` must be a marked
-   * departure, and a rail with none has nothing to mark).
+   * rendered front page emitted. That row reads the public catalogue at `/relationship-types` now
+   * (#794), so the anchor rule moves to the footer — still scrolling the front page for `How it
+   * works` — and the rail is held to the stronger claim: **no row leaves the workspace**. That is
+   * what E39 reads from the other side (a dashboard file linking to `app/(marketing)` must be a
+   * marked departure, and a rail with none has nothing to mark).
    */
   it("points every in-page anchor still in the chrome at a band the front page emits", () => {
     const model = alignmentHome(
@@ -338,7 +338,10 @@ describe("the workspace group reads My Relationships, Templates", () => {
     const at = (href: string) => memberHrefs.indexOf(href);
     expect(at("/dashboard/templates")).toBe(at("/dashboard/relationships") + 1);
     // The shelf the row opens is the catalogue tab of that one destination — not a second row.
+    // #794 — and not the signed-in template *library* under either address: the rail has one
+    // template destination, and it is the dashboard's.
     expect(memberHrefs).not.toContain("/assessment/templates");
+    expect(memberHrefs).not.toContain("/templates/relationship");
   });
 
   it("puts the support pair after the workspace rows, Help first", () => {
@@ -374,7 +377,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     // so its column carries the public help centre — the account page is the rail's row, and a
     // marketing footer pointing at it is the mistake the Help/Support split exists to remove.
     expect(hrefs).toEqual([
-      "/templates",
+      "/relationship-types",
       "/#questions",
       "/help",
       // The contact band's one link, to the form (owner, 2026-11-02): the band no longer prints
@@ -388,7 +391,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
 
   it("restores them for a viewer with the quiz capability", () => {
     const hrefs = footerHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 3)).toEqual(["/templates", "/#questions", "/help"]);
+    expect(hrefs.slice(0, 3)).toEqual(["/relationship-types", "/#questions", "/help"]);
     expect(hrefs).toContain("/leaderboard");
     expect(hrefs.some((href) => href.startsWith("/categories/"))).toBe(true);
   });

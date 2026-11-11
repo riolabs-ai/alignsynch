@@ -1,11 +1,17 @@
 /**
- * `/assessment/templates/[templateId]/create` — the create flow's stage 1, **Who** (#409, #427, #688).
+ * `/templates/relationship/[slug]/create` — the create flow's stage 1, **Who** (#409, #427, #688).
  *
  * A child of the template's own address, so the template being copied is the route's own fact:
- * there is no picker. Stage 1's form posts that id back in a hidden field, and the save handler
- * (`POST /assessment/new/who`) answers with the draft cookie and a redirect to stage 2.
+ * there is no picker. Stage 1's form posts that **record id** back in a hidden field, and the save
+ * handler (`POST /assessment/new/who`) answers with the draft cookie and a redirect to stage 2.
  *
- * The read is `readLibraryTemplate(recordId, viewerUserId)` — the same authorization the library
+ * **The address carries the slug and the form carries the id (#794).** The segment is
+ * `record.slug` — the URL's fact — while the draft cookie is keyed by `record.id` and the hidden
+ * `templateRecordId` field is what the store copies from. The read below turns one into the other,
+ * which is why it happens before the cookie is looked for: a page that passed the slug to
+ * `createDraftCookieName()` would write a draft nobody reads.
+ *
+ * The read is `readLibraryTemplate(slug, viewerUserId)` — the same authorization the library
  * and the template detail page use: the platform's templates plus the viewer's own, and
  * `undefined` for everything else. It is asked with the **session's** id, never one from the
  * URL, and a signed-out visitor's answer is the built-ins only (`author_user_id IS NULL`
@@ -47,7 +53,7 @@ import { currentUserIfConfigured } from "@/lib/auth/session";
 import { EMPTY_CREATE_DRAFT, parseCreateDraft, type CreateDraft } from "@/lib/flow/create-draft";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { readLibraryTemplate } from "@/lib/db/template-library";
-import { TEMPLATE_LIBRARY_PATH, templateDetailPath } from "@/lib/flow/paths";
+import { RELATIONSHIP_TEMPLATES_PATH, relationshipTemplatePath } from "@/lib/flow/paths";
 import { createDraftCookieName } from "@/lib/flow/session";
 
 export const dynamic = "force-dynamic";
@@ -69,6 +75,7 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 
 /** The draft stage 1 saved for this template, or an empty one on a first visit. */
 async function savedDraft(templateRecordId: string): Promise<CreateDraft> {
+  if (templateRecordId === "") return EMPTY_CREATE_DRAFT;
   const jar = await cookies();
   return (
     parseCreateDraft(jar.get(createDraftCookieName(templateRecordId))?.value) ?? EMPTY_CREATE_DRAFT
@@ -79,18 +86,20 @@ export default async function TemplateCreatePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ templateId: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<CreateParams>;
 }) {
-  const { templateId } = await params;
+  const { slug } = await params;
   const query = await searchParams;
   const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
   const viewer = await currentUserIfConfigured();
   const viewerUserId = viewer?.userId ?? null;
-  const detail = await readLibraryTemplate(templateId, viewerUserId);
+  const detail = await readLibraryTemplate(slug, viewerUserId);
   if (detail === undefined && refusal === null) notFound();
 
-  const draft = await savedDraft(templateId);
+  // #794 — the storage handle for the cookie and the form field; the slug is only the address.
+  const recordId = detail?.template.id ?? "";
+  const draft = await savedDraft(recordId);
 
   return (
     <CreateRelationship
@@ -100,14 +109,18 @@ export default async function TemplateCreatePage({
         detail === undefined
           ? null
           : {
-              recordId: templateId,
+              recordId,
               title: detail.template.title,
               summary: detail.template.summary,
               aspectCount: detail.aspects.length,
             }
       }
       draft={draft}
-      backHref={detail === undefined ? TEMPLATE_LIBRARY_PATH : templateDetailPath(templateId)}
+      backHref={
+        detail === undefined
+          ? RELATIONSHIP_TEMPLATES_PATH
+          : relationshipTemplatePath(detail.template.slug)
+      }
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
     />

@@ -35,8 +35,9 @@ export const FOCUS_FLOW_PATTERNS: readonly (readonly string[])[] = [
   // The member's own template: the console's editor in its `private` band.
   ["dashboard", "templates", "*"],
   // The template author's two screens: a blank template, and one started from a catalogue type.
-  ["assessment", "templates", "new"],
-  ["assessment", "templates", "*", "create"],
+  // #794 — the template noun owns them: `assessment` is a record kind, and a template is not one.
+  ["templates", "relationship", "new"],
+  ["templates", "relationship", "*", "create"],
 ];
 
 /** Where the header's one explicit exit goes. The workspace, not the marketing site. */

@@ -38,6 +38,8 @@ import { Client } from "pg";
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const STATE_PATH = process.env.PAYMENT_E2E_STATE ?? ".payment-e2e.json";
 const TEMPLATE_ID = "assessment-relationship-basics";
+/** The same fixture row's `slug` — what every stage's URL carries since #794. */
+const TEMPLATE_SLUG = "relationship-basics";
 
 const failures = [];
 
@@ -162,7 +164,9 @@ function instanceIdIn(location) {
 }
 
 async function createRelationship(jar, templateAspects, label) {
-  const stem = (recordId) => `/assessment/templates/${recordId}/create`;
+  // #794 — the stage addresses carry the template's slug; the post and the draft cookie carry its
+  // id, and stage 1's handler is what turns one into the other before it answers.
+  const stem = (templateSlug) => `/templates/relationship/${templateSlug}/create`;
   const who = await jar.post("/assessment/new/who", {
     templateRecordId: TEMPLATE_ID,
     initiatorName: "Avery E2E",
@@ -173,7 +177,7 @@ async function createRelationship(jar, templateAspects, label) {
   });
   check(
     `[${label}] stage 1 Details answers 303 to Settings`,
-    who.status === 303 && (who.location ?? "").endsWith(`${stem(TEMPLATE_ID)}/mode`),
+    who.status === 303 && (who.location ?? "").endsWith(`${stem(TEMPLATE_SLUG)}/mode`),
     `${who.status} ${who.location}`,
   );
 
@@ -184,7 +188,7 @@ async function createRelationship(jar, templateAspects, label) {
   });
   check(
     `[${label}] stage 2 Settings answers 303 to Aspects`,
-    mode.status === 303 && (mode.location ?? "").endsWith(`${stem(TEMPLATE_ID)}/aspects`),
+    mode.status === 303 && (mode.location ?? "").endsWith(`${stem(TEMPLATE_SLUG)}/aspects`),
     `${mode.status} ${mode.location}`,
   );
 

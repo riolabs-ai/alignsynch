@@ -73,7 +73,7 @@ function stageHtml(stage: CreateStage): string {
       template: TEMPLATE,
       draft: { ...EMPTY_CREATE_DRAFT, mode: "basic", alignmentSetting: "soft" },
       ...(stage === 3 ? { aspects: ASPECTS } : {}),
-      backHref: "/assessment/templates/template-relationship-basics",
+      backHref: "/templates/relationship/template-relationship-basics",
       problem: null,
       problemLink: null,
     }),

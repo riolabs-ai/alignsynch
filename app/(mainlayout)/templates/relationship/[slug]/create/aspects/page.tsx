@@ -1,6 +1,6 @@
 /**
- * `/assessment/templates/[templateId]/create/aspects` — the create flow's stage 3, **Aspects**
- * (#689).
+ * `/templates/relationship/[slug]/create/aspects` — the create flow's stage 3, **Aspects**
+ * (#689, #794).
  *
  * The stage reads the draft stages 1 and 2 wrote and the template the draft names, then hands
  * both to `CreateRelationship` as `stage={3}`. It owns three facts the component does not:
@@ -19,6 +19,10 @@
  *     distinction is deliberate: absent means "untouched, seed it", and an empty array means "a
  *     list the person emptied" — collapsing the two would restore the template under somebody who
  *     had just deleted from it.
+ *
+ * **The address carries the slug; the draft and the form carry the record id (#794).** The read
+ * comes first because it is what turns `[slug]` into `record.id` — the key the cookie was written
+ * under by stage 1.
  *
  * **A refusal lands here when the create refused.** `POST /assessment/new` answers a store code
  * with `?problem=<code>` and this page composes the sentence from the fixture
@@ -62,24 +66,28 @@ export default async function TemplateCreateAspectsPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ templateId: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<AspectsParams>;
 }) {
-  const { templateId } = await params;
+  const { slug } = await params;
   const query = await searchParams;
-  const whoPath = createRelationshipPath(templateId);
-  const modePath = createModePath(templateId);
-
-  const jar = await cookies();
-  const draft = parseCreateDraft(jar.get(createDraftCookieName(templateId))?.value);
-  if (draft === null) redirect(whoPath);
+  const whoPath = createRelationshipPath(slug);
+  const modePath = createModePath(slug);
 
   const viewer = await currentUserIfConfigured();
   const viewerUserId = viewer?.userId ?? null;
 
   const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
-  const detail = await readLibraryTemplate(templateId, viewerUserId);
+  const detail = await readLibraryTemplate(slug, viewerUserId);
   if (detail === undefined && refusal === null) notFound();
+
+  // #794 — the cookie is the record's, the address is the row's slug.
+  const jar = await cookies();
+  const draft =
+    detail === undefined
+      ? null
+      : parseCreateDraft(jar.get(createDraftCookieName(detail.template.id))?.value);
+  if (draft === null) redirect(whoPath);
 
   const templateAspects = detail === undefined ? [] : aspectsFromTemplate(detail.aspects);
 
@@ -91,7 +99,7 @@ export default async function TemplateCreateAspectsPage({
         detail === undefined
           ? null
           : {
-              recordId: templateId,
+              recordId: detail.template.id,
               title: detail.template.title,
               summary: detail.template.summary,
               aspectCount: detail.aspects.length,

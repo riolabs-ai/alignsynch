@@ -4,12 +4,17 @@ import { templatesPage } from "@/lib/templates-page";
 import type { Metadata } from "next";
 
 /**
- * `/templates` — the public Relationship Templates page.
+ * `/relationship-types` — the public Relationship Types page (#794).
  *
  * The destination the header's `Templates` row points at, and the target of the front page's
  * `#templates` band's one call to action. It lives in `app/(marketing)/` because it is a public
  * product page: the marketing header and footer, no sidebar, no session, and nothing on it that
  * asks a signed-out visitor to sign in.
+ *
+ * **The address names the taxonomy, not the templates.** What this page sells is the *types* a
+ * relationship can be; a `template` is a record a person copies, and since #794 it lives one door
+ * over at `/templates/relationship/<slug>`. `/templates` itself is now the template namespace and
+ * 308s here, so a bookmark lands on this page rather than a 404.
  *
  * **Nothing here reads a clock, a store or the database.** The page is a projection of
  * `data/relationship-types.ts` through `data/pages/templates.ts`, so it prerenders — which is

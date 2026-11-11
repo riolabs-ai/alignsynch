@@ -1,9 +1,9 @@
 /**
- * `/assessment/templates` — the templates this account can use (#console 5/5).
+ * `/templates/relationship` — the templates this account can use (#console 5/5).
  *
  * The four built-ins, plus anything the signed-in account wrote. Row actions: open, duplicate,
  * archive (unarchive on an archived row). The "new template" entry point is one link to
- * `/assessment/templates/new`, which already works and is not rebuilt here.
+ * `/templates/relationship/new`, which already works and is not rebuilt here.
  *
  * **The session is the filter.** `currentUser()` resolves the account from the request's own
  * cookies, and `listLibraryTemplates(user.userId)` returns `author_user_id IS NULL OR

@@ -374,9 +374,11 @@ describe("the real tree", () => {
       "/help",
       "/pricing",
       "/privacy",
+      // #794 — the public catalogue left the template noun: `/templates` is a 308 to this
+      // directory, and the library lives at `/templates/relationship` inside the app shell.
+      "/relationship-types",
+      "/relationship-types/[slug]",
       "/support/articles/[slug]",
-      "/templates",
-      "/templates/[slug]",
       "/terms",
       "/welcome",
     ]);

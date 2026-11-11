@@ -1,5 +1,8 @@
 /**
- * `POST /assessment/templates/[templateId]/duplicate` — copy a template into this account's own.
+ * `POST /templates/relationship/[slug]/duplicate` — copy a template into this account's own (#794).
+ *
+ * **The segment is the template's slug; the writer takes its id.** `resolveTemplateHandle()` is the
+ * one step between the two, and an unknown handle is the same refusal an unknown id was.
  *
  * A duplicate is a **new record with copied items**, never a pointer: the copy carries the
  * source's title with " (copy)" appended, its summary, and its Aspects with their order, and it
@@ -16,6 +19,7 @@
 import { NextResponse } from "next/server";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
+import { resolveTemplateHandle } from "@/lib/db/template-library";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import { duplicateTemplate } from "@/lib/flow/templates";
 import { parseRealmFilter } from "@/components/assessment-flow/template-card";
@@ -43,16 +47,22 @@ function libraryUrl(request: Request, form: FormData, extra?: Record<string, str
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ templateId: string }> },
+  context: { params: Promise<{ slug: string }> },
 ): Promise<Response> {
   const user = await currentUser();
   if (user === null) {
     return NextResponse.redirect(new URL(loginPathFor(TEMPLATE_LIBRARY_PATH), request.url), 303);
   }
 
-  const { templateId } = await context.params;
+  const { slug } = await context.params;
   const form = await request.formData();
-  const result = await duplicateTemplate(templateId, user.userId);
+
+  const handle = await resolveTemplateHandle(slug);
+  if (handle === undefined) {
+    return NextResponse.redirect(libraryUrl(request, form, { problem: "unknown-template" }), 303);
+  }
+
+  const result = await duplicateTemplate(handle.id, user.userId);
   if (!result.ok) {
     return NextResponse.redirect(libraryUrl(request, form, { problem: result.code }), 303);
   }

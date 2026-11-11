@@ -11,7 +11,7 @@
  * `lib/db/**` or `pg` (#228, `data:check` E34). This file is the app's own expression of the same
  * variation: no `"use client"`, no state, no handler. The search and the stage tabs are plain
  * links and a GET form, so every state of the screen is a URL a `curl` can ask for — the same
- * reason `/assessment/templates` is built that way.
+ * reason `/templates/relationship` is built that way.
  *
  * **What a card may say is decided before it gets here.** `RelationshipCard` (`lib/db/
  * assessments.ts`) carries counts, a stage and — only when the latest session is complete — a

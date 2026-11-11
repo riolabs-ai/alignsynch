@@ -59,7 +59,7 @@ function stage(step?: PayFlowStep): string {
         copy: assessmentCreatePageCopy,
         draft: EMPTY_CREATE_DRAFT,
         template: TEMPLATE,
-        backHref: "/assessment/templates/x/aspects",
+        backHref: "/templates/relationship/x/aspects",
         cancelHref: "/dashboard",
         cancelLabel: "Cancel",
         advanceClasses: ADVANCE_CLASSES,

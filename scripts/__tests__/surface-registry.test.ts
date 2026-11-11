@@ -47,7 +47,7 @@ const pendingRow = (overrides: Partial<Surface> = {}): Surface => ({
 });
 
 const liveRow = (overrides: Partial<Surface> = {}): Surface => ({
-  route: "/assessment/templates",
+  route: "/templates/relationship",
   label: "Template catalogue",
   area: "relationships",
   status: "live",
@@ -74,12 +74,14 @@ describe("the real surface registry", () => {
       // seat Postgres resolved. It was `preview` while neither was true.
       "/assessment/instances/[instanceId]/answer",
       "/assessment/instances/[instanceId]/report",
-      "/assessment/templates",
-      "/assessment/templates/[templateId]",
+      // #794 — the library moved under the template noun: `assessment` is a record *kind*, and a
+      // template is not an assessment.
+      "/templates/relationship",
+      "/templates/relationship/[slug]",
       // #R2 (#427, PR #429): the form posts to `POST /assessment/new` and the transaction writes
       // the record, the relationship, the session and the initiating seat. It was `preview` while
       // the submit was disabled.
-      "/assessment/templates/[templateId]/create",
+      "/templates/relationship/[slug]/create",
     ]);
   });
 
@@ -92,7 +94,7 @@ describe("the real surface registry", () => {
     // back here must mean a surface that shipped ahead of its write path, not one that is merely
     // hard to reach — a nav gap is not a reason to downgrade a working write.
     assert.deepEqual(preview, []);
-    assert.equal(surfaceFor("/assessment/templates/[templateId]/create")?.status, "live");
+    assert.equal(surfaceFor("/templates/relationship/[slug]/create")?.status, "live");
     assert.equal(surfaceFor("/assessment/instances/[instanceId]/answer")?.status, "live");
   });
 
@@ -195,7 +197,7 @@ describe("the invariants refuse a row that parses but cannot be true", () => {
 describe("the lookups the nav and a pending page use", () => {
   it("finds a surface by its route pattern", () => {
     assert.equal(surfaceFor("/shop")?.status, "pending");
-    assert.equal(surfaceFor("/assessment/templates")?.status, "live");
+    assert.equal(surfaceFor("/templates/relationship")?.status, "live");
     assert.equal(surfaceFor("/nowhere"), undefined);
   });
 

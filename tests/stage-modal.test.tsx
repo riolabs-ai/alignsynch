@@ -68,7 +68,7 @@ function stageHtml(stage: (typeof STAGES)[number]): string {
       // Stage 3 is the only one that draws a list; the others ignore it.
       ...(stage === 3 ? { aspects: [] } : {}),
       draft: EMPTY_CREATE_DRAFT,
-      backHref: "/assessment/templates/template-relationship-basics",
+      backHref: "/templates/relationship/template-relationship-basics",
       problem: null,
       problemLink: null,
     }),
@@ -159,9 +159,7 @@ describe("the four create stages", () => {
 
 describe("the surfaces the shell wraps outside the four stages", () => {
   it("renders the account gate inside the same modal, closing onto the dashboard", () => {
-    const file = source(
-      "app/(mainlayout)/assessment/templates/[templateId]/create/account/page.tsx",
-    );
+    const file = source("app/(mainlayout)/templates/relationship/[slug]/create/account/page.tsx");
     expect(file).toContain("StageShell");
     expect(file).toContain("<StageShell");
     expect(file).toContain("closeHref={OVERVIEW_PATH}");
@@ -181,10 +179,10 @@ describe("the surfaces the shell wraps outside the four stages", () => {
 
   it("keeps every stage route a page of its own — no interception, no second flow", () => {
     const pages = [
-      "app/(mainlayout)/assessment/templates/[templateId]/create/page.tsx",
-      "app/(mainlayout)/assessment/templates/[templateId]/create/mode/page.tsx",
-      "app/(mainlayout)/assessment/templates/[templateId]/create/aspects/page.tsx",
-      "app/(mainlayout)/assessment/templates/[templateId]/create/commit/page.tsx",
+      "app/(mainlayout)/templates/relationship/[slug]/create/page.tsx",
+      "app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx",
+      "app/(mainlayout)/templates/relationship/[slug]/create/aspects/page.tsx",
+      "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
       "app/(mainlayout)/assessment/instances/[instanceId]/sent/page.tsx",
     ];
     for (const path of pages) {

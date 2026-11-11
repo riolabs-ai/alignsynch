@@ -109,7 +109,7 @@ function AlignSynchHome() {
          * `starterTemplates`, not `assessments`: since #catalogue the fixture carries 29 records
          * (the four hand-authored ones plus one per purchasable type), and this band maps every
          * template it is handed. The front page introduces the platform's starter set; the
-         * catalogue at `/assessment/templates` is what a practitioner shops from.
+         * catalogue at `/templates/relationship` is what a practitioner shops from.
          */
         starterTemplates,
         assessmentInstances,
