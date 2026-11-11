@@ -1,0 +1,107 @@
+{
+  "route": "/admin/review/ia",
+  "title": "Four operator groups, and one console inside them · AlignSynch",
+  "signInStatus": 200,
+  "widths": {
+    "390": {
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "contentHeight": 8944,
+      "heading": "Four operator groups, and one console inside them",
+      "groups": [
+        "Workspace",
+        "Support",
+        "Admin",
+        "group-workspace",
+        "group-do",
+        "group-users",
+        "group-templates",
+        "group-billing",
+        "group-system",
+        "group-support"
+      ],
+      "templatesExpanded": "true",
+      "templatesSubmenuRows": 7,
+      "templatesAnchors": [
+        "/admin/templates",
+        "/admin/console/templates",
+        "/admin/review",
+        "/templates/relationship/new"
+      ],
+      "templatesButtons": ["Clone → draft", "Publish revision"],
+      "proposedRows": ["template-clone", "template-publish"],
+      "consoleHubAnchorsInRail": 0,
+      "consoleHubAnchorsOnPage": [
+        "AdminConsoleRelationshipsGap AnalysisInboxPlatform healthBillingBroadcastReviewA"
+      ],
+      "envLeaks": [],
+      "rects": {
+        "group": {
+          "x": 58,
+          "y": 1128,
+          "width": 331.5625,
+          "height": 392
+        },
+        "panel": {
+          "x": 45,
+          "y": 551,
+          "width": 357.5625,
+          "height": 1458
+        },
+        "pageTop": 0
+      },
+      "file": "/home/jadenblack/Desktop/dev.local/alignsynch/quizhub/quizhub/.worktrees/t_b8bb102c/docs/qa-ia/ia-v2-390.png",
+      "bytes": 435018
+    },
+    "1440": {
+      "innerWidth": 1440,
+      "scrollWidth": 1440,
+      "contentHeight": 5992,
+      "heading": "Four operator groups, and one console inside them",
+      "groups": [
+        "Workspace",
+        "Support",
+        "Admin",
+        "group-workspace",
+        "group-do",
+        "group-users",
+        "group-templates",
+        "group-billing",
+        "group-system",
+        "group-support"
+      ],
+      "templatesExpanded": "true",
+      "templatesSubmenuRows": 7,
+      "templatesAnchors": [
+        "/admin/templates",
+        "/admin/console/templates",
+        "/admin/review",
+        "/templates/relationship/new"
+      ],
+      "templatesButtons": ["Clone → draft", "Publish revision"],
+      "proposedRows": ["template-clone", "template-publish"],
+      "consoleHubAnchorsInRail": 0,
+      "consoleHubAnchorsOnPage": [
+        "AdminConsoleRelationshipsGap AnalysisInboxPlatform healthBillingBroadcastReviewA"
+      ],
+      "envLeaks": [],
+      "rects": {
+        "group": {
+          "x": 344,
+          "y": 940,
+          "width": 331.5625,
+          "height": 392
+        },
+        "panel": {
+          "x": 331,
+          "y": 363,
+          "width": 241,
+          "height": 1458
+        },
+        "pageTop": 0
+      },
+      "file": "/home/jadenblack/Desktop/dev.local/alignsynch/quizhub/quizhub/.worktrees/t_b8bb102c/docs/qa-ia/ia-v2-1440.png",
+      "bytes": 795868
+    }
+  }
+}
