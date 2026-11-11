@@ -51,12 +51,33 @@ function matcherFor(source: string): (path: string) => { params: Record<string, 
   return matchSource(source, { decode: decodeURIComponent });
 }
 
+/** A redirect row, as `next.config.mjs` writes it: `permanent` and `statusCode` decide the answer. */
+type RedirectRow = {
+  source: string;
+  destination: string;
+  permanent?: boolean;
+  statusCode?: number;
+};
+
 /** The list Next actually uses, resolved once — `redirects()` is async and takes no arguments. */
-let redirects: readonly { source: string; destination: string }[] = [];
+let redirects: readonly RedirectRow[] = [];
 
 beforeAll(async () => {
   redirects = (await nextConfig.redirects?.()) ?? [];
 });
+
+/** The status Next answers with: an explicit `statusCode`, else `permanent` → 308, temporary → 307. */
+function statusOf(entry: RedirectRow): number {
+  return entry.statusCode ?? (entry.permanent ? 308 : 307);
+}
+
+/** `:param` substituted from a matched source — what the browser is actually sent to. */
+function destinationOf(entry: RedirectRow, params: Record<string, string>): string {
+  return entry.destination.replace(
+    /:([A-Za-z0-9_]+)/g,
+    (_match, key: string) => params[key] ?? `:${key}`,
+  );
+}
 
 /** A destination with its query string removed: `matchRoute` matches paths, not parameters. */
 function pathOf(destination: string): string {
@@ -173,5 +194,141 @@ describe("the legacy redirects", () => {
     expect(hits("/templates/relationship/new")).toEqual([]);
     expect(hits("/templates/relationship/spouses")).toEqual([]);
     expect(hits("/templates/relationship/spouses/create/mode")).toEqual([]);
+  });
+
+  /**
+   * #794 — one address per row of the spec's old → new table, and each of them a **permanent** 308.
+   *
+   * The rules above answer "does this list shadow a page" and "does every destination resolve".
+   * Neither asks the question a bookmark asks: *did this address move, to where, and will a browser
+   * stop asking?* A dropped row, a `permanent: false` row (a 307 keeps the old URL in the tab and the
+   * index), and a row pointed one segment short all pass those two rules, and all three are the
+   * defect this migration exists to prevent.
+   *
+   * The old address is written out, not composed from a helper: this is the table a reader compares
+   * against the issue, and a test that derived it from `lib/flow/paths.ts` would agree with the
+   * implementation by construction instead of proving it. The three `POST` rows are listed like the
+   * rest — a `redirects()` entry is method-agnostic, so the navigation that follows a form moves too.
+   */
+  const MOVED_ADDRESSES: readonly (readonly [oldPath: string, newPath: string])[] = [
+    ["/assessment/templates", "/templates/relationship"],
+    ["/assessment/templates/new", "/templates/relationship/new"],
+    ["/assessment/templates/save", "/templates/relationship/save"],
+    ["/assessment/templates/spouses", "/templates/relationship/spouses"],
+    ["/assessment/templates/spouses/status", "/templates/relationship/spouses/status"],
+    ["/assessment/templates/spouses/duplicate", "/templates/relationship/spouses/duplicate"],
+    ["/assessment/templates/spouses/create", "/templates/relationship/spouses/create"],
+    ["/assessment/templates/spouses/create/mode", "/templates/relationship/spouses/create/mode"],
+    [
+      "/assessment/templates/spouses/create/aspects",
+      "/templates/relationship/spouses/create/aspects",
+    ],
+    [
+      "/assessment/templates/spouses/create/commit",
+      "/templates/relationship/spouses/create/commit",
+    ],
+    [
+      "/assessment/templates/spouses/create/account",
+      "/templates/relationship/spouses/create/account",
+    ],
+    ["/templates", "/relationship-types"],
+    ["/templates/spouses", "/relationship-types/spouses"],
+  ];
+
+  it("answers every old address in the #794 table with a permanent 308", () => {
+    const failures: string[] = [];
+
+    for (const [oldPath, newPath] of MOVED_ADDRESSES) {
+      const matches = redirects.filter((entry) => matcherFor(entry.source)(oldPath) !== false);
+
+      // `next.config.mjs` lists the literal rows before `:slug`, and Next takes the **first** match,
+      // so `/assessment/templates/new` is answered by the literal row while `:slug` would also have
+      // matched it. The row Next uses is the one asserted; an empty match is the failure.
+      if (matches.length === 0) {
+        failures.push(`${oldPath} → no row matches`);
+        continue;
+      }
+
+      const entry = matches[0];
+      const matched = matcherFor(entry.source)(oldPath);
+      const params = matched === false ? {} : matched.params;
+
+      if (statusOf(entry) !== 308) {
+        failures.push(`${oldPath} answers ${statusOf(entry)}, not 308 (${entry.source})`);
+      }
+      if (destinationOf(entry, params) !== newPath) {
+        failures.push(
+          `${oldPath} → ${destinationOf(entry, params)}, expected ${newPath} (${entry.source})`,
+        );
+      }
+    }
+
+    expect(failures).toEqual([]);
+  });
+
+  /**
+   * And the table is the whole family, not a sample: every redirect row under `/templates` is
+   * exercised by an address above. A row added to `next.config.mjs` without a row here is a move
+   * nothing proves, which is how a redirect can land green and send a bookmark nowhere.
+   */
+  it("exercises every /templates redirect row — the table is not a sample", () => {
+    const unproven = redirects
+      .filter((entry) => entry.source.startsWith("/templates"))
+      .filter(
+        (entry) =>
+          !MOVED_ADDRESSES.some(([oldPath]) => matcherFor(entry.source)(oldPath) !== false),
+      )
+      .map((entry) => `${entry.source} → ${entry.destination}`);
+
+    expect(unproven).toEqual([]);
+  });
+
+  /**
+   * #794 — the addresses the move created belong to the tree, not to a redirect.
+   *
+   * A redirect that catches its own destination is the shadow rule in a different coat, and it is
+   * not hypothetical: a bare `/templates/:typeId` row matched `/templates/relationship` and 308'd the
+   * library to a 404. `ROUTE_PATTERNS` covers pages only, so the three `POST` addresses — which live
+   * in `app/` as `route.ts` — need the handler tree as well; the patterns are asserted against the
+   * tree and then asked of every redirect, so a route that moves again fails here by name.
+   */
+  const NEW_PAGES = [
+    "/templates/relationship",
+    "/templates/relationship/new",
+    "/templates/relationship/[slug]",
+    "/templates/relationship/[slug]/create",
+    "/templates/relationship/[slug]/create/mode",
+    "/templates/relationship/[slug]/create/aspects",
+    "/templates/relationship/[slug]/create/commit",
+    "/templates/relationship/[slug]/create/account",
+    "/relationship-types",
+    "/relationship-types/[slug]",
+  ] as const;
+
+  const NEW_HANDLERS = [
+    "/templates/relationship/save",
+    "/templates/relationship/[slug]/status",
+    "/templates/relationship/[slug]/duplicate",
+  ] as const;
+
+  it("leaves the new #794 addresses to the tree, not to a redirect", () => {
+    const handlers = routeHandlerPatterns();
+    const missing = [
+      ...NEW_PAGES.filter((pattern) => !ROUTE_PATTERNS.includes(pattern)),
+      ...NEW_HANDLERS.filter((pattern) => !handlers.includes(pattern)),
+    ];
+    expect(missing).toEqual([]);
+
+    const caught: string[] = [];
+    for (const pattern of [...NEW_PAGES, ...NEW_HANDLERS]) {
+      const live = samplePathOf(pattern);
+      for (const entry of redirects) {
+        if (matcherFor(entry.source)(live) !== false) {
+          caught.push(`${entry.source} → ${entry.destination} catches ${live}`);
+        }
+      }
+    }
+
+    expect(caught).toEqual([]);
   });
 });
