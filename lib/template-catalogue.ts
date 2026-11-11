@@ -19,10 +19,11 @@
  * bare price any more: a field holding `$9.99` is a field one render away from being printed.
  *
  * **Both destinations are public.** `/register` is the account that buys the relationship, and
- * the example is `/assessment/demo/<type>` — the one report a stranger may read — offered only
- * where `demoAnswersFor()` holds a sheet. The card that used to link
- * `/assessment/templates/<id>/create` handed a signed-out visitor a sign-in wall; a marketing
- * card must not do that, which is why the create path is not in this type at all.
+ * the example is `/relationship-types/<type>/demo` — the one report a stranger may read, one
+ * level below the type's own page — offered only where `demoAnswersFor()` holds a sheet. The card
+ * that used to link `/assessment/templates/<id>/create` handed a signed-out visitor a sign-in
+ * wall; a marketing card must not do that, which is why the create path is not in this type at
+ * all.
  *
  * Free of React and Next so a node test can render the model, the same reason `lib/alignment-home.ts`
  * gives: the components that draw these cards hold no words and no hrefs of their own.
@@ -32,8 +33,8 @@ import { formatCurrency } from "@/content/core";
 import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { demoAnswersFor, isPurchasable, type RelationshipType } from "@/data/relationship-types";
 import {
-  assessmentDemoPath,
   RELATIONSHIP_TYPES_PATH,
+  relationshipTypeDemoPath,
   relationshipTypePath,
 } from "@/lib/flow/paths";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
@@ -155,7 +156,9 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
     }),
     aspects: fillLabel(pageItemOf(copy, CARD_IDS.aspects).label, { count: type.aspects.length }),
     priceNote: cataloguePriceNote(pageItemOf(copy, CARD_IDS.price).label),
-    ...(demoAnswersFor(type.id) === undefined ? {} : { example: assessmentDemoPath(type.id) }),
+    ...(demoAnswersFor(type.id) === undefined
+      ? {}
+      : { example: relationshipTypeDemoPath(type.id) }),
     start: START_PATH,
     detail: catalogueDetailPath(type.id),
     useLabel: pageItemOf(copy, CARD_IDS.use).label,
