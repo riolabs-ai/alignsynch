@@ -19,13 +19,23 @@
  * both links test before they offer an example, so a URL that names no example names no page.
  * Nothing on this route reads a clock or a database, so it is safe to prerender — and it must be,
  * because the catalogue that links it is a fixture page.
+ *
+ * **The box under the report prices the plan, never the relationship (#805).** This page used to
+ * quote `RELATIONSHIP_PRICE_CENTS` — "One relationship costs $9.99" — and that sentence was
+ * false the day #619 retired the per-relationship model: a plan is chosen when a relationship is
+ * ready to complete, one plan runs unlimited relationships, and `/pricing` is the only place a
+ * figure is sold. So the sentence here no longer quotes any amount; it states the same claim the
+ * template detail ships (`data/pages/assessment-template-detail.ts`, section `shape`, item
+ * `no-money` — the authoritative pay-later statement, which this page does not touch), in the
+ * demo's own words, and hands the reader the pricing page as the one place a price is named. That
+ * link leaves the app, so it is `components/layout/leaving-link.tsx` and opens in a new tab (E39)
+ * — the report must survive the click.
  */
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
-import { formatCurrency } from "@/content/core";
-import { RELATIONSHIP_PRICE_CENTS } from "@/data/relationship-types";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import { assessmentDemo } from "@/lib/assessment-demo";
-import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
+import { PRICING_PATH, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -80,16 +90,22 @@ export default async function AssessmentDemoPage({
         <div className="rounded-lg border border-border bg-card p-6">
           <p className="text-sm font-semibold text-foreground">Like what you see?</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            One relationship costs {formatCurrency(RELATIONSHIP_PRICE_CENTS)}. You pay; the other
-            person joins by link and pays nothing.
+            Creating a relationship is free. Your plan decides how many you can hold at once, and it
+            is chosen when a relationship is ready to complete. The other person joins by link and
+            pays nothing.
           </p>
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-4">
             <Link
               href={demo.startPath}
               className="inline-flex h-12 items-center justify-center rounded-md bg-action px-6 text-sm font-medium text-action-foreground hover:bg-action-hover"
             >
               Start this relationship
             </Link>
+            <LeavingLink
+              href={PRICING_PATH}
+              label="See plans and prices"
+              className="text-sm font-medium text-action hover:underline"
+            />
           </div>
         </div>
       </StageColumn>

@@ -237,7 +237,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/layout` — **fixture**
   - capability: The shell: header, the sticky sidebar, the layout that composes them, and the footer.
   - files (9): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `leaving-link.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `news-signup.tsx`, `sidebar.tsx`
-  - routes (7): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/support`, `/tournaments`
+  - routes (8): `/affiliate`, `/assessment/demo/[type]`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/support`, `/tournaments`
 
 - `components/legal` — **mock**
   - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
@@ -372,7 +372,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/assessment/demo/[type]` — **fixture**
   - capability: The worked example: one Relationship Type's finished report, answered by You and Them and labelled Example, rendered through the live report projection and component — the value shown before anyone pays, and launch criterion 5's one readable proof.
-  - components: `components/assessment`, `components/assessment-flow`
+  - components: `components/assessment`, `components/assessment-flow`, `components/layout`
   - reads: 2 record fixtures — `data/assessments.ts`, `data/relationship-types.ts`
   - notes: Lands here as `docs/V1-RETIREMENT.md`'s `release` demo row: it was `/v1/templates/[type]/demo`, the last customer route under `/v1`, and it moved out when that namespace was retired (#478). The projection and renderer are `lib/assessment-report.ts` + `components/assessment/assessment-report.tsx` — the v1 report component was deleted with the move, so the app has one report renderer, not two. The example is built from the type's own Aspects and authored demo sheet, never from a stored template record (the staff-manager record predates the taxonomy and carries Aspects its sheet never answered).
 
