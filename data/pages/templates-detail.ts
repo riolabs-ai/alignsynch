@@ -11,8 +11,8 @@
  * **The heading is a frame, not a sentence.** It reads `"{name}"` and the model fills it from
  * `data/relationship-types.ts`, because twenty-seven pages that each spelled their own title
  * would be twenty-seven places a rename hides. `{initiator}` / `{counterparty}` are the two named
- * ends of the relationship and `{price}` is the fixture's integer cents through
- * `formatCurrency` — never a typed figure.
+ * ends of the relationship, and `{plan}` / `{price}` are the plan's name and monthly figure from
+ * `data/billing-plans.ts` — never a typed figure, and never a per-relationship charge (#798).
  *
  * The fixture carries no descriptor text: who a template is for, and who it is not for, is
  * authored with the type (`descriptor.whoItsFor` / `whoItsNotFor`) because the catalogue card,
@@ -29,8 +29,12 @@ export const templatesDetailPageCopy: PageCopy = zPageCopy.parse({
     /** The descriptor's two headings. The sentences under them belong to the record. */
     { id: "descriptor-for", label: "Who it is for" },
     { id: "descriptor-not-for", label: "Who it is not for" },
-    /** One relationship's price, with the unit it is charged in. The counterparty pays nothing. */
-    { id: "template-price", label: "{price} per relationship" },
+    /**
+     * The plan that includes this template, and its interval — `{plan}` and `{price}` are filled
+     * from `data/billing-plans.ts` by `cataloguePriceNote()`. Never a per-relationship charge: the
+     * shop does not sell one, and this row and the catalogue card's are the same string (#798).
+     */
+    { id: "template-price", label: "{plan} · {price}/mo" },
     /** The page's one primary action — the account that buys the relationship. */
     { id: "template-use", label: "Start with this template" },
     /** Offered only where `demoAnswersFor()` holds a sheet for this type. */

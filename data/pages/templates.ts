@@ -46,13 +46,14 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
     { id: "eyebrow-catalogue", label: "Every template" },
     /**
      * The five strings a catalogue card repeats. `{initiator}` and `{counterparty}` are the two
-     * named ends of the relationship, `{count}` the Aspects the template asks, `{price}` the
-     * fixture's integer cents through `formatCurrency` — never a typed figure.
+     * named ends of the relationship, `{count}` the Aspects the template asks, and
+     * `{plan}` / `{price}` the **plan's** name and monthly figure from `data/billing-plans.ts` —
+     * never a typed figure, and never a per-relationship charge (#798).
      */
     { id: "template-use", label: "Start with this template" },
     { id: "template-example", label: "See a worked example" },
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
-    { id: "template-price", label: "{price} per relationship" },
+    { id: "template-price", label: "{plan} · {price}/mo" },
     { id: "aspects", label: "{count} Aspects" },
     /**
      * The catalogue band's count, with both numbers filled from the taxonomy. A heading that
