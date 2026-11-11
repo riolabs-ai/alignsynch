@@ -20,37 +20,25 @@
  * is drawn `—` and never `0`: absent and zero are different facts, and a relationship nobody has
  * scored has no figure.
  *
- * **Every number is derived.** The stage tabs count the rows this component was given, the card's
- * `N of M` is `sessionsCompleted of sessionsOpened`, and the completion percentage is those two
- * divided — there is no literal in this file, and E23 holds it to zero (`data/pages/
- * assessment-instances.ts` carries every word).
- *
- * **No total, and no clock.** What was paid is the plan and the instant it was bought, on the
- * Initiator's card only: one relationship, one purchase, nothing to sum. A date label is a pure
- * function of the ISO instant it read (`formatRelative` against the fixture clock, `formatDate`
- * for an instant past it), because a render path that asks the wall clock prints a label the
- * same rows would print differently a minute later.
+ * **The card is a projection, and this file computes nothing** (#795 F2). `relationshipCard()`
+ * (`lib/member/card.ts`) turns a row into a `MemberCard`: the chips, the sentence, and the metric
+ * row's figures — `N of M`, the percentage, the one-decimal mean — formatted once, there, beside
+ * the template shelf's cards, which are the same type. The component below prints what it is
+ * handed; `tests/member-card-projection.test.ts` fails the build if a `toFixed`, a `Math.round` or
+ * a division of the two session counts comes back into this file. The stage tabs still count the
+ * rows this component was given, and the page's own copy is still the fixture's (E23).
  */
 import Link from "next/link";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
-import { MODE_LABELS } from "@/content/assessment";
-import { DEMO_NOW_ISO, formatDate, formatRelative } from "@/content/core";
-import { STAGE_LABELS } from "@/content/stages";
 import type { PageCopy } from "@/content/pages";
+import { STAGE_LABELS } from "@/content/stages";
 import type { RelationshipCard } from "@/lib/db/assessments";
 import { type OverviewFilter, matchesOverviewFilter } from "@/lib/flow/overview";
-import { MY_INSTANCES_PATH, instancePath } from "@/lib/flow/paths";
+import { MY_INSTANCES_PATH } from "@/lib/flow/paths";
 import { FLOW_STAGES, type FlowStage } from "@/lib/flow/stage";
+import { CARD_ABSENT, type CardFact, relationshipCard } from "@/lib/member/card";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-
-/**
- * The one glyph an absent figure is drawn as.
- *
- * Not `0`, and not an empty cell: a metric that has no value and a metric whose value is zero are
- * different facts, and only one of them can be true of a relationship nobody has scored.
- */
-const ABSENT = "—";
 
 const CARD =
   "flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
@@ -105,36 +93,19 @@ export function matchesQuery(row: RelationshipCard, query: string): boolean {
   );
 }
 
-/** The label a row's instant is drawn with — a pure function of the instant, never a clock. */
-const FIXTURE_CLOCK_MS = Date.parse(DEMO_NOW_ISO);
-
-export function sessionLabelOf(iso: string): string {
-  return Date.parse(iso) > FIXTURE_CLOCK_MS ? formatDate(iso) : formatRelative(iso);
-}
-
 /**
- * The other side of the card, from the seat the read resolved for this request.
+ * One metric tile of the ancestor's stats grid: a label above a figure.
  *
- * Which name is "the other one" is the session's fact, not the row's: the same relationship
- * renders as two different cards to its two parties, and neither card ever names its own reader
- * as the other person. A coach is neither, so they read both names in the direction the
- * relationship was created in.
+ * The figure and its hint arrive already formatted — a tile that derived one would be the defect
+ * this module exists to close (`lib/member/card.ts`), so all three lines are printed as handed.
  */
-function otherNameOf(row: RelationshipCard, copy: PageCopy): string {
-  const unnamed = itemLabel(sectionOf(copy, "row"), "unnamed-party");
-  if (row.viewerRole === "counterparty") return row.initiatorName ?? unnamed;
-  if (row.viewerRole === "initiator") return row.counterpartyName ?? unnamed;
-  return `${row.initiatorName ?? unnamed} → ${row.counterpartyName ?? unnamed}`;
-}
-
-/** One metric tile of the ancestor's stats grid: a label above a figure. */
-function MetricTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function MetricTile({ fact }: { fact: CardFact }) {
   return (
     <div className="rounded-md bg-gray-50 p-2 dark:bg-gray-800">
-      <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className={`text-base ${STRONG}`}>{value}</dd>
-      {hint === undefined ? null : (
-        <dd className="text-[10px] text-gray-500 dark:text-gray-400">{hint}</dd>
+      <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">{fact.label}</dt>
+      <dd className={`text-base ${STRONG}`}>{fact.value}</dd>
+      {fact.hint === null ? null : (
+        <dd className="text-[10px] text-gray-500 dark:text-gray-400">{fact.hint}</dd>
       )}
     </div>
   );
@@ -188,16 +159,10 @@ export function MyInstances({
   }
 
   const list = sectionOf(copy, "list");
-  const states = sectionOf(copy, "state");
-  const marker = sectionOf(copy, "marker");
   const empty = sectionOf(copy, "empty");
   const filters = sectionOf(copy, "filter");
   const stageCopy = sectionOf(copy, "stage");
   const search = sectionOf(copy, "search");
-  const metric = sectionOf(copy, "metric");
-  const card = sectionOf(copy, "card");
-  const paidCopy = sectionOf(copy, "paid");
-  const inviteCopy = sectionOf(copy, "invite");
 
   // The console's filter first, then the stage tab, then the search: three narrowings of one
   // array, each one a predicate over the rows the read produced.
@@ -372,141 +337,96 @@ export function MyInstances({
           <p className={`mt-2 ${MUTED}`}>{sectionBody(list)}</p>
 
           <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((instance) => {
-              const other = otherNameOf(instance, copy);
-              const sessions =
-                instance.sessionsOpened === 0
-                  ? ABSENT
-                  : `${instance.sessionsCompleted} of ${instance.sessionsOpened}`;
-              const completion =
-                instance.sessionsOpened === 0
-                  ? ABSENT
-                  : `${Math.round((instance.sessionsCompleted / instance.sessionsOpened) * 100)}%`;
-              const alignment =
-                instance.alignment === null ? ABSENT : instance.alignment.toFixed(1);
+            {shown.map((row) => {
+              // One projection call; the list prints what it returns and composes no figure, no
+              // name and no sentence of its own (#795 F2).
+              const model = relationshipCard(copy, row);
+              const rel = model.relationship;
 
               return (
                 <li
-                  key={instance.relationshipId}
-                  data-instance={instance.instanceRecordId}
-                  data-instance-state={instance.state}
-                  data-instance-stage={instance.stage}
-                  data-instance-unlock={instance.unlock}
+                  key={rel.relationshipId}
+                  data-instance={rel.instanceRecordId}
+                  data-instance-state={rel.state}
+                  data-instance-stage={rel.stage}
+                  data-instance-unlock={rel.unlock}
                   className={CARD}
                 >
                   {/* The ancestor's cover-and-overlay block, without the image: a relationship
                       carries a template, a stage and two names, not a thumbnail. */}
                   <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={CHIP}>{instance.templateTitle}</span>
-                      <span data-stage-badge={instance.stage} className={CHIP}>
-                        {STAGE_LABELS[instance.stage]}
+                      <span className={CHIP}>{rel.templateTitle}</span>
+                      <span data-stage-badge={rel.stage} className={CHIP}>
+                        {rel.stageLabel}
                       </span>
                     </div>
                     <Link
-                      href={instancePath(instance.instanceRecordId)}
+                      href={model.detail.href}
                       className="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100"
                     >
-                      {instance.name}
+                      {model.title}
                     </Link>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {itemLabel(card, "with")} ·{" "}
-                      {instance.counterpartyName === null && instance.viewerRole !== "counterparty"
-                        ? itemLabel(card, "not-claimed")
-                        : other}
-                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{rel.party}</p>
                   </div>
 
                   <div className="flex flex-1 flex-col gap-4 p-4">
                     <dl className="grid grid-cols-2 gap-2 text-center">
-                      <MetricTile
-                        label={itemLabel(metric, "sessions")}
-                        value={sessions}
-                        hint={
-                          instance.sessionsOpened === 0
-                            ? itemLabel(metric, "none-opened")
-                            : itemLabel(metric, "completed-of-opened")
-                        }
-                      />
-                      <MetricTile label={itemLabel(metric, "completion")} value={completion} />
-                      <MetricTile
-                        label={itemLabel(metric, "alignment")}
-                        value={alignment}
-                        hint={
-                          instance.alignment === null
-                            ? itemLabel(metric, "unscored")
-                            : itemLabel(metric, "mean-gap")
-                        }
-                      />
-                      <MetricTile
-                        label={itemLabel(metric, "aspects")}
-                        value={String(instance.aspectCount)}
-                      />
+                      {rel.facts.map((fact) => (
+                        <MetricTile key={fact.label} fact={fact} />
+                      ))}
                     </dl>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={CHIP}>{MODE_LABELS[instance.mode]}</span>
-                      {instance.inviteState === null ? null : (
-                        <span data-invite-state={instance.inviteState} className={CHIP}>
-                          {itemLabel(inviteCopy, instance.inviteState)}
+                      <span className={CHIP}>{rel.mode}</span>
+                      {rel.invite === null ? null : (
+                        <span data-invite-state={rel.invite.state} className={CHIP}>
+                          {rel.invite.label}
                         </span>
                       )}
                     </div>
 
-                    {/* What was paid — the Initiator's card only, and no total anywhere. `paid`
-                        is `null` for every other viewer, so this block is not drawn from a
-                        value the read withheld; it was never handed one. */}
-                    {instance.paid === null ? null : (
+                    {/* What was paid — the Initiator's card only, and no total anywhere. The
+                        block is absent for every other viewer, not blanked: `paid` is `null`
+                        because the read never handed this seat the fact, and a statement of
+                        `null` is the different fact that nothing has been bought yet. */}
+                    {rel.paid === null ? null : (
                       <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs dark:border-gray-700 dark:bg-gray-800/40">
-                        <p className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(paidCopy, "label")}
-                        </p>
-                        {instance.paid.plan === null && instance.paid.purchasedAt === null ? (
+                        <p className="text-gray-500 dark:text-gray-400">{rel.paid.label}</p>
+                        {rel.paid.statement === null ? (
                           <p data-paid-absent="true" className={STRONG}>
-                            {ABSENT}
+                            {CARD_ABSENT}
                           </p>
                         ) : (
-                          <p className={STRONG}>
-                            {fillLabel(itemLabel(paidCopy, "statement"), {
-                              plan: instance.paid.plan ?? itemLabel(paidCopy, "nothing"),
-                              date:
-                                instance.paid.purchasedAt === null
-                                  ? ABSENT
-                                  : formatDate(instance.paid.purchasedAt),
-                            })}
-                          </p>
+                          <p className={STRONG}>{rel.paid.statement}</p>
                         )}
                       </div>
                     )}
 
-                    <p className={`mt-auto ${MUTED}`}>
-                      {fillLabel(itemLabel(states, instance.state), { name: other })}
-                    </p>
+                    <p className={`mt-auto ${MUTED}`}>{rel.sentence}</p>
 
                     {/* The marker (#252): a quiet line on the row, never a toast, a modal or a
                         count in the header. It says the instance moved while this reader was
                         away — the one fact the state sentence above cannot carry. */}
-                    {instance.unlock === "unseen" ? (
+                    {rel.marker === null ? null : (
                       <p
-                        data-instance-marker="unseen"
+                        data-instance-marker={rel.unlock}
                         className="rounded border border-action/40 bg-action/5 px-2 py-1 text-sm font-medium text-action"
                       >
-                        {itemLabel(marker, "unseen")}
+                        {rel.marker}
                       </p>
-                    ) : null}
+                    )}
                   </div>
 
                   <div className="mt-auto flex items-center justify-between gap-2 px-4 pb-4">
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {fillLabel(itemLabel(card, "last-session"), {
-                        when: sessionLabelOf(instance.lastSessionAt),
-                      })}
+                      {rel.lastSession}
                     </span>
                     <Link
-                      href={instancePath(instance.instanceRecordId)}
+                      href={model.detail.href}
                       className="inline-flex h-9 items-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                     >
-                      {itemLabel(card, "view")}
+                      {model.detail.label}
                     </Link>
                   </div>
                 </li>
