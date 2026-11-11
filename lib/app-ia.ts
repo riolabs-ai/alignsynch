@@ -24,7 +24,7 @@
  *
  * **Template authoring is visible, and two thirds of it is proposed.** The owner asked that admins
  * "create or clone new templates drafts and publish revisions". `New template` is a real route
- * (`/assessment/templates/new`) and links. **Clone → draft** and **Publish revision** have no route
+ * (`/templates/relationship/new`) and links. **Clone → draft** and **Publish revision** have no route
  * yet, so they carry `proposed: true`: they are drawn as controls, never as links, because a rail
  * must never point at a placeholder (the `isLinkableHref` rule the crash in #721 taught us).
  *
@@ -326,7 +326,7 @@ export const APP_IA_GROUPS: readonly AppIaGroup[] = [
       },
       {
         id: "template-new",
-        href: "/assessment/templates/new",
+        href: "/templates/relationship/new",
         icon: "new-template",
         needs: "admin",
         note: "Create. A real route, so it links: the first of the three authoring actions the owner asked to see named here.",
@@ -595,7 +595,7 @@ export const APP_IA_SCREEN_MAP: readonly AppIaScreen[] = [
   },
   {
     id: "screen-template-new",
-    href: "/assessment/templates/new",
+    href: "/templates/relationship/new",
     group: "group-templates",
     row: "template-new",
     pattern: "single",

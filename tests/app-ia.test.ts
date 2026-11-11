@@ -158,9 +158,9 @@ describe("lib/app-ia — the shape of the rail", () => {
     // Three groups a member sees: the two work groups plus the shared band.
     const memberVisible = [...appIaGroupsFor("member"), ...appIaGroupsFor("shared")];
     expect(memberVisible).toHaveLength(3);
-    expect(memberVisible.flatMap((group) => group.items).every((row) => row.needs === "member")).toBe(
-      true,
-    );
+    expect(
+      memberVisible.flatMap((group) => group.items).every((row) => row.needs === "member"),
+    ).toBe(true);
     // And the operator's four hold every admin row the rail draws, fifteen in all.
     const adminRows = appIaGroupsFor("admin").flatMap((group) => group.items);
     expect(adminRows).toHaveLength(15);
@@ -313,9 +313,11 @@ describe("lib/app-ia — template authoring", () => {
     expect(itemLabel(nav, "template-clone")).toBe("Clone → draft");
     expect(itemLabel(nav, "template-publish")).toBe("Publish revision");
 
-    // Create has a route; the other two do not, and say so.
+    // Create has a route; the other two do not, and say so. The route is the migrated one (#794
+    // moved authoring under `/templates/relationship`): `/assessment/templates/new` still answers
+    // as a 308, but a rail must point at the destination the manifest carries, not at a redirect.
     expect(appIaRowOf("template-new")?.proposed).toBeUndefined();
-    expect(appIaRowOf("template-new")?.href).toBe("/assessment/templates/new");
+    expect(appIaRowOf("template-new")?.href).toBe("/templates/relationship/new");
     expect(appIaRowOf("template-clone")?.proposed).toBe(true);
     expect(appIaRowOf("template-publish")?.proposed).toBe(true);
     // "as actions, not links" is structural: neither proposed row carries a path to link.
@@ -454,7 +456,7 @@ describe("lib/app-ia — the screen map", () => {
       "/admin/templates",
       "/admin/console/templates",
       "/admin/review",
-      "/assessment/templates/new",
+      "/templates/relationship/new",
       "/admin/billing",
       "/admin/health",
       "/admin/broadcast",
@@ -554,7 +556,7 @@ describe("the review screen draws the proposal, not a picture of it", () => {
       expect(text).toContain(itemLabel(nav, id));
     }
     // New template is a real route, so it links…
-    expect(drawnHrefs).toContain("/assessment/templates/new");
+    expect(drawnHrefs).toContain("/templates/relationship/new");
     // …and the two proposed actions are `<button>`s with the marker under them, never anchors.
     for (const id of ["template-clone", "template-publish"]) {
       const label = itemLabel(nav, id);
