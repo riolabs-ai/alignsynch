@@ -1,12 +1,17 @@
 /**
- * `/templates`, joined — the public catalogue page's model (its sibling is `lib/alignment-home.ts`
- * for `/`).
+ * `/templates`, joined — the public template **directory**'s model (its sibling is
+ * `lib/alignment-home.ts` for `/`).
  *
  * Two species of thing, as on the front page: **words** from `data/pages/templates.ts` and
  * **records** from `data/relationship-types.ts`. This module is the join, and the only arithmetic
- * it does is counting. The band that says how many templates there are spells its numbers from
- * the taxonomy, through the same `isPurchasable()` gate the shop reads — so the sentence above the
- * shelf cannot promise a template the product will not sell.
+ * it does is counting. The catalogue's sentence that says how many templates there are spells its
+ * numbers from the taxonomy, through the same `isPurchasable()` gate the shop reads — so the
+ * sentence above the shelf cannot promise a template the product will not sell.
+ *
+ * The page is a directory, not an explainer: the hero says what the page is and offers one action,
+ * and the catalogue is everything below it. There is no "what a template is" band, no "what you
+ * get" band and no closing sales band — the front page's `#templates` band carries the pitch, and
+ * this page exists so a reader who already wants the list can find it.
  *
  * Free of React and Next, so `tests/templates-page.test.ts` renders the model in a node process
  * and `components/templates/**` holds no string of its own (E23 keeps the route at 0 leaf
@@ -30,46 +35,22 @@ export interface TemplatesLink {
 
 /** Everything `components/templates/templates-page.tsx` prints, already joined. */
 export interface TemplatesPageModel {
+  /** The page's name, one sentence, and the one action a stranger can take. */
   readonly hero: {
     readonly eyebrow?: string;
     readonly heading: string;
     readonly subtitle?: string;
     readonly primary?: TemplatesLink;
-    readonly secondary?: TemplatesLink;
   };
-  /** "What a template is" — one heading and one paragraph, before any card. */
-  readonly intro: {
-    readonly eyebrow?: string;
-    readonly heading?: string;
-    readonly body?: string;
-  };
-  /** "What you get" — the three things a purchase buys, each with its own paragraph. */
-  readonly included: {
-    readonly eyebrow?: string;
-    readonly heading?: string;
-    readonly body?: string;
-    readonly items: ReadonlyArray<{
-      readonly id: string;
-      readonly label: string;
-      readonly body: string;
-    }>;
-  };
-  /** The catalogue: the counted sentence, then every card grouped by realm. */
+  /** The directory: the counted sentence, then every card grouped by realm. */
   readonly catalogue: {
     readonly eyebrow?: string;
     readonly heading?: string;
     readonly body?: string;
-    /** `"Six templates across six realms."` — filled from the taxonomy, never typed. */
+    /** `"Twenty-seven templates across seven realms."` — filled from the taxonomy, never typed. */
     readonly count: string;
     readonly realms: readonly TemplateRealm[];
     readonly total: number;
-  };
-  /** The closing band: one primary action and the plan comparison beside it. */
-  readonly buy: {
-    readonly heading?: string;
-    readonly body?: string;
-    readonly cta?: TemplatesLink;
-    readonly secondaryCta?: TemplatesLink;
   };
 }
 
@@ -95,8 +76,7 @@ export function templatesPage(
   realms: readonly string[] = REALMS,
 ): TemplatesPageModel {
   const catalogueSection = sectionOf(copy, "catalogue");
-  const countItem = pageItemOf(copy, "catalogue-count");
-  const countLabel = countItem.label;
+  const countLabel = pageItemOf(copy, "catalogue-count").label;
   if (!countLabel.includes("{types}") || !countLabel.includes("{realms}")) {
     throw new Error(
       `templatesPage: page item "catalogue-count" in data/pages/templates.ts must spell its sentence with {types} and {realms} — the counts come from data/relationship-types.ts, and a typed number is a number nobody re-measures (have: ${countLabel})`,
@@ -105,18 +85,7 @@ export function templatesPage(
 
   const cards = templateCards(copy, relationshipTypes);
   const grouped = templateRealms(cards, realms);
-  const introSection = sectionOf(copy, "intro");
-  const includedSection = sectionOf(copy, "included");
-  const buySection = sectionOf(copy, "buy");
-
-  const includedItems = (includedSection.items ?? []).map((item) => {
-    if (item.body === undefined) {
-      throw new Error(
-        `templatesPage: item "${item.id}" in section "included" has no body — that band renders titled cards, and a card without its paragraph renders blank`,
-      );
-    }
-    return { id: item.id, label: item.label, body: item.body };
-  });
+  const catalogueEyebrow = eyebrowOf(copy, "eyebrow-catalogue");
 
   return {
     hero: {
@@ -124,27 +93,9 @@ export function templatesPage(
       heading: copy.heading,
       ...(copy.subtitle === undefined ? {} : { subtitle: copy.subtitle }),
       ...(copy.cta === undefined ? {} : { primary: copy.cta }),
-      ...(copy.secondaryCta === undefined ? {} : { secondary: copy.secondaryCta }),
-    },
-    intro: {
-      ...(eyebrowOf(copy, "eyebrow-intro") === undefined
-        ? {}
-        : { eyebrow: eyebrowOf(copy, "eyebrow-intro") }),
-      ...(introSection.heading === undefined ? {} : { heading: introSection.heading }),
-      ...(introSection.body === undefined ? {} : { body: introSection.body }),
-    },
-    included: {
-      ...(eyebrowOf(copy, "eyebrow-included") === undefined
-        ? {}
-        : { eyebrow: eyebrowOf(copy, "eyebrow-included") }),
-      ...(includedSection.heading === undefined ? {} : { heading: includedSection.heading }),
-      ...(includedSection.body === undefined ? {} : { body: includedSection.body }),
-      items: includedItems,
     },
     catalogue: {
-      ...(eyebrowOf(copy, "eyebrow-catalogue") === undefined
-        ? {}
-        : { eyebrow: eyebrowOf(copy, "eyebrow-catalogue") }),
+      ...(catalogueEyebrow === undefined ? {} : { eyebrow: catalogueEyebrow }),
       ...(catalogueSection.heading === undefined ? {} : { heading: catalogueSection.heading }),
       ...(catalogueSection.body === undefined ? {} : { body: catalogueSection.body }),
       count: sentenceCase(
@@ -156,18 +107,12 @@ export function templatesPage(
       realms: grouped,
       total: cards.length,
     },
-    buy: {
-      ...(buySection.heading === undefined ? {} : { heading: buySection.heading }),
-      ...(buySection.body === undefined ? {} : { body: buySection.body }),
-      ...(buySection.cta === undefined ? {} : { cta: buySection.cta }),
-      ...(buySection.secondaryCta === undefined ? {} : { secondaryCta: buySection.secondaryCta }),
-    },
   };
 }
 
 /**
- * A band's eyebrow, when the fixture declares one. Page-level rather than a section item, so
- * `included.items` never mistakes a kicker for a card (a card there must carry a paragraph).
+ * The catalogue's eyebrow, when the fixture declares one. Page-level rather than a section item,
+ * so it never competes with the strings a catalogue card reads.
  */
 function eyebrowOf(copy: PageCopy, id: string): string | undefined {
   return copy.items?.find((item) => item.id === id)?.label;
