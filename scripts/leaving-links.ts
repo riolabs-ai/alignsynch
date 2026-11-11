@@ -422,11 +422,25 @@ export function unmarkedLeavingMounts(input: {
   return findings;
 }
 
-/** The derived route set in the spelling the runtime table uses: `[slug]` → `*`. */
+/**
+ * The derived route set in the spelling the runtime table uses: a dynamic segment becomes the
+ * prefix `*`.
+ *
+ * **Any** `[param]` widens, not only a trailing one. The table answers "does this href address
+ * the public site", and the only honest answer for a route with a dynamic segment is "everything
+ * below its static prefix" — a marketing page nested one level under a dynamic one
+ * (`/relationship-types/[slug]/demo`) is exactly that case, and spelling it literally would mean
+ * the table carried a row no real href could ever equal.
+ *
+ * The map collapses to a set: two routes under one prefix (`…/[slug]` and `…/[slug]/demo`) are
+ * one row, because the table has no way to tell them apart and needs none — both are public.
+ */
 export function routePatterns(routes: readonly string[]): string[] {
-  return routes
-    .map((route) => (route.endsWith("/[slug]") ? `${route.slice(0, -"[slug]".length)}*` : route))
-    .sort();
+  const patterns = routes.map((route) => {
+    const dynamic = route.indexOf("/[");
+    return dynamic === -1 ? route : `${route.slice(0, dynamic + 1)}*`;
+  });
+  return [...new Set(patterns)].sort();
 }
 
 /**

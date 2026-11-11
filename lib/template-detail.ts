@@ -35,7 +35,7 @@ import {
   purchasableRelationshipTypes,
   type RelationshipType,
 } from "@/data/relationship-types";
-import { assessmentDemoPath } from "@/lib/flow/paths";
+import { relationshipTypeDemoPath } from "@/lib/flow/paths";
 import {
   CATALOGUE_PATH,
   START_PATH,
@@ -170,7 +170,7 @@ export function templateDetail(
       : {
           example: {
             label: exampleLabel,
-            href: assessmentDemoPath(type.id),
+            href: relationshipTypeDemoPath(type.id),
           },
         }),
     back: { label: pageItemOf(copy, DETAIL_IDS.back).label, href: CATALOGUE_PATH },

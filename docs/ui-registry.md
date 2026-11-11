@@ -25,7 +25,7 @@ How a template picks from this page — the order a new surface is decided in �
 - component domains: **42** — 317 files under `components/`, 310 of them `.tsx`
 - route handlers: **28** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 68 · **db** 40 · **live** 8 · **prototype** 1
-- templates: Both templates 43 · AlignSynch 45 · QuizHub 42 · No template yet 2
+- templates: Both templates 44 · AlignSynch 44 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
 
 Status is the judgement half and the wiring is what checks it: `db` reaches `lib/db/`, `live` reaches an `/api` write, `fixture` reaches a module under `data/`, and `mock` reaches no `lib/db/` module and no record fixture — the media registry is an asset and page copy is copy, so a surface whose numbers are literals is still a stand-in.
@@ -155,7 +155,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/client.ts`
 
 - `/relationship-types` — **fixture**
-  - capability: The public Relationship Templates catalogue: what a template is, what buying one gets you (both sides answering blind, the Gap by Aspect, the session agenda), and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count, its price and — where a demo sheet exists — a worked example. Both card actions are public: `/register`, and `/assessment/demo/<type>`. No session, no clock and no database, so the page prerenders.
+  - capability: The public Relationship Templates catalogue: what a template is, what buying one gets you (both sides answering blind, the Gap by Aspect, the session agenda), and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count, its price and — where a demo sheet exists — a worked example. Both card actions are public: `/register`, and `/relationship-types/<type>/demo`. No session, no clock and no database, so the page prerenders.
   - components: `components/templates`
   - reads: an `/api` path — `data/billing-plans.ts`
   - notes: The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. The catalogue is derived (`lib/template-catalogue.ts` over `data/relationship-types.ts`), so the count sentence above the shelf and the cards under it cannot disagree, and a type the shop will not sell throws instead of rendering a card nobody can buy. The front page shows six of these cards, curated in `data/template-shelf.ts`, with no per-card actions — one CTA there, the full shelf here.
@@ -165,6 +165,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - components: `components/templates`
   - reads: an `/api` path — `data/billing-plans.ts`
   - notes: The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` emits one prerendered page per purchasable type and `notFound()` answers any other slug.
+
+- `/relationship-types/[slug]/demo` — **fixture**
+  - capability: The worked example: one Relationship Type's finished report, answered by You and Them and labelled Example, rendered through the live report projection and component — the value shown before anyone pays, and launch criterion 5's one readable proof. No session, no clock and no database.
+  - components: `components/assessment`, `components/assessment-flow`
+  - reads: an `/api` path — `data/billing-plans.ts`
+  - notes: Lands here as `docs/V1-RETIREMENT.md`'s `release` demo row: it was `/v1/templates/[type]/demo`, the last customer route under `/v1`, and it moved out when that namespace was retired (#478) — first to `/assessment/demo/[type]`, then, once #794 retired the `assessment` noun from every surface that is not a record, to one segment below the type's own page. It is in `(marketing)` because a stranger reads it before an account exists, so it wears the public header and footer and renders the app shell nowhere. The projection and renderer are `lib/assessment-report.ts` + `components/assessment/assessment-report.tsx` — the v1 report component was deleted with the move, so the app has one report renderer, not two, which is also why this is a page and not a band on the type page: a band could only be a truncated second presentation of the same report. The example is built from the type's own Aspects and authored demo sheet, never from a stored template record (the staff-manager record predates the taxonomy and carries Aspects its sheet never answered).
 
 - `/reset/[token]` — **db**
   - capability: Spend a reset link: a single-use, hour-long token in the path, refused with its own sentence when it is expired, already used or not one this app issued. Setting the password revokes every session.
@@ -237,7 +243,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/layout` — **fixture**
   - capability: The shell: header, the sticky sidebar, the layout that composes them, and the footer.
   - files (9): `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `leaving-link.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `news-signup.tsx`, `sidebar.tsx`
-  - routes (7): `/affiliate`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/support`, `/tournaments`
+  - routes (10): `/affiliate`, `/assessment`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/login`, `/support`, `/templates/relationship`, `/templates/relationship/[slug]`, `/tournaments`
 
 - `components/legal` — **mock**
   - capability: The one view `/terms` and `/privacy` render: the draft banner first, then the section stack, with the fixture's paragraphs and `- ` lists as its only markup vocabulary.
@@ -362,19 +368,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/assessment` — **db**
   - capability: The published assessment templates, each with its create form: pick a template and open a two-party instance from the templates that read from Postgres.
-  - components: `components/assessment-flow`
+  - components: `components/assessment-flow`, `components/layout`
   - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/assessment/[slug]` — **db**
   - capability: One assessment instance from Postgres: both parties' answers per Aspect, the Opinions and Values behind them, and the Gap between the two.
   - components: `components/assessment`, `components/assessment-flow`
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`
-
-- `/assessment/demo/[type]` — **fixture**
-  - capability: The worked example: one Relationship Type's finished report, answered by You and Them and labelled Example, rendered through the live report projection and component — the value shown before anyone pays, and launch criterion 5's one readable proof.
-  - components: `components/assessment`, `components/assessment-flow`
-  - reads: 2 record fixtures — `data/assessments.ts`, `data/relationship-types.ts`
-  - notes: Lands here as `docs/V1-RETIREMENT.md`'s `release` demo row: it was `/v1/templates/[type]/demo`, the last customer route under `/v1`, and it moved out when that namespace was retired (#478). The projection and renderer are `lib/assessment-report.ts` + `components/assessment/assessment-report.tsx` — the v1 report component was deleted with the move, so the app has one report renderer, not two. The example is built from the type's own Aspects and authored demo sheet, never from a stored template record (the staff-manager record predates the taxonomy and carries Aspects its sheet never answered).
 
 - `/assessment/instances` — **db**
   - capability: Every relationship the signed-in account is a member of, as the My Quizzes card grid — the template, the stage, both parties, the session counts and the alignment once a session is complete.
@@ -443,13 +443,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/templates/relationship` — **db**
   - capability: The template catalogue, grouped by the relationship type each template names (Business · Personal, then the ones that name none): one card per template with its type, realm, roles and Aspect count, a View details link, and duplicate/archive on the rows this account owns.
-  - components: `components/assessment-flow`
+  - components: `components/assessment-flow`, `components/layout`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: `record.author_user_id` is the whole rule — `NULL` is a built-in, the author's id is a template a person wrote, and the read returns `author_user_id IS NULL OR author_user_id = $1`, so another account's template is never in the payload. A template written before `0011_console_columns.sql` has no author and therefore reads as built-in; the page says so in its own band rather than leaving it to be discovered. Archiving flips `record.status` to `archived` (author only): the catalogue stops listing it and `createInstanceFromTemplate` refuses it, while every instance already made from it keeps its own copy of the Aspects and still opens. Duplicating copies the record and its items into a new template authored by the caller, whatever state the source is in.
 
 - `/templates/relationship/[slug]` — **db**
   - capability: One template as a landing page: a header band naming its group, realm, Relationship Type and the two role seats, who it is for and who it is not for, every Aspect with both named ends of the scale, and what a Mode and a Setting are. No person's name, no price, no testimonial.
-  - components: `components/assessment-flow`
+  - components: `components/assessment-flow`, `components/layout`
   - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.
 
@@ -505,13 +505,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/assessment` — **mock**
   - capability: The assessment report: each Aspect's two Opinions, the Values behind them and the Gap between the parties.
   - files (2): `assessment-report.tsx`, `assessment-unreadable.tsx`
-  - routes (2): `/assessment/[slug]`, `/assessment/demo/[type]`
+  - routes (2): `/assessment/[slug]`, `/relationship-types/[slug]/demo`
   - notes: Reads nothing itself — the instance arrives as props from the route that read Postgres, which is why the surface is `mock` and the route above it is `db`. Since #204 it also draws the one failure state the route can describe: `assessment-unreadable.tsx` prints the database layer's own sentence when the read did not answer, instead of Next's 500 and a digest.
 
 - `components/assessment-flow` — **db**
   - capability: The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.
   - files (29): `accept-session.tsx`, `account-gate.tsx`, `alignment-view.tsx`, `answer-form.tsx`, `answer-sheet.tsx`, `aspect-list.tsx`, `counterparty-wizard.tsx`, `create-relationship.tsx`, `instance-view.tsx`, `invite-link.tsx`, `invite-view.tsx`, `my-instances.tsx`, `plan-choices.tsx`, `reinvite-form.tsx`, `report-view.tsx`, `sent-state.tsx`, `stage-column.tsx`, `stage-foot.tsx`, `stage-four.tsx`, `stage-rail.tsx`, `stage-shell.tsx`, `steps-panel.tsx`, `submission-confirmation.tsx`, `template-card.tsx`, `template-detail.tsx`, `template-form.tsx`, `template-library.tsx`, `template-list.tsx`, `wizard-steps.tsx`
-  - routes (26): `/admin/templates/[id]`, `/assessment`, `/assessment/[slug]`, `/assessment/demo/[type]`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/dashboard`, `/dashboard/relationships/[id]`, `/dashboard/templates/[id]`, `/dashboard/user`, `/invite/[token]`, `/profile/[username]`, `/settings`, `/support`, `/templates/relationship`, `/templates/relationship/[slug]`, `/templates/relationship/[slug]/create`, `/templates/relationship/[slug]/create/account`, `/templates/relationship/[slug]/create/aspects`, `/templates/relationship/[slug]/create/commit`, `/templates/relationship/[slug]/create/mode`, `/templates/relationship/new`
+  - routes (26): `/admin/templates/[id]`, `/assessment`, `/assessment/[slug]`, `/assessment/instances`, `/assessment/instances/[instanceId]`, `/assessment/instances/[instanceId]/accept`, `/assessment/instances/[instanceId]/answer`, `/assessment/instances/[instanceId]/report`, `/assessment/instances/[instanceId]/sent`, `/dashboard`, `/dashboard/relationships/[id]`, `/dashboard/templates/[id]`, `/dashboard/user`, `/invite/[token]`, `/profile/[username]`, `/relationship-types/[slug]/demo`, `/settings`, `/support`, `/templates/relationship`, `/templates/relationship/[slug]`, `/templates/relationship/[slug]/create`, `/templates/relationship/[slug]/create/account`, `/templates/relationship/[slug]/create/aspects`, `/templates/relationship/[slug]/create/commit`, `/templates/relationship/[slug]/create/mode`, `/templates/relationship/new`
   - notes: Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.
 
 - `components/console` — **mock**
@@ -547,7 +547,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - capability: What is left of the /v1 prototype — the operator console's components and the shared primitives they paint with. No route in the app is a `/v1` one.
   - files (9): `admin-console-overview.tsx`, `admin-limits.tsx`, `admin-relationship-detail.tsx`, `admin-relationship-registry.tsx`, `admin-template-detail.tsx`, `admin-template-registry.tsx`, `admin-users-list.tsx`, `relationship-metadata.tsx`, `v1-ui.tsx`
   - routes (6): `/admin/console`, `/admin/console/relationships`, `/admin/console/relationships/[id]`, `/admin/console/templates`, `/admin/console/templates/[id]`, `/admin/console/users`
-  - notes: The prototype is retired (#478): `docs/V1-RETIREMENT.md` classified 118 `/v1` items, and this domain now holds nine files — the console's own components, all of them written below. The **nine admin components** — `admin-console-overview`, `admin-relationship-registry`, `admin-relationship-detail`, `admin-template-registry`, `admin-template-detail`, `admin-users-list`, `admin-limits`, `relationship-metadata`, `v1-ui` — are the operator console at `/admin/console`, behind `requireAdmin`, reading the in-browser store (`lib/v1/store.tsx`) seeded from `data/v1/fixtures.ts`; that is why they stay a fixture surface while the product's `/admin/instances` reads Postgres. `v1-ui.tsx` is the one shared atom set (`StageBadge`, `GapPill`, `StatTile`, `EmptyState`, `NotFoundState`, `SectionIntro`, the status tones) the console paints with, and `relationship-metadata.tsx` is the mode/setting editor the console's relationship detail draws. The two `release` rows this domain once kept are gone to their destinations: `steps-panel.tsx` became `components/assessment-flow/steps-panel.tsx`, drawn on the instance screen from the Steps acceptance already stores, and `template-demo.tsx` with `report-body.tsx` became `/assessment/demo/[type]` over the app's own `components/assessment/assessment-report.tsx` — so there is no second report renderer left anywhere. The `/v1` route group, its layout gate, `lib/v1/persona.ts` and the flag-count derivations went with them; `app/(prototype)` no longer exists. Everything else in the domain — the shell, the persona bar, the chat, the shop, the review checklist, the settings views, the answer sheet and the template authoring — was deleted by the cohort before this one.
+  - notes: The prototype is retired (#478): `docs/V1-RETIREMENT.md` classified 118 `/v1` items, and this domain now holds nine files — the console's own components, all of them written below. The **nine admin components** — `admin-console-overview`, `admin-relationship-registry`, `admin-relationship-detail`, `admin-template-registry`, `admin-template-detail`, `admin-users-list`, `admin-limits`, `relationship-metadata`, `v1-ui` — are the operator console at `/admin/console`, behind `requireAdmin`, reading the in-browser store (`lib/v1/store.tsx`) seeded from `data/v1/fixtures.ts`; that is why they stay a fixture surface while the product's `/admin/instances` reads Postgres. `v1-ui.tsx` is the one shared atom set (`StageBadge`, `GapPill`, `StatTile`, `EmptyState`, `NotFoundState`, `SectionIntro`, the status tones) the console paints with, and `relationship-metadata.tsx` is the mode/setting editor the console's relationship detail draws. The two `release` rows this domain once kept are gone to their destinations: `steps-panel.tsx` became `components/assessment-flow/steps-panel.tsx`, drawn on the instance screen from the Steps acceptance already stores, and `template-demo.tsx` with `report-body.tsx` became the public worked example (`/relationship-types/[slug]/demo`) over the app's own `components/assessment/assessment-report.tsx` — so there is no second report renderer left anywhere. The `/v1` route group, its layout gate, `lib/v1/persona.ts` and the flag-count derivations went with them; `app/(prototype)` no longer exists. Everything else in the domain — the shell, the persona bar, the chat, the shop, the review checklist, the settings views, the answer sheet and the template authoring — was deleted by the cohort before this one.
 
 ## QuizHub
 

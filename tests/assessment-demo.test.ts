@@ -1,5 +1,6 @@
 /**
- * `/assessment/demo/[type]` — the one worked example, proved against the projection it draws.
+ * `/relationship-types/[slug]/demo` — the one worked example, proved against the projection it
+ * draws.
  *
  * The route's job is narrow and this file holds it to exactly that:
  *
@@ -26,9 +27,8 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-import DemoPage, { generateMetadata } from "@/app/(mainlayout)/assessment/demo/[type]/page";
+import DemoPage, { generateMetadata } from "@/app/(marketing)/relationship-types/[slug]/demo/page";
 import { GAP_KINDS, gapKindsIn, gapKindsOf } from "@/content/gaps";
-import { assessments } from "@/data/assessments";
 import {
   demoAnswersByType,
   demoAnswersFor,
@@ -36,7 +36,8 @@ import {
   purchasableRelationshipType,
 } from "@/data/relationship-types";
 import { assessmentDemo } from "@/lib/assessment-demo";
-import { createRelationshipPath } from "@/lib/flow/paths";
+import { relationshipTypeDemoPath, relationshipTypePath } from "@/lib/flow/paths";
+import { START_PATH } from "@/lib/template-catalogue";
 
 /** The two types with an authored sheet — the demo's whole reachable set today. */
 const DEMO_IDS = Object.keys(demoAnswersByType) as readonly string[];
@@ -88,13 +89,14 @@ describe("the worked example is one type's report, through the live projection",
     }
   });
 
-  it("points the Start CTA at the type's own record, never at /v1", () => {
+  it("points the Start CTA at a public destination, never into the app shell", () => {
     for (const id of DEMO_IDS) {
       const demo = assessmentDemo(id);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
-      const record = assessments.find((entry) => entry.slug === id);
-      if (record === undefined) throw new Error(`no template record for "${id}"`);
-      expect(demo.startPath).toBe(createRelationshipPath(record.id));
+      // The example is a `(marketing)` page, so `/register` is the only honest action: the
+      // create form is a signed-in surface and a link to it is a sign-in wall.
+      expect(demo.startPath).toBe(START_PATH);
+      expect(demo.startPath).toBe("/register");
       expect(demo.startPath.startsWith("/v1/")).toBe(false);
     }
   });
@@ -114,11 +116,11 @@ describe("a type with no example is a 404, not a fabricated report", () => {
   });
 
   it("turns that into notFound() on the page", async () => {
-    await expect(DemoPage({ params: Promise.resolve({ type: "no-such-type" }) })).rejects.toThrow(
+    await expect(DemoPage({ params: Promise.resolve({ slug: "no-such-type" }) })).rejects.toThrow(
       "NEXT_NOT_FOUND",
     );
     await expect(
-      generateMetadata({ params: Promise.resolve({ type: "no-such-type" }) }),
+      generateMetadata({ params: Promise.resolve({ slug: "no-such-type" }) }),
     ).resolves.toEqual({ title: "Example Not Found" });
   });
 });
@@ -129,7 +131,7 @@ describe("the page draws the label and the report", () => {
     const demo = assessmentDemo(type);
     if (demo === undefined) throw new Error(`no demo for "${type}"`);
 
-    const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ type }) }));
+    const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ slug: type }) }));
 
     expect(html).toContain("Example");
     expect(html).toContain(demo.report.title);
@@ -142,11 +144,28 @@ describe("the page draws the label and the report", () => {
     expect(html).not.toContain("/v1");
   });
 
+  it("sits one segment below the type's own public page, and links no app-shell route", async () => {
+    const type = "staff-manager";
+    const demo = assessmentDemo(type);
+    if (demo === undefined) throw new Error(`no demo for "${type}"`);
+
+    const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ slug: type }) }));
+
+    // The address is the catalogue's, one level under the type page …
+    expect(relationshipTypeDemoPath(type)).toBe(`/relationship-types/${type}/demo`);
+    expect(html).not.toContain("/assessment/demo");
+    // … the breadcrumb back is the type itself, not the signed-in library …
+    expect(html).toContain(`href="${relationshipTypePath(type)}"`);
+    expect(html).not.toContain('href="/templates/');
+    // … and the page is the public one: no sidebar, no shelf column of its own.
+    expect(html).not.toContain("data-tour");
+  });
+
   it("titles the tab and the description from the report", async () => {
     const demo = assessmentDemo("co-founders");
     if (demo === undefined) throw new Error("no demo for co-founders");
     await expect(
-      generateMetadata({ params: Promise.resolve({ type: "co-founders" }) }),
+      generateMetadata({ params: Promise.resolve({ slug: "co-founders" }) }),
     ).resolves.toEqual({
       title: `${demo.report.title} — example report`,
       description: demo.report.summary,

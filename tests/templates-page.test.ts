@@ -11,8 +11,8 @@
  *      by realm, in `REALMS` order — and the counted sentence above it is filled from the
  *      taxonomy, so a fixture change moves it;
  *   4. every card action is a **public** destination. `/register` makes the account; the example
- *      is `/assessment/demo/<type>` and exists only where the fixture holds a demo sheet. A
- *      marketing page that linked a create form behind a session would be the sign-in wall this
+ *      is `/relationship-types/<type>/demo` and exists only where the fixture holds a demo sheet.
+ *      A marketing page that linked a create form behind a session would be the sign-in wall this
  *      page exists to remove, so the assertion is "no dashboard route in the markup", not a
  *      review of the intent;
  *   5. the page claims no proof it cannot show — no rating, no logo, no count it did not count;
@@ -181,14 +181,14 @@ describe("every action on the page is public", () => {
       .filter((card) => card.example !== undefined);
     expect(withExample.map((card) => card.id).sort()).toEqual(["co-founders", "staff-manager"]);
     for (const card of withExample) {
-      expect(card.example).toBe(`/assessment/demo/${card.id}`);
+      expect(card.example).toBe(`/relationship-types/${card.id}/demo`);
     }
   });
 
   /**
    * The rule, as a scan of the served markup rather than of the model: a signed-out visitor who
    * follows any link on this page must not meet a login wall. `/register` and
-   * `/assessment/demo/<type>` are the only two app destinations on the page, and both answer
+   * `/relationship-types/<type>/demo` are the only two destinations on the page, and both answer
    * without a session.
    */
   it("links no dashboard route", () => {
@@ -215,7 +215,7 @@ describe("every action on the page is public", () => {
     for (const href of hrefs) {
       expect(
         href === START_PATH ||
-          /^\/assessment\/demo\/[a-z-]+$/.test(href) ||
+          /^\/relationship-types\/[a-z-]+\/demo$/.test(href) ||
           /^\/relationship-types\/[a-z-]+$/.test(href),
         href,
       ).toBe(true);

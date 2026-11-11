@@ -19,7 +19,7 @@
  * **Nothing here reads a clock.** The instants below are authored, not `new Date()`: this page
  * is server-rendered and re-rendered, and two different stamps would be a hydration mismatch.
  *
- * Pure: no React, no Next. `app/(mainlayout)/assessment/demo/[type]/page.tsx` draws it and
+ * Pure: no React, no Next. `app/(marketing)/relationship-types/[slug]/demo/page.tsx` draws it and
  * `tests/assessment-demo.test.ts` reads it in a node environment.
  */
 import type {
@@ -29,14 +29,13 @@ import type {
   Opinions,
 } from "@/content/assessment";
 import { DEMO_NOW_ISO } from "@/content/core";
-import { assessments } from "@/data/assessments";
 import {
   demoAnswersFor,
   purchasableRelationshipType,
   type RelationshipType,
 } from "@/data/relationship-types";
 import { assessmentReport, type AssessmentReport } from "@/lib/assessment-report";
-import { TEMPLATE_LIBRARY_PATH, createRelationshipPath } from "@/lib/flow/paths";
+import { START_PATH } from "@/lib/template-catalogue";
 
 /** The two seats the demo names, in the order the report draws them. */
 const DEMO_INITIATOR = "You";
@@ -134,9 +133,14 @@ export interface AssessmentDemo {
   readonly type: RelationshipType;
   readonly report: AssessmentReport;
   /**
-   * The create step for the type's live template record, or the library when the type has no
-   * record — the same fallback the catalogue card and the marketing page use, so a reader is
-   * never handed a dead route.
+   * Where a reader starts this relationship: `/register`, the **public** action.
+   *
+   * It used to be the type's live template record's create step, with the library as the
+   * fallback — an in-app destination, because the example rendered inside the app shell. The page
+   * is a public marketing route now, and a public page that links `/templates/relationship/<id>/
+   * create` hands a signed-out visitor a sign-in wall: the exact defect `lib/template-catalogue.ts`
+   * warns about for every marketing card. So the action is the one the type's own page carries,
+   * and the account is created first.
    */
   readonly startPath: string;
 }
@@ -153,11 +157,10 @@ export function assessmentDemo(typeId: string): AssessmentDemo | undefined {
 
   const template = demoTemplate(type);
   const instance = demoInstance(type, template);
-  const record = assessments.find((entry) => entry.slug === type.id);
 
   return {
     type,
     report: assessmentReport(instance, template),
-    startPath: record === undefined ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(record.id),
+    startPath: START_PATH,
   };
 }
