@@ -414,6 +414,13 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "saved", label: "Aspect saved." },
         { id: "reordered", label: "Order saved." },
         { id: "refused", label: "That Aspect was not saved." },
+        /**
+         * The shared editor's two list controls (#774). Stage 3 does not draw them — V4 keeps the
+         * template's list fixed until #699 — but `components/assessment-flow/aspect-list.tsx` names
+         * both ids, so they are declared here, where that component's copy is bound.
+         */
+        { id: "add", label: "Add an Aspect" },
+        { id: "remove", label: "Remove {name}" },
         { id: "submit", label: "Continue to Stage 4" },
         { id: "back", label: "Back" },
       ],
