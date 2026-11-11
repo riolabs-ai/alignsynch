@@ -50,6 +50,9 @@ import {
   type RepublishOutcome,
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
+import { AspectList, type AspectSaveResult } from "@/components/assessment-flow/aspect-list";
+import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detail";
+import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 import { PRICING_PATH } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
@@ -178,6 +181,17 @@ export function RelationshipDetail({
   const offersRepublish = relationship.offersRepublish;
   const trialAlone = relationship.trialWithoutLiveInvite;
 
+  /**
+   * The list the standard editor draws: the dashboard's own row type, with a stand-in id for a row
+   * added in this edit, so one component can hold a row the record does not have yet.
+   */
+  const aspectDrafts: AspectDraft[] = aspects.map((aspect, index) => ({
+    id: aspect.id ?? `new-${String(index + 1)}`,
+    prompt: aspect.prompt,
+    leftValue: aspect.leftValue,
+    rightValue: aspect.rightValue,
+  }));
+
   /** The refusal line for the view's own sentence — one id per state, from the fixture. */
   const viewSentence = (view: string): string => {
     const known = (viewCopy.items ?? []).find((item) => item.id === view);
@@ -208,18 +222,52 @@ export function RelationshipDetail({
     startTransition(async () => {
       const answer = await onSaveAspects({
         relationshipId: relationship.id,
-        record: buildTemplateRecord({
-          id: relationship.templateId,
-          slug: relationship.template.slug,
-          title: relationship.template.title,
-          summary: relationship.template.summary,
-          status: relationship.template.status,
-          date: relationship.template.date,
-          aspects,
-        }),
+        record: buildRecord(aspects),
         saveAs,
       });
       setAspectsOutcome(answer);
+    });
+  }
+
+  /**
+   * The standard editor's writer: one row, saved through the same action the status buttons use.
+   *
+   * A row with a `new-` id is one this screen added and the record does not hold yet, so it is sent
+   * without an id and the server creates it. `saveAs` stays `draft`: saving a row is not a decision
+   * to publish, and "Save and mark ready" is still the control that makes that decision.
+   */
+  async function persistAspects(next: readonly AspectDraft[]): Promise<AspectSaveResult> {
+    const answer = await onSaveAspects({
+      relationshipId: relationship.id,
+      record: buildRecord(next),
+      saveAs: "draft",
+    });
+    setAspectsOutcome(answer);
+    return answer.ok ? { ok: true } : { ok: false, problem: answer.code };
+  }
+
+  /** The rows the person is looking at, kept so a status change writes them rather than the mount. */
+  function mirrorAspects(next: readonly AspectDraft[]): void {
+    setAspects(
+      next.map((row) => ({
+        id: row.id.startsWith("new-") ? undefined : row.id,
+        prompt: row.prompt,
+        leftValue: row.leftValue,
+        rightValue: row.rightValue,
+      })),
+    );
+  }
+
+  /** The relationship's template record with this list on it — one builder for both writers. */
+  function buildRecord(list: readonly AspectState[]) {
+    return buildTemplateRecord({
+      id: relationship.templateId,
+      slug: relationship.template.slug,
+      title: relationship.template.title,
+      summary: relationship.template.summary,
+      status: relationship.template.status,
+      date: relationship.template.date,
+      aspects: list,
     });
   }
 
@@ -407,79 +455,15 @@ export function RelationshipDetail({
             <CardDescription>{sectionBody(aspectCopy)}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ul data-aspect-editor className="space-y-3">
-              {aspects.map((aspect, index) => (
-                <li key={aspect.id ?? `new-${index}`} className="space-y-2 rounded-lg border p-3">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor={`aspect-prompt-${index}`}>
-                      {itemLabel(aspectCopy, "prompt")}
-                    </Label>
-                    <Input
-                      id={`aspect-prompt-${index}`}
-                      value={aspect.prompt}
-                      onChange={(event) => patchAspect(index, { prompt: event.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor={`aspect-left-${index}`}>
-                        {itemLabel(aspectCopy, "left")}
-                      </Label>
-                      <Input
-                        id={`aspect-left-${index}`}
-                        value={aspect.leftValue}
-                        onChange={(event) => patchAspect(index, { leftValue: event.target.value })}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor={`aspect-right-${index}`}>
-                        {itemLabel(aspectCopy, "right")}
-                      </Label>
-                      <Input
-                        id={`aspect-right-${index}`}
-                        value={aspect.rightValue}
-                        onChange={(event) => patchAspect(index, { rightValue: event.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => moveAspect(index, -1)}
-                    >
-                      {itemLabel(aspectCopy, "up")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => moveAspect(index, 1)}
-                    >
-                      {itemLabel(aspectCopy, "down")}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        setAspects((current) => current.filter((_, at) => at !== index))
-                      }
-                    >
-                      {itemLabel(aspectCopy, "remove")}
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setAspects((current) => [...current, BLANK_ASPECT])}
-            >
-              {itemLabel(aspectCopy, "add")}
-            </Button>
+            <AspectList
+              copy={copy}
+              wordsSection={ASPECT_EDITOR_SECTION}
+              validationSection={null}
+              aspects={aspectDrafts}
+              addRemove
+              onChange={mirrorAspects}
+              save={persistAspects}
+            />
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"

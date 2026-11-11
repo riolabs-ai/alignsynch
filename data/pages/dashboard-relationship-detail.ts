@@ -33,6 +33,14 @@
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
+/**
+ * The id of the shared Aspect editor's section on this page.
+ *
+ * Exported, not written into the page: `/dashboard/relationships/[id]` has a leaf-literal budget of
+ * zero (E23), so a page component may name a section only through a constant the fixture declares.
+ */
+export const ASPECT_EDITOR_SECTION = "aspect-editor";
+
 export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship",
   subtitle:
@@ -112,6 +120,39 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "save-pending", label: "Save and mark ready" },
         { id: "saving", label: "Saving…" },
         { id: "saved", label: "Saved at status {status}. Audit action {actionId}." },
+      ],
+    },
+    {
+      /**
+       * The row vocabulary of the shared Aspect editor (#774).
+       *
+       * The anatomy — the ordinal, the grip, the question, the scale, the edit icon — is the modal's,
+       * drawn by `components/assessment-flow/aspect-list.tsx`. This section is only what *this* page
+       * says while drawing it, because the dashboard and the create flow are different screens and
+       * each owns its own copy (E23).
+       */
+      id: "aspect-editor",
+      heading: "Edit an Aspect",
+      body: "One question per row. Open a row to reword it, drag it to reorder, or remove it.",
+      items: [
+        { id: "count", label: "{count} Aspects" },
+        { id: "tap-to-edit", label: "Open an Aspect to reword it in place." },
+        { id: "drag-hint", label: "Drag to reorder" },
+        { id: "prompt-label", label: "The question both of you answer" },
+        { id: "left-label", label: "Left opinion label" },
+        { id: "left-help", label: "The low end — what a 1 means." },
+        { id: "right-label", label: "Right opinion label" },
+        { id: "right-help", label: "The high end — what a 5 means." },
+        { id: "edit", label: "Edit this Aspect" },
+        { id: "save", label: "Save Aspect" },
+        { id: "cancel", label: "Cancel" },
+        { id: "unsaved", label: "Discard the changes to this Aspect?" },
+        { id: "grip", label: "Reorder {name}" },
+        { id: "saved", label: "Aspect saved." },
+        { id: "reordered", label: "Order saved." },
+        { id: "refused", label: "That Aspect was not saved." },
+        { id: "add", label: "Add an Aspect" },
+        { id: "remove", label: "Remove {name}" },
       ],
     },
     {

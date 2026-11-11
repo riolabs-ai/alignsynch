@@ -70,12 +70,45 @@ const FIELD_ITEM: Readonly<Record<AspectField, string>> = {
   right: "right-label",
 };
 
+/** What a writer reports back: `ok`, or the field it refused by the fixture's id. */
+export interface AspectSaveResult {
+  readonly ok: boolean;
+  readonly problem?: string;
+}
+
 export interface AspectListProps {
   copy: PageCopy;
+  /**
+   * The fixture section the row vocabulary lives in. Stage 3 and the dashboard declare the same
+   * row ids in their own sections, which is what makes the row the same row on both screens: the
+   * words are per page, the anatomy is not.
+   */
+  readonly wordsSection?: string;
+  /** Where `required` lives. `null` when the page has none, so a refusal falls back to the words'
+   * own `refused` sentence rather than inventing a second one. */
+  readonly validationSection?: string | null;
   /** The template being copied — the list is saved against it, one draft per template. */
-  readonly templateRecordId: string;
+  readonly templateRecordId?: string;
   /** The list the page read: the draft's own when it has one, the template's on a first visit. */
   readonly aspects: readonly AspectDraft[];
+  /**
+   * Whether a row may be added or removed here. Off by default: stage 3 forbids it (V4, #699), and
+   * the dashboard's initiator editor has always allowed it. This is the one axis the two screens
+   * disagree on, so it is a prop rather than a second component.
+   */
+  readonly addRemove?: boolean;
+  /**
+   /**
+    * Told every time the list moves. A page that also saves the list as part of a *status* change
+    * (the dashboard's draft → ready) has to write the rows the person is looking at, not the ones
+    * the page read on mount, so the component reports and the page keeps the mirror.
+    */
+  readonly onChange?: (next: readonly AspectDraft[]) => void;
+  /** Where the list is written. Absent, it posts to the create flow's draft endpoint
+   * stage 3 needs. The dashboard passes its own writer because it saves the whole record through a
+   * server action — the row anatomy is shared, the persistence is not.
+   */
+  readonly save?: (next: readonly AspectDraft[]) => Promise<AspectSaveResult>;
 }
 
 interface SaveReply {
@@ -83,7 +116,16 @@ interface SaveReply {
   readonly problem?: string;
 }
 
-export function AspectList({ copy, templateRecordId, aspects: initial }: AspectListProps) {
+export function AspectList({
+  copy,
+  wordsSection = "aspects",
+  validationSection = "validation",
+  templateRecordId,
+  aspects: initial,
+  addRemove = false,
+  save,
+  onChange,
+}: AspectListProps) {
   const [rows, setRows] = useState<AspectDraft[]>(() => [...initial]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -93,13 +135,14 @@ export function AspectList({ copy, templateRecordId, aspects: initial }: AspectL
   /** The one open row's form, so "has this been typed into?" is read off the DOM, not a mirror. */
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const words = sectionOf(copy, "aspects");
-  const validation = sectionOf(copy, "validation");
+  const words = sectionOf(copy, wordsSection);
+  const validation = validationSection === null ? null : sectionOf(copy, validationSection);
 
   /** The one place the list moves, so the ref the drag reads can never lag the state. */
   function applyRows(next: AspectDraft[]) {
     rowsRef.current = next;
     setRows(next);
+    onChange?.(next);
   }
 
   /**
@@ -141,7 +184,7 @@ export function AspectList({ copy, templateRecordId, aspects: initial }: AspectL
   function refusalSentence(problem: AspectField | string): string {
     const field =
       problem === "prompt" || problem === "left" || problem === "right" ? problem : null;
-    if (field === null) return itemLabel(words, "refused");
+    if (field === null || validation === null) return itemLabel(words, "refused");
     return fillLabel(itemLabel(validation, "required"), {
       field: itemLabel(words, FIELD_ITEM[field]),
     });
@@ -155,19 +198,53 @@ export function AspectList({ copy, templateRecordId, aspects: initial }: AspectL
    */
   async function persist(next: readonly AspectDraft[]): Promise<boolean> {
     try {
-      const response = await fetch(SAVE_ASPECTS_PATH, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ templateRecordId, aspects: next }),
-      });
-      if (response.ok) return true;
-      const reply = (await response.json().catch(() => ({}))) as SaveReply;
-      toast(refusalSentence(reply.problem ?? ""));
+      const result = save === undefined ? await postDraft(next) : await save(next);
+      if (result.ok) return true;
+      toast(refusalSentence(result.problem ?? ""));
       return false;
     } catch {
       toast(itemLabel(words, "refused"));
       return false;
     }
+  }
+
+  /** The create flow's writer: the list lands in the draft behind this template. */
+  async function postDraft(next: readonly AspectDraft[]): Promise<AspectSaveResult> {
+    if (templateRecordId === undefined) {
+      throw new Error("aspect-list: a list with no writer and no template cannot be saved");
+    }
+    const response = await fetch(SAVE_ASPECTS_PATH, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ templateRecordId, aspects: next }),
+    });
+    if (response.ok) return { ok: true };
+    const reply = (await response.json().catch(() => ({}))) as SaveReply;
+    return { ok: false, problem: reply.problem ?? "" };
+  }
+
+  /** A row added here holds an id no server has seen, and is dropped without a write. */
+  function isNew(id: string): boolean {
+    return id.startsWith("new-");
+  }
+
+  function addRow(): void {
+    const id = `new-${String(rowsRef.current.length + 1)}`;
+    const next = [...rowsRef.current, { id, prompt: "", leftValue: "", rightValue: "" }];
+    applyRows(next);
+    setOpenId(id);
+  }
+
+  /**
+   * Remove one row. A row the server holds is written out first and disappears only if the write
+   * took, so the list on screen never disagrees with the list on record.
+   */
+  async function removeRow(id: string): Promise<void> {
+    const next = rowsRef.current.filter((row) => row.id !== id);
+    if (next.length === rowsRef.current.length) return;
+    if (!isNew(id) && !(await persist(next))) return;
+    applyRows(next);
+    if (openId === id) setOpenId(null);
   }
 
   /** Save one Aspect: commit the list first, and collapse only if the draft took it. */
@@ -353,7 +430,14 @@ export function AspectList({ copy, templateRecordId, aspects: initial }: AspectL
               ) : (
                 // The artifact's line: `01 · ⠿ · name · opinions · ✎` — four tracks below 560
                 // with the opinions on a second line, five above it (#760).
-                <div className="grid grid-cols-[auto_1.75rem_minmax(0,1fr)_auto] items-center gap-2 p-2 min-[560px]:grid-cols-[auto_1.75rem_minmax(0,1fr)_auto_auto]">
+                <div
+                  className={[
+                    "grid items-center gap-2 p-2",
+                    addRemove
+                      ? "grid-cols-[auto_1.75rem_minmax(0,1fr)_auto_auto] min-[560px]:grid-cols-[auto_1.75rem_minmax(0,1fr)_auto_auto_auto]"
+                      : "grid-cols-[auto_1.75rem_minmax(0,1fr)_auto] min-[560px]:grid-cols-[auto_1.75rem_minmax(0,1fr)_auto_auto]",
+                  ].join(" ")}
+                >
                   {/* The position, at the far left: the row's index, so a drag renumbers it. */}
                   <span
                     data-aspect-ordinal={index + 1}
@@ -402,12 +486,35 @@ export function AspectList({ copy, templateRecordId, aspects: initial }: AspectL
                   >
                     <span aria-hidden="true">✎</span>
                   </button>
+                  {addRemove ? (
+                    <button
+                      type="button"
+                      data-aspect-remove={row.id}
+                      aria-label={fillLabel(itemLabel(words, "remove"), { name: row.prompt })}
+                      title={fillLabel(itemLabel(words, "remove"), { name: row.prompt })}
+                      onClick={() => void removeRow(row.id)}
+                      className="grid h-9 place-items-center rounded-md px-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                    >
+                      <span aria-hidden="true">✕</span>
+                    </button>
+                  ) : null}
                 </div>
               )}
             </li>
           );
         })}
       </ol>
+
+      {addRemove ? (
+        <button
+          type="button"
+          data-aspect-add="true"
+          onClick={addRow}
+          className="inline-flex h-11 items-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
+        >
+          {itemLabel(words, "add")}
+        </button>
+      ) : null}
     </div>
   );
 }
