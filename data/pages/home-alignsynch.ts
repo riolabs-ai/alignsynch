@@ -151,7 +151,12 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     { id: "template-use", label: "Start with this template" },
     { id: "template-example", label: "See a worked example" },
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
-    { id: "template-price", label: "{price} per relationship" },
+    /**
+     * The card's one figure: the plan that includes every template, and its interval. `{plan}` and
+     * `{price}` come from `data/billing-plans.ts` through `cataloguePriceNote()` — the same string
+     * `/templates` and `/templates/<slug>` carry, because the three surfaces sell one plan (#798).
+     */
+    { id: "template-price", label: "{plan} · {price}/mo" },
     /**
      * Under the hero CTA: the two facts that make the button safe to press — one relationship is
      * bought once and every session after it is the reader's, and the reader's seat is the coach's
@@ -267,7 +272,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     {
       id: "boundary",
       heading: "What this page does not claim.",
-      body: "No pay figures, no client counts, no logos. The product model is real and priced per relationship.",
+      body: "No pay figures, no client counts, no logos. The product model is real, and the pricing page states what it costs.",
     },
   ],
 });

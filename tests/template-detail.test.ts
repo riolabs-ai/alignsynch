@@ -8,7 +8,8 @@
  *   1. the `staff-manager` page prints **every one of that type's Aspect questions and both of
  *      its named ends** — read from `data/relationship-types.ts`, never retyped here, so a
  *      question edited in the taxonomy cannot silently stop appearing;
- *   2. the price and the one start action (`/register`) are printed;
+ *   2. the price and the one start action (`/register`) are printed — and the price is the
+ *      **plan's** month, named with its plan and its interval, never a per-relationship figure;
  *   3. a slug that is not a purchasable type resolves to no page, and `generateStaticParams()`
  *      covers **exactly** the purchasable set — the three excluded dating rows produce no URL;
  *   4. every catalogue card carries `detail === "/templates/<id>"` and the directory renders it;
@@ -27,6 +28,8 @@ import { test } from "vitest";
 import { generateStaticParams } from "@/app/(marketing)/templates/[slug]/page";
 import { TemplateDetail } from "@/components/templates/template-detail";
 import { TemplatesPageView } from "@/components/templates/templates-page";
+import { formatCurrency } from "@/content/core";
+import { billingPlan } from "@/data/billing-plans";
 import {
   EXCLUDED_TYPE_IDS,
   demoAnswersByType,
@@ -34,6 +37,7 @@ import {
   purchasableRelationshipTypes,
   relationshipType,
 } from "@/data/relationship-types";
+import { alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { templatesDetailPageCopy } from "@/data/pages/templates-detail";
 import { templatesPageCopy } from "@/data/pages/templates";
 import { assessmentDemoPath } from "@/lib/flow/paths";
@@ -41,6 +45,13 @@ import { leafLiterals } from "@/scripts/copy-refs";
 import { CATALOGUE_PATH, START_PATH, templateCards } from "@/lib/template-catalogue";
 import { templateDetail, templateSlugs } from "@/lib/template-detail";
 import { templatesPage } from "@/lib/templates-page";
+import { pageItemOf } from "@/lib/page-copy";
+
+/** The one plan the marketing surfaces price: Basic, whose monthly figure each card prints. */
+const basic = billingPlan("basic");
+if (basic === undefined) throw new Error('data/billing-plans.ts has no "basic" plan');
+const BASIC_MONTH = formatCurrency(basic.monthlyCents);
+const PLAN_CHIP = `${basic.name} · ${BASIC_MONTH}/mo`;
 
 /** The words a reader sees: tags dropped, entities decoded, whitespace collapsed. */
 function textOf(html: string): string {
@@ -98,17 +109,64 @@ test("renders every staff-manager Aspect question, with both of its named ends",
   assert.ok(text.includes(type.descriptor.whoItsNotFor));
 });
 
-test("prints the price and the one start action, both from the fixture", () => {
+test("prints the plan's price and the one start action, both from the fixture", () => {
   const type = typeAt("staff-manager");
-  const { model, html } = renderTemplate(type.id);
+  const { model, html, text } = renderTemplate(type.id);
 
-  assert.equal(model.priceNote, "$9.99 per relationship");
+  // The page's one figure is the plan's month, named with its plan and its interval — the same
+  // chip the member shelf and `/assessment/templates` print, from the one plan fixture (#798).
+  assert.equal(model.priceNote, PLAN_CHIP);
   assert.ok(html.includes(model.priceNote), "the price line is not in the markup");
   assert.equal(model.start.href, START_PATH);
   assert.equal(START_PATH, "/register");
   assert.ok(html.includes(`href="${START_PATH}"`), "the start action does not link to /register");
   assert.ok(html.includes(`href="${CATALOGUE_PATH}"`), "there is no way back to the directory");
   assert.equal(model.back.href, CATALOGUE_PATH);
+
+  // Neither the figure the pricing page does not sell nor the unit it was charged in is on the
+  // page — asserted on what a reader gets, not only on the model.
+  assert.equal(text.includes("999"), false, "the page prints 999");
+  assert.equal(
+    text.toLowerCase().includes("per relationship"),
+    false,
+    'the page says "per relationship"',
+  );
+  assert.equal(html.includes(formatCurrency(999)), false, "the page prints $9.99");
+});
+
+test("the plan's price does not vary with the template", () => {
+  const chips = new Set(
+    purchasableRelationshipTypes.map((type) => renderTemplate(type.id).model.priceNote),
+  );
+  assert.deepEqual([...chips], [PLAN_CHIP]);
+});
+
+/**
+ * One label, three fixtures — not three spellings of the same rule.
+ *
+ * `template-price` is declared on each surface's own fixture (E23: a component reads the fixture
+ * of the route that renders it), so the three rows are three copies by design. What they may not
+ * be is three *wordings*: this pins them to one string, so the shop cannot end up describing the
+ * same plan three ways (#798).
+ */
+test("all three marketing fixtures carry the same price label, with both placeholders", () => {
+  const labels = [
+    ["data/pages/templates.ts", pageItemOf(templatesPageCopy, "template-price").label],
+    ["data/pages/templates-detail.ts", pageItemOf(templatesDetailPageCopy, "template-price").label],
+    ["data/pages/home-alignsynch.ts", pageItemOf(alignSynchHomeCopy, "template-price").label],
+  ] as const;
+
+  const distinct = new Set(labels.map(([, label]) => label));
+  assert.deepEqual([...distinct], ["{plan} · {price}/mo"]);
+  for (const [path, label] of labels) {
+    assert.ok(label.includes("{plan}"), `${path} does not name the plan`);
+    assert.ok(label.includes("{price}"), `${path} does not carry a price`);
+    assert.equal(
+      label.includes("per relationship"),
+      false,
+      `${path} still charges per relationship`,
+    );
+  }
 });
 
 test("a slug that names no purchasable type produces no page", () => {

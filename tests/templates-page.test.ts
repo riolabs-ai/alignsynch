@@ -17,7 +17,10 @@
  *      review of the intent;
  *   5. the page claims no proof it cannot show — no rating, no logo, no count it did not count;
  *   6. the components hold no words: E23 attributes `components/templates/**` to
- *      `data/pages/templates.ts` at budget 0, and this pins the two files that carry it.
+ *      `data/pages/templates.ts` at budget 0, and this pins the two files that carry it;
+ *   7. every card's one figure is the **plan's** month — Basic's `$8.95/mo` from
+ *      `data/billing-plans.ts`, named with its plan and its interval, never `$9.99` and never
+ *      "per relationship" (#798). The absence is asserted on the rendered markup.
  *
  * "Renders" means `renderToStaticMarkup`: the view is a server component with no state, so the
  * markup is the screen.
@@ -28,6 +31,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { TemplatesPageView } from "@/components/templates/templates-page";
+import { formatCurrency } from "@/content/core";
+import { billingPlan } from "@/data/billing-plans";
 import { EXCLUDED_TYPE_IDS, REALMS, relationshipTypes } from "@/data/relationship-types";
 import { templatesPageCopy } from "@/data/pages/templates";
 import { CATALOGUE_PATH, START_PATH, templateCards } from "@/lib/template-catalogue";
@@ -36,6 +41,24 @@ import { leafLiterals } from "@/scripts/copy-refs";
 
 const model = templatesPage(templatesPageCopy);
 const html = renderToStaticMarkup(createElement(TemplatesPageView, { model }));
+
+/** The words a reader sees: tags dropped, entities decoded, whitespace collapsed. */
+function textOf(markup: string): string {
+  return markup
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#x27;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** The one plan the catalogue prices: Basic, whose monthly figure every card prints. */
+const basic = billingPlan("basic");
+if (basic === undefined) throw new Error('data/billing-plans.ts has no "basic" plan');
+const basicMonth = formatCurrency(basic.monthlyCents);
 
 /** The purchasable set, counted a second way: the flag plus the exclusion list. */
 const offered = relationshipTypes.filter(
@@ -131,14 +154,15 @@ describe("the catalogue is the fixture, grouped and counted", () => {
     expect(() => templatesPage(broken)).toThrow(/\{types\} and \{realms\}/);
   });
 
-  it("counts aspects and formats the price instead of typing either", () => {
+  it("counts aspects and prices the plan instead of typing either", () => {
     const staffManager = model.catalogue.realms
       .flatMap((group) => group.cards)
       .find((card) => card.id === "staff-manager");
     const record = relationshipTypes.find((type) => type.id === "staff-manager");
     expect(staffManager?.aspects).toBe(`${record?.aspects.length} Aspects`);
-    expect(staffManager?.price).toBe("$9.99");
-    expect(staffManager?.priceNote).toBe("$9.99 per relationship");
+    // The card's one figure is Basic's monthly price, named with its plan and its interval —
+    // never `type.price`, which is the $9.99 the pricing page does not sell (#798).
+    expect(staffManager?.priceNote).toBe(`${basic.name} · ${basicMonth}/mo`);
     expect(staffManager?.roles).toBe("Staff ↔ Manager");
   });
 });
@@ -216,15 +240,27 @@ describe("the page claims nothing it cannot show", () => {
     }
   });
 
-  it("prints money only as the catalogue's own price", () => {
+  it("prints money only as the plan's monthly figure, never a per-relationship price", () => {
     const printed = [...html.matchAll(/\$[\d.,]+/g)].map((match) => match[0]);
-    const prices = new Set(
-      model.catalogue.realms.flatMap((group) => group.cards).map((card) => card.price),
-    );
-    // One price per card: the `priceNote` carries the figure with its unit, the plain price is
-    // not printed a second time.
+    // One figure per card, and it is Basic's month on every one — the plan does not change with
+    // the template, so a second figure on the page would be a second price model (#798).
     expect(printed.length).toBe(model.catalogue.total);
-    for (const price of printed) expect(prices.has(price)).toBe(true);
+    for (const price of printed) expect(price).toBe(basicMonth);
+
+    // The unit the old label charged in is gone from what a reader sees, and so is the figure the
+    // pricing page does not sell — asserted on the render, not only on the model.
+    const text = textOf(html);
+    expect(text.toLowerCase()).not.toContain("per relationship");
+    expect(text).not.toContain("999");
+    expect(text).not.toContain("$9.99");
+    expect(html).not.toContain(formatCurrency(999));
+  });
+
+  it("names the plan and its interval on every card, sourced from the plan fixture", () => {
+    for (const card of model.catalogue.realms.flatMap((group) => group.cards)) {
+      expect(card.priceNote).toBe(`${basic.name} · ${basicMonth}/mo`);
+      expect(html).toContain(card.priceNote);
+    }
   });
 });
 

@@ -16,8 +16,11 @@
  *     dispute out of a conversation aid, and it is printed at the same weight as the other;
  *   - the **Aspects**, every one, with both named ends. They are the product: a question two
  *     people answer, and two ends neither of which is the right answer;
- *   - one **price**, formatted by the tree's one currency helper from the fixture's integer
- *     cents;
+ *   - one **price**, and it is the plan's: Basic's monthly figure from `data/billing-plans.ts`,
+ *     printed through the surface's own `template-price` label (`"{plan} · {price}/mo"`). The
+ *     template does not carry a price of its own and the shop does not sell a relationship at a
+ *     per-relationship rate (#798, and the owner's letter on #796), so there is no `type.price`
+ *     read on this page at all;
  *   - one primary action, `START_PATH` (`/register`), and the worked example **only** where
  *     `demoAnswersFor()` holds a sheet — a link to a page that answers 404 is worse than none;
  *   - a way back to the directory.
@@ -26,7 +29,6 @@
  * that into `notFound()`, so the three dating rows and a typo are the same 404.
  */
 import type { PageCopy } from "@/content/pages";
-import { formatCurrency } from "@/content/core";
 import {
   demoAnswersFor,
   isPurchasable,
@@ -34,7 +36,12 @@ import {
   type RelationshipType,
 } from "@/data/relationship-types";
 import { assessmentDemoPath } from "@/lib/flow/paths";
-import { CATALOGUE_PATH, START_PATH, catalogueDetailPath } from "@/lib/template-catalogue";
+import {
+  CATALOGUE_PATH,
+  START_PATH,
+  catalogueDetailPath,
+  cataloguePriceNote,
+} from "@/lib/template-catalogue";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 
 /** A link, as this page draws one: the fixture's words over a route the model resolved. */
@@ -74,7 +81,7 @@ export interface TemplateDetailModel {
     readonly body: string;
     readonly rows: readonly TemplateDetailAspect[];
   };
-  /** `"$9.99 per relationship"` — the fixture's cents through the tree's one formatter. */
+  /** `"Basic · $8.95/mo"` — the plan that includes this template, from `data/billing-plans.ts`. */
   readonly priceNote: string;
   /** Where a reader starts this relationship: `/register`. */
   readonly start: TemplateDetailLink;
@@ -130,7 +137,6 @@ export function templateDetail(
       'templateDetail: section "aspects" in data/pages/templates-detail.ts must carry a heading — the Aspects band is what the page is for',
     );
   }
-  const price = formatCurrency(type.price);
   const exampleLabel = pageItemOf(copy, DETAIL_IDS.example).label;
 
   return {
@@ -157,7 +163,7 @@ export function templateDetail(
         right: aspect.rightValue,
       })),
     },
-    priceNote: fillLabel(pageItemOf(copy, DETAIL_IDS.price).label, { price }),
+    priceNote: cataloguePriceNote(pageItemOf(copy, DETAIL_IDS.price).label),
     start: { label: pageItemOf(copy, DETAIL_IDS.use).label, href: START_PATH },
     ...(demoAnswersFor(type.id) === undefined
       ? {}

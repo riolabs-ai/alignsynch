@@ -2,11 +2,21 @@
  * One catalogue card, projected — the join between `data/relationship-types.ts` and the two
  * public surfaces that list templates (`/templates` and the front page's `#templates` band).
  *
- * A **projection**, not the record: the card needs six strings and two destinations, and the
+ * A **projection**, not the record: the card needs five strings and two destinations, and the
  * record's Aspects, descriptor and demo sheet belong to the report, not to a shelf. Every string
- * is derived — the roles from the two named ends, the Aspect count from the array, the price
- * through `formatCurrency` over the fixture's integer cents — so a card cannot print a figure
- * the taxonomy does not hold.
+ * is derived — the roles from the two named ends, the Aspect count from the array, the price from
+ * the **plan** (`cataloguePriceNote` below) — so a card cannot print a figure the taxonomy does
+ * not hold.
+ *
+ * **A card prices the plan, never the relationship (#798).** `data/relationship-types.ts` still
+ * carries a `price` — `RELATIONSHIP_PRICE_CENTS`, $9.99 — and no marketing surface may quote it:
+ * `data/billing-plans.ts` sells Basic at `$8.95/mo` with unlimited relationships, and the
+ * relationship itself is not a thing the shop charges for. So the card's one figure is one month
+ * of Basic, read from the plan fixture and printed as `"Basic · $8.95/mo"` — the same chip the
+ * member shelf (`lib/member/shelf.ts`) and `/assessment/templates`
+ * (`components/assessment-flow/template-card.tsx`) draw, so the three shelves cannot disagree
+ * about the number. The template does not change the figure, which is why no card carries a
+ * bare price any more: a field holding `$9.99` is a field one render away from being printed.
  *
  * **Both destinations are public.** `/register` is the account that buys the relationship, and
  * the example is `/assessment/demo/<type>` — the one report a stranger may read — offered only
@@ -19,9 +29,42 @@
  */
 import type { PageCopy } from "@/content/pages";
 import { formatCurrency } from "@/content/core";
+import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { demoAnswersFor, isPurchasable, type RelationshipType } from "@/data/relationship-types";
 import { assessmentDemoPath } from "@/lib/flow/paths";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
+
+/**
+ * The plan that includes every catalogue type, and so the one price a card prints.
+ *
+ * `basic` cannot be missing — `billingPlanProblems()` in `data/billing-plans.ts` fails on a
+ * fixture that loses a tier — and a lookup that resolved to nothing would be a card printing an
+ * invented `$0.00`, so this throws rather than guessing. The figure itself has one home: the
+ * fixture. This module names the plan; it never types a number.
+ */
+const CATALOGUE_PLAN: BillingPlan = (() => {
+  const plan = billingPlan("basic");
+  if (plan === undefined) {
+    throw new Error('data/billing-plans.ts has no "basic" plan to price the catalogue from');
+  }
+  return plan;
+})();
+
+/**
+ * `"Basic · $8.95/mo"` — the plan's name and its monthly figure, from a surface's own label.
+ *
+ * One helper, because three fixtures carry the same `template-price` row (E23 binds a component
+ * to the fixture of the route that renders it, so the row is repeated per surface by design) and
+ * a surface that filled it differently would be a second price model. The name is in the sentence
+ * on purpose: `$8.95/mo` alone beside a shelf of templates reads as one subscription per
+ * template, and the card is not selling the template.
+ */
+export function cataloguePriceNote(label: string): string {
+  return fillLabel(label, {
+    plan: CATALOGUE_PLAN.name,
+    price: formatCurrency(CATALOGUE_PLAN.monthlyCents),
+  });
+}
 
 /** The public buy path. Not a plan: buying a relationship is what `/register` starts. */
 export const START_PATH = "/register";
@@ -57,9 +100,10 @@ export interface TemplateCard {
   readonly roles: string;
   /** `"6 Aspects"` — counted from the record, never typed. */
   readonly aspects: string;
-  /** `"$9.99"` — the fixture's cents through the tree's one formatter. */
-  readonly price: string;
-  /** `"$9.99 per relationship"` — the same figure with the unit it is charged in. */
+  /**
+   * `"Basic · $8.95/mo"` — the plan that includes this template and its monthly interval, never a
+   * per-relationship figure and never a bare price (#798). `cataloguePriceNote()` fills it.
+   */
   readonly priceNote: string;
   /** The worked example, **only** where the fixture holds a demo sheet for this type. */
   readonly example?: string;
@@ -95,7 +139,6 @@ const CARD_IDS = {
  * the same action and the two cannot drift into two spellings of one button.
  */
 export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCard {
-  const price = formatCurrency(type.price);
   return {
     id: type.id,
     slug: type.id,
@@ -106,8 +149,7 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
       counterparty: type.roles.counterparty,
     }),
     aspects: fillLabel(pageItemOf(copy, CARD_IDS.aspects).label, { count: type.aspects.length }),
-    price,
-    priceNote: fillLabel(pageItemOf(copy, CARD_IDS.price).label, { price }),
+    priceNote: cataloguePriceNote(pageItemOf(copy, CARD_IDS.price).label),
     ...(demoAnswersFor(type.id) === undefined ? {} : { example: assessmentDemoPath(type.id) }),
     start: START_PATH,
     detail: catalogueDetailPath(type.id),

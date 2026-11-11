@@ -27,7 +27,9 @@ import { describe, expect, it } from "vitest";
 
 import { AlignmentHomeView } from "@/components/home/alignment-home";
 import type { PageCopy } from "@/content/pages";
+import { formatCurrency } from "@/content/core";
 import { assessmentInstances, assessments } from "@/data/assessments";
+import { billingPlan } from "@/data/billing-plans";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import {
@@ -57,6 +59,15 @@ const model = alignmentHome(
 );
 
 const html = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
+
+/**
+ * The one plan the shelf prices: Basic's month, from `data/billing-plans.ts`. The same chip the
+ * member shelf and `/assessment/templates` print — the band sells a template, and the template is
+ * included in the plan, so the figure is the plan's and not the template's (#798).
+ */
+const basic = billingPlan("basic");
+if (basic === undefined) throw new Error('data/billing-plans.ts has no "basic" plan');
+const PLAN_CHIP = `${basic.name} · ${formatCurrency(basic.monthlyCents)}/mo`;
 
 /**
  * The purchasable types, counted here a second way — `purchasable && !EXCLUDED_TYPE_IDS` — so
@@ -151,12 +162,12 @@ describe("the templates band: a capped shelf, one call to action", () => {
     }
   });
 
-  it("counts aspects and formats the price instead of typing either", () => {
+  it("counts aspects and prices the plan instead of typing either", () => {
     const staffManager = model.templates.featured.find((card) => card.id === "staff-manager");
     const record = relationshipTypes.find((type) => type.id === "staff-manager");
     expect(staffManager?.aspects).toBe(`${record?.aspects.length} Aspects`);
-    expect(staffManager?.price).toBe("$9.99");
-    expect(staffManager?.priceNote).toBe("$9.99 per relationship");
+    // The band's one figure is Basic's month, named with its plan and its interval (#798).
+    expect(staffManager?.priceNote).toBe(PLAN_CHIP);
     expect(staffManager?.realm).toBe("Office");
     expect(staffManager?.roles).toBe("Staff ↔ Manager");
   });
@@ -458,18 +469,34 @@ describe("the render", () => {
   });
 
   /**
-   * The one place a `$` legitimately appears: the catalogue card's price.
+   * The one place a `$` legitimately appears: the shelf card's plan price.
    *
-   * The owner's product catalogue sells one relationship for a fixed price, so the card carries
-   * it (`{type.price}`, `formatCurrency` over the fixture's integer cents). That is not the claim
-   * the absence rule exists to stop — what a practice *earns* — so the assertion is the set and
-   * not the symbol's absence: every dollar figure on the page is one of the catalogue's own.
+   * The band sells a template, and every template is included in the same plan, so the card
+   * carries one figure — Basic's month, from `data/billing-plans.ts`. That is not the claim the
+   * absence rule exists to stop (what a practice *earns*), so the assertion is the set and not
+   * the symbol's absence: every dollar figure on the page is that plan's monthly one, and the
+   * per-relationship figure the pricing page does not sell appears nowhere in the render.
    */
-  it("prints money only as the catalogue's own price", () => {
+  it("prints money only as the plan's monthly price", () => {
     const printed = [...html.matchAll(/\$[\d.,]+/g)].map((match) => match[0]);
-    const prices = new Set(model.templates.featured.map((card) => card.price));
     expect(printed.length).toBe(model.templates.featured.length);
-    for (const price of printed) expect(prices.has(price)).toBe(true);
+    for (const price of printed) expect(price).toBe(formatCurrency(basic.monthlyCents));
+
+    // The band's six cards all carry the same chip, and it names the plan and its interval.
+    for (const card of model.templates.featured) {
+      expect(card.priceNote).toBe(PLAN_CHIP);
+      expect(html).toContain(card.priceNote);
+    }
+
+    // What a reader gets, not only what the model holds (#798).
+    const text = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(text.toLowerCase()).not.toContain("per relationship");
+    expect(text).not.toContain("999");
+    expect(text).not.toContain("$9.99");
+    expect(html).not.toContain(formatCurrency(999));
   });
 
   it("names nobody who is not on a relationship it links", () => {
