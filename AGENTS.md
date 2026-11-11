@@ -73,7 +73,7 @@ that refusal by working detached in the shared checkout.
 | `pnpm db:verify`                 | exit 0, ~1 s         | the DB port of E31 (drift) plus the party rules, read through `lib/db/**`; exit 1 with a named failure per violation   |
 | `pnpm demo:verify`               | exit 0, ~50 s        | seeds the demo dataset, drives the app, diffs rows + 9 answers against `data/verify/demo-expectations.json`            |
 | `pnpm objstore:smoke`            | exit 0, <1 s         | put → get → bytes compared → deleted; reads `NEON_OBJSTORE_*` (falls back to the `AWS_*` names `neon env pull` writes) |
-| `pnpm lint`                      | exit 0, ~1.6–2.6 s   | `biome check` then `node scripts/lint-brand-classes.mjs`; **0 errors**, 203 warnings, 34 infos                         |
+| `pnpm lint`                      | exit 0, ~1.6–2.6 s   | `biome check` then `node scripts/lint-brand-classes.mjs`; **0 errors**, 221 warnings, 37 infos                         |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 442 files; CI gate                                                                                     |
 | `pnpm build`                     | exit 0, ~50–76 s     | `next build`; `/assessment/[slug]` is request-time since #145 (no `generateStaticParams`, no build-time DB read)       |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                                          |
@@ -436,8 +436,9 @@ noun in a component's name is the sign that question 3 was skipped. Full text:
   date and a reward window, so the census is empty and `W3`/`W5` were already 0. From here a non-zero
   `W` count is a regression, not the baseline: no date, question or window is invented to silence one,
   and the record of what each repair changed is in `docs/p1-migration/MIGRATION.md`.
-- 195 lint warnings / 34 infos are the current baseline (measured on `main` at `37c1d7c` and
-  unchanged by #145). Compare counts, not vibes: a new warning is a
+- 221 lint warnings / 37 infos are the current baseline (`main` at `4d581704`), measured with
+  `pnpm exec biome check 2>&1 | tail -3` — re-run it rather than trusting it, because a stale tree
+  reports its own count and not `main`'s. Compare counts, not vibes: a new warning is a
   regression even though `pnpm lint` exits 0.
 - Stop `pnpm dev` before `pnpm build` — both write `.next/` and a concurrent run corrupts it.
 
