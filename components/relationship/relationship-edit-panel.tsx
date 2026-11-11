@@ -68,6 +68,7 @@ export function RelationshipEditPanel({
   copy,
   state,
   instanceRecordId,
+  variant = "page",
   onPreview,
   onEdit,
 }: {
@@ -79,10 +80,26 @@ export function RelationshipEditPanel({
    * translating ids it does not own.
    */
   instanceRecordId?: string;
+  /**
+   * #795 — **which column this panel is drawn in.** `page` (the default, and what the console's
+   * staff mount keeps) is the shipped form: a `text-2xl` `CardTitle` and two-column field rows.
+   * `panel` is the member detail screen's 320 px actions rail, where the artifact
+   * (`docs/mockups/one-card-one-detail-v2.html` §5) draws every working panel at the shell's
+   * `text-base` heading and a 24 px title would be the size that makes two pages read as two
+   * products. The field rows collapse to one column for the same reason: `sm:` reads the viewport,
+   * not this rail, so two 130 px inputs is what `sm:grid-cols-2` would produce here.
+   *
+   * It is a variant rather than a second panel because the authority, the fields and the actions are
+   * identical on both mounts — the console is not a different surface, it is the same one in a
+   * wider column.
+   */
+  variant?: "page" | "panel";
   onPreview: (payload: RelationshipEditPayload) => Promise<EditPreviewOutcome>;
   onEdit: (payload: RelationshipEditPayload) => Promise<EditOutcome>;
 }) {
   const editCopy = sectionOf(copy, "edit");
+  const rail = variant === "panel";
+  const fieldRow = rail ? "grid gap-2" : "grid gap-2 sm:grid-cols-2";
 
   const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState(state.title);
@@ -182,11 +199,18 @@ export function RelationshipEditPanel({
 
   return (
     <FormSurface data-relationship-edit>
-      <CardHeader>
-        <CardTitle>{editCopy.heading}</CardTitle>
-        <CardDescription>{sectionBody(editCopy)}</CardDescription>
-      </CardHeader>
-      <div className="space-y-4 p-6 pt-0">
+      {rail ? (
+        <div className="space-y-2 p-6 pb-0">
+          <h2 className="text-base font-semibold text-foreground">{editCopy.heading}</h2>
+          <p className="text-sm text-muted-foreground">{sectionBody(editCopy)}</p>
+        </div>
+      ) : (
+        <CardHeader>
+          <CardTitle>{editCopy.heading}</CardTitle>
+          <CardDescription>{sectionBody(editCopy)}</CardDescription>
+        </CardHeader>
+      )}
+      <div className={rail ? "space-y-4 p-6" : "space-y-4 p-6 pt-0"}>
         <div className="flex flex-col gap-2">
           <Label htmlFor="edit-title">{itemLabel(editCopy, "title")}</Label>
           <Input id="edit-title" value={title} onChange={(event) => setTitle(event.target.value)} />
@@ -201,7 +225,7 @@ export function RelationshipEditPanel({
         </div>
 
         {/* The two settings, printed with the reason they are not controls. */}
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
+        <dl className={rail ? "grid gap-2 text-sm" : "grid gap-2 text-sm sm:grid-cols-2"}>
           <div className="flex gap-2">
             <dt className="text-muted-foreground">{itemLabel(editCopy, "mode")}</dt>
             <dd data-relationship-mode={state.mode}>
@@ -252,7 +276,7 @@ export function RelationshipEditPanel({
                     onChange={(event) => patchAspect(index, { prompt: event.target.value })}
                   />
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className={fieldRow}>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={`edit-left-${index}`}>{itemLabel(editCopy, "left")}</Label>
                     <Input
@@ -315,7 +339,7 @@ export function RelationshipEditPanel({
           </div>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={rail ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
           <div className="flex flex-col gap-2">
             <Label htmlFor="edit-invitee">{itemLabel(editCopy, "invitee")}</Label>
             <Input
