@@ -12,11 +12,15 @@
  *      purchasable type whose sheet has not been authored all answer `undefined`, which the page
  *      turns into `notFound()`;
  *   4. **the CTA is a route that exists** — the type's live template record's create step, with
- *      the library as the fallback the catalogue card uses.
+ *      the library as the fallback the catalogue card uses;
+ *   5. **the box under it prices the plan, never the relationship** — no per-relationship figure is
+ *      rendered, the plan-at-completion claim is stated, and the one way to a price leaves the app
+ *      in a new tab (#805).
  *
  * The starter check is `docs/V1-RETIREMENT.md`'s demo row: the surface was `/v1/...` and marked
  * **release** for launch criterion 5, so it moved here rather than being deleted.
  */
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -27,16 +31,18 @@ vi.mock("next/navigation", () => ({
 }));
 
 import DemoPage, { generateMetadata } from "@/app/(mainlayout)/assessment/demo/[type]/page";
+import { formatCurrency } from "@/content/core";
 import { GAP_KINDS, gapKindsIn, gapKindsOf } from "@/content/gaps";
 import { assessments } from "@/data/assessments";
 import {
+  RELATIONSHIP_PRICE_CENTS,
   demoAnswersByType,
   demoAnswersFor,
   purchasableRelationshipTypes,
   purchasableRelationshipType,
 } from "@/data/relationship-types";
 import { assessmentDemo } from "@/lib/assessment-demo";
-import { createRelationshipPath } from "@/lib/flow/paths";
+import { PRICING_PATH, createRelationshipPath } from "@/lib/flow/paths";
 
 /** The two types with an authored sheet — the demo's whole reachable set today. */
 const DEMO_IDS = Object.keys(demoAnswersByType) as readonly string[];
@@ -151,5 +157,59 @@ describe("the page draws the label and the report", () => {
       title: `${demo.report.title} — example report`,
       description: demo.report.summary,
     });
+  });
+});
+
+describe("the box under the report prices the plan, never the relationship (#805)", () => {
+  /** The route's own words, as a server render produces them — the only reading a crawler gets. */
+  async function boxOf(type: string): Promise<string> {
+    return renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ type }) }));
+  }
+
+  it("renders no per-relationship amount on any demo", async () => {
+    for (const id of DEMO_IDS) {
+      const html = await boxOf(id);
+      // This page printed "One relationship costs $9.99" until #805: the per-relationship model
+      // #619 retired, and a figure here is a promise the completion step does not honour.
+      expect(html, `"${id}" still quotes the relationship's price`).not.toContain(
+        formatCurrency(RELATIONSHIP_PRICE_CENTS),
+      );
+      expect(html, `"${id}" still prices a relationship`).not.toContain("per relationship");
+    }
+  });
+
+  it("says when the plan is chosen, and that the other person pays nothing", async () => {
+    const html = await boxOf("staff-manager");
+    // The claim, not the figure: one plan, chosen at completion, and the counterparty's seat is
+    // free — the shipped statement the template detail's `no-money` item makes in full.
+    expect(html).toContain(
+      "Creating a relationship is free. Your plan decides how many you can hold at once",
+    );
+    expect(html).toContain("chosen when a relationship is ready to complete");
+    expect(html).toContain("The other person joins by link and pays nothing.");
+  });
+
+  it("hands the reader the pricing page as the one place a price is named", async () => {
+    const html = await boxOf("staff-manager");
+    // `/pricing` is a public route and this page sits behind the app shell, so the departure is a
+    // new tab that says so (`LeavingLink`) — E39, and the report survives the click.
+    expect(html).toContain(`href="${PRICING_PATH}"`);
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain("opens in a new tab");
+  });
+
+  it("reads no per-relationship figure at all, not merely prints none", () => {
+    // A render proves today's output; the source scan proves the next edit cannot reintroduce the
+    // read. The docblock names `RELATIONSHIP_PRICE_CENTS` as provenance for why it is *not* used
+    // (the same shape `tests/member-templates-tabs.test.ts` scans `lib/member/shelf.ts` with), so
+    // the scan is for a read: an import of the constant, a formatter call, or the type's field.
+    const source = readFileSync(
+      new URL("../app/(mainlayout)/assessment/demo/[type]/page.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toMatch(/import[^;]*RELATIONSHIP_PRICE_CENTS/);
+    expect(source).not.toContain("formatCurrency");
+    expect(source).not.toContain("type.price");
   });
 });

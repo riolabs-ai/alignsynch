@@ -30,10 +30,13 @@
  *
  * ## Price
  *
- * One relationship costs one price, in integer cents (the tree's money convention — see
- * `data/billing-plans.ts`). The **counterparty pays nothing** — the initiator pays, the other
- * person joins by link. There is no per-type price yet, so the single constant below is the
- * honest answer until pricing is a decision the owner makes.
+ * **This file does not price a relationship.** `data/billing-plans.ts` is the price list: a plan is
+ * chosen when a relationship is ready to complete (#619), one plan runs unlimited relationships,
+ * and the **counterparty pays nothing** — the initiator holds the plan, the other person joins by
+ * link. The `price` field and `RELATIONSHIP_PRICE_CENTS` below are the catalogue's own amount, not
+ * a rate the shop charges, and **no public surface may print them** (#796, #798, #805): the
+ * marketing catalogue, its detail page, the member shelf and the demo report each name the plan
+ * instead, and the demo report was the last surface quoting the old per-relationship figure.
  *
  * Imported through relative paths on purpose: `tsconfig.datacheck.json` compiles this file
  * under `module: commonjs`, and the `@/` alias is not resolved there. Nothing here is a
@@ -87,7 +90,10 @@ export interface RelationshipType {
   readonly descriptor: RelationshipDescriptor;
   /** The Aspects — 5–10 for a purchasable type, none for the excluded dating rows. */
   readonly aspects: readonly Aspect[];
-  /** One relationship's price, integer cents. */
+  /**
+   * The catalogue's own amount for one relationship, integer cents — the taxonomy's field, not a
+   * price the shop charges. See `RELATIONSHIP_PRICE_CENTS`: no public surface may print it.
+   */
   readonly price: number;
   /** Whether this type is for sale. `false` for the dating set, a field not a deletion. */
   readonly purchasable: boolean;
@@ -115,9 +121,17 @@ function aspect(id: string, prompt: string, leftValue: string, rightValue: strin
 }
 
 /**
- * One relationship costs one price — the initiator pays this, the counterparty pays nothing.
- * Integer cents, the tree's money convention: `999` is `$9.99`, the Basic plan's monthly price.
- * Uniform until per-type pricing is a decision rather than a guess.
+ * The catalogue's own amount for one relationship, integer cents — **not** a price the shop
+ * charges, and not a rate any surface may quote.
+ *
+ * Two readers, neither of them a visitor's price: the operator's template screen
+ * (`components/admin/template-editor.tsx`) reports the taxonomy's own field beside the realm, and
+ * the retired `/v1` prototype's seeded subscriptions (`data/v1/fixtures.ts`) carry it as their
+ * `amountCents`. The demo report used to print it as "One relationship costs $9.99" and no longer
+ * does (#805), which is the rule rather than the exception: `data/billing-plans.ts` sells a plan,
+ * the plan is chosen when a relationship is ready to complete (#619), and a per-relationship
+ * figure beside a plan page quoting another number is two price models in one product (#796,
+ * #798).
  */
 export const RELATIONSHIP_PRICE_CENTS = 999;
 
