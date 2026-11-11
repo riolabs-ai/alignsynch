@@ -15,6 +15,7 @@
  *      link differs with it, because editing somebody else's template is not a thing this build
  *      offers.
  */
+import { readFileSync } from "node:fs";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -51,7 +52,6 @@ const mineRow = {
   title: "Our Family Check-in",
   summary: "What we want to ask each other every month.",
   status: "published",
-  owned: true,
   aspectCount: 4,
   relationshipCount: 2,
 };
@@ -114,6 +114,25 @@ describe("the catalogue card", () => {
   });
 });
 
+describe("what My Templates may contain", () => {
+  /**
+   * The defect this guards: `IN_LIBRARY` also admitted any template a session the member is a
+   * party to was copied from, so creating a relationship made a platform template show up as
+   * theirs. The predicate is SQL in a module, so the check is on the source — the same shape
+   * `tests/flow-ui-parity.test.tsx` uses for a file it must not let drift.
+   */
+  it("is ownership and nothing else — a relationship does not make a template yours", () => {
+    const source = readFileSync(new URL("../lib/member/library.ts", import.meta.url), "utf8");
+    const predicate = source.slice(
+      source.indexOf("const IN_LIBRARY"),
+      source.indexOf("const MY_RELATIONSHIPS_OF"),
+    );
+    expect(predicate).toContain("r.owner_user_id = $1");
+    expect(predicate).not.toContain("party");
+    expect(predicate).not.toContain("TEMPLATE");
+  });
+});
+
 describe("a My Templates card", () => {
   it("says the row is Yours, and opens the private editor", () => {
     const card = mineCard(copy, mineRow);
@@ -124,16 +143,14 @@ describe("a My Templates card", () => {
     expect(html).toContain("Create Relationship");
   });
 
-  it("says an adopted row is Adopted, and opens the catalogue entry instead", () => {
-    const card = mineCard(copy, {
-      ...mineRow,
-      id: "assessment-business-staff-manager",
-      slug: "staff-manager",
-      owned: false,
-      relationshipCount: 0,
-    });
-    expect(card.chips).toContain("Adopted");
-    expect(card.detail.href).toBe("/assessment/templates/assessment-business-staff-manager");
+  it("never routes around the member's own editor — there is no adopted case left", () => {
+    // A relationship used to put the platform's template in this list, and the card said "Adopted"
+    // and opened the catalogue instead of the editor. That half is gone: `listMemberLibrary()` is
+    // authorship now, so every row this card is handed is the member's own.
+    const card = mineCard(copy, { ...mineRow, relationshipCount: 0 });
+    expect(card.chips).not.toContain("Adopted");
+    expect(card.chips).toContain("Yours");
+    expect(card.detail.href.startsWith("/dashboard/templates/")).toBe(true);
     expect(renderToStaticMarkup(createElement(TemplateShelf, { cards: [card] }))).toContain(
       "Not used yet",
     );

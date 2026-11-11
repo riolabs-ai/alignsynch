@@ -3,8 +3,8 @@
  *
  * **Two reads, one card.** The catalogue tab lists what a member may start a relationship from
  * (`listLibraryTemplates`: the platform's templates plus their own), and the "My Templates" tab
- * lists what they have got (`listMemberLibrary`: the rows they own or that one of their
- * relationships names). The two reads answer different questions, but a person sees one kind of
+ * lists the templates they **own** (`listMemberLibrary`). A relationship does not put a template
+ * in that list — it uses one — so the second read is authorship and not membership. A person sees one kind of
  * card, so the projection happens here — once — and the component prints what it is handed.
  *
  * **The price and the two roles belong to the type, not to the record.** `data/assessments.ts`
@@ -98,11 +98,12 @@ export function catalogueCard(copy: PageCopy, row: LibraryTemplate): ShelfCard {
 }
 
 /**
- * A "My Templates" card: a row this member owns or has adopted.
+ * A "My Templates" card: a template this member owns.
  *
- * The chip says which, because the two are different facts and only one of them may be edited:
- * a row you own opens the private editor at `/dashboard/templates/<id>`, a row you adopted opens
- * the catalogue entry, and neither screen is guessed from a second badge.
+ * The chip says `Owned`, and every row opens the private editor at `/dashboard/templates/<id>`.
+ * There is no read-only case: the list is authorship, so a row that is not the member's cannot be
+ * in it. What used to be the second case — a template a session named — was the defect, and is
+ * gone rather than relabelled.
  */
 export function mineCard(copy: PageCopy, row: LibraryRow): ShelfCard {
   const card = sectionOf(copy, "card");
@@ -119,10 +120,10 @@ export function mineCard(copy: PageCopy, row: LibraryRow): ShelfCard {
     slug: row.slug,
     title: row.title,
     summary: row.summary,
-    chips: [itemLabel(card, "template"), itemLabel(card, row.owned ? "owned" : "adopted")],
+    chips: [itemLabel(card, "template"), itemLabel(card, "owned")],
     meta: [aspectsLabel(card, row.aspectCount), used],
     detail: {
-      href: row.owned ? `${MEMBER_TEMPLATES_PATH}/${row.id}` : templateDetailPath(row.id),
+      href: `${MEMBER_TEMPLATES_PATH}/${row.id}`,
       label: words.detail,
     },
     create: { href: createRelationshipPath(row.id), label: words.create },
