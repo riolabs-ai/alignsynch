@@ -145,11 +145,13 @@ export interface DetailFact {
 }
 
 /**
- * The facts card — the template's four figures and the relationship's four dates, one anatomy.
+ * The facts card — the template's four figures and the relationship's four facts, one anatomy.
  *
- * The `footnote` is where a card says the one thing that is not a fact/value pair: which seat the
- * reader holds, or who wrote the record. It sits inside the same card, under the `<dl>`, so the
- * card keeps a single frame on both pages.
+ * A cell is a label and a value; `figure` is the numeric step the template's counts use, and
+ * everything else is prose or a chip (the relationship's `State` is the chip). The `footnote` is
+ * where a card says the one thing that is not a fact/value pair: which seat the reader holds, or who
+ * wrote the record. It sits inside the same card, under the `<dl>`, so the card keeps a single frame
+ * on both pages.
  */
 export function DetailFacts({
   facts,
