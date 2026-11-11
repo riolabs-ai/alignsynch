@@ -42,11 +42,7 @@ import {
   purchasableRelationshipType,
 } from "@/data/relationship-types";
 import { assessmentDemo } from "@/lib/assessment-demo";
-import {
-  PRICING_PATH,
-  relationshipTypeDemoPath,
-  relationshipTypePath,
-} from "@/lib/flow/paths";
+import { PRICING_PATH, relationshipTypeDemoPath, relationshipTypePath } from "@/lib/flow/paths";
 import { START_PATH } from "@/lib/template-catalogue";
 
 /** The two types with an authored sheet — the demo's whole reachable set today. */
