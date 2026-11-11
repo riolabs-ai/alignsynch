@@ -58,7 +58,6 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "details", label: "View Details" },
         { id: "create", label: "Create Relationship" },
         { id: "owned", label: "Yours" },
-        { id: "adopted", label: "Adopted" },
         { id: "aspects", label: "{count} Aspects" },
         { id: "price", label: "{price} per relationship" },
         { id: "unused", label: "Not used yet" },
@@ -79,12 +78,12 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "mine",
       heading: "My Templates",
-      body: "The templates you own and the ones your relationships were built from. Opening one you own edits its words and its Aspects; starting a relationship from it copies those Aspects, so editing here never changes a relationship you have already configured.",
+      body: "The templates you own. Opening one edits its words and its Aspects; starting a relationship from it copies those Aspects into that relationship, so editing here never changes one you have already configured. Starting a relationship from the catalogue does not put that template here — the relationship uses the template, it does not make one.",
     },
     {
       id: "mine-empty",
       heading: "No templates yet",
-      body: "Start one below — blank, or cloned from the catalogue. A relationship starts from a template, so this is where the work begins.",
+      body: "Start one below — blank, or cloned from the catalogue. Templates you started a relationship from are not listed here: a relationship uses a template, it does not make one yours.",
     },
     {
       id: "list",
