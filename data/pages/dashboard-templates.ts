@@ -59,7 +59,13 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "create", label: "Create Relationship" },
         { id: "owned", label: "Yours" },
         { id: "aspects", label: "{count} Aspects" },
-        { id: "price", label: "{price} per relationship" },
+        /**
+         * The card's one price (#796) — the *plan's*, never a per-relationship charge. It is the
+         * same chip `/assessment/templates` prints (`{plan} · {price}/mo`, Basic's monthly figure
+         * from `data/billing-plans.ts`), and the name is in the line because a bare `$8.95/mo`
+         * beside nine cards reads as nine subscriptions. `{price}` is `formatCurrency`.
+         */
+        { id: "price", label: "{plan} · {price}/mo" },
         { id: "unused", label: "Not used yet" },
         { id: "relationship-one", label: "used in 1 relationship" },
         { id: "relationships", label: "used in {count} relationships" },
@@ -68,7 +74,7 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "catalogue",
       heading: "Relationship Templates",
-      body: "The templates this account can start a relationship from. Each card carries the price of the relationship it opens; View Details shows the Aspects, and Create Relationship copies them into a relationship you configure.",
+      body: "The templates this account can start a relationship from. Each card carries the price of the plan that includes it — one monthly figure, never a per-relationship charge. View Details shows the Aspects, and Create Relationship copies them into a relationship you configure.",
     },
     {
       id: "catalogue-empty",
