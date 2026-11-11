@@ -42,7 +42,7 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
       heading: "About this template",
       items: [
         { id: "aspects", label: "Aspects" },
-        { id: "instances", label: "Instances made" },
+        { id: "instances", label: "Relationships made" },
         { id: "status", label: "Status" },
         { id: "created", label: "Created" },
         { id: "authorship-built-in", label: "Built-in — the platform wrote it" },
@@ -150,7 +150,7 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "archive-note",
       heading: "This template is archived",
-      body: "It no longer appears in the catalogue and no new instance can be started from it. Every instance already made from it keeps its own copy of the Aspects, so those still open and still read.",
+      body: "It no longer appears in the catalogue and no new relationship can be started from it. Every relationship already made from it keeps its own copy of the Aspects, so those still open and still read.",
     },
   ],
 });

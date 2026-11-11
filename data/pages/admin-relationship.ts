@@ -35,7 +35,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
       heading: "This relationship",
       body: "What the row is right now. Nothing on this screen reads either party's answers — a repair changes a mark, an invitation or an acceptance, never a score.",
       items: [
-        { id: "id", label: "Instance" },
+        { id: "id", label: "Relationship" },
         { id: "template", label: "Template" },
         { id: "mode", label: "Mode" },
         { id: "setting", label: "Setting" },
@@ -91,7 +91,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "op-unlock",
       heading: "Unlock a party",
-      body: 'Clears a seat\'s unlock mark, so the "complete since you last looked" marker shows again for that party. This is the V11 repair — a mark that is set on an instance that is not complete is a row the database gate names, and clearing it is this button.',
+      body: 'Clears a seat\'s unlock mark, so the "complete since you last looked" marker shows again for that party. This is the V11 repair — a mark that is set on a session that is not complete is a row the database gate names, and clearing it is this button.',
       items: [
         { id: "button", label: "Clear the mark" },
         { id: "party", label: "Which seat" },

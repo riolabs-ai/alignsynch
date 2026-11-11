@@ -32,7 +32,7 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
       heading: "This report",
       body: "Every number below is derived from the two parties' answers on every Aspect: a Gap is the difference of two scores, and nothing here is a stored value. The instant and the template version it names are the fixture clock and this build's version, never a wall clock.",
       items: [
-        { id: "instance", label: "Instance" },
+        { id: "instance", label: "Relationship" },
         { id: "template", label: "Template" },
         { id: "mode", label: "Mode" },
         { id: "setting", label: "Setting" },
@@ -143,7 +143,7 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "template-missing",
           label:
-            "The template this instance copies no longer resolves, so there is no title to report under.",
+            "The template this relationship copies no longer resolves, so there is no title to report under.",
         },
         { id: "no-such-party", label: "That seat is not on this relationship." },
         { id: "role-too-low", label: "Reissuing a report needs a higher role than yours." },

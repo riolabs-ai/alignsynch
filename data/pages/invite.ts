@@ -41,7 +41,7 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
     lifecycleStageSection,
     {
       id: "viewer",
-      heading: "You already have a seat in this instance",
+      heading: "You already have a seat in this relationship",
       items: [
         { id: "initiator", label: "You are answering as {name}, the Initiator." },
         { id: "counterparty", label: "You are answering as {name}, the Counterparty." },
@@ -133,7 +133,7 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "claimed",
       heading: "This invitation was used already",
-      body: "An invitation works once. Ask {initiator} to start a new instance with you.",
+      body: "An invitation works once. Ask {initiator} to start a new relationship with you.",
     },
     {
       id: "expired",
@@ -181,12 +181,12 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "already-a-party",
           label:
-            "Nothing was claimed: this browser already answers as one of the two parties to this instance, so this invitation is not yours to take. The link is still unused.",
+            "Nothing was claimed: this browser already answers as one of the two parties to this relationship, so this invitation is not yours to take. The link is still unused.",
         },
         {
           id: "already-bound",
           label:
-            "This instance already has both parties, so there is no seat left to claim. Ask {initiator} to start a new instance with you.",
+            "This relationship already has both parties, so there is no seat left to claim. Ask {initiator} to start a new relationship with you.",
         },
         {
           id: "unconfirmed",

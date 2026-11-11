@@ -13,7 +13,7 @@
  * heading of its own; it is the page's heading, which is why it is not repeated in `sections`.
  *
  * **Every claim here is traceable to code in this repo, and nothing else may be implied.**
- * The vocabulary is the schema's (Aspect, Opinion, Template, Instance, Gap), the facts are the
+ * The vocabulary is the schema's (Aspect, Opinion, Template, Relationship, Session, Gap), the facts are the
  * collections':
  *
  *   - the two families and their Relationship Types are `data/assessments.ts` — Business is the
@@ -22,7 +22,7 @@
  *   - Feel and Wish are `BASIC_OPINION_KINDS`, Think and Guess `ADVANCED_OPINION_KINDS`, and
  *     `zOpinions` rejects one of the advanced pair without the other;
  *   - a Gap is `gapOf()` in `content/record.ts` — a difference of two Scores, never a stored
- *     field — and the worked example links to `/assessment/avery-rowan`, the instance
+ *     field — and the worked example links to `/assessment/avery-rowan`, the relationship
  *     `data/assessments.ts` answers.
  *
  * The two limits are stated because they are true: the demo dataset is a demonstration set —
