@@ -27,18 +27,27 @@ import { Chip } from "@/components/ui/badge";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { mutedGradientFor, monogramOf } from "@/lib/category-gradient";
 import { TEMPLATE_TABS, type TemplateTab, templatesTabPath } from "@/lib/member/shelf";
-import type { TemplateShelfCard } from "@/lib/member/card";
+import {
+  CARD_ACTIONS,
+  CARD_COVER,
+  CARD_COVER_WORD,
+  CARD_FRAME,
+  CARD_META,
+  CARD_TITLE,
+  type TemplateShelfCard,
+} from "@/lib/member/card";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
 
-const CARD =
-  "flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
-const COVER = "flex h-[104px] items-center justify-center border-b border-gray-200";
-const MONOGRAM =
-  "text-3xl font-bold tracking-[0.06em] text-gray-900/[.34] dark:text-gray-100/[.34]";
-const TITLE =
-  "line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100";
-const MUTED = "text-xs text-gray-500 dark:text-gray-400";
+/**
+ * The frame, the cover slot, the title and the facts line are **not** this file's (#795).
+ *
+ * They are the card's, declared once in `lib/member/card.ts`, because the relationship shelf draws
+ * the same card: a copy of the frame here was a second look waiting to happen, and the artifact's
+ * "same frame, same padding" claim had nothing enforcing it until both shelves imported one string.
+ * What stays local is the axis — the gradient wash and the monogram this cover draws, where the
+ * relationship draws its stage word — and this shelf's two buttons.
+ */
 const OUTLINE =
   "inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800";
 const PRIMARY =
@@ -81,9 +90,9 @@ export function TemplateShelf({ cards }: { cards: readonly TemplateShelfCard[] }
   return (
     <ul data-template-shelf className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((card) => (
-        <li key={card.id} className={CARD} data-template-id={card.id}>
-          <div className={COVER} style={{ backgroundImage: mutedGradientFor(card.slug).css }}>
-            <span className={MONOGRAM} aria-hidden="true">
+        <li key={card.id} className={CARD_FRAME} data-template-id={card.id}>
+          <div className={CARD_COVER} style={{ backgroundImage: mutedGradientFor(card.slug).css }}>
+            <span className={CARD_COVER_WORD} aria-hidden="true">
               {monogramOf(card.title)}
             </span>
           </div>
@@ -95,11 +104,11 @@ export function TemplateShelf({ cards }: { cards: readonly TemplateShelfCard[] }
                 </Chip>
               ))}
             </div>
-            <Link href={card.detail.href} className={TITLE}>
+            <Link href={card.detail.href} className={CARD_TITLE}>
               {card.title}
             </Link>
             <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-300">{card.summary}</p>
-            <div className={`flex flex-wrap items-center gap-2 ${MUTED}`}>
+            <div className={CARD_META}>
               {card.meta.map((fact, index) => (
                 <span key={fact} className={index === 0 ? "" : "border-l border-gray-300 pl-2"}>
                   {fact}
@@ -107,7 +116,7 @@ export function TemplateShelf({ cards }: { cards: readonly TemplateShelfCard[] }
               ))}
             </div>
           </div>
-          <div className="mt-auto flex flex-wrap gap-2 border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+          <div className={CARD_ACTIONS}>
             <Link href={card.detail.href} className={OUTLINE}>
               {card.detail.label}
             </Link>

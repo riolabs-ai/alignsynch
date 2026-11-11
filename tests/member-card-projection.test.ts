@@ -130,6 +130,35 @@ describe("the card's figures are formatted by the projection, not by JSX", () =>
   it("builds every card through the one projection", () => {
     expect(view).toContain("relationshipCard(");
   });
+
+  it("draws no tile grid of its own — the figures are the card's one meta line (#795 F4)", () => {
+    // The artifact approved option A: the four metric tiles are one line. A `<dl>` grid, a tile
+    // component or a two-column stat block coming back is that decision being undone in the
+    // component instead of in the projection.
+    const forbidden: ReadonlyArray<readonly [string, RegExp]> = [
+      ["a metric tile grid", /grid grid-cols-2\b/],
+      ["a definition-list figure block", /<dl\b/],
+      ["a local tile component", /function\s+MetricTile\b/],
+    ];
+    for (const [what, pattern] of forbidden) {
+      expect(view, `my-instances.tsx grew ${what}`).not.toMatch(pattern);
+    }
+    expect(view).toContain("model.meta.map(");
+  });
+
+  it("imports the card chrome instead of restating it", () => {
+    // The frame, the cover slot, the title and the facts line are declared once (#795); a copy of
+    // any of those literals in either shelf is the second look this change exists to remove.
+    for (const surface of [VIEW, "components/dashboard/template-shelf.tsx"]) {
+      const code = codeOf(surface);
+      for (const constant of ["CARD_FRAME", "CARD_COVER", "CARD_TITLE", "CARD_META"]) {
+        expect(code, `${surface} restates ${constant}`).not.toMatch(
+          new RegExp(`const ${constant}\\b`),
+        );
+      }
+      expect(code, `${surface} does not import the card chrome`).toContain("@/lib/member/card");
+    }
+  });
 });
 
 describe("there is one card projection type", () => {
@@ -161,52 +190,41 @@ describe("there is one card projection type", () => {
 });
 
 describe("relationshipCard — the figures", () => {
-  it("prints the ratio, the proportion, the mean Gap and the Aspect count", () => {
-    const facts = relationshipCard(myInstancesPageCopy, rowOf()).relationship.facts;
+  it("prints the ratio, the alignment and the Aspect count as one meta line", () => {
+    const meta = relationshipCard(myInstancesPageCopy, rowOf()).meta;
 
-    expect(facts).toEqual([
-      { label: "Sessions", value: "1 of 1", hint: "completed of opened" },
-      { label: "Completion", value: "100%", hint: null },
-      { label: "Avg alignment", value: "1.4", hint: "mean Gap" },
-      { label: "Aspects", value: "5", hint: null },
-    ]);
+    expect(meta).toEqual(["1 of 1 Sessions", "Avg alignment 1.4", "5 Aspects"]);
   });
 
-  it("prints `—` for an unscored session and never `0`, while keeping the counts", () => {
+  it("never prints a percentage — the ratio already states the proportion", () => {
+    // The tiles drew `1 of 1` and `100%`; the artifact's one line keeps one way of saying a count.
+    const meta = relationshipCard(
+      myInstancesPageCopy,
+      rowOf({ sessionsOpened: 3, sessionsCompleted: 2 }),
+    ).meta;
+    expect(meta[0]).toBe("2 of 3 Sessions");
+    for (const segment of meta) expect(segment).not.toContain("%");
+  });
+
+  it("says `No scored session yet` where the alignment has no figure, never `0`", () => {
     // One session open, none complete: the counts are facts, the Gap is not.
-    const facts = relationshipCard(
+    const meta = relationshipCard(
       myInstancesPageCopy,
       rowOf({ sessionsCompleted: 0, alignment: null }),
-    ).relationship.facts;
+    ).meta;
 
-    expect(facts[0]).toEqual({ label: "Sessions", value: "0 of 1", hint: "completed of opened" });
-    expect(facts[1]).toEqual({ label: "Completion", value: "0%", hint: null });
-    expect(facts[2]).toEqual({
-      label: "Avg alignment",
-      value: CARD_ABSENT,
-      hint: "No scored session yet",
-    });
+    expect(meta).toEqual(["0 of 1 Sessions", "No scored session yet", "5 Aspects"]);
+    expect(meta.join(" ")).not.toContain("0.0");
   });
 
   it("prints `—` for a relationship with no session open, instead of dividing by zero", () => {
-    const facts = relationshipCard(
+    const meta = relationshipCard(
       myInstancesPageCopy,
       rowOf({ sessionsOpened: 0, sessionsCompleted: 0, alignment: null }),
-    ).relationship.facts;
+    ).meta;
 
-    expect(facts[0]).toEqual({ label: "Sessions", value: CARD_ABSENT, hint: "none opened" });
-    expect(facts[1]).toEqual({ label: "Completion", value: CARD_ABSENT, hint: null });
-    expect(facts[1].value).not.toContain("NaN");
-    expect(facts[1].value).not.toContain("%");
-  });
-
-  it("rounds a completion to whole percent rather than printing a repeating decimal", () => {
-    // Two of three sessions is 66.66…%, which is a proportion, not a claim to two decimals.
-    const facts = relationshipCard(
-      myInstancesPageCopy,
-      rowOf({ sessionsOpened: 3, sessionsCompleted: 2 }),
-    ).relationship.facts;
-    expect(facts[1].value).toBe("67%");
+    expect(meta[0]).toBe(`${CARD_ABSENT} Sessions`);
+    expect(meta.join(" ")).not.toContain("NaN");
   });
 });
 

@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: a relationship per card — the same title row with the primary action at the right, the same search field in a filter row, the same stage tabs and the same card grid; the cover block becomes a stage band, the metric row translates Players → sessions `N of M`, Completion → session completion, Average Score → average alignment and `N Questions` → `N Aspects`, and what was paid is drawn on the Initiator's card alone)
+ * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: a relationship per card in the same title row, filter row, stage tabs and card grid — the axes are the card's cover, which carries the relationship's stage word on the muted wash where a quiz card carries its image, and the relationship's working facts: the one meta line is the record's figures, and what was paid is drawn on the Initiator's card alone)
  * The /v1 prototype of the same variation — `relationships-list.tsx` and the metric row in its
  * Manage tab — is deleted (#478); this file is the port that replaced it, and the ancestor above is
  * the surface both varied.
@@ -20,13 +20,15 @@
  * is drawn `—` and never `0`: absent and zero are different facts, and a relationship nobody has
  * scored has no figure.
  *
- * **The card is a projection, and this file computes nothing** (#795 F2). `relationshipCard()`
- * (`lib/member/card.ts`) turns a row into a `MemberCard`: the chips, the sentence, and the metric
- * row's figures — `N of M`, the percentage, the one-decimal mean — formatted once, there, beside
- * the template shelf's cards, which are the same type. The component below prints what it is
- * handed; `tests/member-card-projection.test.ts` fails the build if a `toFixed`, a `Math.round` or
- * a division of the two session counts comes back into this file. The stage tabs still count the
- * rows this component was given, and the page's own copy is still the fixture's (E23).
+ * **The card is a projection, and this file computes nothing** (#795 F2, F4). `relationshipCard()`
+ * (`lib/member/card.ts`) turns a row into a `MemberCard`: the chips, the sentence, and the record's
+ * one meta line — `3 of 4 sessions`, `Avg alignment 2.4`, `5 Aspects`, every figure formatted once,
+ * there, beside the template shelf's cards, which are the same type and print the same line. The
+ * component below prints what it is handed and joins nothing; `tests/member-card-projection.test.ts`
+ * fails the build if a `toFixed`, a `Math.round` or a division of the two session counts comes back
+ * into this file, and it fails if the four-tile grid the artifact replaced comes back either. The
+ * stage tabs still count the rows this component was given, and the page's own copy is still the
+ * fixture's (E23).
  */
 import Link from "next/link";
 
@@ -38,13 +40,22 @@ import type { RelationshipCard } from "@/lib/db/assessments";
 import { type OverviewFilter, matchesOverviewFilter } from "@/lib/flow/overview";
 import { MY_INSTANCES_PATH } from "@/lib/flow/paths";
 import { FLOW_STAGES, type FlowStage } from "@/lib/flow/stage";
-import { CARD_ABSENT, type CardFact, relationshipCard } from "@/lib/member/card";
+import {
+  CARD_ABSENT,
+  CARD_ACTIONS,
+  CARD_COVER,
+  CARD_COVER_WORD,
+  CARD_FRAME,
+  CARD_META,
+  CARD_TITLE,
+  relationshipCard,
+} from "@/lib/member/card";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
-const CARD =
-  "flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
 const MUTED = "text-sm text-gray-600 dark:text-gray-300";
 const STRONG = "font-semibold text-gray-900 dark:text-gray-100";
+const OUTLINE =
+  "inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800";
 
 /**
  * The stage a `?stage=` value names, or `null` for "every relationship".
@@ -89,24 +100,6 @@ export function matchesQuery(row: RelationshipCard, query: string): boolean {
   if (needle === "") return true;
   return [row.name, row.templateTitle, row.initiatorName ?? "", row.counterpartyName ?? ""].some(
     (field) => field.toLowerCase().includes(needle),
-  );
-}
-
-/**
- * One metric tile of the ancestor's stats grid: a label above a figure.
- *
- * The figure and its hint arrive already formatted — a tile that derived one would be the defect
- * this module exists to close (`lib/member/card.ts`), so all three lines are printed as handed.
- */
-function MetricTile({ fact }: { fact: CardFact }) {
-  return (
-    <div className="rounded-md bg-gray-50 p-2 dark:bg-gray-800">
-      <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">{fact.label}</dt>
-      <dd className={`text-base ${STRONG}`}>{fact.value}</dd>
-      {fact.hint === null ? null : (
-        <dd className="text-[10px] text-gray-500 dark:text-gray-400">{fact.hint}</dd>
-      )}
-    </div>
   );
 }
 
@@ -349,32 +342,43 @@ export function MyInstances({
                   data-instance-state={rel.state}
                   data-instance-stage={rel.stage}
                   data-instance-unlock={rel.unlock}
-                  className={CARD}
+                  className={CARD_FRAME}
                 >
-                  {/* The ancestor's cover-and-overlay block, without the image: a relationship
-                      carries a template, a stage and two names, not a thumbnail. */}
-                  <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
-                    <div className="flex items-center justify-between gap-2">
+                  {/* One card, and the same one as the template shelf: the frame, the 104 px cover
+                      slot, the title and the facts line come from `lib/member/card.ts`. The axis is
+                      what goes *in* the cover — the stage word where a template draws its monogram
+                      — because a relationship has no thumbnail. `aria-hidden` keeps it decoration:
+                      the chip below carries the stage as text. */}
+                  <div className={`${CARD_COVER} bg-gray-50 dark:bg-gray-800/40`}>
+                    <span className={CARD_COVER_WORD} aria-hidden="true">
+                      {rel.stageLabel}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-3 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Chip variant="tint">{rel.templateTitle}</Chip>
                       <Chip variant="tint" data-stage-badge={rel.stage}>
                         {rel.stageLabel}
                       </Chip>
                     </div>
-                    <Link
-                      href={model.detail.href}
-                      className="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100"
-                    >
+                    <Link href={model.detail.href} className={CARD_TITLE}>
                       {model.title}
                     </Link>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{rel.party}</p>
-                  </div>
 
-                  <div className="flex flex-1 flex-col gap-4 p-4">
-                    <dl className="grid grid-cols-2 gap-2 text-center">
-                      {rel.facts.map((fact) => (
-                        <MetricTile key={fact.label} fact={fact} />
+                    {/* The record's figures are the card's one meta line (#795 F4) — the same row
+                        the template shelf prints, handed over formatted by the projection. */}
+                    <div className={CARD_META}>
+                      {model.meta.map((fact, index) => (
+                        <span
+                          key={fact}
+                          className={index === 0 ? "" : "border-l border-gray-300 pl-2"}
+                        >
+                          {fact}
+                        </span>
                       ))}
-                    </dl>
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <Chip variant="neutral">{rel.mode}</Chip>
@@ -417,14 +421,11 @@ export function MyInstances({
                     )}
                   </div>
 
-                  <div className="mt-auto flex items-center justify-between gap-2 px-4 pb-4">
+                  <div className={`${CARD_ACTIONS} justify-between`}>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {rel.lastSession}
                     </span>
-                    <Link
-                      href={model.detail.href}
-                      className="inline-flex h-9 items-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-                    >
+                    <Link href={model.detail.href} className={OUTLINE}>
                       {model.detail.label}
                     </Link>
                   </div>
