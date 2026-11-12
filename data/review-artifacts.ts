@@ -168,4 +168,28 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     path: "docs/review/artifacts/prototype-relationship-lifecycle-v9.html",
     capturedAt: "2026-11-12T00:00:00.000Z",
   },
+  /**
+   * comments v1 — the mockup for #921, not a feature. Comments on an aspect opinion, an
+   * assessment and a relationship: one `Comment` component with the subject as the only
+   * variation axis, drawn in two placements (A inline, B side panel) across every state the
+   * issue lists, plus the composer's five.
+   *
+   * The row exists so the artifact is reachable at `?artifact=prototype-comments-v1`, which is
+   * the one thing the issue requires of this phase: an approved artifact is the spec of record,
+   * and a file nobody can open is not. Nothing in the feature is built here — no schema, no
+   * action, no `db/` change — so the catalogue row is the whole of the deliverable beside the
+   * drawing itself.
+   *
+   * The title says which variant the drawing is, because the row has no field for "decision
+   * pending" and inventing one would be a second copy of a fact the series already carries.
+   */
+  {
+    id: "review-comments-v1",
+    slug: "prototype-comments-v1",
+    title: "Comments on opinions, sessions and relationships — mockup, variants A and B",
+    kind: "prototype",
+    version: "v1",
+    path: "docs/review/artifacts/prototype-comments-v1.html",
+    capturedAt: "2026-11-12T00:00:00.000Z",
+  },
 ];
