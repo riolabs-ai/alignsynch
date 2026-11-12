@@ -555,14 +555,16 @@ export class StripeBillingAdapter implements BillingPort {
       form.set("ui_mode", "embedded_page");
       form.set("return_url", request.successUrl);
       form.set("redirect_on_completion", "if_required");
-      // An embedded page renders the session's own amount line, so the provider requires the
-      // currency even in `setup` mode where nothing is charged — measured as "Missing required
-      // param: currency" (2026-11-08). `STRIPE_CURRENCY` is this adapter's one authored answer.
-      form.set("currency", STRIPE_CURRENCY);
     } else {
       form.set("success_url", `${request.successUrl}${separator}capture={CHECKOUT_SESSION_ID}`);
       form.set("cancel_url", request.cancelUrl);
     }
+    // **Both** presentations need it, not just the embedded one. A `setup` session charges nothing,
+    // but the provider's Checkout still draws an amount line and refuses the request without a
+    // currency: the hosted capture answered `400 invalid-request — the payment provider refused the
+    // POST /checkout/sessions: Missing required param: currency` until this line was moved out of
+    // the embedded branch. `STRIPE_CURRENCY` is this adapter's one authored answer.
+    form.set("currency", STRIPE_CURRENCY);
     if (request.email !== undefined && request.email !== "") {
       form.set("customer_email", request.email);
     }

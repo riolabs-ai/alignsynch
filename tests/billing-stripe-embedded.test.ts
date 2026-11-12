@@ -112,6 +112,12 @@ describe("the embedded capture", () => {
     expect(form.get("cancel_url")).toBe(CAPTURE.cancelUrl);
     expect(form.get("ui_mode")).toBeNull();
     expect(form.get("return_url")).toBeNull();
+    // The hosted capture was refused at the provider until this line existed: `400
+    // invalid-request — Missing required param: currency`, measured by the flow E2E on 2026-11-12.
+    // The embedded test above asserted the field; this one did not, which is why only one of the
+    // two paths was ever proven.
+    expect(form.get("currency")).toBe("usd");
+    expect(form.get("mode")).toBe("setup");
     expect(session.url).toBe("https://checkout.stripe.test/x");
     expect(session.clientSecret).toBeUndefined();
   });

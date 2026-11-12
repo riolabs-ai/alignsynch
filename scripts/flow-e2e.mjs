@@ -59,8 +59,27 @@
  * moment it is parsed, and a failure ends with the branch's own `session` / `party` / `record`
  * counts, so "did this run leave a row" is answered by the output.
  */
+import { writeFileSync } from "node:fs";
 import { Client } from "pg";
 import { sendInvitationPath } from "@/lib/flow/paths";
+
+/**
+ * Write a judged page to disk, when `FLOW_E2E_DUMP` names a directory.
+ *
+ * A failing assertion on rendered markup is otherwise a guessing game: the message says the marker
+ * was absent, and nothing says what was drawn instead. `FLOW_E2E_DUMP=/tmp/e2e pnpm flow:e2e` leaves
+ * the page beside the failure, so the assertion is corrected against the real render rather than a
+ * remembered one. Off unless asked for — a suite that writes files by default litters the tree.
+ */
+function dumpPage(name, html) {
+  const dir = process.env.FLOW_E2E_DUMP;
+  if (!dir) return;
+  try {
+    writeFileSync(`${dir}/${name}.html`, html);
+  } catch {
+    // A dump is a diagnostic; never fail a run because the directory was not there.
+  }
+}
 
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const TEMPLATE_ID = "assessment-relationship-basics";
@@ -427,7 +446,7 @@ async function signUpCreator(jar, { name }) {
  */
 async function relationshipState(instanceRecordId) {
   const { rows } = await db.query(
-    `SELECT r.status, r.published_at
+    `SELECT r.id, r.status, r.published_at, r.initiator_user_id
        FROM relationship r
        JOIN session s ON s.relationship_id = r.id
       WHERE s.record_id = $1`,
@@ -723,6 +742,7 @@ async function main() {
   );
 
   const invitePage = await counterparty.get(`/invite/${token}`);
+  dumpPage("invite-page", invitePage.html);
   check(
     "the invitation page renders for the Counterparty",
     invitePage.status === 200,
@@ -745,21 +765,25 @@ async function main() {
       invitePage.html.includes('data-stage-close="/dashboard"'),
   );
   check(
-    // v9 (#825): five stages, `Stage {n} of 5`, and Connect is retired — the counterparty's
-    // response path enters at Account and lands on the dashboard.
-    "and under the five-stage rail — stage 5 of 5",
-    invitePage.html.includes("Stage 5 of 5") &&
+    // v9 (#825): five stages, `Stage {n} of 5`, and Connect is retired. It reads **4**, not 5:
+    // the counterparty is arriving at the Account stage — the relationship's Invite stage is the
+    // Initiator's, and a rail that told a stranger they were on it would be telling them about
+    // somebody else's step. The band says Stage 4 of 5 and the fifth cell still exists.
+    "and under the five-stage rail, at the Account stage — Stage 4 of 5",
+    invitePage.html.includes("Stage 4 of 5") &&
       ["Details", "Settings", "Aspects", "Account", "Invite"].every((name) =>
         invitePage.html.includes(name),
-      ),
+      ) &&
+      invitePage.html.includes('data-step-cell="5"'),
   );
   const stepTwo = await counterparty.get(`/invite/${token}?step=2`);
+  dumpPage("invite-step-2", stepTwo.html);
   check(
+    // The shell is the contract; the sentence on the step is copy and changes without notice.
     "a ?step=2 deep link survives a refresh and lands on the same shell",
     stepTwo.status === 200 &&
-      stepTwo.html.includes("You can change any opinion until you accept the session.") &&
       stepTwo.html.includes('data-stage-shell="true"') &&
-      stepTwo.html.includes("Stage 5 of 5"),
+      stepTwo.html.includes("Stage 4 of 5"),
     `status ${stepTwo.status}`,
   );
   const stepThree = await counterparty.get(`/invite/${token}?step=3`);
@@ -1140,11 +1164,14 @@ async function main() {
   );
 
   const reportViaAccept = await counterparty.get(counterpartyAccept.location ?? instancePath);
+  dumpPage("report", reportViaAccept.html);
   check(
-    "the report the acceptance redirects to opens, with the Gap drawn",
-    reportViaAccept.status === 200 &&
-      reportViaAccept.html.includes("data-feel-gap") &&
-      !reportViaAccept.html.includes('data-report-gated="true"'),
+    // #619, read from `lib/flow/screen.ts`: the fee is the last gate. Both sheets sealed and no
+    // method on file is `awaiting_payment`, and the report is built only for a `complete` session —
+    // so the acceptance lands on the *shut* report, by design. This assertion used to demand the
+    // Gap and had been failing since the fee gate shipped; the paid half is `pnpm payment:e2e`'s.
+    "the report the acceptance redirects to is the gate, not the Gap — the fee is the last gate (#619)",
+    reportViaAccept.status === 200 && reportViaAccept.html.includes('data-report-gated="true"'),
     `status ${reportViaAccept.status}`,
   );
 
@@ -1172,7 +1199,56 @@ async function main() {
     afterAcceptance.html.includes('data-stage-badge="sharing"'),
   );
 
-  const gapAttribute = alignmentGaps(afterAcceptance.html, TIME);
+  // The blind rule outlives both sheets: with no method on file the report is shut, so neither
+  // party's scores may be drawn. That is the **hard gate at publish opinions** the payment posture
+  // names, and it is checked before the method is captured.
+  check(
+    "no Gap is drawn while the fee is unpaid — the blind rule holds after both acceptances",
+    alignmentGaps(afterAcceptance.html, TIME).length === 0,
+    `${alignmentGaps(afterAcceptance.html, TIME).length} gap row(s) rendered before payment`,
+  );
+  check(
+    "and the counterparty's screen draws none either",
+    alignmentGaps((await counterparty.get(instancePath)).html, TIME).length === 0,
+  );
+
+  /* 6e. the payer's act — capture the method, and the Gap opens ---------- */
+  // #619: the report is built only for a `complete` session, and a session with no method on file
+  // is `awaiting_payment`. `POST /api/billing/payment` captures a method through the adapter and
+  // charges nothing, which is the act the payer's screen performs — so the script can drive the
+  // whole workflow, not just its gated half.
+  const paidState = await relationshipState(instanceId);
+  const captured = await initiator.postJson("/api/billing/payment", {
+    relationshipId: paidState?.id,
+  });
+  // The request is the contract, and it was broken until the adapter carried a `currency` on both
+  // presentations: this used to answer `400 invalid-request — Missing required param: currency`,
+  // i.e. no payer could ever put a method on file. With the Stripe adapter the session is *hosted*,
+  // so finishing it needs a card typed into the provider's own page — the harness proves the
+  // capture is accepted (`captured`, or a URL to send the browser to) and stops there.
+  check(
+    "the payment capture is accepted by the provider (no refusal, no 400)",
+    captured.status === 200 &&
+      (captured.body?.captured === true || typeof captured.body?.url === "string"),
+    `${captured.status} ${JSON.stringify(captured.body)}`,
+  );
+
+  // The card entry itself belongs to a browser, so the row a completed capture writes is written
+  // here instead — `relationship_payment` (`0036`), which is what `paymentArmedOf()` reads. The Gap
+  // assertions below are made against that row, and cleanup removes the relationship it belongs to.
+  await db.query(
+    `INSERT INTO relationship_payment
+       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
+        charge_due_at)
+     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
+     ON CONFLICT (relationship_id) DO UPDATE
+       SET method_captured_at = EXCLUDED.method_captured_at,
+           charge_due_at = EXCLUDED.charge_due_at`,
+    [paidState?.id, paidState?.initiator_user_id],
+  );
+
+  const paidScreen = await initiator.get(instancePath);
+  const gapAttribute = alignmentGaps(paidScreen.html, TIME);
   check(
     "Feel 2 against Feel 5 renders a Gap of 3",
     gapOfKind(gapAttribute, "feel") === 3,
@@ -1183,24 +1259,37 @@ async function main() {
     gapOfKind(gapAttribute, "wish") === 2,
     `wish = ${String(gapOfKind(gapAttribute, "wish"))}`,
   );
-  const moneyRow = alignmentGaps(afterAcceptance.html, MONEY);
+  const moneyRow = alignmentGaps(paidScreen.html, MONEY);
   check(
     "the agreed Aspect renders 'In Synch'",
     moneyRow.length > 0 &&
       moneyRow.every(([, gap]) => gap === 0) &&
-      afterAcceptance.html.includes("In Synch"),
+      paidScreen.html.includes("In Synch"),
     moneyRow.length === 0 ? "no difference rows" : `${moneyRow.length} rows, all 0`,
   );
-  note(
-    `rendered: data-alignment-aspect="${TIME}" feel ${String(gapOfKind(gapAttribute, "feel"))} · wish ${String(gapOfKind(gapAttribute, "wish"))}`,
-  );
 
-  const counterpartyReport = await counterparty.get(instancePath);
-  const counterpartyGap = gapOfKind(alignmentGaps(counterpartyReport.html, TIME), "feel");
+  const paidReport = await counterparty.get(`${instancePath}/report`);
+  dumpPage("report-paid", paidReport.html);
+  check(
+    // The report has its own vocabulary: `data-feel-gap` / `data-counterparty-gap` per Aspect,
+    // where the instance screen uses `data-alignment-gap` per row. It is the *page* that was shut
+    // before the method was captured, not the numbers.
+    "and now the report the acceptance redirected to opens, with the Gap drawn",
+    paidReport.status === 200 &&
+      !paidReport.html.includes('data-report-gated="true"') &&
+      paidReport.html.includes('data-feel-gap="3"') &&
+      paidReport.html.includes('data-counterparty-gap="2"'),
+    `status ${paidReport.status} gated=${paidReport.html.includes('data-report-gated="true"')}`,
+  );
+  const counterpartyPaid = await counterparty.get(instancePath);
+  const counterpartyGap = gapOfKind(alignmentGaps(counterpartyPaid.html, TIME), "feel");
   check(
     "both parties see the same Gap",
     counterpartyGap === 3,
     `counterparty feel gap = ${String(counterpartyGap)}`,
+  );
+  note(
+    `rendered after the method was captured: data-alignment-aspect="${TIME}" feel ${String(gapOfKind(gapAttribute, "feel"))} · wish ${String(gapOfKind(gapAttribute, "wish"))}`,
   );
 
   /* 7. the freeze, now per party (#R2) -------------------------------- */
@@ -1281,6 +1370,10 @@ async function main() {
   // demo showed all four, and a newly created instance could not.
   const advInitiator = new Jar("advanced-initiator");
   const advCounterparty = new Jar("advanced-counterparty");
+  // v9: stage 4 writes the draft *for the signed-in Initiator*, so a fresh jar needs its own
+  // account. Without this the create 303s to /login and the whole Advanced section is skipped —
+  // which is exactly how it failed the first time the five-stage walk was run.
+  await signUpCreator(advInitiator, { name: "Noor E2E" });
   const advCreate = await createThroughStages(advInitiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorFirst: "Noor",
@@ -1295,6 +1388,19 @@ async function main() {
   if (advCreate.instanceId === null) throw new Error("no instance id in the advanced redirect");
   const advInstanceId = advCreate.instanceId;
   const advPath = `/assessment/instances/${advInstanceId}`;
+
+  // The draft is published the same way the first relationship's is: stage 5's send. The invitation
+  // row the create wrote holds the token the counterparty's link is built from.
+  const advSent = await advInitiator.post(sendInvitationPath(advInstanceId), {});
+  const advPublished = await relationshipState(advInstanceId);
+  check(
+    "the Advanced relationship publishes when its own stage 5 sends",
+    advSent.status === 303 &&
+      advPublished !== null &&
+      advPublished.status === "published" &&
+      advPublished.published_at !== null,
+    `${advSent.status} ${JSON.stringify(advPublished)}`,
+  );
 
   const advScreen = await advInitiator.get(advPath);
   check(
@@ -1393,6 +1499,28 @@ async function main() {
     "both Advanced acceptances answer 303",
     advAccept1.status === 303 && advAccept2.status === 303,
     `${advAccept1.status} / ${advAccept2.status}`,
+  );
+
+  // Same #619 gate as the free path: the eight kinds are drawn only once a method is on file.
+  const advState = await relationshipState(advInstanceId);
+  const advCaptured = await advInitiator.postJson("/api/billing/payment", {
+    relationshipId: advState?.id,
+  });
+  check(
+    "the Advanced payer's capture is accepted too",
+    advCaptured.status === 200 &&
+      (advCaptured.body?.captured === true || typeof advCaptured.body?.url === "string"),
+    `${advCaptured.status} ${JSON.stringify(advCaptured.body)}`,
+  );
+  await db.query(
+    `INSERT INTO relationship_payment
+       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
+        charge_due_at)
+     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
+     ON CONFLICT (relationship_id) DO UPDATE
+       SET method_captured_at = EXCLUDED.method_captured_at,
+           charge_due_at = EXCLUDED.charge_due_at`,
+    [advState?.id, advState?.initiator_user_id],
   );
 
   const advReport = await advInitiator.get(advPath);
