@@ -514,12 +514,20 @@ function QuizHubLinkColumns({
 }
 
 /**
- * The alignment product's column — the sidebar's destinations minus Home, because a footer
- * column whose first row is the page you are standing on is furniture.
+ * The alignment product's column — **the public header menu, row for row** (owner, *"footer links
+ * mirror the marketing website header menu items for now"*): Home · Templates · How It Works ·
+ * Pricing · Help, the same five rows `AlignSynchPublicNav` draws in the same order.
+ *
+ * It used to be the sidebar's destinations minus Home, because a footer column whose first row is
+ * the page you are standing on is furniture. The mirror decision overrides that — Home is row one
+ * here because it is row one up there, and *"before Help add Pricing"* is row four of the same
+ * list. `tests/footer-links-mirror.test.tsx` renders both surfaces and fails when their hrefs or
+ * their words disagree, so the mirror is checked rather than remembered; that test is the reason
+ * the labels come from the fixture (`footer-links-alignsynch`) and not from this file.
  *
  * The hrefs are literal JSX for the reason `components/layout/nav-menus.tsx` gives: E10 only
  * sees a `href="…"` attribute, and `/`'s two anchor bands are the only honest targets for
- * Templates and How it works until a listing route ships.
+ * How it works until a listing route ships.
  */
 function AlignSynchLinkColumn({
   links,
@@ -532,6 +540,7 @@ function AlignSynchLinkColumn({
     <div className="space-y-5">
       <FooterColumnHeading>{links.heading}</FooterColumnHeading>
       <ul className="space-y-3">
+        <FooterLinkRow href="/" label={itemLabel(links, "home")} leaving={leaving} />
         <FooterLinkRow
           href={RELATIONSHIP_TYPES_PATH}
           label={itemLabel(links, "templates")}
@@ -542,6 +551,7 @@ function AlignSynchLinkColumn({
           label={itemLabel(links, "how-it-works")}
           leaving={leaving}
         />
+        <FooterLinkRow href="/pricing" label={itemLabel(links, "pricing")} leaving={leaving} />
         <FooterLinkRow href="/help" label={itemLabel(links, "help")} leaving={leaving} />
       </ul>
     </div>
