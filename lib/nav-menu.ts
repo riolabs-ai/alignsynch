@@ -116,31 +116,43 @@ function toItem(row: NavRowRecord): NavItem {
 }
 
 /**
- * The alignment rail, in the order the owner's review set: the reader's own work, then the support
- * surfaces, then the operator's group.
+ * The alignment rail, in the order the owner's review set — **one order for every role** (#929):
+ * the operator's group, then the reader's own work, then the support surfaces.
  *
- * **The Workspace group is two rows — #620 merged the four.** `My Relationships` is
- * `/dashboard/relationships` (the relationship *and* its assessment, in one list) and `Templates`
- * is `/dashboard/templates` (one destination, two tabs: the catalogue and what this member owns).
- * The rows this replaced were `/dashboard` (the Overview), `My Templates` and `Library`; the last
- * two named three shelves a person had to tell apart, and the third — `/dashboard/library` — is a
- * 308 to the Templates tab that absorbed it (`next.config.mjs`). The Overview keeps answering at
- * `/dashboard`; it is no longer a rail row, because the two rows above are the work and the
- * brand's own link is the way home.
+ * `needs` gates a row's **visibility only**. A role that cannot reach a row does not see it, and
+ * the rows they can see keep the document's order — nobody gets a re-sorted menu. That is why the
+ * review shelf and the health page sit inside `group-support` on the document's own terms rather
+ * than being moved back to `group-admin` for the roles that can see them: two staff rows inside
+ * the Support group is the owner's arrangement, drawn as written, and a later change is a version
+ * bump plus a diff, never a second document or a per-role fork.
  *
- * **Admin leads with `/admin/console`.** The console is the hub for its own subtree (users,
- * templates, relationships), and it had no entry anywhere in the UI — the defect this card exists
- * for. It is the group's first row, then the console's five existing destinations, then the two
- * staff surfaces that were also unreachable (`/admin/inbox`, `/admin/health`), and `/admin/audit`
- * last: the log is where an operator checks what the rows above it did.
+ * **The Workspace group is three rows — #620 merged four, #877 added one back.** `My
+ * Relationships` is `/dashboard/relationships` (the relationship *and* its assessment, in one
+ * list), `My Assessments` is `/assessments` (the sessions the member is a party to), and
+ * `Templates` is `/dashboard/templates` (one destination, two tabs: the catalogue and what this
+ * member owns). The rows #620 replaced were `/dashboard` (the Overview), `My Templates` and
+ * `Library`; the last two named three shelves a person had to tell apart, and the third —
+ * `/dashboard/library` — is a 308 to the Templates tab that absorbed it (`next.config.mjs`). The
+ * Overview keeps answering at `/dashboard`; it is no longer a rail row.
+ *
+ * **Admin leads with the inbox.** The console is the hub for its own subtree (users, templates,
+ * relationships) and it had no entry anywhere in the UI before #542 phase 2, so it stays the
+ * second row; `/admin/audit` is last, because the log is where an operator checks what the rows
+ * above it did. The review shelf and the health page have moved to `group-support` (#929) and are
+ * drawn there for the roles that can reach them.
+ *
+ * **A staff row may live in Support.** `/admin/review` and `/admin/health` are `needs: "admin"`
+ * rows inside `group-support` — the owner's arrangement, and the reason the rule below is about
+ * *one named group*, not "no `/admin` href outside `group-admin`".
  *
  * **The group's floor is `support`, and each row carries its own.** A `support` seat sees the one
- * row they work — the inbox — and no page they would be refused. The group is drawn when at least
+ * row they work — the inbox — and no page they would be refused. A group draws only when at least
  * one of its rows survives (`menuFor`), so a member sees no Admin heading at all.
  *
- * **No admin destination exists outside this group.** The five were once a second, separately
- * gated list above the member's rows; one group is what makes "an operator row is in the operator
- * group" a fact a test can assert by looking at one array.
+ * **No `/admin` destination is outside the document's staff groups.** The five were once a second,
+ * separately gated list above the member's rows; one document is what makes "an operator row is in
+ * `group-admin` or one of the two staff rows named in `group-support`" a fact a test asserts by
+ * looking at one array.
  *
  * **A `hidden` row is in the document and not in this array.** It is the operator's way to take a
  * row off the rail without losing its place, its note and the fact that it exists — the reason it
