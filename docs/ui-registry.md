@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **92** — 56 static, 36 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 344 files under `components/`, 337 of them `.tsx`
+- component domains: **43** — 345 files under `components/`, 338 of them `.tsx`
 - route handlers: **31** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 70 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 46 · AlignSynch 45 · QuizHub 42 · No template yet 2
@@ -733,7 +733,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (16): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - files (17): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-edit-dialog.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
   - routes (4): `/assessments`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 

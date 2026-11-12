@@ -17,7 +17,7 @@
  * file starts where the component starts — the same seam `tests/relationship-publish-gate.test.tsx`
  * uses.
  */
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -28,6 +28,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
+import { RelationshipEditDialog } from "@/components/dashboard/relationship-edit-dialog";
 import { assessments } from "@/data/assessments";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
 import { PRICING_PATH, RELATIONSHIPS_PATH } from "@/lib/flow/paths";
@@ -91,13 +92,24 @@ function viewOf(input: {
 /** The edit surface the page hands down when `readRelationshipEditState()` answered. */
 const EDIT_PANEL = createElement("div", { "data-edit-panel": "stand-in" }, "edit surface");
 
-function html(view: MemberRelationshipView): string {
+/** The door's words and the dialog's name — the page's own fixture, never typed here (#923). */
+const EDIT_SECTION = sectionOf(dashboardRelationshipDetailPageCopy, "edit");
+const EDIT_OPEN = itemLabel(EDIT_SECTION, "open");
+
+/** The door the page hands down when the relationship can be edited. */
+const EDIT_TRIGGER = createElement(RelationshipEditDialog, {
+  label: EDIT_OPEN,
+  title: EDIT_SECTION.heading ?? "",
+  panel: EDIT_PANEL,
+});
+
+function html(view: MemberRelationshipView, editTrigger: ReactNode = EDIT_TRIGGER): string {
   const noop = async () => ({ ok: true as const }) as never;
   return renderToStaticMarkup(
     createElement(RelationshipDetail, {
       copy: dashboardRelationshipDetailPageCopy,
       relationship: view,
-      editPanel: EDIT_PANEL,
+      editTrigger,
       onSaveAspects: noop,
       onPublish: noop,
       onRepublish: noop,
@@ -109,13 +121,24 @@ function html(view: MemberRelationshipView): string {
 }
 
 describe("#873 · the initiator's draft funnel", () => {
-  it("step 1 — the edit surface is drawn, and drawn before the publish band", () => {
+  it("step 1 — the edit door is drawn, and drawn before the publish band", () => {
     const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }));
-    expect(rendered).toContain('data-edit-panel="stand-in"');
+    // #923 — the rail carries the trigger, not the form: the panel is not in the document.
+    expect(rendered).toContain('data-relationship-edit-open="true"');
+    expect(rendered).toContain(`>${EDIT_OPEN}</button>`);
+    expect(rendered).not.toContain('data-edit-panel="stand-in"');
     // Configuring comes before publishing: the panel order is the funnel's order.
-    expect(rendered.indexOf('data-edit-panel="stand-in"')).toBeLessThan(
+    expect(rendered.indexOf('data-relationship-edit-open="true"')).toBeLessThan(
       rendered.indexOf('id="publish-name"'),
     );
+  });
+
+  it("step 1b — a relationship the page cannot edit renders no Edit control at all", () => {
+    // #923 keeps `editState === undefined || closed` meaning *no control*: a disabled button
+    // would claim a permission the server would refuse, and that is not the same screen.
+    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }), null);
+    expect(rendered).not.toContain('data-relationship-edit-open="true"');
+    expect(rendered).not.toContain('data-edit-panel="stand-in"');
   });
 
   it("step 2 — the Aspect editor is drawn on a draft, with its add control", () => {

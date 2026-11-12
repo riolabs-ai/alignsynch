@@ -28,12 +28,17 @@ import { notFound } from "next/navigation";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
+import { RelationshipEditDialog } from "@/components/dashboard/relationship-edit-dialog";
 import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
-import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
+import {
+  dashboardRelationshipDetailPageCopy,
+  RELATIONSHIP_EDIT_SECTION,
+} from "@/data/pages/dashboard-relationship-detail";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
   completeRelationshipAction,
@@ -99,6 +104,8 @@ export default async function MemberRelationshipPage({
     editState = undefined;
   }
 
+  const editSection = sectionOf(dashboardRelationshipDetailPageCopy, RELATIONSHIP_EDIT_SECTION);
+
   return (
     <StageColumn>
       <div className="space-y-6">
@@ -111,14 +118,27 @@ export default async function MemberRelationshipPage({
         <RelationshipDetail
           copy={dashboardRelationshipDetailPageCopy}
           relationship={view}
-          editPanel={
+          /*
+            #923 — **a trigger, not a column.** The panel used to arrive here as `editPanel` and
+            render inline in the 320 px actions rail, so the detail and its editor described the
+            same relationship side by side. Now the rail carries one control and the panel is
+            mounted only while that control's dialog/sheet is open. The panel itself is unchanged:
+            same component, same fields, same `variant="panel"`.
+          */
+          editTrigger={
             editState === undefined || editState.closed ? undefined : (
-              <RelationshipEditPanel
-                copy={dashboardRelationshipDetailPageCopy}
-                state={editState}
-                variant="panel"
-                onPreview={previewRelationshipEditAction}
-                onEdit={editRelationshipAction}
+              <RelationshipEditDialog
+                label={itemLabel(editSection, "open")}
+                title={editSection.heading ?? ""}
+                panel={
+                  <RelationshipEditPanel
+                    copy={dashboardRelationshipDetailPageCopy}
+                    state={editState}
+                    variant="panel"
+                    onPreview={previewRelationshipEditAction}
+                    onEdit={editRelationshipAction}
+                  />
+                }
               />
             )
           }

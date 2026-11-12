@@ -21,8 +21,9 @@
  * (`MemberRelationshipView.view`), so the screen cannot say “link live” while the server would
  * refuse the link. In the actions slot, in this order:
  *
- *   edit       the page's edit surface, passed in as `editPanel` — a server read this component
- *              cannot do (E34), mounted first because configuring comes before publishing
+ *   edit       the page's edit surface, passed in as `editTrigger` — a server read this component
+ *              cannot do (E34), and since #923 a **control, not a column**: the panel it opens is
+ *              mounted only while that dialog/sheet is open, so no fact is on screen twice
  *   publish    the counterparty's name and address, and one button that starts the trial
  *              (or a checkout), publishes the relationship and mints the invitation
  *   republish  one click, for a link that lapsed or was revoked — and only those two, because a
@@ -107,7 +108,7 @@ function sentenceFor(
 export function RelationshipDetail({
   copy,
   relationship,
-  editPanel,
+  editTrigger,
   onSaveAspects,
   onPublish,
   onRepublish,
@@ -118,11 +119,15 @@ export function RelationshipDetail({
   copy: PageCopy;
   relationship: MemberRelationshipView;
   /**
-   * The edit surface, rendered by the page. It is a server read (`readRelationshipEditState()`)
-   * that this component cannot do, so it arrives as a node and is drawn first in the actions slot —
-   * configuring a relationship comes before publishing it.
+   * The edit surface's **door**, rendered by the page. It is a server read
+   * (`readRelationshipEditState()`) that this component cannot do, so it arrives as a node and is
+   * drawn first in the actions slot — configuring a relationship comes before publishing it.
+   *
+   * #923 — the node is a trigger (`RelationshipEditDialog`), not the form. The detail renders no
+   * edit surface of its own until the person asks for one; a relationship the page cannot edit
+   * (`editState` absent or `closed`) passes no node at all, which is how it stays honest.
    */
-  editPanel?: ReactNode;
+  editTrigger?: ReactNode;
   onSaveAspects: (payload: {
     relationshipId?: string;
     record?: unknown;
@@ -474,7 +479,7 @@ export function RelationshipDetail({
       }
       actions={
         <>
-          {editPanel}
+          {editTrigger}
           {/*
             #785 — the Counterparty's one action, and the only control on this screen that is
             theirs. It sits first in the rail because for them every other band is absent, and it

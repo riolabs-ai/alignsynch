@@ -1,0 +1,171 @@
+[
+  {
+    "file": "rel-detail-edit-closed-1440.png",
+    "viewport": "1440x1130",
+    "url": "/dashboard/relationships/qarel-edit-draft",
+    "innerWidth": 1440,
+    "scrollWidth": 1440,
+    "docHeight": 1130,
+    "h1": "Relationship Basics",
+    "state": "draft",
+    "trigger": {
+      "text": "Edit",
+      "box": {
+        "x": 306,
+        "y": 454,
+        "width": 320,
+        "height": 36
+      },
+      "expanded": "false"
+    },
+    "triggerInRail": true,
+    "formOnPage": false,
+    "formInRail": false,
+    "dialog": null,
+    "aspectList": true,
+    "leaked": false,
+    "expectedWidth": 1440
+  },
+  {
+    "file": "rel-detail-edit-dialog-1440.png",
+    "viewport": "1440x900",
+    "url": "/dashboard/relationships/qarel-edit-draft",
+    "innerWidth": 1440,
+    "scrollWidth": 1440,
+    "docHeight": 1130,
+    "h1": "Relationship Basics",
+    "state": "draft",
+    "trigger": {
+      "text": "Edit",
+      "box": {
+        "x": 306,
+        "y": 454,
+        "width": 320,
+        "height": 36
+      },
+      "expanded": "true"
+    },
+    "triggerInRail": true,
+    "formOnPage": true,
+    "formInRail": false,
+    "dialog": {
+      "box": {
+        "x": 384,
+        "y": 68,
+        "width": 672,
+        "height": 765,
+        "clientHeight": 765,
+        "scrollHeight": 2324
+      },
+      "kind": "dialog",
+      "labelledBy": "Edit this relationship",
+      "hasTitleField": true,
+      "fields": 20,
+      "focusInside": true
+    },
+    "aspectList": true,
+    "leaked": false,
+    "expectedWidth": 1440
+  },
+  {
+    "check": "escape-closes",
+    "dialog": false,
+    "form": false,
+    "focusOnTrigger": true
+  },
+  {
+    "file": "rel-detail-edit-closed-390.png",
+    "viewport": "390x1847",
+    "url": "/dashboard/relationships/qarel-edit-draft",
+    "innerWidth": 390,
+    "scrollWidth": 390,
+    "docHeight": 1847,
+    "h1": "Relationship Basics",
+    "state": "draft",
+    "trigger": {
+      "text": "Edit",
+      "box": {
+        "x": 28,
+        "y": 486,
+        "width": 334,
+        "height": 36
+      },
+      "expanded": "false"
+    },
+    "triggerInRail": true,
+    "formOnPage": false,
+    "formInRail": false,
+    "dialog": null,
+    "aspectList": true,
+    "leaked": false,
+    "expectedWidth": 390
+  },
+  {
+    "file": "rel-detail-edit-sheet-390.png",
+    "viewport": "390x844",
+    "url": "/dashboard/relationships/qarel-edit-draft",
+    "innerWidth": 390,
+    "scrollWidth": 390,
+    "docHeight": 1847,
+    "h1": "Relationship Basics",
+    "state": "draft",
+    "trigger": {
+      "text": "Edit",
+      "box": {
+        "x": 28,
+        "y": 486,
+        "width": 334,
+        "height": 36
+      },
+      "expanded": "true"
+    },
+    "triggerInRail": true,
+    "formOnPage": true,
+    "formInRail": false,
+    "dialog": {
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "clientHeight": 844,
+        "scrollHeight": 2404
+      },
+      "kind": "sheet",
+      "labelledBy": "Edit this relationship",
+      "hasTitleField": true,
+      "fields": 20,
+      "focusInside": true
+    },
+    "aspectList": true,
+    "leaked": false,
+    "expectedWidth": 390
+  },
+  {
+    "file": "rel-detail-edit-live-1440.png",
+    "viewport": "1440x1380",
+    "url": "/dashboard/relationships/qarel-edit-live",
+    "innerWidth": 1440,
+    "scrollWidth": 1440,
+    "docHeight": 1380,
+    "h1": "Relationship Basics",
+    "state": "published",
+    "trigger": {
+      "text": "Edit",
+      "box": {
+        "x": 306,
+        "y": 454,
+        "width": 320,
+        "height": 36
+      },
+      "expanded": "false"
+    },
+    "triggerInRail": true,
+    "formOnPage": false,
+    "formInRail": false,
+    "dialog": null,
+    "aspectList": false,
+    "leaked": false,
+    "expectedWidth": 1440
+  }
+]

@@ -698,6 +698,11 @@
           "question": "Do the pie labels still render after the recharts 3 bump?"
         },
         {
+          "path": "qa-rel-detail-edit/README.md",
+          "title": "Relationship detail — the edit form is asked for",
+          "question": "Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?"
+        },
+        {
           "path": "qa-stage5/README.md",
           "title": "Stage 5, both states",
           "question": "Does stage 5 offer the payment walk and send/draft instead of a band with no action?"
