@@ -1,4 +1,5 @@
 // template-ancestor: components/my-quizzes/my-quizzes.tsx
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AdminRelationshipRegistry } from "@/components/v1/admin-relationship-registry";
 import { adminRegistryQueryOf } from "@/lib/v1/admin-console";
 
@@ -16,5 +17,9 @@ export default async function AdminRelationshipsPage({
   searchParams: Promise<{ stage?: string; subscription?: string; state?: string; filter?: string }>;
 }) {
   const params = await searchParams;
-  return <AdminRelationshipRegistry query={adminRegistryQueryOf(params)} />;
+  return (
+    <StageColumn>
+      <AdminRelationshipRegistry query={adminRegistryQueryOf(params)} />
+    </StageColumn>
+  );
 }

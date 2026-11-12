@@ -22,6 +22,7 @@
  * `force-dynamic` for the reason the list carries: per-request session, a database read, and a
  * build that must pass with no `DATABASE_URL`.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -62,13 +63,15 @@ export default async function AdminTemplatePage({ params }: { params: Promise<{ 
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("admin-template: the template could not be read", error);
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">{adminTemplateEditorPageCopy.heading}</h1>
-        <p data-template-unreadable className="text-sm text-muted-foreground">
-          {adminTemplateEditorPageCopy.sections?.find((section) => section.id === "unreadable")
-            ?.body ?? ""}
-        </p>
-      </div>
+      <StageColumn>
+        <div className="space-y-6">
+          <h1 className="text-2xl font-semibold">{adminTemplateEditorPageCopy.heading}</h1>
+          <p data-template-unreadable className="text-sm text-muted-foreground">
+            {adminTemplateEditorPageCopy.sections?.find((section) => section.id === "unreadable")
+              ?.body ?? ""}
+          </p>
+        </div>
+      </StageColumn>
     );
   }
   if (view === undefined) notFound();
@@ -77,31 +80,33 @@ export default async function AdminTemplatePage({ params }: { params: Promise<{ 
   const catalogue = type === undefined ? null : { realm: type.realm, price: type.price };
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-sm text-muted-foreground">{adminTemplateEditorPageCopy.heading}</p>
-        <h1 className="text-2xl font-semibold">{view.template.title}</h1>
-        {adminTemplateEditorPageCopy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {adminTemplateEditorPageCopy.subtitle}
-          </p>
-        )}
-      </header>
-      <TemplateEditor
-        copy={adminTemplateEditorPageCopy}
-        sheetCopy={assessmentInstancePageCopy}
-        template={view.template}
-        editable={view.editable}
-        status={view.status}
-        versions={view.versions}
-        catalogue={catalogue}
-        onSave={saveTemplate}
-        onPublish={publishTemplateVersion}
-        onUnpublish={unpublishTemplateVersion}
-        onArchive={archiveTemplateVersion}
-        onRestore={restoreTemplateVersion}
-        onDelete={destroyTemplateVersion}
-      />
-    </div>
+    <StageColumn>
+      <div className="space-y-6">
+        <header className="space-y-2">
+          <p className="text-sm text-muted-foreground">{adminTemplateEditorPageCopy.heading}</p>
+          <h1 className="text-2xl font-semibold">{view.template.title}</h1>
+          {adminTemplateEditorPageCopy.subtitle === undefined ? null : (
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              {adminTemplateEditorPageCopy.subtitle}
+            </p>
+          )}
+        </header>
+        <TemplateEditor
+          copy={adminTemplateEditorPageCopy}
+          sheetCopy={assessmentInstancePageCopy}
+          template={view.template}
+          editable={view.editable}
+          status={view.status}
+          versions={view.versions}
+          catalogue={catalogue}
+          onSave={saveTemplate}
+          onPublish={publishTemplateVersion}
+          onUnpublish={unpublishTemplateVersion}
+          onArchive={archiveTemplateVersion}
+          onRestore={restoreTemplateVersion}
+          onDelete={destroyTemplateVersion}
+        />
+      </div>
+    </StageColumn>
   );
 }

@@ -55,7 +55,7 @@ export function AdminConsoleOverview() {
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <SectionIntro title="Admin console" subtitle="Reading the store…" />
         <LoadingState rows={4} />
       </div>
@@ -156,7 +156,7 @@ export function AdminConsoleOverview() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
+    <div className="space-y-6">
       <SectionIntro
         title="Admin console"
         subtitle="Relationships, templates and the two seats. Every figure is a store query, and every card opens the list it counts."

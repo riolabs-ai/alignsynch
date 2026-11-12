@@ -28,6 +28,7 @@
  * its sentence handed to the view, and any other failure keeps throwing, because a row that fails
  * the model is a defect the gate exists to catch.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 
 import { InstanceRegistry } from "@/components/admin/instance-registry";
@@ -79,5 +80,9 @@ export default async function AdminInstancesPage() {
     unreadable = error.reason;
   }
 
-  return <InstanceRegistry copy={adminInstancesPageCopy} rows={rows} unreadable={unreadable} />;
+  return (
+    <StageColumn>
+      <InstanceRegistry copy={adminInstancesPageCopy} rows={rows} unreadable={unreadable} />
+    </StageColumn>
+  );
 }

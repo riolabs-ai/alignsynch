@@ -501,7 +501,7 @@ export function PlatformHealth({
 }) {
   const sources = sectionOf(copy, "sources");
   return (
-    <div className="container mx-auto max-w-7xl space-y-6 py-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">{copy.heading}</h1>
         {copy.subtitle === undefined ? null : (

@@ -101,7 +101,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <LoadingState rows={5} />
       </div>
     );
@@ -137,7 +137,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-8">
+    <div className="space-y-5">
       <SectionIntro
         title="Relationships"
         subtitle={`${visible.length} of ${live} live relationships shown · ${rows.length - live} archived. Read-only for answers.`}

@@ -27,6 +27,7 @@
  * its sentence handed to the view, and any other failure keeps throwing, because a row that fails
  * the model is a defect the gate exists to catch.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 
 import { TemplateRegistry } from "@/components/admin/template-registry";
@@ -64,21 +65,23 @@ export default async function AdminTemplatesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">{adminTemplatesPageCopy.heading}</h1>
-        {adminTemplatesPageCopy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {adminTemplatesPageCopy.subtitle}
-          </p>
-        )}
-      </header>
-      <TemplateRegistry
-        copy={adminTemplatesPageCopy}
-        rows={rows}
-        unreadable={unreadable}
-        onCreate={createTemplate}
-      />
-    </div>
+    <StageColumn>
+      <div className="space-y-6">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold">{adminTemplatesPageCopy.heading}</h1>
+          {adminTemplatesPageCopy.subtitle === undefined ? null : (
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              {adminTemplatesPageCopy.subtitle}
+            </p>
+          )}
+        </header>
+        <TemplateRegistry
+          copy={adminTemplatesPageCopy}
+          rows={rows}
+          unreadable={unreadable}
+          onCreate={createTemplate}
+        />
+      </div>
+    </StageColumn>
   );
 }
