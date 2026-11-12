@@ -476,6 +476,11 @@
           "question": "What shipped in which release, and where does this page come from?"
         },
         {
+          "path": "changelog/v1-16-0.md",
+          "title": "v1.16.0",
+          "question": "Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?"
+        },
+        {
           "path": "changelog/v1-0-0.md",
           "title": "v1.0.0",
           "question": "The release where the webapp stopped being a mock."
