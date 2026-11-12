@@ -34,6 +34,7 @@ import { type CreateDraftField, isCreateDraftField, isCreateDraftReason } from "
 import {
   PRICING_PATH,
   RELATIONSHIP_TEMPLATES_PATH,
+  createAspectsPath,
   dashboardTemplateEditorPath,
   relationshipTemplatePath,
 } from "./paths";
@@ -132,9 +133,22 @@ export function createRefusal(
   if (code === "unknown-template") {
     return { sentence: itemLabel(problems, "unknown-template"), link: library };
   }
-  // #699 — stage 3's list emptied by the creator, not the template's fault.
+  // #699 — stage 3's list emptied by the creator, not the template's fault. #878 — the sentence
+  // already names the fix ("Add one to the list before continuing"), so the band carries the door
+  // back to that list: **stage 3 of this template's own create flow**, never the library. The label
+  // is the stage-4 section's own `back` item — the same word the foot's Back control draws on the
+  // screen the refusal lands on — so the band invents no copy.
   if (code === "aspects-none") {
-    return { sentence: itemLabel(problems, "aspects-none"), link: null };
+    return {
+      sentence: itemLabel(problems, "aspects-none"),
+      link:
+        slug === ""
+          ? library
+          : {
+              href: createAspectsPath(slug),
+              label: itemLabel(sectionOf(assessmentCreatePageCopy, "account"), "back"),
+            },
+    };
   }
   if (code === "record-is-an-instance") {
     return { sentence: itemLabel(problems, "record-is-an-instance"), link: library };
