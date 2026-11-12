@@ -1162,6 +1162,64 @@ async function main() {
     return;
   }
 
+  /**
+   * #914 — the review shelf's rows, and *only* those.
+   *
+   * The catalogue in `data/review-artifacts.ts` reaches `review_artifact` through this file, but the
+   * full seed is all-or-nothing inside one transaction: on the shared demo branch a single
+   * assessment row another card authored makes the closing drift check throw, which rolls the
+   * shelf rows back with everything else. The shelf then 404s an artifact that is committed, in the
+   * catalogue and in the manifest — the whole reason the `?artifact=` link was dead.
+   *
+   * So this is the narrow door: no lock, no content rows, no sweep, no auth server, one idempotent
+   * upsert per catalogue row. It cannot damage a branch someone else is seeding, and it is the
+   * command a merge needs when only the shelf moved.
+   */
+  if (process.argv.includes("--review")) {
+    const client = new Client({
+      connectionString: writeDatabaseUrl(),
+      application_name: "db:seed --review",
+    });
+    await client.connect();
+    try {
+      const count = await syncReviewArtifacts(client);
+      console.log(`review artifacts: ${count} row(s) upserted from data/review-artifacts.ts`);
+    } finally {
+      await client.end();
+    }
+    return;
+  }
+
+  /**
+   * #914 — the demo identities, and only those.
+   *
+   * `seedDemoAccounts` runs at the *end* of the seed's second transaction, after the content and the
+   * review shelf; phase 1 deletes the three identities at the *start*, in its own committed
+   * transaction. A run that stops in between — a foreign assessment row the closing drift check
+   * refuses, an auth endpoint that answers slowly — therefore leaves the branch holding the content
+   * and none of the demo identities, and `db:seed` cannot be re-run while the branch still carries a
+   * row another card authored. That is the state the demo buttons on `/login` are dead in, and this
+   * is the narrow repair: the same three functions in the same order, no deletes, no content writes.
+   */
+  if (process.argv.includes("--demo-accounts")) {
+    const client = new Client({
+      connectionString: writeDatabaseUrl(),
+      application_name: "db:seed --demo-accounts",
+    });
+    await client.connect();
+    try {
+      const accounts = await seedDemoAccounts(client);
+      const bound = await bindDemoParties(client, accounts);
+      await syncRelationshipMembers(client);
+      console.log(
+        `demo accounts: ${accounts.length} identity(ies) restored, ${[...bound].length} party binding(s)`,
+      );
+    } finally {
+      await client.end();
+    }
+    return;
+  }
+
   // The platform admins, read once before any phase so the removal and the seed share one list.
   // A half-configured pair is a printed warning, never a failure: nothing configured is the gate's
   // state, and a stray variable must not turn a content seed red.
