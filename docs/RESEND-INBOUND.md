@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Resend inbound · prev [Demo auth](DEMO-AUTH.md) · next [P3 exit record](P3-EXIT.md)
+[Docs hub](README.md) › **Operations** › Resend inbound · prev [The growth model](GROWTH-MODEL.md) · next [P3 exit record](P3-EXIT.md)
 
 <!-- docs-nav:end -->
 
@@ -99,6 +99,6 @@ failing row's values.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Resend inbound · prev [Demo auth](DEMO-AUTH.md) · next [P3 exit record](P3-EXIT.md)
+[Docs hub](README.md) › **Operations** › Resend inbound · prev [The growth model](GROWTH-MODEL.md) · next [P3 exit record](P3-EXIT.md)
 
 <!-- docs-nav:end -->

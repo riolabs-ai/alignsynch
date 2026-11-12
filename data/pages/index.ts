@@ -21,6 +21,8 @@ import { adminBroadcastPageCopy } from "./admin-broadcast";
 import { adminDocPageCopy } from "./admin-docs-document";
 import { adminDocsPageCopy } from "./admin-docs";
 import { adminGapsPageCopy } from "./admin-gaps";
+// #920 — the growth model: cohorts, plan mix, churn and invoices from one committed artifact.
+import { adminGrowthPageCopy } from "./admin-growth";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
@@ -97,6 +99,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/docs": adminDocsPageCopy,
   "/admin/docs/[...slug]": adminDocPageCopy,
   "/admin/gaps": adminGapsPageCopy,
+  // #920 — the growth model and the sampled operational set beside it.
+  "/admin/growth": adminGrowthPageCopy,
   "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
