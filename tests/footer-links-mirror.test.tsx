@@ -11,11 +11,15 @@
  *
  * So this case renders both surfaces with the harness `tests/marketing-header.test.ts` uses
  * (`renderToStaticMarkup`, `next/link` mocked to an `<a>`), reads the anchors out of the header's
- * `<nav>` and out of the footer's Quick Links `<ul>`, and asserts they are **equal** — hrefs,
- * words and order. It fails on a sixth header row with no footer twin, on a footer row that
- * points somewhere else, and on a reordering on either side.
+ * `<nav>` and out of the footer's link column (headed `Website Links` — owner comment 823), and
+ * asserts they are **equal** — hrefs, words and order. It fails on a sixth header row with no
+ * footer twin, on a footer row that points somewhere else, and on a reordering on either side.
  *
- * It also pins the part of this that must not move: the quiz brand's Quick Links column is a
+ * It also pins the two headings, one per brand: the AlignSynch column reads `Website Links`, the
+ * quiz brand's reads `Quick Links`. Neither is derived from the other, so a rename that travels
+ * across the brand line fails here instead of shipping.
+ *
+ * And it pins the part of this that must not move: the quiz brand's Quick Links column is a
  * different list (Dashboard · Create Quiz · Leaderboard · Affiliate Program · Pricing), and it is
  * byte-identical to what it was before the mirror — the owner was reading the AlignSynch footer,
  * and the quiz product's footer is not in this card's scope.
@@ -61,18 +65,37 @@ function headerMenu(html: string): Anchor[] {
 }
 
 /**
- * The anchors of a footer "Quick Links" column, in document order.
+ * A footer heading, as a regex fragment: the words, then the `</h3>` and the list it titles.
  *
- * The footer draws the heading and then the list; `column` picks the list when a brand draws two
- * (the quiz column comes back below this one for a viewer with the quiz capability), and here it
- * is always the first — the AlignSynch column on `alignsynch`, the quiz one on `quizhub`.
+ * The headings are authored strings (`data/pages/shell.ts`), so they can match in more than one
+ * place — escaping what the fixture contains keeps a `?` or a `(` in a future heading from turning
+ * this into a pattern that matches something else.
  */
-function footerColumn(html: string, column = 0): Anchor[] {
-  const blocks = [
-    ...html.matchAll(/Quick Links[\s\S]{0,300}?<\/h3>\s*<ul[^>]*>([\s\S]*?)<\/ul>/g),
-  ].map(([, inner]) => inner);
-  expect(blocks.length, "no Quick Links column rendered").toBeGreaterThan(column);
+function headingPattern(heading: string): RegExp {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`${escaped}[\\s\\S]{0,300}?<\\/h3>\\s*<ul[^>]*>([\\s\\S]*?)<\\/ul>`, "g");
+}
+
+/**
+ * The anchors of a footer column, picked by the heading it draws, in document order.
+ *
+ * `column` picks the list when a brand draws two columns under one heading, and here it is always
+ * the first — the AlignSynch column on `alignsynch`, the quiz one on `quizhub`.
+ */
+function footerColumn(html: string, heading: string, column = 0): Anchor[] {
+  const blocks = [...html.matchAll(headingPattern(heading))].map(([, inner]) => inner);
+  expect(blocks.length, `no "${heading}" column rendered`).toBeGreaterThan(column);
   return anchorsOf(blocks[column] ?? "");
+}
+
+/** Every `h3` the footer draws, as words — the column titles, in document order. */
+function footerHeadings(html: string): string[] {
+  return [...html.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>/g)].map(([, inner]) =>
+    inner
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 }
 
 function headerHtml(): string {
@@ -100,7 +123,15 @@ function footerHtml(brandId: BrandId): string {
 
 describe("the AlignSynch footer column is the public header menu", () => {
   const menu = headerMenu(headerHtml());
-  const column = footerColumn(footerHtml("alignsynch"));
+  const column = footerColumn(footerHtml("alignsynch"), "Website Links");
+
+  it("heads the column 'Website Links' — the owner's comment 823, as an assertion", () => {
+    // The rename is the AlignSynch column's alone. On this viewer's footer (no quiz capability,
+    // so the quiz columns are not drawn) `Quick Links` must be gone: that heading belongs to the
+    // quiz column's different list, not to this one.
+    expect(footerHeadings(footerHtml("alignsynch"))).toContain("Website Links");
+    expect(footerHeadings(footerHtml("alignsynch"))).not.toContain("Quick Links");
+  });
 
   it("draws the five public rows of the header, in the header's order", () => {
     expect(menu.map((anchor) => anchor.href)).toEqual([
@@ -137,12 +168,22 @@ describe("the quiz footer is untouched by the mirror", () => {
    * not its fourth — and nothing was inserted beside it.
    */
   it("still reads Dashboard · Create Quiz · Leaderboard · Affiliate Program · Pricing", () => {
-    expect(footerColumn(footerHtml("quizhub")).map((anchor) => ({ ...anchor }))).toEqual([
+    expect(
+      footerColumn(footerHtml("quizhub"), "Quick Links").map((anchor) => ({ ...anchor })),
+    ).toEqual([
       { href: "/dashboard/user", text: "Dashboard" },
       { href: "/create/editor", text: "Create Quiz" },
       { href: "/leaderboard", text: "Leaderboard" },
       { href: "/affiliate", text: "Affiliate Program" },
       { href: "/pricing", text: "Pricing" },
     ]);
+  });
+
+  it("still heads that column 'Quick Links', and never 'Website Links'", () => {
+    // The other half of the pin: the AlignSynch rename must not travel. A future edit that moves
+    // both headings together fails here, on the brand that was never in this card's scope.
+    const headings = footerHeadings(footerHtml("quizhub"));
+    expect(headings).toContain("Quick Links");
+    expect(headings).not.toContain("Website Links");
   });
 });

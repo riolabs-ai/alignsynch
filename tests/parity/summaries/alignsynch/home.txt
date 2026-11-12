@@ -36,7 +36,7 @@ headings (36)
   h3  "— A shared sense of purpose"
   h2  "Reduce stress. Reduce surprises."
   h3  "Product news"
-  h3  "Quick Links"
+  h3  "Website Links"
   h3  "Contact"
 
 landmarks (7)
