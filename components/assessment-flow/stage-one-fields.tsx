@@ -67,9 +67,16 @@ export interface StageOneValues {
   readonly description: string;
 }
 
-/** The shared control shapes — the shipped create form's own classes, not a second style. */
+/**
+ * The shared control shapes — the shipped create form's own classes, not a second style — and a
+ * control fills the cell it is in. `w-full` is what the old one-per-row form got away without: a
+ * bare `<input>` keeps its intrinsic `size="20"` width, which fits a full-width row and is wider
+ * than a half of the two-column name pair — where it overflowed the cell (found in local review of
+ * Stage 1, 2026-11-12). `min-w-0` lets the grid item shrink below that intrinsic width instead of
+ * pushing its own track wider.
+ */
 const INPUT_CLASSES =
-  "rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950";
+  "w-full min-w-0 rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950";
 const LABEL_CLASSES = "font-medium text-gray-700 dark:text-gray-200";
 const HELP_CLASSES = "text-xs text-gray-500 dark:text-gray-400";
 
