@@ -134,6 +134,7 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
  */
 export function LoginView({
   copy,
+  onSwitchToRegister,
   marks,
   markSrc,
   next,
@@ -177,6 +178,13 @@ export function LoginView({
    * open a new tab: the person is mid-flow and must not lose the stage they were on.
    */
   leaving?: boolean;
+  /**
+   * Swaps to sign-up **in place** (#829). Present, the "Sign up" control under the form is a
+   * button that calls this instead of a link to `/register`; absent, `/login` keeps its link and
+   * its navigation, byte-identically (proven by `pnpm parity`). Stage 4 of the create flow needs
+   * the in-place form: a navigation there would leave the stage column and the review beside it.
+   */
+  onSwitchToRegister?: () => void;
   next: string;
   /**
    * The one sentence for a visitor who was accepting an invitation (#t_0aa81144), or `null` for
@@ -537,9 +545,19 @@ export function LoginView({
             </form>
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}
-              <Link href="/register" className="text-action">
-                {itemLabel(form, "signup-action")}
-              </Link>
+              {onSwitchToRegister === undefined ? (
+                <Link href="/register" className="text-action">
+                  {itemLabel(form, "signup-action")}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onSwitchToRegister}
+                  className="text-action hover:underline"
+                >
+                  {itemLabel(form, "signup-action")}
+                </button>
+              )}
             </div>
 
             {/* The demo surfaces, resolved on the server (#218). `off` renders nothing — no
