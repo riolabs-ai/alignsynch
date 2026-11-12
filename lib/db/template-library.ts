@@ -106,6 +106,17 @@ function libraryTemplateOf(row: LibraryRow, viewerUserId: string | null): Librar
  * screen would be a template with no action that could make it usable, so the platform's blank
  * stays out; a draft the *viewer* wrote would stay in, because a person has to be able to manage
  * their own row whatever state it is in.
+ *
+ * **A relationship's private copy is not a template, and this read now says so (#743).** Creating
+ * a relationship copies the chosen template into a `record` of its own and points
+ * `relationship.template_id` at that copy (`lib/member/relationships.ts`). The copy is written
+ * `draft`, `private`, and `author_user_id = actor` — which satisfied every clause above, so it was
+ * listed on this screen as one of the account's own templates. Measured on the demo branch before
+ * the fix: a freshly created relationship added a phantom "Yours" row whose archive and delete
+ * controls would have reached a live relationship's own record. The exclusion is the same one
+ * `lib/member/templates.ts` states for `/dashboard/templates` (`OWNED_TEMPLATE_PREDICATE`), spelled
+ * the same way, because it is one fact: a private record somebody started a relationship from is
+ * that relationship's configuration, not a template of theirs.
  */
 export async function listLibraryTemplates(
   viewerUserId: string | null,
@@ -117,6 +128,10 @@ export async function listLibraryTemplates(
       WHERE r.record_type = 'assessment'
         AND (r.status <> 'draft' OR r.author_user_id = $1)
         AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
+        AND NOT EXISTS (
+          SELECT 1 FROM relationship rel
+           WHERE rel.template_id = r.id AND r.visibility = 'private'
+        )
         AND (r.author_user_id IS NULL OR r.author_user_id = $1)
       ORDER BY r.title`,
     [viewerUserId],
