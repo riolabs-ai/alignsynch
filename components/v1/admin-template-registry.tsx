@@ -85,9 +85,9 @@ export function AdminTemplateRegistry() {
           <TableHeader>
             <TableRow>
               <TableHead>Template</TableHead>
-              <TableHead>Aspects</TableHead>
-              <TableHead>Started from it</TableHead>
-              <TableHead>Archived</TableHead>
+              <TableHead className="text-right">Aspects</TableHead>
+              <TableHead className="text-right">Started from it</TableHead>
+              <TableHead className="text-right">Archived</TableHead>
               <TableHead>State</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -108,13 +108,13 @@ export function AdminTemplateRegistry() {
                   </Link>
                   <p className="text-xs text-muted-foreground">{template.id}</p>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
                   {template.aspectCount}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
                   {template.startedCount} live
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
                   {template.archivedCount}
                 </TableCell>
                 <TableCell>

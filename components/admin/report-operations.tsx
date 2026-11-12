@@ -164,7 +164,11 @@ function SubmissionTable({
   copy: PageCopySection;
 }) {
   if (answers.length === 0) {
-    return <p className="text-sm text-muted-foreground">{itemLabel(copy, "no-answers")}</p>;
+    return (
+      <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+        {itemLabel(copy, "no-answers")}
+      </p>
+    );
   }
   return (
     <ul data-submission-answers={answers.length} className="space-y-2">
@@ -354,20 +358,22 @@ export function ReportOperations({
             </CardContent>
           </Card>
 
-          <Card data-not-computable="true">
-            <CardHeader>
-              <CardTitle>{headingOf(notComputableCopy)}</CardTitle>
-              <CardDescription>{sectionBody(notComputableCopy)}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ready.not_computable.map((entry) => (
-                <div key={entry.id} data-gap-step={entry.id} className="rounded-md border p-3">
-                  <p className="text-sm font-medium">{itemLabel(notComputableCopy, "doubt")}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{entry.reason}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          {ready.not_computable.length === 0 ? null : (
+            <Card data-not-computable="true">
+              <CardHeader>
+                <CardTitle>{headingOf(notComputableCopy)}</CardTitle>
+                <CardDescription>{sectionBody(notComputableCopy)}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {ready.not_computable.map((entry) => (
+                  <div key={entry.id} data-gap-step={entry.id} className="rounded-md border p-3">
+                    <p className="text-sm font-medium">{itemLabel(notComputableCopy, "doubt")}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{entry.reason}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
 

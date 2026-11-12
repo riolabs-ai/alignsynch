@@ -109,7 +109,10 @@ export function SupportInbox({
         </CardHeader>
         <CardContent>
           {source.messages.length === 0 ? (
-            <p data-empty="true" className="text-sm text-muted-foreground">
+            <p
+              data-empty="true"
+              className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground"
+            >
               {itemLabel(listCopy, "empty")}
             </p>
           ) : (

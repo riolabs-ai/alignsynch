@@ -126,6 +126,7 @@ import {
   gatedPages,
   type CopySurface,
 } from "./brand-word";
+import { NON_EMPTY_LISTS, censusFindings } from "./ui-census";
 import {
   danglingEntries,
   generatedKeys,
@@ -839,6 +840,12 @@ const uiSources = UI_ROOTS.flatMap((root) => {
  * not leave the gate. Naming the file (rather than walking all of `lib/`) keeps this a link scan:
  * `lib/` also holds paths built from constants and database modules, and widening E10 to them
  * would report `lib/`'s own relative imports as dead links.
+ *
+ * **The rail's rows moved to `data/nav-menu.json` (#861)** and E10 cannot read them there — its
+ * extractor matches `href:` as TypeScript source, and a JSON key is a quoted string. The file
+ * stays named because a literal `href` written back into the module is still a dead link E10 must
+ * catch, and `pnpm nav:menu --check` (a gate step in every lane) is what resolves the document's
+ * hrefs against this same manifest.
  */
 const LINK_ONLY_SOURCES = ["lib/nav-menu.ts"];
 
@@ -1229,6 +1236,37 @@ if (leavingDashboard.length < LEAVING_MIN_WALKED) {
 }
 
 const leavingCensus = `${leavingDashboard.length} dashboard file(s) against ${leavingRoutes.length} public route(s), ${leavingSurfaces.length} shared departure surface(s)`;
+
+/* ------------------------------------------------------------------ *
+ * E40 — rules 6 and 7 of the reference pattern set, measured
+ *
+ * Rule 6 (numbers right-align in tables and label/value lists) and rule 7 (empty data draws a
+ * bordered block plus one action, never blank space) were the two rules of
+ * `docs/specs/ux-reference-patterns.md` with no measurement behind them: the only evidence anyone
+ * had was a `rg -c tabular-nums` count and a list of files that mentioned no empty state, which is
+ * a candidate list somebody then fixes by hand, one grep hit at a time.
+ *
+ * `scripts/ui-census.ts` owns both derivations — the scope (the console's and the member
+ * dashboard's import closure, from the pages that do not gate themselves out of this brand), the
+ * numeric-cell vocabulary, the record-list shape, the guard forms and the empty-block/action
+ * measurement — and is pure, so `scripts/__tests__/ui-census.test.ts` drives every shape and its
+ * last section asserts the real tree is clean. The same walk is runnable by name:
+ * `pnpm ui:census` prints the counts and exits non-zero on a violation.
+ *
+ * The exemption table (`NON_EMPTY_LISTS`) names an exact file and receiver with the invariant or
+ * the caller that makes the empty state impossible or somebody else's, and a row nothing used is a
+ * finding — the same shape as `BRAND_WORD_ALLOWANCES`, so the boundary cannot be pre-widened.
+ * ------------------------------------------------------------------ */
+
+const uiCensusFiles = uiSources.filter(
+  (file) => file.path.endsWith(".tsx") && !file.path.startsWith("components/ui/"),
+);
+
+const uiCensusResult = censusFindings({ files: uiCensusFiles, exemptions: NON_EMPTY_LISTS });
+
+for (const problem of uiCensusResult.problems) err(problem.rule, problem.message);
+
+const uiCensusSummary = `${uiCensusResult.census.numericCells} numeric cells (${uiCensusResult.census.aligned} right-aligned), ${uiCensusResult.census.listSurfaces} list surfaces (${uiCensusResult.census.bordered} bordered, ${uiCensusResult.census.absent} omitted when empty, ${uiCensusResult.census.zeroAction} with no action, ${uiCensusResult.census.exemptions} exempt) across ${uiCensusResult.census.modules} console/member modules`;
 
 const imageTags = nextImageTags(imageSources);
 const imageMeasured = imageCensus(imageTags);
@@ -1949,6 +1987,7 @@ console.log(
 console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
 console.log(`      ${brandWordCensus} (E37)`);
 console.log(`      ${leavingCensus} (E39)`);
+console.log(`      ${uiCensusSummary} (E40)`);
 console.log(
   `      ${iconMarkMeasurements.length} icon set(s) drawn from the brand's own mark (E38${iconMarkMeasurements.length > 0 ? `: ${iconMarkMeasurements.join(", ")}` : " — no record names a mark"})`,
 );

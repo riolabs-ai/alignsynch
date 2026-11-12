@@ -168,9 +168,12 @@ export function TemplateGallery({
                 <p className="text-sm text-muted-foreground">{unreadable}</p>
               </div>
             ) : rows.length === 0 ? (
-              <div data-templates-empty>
-                <p className="text-sm font-medium">{empty.heading}</p>
-                <p className="text-sm text-muted-foreground">{sectionBody(empty)}</p>
+              <div
+                data-templates-empty
+                className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center"
+              >
+                <p className="text-sm font-medium text-foreground">{empty.heading}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{sectionBody(empty)}</p>
               </div>
             ) : (
               <ul data-templates-list className="grid gap-3 sm:grid-cols-2">
