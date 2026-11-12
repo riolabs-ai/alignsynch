@@ -106,6 +106,22 @@ export const alignSynchBrand: Brand = zBrand.parse({
     actionForeground: "#ffffff",
     navActive: "#37474f",
     accentPress: "#0693b8",
+    /**
+     * The AS2 home page's surfaces (#853) — the first page to need a ground other than white.
+     * Sampled from the approved `docs/specs/spec-as2-style-home-redesign/`, and collapsed from the
+     * stylesheet's nine tints to seven roles: the page's `#f2f7f9` hero and `#f5f7f8` model band
+     * were within 3 units of each other and both read as one cool mist, so they are one token
+     * (`mist`) rather than two the next editor has to tell apart. Every one is a **surface**: none
+     * of them is legible as text on white, which is why the page has no `text-paper`-style utility
+     * and the one ink it needed is `deep`.
+     */
+    paper: "#f8fafb",
+    mist: "#f5f7f8",
+    sand: "#eef4f7",
+    line: "#d9e0e3",
+    pale: "#e5f5fa",
+    mark: "#8dc63f",
+    deep: "#156898",
   },
   /**
    * The palette is no longer the logo's palette — the owner picked these values off a rendered

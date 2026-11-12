@@ -55,6 +55,25 @@ const config: Config = {
           hover: "var(--action-hover)",
         },
         "nav-active": "hsl(var(--nav-active))",
+        /**
+         * The AS2 home page's surface roles (#853) — `paper`, `mist`, `sand`, `line`, `pale`,
+         * `mark`, `deep`. Resolved from the custom properties `lib/brand-theme.ts`'s
+         * `brandSurfaceVars()` paints **on the page that uses them**, not on `<html>`: a role
+         * added to the global set moves six unrelated parity renders for zero visual change.
+         *
+         * They are brand roles, not palette steps, and three of them are surfaces only — `paper`,
+         * `mist`, `sand`, `line`, `pale` and `mark` are not legible as text on white, so a
+         * `text-mark` in a component is a contrast defect the reviewer should catch. `deep` is the
+         * one ink the page needed (a deep teal, 5.7:1) and it exists because the cyan `accent` is a
+         * *surface* on this brand: `text-accent` is banned by `scripts/lint-brand-classes.mjs`.
+         */
+        paper: "hsl(var(--paper))",
+        mist: "hsl(var(--mist))",
+        sand: "hsl(var(--sand))",
+        line: "hsl(var(--line))",
+        pale: "hsl(var(--pale))",
+        mark: "hsl(var(--mark))",
+        deep: "hsl(var(--deep))",
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
