@@ -4,6 +4,15 @@
   are the same claim in the place a reviewer reads it, with room to say why.
 -->
 
+## 0 · Issue, gate, head
+
+The issue this closes (`#<n>` — no issue, no build), the `bash scripts/verify.sh` result (`lane=`
+and the seconds it printed), and the exact head sha you proved green:
+
+- Issue:
+- Gate:
+- Head:
+
 ## 1 · Ancestor
 
 The file this copies — the path, not the idea:
