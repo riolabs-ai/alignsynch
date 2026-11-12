@@ -21,6 +21,8 @@
  *   controls   the toolbar: the search field's placeholder, the two selects, the view toggle
  *   tabs       the six filters, in the order the rail draws them (`Drafts` filters `draft`)
  *   status     the seven lifecycle words, as the badges print them
+ *   kind       the record's own kind, as the card's first chip prints it (a relationship,
+ *              never the template it was copied from — #874)
  *   view       what the invitation's state reads as on a row (`live`, `expired`, `claimed`, …)
  *   card       the card's own words, including the per-row menu's four acts and their reasons
  *   empty      no relationships yet
@@ -125,6 +127,22 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     /**
+     * #874 — the record's **own kind**, keyed by the kind's value rather than by the name of
+     * the field it came from.
+     *
+     * A relationship is not a Template: a template is the product a person copies, and a
+     * relationship is the two-party pairing made from one. The card's kind chip resolves
+     * through this table (`wordFor`, beside the `status` and `view` tables it already reads),
+     * so the chip prints a value like every other chip on the card. It used to ask for a
+     * `card` item whose only job was to name the concept, which is why every relationship
+     * read as a "Template". `/templates`, Template records and the catalogue keep their own
+     * noun — this table is the card's, and it says one thing.
+     */
+    {
+      id: "kind",
+      items: [{ id: "relationship", label: "Relationship" }],
+    },
+    /**
      * #620 — the card's own words. The three actions are the owner's labels, verbatim.
      *
      * #739 removed the two controls #620 shipped disabled (`Activate Relationship`, `Gap
@@ -142,7 +160,6 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "card",
       items: [
-        { id: "template", label: "Template" },
         { id: "with", label: "with" },
         { id: "not-claimed", label: "Not claimed yet" },
         { id: "the-other", label: "the other party" },
