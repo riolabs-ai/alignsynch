@@ -298,6 +298,16 @@
           "question": "Where did each photograph come from, who took it, and under which licence?"
         },
         {
+          "path": "specs/spec-design-page-rel-templates-v2/banner/README.md",
+          "title": "Admin notice banner (V2 package)",
+          "question": "Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/admin-brand/README.md",
+          "title": "/admin/brand (V2 package)",
+          "question": "Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?"
+        },
+        {
           "path": "qa-as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"

@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**119 documents in 9 sections.** Every page carries the same nav block, generated
+**121 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,7 +31,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 6 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 24 documents
+- [Product](#product) — 26 documents
 - [Operations](#operations) — 9 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -111,6 +111,8 @@ What the product promises, and the specifications behind it.
 - [`specs/spec-as2-style-home-redesign/README.md`](specs/spec-as2-style-home-redesign/README.md) — **AS2 home redesign (handoff)** — What is in the approved home-redesign package, and how do I preview it?
 - [`specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md`](specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md) — **AS2 home redesign — implementation brief** — Which existing components does the redesign reuse, and what must not change?
 - [`specs/spec-as2-style-home-redesign/ASSET-SOURCES.md`](specs/spec-as2-style-home-redesign/ASSET-SOURCES.md) — **AS2 redesign — asset sources and credits** — Where did each photograph come from, who took it, and under which licence?
+- [`specs/spec-design-page-rel-templates-v2/banner/README.md`](specs/spec-design-page-rel-templates-v2/banner/README.md) — **Admin notice banner (V2 package)** — Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?
+- [`specs/spec-design-page-rel-templates-v2/admin-brand/README.md`](specs/spec-design-page-rel-templates-v2/admin-brand/README.md) — **/admin/brand (V2 package)** — Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?
 - [`qa-as2-home/README.md`](qa-as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
 - [`qa-home-comments/README.md`](qa-home-comments/README.md) — **Home review comments — the logo** — Is the public header's brand lockup a link home, and what did the page look like before it was?
 
