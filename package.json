@@ -19,6 +19,7 @@
     "bundles": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundles.js",
     "gen": "node scripts/gen-fixtures.mjs",
     "nav:menu": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/nav-menu.ts",
+    "qa:links": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-links.ts",
     "brand:icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",

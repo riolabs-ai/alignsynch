@@ -315,6 +315,11 @@
           "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
         },
         {
+          "path": "QA-LINKS.md",
+          "title": "QA links",
+          "question": "Which local routes do I click to QA this change range, and what will each one cost me?"
+        },
+        {
           "path": "BRANCH-TRIAGE.md",
           "title": "Branch triage",
           "question": "Which of the non-main heads is safe, and on what evidence?"
