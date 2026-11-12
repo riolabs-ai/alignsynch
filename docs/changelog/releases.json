@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.15.0",
+      "theme": "the create flow is five stages — the account becomes stage 4 and is the app's own sign-in form, the invitation becomes stage 5 and is the only place anything is sent, and the rail, the spec and the tests all count to five.",
+      "headline": "`feat(flow)` — Account is stage 4 and Invite is stage 5 — the five-cell rail (#825) (#828)"
+    },
+    {
       "version": "1.14.0",
       "theme": "the public catalogue owns the relationship noun \u2014 /relationship-types replaces /templates and the worked example moves under it, every card prices the plan instead of the relationship, and one chip and one member card replace three constants and four tiles.",
       "headline": "`feat(ia)` \u2014 the worked example lives at /relationship-types/<slug>/demo (#794 follow-up) (#809)"

@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**107 documents in 9 sections.** Every page carries the same nav block, generated
+**108 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -35,7 +35,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Operations](#operations) — 8 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 17 documents
+- [Release notes](#release-notes) — 18 documents
 - [Records & QA](#records-qa) — 18 documents
 
 ## Start here
@@ -166,6 +166,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-12-0.md`](changelog/v1-12-0.md) — **v1.12.0** — Which release moved the payment decision into the create flow, and what does it defer?
 - [`changelog/v1-13-0.md`](changelog/v1-13-0.md) — **v1.13.0** — Which release turned the templates page into a directory, and gave every template a page?
 - [`changelog/v1-14-0.md`](changelog/v1-14-0.md) — **v1.14.0** — Which release moved the catalogue onto the relationship noun, and put the plan's price on every card?
+- [`changelog/v1-15-0.md`](changelog/v1-15-0.md) — **v1.15.0** — Which release made the create flow five stages, with the account at stage 4 and the invitation at stage 5?
 
 ## Records & QA
 

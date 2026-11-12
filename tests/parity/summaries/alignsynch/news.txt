@@ -43,7 +43,7 @@ links (16 unique, 32 total)
   /news/quiz-trends-2025                               4
   /news/summer-quiz-championship-announcement          2
   /settings                                            1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.14.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 2
 
 counts
   elements  556
