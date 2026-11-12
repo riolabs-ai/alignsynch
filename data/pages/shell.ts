@@ -90,6 +90,24 @@ export function shellCopy(brand: Brand): PageCopy {
     heading: brand.name,
 
     sections: [
+      /**
+       * The admin notice bar (#906) — the one row above every shell, for one reader.
+       *
+       * Its words live here rather than in `components/layout/admin-notice-bar.tsx` because the bar
+       * mounts in the shell: `data:check` E23 attributes leaf literals by reachable directory, so a
+       * label typed into the component would raise the shell's measured count above its budget of
+       * **0**. The section carries the band's own label as an item and the door as its `cta`, which
+       * is the shape E23 already validates a destination with — the href is checked against
+       * `content/routes.ts`, so the bar cannot point at a page that stopped existing.
+       *
+       * One item is the content, not a limit: a second row is one more `items` entry, same band,
+       * same type, no prop and no variant (`banner/README.md` §5).
+       */
+      {
+        id: "admin-notice",
+        items: [{ id: "label", label: "Admin" }],
+        cta: { label: "Brand and audience profile", href: "/admin/brand" },
+      },
       {
         id: "nav",
         items: [

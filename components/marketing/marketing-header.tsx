@@ -77,6 +77,7 @@ export function MarketingHeader({
   copy,
   mark,
   account,
+  notice = false,
 }: {
   brand: Brand;
   /** The build's brand, so the public menu picks its rows the way the sidebar does. */
@@ -91,9 +92,20 @@ export function MarketingHeader({
    * (#212).
    */
   account: ShellAccount | null;
+  /**
+   * Is the admin notice bar mounted above this header (#906)?
+   *
+   * The bar is a row in the document flow, so a `sticky top-0` header would stick over it. When the
+   * bar is present this header's `top` is `var(--admin-notice-h)` — the height the bar publishes on
+   * the layout wrapper — and when it is not, the class list is the string it shipped with, so a
+   * signed-out or QuizHub render is unchanged.
+   */
+  notice?: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header
+      className={`sticky ${notice ? "top-[var(--admin-notice-h)]" : "top-0"} z-10 border-b border-slate-200 bg-white/95 backdrop-blur`}
+    >
       <div className="marketing-container flex h-20 items-center justify-between gap-6">
         <span className="flex min-w-0 items-center gap-3">
           <Link className="flex shrink-0 items-center" href="/">

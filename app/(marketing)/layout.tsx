@@ -1,11 +1,14 @@
+import { AdminNoticeBar } from "@/components/layout/admin-notice-bar";
 import { Footer } from "@/components/layout/footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
-import { shellAccount } from "@/lib/auth/shell-account";
+import { shellSession } from "@/lib/auth/shell-account";
+import { adminProductShipped, quizProductShipped } from "@/lib/brand-boundary";
 import { brandMark } from "@/lib/brand-mark";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
+import { ADMIN_NOTICE_SHELL_CLASS, adminNoticeVisible } from "@/lib/shell/admin-notice";
 import { publicChromeCopy } from "@/lib/shell-copy";
 import type React from "react";
 
@@ -67,15 +70,31 @@ export default async function MarketingLayout({
   children: React.ReactNode;
 }>) {
   const brandId = brandIdOf(brand);
-  const account = await shellAccount();
+  const { account, role } = await shellSession();
+  /**
+   * The admin notice bar on a public page (#906). Same predicate, same fixture, same component as
+   * `app/(mainlayout)/layout.tsx` — an admin who is signed in gets the row on `/` and `/dashboard`
+   * alike, because the bar belongs to the *shell*, not to one group. The role is the one
+   * `shellSession()` already read for the account slot, so this costs no second profile read, and
+   * the class is added only when the answer is yes: a visitor's markup is unchanged.
+   */
+  const notice = adminNoticeVisible({
+    adminProduct: adminProductShipped(),
+    quizProduct: quizProductShipped(),
+    role,
+  });
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div
+      className={`flex min-h-screen flex-col bg-white${notice ? ` ${ADMIN_NOTICE_SHELL_CLASS}` : ""}`}
+    >
+      {notice ? <AdminNoticeBar copy={shellPageCopy} viewerRole={role} /> : null}
       <MarketingHeader
         account={account}
         brand={brand}
         brandId={brandId}
         copy={publicChromeCopy(shellPageCopy, brandId)}
         mark={brandMark(brand.logo)}
+        notice={notice}
       />
       <div className="flex-1">{children}</div>
       {/*

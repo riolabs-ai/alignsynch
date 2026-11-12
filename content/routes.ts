@@ -27,6 +27,10 @@ const STATIC_ROUTES = [
   "/admin/broadcast",
   // #505 — billing control: subscription state per relationship, and the owner's comp.
   "/admin/billing",
+  // #906 — the brand and audience profile: the canon, rendered for the operator who writes from it.
+  // Reached from the admin notice bar (the only door), gated by the console capability *and* the
+  // alignment product — a quiz-only build answers 404.
+  "/admin/brand",
   // #892 — the documentation home: the 117 pages under docs/, rendered from the manifest the gate
   // already walks. Its document route is a catch-all and lives in `DYNAMIC_ROUTES` below.
   "/admin/docs",

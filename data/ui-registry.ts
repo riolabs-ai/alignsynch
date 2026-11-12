@@ -241,6 +241,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/brand",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The brand and audience profile, rendered as a reference page for an operator: positioning, who the product is for, how the flow works with its privacy gate, the three reusable descriptions (short, company, app) and the closing action — the same eleven headings, in the same order, with the same words as the approved profile document.",
+    notes:
+      "#906 — the second surface that reads the *alignment* product flag (`requireAdminProduct()`, then `requireAlignmentProduct()`, then `requireAdmin()`), so a quiz-only build answers the 404 an unknown URL gets instead of serving another product's brand story. Read-only structurally: no form, no server action, no write import; the words are `data/pages/admin-brand.ts` at a copy budget of 0 and the place to change them is the canon, never the page. Its only entrance is the admin notice bar (`components/layout/admin-notice-bar.tsx`), which is drawn for a signed-in admin on the alignment build only and sits above both the marketing header and the app shell — a sidebar row would put a reference page above five working ones. Six declared divergences from the mockup (gradient hero, two-tone eyebrow, sub-12px type, graphite hue, box-shadow, preview chrome) are named in `docs/specs/spec-design-page-rel-templates-v2/admin-brand/README.md` §6 and land as tokens here, never as hex.",
+  },
+  {
+    kind: "route",
     surface: "/admin/health",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],

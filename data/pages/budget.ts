@@ -74,6 +74,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-broadcast",
     budget: 0,
   },
+  // #906 — the brand and audience profile. Budget 0 from the first commit, like the console's other
+  // screens: the eleven headings, the story's three paragraphs, the three value cards, both audience
+  // cards with their example rows, the counselor and participant notes, the four steps, the three
+  // reusable descriptions, the hero figure's eight labels and the two hero actions are all
+  // `data/pages/admin-brand.ts`, so the next string written in `brand-profile.tsx` is a red build.
+  // Attribution is reachability, so this row counts one component.
+  "/admin/brand": {
+    page: "app/(mainlayout)/admin/brand/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-brand",
+    budget: 0,
+  },
   // #505 — billing control. Budget 0 from the first commit, like the console's other screens: the
   // test-mode banner's three states, the six stat captions, the nine column labels, the five
   // subscription states, the four plan sources, the plan-limit sentences, the comp band's eleven

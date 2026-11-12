@@ -31,7 +31,7 @@ export function As2Benefits({ band }: { band: As2HomeModel["benefits"] }): React
   return (
     <section className="bg-sand py-[86px]" data-home-anchor id="benefits">
       <div className="home-container grid grid-cols-1 items-start gap-[22px] min-[741px]:gap-[34px] min-[981px]:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] min-[981px]:gap-[52px]">
-        <div className="min-[741px]:sticky min-[741px]:top-[calc(var(--site-header-height)+3.75rem)]">
+        <div className="min-[741px]:sticky min-[741px]:top-[calc(var(--admin-notice-h)_+_var(--site-header-height)_+_3.75rem)]">
           {band.eyebrow === undefined ? null : (
             <Eyebrow className="text-[14px]">{band.eyebrow}</Eyebrow>
           )}
