@@ -622,26 +622,44 @@ export function shellCopy(brand: Brand): PageCopy {
         ],
       },
       /**
-       * The AlignSynch footer's link column (issue #156) — the same destinations as the
-       * sidebar's `nav-alignsynch`, minus Home (a footer column whose first row is the page
-       * you are on is furniture, not navigation). The quiz Quick Links and the quiz subject
-       * column replace nothing here: on the alignment brand they are not rendered at all
-       * (`components/layout/footer.tsx` switches on the brand), and an elevated viewer gets
-       * them back below this column.
+       * The AlignSynch footer's link column (issue #156) — and since the owner's
+       * *"footer links mirror the marketing website header menu items for now"*, the
+       * **same five public rows, in the same order** as `AlignSynchPublicNav`
+       * (`components/layout/nav-menus.tsx`): Home · Templates · How It Works · Pricing · Help.
+       *
+       * The row this replaced was the sidebar's `nav-alignsynch` set minus Home ("a footer column
+       * whose first row is the page you are on is furniture"). The mirror decision overrides
+       * that: the footer is a copy of the header's public menu while the mirror holds, so Home is
+       * row one because it is row one up there. The labels are separate ids rather than shared
+       * ones because this section is the footer's own (the header draws the column from
+       * `nav-alignsynch`); `tests/footer-links-mirror.test.tsx` renders both and fails when the
+       * lists — hrefs *and* words — disagree, which is what keeps the mirror checked rather than
+       * remembered.
+       *
+       * The quiz Quick Links and the quiz subject column replace nothing here: on the alignment
+       * brand they are not rendered at all (`components/layout/footer.tsx` switches on the
+       * brand), and an elevated viewer gets them back below this column.
        */
       {
         id: "footer-links-alignsynch",
         heading: "Quick Links",
         items: [
+          { id: "home", label: "Home" },
           { id: "templates", label: "Templates" },
           { id: "how-it-works", label: "How It Works" },
+          /**
+           * The public menu's fourth row (owner, *"before help add Pricing"*). `/pricing` is
+           * unchanged by the brand — it is the plan page both builds render — and the row stands
+           * directly above Help because that is where the header draws it.
+           */
+          { id: "pricing", label: "Pricing" },
           /**
            * The footer's help row (Help/Support split). The footer is mounted by the public pages
            * *and* by four product pages, so this column carries the public destination — `help` —
            * and the rail's `support` row stays the account page. A marketing footer pointing at
            * the account page is the same mistake as a console row pointing at the marketing site.
            *
-           * One row, not two: "Support" and "Help" beside each other in a four-row column is the
+           * One row, not two: "Support" and "Help" beside each other in a five-row column is the
            * same question asked twice, and the split exists so that one URL is not two pages.
            */
           { id: "help", label: "Help" },
