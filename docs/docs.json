@@ -668,6 +668,11 @@
           "question": "Is the lockup back in the chrome, at a seal's size?"
         },
         {
+          "path": "qa-comments-mockup/README.md",
+          "title": "Comments mockup, both placements",
+          "question": "Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?"
+        },
+        {
           "path": "qa-contact-land/README.md",
           "title": "Contact landing",
           "question": "What do the contact pages look like?"

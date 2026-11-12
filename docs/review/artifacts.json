@@ -2,6 +2,11 @@
   "schemaVersion": 1,
   "artifacts": [
     {
+      "id": "review-comments-v1",
+      "release": "1.16.0",
+      "lookFor": "The comment feature drawn before it is specified: one thread component on three subjects — an Aspect opinion (the party's statement, its Aspect on the left, the answer body), a session summary (the verdict band, the Gap, the Aspect table) and a relationship (the two parties, the state chip, the shared sessions). Variant A hangs the thread under the subject and Variant B opens it in a panel beside it so the subject stays in view; switch subject, variant and viewport in the toolbar. Every state is drawn for every subject in both variants — empty, one comment, a thread with a reply collapsed and expanded, the reader's own comment with the affordances drawn three ways (none · edit · delete) because the choice is the owner's, a locked subject whose composer is withheld with a sentence, a long body and a long author name at 390, and the composer's five states (empty, filled, submitting, refused as a sentence beside the field, long text). Dotted-underlined strings are placeholders; the Provenance panel says which of the rest are the app's own words."
+    },
+    {
       "id": "review-relationship-lifecycle-v9",
       "release": "1.16.0",
       "lookFor": "The approved visual reference. The five stages — Details · Settings · Aspects · Account · Invite — run inside one sheet whose cell rail prints Stage N of 5, with Gallery and Detail as how a template gets picked and Invitation sent as the confirmation rather than a stage. The account is the stage before the invite; the invite sends the relationship or keeps it as a draft and charges nothing; Publish Assessment stays locked until a payment method is on file. Align is the dashboard, never a cell in the band — there is no Ongoing stage. This is the artifact the build is measured against; read a screen against this file, never the other way round."
