@@ -495,6 +495,30 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * #785 — the Counterparty's one action on this screen.
+       *
+       * The relationship's template is a private copy of the initiator's, so nothing in either
+       * library lists it for the person who was asked to answer it: without this panel the words
+       * they were invited on are readable once and never theirs. The body says what the copy is
+       * and — the part that keeps it honest — what it is not: taking it changes nothing about the
+       * relationship it came from.
+       */
+      id: "fork",
+      heading: "Keep these Aspects for yourself",
+      body: "This relationship's template belongs to the person who started it, so it is not in your templates. Save a copy and it becomes yours to edit, with the Aspects exactly as they were when the invitation went out — and this relationship is untouched: the same words, the same answers, nothing re-sent. Taking it twice points at the copy you already have instead of making a second one.",
+      items: [
+        { id: "submit", label: "Save this template to My Templates" },
+        { id: "working", label: "Saving…" },
+        {
+          id: "saved",
+          label: "Saved as “{title}” — {aspects} Aspects — in My Templates.",
+        },
+        { id: "reused", label: "You already have this one, saved as “{title}”." },
+        { id: "open", label: "Open My Templates" },
+      ],
+    },
+    {
       id: "closed",
       heading: "This relationship is closed",
       body: "Nothing more happens to a relationship in this state. Starting a new one is a new relationship with its own invitation.",
@@ -555,6 +579,16 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
             "That tier cannot carry a relationship fee. Free is a relationship limit, not a payment exemption.",
         },
         { id: "not-configured", label: "Billing is not configured on this deployment yet." },
+        /* #785 — the fork's own two refusals, one sentence each. */
+        {
+          id: "template-not-yours",
+          label:
+            "That template belongs to another account. Only a party to a relationship can take its template.",
+        },
+        {
+          id: "unknown-template",
+          label: "This relationship's template could not be read — support can repair the binding.",
+        },
         /* #623 — the edit surface's own dead ends, one sentence each. */
         {
           id: "unconfirmed-invalidation",

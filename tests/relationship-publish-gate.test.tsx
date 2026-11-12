@@ -84,6 +84,8 @@ function viewOf(input: {
     trialEndsAt: null,
     lapseSentence: null,
     inviteLinkAvailable: false,
+    /* #785 — the fork is not this file's subject; `tests/relationship-fork.test.tsx` drives it. */
+    canForkTemplate: false,
   };
 }
 
@@ -101,6 +103,8 @@ function html(view: MemberRelationshipView): string {
       onCapture: noop,
       onResolve: noop,
       onComplete: noop,
+      onFork: noop,
+      templatesHref: "/templates/relationship?view=mine",
     }),
   );
 }

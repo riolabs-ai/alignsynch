@@ -126,6 +126,8 @@ function relationshipView(overrides: Partial<MemberRelationshipView> = {}): Memb
     trialEndsAt: null,
     lapseSentence: null,
     inviteLinkAvailable: false,
+    /* #785 — the fork is not this file's subject; `tests/relationship-fork.test.tsx` drives it. */
+    canForkTemplate: false,
     ...overrides,
   };
 }
@@ -151,6 +153,8 @@ function relationshipHtml(view: MemberRelationshipView = relationshipView()): st
       onCapture: noop,
       onResolve: noop,
       onComplete: noop,
+      onFork: noop,
+      templatesHref: "/templates/relationship?view=mine",
     }),
   );
 }
