@@ -112,6 +112,7 @@ describe("the menu descriptor", () => {
     for (const href of [
       "/admin/instances",
       "/admin/gaps",
+      "/admin/growth",
       "/admin/billing",
       "/admin/broadcast",
       "/admin/inbox",
@@ -195,7 +196,8 @@ describe("the ladder decides the rows", () => {
     // #901 put the docs home between it and the log, which is why both moved one place up.
     expect(staff[staff.length - 2]).toBe("/admin/docs");
     expect(staff[staff.length - 3]).toBe("/admin/review");
-    expect(staff).toHaveLength(10);
+    // #920 added the growth row to the operator group — 11 today.
+    expect(staff).toHaveLength(11);
   });
 
   /**
@@ -219,7 +221,8 @@ describe("the ladder decides the rows", () => {
 
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    expect(counts).toEqual([5, 6, 15, 15]);
+    // #920 added one operator row, so the two staff rungs carry 16 each.
+    expect(counts).toEqual([5, 6, 16, 16]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);

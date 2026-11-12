@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [Resend inbound](RESEND-INBOUND.md)
+[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [The growth model](GROWTH-MODEL.md)
 
 <!-- docs-nav:end -->
 
@@ -260,6 +260,6 @@ when there is none.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [Resend inbound](RESEND-INBOUND.md)
+[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [The growth model](GROWTH-MODEL.md)
 
 <!-- docs-nav:end -->

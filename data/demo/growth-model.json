@@ -1,0 +1,5728 @@
+{
+  "modelVersion": 1,
+  "generatedBy": "pnpm growth --seed 42 --months 36 --target-arr 3000000",
+  "params": {
+    "seed": 42,
+    "months": 36,
+    "targetArrCents": 300000000,
+    "baseSignups": 190,
+    "monthlyGrowthBps": 810,
+    "failureBps": 90,
+    "refundBps": 300
+  },
+  "plans": [
+    {
+      "id": "basic",
+      "label": "Basic",
+      "monthlyCents": 895,
+      "logoChurnBps": 340,
+      "revenueChurnBps": 210,
+      "startingShareBps": 6800,
+      "endingShareBps": 4200
+    },
+    {
+      "id": "principal",
+      "label": "Principal",
+      "monthlyCents": 1695,
+      "logoChurnBps": 160,
+      "revenueChurnBps": 110,
+      "startingShareBps": 3200,
+      "endingShareBps": 5800
+    }
+  ],
+  "solve": {
+    "method": "ratio-iteration",
+    "targetArrCents": 300000000,
+    "acquisitionIndexBps": 7207,
+    "passes": 4,
+    "finalArrCents": 299989524,
+    "errorBps": 0,
+    "toleranceBps": 100
+  },
+  "months": [
+    {
+      "month": 0,
+      "label": "2023-11",
+      "startedAt": "2023-11-01T00:00:00.000Z",
+      "signups": 137,
+      "activeAccounts": 137,
+      "churnedAccounts": 0,
+      "newMrrCents": 157815,
+      "retainedMrrCents": 0,
+      "lostMrrCents": 0,
+      "mrrCents": 157815,
+      "arrCents": 1893780,
+      "logoChurnBps": 0,
+      "revenueChurnBps": 0,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 93,
+          "mrrCents": 83235,
+          "invoices": {
+            "issued": 93,
+            "paid": 92,
+            "failed": 1,
+            "refunded": 3,
+            "collectedCents": 82340,
+            "refundedCents": 2685
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 44,
+          "mrrCents": 74580,
+          "invoices": {
+            "issued": 44,
+            "paid": 44,
+            "failed": 0,
+            "refunded": 1,
+            "collectedCents": 74580,
+            "refundedCents": 1695
+          }
+        }
+      ]
+    },
+    {
+      "month": 1,
+      "label": "2023-12",
+      "startedAt": "2023-12-01T00:00:00.000Z",
+      "signups": 148,
+      "activeAccounts": 281,
+      "churnedAccounts": 4,
+      "newMrrCents": 170860,
+      "retainedMrrCents": 150941,
+      "lostMrrCents": 6874,
+      "mrrCents": 321801,
+      "arrCents": 3861612,
+      "logoChurnBps": 292,
+      "revenueChurnBps": 436,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 190,
+          "mrrCents": 168358,
+          "invoices": {
+            "issued": 190,
+            "paid": 188,
+            "failed": 2,
+            "refunded": 6,
+            "collectedCents": 168260,
+            "refundedCents": 5370
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 91,
+          "mrrCents": 153443,
+          "invoices": {
+            "issued": 91,
+            "paid": 90,
+            "failed": 1,
+            "refunded": 3,
+            "collectedCents": 152550,
+            "refundedCents": 5085
+          }
+        }
+      ]
+    },
+    {
+      "month": 2,
+      "label": "2024-01",
+      "startedAt": "2024-01-01T00:00:00.000Z",
+      "signups": 160,
+      "activeAccounts": 434,
+      "churnedAccounts": 7,
+      "newMrrCents": 186400,
+      "retainedMrrCents": 309700,
+      "lostMrrCents": 12101,
+      "mrrCents": 496100,
+      "arrCents": 5953200,
+      "logoChurnBps": 249,
+      "revenueChurnBps": 376,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 290,
+          "mrrCents": 254491,
+          "invoices": {
+            "issued": 290,
+            "paid": 287,
+            "failed": 3,
+            "refunded": 9,
+            "collectedCents": 256865,
+            "refundedCents": 8055
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 144,
+          "mrrCents": 241609,
+          "invoices": {
+            "issued": 144,
+            "paid": 143,
+            "failed": 1,
+            "refunded": 4,
+            "collectedCents": 242385,
+            "refundedCents": 6780
+          }
+        }
+      ]
+    },
+    {
+      "month": 3,
+      "label": "2024-02",
+      "startedAt": "2024-02-01T00:00:00.000Z",
+      "signups": 173,
+      "activeAccounts": 593,
+      "churnedAccounts": 14,
+      "newMrrCents": 202035,
+      "retainedMrrCents": 473668,
+      "lostMrrCents": 22432,
+      "mrrCents": 675703,
+      "arrCents": 8108436,
+      "logoChurnBps": 323,
+      "revenueChurnBps": 452,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 393,
+          "mrrCents": 341721,
+          "invoices": {
+            "issued": 393,
+            "paid": 389,
+            "failed": 4,
+            "refunded": 12,
+            "collectedCents": 348155,
+            "refundedCents": 10740
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 200,
+          "mrrCents": 333982,
+          "invoices": {
+            "issued": 200,
+            "paid": 198,
+            "failed": 2,
+            "refunded": 6,
+            "collectedCents": 335610,
+            "refundedCents": 10170
+          }
+        }
+      ]
+    },
+    {
+      "month": 4,
+      "label": "2024-03",
+      "startedAt": "2024-03-01T00:00:00.000Z",
+      "signups": 187,
+      "activeAccounts": 764,
+      "churnedAccounts": 16,
+      "newMrrCents": 219365,
+      "retainedMrrCents": 648835,
+      "lostMrrCents": 26868,
+      "mrrCents": 868200,
+      "arrCents": 10418400,
+      "logoChurnBps": 270,
+      "revenueChurnBps": 398,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 502,
+          "mrrCents": 432672,
+          "invoices": {
+            "issued": 502,
+            "paid": 497,
+            "failed": 5,
+            "refunded": 15,
+            "collectedCents": 444815,
+            "refundedCents": 13425
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 262,
+          "mrrCents": 435528,
+          "invoices": {
+            "issued": 262,
+            "paid": 260,
+            "failed": 2,
+            "refunded": 8,
+            "collectedCents": 440700,
+            "refundedCents": 13560
+          }
+        }
+      ]
+    },
+    {
+      "month": 5,
+      "label": "2024-04",
+      "startedAt": "2024-04-01T00:00:00.000Z",
+      "signups": 202,
+      "activeAccounts": 945,
+      "churnedAccounts": 21,
+      "newMrrCents": 238390,
+      "retainedMrrCents": 833390,
+      "lostMrrCents": 34810,
+      "mrrCents": 1071780,
+      "arrCents": 12861360,
+      "logoChurnBps": 275,
+      "revenueChurnBps": 401,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 615,
+          "mrrCents": 525598,
+          "invoices": {
+            "issued": 615,
+            "paid": 609,
+            "failed": 6,
+            "refunded": 18,
+            "collectedCents": 545055,
+            "refundedCents": 16110
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 330,
+          "mrrCents": 546182,
+          "invoices": {
+            "issued": 330,
+            "paid": 327,
+            "failed": 3,
+            "refunded": 10,
+            "collectedCents": 554265,
+            "refundedCents": 16950
+          }
+        }
+      ]
+    },
+    {
+      "month": 6,
+      "label": "2024-05",
+      "startedAt": "2024-05-01T00:00:00.000Z",
+      "signups": 219,
+      "activeAccounts": 1139,
+      "churnedAccounts": 25,
+      "newMrrCents": 260005,
+      "retainedMrrCents": 1029835,
+      "lostMrrCents": 41945,
+      "mrrCents": 1289840,
+      "arrCents": 15478080,
+      "logoChurnBps": 265,
+      "revenueChurnBps": 391,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 734,
+          "mrrCents": 622231,
+          "invoices": {
+            "issued": 734,
+            "paid": 727,
+            "failed": 7,
+            "refunded": 22,
+            "collectedCents": 650665,
+            "refundedCents": 19690
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 405,
+          "mrrCents": 667609,
+          "invoices": {
+            "issued": 405,
+            "paid": 401,
+            "failed": 4,
+            "refunded": 12,
+            "collectedCents": 679695,
+            "refundedCents": 20340
+          }
+        }
+      ]
+    },
+    {
+      "month": 7,
+      "label": "2024-06",
+      "startedAt": "2024-06-01T00:00:00.000Z",
+      "signups": 236,
+      "activeAccounts": 1342,
+      "churnedAccounts": 33,
+      "newMrrCents": 281620,
+      "retainedMrrCents": 1237249,
+      "lostMrrCents": 52591,
+      "mrrCents": 1518869,
+      "arrCents": 18226428,
+      "logoChurnBps": 290,
+      "revenueChurnBps": 408,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 855,
+          "mrrCents": 719212,
+          "invoices": {
+            "issued": 855,
+            "paid": 847,
+            "failed": 8,
+            "refunded": 25,
+            "collectedCents": 758065,
+            "refundedCents": 22375
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 487,
+          "mrrCents": 799657,
+          "invoices": {
+            "issued": 487,
+            "paid": 483,
+            "failed": 4,
+            "refunded": 14,
+            "collectedCents": 818685,
+            "refundedCents": 23730
+          }
+        }
+      ]
+    },
+    {
+      "month": 8,
+      "label": "2024-07",
+      "startedAt": "2024-07-01T00:00:00.000Z",
+      "signups": 255,
+      "activeAccounts": 1561,
+      "churnedAccounts": 36,
+      "newMrrCents": 305825,
+      "retainedMrrCents": 1458895,
+      "lostMrrCents": 59974,
+      "mrrCents": 1764720,
+      "arrCents": 21176640,
+      "logoChurnBps": 268,
+      "revenueChurnBps": 395,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 985,
+          "mrrCents": 822456,
+          "invoices": {
+            "issued": 985,
+            "paid": 976,
+            "failed": 9,
+            "refunded": 29,
+            "collectedCents": 873520,
+            "refundedCents": 25955
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 576,
+          "mrrCents": 942264,
+          "invoices": {
+            "issued": 576,
+            "paid": 571,
+            "failed": 5,
+            "refunded": 17,
+            "collectedCents": 967845,
+            "refundedCents": 28815
+          }
+        }
+      ]
+    },
+    {
+      "month": 9,
+      "label": "2024-08",
+      "startedAt": "2024-08-01T00:00:00.000Z",
+      "signups": 276,
+      "activeAccounts": 1794,
+      "churnedAccounts": 43,
+      "newMrrCents": 332620,
+      "retainedMrrCents": 1693918,
+      "lostMrrCents": 70802,
+      "mrrCents": 2026538,
+      "arrCents": 24318456,
+      "logoChurnBps": 275,
+      "revenueChurnBps": 401,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 1121,
+          "mrrCents": 929461,
+          "invoices": {
+            "issued": 1121,
+            "paid": 1111,
+            "failed": 10,
+            "refunded": 33,
+            "collectedCents": 994345,
+            "refundedCents": 29535
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 673,
+          "mrrCents": 1097077,
+          "invoices": {
+            "issued": 673,
+            "paid": 667,
+            "failed": 6,
+            "refunded": 20,
+            "collectedCents": 1130565,
+            "refundedCents": 33900
+          }
+        }
+      ]
+    },
+    {
+      "month": 10,
+      "label": "2024-09",
+      "startedAt": "2024-09-01T00:00:00.000Z",
+      "signups": 298,
+      "activeAccounts": 2040,
+      "churnedAccounts": 52,
+      "newMrrCents": 361110,
+      "retainedMrrCents": 1943966,
+      "lostMrrCents": 82572,
+      "mrrCents": 2305076,
+      "arrCents": 27660912,
+      "logoChurnBps": 290,
+      "revenueChurnBps": 407,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 1260,
+          "mrrCents": 1037761,
+          "invoices": {
+            "issued": 1260,
+            "paid": 1249,
+            "failed": 11,
+            "refunded": 37,
+            "collectedCents": 1117855,
+            "refundedCents": 33115
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 780,
+          "mrrCents": 1267315,
+          "invoices": {
+            "issued": 780,
+            "paid": 773,
+            "failed": 7,
+            "refunded": 23,
+            "collectedCents": 1310235,
+            "refundedCents": 38985
+          }
+        }
+      ]
+    },
+    {
+      "month": 11,
+      "label": "2024-10",
+      "startedAt": "2024-10-01T00:00:00.000Z",
+      "signups": 323,
+      "activeAccounts": 2313,
+      "churnedAccounts": 50,
+      "newMrrCents": 393085,
+      "retainedMrrCents": 2220062,
+      "lostMrrCents": 85014,
+      "mrrCents": 2613147,
+      "arrCents": 31357764,
+      "logoChurnBps": 245,
+      "revenueChurnBps": 369,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 1414,
+          "mrrCents": 1157164,
+          "invoices": {
+            "issued": 1414,
+            "paid": 1401,
+            "failed": 13,
+            "refunded": 42,
+            "collectedCents": 1253895,
+            "refundedCents": 37590
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 899,
+          "mrrCents": 1455983,
+          "invoices": {
+            "issued": 899,
+            "paid": 891,
+            "failed": 8,
+            "refunded": 27,
+            "collectedCents": 1510245,
+            "refundedCents": 45765
+          }
+        }
+      ]
+    },
+    {
+      "month": 12,
+      "label": "2024-11",
+      "startedAt": "2024-11-01T00:00:00.000Z",
+      "signups": 349,
+      "activeAccounts": 2596,
+      "churnedAccounts": 66,
+      "newMrrCents": 426755,
+      "retainedMrrCents": 2507316,
+      "lostMrrCents": 105831,
+      "mrrCents": 2934071,
+      "arrCents": 35208852,
+      "logoChurnBps": 285,
+      "revenueChurnBps": 405,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 1570,
+          "mrrCents": 1277238,
+          "invoices": {
+            "issued": 1570,
+            "paid": 1556,
+            "failed": 14,
+            "refunded": 47,
+            "collectedCents": 1392620,
+            "refundedCents": 42065
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 1026,
+          "mrrCents": 1656833,
+          "invoices": {
+            "issued": 1026,
+            "paid": 1017,
+            "failed": 9,
+            "refunded": 31,
+            "collectedCents": 1723815,
+            "refundedCents": 52545
+          }
+        }
+      ]
+    },
+    {
+      "month": 13,
+      "label": "2024-12",
+      "startedAt": "2024-12-01T00:00:00.000Z",
+      "signups": 377,
+      "activeAccounts": 2902,
+      "churnedAccounts": 71,
+      "newMrrCents": 463015,
+      "retainedMrrCents": 2818841,
+      "lostMrrCents": 115230,
+      "mrrCents": 3281856,
+      "arrCents": 39382272,
+      "logoChurnBps": 273,
+      "revenueChurnBps": 393,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 1736,
+          "mrrCents": 1404359,
+          "invoices": {
+            "issued": 1736,
+            "paid": 1720,
+            "failed": 16,
+            "refunded": 52,
+            "collectedCents": 1539400,
+            "refundedCents": 46540
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 1166,
+          "mrrCents": 1877497,
+          "invoices": {
+            "issued": 1166,
+            "paid": 1156,
+            "failed": 10,
+            "refunded": 35,
+            "collectedCents": 1959420,
+            "refundedCents": 59325
+          }
+        }
+      ]
+    },
+    {
+      "month": 14,
+      "label": "2025-01",
+      "startedAt": "2025-01-01T00:00:00.000Z",
+      "signups": 407,
+      "activeAccounts": 3231,
+      "churnedAccounts": 78,
+      "newMrrCents": 502665,
+      "retainedMrrCents": 3154849,
+      "lostMrrCents": 127007,
+      "mrrCents": 3657514,
+      "arrCents": 43890168,
+      "logoChurnBps": 269,
+      "revenueChurnBps": 387,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 1911,
+          "mrrCents": 1537607,
+          "invoices": {
+            "issued": 1911,
+            "paid": 1894,
+            "failed": 17,
+            "refunded": 57,
+            "collectedCents": 1695130,
+            "refundedCents": 51015
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 1320,
+          "mrrCents": 2119907,
+          "invoices": {
+            "issued": 1320,
+            "paid": 1308,
+            "failed": 12,
+            "refunded": 39,
+            "collectedCents": 2217060,
+            "refundedCents": 66105
+          }
+        }
+      ]
+    },
+    {
+      "month": 15,
+      "label": "2025-02",
+      "startedAt": "2025-02-01T00:00:00.000Z",
+      "signups": 440,
+      "activeAccounts": 3586,
+      "churnedAccounts": 85,
+      "newMrrCents": 545800,
+      "retainedMrrCents": 3518674,
+      "lostMrrCents": 138840,
+      "mrrCents": 4064474,
+      "arrCents": 48773688,
+      "logoChurnBps": 263,
+      "revenueChurnBps": 380,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 2096,
+          "mrrCents": 1677760,
+          "invoices": {
+            "issued": 2096,
+            "paid": 2077,
+            "failed": 19,
+            "refunded": 62,
+            "collectedCents": 1858915,
+            "refundedCents": 55490
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 1490,
+          "mrrCents": 2386714,
+          "invoices": {
+            "issued": 1490,
+            "paid": 1477,
+            "failed": 13,
+            "refunded": 44,
+            "collectedCents": 2503515,
+            "refundedCents": 74580
+          }
+        }
+      ]
+    },
+    {
+      "month": 16,
+      "label": "2025-03",
+      "startedAt": "2025-03-01T00:00:00.000Z",
+      "signups": 476,
+      "activeAccounts": 3969,
+      "churnedAccounts": 93,
+      "newMrrCents": 593220,
+      "retainedMrrCents": 3912500,
+      "lostMrrCents": 151974,
+      "mrrCents": 4505720,
+      "arrCents": 54068640,
+      "logoChurnBps": 259,
+      "revenueChurnBps": 374,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 2292,
+          "mrrCents": 1825815,
+          "invoices": {
+            "issued": 2292,
+            "paid": 2271,
+            "failed": 21,
+            "refunded": 68,
+            "collectedCents": 2032545,
+            "refundedCents": 60860
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 1677,
+          "mrrCents": 2679905,
+          "invoices": {
+            "issued": 1677,
+            "paid": 1662,
+            "failed": 15,
+            "refunded": 50,
+            "collectedCents": 2817090,
+            "refundedCents": 84750
+          }
+        }
+      ]
+    },
+    {
+      "month": 17,
+      "label": "2025-04",
+      "startedAt": "2025-04-01T00:00:00.000Z",
+      "signups": 515,
+      "activeAccounts": 4378,
+      "churnedAccounts": 106,
+      "newMrrCents": 644925,
+      "retainedMrrCents": 4332247,
+      "lostMrrCents": 173473,
+      "mrrCents": 4977172,
+      "arrCents": 59726064,
+      "logoChurnBps": 267,
+      "revenueChurnBps": 385,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 2500,
+          "mrrCents": 1982521,
+          "invoices": {
+            "issued": 2500,
+            "paid": 2477,
+            "failed": 23,
+            "refunded": 74,
+            "collectedCents": 2216915,
+            "refundedCents": 66230
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 1878,
+          "mrrCents": 2994651,
+          "invoices": {
+            "issued": 1878,
+            "paid": 1861,
+            "failed": 17,
+            "refunded": 56,
+            "collectedCents": 3154395,
+            "refundedCents": 94920
+          }
+        }
+      ]
+    },
+    {
+      "month": 18,
+      "label": "2025-05",
+      "startedAt": "2025-05-01T00:00:00.000Z",
+      "signups": 556,
+      "activeAccounts": 4819,
+      "churnedAccounts": 115,
+      "newMrrCents": 699220,
+      "retainedMrrCents": 4789668,
+      "lostMrrCents": 187504,
+      "mrrCents": 5488888,
+      "arrCents": 65866656,
+      "logoChurnBps": 263,
+      "revenueChurnBps": 377,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 2718,
+          "mrrCents": 2146022,
+          "invoices": {
+            "issued": 2718,
+            "paid": 2694,
+            "failed": 24,
+            "refunded": 81,
+            "collectedCents": 2411130,
+            "refundedCents": 72495
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 2101,
+          "mrrCents": 3342866,
+          "invoices": {
+            "issued": 2101,
+            "paid": 2082,
+            "failed": 19,
+            "refunded": 62,
+            "collectedCents": 3528990,
+            "refundedCents": 105090
+          }
+        }
+      ]
+    },
+    {
+      "month": 19,
+      "label": "2025-06",
+      "startedAt": "2025-06-01T00:00:00.000Z",
+      "signups": 601,
+      "activeAccounts": 5299,
+      "churnedAccounts": 121,
+      "newMrrCents": 759495,
+      "retainedMrrCents": 5287246,
+      "lostMrrCents": 201642,
+      "mrrCents": 6046741,
+      "arrCents": 72560892,
+      "logoChurnBps": 251,
+      "revenueChurnBps": 367,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 2954,
+          "mrrCents": 2322940,
+          "invoices": {
+            "issued": 2954,
+            "paid": 2927,
+            "failed": 27,
+            "refunded": 88,
+            "collectedCents": 2619665,
+            "refundedCents": 78760
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 2345,
+          "mrrCents": 3723801,
+          "invoices": {
+            "issued": 2345,
+            "paid": 2324,
+            "failed": 21,
+            "refunded": 70,
+            "collectedCents": 3939180,
+            "refundedCents": 118650
+          }
+        }
+      ]
+    },
+    {
+      "month": 20,
+      "label": "2025-07",
+      "startedAt": "2025-07-01T00:00:00.000Z",
+      "signups": 650,
+      "activeAccounts": 5805,
+      "churnedAccounts": 144,
+      "newMrrCents": 825750,
+      "retainedMrrCents": 5815128,
+      "lostMrrCents": 231613,
+      "mrrCents": 6640878,
+      "arrCents": 79690536,
+      "logoChurnBps": 272,
+      "revenueChurnBps": 383,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 3194,
+          "mrrCents": 2502268,
+          "invoices": {
+            "issued": 3194,
+            "paid": 3165,
+            "failed": 29,
+            "refunded": 95,
+            "collectedCents": 2832675,
+            "refundedCents": 85025
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 2611,
+          "mrrCents": 4138610,
+          "invoices": {
+            "issued": 2611,
+            "paid": 2588,
+            "failed": 23,
+            "refunded": 78,
+            "collectedCents": 4386660,
+            "refundedCents": 132210
+          }
+        }
+      ]
+    },
+    {
+      "month": 21,
+      "label": "2025-08",
+      "startedAt": "2025-08-01T00:00:00.000Z",
+      "signups": 703,
+      "activeAccounts": 6362,
+      "churnedAccounts": 146,
+      "newMrrCents": 897185,
+      "retainedMrrCents": 6398430,
+      "lostMrrCents": 242448,
+      "mrrCents": 7295615,
+      "arrCents": 87547380,
+      "logoChurnBps": 252,
+      "revenueChurnBps": 365,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 3456,
+          "mrrCents": 2697577,
+          "invoices": {
+            "issued": 3456,
+            "paid": 3425,
+            "failed": 31,
+            "refunded": 103,
+            "collectedCents": 3065375,
+            "refundedCents": 92185
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 2906,
+          "mrrCents": 4598038,
+          "invoices": {
+            "issued": 2906,
+            "paid": 2880,
+            "failed": 26,
+            "refunded": 86,
+            "collectedCents": 4881600,
+            "refundedCents": 145770
+          }
+        }
+      ]
+    },
+    {
+      "month": 22,
+      "label": "2025-09",
+      "startedAt": "2025-09-01T00:00:00.000Z",
+      "signups": 760,
+      "activeAccounts": 6954,
+      "churnedAccounts": 168,
+      "newMrrCents": 973800,
+      "retainedMrrCents": 7022913,
+      "lostMrrCents": 272702,
+      "mrrCents": 7996713,
+      "arrCents": 95960556,
+      "logoChurnBps": 264,
+      "revenueChurnBps": 374,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 3728,
+          "mrrCents": 2900655,
+          "invoices": {
+            "issued": 3728,
+            "paid": 3694,
+            "failed": 34,
+            "refunded": 111,
+            "collectedCents": 3306130,
+            "refundedCents": 99345
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 3226,
+          "mrrCents": 5096058,
+          "invoices": {
+            "issued": 3226,
+            "paid": 3197,
+            "failed": 29,
+            "refunded": 96,
+            "collectedCents": 5418915,
+            "refundedCents": 162720
+          }
+        }
+      ]
+    },
+    {
+      "month": 23,
+      "label": "2025-10",
+      "startedAt": "2025-10-01T00:00:00.000Z",
+      "signups": 821,
+      "activeAccounts": 7600,
+      "churnedAccounts": 175,
+      "newMrrCents": 1057195,
+      "retainedMrrCents": 7705382,
+      "lostMrrCents": 291331,
+      "mrrCents": 8762577,
+      "arrCents": 105150924,
+      "logoChurnBps": 252,
+      "revenueChurnBps": 364,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 4022,
+          "mrrCents": 3119203,
+          "invoices": {
+            "issued": 4022,
+            "paid": 3986,
+            "failed": 36,
+            "refunded": 120,
+            "collectedCents": 3567470,
+            "refundedCents": 107400
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 3578,
+          "mrrCents": 5643374,
+          "invoices": {
+            "issued": 3578,
+            "paid": 3546,
+            "failed": 32,
+            "refunded": 106,
+            "collectedCents": 6010470,
+            "refundedCents": 179670
+          }
+        }
+      ]
+    },
+    {
+      "month": 24,
+      "label": "2025-11",
+      "startedAt": "2025-11-01T00:00:00.000Z",
+      "signups": 888,
+      "activeAccounts": 8293,
+      "churnedAccounts": 195,
+      "newMrrCents": 1148360,
+      "retainedMrrCents": 8439666,
+      "lostMrrCents": 322911,
+      "mrrCents": 9588026,
+      "arrCents": 115056312,
+      "logoChurnBps": 257,
+      "revenueChurnBps": 369,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 4332,
+          "mrrCents": 3349460,
+          "invoices": {
+            "issued": 4332,
+            "paid": 4293,
+            "failed": 39,
+            "refunded": 129,
+            "collectedCents": 3842235,
+            "refundedCents": 115455
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 3961,
+          "mrrCents": 6238566,
+          "invoices": {
+            "issued": 3961,
+            "paid": 3925,
+            "failed": 36,
+            "refunded": 118,
+            "collectedCents": 6652875,
+            "refundedCents": 200010
+          }
+        }
+      ]
+    },
+    {
+      "month": 25,
+      "label": "2025-12",
+      "startedAt": "2025-12-01T00:00:00.000Z",
+      "signups": 960,
+      "activeAccounts": 9040,
+      "churnedAccounts": 213,
+      "newMrrCents": 1247200,
+      "retainedMrrCents": 9237475,
+      "lostMrrCents": 350551,
+      "mrrCents": 10484675,
+      "arrCents": 125816100,
+      "logoChurnBps": 257,
+      "revenueChurnBps": 366,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 4657,
+          "mrrCents": 3590833,
+          "invoices": {
+            "issued": 4657,
+            "paid": 4615,
+            "failed": 42,
+            "refunded": 138,
+            "collectedCents": 4130425,
+            "refundedCents": 123510
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 4383,
+          "mrrCents": 6893842,
+          "invoices": {
+            "issued": 4383,
+            "paid": 4344,
+            "failed": 39,
+            "refunded": 130,
+            "collectedCents": 7363080,
+            "refundedCents": 220350
+          }
+        }
+      ]
+    },
+    {
+      "month": 26,
+      "label": "2026-01",
+      "startedAt": "2026-01-01T00:00:00.000Z",
+      "signups": 1037,
+      "activeAccounts": 9851,
+      "churnedAccounts": 226,
+      "newMrrCents": 1353715,
+      "retainedMrrCents": 10106429,
+      "lostMrrCents": 378246,
+      "mrrCents": 11460144,
+      "arrCents": 137521728,
+      "logoChurnBps": 250,
+      "revenueChurnBps": 361,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 5006,
+          "mrrCents": 3849561,
+          "invoices": {
+            "issued": 5006,
+            "paid": 4961,
+            "failed": 45,
+            "refunded": 149,
+            "collectedCents": 4440095,
+            "refundedCents": 133355
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 4845,
+          "mrrCents": 7610583,
+          "invoices": {
+            "issued": 4845,
+            "paid": 4801,
+            "failed": 44,
+            "refunded": 144,
+            "collectedCents": 8137695,
+            "refundedCents": 244080
+          }
+        }
+      ]
+    },
+    {
+      "month": 27,
+      "label": "2026-02",
+      "startedAt": "2026-02-01T00:00:00.000Z",
+      "signups": 1122,
+      "activeAccounts": 10726,
+      "churnedAccounts": 247,
+      "newMrrCents": 1471390,
+      "retainedMrrCents": 11046470,
+      "lostMrrCents": 413674,
+      "mrrCents": 12517860,
+      "arrCents": 150214320,
+      "logoChurnBps": 251,
+      "revenueChurnBps": 361,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 5376,
+          "mrrCents": 4123389,
+          "invoices": {
+            "issued": 5376,
+            "paid": 5328,
+            "failed": 48,
+            "refunded": 160,
+            "collectedCents": 4768560,
+            "refundedCents": 143200
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 5350,
+          "mrrCents": 8394471,
+          "invoices": {
+            "issued": 5350,
+            "paid": 5302,
+            "failed": 48,
+            "refunded": 159,
+            "collectedCents": 8986890,
+            "refundedCents": 269505
+          }
+        }
+      ]
+    },
+    {
+      "month": 28,
+      "label": "2026-03",
+      "startedAt": "2026-03-01T00:00:00.000Z",
+      "signups": 1212,
+      "activeAccounts": 11666,
+      "churnedAccounts": 272,
+      "newMrrCents": 1596740,
+      "retainedMrrCents": 12066945,
+      "lostMrrCents": 450915,
+      "mrrCents": 13663685,
+      "arrCents": 163964220,
+      "logoChurnBps": 254,
+      "revenueChurnBps": 360,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 5761,
+          "mrrCents": 4408839,
+          "invoices": {
+            "issued": 5761,
+            "paid": 5709,
+            "failed": 52,
+            "refunded": 171,
+            "collectedCents": 5109555,
+            "refundedCents": 153045
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 5905,
+          "mrrCents": 9254846,
+          "invoices": {
+            "issued": 5905,
+            "paid": 5852,
+            "failed": 53,
+            "refunded": 176,
+            "collectedCents": 9919140,
+            "refundedCents": 298320
+          }
+        }
+      ]
+    },
+    {
+      "month": 29,
+      "label": "2026-04",
+      "startedAt": "2026-04-01T00:00:00.000Z",
+      "signups": 1311,
+      "activeAccounts": 12689,
+      "churnedAccounts": 288,
+      "newMrrCents": 1734945,
+      "retainedMrrCents": 13179742,
+      "lostMrrCents": 483943,
+      "mrrCents": 14914687,
+      "arrCents": 178976244,
+      "logoChurnBps": 247,
+      "revenueChurnBps": 354,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 6174,
+          "mrrCents": 4714592,
+          "invoices": {
+            "issued": 6174,
+            "paid": 6118,
+            "failed": 56,
+            "refunded": 184,
+            "collectedCents": 5475610,
+            "refundedCents": 164680
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 6515,
+          "mrrCents": 10200095,
+          "invoices": {
+            "issued": 6515,
+            "paid": 6456,
+            "failed": 59,
+            "refunded": 194,
+            "collectedCents": 10942920,
+            "refundedCents": 328830
+          }
+        }
+      ]
+    },
+    {
+      "month": 30,
+      "label": "2026-05",
+      "startedAt": "2026-05-01T00:00:00.000Z",
+      "signups": 1417,
+      "activeAccounts": 13795,
+      "churnedAccounts": 311,
+      "newMrrCents": 1883415,
+      "retainedMrrCents": 14385805,
+      "lostMrrCents": 528882,
+      "mrrCents": 16269220,
+      "arrCents": 195230640,
+      "logoChurnBps": 245,
+      "revenueChurnBps": 355,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 6617,
+          "mrrCents": 5041509,
+          "invoices": {
+            "issued": 6617,
+            "paid": 6557,
+            "failed": 60,
+            "refunded": 197,
+            "collectedCents": 5868515,
+            "refundedCents": 176315
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 7178,
+          "mrrCents": 11227711,
+          "invoices": {
+            "issued": 7178,
+            "paid": 7113,
+            "failed": 65,
+            "refunded": 213,
+            "collectedCents": 12056535,
+            "refundedCents": 361035
+          }
+        }
+      ]
+    },
+    {
+      "month": 31,
+      "label": "2026-06",
+      "startedAt": "2026-06-01T00:00:00.000Z",
+      "signups": 1531,
+      "activeAccounts": 14985,
+      "churnedAccounts": 341,
+      "newMrrCents": 2044645,
+      "retainedMrrCents": 15694154,
+      "lostMrrCents": 575066,
+      "mrrCents": 17738799,
+      "arrCents": 212865588,
+      "logoChurnBps": 247,
+      "revenueChurnBps": 353,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 7078,
+          "mrrCents": 5382395,
+          "invoices": {
+            "issued": 7078,
+            "paid": 7014,
+            "failed": 64,
+            "refunded": 210,
+            "collectedCents": 6277530,
+            "refundedCents": 187950
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 7907,
+          "mrrCents": 12356404,
+          "invoices": {
+            "issued": 7907,
+            "paid": 7836,
+            "failed": 71,
+            "refunded": 235,
+            "collectedCents": 13282020,
+            "refundedCents": 398325
+          }
+        }
+      ]
+    },
+    {
+      "month": 32,
+      "label": "2026-07",
+      "startedAt": "2026-07-01T00:00:00.000Z",
+      "signups": 1656,
+      "activeAccounts": 16276,
+      "churnedAccounts": 365,
+      "newMrrCents": 2221320,
+      "retainedMrrCents": 17118172,
+      "lostMrrCents": 620627,
+      "mrrCents": 19339492,
+      "arrCents": 232073904,
+      "logoChurnBps": 244,
+      "revenueChurnBps": 350,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 7570,
+          "mrrCents": 5746027,
+          "invoices": {
+            "issued": 7570,
+            "paid": 7502,
+            "failed": 68,
+            "refunded": 225,
+            "collectedCents": 6714290,
+            "refundedCents": 201375
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 8706,
+          "mrrCents": 13593465,
+          "invoices": {
+            "issued": 8706,
+            "paid": 8628,
+            "failed": 78,
+            "refunded": 259,
+            "collectedCents": 14624460,
+            "refundedCents": 439005
+          }
+        }
+      ]
+    },
+    {
+      "month": 33,
+      "label": "2026-08",
+      "startedAt": "2026-08-01T00:00:00.000Z",
+      "signups": 1790,
+      "activeAccounts": 17664,
+      "churnedAccounts": 402,
+      "newMrrCents": 2411650,
+      "retainedMrrCents": 18656415,
+      "lostMrrCents": 683077,
+      "mrrCents": 21068065,
+      "arrCents": 252816780,
+      "logoChurnBps": 247,
+      "revenueChurnBps": 353,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 8088,
+          "mrrCents": 6128466,
+          "invoices": {
+            "issued": 8088,
+            "paid": 8015,
+            "failed": 73,
+            "refunded": 240,
+            "collectedCents": 7173425,
+            "refundedCents": 214800
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 9576,
+          "mrrCents": 14939599,
+          "invoices": {
+            "issued": 9576,
+            "paid": 9490,
+            "failed": 86,
+            "refunded": 285,
+            "collectedCents": 16085550,
+            "refundedCents": 483075
+          }
+        }
+      ]
+    },
+    {
+      "month": 34,
+      "label": "2026-09",
+      "startedAt": "2026-09-01T00:00:00.000Z",
+      "signups": 1935,
+      "activeAccounts": 19170,
+      "churnedAccounts": 429,
+      "newMrrCents": 2618225,
+      "retainedMrrCents": 20334642,
+      "lostMrrCents": 733423,
+      "mrrCents": 22952867,
+      "arrCents": 275434404,
+      "logoChurnBps": 243,
+      "revenueChurnBps": 348,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 8640,
+          "mrrCents": 6536154,
+          "invoices": {
+            "issued": 8640,
+            "paid": 8562,
+            "failed": 78,
+            "refunded": 257,
+            "collectedCents": 7662990,
+            "refundedCents": 230015
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 10530,
+          "mrrCents": 16416713,
+          "invoices": {
+            "issued": 10530,
+            "paid": 10435,
+            "failed": 95,
+            "refunded": 313,
+            "collectedCents": 17687325,
+            "refundedCents": 530535
+          }
+        }
+      ]
+    },
+    {
+      "month": 35,
+      "label": "2026-10",
+      "startedAt": "2026-10-01T00:00:00.000Z",
+      "signups": 2091,
+      "activeAccounts": 20800,
+      "churnedAccounts": 461,
+      "newMrrCents": 2841845,
+      "retainedMrrCents": 22157282,
+      "lostMrrCents": 795585,
+      "mrrCents": 24999127,
+      "arrCents": 299989524,
+      "logoChurnBps": 240,
+      "revenueChurnBps": 347,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 9226,
+          "mrrCents": 6968060,
+          "invoices": {
+            "issued": 9226,
+            "paid": 9143,
+            "failed": 83,
+            "refunded": 274,
+            "collectedCents": 8182985,
+            "refundedCents": 245230
+          }
+        },
+        {
+          "plan": "principal",
+          "accounts": 11574,
+          "mrrCents": 18031067,
+          "invoices": {
+            "issued": 11574,
+            "paid": 11470,
+            "failed": 104,
+            "refunded": 344,
+            "collectedCents": 19441650,
+            "refundedCents": 583080
+          }
+        }
+      ]
+    }
+  ],
+  "cohorts": [
+    {
+      "month": 0,
+      "label": "2023-11",
+      "startedAt": "2023-11-01T00:00:00.000Z",
+      "signups": 137,
+      "accounts": 137,
+      "mrrCents": 157815,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 93,
+          "mrrCents": 83235
+        },
+        {
+          "plan": "principal",
+          "accounts": 44,
+          "mrrCents": 74580
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 137,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 133,
+          "retentionBps": 9708
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 130,
+          "retentionBps": 9489
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 126,
+          "retentionBps": 9197
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 122,
+          "retentionBps": 8905
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 119,
+          "retentionBps": 8686
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 116,
+          "retentionBps": 8467
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 112,
+          "retentionBps": 8175
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 110,
+          "retentionBps": 8029
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 106,
+          "retentionBps": 7737
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 103,
+          "retentionBps": 7518
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 101,
+          "retentionBps": 7372
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 97,
+          "retentionBps": 7080
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 95,
+          "retentionBps": 6934
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 92,
+          "retentionBps": 6715
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 90,
+          "retentionBps": 6569
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 87,
+          "retentionBps": 6350
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 85,
+          "retentionBps": 6204
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 83,
+          "retentionBps": 6058
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 80,
+          "retentionBps": 5839
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 79,
+          "retentionBps": 5766
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 76,
+          "retentionBps": 5547
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 74,
+          "retentionBps": 5401
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 72,
+          "retentionBps": 5255
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 71,
+          "retentionBps": 5182
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 68,
+          "retentionBps": 4964
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 67,
+          "retentionBps": 4891
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 65,
+          "retentionBps": 4745
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 63,
+          "retentionBps": 4599
+        },
+        {
+          "age": 29,
+          "retainedAccounts": 62,
+          "retentionBps": 4526
+        },
+        {
+          "age": 30,
+          "retainedAccounts": 60,
+          "retentionBps": 4380
+        },
+        {
+          "age": 31,
+          "retainedAccounts": 59,
+          "retentionBps": 4307
+        },
+        {
+          "age": 32,
+          "retainedAccounts": 57,
+          "retentionBps": 4161
+        },
+        {
+          "age": 33,
+          "retainedAccounts": 56,
+          "retentionBps": 4088
+        },
+        {
+          "age": 34,
+          "retainedAccounts": 54,
+          "retentionBps": 3942
+        },
+        {
+          "age": 35,
+          "retainedAccounts": 53,
+          "retentionBps": 3869
+        }
+      ]
+    },
+    {
+      "month": 1,
+      "label": "2023-12",
+      "startedAt": "2023-12-01T00:00:00.000Z",
+      "signups": 148,
+      "accounts": 148,
+      "mrrCents": 170860,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 100,
+          "mrrCents": 89500
+        },
+        {
+          "plan": "principal",
+          "accounts": 48,
+          "mrrCents": 81360
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 148,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 144,
+          "retentionBps": 9730
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 139,
+          "retentionBps": 9392
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 136,
+          "retentionBps": 9189
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 132,
+          "retentionBps": 8919
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 128,
+          "retentionBps": 8649
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 125,
+          "retentionBps": 8446
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 121,
+          "retentionBps": 8176
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 118,
+          "retentionBps": 7973
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 115,
+          "retentionBps": 7770
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 112,
+          "retentionBps": 7568
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 108,
+          "retentionBps": 7297
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 106,
+          "retentionBps": 7162
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 103,
+          "retentionBps": 6959
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 100,
+          "retentionBps": 6757
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 98,
+          "retentionBps": 6622
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 94,
+          "retentionBps": 6351
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 92,
+          "retentionBps": 6216
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 90,
+          "retentionBps": 6081
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 87,
+          "retentionBps": 5878
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 85,
+          "retentionBps": 5743
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 82,
+          "retentionBps": 5541
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 81,
+          "retentionBps": 5473
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 78,
+          "retentionBps": 5270
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 77,
+          "retentionBps": 5203
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 74,
+          "retentionBps": 5000
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 73,
+          "retentionBps": 4932
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 70,
+          "retentionBps": 4730
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 69,
+          "retentionBps": 4662
+        },
+        {
+          "age": 29,
+          "retainedAccounts": 67,
+          "retentionBps": 4527
+        },
+        {
+          "age": 30,
+          "retainedAccounts": 65,
+          "retentionBps": 4392
+        },
+        {
+          "age": 31,
+          "retainedAccounts": 63,
+          "retentionBps": 4257
+        },
+        {
+          "age": 32,
+          "retainedAccounts": 62,
+          "retentionBps": 4189
+        },
+        {
+          "age": 33,
+          "retainedAccounts": 60,
+          "retentionBps": 4054
+        },
+        {
+          "age": 34,
+          "retainedAccounts": 59,
+          "retentionBps": 3986
+        }
+      ]
+    },
+    {
+      "month": 2,
+      "label": "2024-01",
+      "startedAt": "2024-01-01T00:00:00.000Z",
+      "signups": 160,
+      "accounts": 160,
+      "mrrCents": 186400,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 106,
+          "mrrCents": 94870
+        },
+        {
+          "plan": "principal",
+          "accounts": 54,
+          "mrrCents": 91530
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 160,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 155,
+          "retentionBps": 9688
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 151,
+          "retentionBps": 9438
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 147,
+          "retentionBps": 9188
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 143,
+          "retentionBps": 8938
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 139,
+          "retentionBps": 8688
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 135,
+          "retentionBps": 8438
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 131,
+          "retentionBps": 8188
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 127,
+          "retentionBps": 7938
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 125,
+          "retentionBps": 7813
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 121,
+          "retentionBps": 7563
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 117,
+          "retentionBps": 7313
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 114,
+          "retentionBps": 7125
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 112,
+          "retentionBps": 7000
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 108,
+          "retentionBps": 6750
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 105,
+          "retentionBps": 6563
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 103,
+          "retentionBps": 6438
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 100,
+          "retentionBps": 6250
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 97,
+          "retentionBps": 6063
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 95,
+          "retentionBps": 5938
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 92,
+          "retentionBps": 5750
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 89,
+          "retentionBps": 5563
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 88,
+          "retentionBps": 5500
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 85,
+          "retentionBps": 5313
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 83,
+          "retentionBps": 5188
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 81,
+          "retentionBps": 5063
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 79,
+          "retentionBps": 4938
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 77,
+          "retentionBps": 4813
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 74,
+          "retentionBps": 4625
+        },
+        {
+          "age": 29,
+          "retainedAccounts": 73,
+          "retentionBps": 4563
+        },
+        {
+          "age": 30,
+          "retainedAccounts": 71,
+          "retentionBps": 4438
+        },
+        {
+          "age": 31,
+          "retainedAccounts": 69,
+          "retentionBps": 4313
+        },
+        {
+          "age": 32,
+          "retainedAccounts": 67,
+          "retentionBps": 4188
+        },
+        {
+          "age": 33,
+          "retainedAccounts": 66,
+          "retentionBps": 4125
+        }
+      ]
+    },
+    {
+      "month": 3,
+      "label": "2024-02",
+      "startedAt": "2024-02-01T00:00:00.000Z",
+      "signups": 173,
+      "accounts": 173,
+      "mrrCents": 202035,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 114,
+          "mrrCents": 102030
+        },
+        {
+          "plan": "principal",
+          "accounts": 59,
+          "mrrCents": 100005
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 173,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 168,
+          "retentionBps": 9711
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 163,
+          "retentionBps": 9422
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 159,
+          "retentionBps": 9191
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 154,
+          "retentionBps": 8902
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 150,
+          "retentionBps": 8671
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 147,
+          "retentionBps": 8497
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 142,
+          "retentionBps": 8208
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 138,
+          "retentionBps": 7977
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 135,
+          "retentionBps": 7803
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 131,
+          "retentionBps": 7572
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 127,
+          "retentionBps": 7341
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 124,
+          "retentionBps": 7168
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 121,
+          "retentionBps": 6994
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 117,
+          "retentionBps": 6763
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 114,
+          "retentionBps": 6590
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 112,
+          "retentionBps": 6474
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 108,
+          "retentionBps": 6243
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 105,
+          "retentionBps": 6069
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 102,
+          "retentionBps": 5896
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 100,
+          "retentionBps": 5780
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 97,
+          "retentionBps": 5607
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 94,
+          "retentionBps": 5434
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 92,
+          "retentionBps": 5318
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 90,
+          "retentionBps": 5202
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 87,
+          "retentionBps": 5029
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 85,
+          "retentionBps": 4913
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 83,
+          "retentionBps": 4798
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 81,
+          "retentionBps": 4682
+        },
+        {
+          "age": 29,
+          "retainedAccounts": 79,
+          "retentionBps": 4566
+        },
+        {
+          "age": 30,
+          "retainedAccounts": 76,
+          "retentionBps": 4393
+        },
+        {
+          "age": 31,
+          "retainedAccounts": 75,
+          "retentionBps": 4335
+        },
+        {
+          "age": 32,
+          "retainedAccounts": 73,
+          "retentionBps": 4220
+        }
+      ]
+    },
+    {
+      "month": 4,
+      "label": "2024-03",
+      "startedAt": "2024-03-01T00:00:00.000Z",
+      "signups": 187,
+      "accounts": 187,
+      "mrrCents": 219365,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 122,
+          "mrrCents": 109190
+        },
+        {
+          "plan": "principal",
+          "accounts": 65,
+          "mrrCents": 110175
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 187,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 182,
+          "retentionBps": 9733
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 177,
+          "retentionBps": 9465
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 172,
+          "retentionBps": 9198
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 167,
+          "retentionBps": 8930
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 163,
+          "retentionBps": 8717
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 158,
+          "retentionBps": 8449
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 154,
+          "retentionBps": 8235
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 150,
+          "retentionBps": 8021
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 145,
+          "retentionBps": 7754
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 141,
+          "retentionBps": 7540
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 137,
+          "retentionBps": 7326
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 135,
+          "retentionBps": 7219
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 131,
+          "retentionBps": 7005
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 127,
+          "retentionBps": 6791
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 124,
+          "retentionBps": 6631
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 120,
+          "retentionBps": 6417
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 117,
+          "retentionBps": 6257
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 114,
+          "retentionBps": 6096
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 111,
+          "retentionBps": 5936
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 108,
+          "retentionBps": 5775
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 105,
+          "retentionBps": 5615
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 103,
+          "retentionBps": 5508
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 100,
+          "retentionBps": 5348
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 97,
+          "retentionBps": 5187
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 94,
+          "retentionBps": 5027
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 93,
+          "retentionBps": 4973
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 90,
+          "retentionBps": 4813
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 87,
+          "retentionBps": 4652
+        },
+        {
+          "age": 29,
+          "retainedAccounts": 86,
+          "retentionBps": 4599
+        },
+        {
+          "age": 30,
+          "retainedAccounts": 83,
+          "retentionBps": 4439
+        },
+        {
+          "age": 31,
+          "retainedAccounts": 81,
+          "retentionBps": 4332
+        }
+      ]
+    },
+    {
+      "month": 5,
+      "label": "2024-04",
+      "startedAt": "2024-04-01T00:00:00.000Z",
+      "signups": 202,
+      "accounts": 202,
+      "mrrCents": 238390,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 130,
+          "mrrCents": 116350
+        },
+        {
+          "plan": "principal",
+          "accounts": 72,
+          "mrrCents": 122040
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 202,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 197,
+          "retentionBps": 9752
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 191,
+          "retentionBps": 9455
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 186,
+          "retentionBps": 9208
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 181,
+          "retentionBps": 8960
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 175,
+          "retentionBps": 8663
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 171,
+          "retentionBps": 8465
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 166,
+          "retentionBps": 8218
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 162,
+          "retentionBps": 8020
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 157,
+          "retentionBps": 7772
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 153,
+          "retentionBps": 7574
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 149,
+          "retentionBps": 7376
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 145,
+          "retentionBps": 7178
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 141,
+          "retentionBps": 6980
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 137,
+          "retentionBps": 6782
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 134,
+          "retentionBps": 6634
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 131,
+          "retentionBps": 6485
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 127,
+          "retentionBps": 6287
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 124,
+          "retentionBps": 6139
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 120,
+          "retentionBps": 5941
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 117,
+          "retentionBps": 5792
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 114,
+          "retentionBps": 5644
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 111,
+          "retentionBps": 5495
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 109,
+          "retentionBps": 5396
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 106,
+          "retentionBps": 5248
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 103,
+          "retentionBps": 5099
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 100,
+          "retentionBps": 4950
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 98,
+          "retentionBps": 4851
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 95,
+          "retentionBps": 4703
+        },
+        {
+          "age": 29,
+          "retainedAccounts": 93,
+          "retentionBps": 4604
+        },
+        {
+          "age": 30,
+          "retainedAccounts": 90,
+          "retentionBps": 4455
+        }
+      ]
+    },
+    {
+      "month": 6,
+      "label": "2024-05",
+      "startedAt": "2024-05-01T00:00:00.000Z",
+      "signups": 219,
+      "accounts": 219,
+      "mrrCents": 260005,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 139,
+          "mrrCents": 124405
+        },
+        {
+          "plan": "principal",
+          "accounts": 80,
+          "mrrCents": 135600
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 219,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 213,
+          "retentionBps": 9726
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 207,
+          "retentionBps": 9452
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 201,
+          "retentionBps": 9178
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 196,
+          "retentionBps": 8950
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 191,
+          "retentionBps": 8721
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 186,
+          "retentionBps": 8493
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 180,
+          "retentionBps": 8219
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 175,
+          "retentionBps": 7991
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 171,
+          "retentionBps": 7808
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 166,
+          "retentionBps": 7580
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 162,
+          "retentionBps": 7397
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 158,
+          "retentionBps": 7215
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 154,
+          "retentionBps": 7032
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 150,
+          "retentionBps": 6849
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 146,
+          "retentionBps": 6667
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 142,
+          "retentionBps": 6484
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 138,
+          "retentionBps": 6301
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 135,
+          "retentionBps": 6164
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 131,
+          "retentionBps": 5982
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 128,
+          "retentionBps": 5845
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 124,
+          "retentionBps": 5662
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 121,
+          "retentionBps": 5525
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 118,
+          "retentionBps": 5388
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 115,
+          "retentionBps": 5251
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 112,
+          "retentionBps": 5114
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 110,
+          "retentionBps": 5023
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 107,
+          "retentionBps": 4886
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 104,
+          "retentionBps": 4749
+        },
+        {
+          "age": 29,
+          "retainedAccounts": 101,
+          "retentionBps": 4612
+        }
+      ]
+    },
+    {
+      "month": 7,
+      "label": "2024-06",
+      "startedAt": "2024-06-01T00:00:00.000Z",
+      "signups": 236,
+      "accounts": 236,
+      "mrrCents": 281620,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 148,
+          "mrrCents": 132460
+        },
+        {
+          "plan": "principal",
+          "accounts": 88,
+          "mrrCents": 149160
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 236,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 230,
+          "retentionBps": 9746
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 223,
+          "retentionBps": 9449
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 217,
+          "retentionBps": 9195
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 212,
+          "retentionBps": 8983
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 205,
+          "retentionBps": 8686
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 200,
+          "retentionBps": 8475
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 195,
+          "retentionBps": 8263
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 189,
+          "retentionBps": 8008
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 184,
+          "retentionBps": 7797
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 180,
+          "retentionBps": 7627
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 175,
+          "retentionBps": 7415
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 171,
+          "retentionBps": 7246
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 165,
+          "retentionBps": 6992
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 161,
+          "retentionBps": 6822
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 157,
+          "retentionBps": 6653
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 153,
+          "retentionBps": 6483
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 149,
+          "retentionBps": 6314
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 145,
+          "retentionBps": 6144
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 142,
+          "retentionBps": 6017
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 138,
+          "retentionBps": 5847
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 135,
+          "retentionBps": 5720
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 131,
+          "retentionBps": 5551
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 128,
+          "retentionBps": 5424
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 125,
+          "retentionBps": 5297
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 121,
+          "retentionBps": 5127
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 118,
+          "retentionBps": 5000
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 115,
+          "retentionBps": 4873
+        },
+        {
+          "age": 28,
+          "retainedAccounts": 112,
+          "retentionBps": 4746
+        }
+      ]
+    },
+    {
+      "month": 8,
+      "label": "2024-07",
+      "startedAt": "2024-07-01T00:00:00.000Z",
+      "signups": 255,
+      "accounts": 255,
+      "mrrCents": 305825,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 158,
+          "mrrCents": 141410
+        },
+        {
+          "plan": "principal",
+          "accounts": 97,
+          "mrrCents": 164415
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 255,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 248,
+          "retentionBps": 9725
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 241,
+          "retentionBps": 9451
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 234,
+          "retentionBps": 9176
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 229,
+          "retentionBps": 8980
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 222,
+          "retentionBps": 8706
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 216,
+          "retentionBps": 8471
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 211,
+          "retentionBps": 8275
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 205,
+          "retentionBps": 8039
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 200,
+          "retentionBps": 7843
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 195,
+          "retentionBps": 7647
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 189,
+          "retentionBps": 7412
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 184,
+          "retentionBps": 7216
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 180,
+          "retentionBps": 7059
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 174,
+          "retentionBps": 6824
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 170,
+          "retentionBps": 6667
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 166,
+          "retentionBps": 6510
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 162,
+          "retentionBps": 6353
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 158,
+          "retentionBps": 6196
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 153,
+          "retentionBps": 6000
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 149,
+          "retentionBps": 5843
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 145,
+          "retentionBps": 5686
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 142,
+          "retentionBps": 5569
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 138,
+          "retentionBps": 5412
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 135,
+          "retentionBps": 5294
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 132,
+          "retentionBps": 5176
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 128,
+          "retentionBps": 5020
+        },
+        {
+          "age": 27,
+          "retainedAccounts": 125,
+          "retentionBps": 4902
+        }
+      ]
+    },
+    {
+      "month": 9,
+      "label": "2024-08",
+      "startedAt": "2024-08-01T00:00:00.000Z",
+      "signups": 276,
+      "accounts": 276,
+      "mrrCents": 332620,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 169,
+          "mrrCents": 151255
+        },
+        {
+          "plan": "principal",
+          "accounts": 107,
+          "mrrCents": 181365
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 276,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 268,
+          "retentionBps": 9710
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 262,
+          "retentionBps": 9493
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 254,
+          "retentionBps": 9203
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 247,
+          "retentionBps": 8949
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 241,
+          "retentionBps": 8732
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 234,
+          "retentionBps": 8478
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 229,
+          "retentionBps": 8297
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 222,
+          "retentionBps": 8043
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 217,
+          "retentionBps": 7862
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 211,
+          "retentionBps": 7645
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 206,
+          "retentionBps": 7464
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 200,
+          "retentionBps": 7246
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 195,
+          "retentionBps": 7065
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 189,
+          "retentionBps": 6848
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 185,
+          "retentionBps": 6703
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 180,
+          "retentionBps": 6522
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 175,
+          "retentionBps": 6341
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 171,
+          "retentionBps": 6196
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 167,
+          "retentionBps": 6051
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 162,
+          "retentionBps": 5870
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 158,
+          "retentionBps": 5725
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 154,
+          "retentionBps": 5580
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 150,
+          "retentionBps": 5435
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 147,
+          "retentionBps": 5326
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 142,
+          "retentionBps": 5145
+        },
+        {
+          "age": 26,
+          "retainedAccounts": 139,
+          "retentionBps": 5036
+        }
+      ]
+    },
+    {
+      "month": 10,
+      "label": "2024-09",
+      "startedAt": "2024-09-01T00:00:00.000Z",
+      "signups": 298,
+      "accounts": 298,
+      "mrrCents": 361110,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 180,
+          "mrrCents": 161100
+        },
+        {
+          "plan": "principal",
+          "accounts": 118,
+          "mrrCents": 200010
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 298,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 290,
+          "retentionBps": 9732
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 282,
+          "retentionBps": 9463
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 274,
+          "retentionBps": 9195
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 268,
+          "retentionBps": 8993
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 260,
+          "retentionBps": 8725
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 253,
+          "retentionBps": 8490
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 246,
+          "retentionBps": 8255
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 240,
+          "retentionBps": 8054
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 234,
+          "retentionBps": 7852
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 227,
+          "retentionBps": 7617
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 222,
+          "retentionBps": 7450
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 216,
+          "retentionBps": 7248
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 211,
+          "retentionBps": 7081
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 205,
+          "retentionBps": 6879
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 200,
+          "retentionBps": 6711
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 194,
+          "retentionBps": 6510
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 190,
+          "retentionBps": 6376
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 185,
+          "retentionBps": 6208
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 180,
+          "retentionBps": 6040
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 175,
+          "retentionBps": 5872
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 171,
+          "retentionBps": 5738
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 167,
+          "retentionBps": 5604
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 162,
+          "retentionBps": 5436
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 158,
+          "retentionBps": 5302
+        },
+        {
+          "age": 25,
+          "retainedAccounts": 155,
+          "retentionBps": 5201
+        }
+      ]
+    },
+    {
+      "month": 11,
+      "label": "2024-10",
+      "startedAt": "2024-10-01T00:00:00.000Z",
+      "signups": 323,
+      "accounts": 323,
+      "mrrCents": 393085,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 193,
+          "mrrCents": 172735
+        },
+        {
+          "plan": "principal",
+          "accounts": 130,
+          "mrrCents": 220350
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 323,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 314,
+          "retentionBps": 9721
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 306,
+          "retentionBps": 9474
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 298,
+          "retentionBps": 9226
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 290,
+          "retentionBps": 8978
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 282,
+          "retentionBps": 8731
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 275,
+          "retentionBps": 8514
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 267,
+          "retentionBps": 8266
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 260,
+          "retentionBps": 8050
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 253,
+          "retentionBps": 7833
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 248,
+          "retentionBps": 7678
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 241,
+          "retentionBps": 7461
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 234,
+          "retentionBps": 7245
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 228,
+          "retentionBps": 7059
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 223,
+          "retentionBps": 6904
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 217,
+          "retentionBps": 6718
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 211,
+          "retentionBps": 6533
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 206,
+          "retentionBps": 6378
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 201,
+          "retentionBps": 6223
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 196,
+          "retentionBps": 6068
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 191,
+          "retentionBps": 5913
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 186,
+          "retentionBps": 5759
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 181,
+          "retentionBps": 5604
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 177,
+          "retentionBps": 5480
+        },
+        {
+          "age": 24,
+          "retainedAccounts": 172,
+          "retentionBps": 5325
+        }
+      ]
+    },
+    {
+      "month": 12,
+      "label": "2024-11",
+      "startedAt": "2024-11-01T00:00:00.000Z",
+      "signups": 349,
+      "accounts": 349,
+      "mrrCents": 426755,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 206,
+          "mrrCents": 184370
+        },
+        {
+          "plan": "principal",
+          "accounts": 143,
+          "mrrCents": 242385
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 349,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 340,
+          "retentionBps": 9742
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 330,
+          "retentionBps": 9456
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 322,
+          "retentionBps": 9226
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 313,
+          "retentionBps": 8968
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 305,
+          "retentionBps": 8739
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 297,
+          "retentionBps": 8510
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 290,
+          "retentionBps": 8309
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 282,
+          "retentionBps": 8080
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 275,
+          "retentionBps": 7880
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 268,
+          "retentionBps": 7679
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 261,
+          "retentionBps": 7479
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 254,
+          "retentionBps": 7278
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 247,
+          "retentionBps": 7077
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 241,
+          "retentionBps": 6905
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 235,
+          "retentionBps": 6734
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 228,
+          "retentionBps": 6533
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 223,
+          "retentionBps": 6390
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 218,
+          "retentionBps": 6246
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 212,
+          "retentionBps": 6074
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 207,
+          "retentionBps": 5931
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 202,
+          "retentionBps": 5788
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 196,
+          "retentionBps": 5616
+        },
+        {
+          "age": 23,
+          "retainedAccounts": 192,
+          "retentionBps": 5501
+        }
+      ]
+    },
+    {
+      "month": 13,
+      "label": "2024-12",
+      "startedAt": "2024-12-01T00:00:00.000Z",
+      "signups": 377,
+      "accounts": 377,
+      "mrrCents": 463015,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 220,
+          "mrrCents": 196900
+        },
+        {
+          "plan": "principal",
+          "accounts": 157,
+          "mrrCents": 266115
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 377,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 367,
+          "retentionBps": 9735
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 357,
+          "retentionBps": 9469
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 348,
+          "retentionBps": 9231
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 339,
+          "retentionBps": 8992
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 330,
+          "retentionBps": 8753
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 322,
+          "retentionBps": 8541
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 313,
+          "retentionBps": 8302
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 305,
+          "retentionBps": 8090
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 297,
+          "retentionBps": 7878
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 290,
+          "retentionBps": 7692
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 281,
+          "retentionBps": 7454
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 274,
+          "retentionBps": 7268
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 267,
+          "retentionBps": 7082
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 261,
+          "retentionBps": 6923
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 254,
+          "retentionBps": 6737
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 247,
+          "retentionBps": 6552
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 241,
+          "retentionBps": 6393
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 235,
+          "retentionBps": 6233
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 230,
+          "retentionBps": 6101
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 224,
+          "retentionBps": 5942
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 218,
+          "retentionBps": 5782
+        },
+        {
+          "age": 22,
+          "retainedAccounts": 213,
+          "retentionBps": 5650
+        }
+      ]
+    },
+    {
+      "month": 14,
+      "label": "2025-01",
+      "startedAt": "2025-01-01T00:00:00.000Z",
+      "signups": 407,
+      "accounts": 407,
+      "mrrCents": 502665,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 234,
+          "mrrCents": 209430
+        },
+        {
+          "plan": "principal",
+          "accounts": 173,
+          "mrrCents": 293235
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 407,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 396,
+          "retentionBps": 9730
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 386,
+          "retentionBps": 9484
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 376,
+          "retentionBps": 9238
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 366,
+          "retentionBps": 8993
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 357,
+          "retentionBps": 8771
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 347,
+          "retentionBps": 8526
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 339,
+          "retentionBps": 8329
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 329,
+          "retentionBps": 8084
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 321,
+          "retentionBps": 7887
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 313,
+          "retentionBps": 7690
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 305,
+          "retentionBps": 7494
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 298,
+          "retentionBps": 7322
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 289,
+          "retentionBps": 7101
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 282,
+          "retentionBps": 6929
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 275,
+          "retentionBps": 6757
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 269,
+          "retentionBps": 6609
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 262,
+          "retentionBps": 6437
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 255,
+          "retentionBps": 6265
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 248,
+          "retentionBps": 6093
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 242,
+          "retentionBps": 5946
+        },
+        {
+          "age": 21,
+          "retainedAccounts": 236,
+          "retentionBps": 5799
+        }
+      ]
+    },
+    {
+      "month": 15,
+      "label": "2025-02",
+      "startedAt": "2025-02-01T00:00:00.000Z",
+      "signups": 440,
+      "accounts": 440,
+      "mrrCents": 545800,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 250,
+          "mrrCents": 223750
+        },
+        {
+          "plan": "principal",
+          "accounts": 190,
+          "mrrCents": 322050
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 440,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 429,
+          "retentionBps": 9750
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 417,
+          "retentionBps": 9477
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 406,
+          "retentionBps": 9227
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 396,
+          "retentionBps": 9000
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 385,
+          "retentionBps": 8750
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 375,
+          "retentionBps": 8523
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 366,
+          "retentionBps": 8318
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 357,
+          "retentionBps": 8114
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 347,
+          "retentionBps": 7886
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 339,
+          "retentionBps": 7705
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 330,
+          "retentionBps": 7500
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 322,
+          "retentionBps": 7318
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 313,
+          "retentionBps": 7114
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 306,
+          "retentionBps": 6955
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 298,
+          "retentionBps": 6773
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 291,
+          "retentionBps": 6614
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 283,
+          "retentionBps": 6432
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 276,
+          "retentionBps": 6273
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 270,
+          "retentionBps": 6136
+        },
+        {
+          "age": 20,
+          "retainedAccounts": 263,
+          "retentionBps": 5977
+        }
+      ]
+    },
+    {
+      "month": 16,
+      "label": "2025-03",
+      "startedAt": "2025-03-01T00:00:00.000Z",
+      "signups": 476,
+      "accounts": 476,
+      "mrrCents": 593220,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 267,
+          "mrrCents": 238965
+        },
+        {
+          "plan": "principal",
+          "accounts": 209,
+          "mrrCents": 354255
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 476,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 464,
+          "retentionBps": 9748
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 451,
+          "retentionBps": 9475
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 440,
+          "retentionBps": 9244
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 428,
+          "retentionBps": 8992
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 418,
+          "retentionBps": 8782
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 407,
+          "retentionBps": 8550
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 397,
+          "retentionBps": 8340
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 386,
+          "retentionBps": 8109
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 377,
+          "retentionBps": 7920
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 367,
+          "retentionBps": 7710
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 357,
+          "retentionBps": 7500
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 348,
+          "retentionBps": 7311
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 339,
+          "retentionBps": 7122
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 332,
+          "retentionBps": 6975
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 323,
+          "retentionBps": 6786
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 315,
+          "retentionBps": 6618
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 307,
+          "retentionBps": 6450
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 299,
+          "retentionBps": 6282
+        },
+        {
+          "age": 19,
+          "retainedAccounts": 292,
+          "retentionBps": 6134
+        }
+      ]
+    },
+    {
+      "month": 17,
+      "label": "2025-04",
+      "startedAt": "2025-04-01T00:00:00.000Z",
+      "signups": 515,
+      "accounts": 515,
+      "mrrCents": 644925,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 285,
+          "mrrCents": 255075
+        },
+        {
+          "plan": "principal",
+          "accounts": 230,
+          "mrrCents": 389850
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 515,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 501,
+          "retentionBps": 9728
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 489,
+          "retentionBps": 9495
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 476,
+          "retentionBps": 9243
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 464,
+          "retentionBps": 9010
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 452,
+          "retentionBps": 8777
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 441,
+          "retentionBps": 8563
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 429,
+          "retentionBps": 8330
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 418,
+          "retentionBps": 8117
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 408,
+          "retentionBps": 7922
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 398,
+          "retentionBps": 7728
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 388,
+          "retentionBps": 7534
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 378,
+          "retentionBps": 7340
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 368,
+          "retentionBps": 7146
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 360,
+          "retentionBps": 6990
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 351,
+          "retentionBps": 6816
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 342,
+          "retentionBps": 6641
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 333,
+          "retentionBps": 6466
+        },
+        {
+          "age": 18,
+          "retainedAccounts": 325,
+          "retentionBps": 6311
+        }
+      ]
+    },
+    {
+      "month": 18,
+      "label": "2025-05",
+      "startedAt": "2025-05-01T00:00:00.000Z",
+      "signups": 556,
+      "accounts": 556,
+      "mrrCents": 699220,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 304,
+          "mrrCents": 272080
+        },
+        {
+          "plan": "principal",
+          "accounts": 252,
+          "mrrCents": 427140
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 556,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 542,
+          "retentionBps": 9748
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 528,
+          "retentionBps": 9496
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 514,
+          "retentionBps": 9245
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 501,
+          "retentionBps": 9011
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 488,
+          "retentionBps": 8777
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 476,
+          "retentionBps": 8561
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 464,
+          "retentionBps": 8345
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 452,
+          "retentionBps": 8129
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 441,
+          "retentionBps": 7932
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 429,
+          "retentionBps": 7716
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 419,
+          "retentionBps": 7536
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 409,
+          "retentionBps": 7356
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 398,
+          "retentionBps": 7158
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 388,
+          "retentionBps": 6978
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 379,
+          "retentionBps": 6817
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 370,
+          "retentionBps": 6655
+        },
+        {
+          "age": 17,
+          "retainedAccounts": 361,
+          "retentionBps": 6493
+        }
+      ]
+    },
+    {
+      "month": 19,
+      "label": "2025-06",
+      "startedAt": "2025-06-01T00:00:00.000Z",
+      "signups": 601,
+      "accounts": 601,
+      "mrrCents": 759495,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 324,
+          "mrrCents": 289980
+        },
+        {
+          "plan": "principal",
+          "accounts": 277,
+          "mrrCents": 469515
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 601,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 586,
+          "retentionBps": 9750
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 570,
+          "retentionBps": 9484
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 556,
+          "retentionBps": 9251
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 542,
+          "retentionBps": 9018
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 529,
+          "retentionBps": 8802
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 514,
+          "retentionBps": 8552
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 501,
+          "retentionBps": 8336
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 489,
+          "retentionBps": 8136
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 477,
+          "retentionBps": 7937
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 465,
+          "retentionBps": 7737
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 453,
+          "retentionBps": 7537
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 442,
+          "retentionBps": 7354
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 432,
+          "retentionBps": 7188
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 421,
+          "retentionBps": 7005
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 410,
+          "retentionBps": 6822
+        },
+        {
+          "age": 16,
+          "retainedAccounts": 400,
+          "retentionBps": 6656
+        }
+      ]
+    },
+    {
+      "month": 20,
+      "label": "2025-07",
+      "startedAt": "2025-07-01T00:00:00.000Z",
+      "signups": 650,
+      "accounts": 650,
+      "mrrCents": 825750,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 345,
+          "mrrCents": 308775
+        },
+        {
+          "plan": "principal",
+          "accounts": 305,
+          "mrrCents": 516975
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 650,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 633,
+          "retentionBps": 9738
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 617,
+          "retentionBps": 9492
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 602,
+          "retentionBps": 9262
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 586,
+          "retentionBps": 9015
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 571,
+          "retentionBps": 8785
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 557,
+          "retentionBps": 8569
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 543,
+          "retentionBps": 8354
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 530,
+          "retentionBps": 8154
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 517,
+          "retentionBps": 7954
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 504,
+          "retentionBps": 7754
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 491,
+          "retentionBps": 7554
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 479,
+          "retentionBps": 7369
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 467,
+          "retentionBps": 7185
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 456,
+          "retentionBps": 7015
+        },
+        {
+          "age": 15,
+          "retainedAccounts": 444,
+          "retentionBps": 6831
+        }
+      ]
+    },
+    {
+      "month": 21,
+      "label": "2025-08",
+      "startedAt": "2025-08-01T00:00:00.000Z",
+      "signups": 703,
+      "accounts": 703,
+      "mrrCents": 897185,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 368,
+          "mrrCents": 329360
+        },
+        {
+          "plan": "principal",
+          "accounts": 335,
+          "mrrCents": 567825
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 703,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 685,
+          "retentionBps": 9744
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 667,
+          "retentionBps": 9488
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 651,
+          "retentionBps": 9260
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 634,
+          "retentionBps": 9018
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 619,
+          "retentionBps": 8805
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 603,
+          "retentionBps": 8578
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 588,
+          "retentionBps": 8364
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 573,
+          "retentionBps": 8151
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 560,
+          "retentionBps": 7966
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 545,
+          "retentionBps": 7752
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 533,
+          "retentionBps": 7582
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 519,
+          "retentionBps": 7383
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 507,
+          "retentionBps": 7212
+        },
+        {
+          "age": 14,
+          "retainedAccounts": 494,
+          "retentionBps": 7027
+        }
+      ]
+    },
+    {
+      "month": 22,
+      "label": "2025-09",
+      "startedAt": "2025-09-01T00:00:00.000Z",
+      "signups": 760,
+      "accounts": 760,
+      "mrrCents": 973800,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 393,
+          "mrrCents": 351735
+        },
+        {
+          "plan": "principal",
+          "accounts": 367,
+          "mrrCents": 622065
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 760,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 741,
+          "retentionBps": 9750
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 722,
+          "retentionBps": 9500
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 704,
+          "retentionBps": 9263
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 686,
+          "retentionBps": 9026
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 670,
+          "retentionBps": 8816
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 652,
+          "retentionBps": 8579
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 636,
+          "retentionBps": 8368
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 621,
+          "retentionBps": 8171
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 605,
+          "retentionBps": 7961
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 590,
+          "retentionBps": 7763
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 576,
+          "retentionBps": 7579
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 561,
+          "retentionBps": 7382
+        },
+        {
+          "age": 13,
+          "retainedAccounts": 549,
+          "retentionBps": 7224
+        }
+      ]
+    },
+    {
+      "month": 23,
+      "label": "2025-10",
+      "startedAt": "2025-10-01T00:00:00.000Z",
+      "signups": 821,
+      "accounts": 821,
+      "mrrCents": 1057195,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 418,
+          "mrrCents": 374110
+        },
+        {
+          "plan": "principal",
+          "accounts": 403,
+          "mrrCents": 683085
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 821,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 801,
+          "retentionBps": 9756
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 780,
+          "retentionBps": 9501
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 761,
+          "retentionBps": 9269
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 742,
+          "retentionBps": 9038
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 724,
+          "retentionBps": 8819
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 706,
+          "retentionBps": 8599
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 688,
+          "retentionBps": 8380
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 671,
+          "retentionBps": 8173
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 655,
+          "retentionBps": 7978
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 639,
+          "retentionBps": 7783
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 623,
+          "retentionBps": 7588
+        },
+        {
+          "age": 12,
+          "retainedAccounts": 608,
+          "retentionBps": 7406
+        }
+      ]
+    },
+    {
+      "month": 24,
+      "label": "2025-11",
+      "startedAt": "2025-11-01T00:00:00.000Z",
+      "signups": 888,
+      "accounts": 888,
+      "mrrCents": 1148360,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 446,
+          "mrrCents": 399170
+        },
+        {
+          "plan": "principal",
+          "accounts": 442,
+          "mrrCents": 749190
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 888,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 866,
+          "retentionBps": 9752
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 844,
+          "retentionBps": 9505
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 823,
+          "retentionBps": 9268
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 802,
+          "retentionBps": 9032
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 783,
+          "retentionBps": 8818
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 763,
+          "retentionBps": 8592
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 745,
+          "retentionBps": 8390
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 726,
+          "retentionBps": 8176
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 709,
+          "retentionBps": 7984
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 692,
+          "retentionBps": 7793
+        },
+        {
+          "age": 11,
+          "retainedAccounts": 675,
+          "retentionBps": 7601
+        }
+      ]
+    },
+    {
+      "month": 25,
+      "label": "2025-12",
+      "startedAt": "2025-12-01T00:00:00.000Z",
+      "signups": 960,
+      "accounts": 960,
+      "mrrCents": 1247200,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 475,
+          "mrrCents": 425125
+        },
+        {
+          "plan": "principal",
+          "accounts": 485,
+          "mrrCents": 822075
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 960,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 936,
+          "retentionBps": 9750
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 913,
+          "retentionBps": 9510
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 890,
+          "retentionBps": 9271
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 869,
+          "retentionBps": 9052
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 847,
+          "retentionBps": 8823
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 826,
+          "retentionBps": 8604
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 806,
+          "retentionBps": 8396
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 786,
+          "retentionBps": 8188
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 767,
+          "retentionBps": 7990
+        },
+        {
+          "age": 10,
+          "retainedAccounts": 749,
+          "retentionBps": 7802
+        }
+      ]
+    },
+    {
+      "month": 26,
+      "label": "2026-01",
+      "startedAt": "2026-01-01T00:00:00.000Z",
+      "signups": 1037,
+      "accounts": 1037,
+      "mrrCents": 1353715,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 505,
+          "mrrCents": 451975
+        },
+        {
+          "plan": "principal",
+          "accounts": 532,
+          "mrrCents": 901740
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1037,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1011,
+          "retentionBps": 9749
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 986,
+          "retentionBps": 9508
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 962,
+          "retentionBps": 9277
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 939,
+          "retentionBps": 9055
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 916,
+          "retentionBps": 8833
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 893,
+          "retentionBps": 8611
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 871,
+          "retentionBps": 8399
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 851,
+          "retentionBps": 8206
+        },
+        {
+          "age": 9,
+          "retainedAccounts": 830,
+          "retentionBps": 8004
+        }
+      ]
+    },
+    {
+      "month": 27,
+      "label": "2026-02",
+      "startedAt": "2026-02-01T00:00:00.000Z",
+      "signups": 1122,
+      "accounts": 1122,
+      "mrrCents": 1471390,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 538,
+          "mrrCents": 481510
+        },
+        {
+          "plan": "principal",
+          "accounts": 584,
+          "mrrCents": 989880
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1122,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1095,
+          "retentionBps": 9759
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 1067,
+          "retentionBps": 9510
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 1041,
+          "retentionBps": 9278
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 1016,
+          "retentionBps": 9055
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 992,
+          "retentionBps": 8841
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 967,
+          "retentionBps": 8619
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 944,
+          "retentionBps": 8414
+        },
+        {
+          "age": 8,
+          "retainedAccounts": 921,
+          "retentionBps": 8209
+        }
+      ]
+    },
+    {
+      "month": 28,
+      "label": "2026-03",
+      "startedAt": "2026-03-01T00:00:00.000Z",
+      "signups": 1212,
+      "accounts": 1212,
+      "mrrCents": 1596740,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 572,
+          "mrrCents": 511940
+        },
+        {
+          "plan": "principal",
+          "accounts": 640,
+          "mrrCents": 1084800
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1212,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1183,
+          "retentionBps": 9761
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 1154,
+          "retentionBps": 9521
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 1126,
+          "retentionBps": 9290
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 1098,
+          "retentionBps": 9059
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 1071,
+          "retentionBps": 8837
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 1046,
+          "retentionBps": 8630
+        },
+        {
+          "age": 7,
+          "retainedAccounts": 1021,
+          "retentionBps": 8424
+        }
+      ]
+    },
+    {
+      "month": 29,
+      "label": "2026-04",
+      "startedAt": "2026-04-01T00:00:00.000Z",
+      "signups": 1311,
+      "accounts": 1311,
+      "mrrCents": 1734945,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 609,
+          "mrrCents": 545055
+        },
+        {
+          "plan": "principal",
+          "accounts": 702,
+          "mrrCents": 1189890
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1311,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1279,
+          "retentionBps": 9756
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 1248,
+          "retentionBps": 9519
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 1218,
+          "retentionBps": 9291
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 1188,
+          "retentionBps": 9062
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 1160,
+          "retentionBps": 8848
+        },
+        {
+          "age": 6,
+          "retainedAccounts": 1132,
+          "retentionBps": 8635
+        }
+      ]
+    },
+    {
+      "month": 30,
+      "label": "2026-05",
+      "startedAt": "2026-05-01T00:00:00.000Z",
+      "signups": 1417,
+      "accounts": 1417,
+      "mrrCents": 1883415,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 648,
+          "mrrCents": 579960
+        },
+        {
+          "plan": "principal",
+          "accounts": 769,
+          "mrrCents": 1303455
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1417,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1383,
+          "retentionBps": 9760
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 1350,
+          "retentionBps": 9527
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 1317,
+          "retentionBps": 9294
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 1285,
+          "retentionBps": 9068
+        },
+        {
+          "age": 5,
+          "retainedAccounts": 1254,
+          "retentionBps": 8850
+        }
+      ]
+    },
+    {
+      "month": 31,
+      "label": "2026-06",
+      "startedAt": "2026-06-01T00:00:00.000Z",
+      "signups": 1531,
+      "accounts": 1531,
+      "mrrCents": 2044645,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 688,
+          "mrrCents": 615760
+        },
+        {
+          "plan": "principal",
+          "accounts": 843,
+          "mrrCents": 1428885
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1531,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1495,
+          "retentionBps": 9765
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 1458,
+          "retentionBps": 9523
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 1423,
+          "retentionBps": 9295
+        },
+        {
+          "age": 4,
+          "retainedAccounts": 1389,
+          "retentionBps": 9073
+        }
+      ]
+    },
+    {
+      "month": 32,
+      "label": "2026-07",
+      "startedAt": "2026-07-01T00:00:00.000Z",
+      "signups": 1656,
+      "accounts": 1656,
+      "mrrCents": 2221320,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 732,
+          "mrrCents": 655140
+        },
+        {
+          "plan": "principal",
+          "accounts": 924,
+          "mrrCents": 1566180
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1656,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1616,
+          "retentionBps": 9758
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 1578,
+          "retentionBps": 9529
+        },
+        {
+          "age": 3,
+          "retainedAccounts": 1540,
+          "retentionBps": 9300
+        }
+      ]
+    },
+    {
+      "month": 33,
+      "label": "2026-08",
+      "startedAt": "2026-08-01T00:00:00.000Z",
+      "signups": 1790,
+      "accounts": 1790,
+      "mrrCents": 2411650,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 778,
+          "mrrCents": 696310
+        },
+        {
+          "plan": "principal",
+          "accounts": 1012,
+          "mrrCents": 1715340
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1790,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1748,
+          "retentionBps": 9765
+        },
+        {
+          "age": 2,
+          "retainedAccounts": 1706,
+          "retentionBps": 9531
+        }
+      ]
+    },
+    {
+      "month": 34,
+      "label": "2026-09",
+      "startedAt": "2026-09-01T00:00:00.000Z",
+      "signups": 1935,
+      "accounts": 1935,
+      "mrrCents": 2618225,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 827,
+          "mrrCents": 740165
+        },
+        {
+          "plan": "principal",
+          "accounts": 1108,
+          "mrrCents": 1878060
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 1935,
+          "retentionBps": 10000
+        },
+        {
+          "age": 1,
+          "retainedAccounts": 1889,
+          "retentionBps": 9762
+        }
+      ]
+    },
+    {
+      "month": 35,
+      "label": "2026-10",
+      "startedAt": "2026-10-01T00:00:00.000Z",
+      "signups": 2091,
+      "accounts": 2091,
+      "mrrCents": 2841845,
+      "plans": [
+        {
+          "plan": "basic",
+          "accounts": 878,
+          "mrrCents": 785810
+        },
+        {
+          "plan": "principal",
+          "accounts": 1213,
+          "mrrCents": 2056035
+        }
+      ],
+      "retention": [
+        {
+          "age": 0,
+          "retainedAccounts": 2091,
+          "retentionBps": 10000
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "signups": 26219,
+    "activeAccounts": 20800,
+    "churnedAccounts": 5419,
+    "finalMrrCents": 24999127,
+    "finalArrCents": 299989524,
+    "peakArrCents": 299989524,
+    "collectedCents": 301616630,
+    "refundedCents": 9049245,
+    "failedInvoices": 2125,
+    "refundedInvoices": 7011
+  }
+}

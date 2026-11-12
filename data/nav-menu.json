@@ -73,6 +73,13 @@
           "needs": "admin"
         },
         {
+          "id": "admin-growth",
+          "href": "/admin/growth",
+          "icon": "growth",
+          "needs": "admin",
+          "note": "#920 — the growth model: 36 cohorts to a $3M run-rate, charted from one committed artifact, beside the Gap it aggregates over. The row exists because the page had no other way in: the console hub links none of its staff destinations."
+        },
+        {
           "id": "admin-inbox",
           "href": "/admin/inbox",
           "icon": "inbox",

@@ -51,6 +51,8 @@ export const NAV_ICON_NAMES = [
   "console",
   "instances",
   "gaps",
+  // #920 — the growth model: cohorts, plan mix and churn from one committed artifact.
+  "growth",
   "inbox",
   "health",
   "billing",

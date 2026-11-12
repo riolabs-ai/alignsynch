@@ -116,6 +116,8 @@ describe("the shell's menus", () => {
       "/admin/console",
       "/admin/instances",
       "/admin/gaps",
+      // #920 — the growth model: 36 cohorts to a $3M run-rate, charted from one artifact.
+      "/admin/growth",
       "/admin/inbox",
       "/admin/health",
       "/admin/billing",

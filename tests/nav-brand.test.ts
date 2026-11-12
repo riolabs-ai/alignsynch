@@ -153,6 +153,8 @@ const ADMIN_MENU = [
   "/admin/console",
   "/admin/instances",
   "/admin/gaps",
+  // #920 — the growth model, between the Gap and the inbox.
+  "/admin/growth",
   "/admin/inbox",
   "/admin/health",
   "/admin/billing",

@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**133 documents in 9 sections.** Every page carries the same nav block, generated
+**134 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -32,7 +32,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Product](#product) — 36 documents
-- [Operations](#operations) — 9 documents
+- [Operations](#operations) — 10 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 19 documents
@@ -137,6 +137,7 @@ Deploying, releasing, demoing and running the fleet.
 - [`BRANCH-TRIAGE.md`](BRANCH-TRIAGE.md) — **Branch triage** — Which of the non-main heads is safe, and on what evidence?
 - [`DEMO.md`](DEMO.md) — **The demo** — How is the demo branch built, reset and bundled?
 - [`DEMO-AUTH.md`](DEMO-AUTH.md) — **Demo auth** — How do the demo roles and the PIN gate work?
+- [`GROWTH-MODEL.md`](GROWTH-MODEL.md) — **The growth model** — Where does the $3M demonstration business come from, and how is it proven?
 - [`RESEND-INBOUND.md`](RESEND-INBOUND.md) — **Resend inbound** — How do bounces, complaints and suppression marks reach us?
 - [`P3-EXIT.md`](P3-EXIT.md) — **P3 exit record** — Did bulk generation meet its gate, and with what numbers?
 
