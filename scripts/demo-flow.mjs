@@ -97,13 +97,29 @@ const ARGS = process.argv.slice(2);
 const CHECK = ARGS.includes("--check");
 const STRICT = ARGS.includes("--strict");
 const SKIP_SEED = process.env.DEMO_FLOW_SKIP_SEED === "1";
+/**
+ * `DEMO_FLOW_ONLY=unpaid` walks one path. Iterating on one screen should not cost three paths, and a
+ * path that stopped needs to be re-walked on its own without a second full run.
+ */
+const ONLY = (process.env.DEMO_FLOW_ONLY ?? "")
+  .split(",")
+  .map((entry) => entry.trim())
+  .filter((entry) => entry !== "");
 
 const ROOT = repoRoot;
 const CANONICAL_OUT = join(ROOT, "docs", "qa-demo-flow");
 /** Where the images are written. `--check` stages them elsewhere and diffs against the commit. */
 const OUT = CHECK
   ? join(process.env.DEMO_FLOW_OUT ?? "/tmp", "demo-flow-check")
-  : (process.env.DEMO_FLOW_OUT ?? CANONICAL_OUT);
+  : (process.env.DEMO_FLOW_OUT ?? (ONLY.length > 0 ? scratchOut() : CANONICAL_OUT));
+
+/**
+ * A single-path run writes beside the commit, never over it: `DEMO_FLOW_ONLY` is for iterating on one
+ * screen, and a partial transcript is not the transcript.
+ */
+function scratchOut() {
+  return join(tmpdir(), `demo-flow-${ONLY.join("-")}`);
+}
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3411").replace(/\/+$/, "");
 const CHROME = process.env.CHROME_BIN ?? "/usr/bin/google-chrome";
@@ -219,7 +235,16 @@ async function json(path) {
   return await response.json();
 }
 
-/** A session-scoped CDP connection to the page target. */
+/**
+ * A session-scoped CDP connection to the page target.
+ *
+ * **Targets are auto-attached, because one screen in this flow is not in this document.** Stage 5's
+ * card step mounts the provider's own checkout in a cross-origin iframe (#911). Same-origin policy
+ * hides its DOM from `Runtime.evaluate` on the page target, and a driver that cannot type into the
+ * card cannot prove the payment step ran — so every sub-target is attached flat and reachable by
+ * `sessionId`. `waitForDebuggerOnStart: false` keeps a freshly attached target running; nothing here
+ * pauses one.
+ */
 async function attach() {
   const listed = await json("/json/list");
   const targetInfos = Array.isArray(listed) ? listed : listed.targetInfos;
@@ -234,8 +259,51 @@ async function attach() {
 
   let nextId = 1;
   const pending = new Map();
+  /** targetId → sessionId, and targetId → the target's own description. */
+  const sessions = new Map();
+  const targets = new Map();
+  /**
+   * Every JavaScript context the page has announced, keyed by id.
+   *
+   * A cross-origin frame is not always handed to `Target.setAutoAttach` as a sub-target; when it is
+   * not, its world is still a context `Runtime` announced, and `Runtime.evaluate` can run in it by
+   * `contextId`. This is the second door to the payment frame, and the one that works whether or not
+   * Chrome decides the frame deserves its own process.
+   */
+  const contexts = new Map();
+
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
+    if (message.method === "Target.attachedToTarget") {
+      sessions.set(message.params.targetInfo.targetId, message.params.sessionId);
+      targets.set(message.params.targetInfo.targetId, message.params.targetInfo);
+      // A sub-target's own contexts are announced on its session, not the page's.
+      void send("Runtime.enable", {}, message.params.sessionId).catch(() => undefined);
+      return;
+    }
+    if (message.method === "Target.detachedFromTarget") {
+      sessions.delete(message.params.targetId);
+      targets.delete(message.params.targetId);
+      return;
+    }
+    if (message.method === "Runtime.executionContextCreated") {
+      // The session is part of the context's identity: a context announced on a sub-target's session
+      // has to be evaluated on **that** session, and sending it to the page answers
+      // "Cannot find context with specified id".
+      contexts.set(message.params.context.id, {
+        ...message.params.context,
+        sessionId: message.sessionId,
+      });
+      return;
+    }
+    if (
+      message.method === "Runtime.executionContextDestroyed" ||
+      message.method === "Runtime.executionContextsCleared"
+    ) {
+      if (message.method === "Runtime.executionContextsCleared") contexts.clear();
+      else contexts.delete(message.params.executionContextId);
+      return;
+    }
     if (message.id === undefined) return;
     const entry = pending.get(message.id);
     if (entry === undefined) return;
@@ -245,13 +313,20 @@ async function attach() {
     else entry.resolve(message.result);
   });
 
-  const send = (method, params = {}) =>
+  const send = (method, params = {}, sessionId) =>
     new Promise((resolve, reject) => {
       const id = nextId++;
       pending.set(id, { resolve, reject });
-      socket.send(JSON.stringify({ id, method, params }));
+      socket.send(JSON.stringify({ id, method, params, ...(sessionId === undefined ? {} : { sessionId }) }));
     });
 
+  await send("Target.setAutoAttach", {
+    autoAttach: true,
+    waitForDebuggerOnStart: false,
+    flatten: true,
+  });
+
+  cdp = { send, sessions, targets, contexts };
   return { send, close: () => socket.close() };
 }
 
@@ -570,6 +645,8 @@ const createdAccounts = [];
 
 let db = null;
 let cleaned = false;
+/** The live CDP connection, so a helper can reach a sub-target (stage 5's card frame). */
+let cdp = null;
 
 async function authUserTable() {
   const { rows } = await db.query(
@@ -1013,6 +1090,424 @@ async function commitDraft(send, pathLabel) {
   return { instanceId, relationshipId };
 }
 
+/* ------------------------------------------------------------------ *
+ * Stage 5's left column: the pay walk, and the card it takes (#911)
+ * ------------------------------------------------------------------ */
+
+/** The pay panel, as the panel declares its own step. */
+const payStep = (step) =>
+  `!!document.querySelector('[data-create-plans="true"][data-pay-step="${step}"]')`;
+
+/** The send column's state, as the column declares it. */
+const SEND_GATE = `document.querySelector("[data-send-gate]")?.getAttribute("data-send-gate") ?? null`;
+
+/** Run an expression inside a sub-target (by session) or a frame's context (by contextId). */
+async function evaluateIn(door, expression) {
+  const params = { expression, returnByValue: true, awaitPromise: true, userGesture: true };
+  if (door.contextId !== undefined) params.contextId = door.contextId;
+  const result = await cdp.send("Runtime.evaluate", params, door.sessionId);
+  if (result.exceptionDetails !== undefined) {
+    throw new Error(
+      `frame threw: ${result.exceptionDetails.text} ${String(
+        result.exceptionDetails.exception?.description ?? "",
+      ).slice(0, 240)}`,
+    );
+  }
+  return result.result.value;
+}
+
+/**
+ * The provider's checkout frame — the one document in this flow that is not ours.
+ *
+ * Two doors, tried in order, because which one exists is Chrome's decision and not something to
+ * assume: a cross-origin frame that got its own process is a **sub-target** with a `sessionId`; one
+ * that did not is still a **context** `Runtime` announced, reachable by `contextId`. Same-origin
+ * policy hides either one from `Runtime.evaluate` on the page, so a driver that only knows about the
+ * first door reports "no frame" on a frame that is plainly on screen.
+ */
+async function cardFrameDoor({ timeout = 25000 } = {}) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    for (const [targetId, info] of cdp.targets) {
+      if (!/stripe\.com/.test(info.url ?? "")) continue;
+      const sessionId = cdp.sessions.get(targetId);
+      if (sessionId !== undefined) return { sessionId, url: info.url, via: "target" };
+    }
+    for (const [id, context] of cdp.contexts) {
+      const origin = context.origin ?? "";
+      if (!/stripe\.com/.test(origin)) continue;
+      if (context.auxData?.isDefault === false) continue;
+      // A context is only reachable on the session that announced it — `undefined` is the page's own.
+      return { contextId: id, sessionId: context.sessionId, url: origin, via: "context" };
+    }
+    await sleep(200);
+  }
+
+  // Named, not guessed: what the page actually has, so the next reader does not repeat this hunt.
+  console.error(
+    `! demo-flow: no provider frame — ${cdp.targets.size} sub-target(s), ${cdp.contexts.size} context(s):`,
+  );
+  for (const [, info] of cdp.targets) console.error(`    target ${info.type} ${info.url}`);
+  for (const [, context] of cdp.contexts) {
+    console.error(`    context ${context.id} ${context.origin} ${context.name}`);
+  }
+  return null;
+}
+
+/**
+ * Print the page's frame tree and every announced JS context.
+ *
+ * A checkout is a document inside a document inside a document, and a driver that fills the wrong
+ * one reports "no fields" on a screen full of them. Naming the topology when a fill finds nothing is
+ * what turned this from a guess into a fact once already.
+ */
+async function dumpFrameTopology() {
+  console.error("! demo-flow: the frame drew no visible field — topology follows");
+  try {
+    const tree = await cdp.send("Page.getFrameTree", {});
+    const walk = (node, depth) => {
+      console.error(`    ${"  ".repeat(depth)}frame ${node.frame.id} ${node.frame.url}`);
+      for (const child of node.childFrames ?? []) walk(child, depth + 1);
+    };
+    walk(tree.frameTree, 0);
+  } catch (error) {
+    console.error(`    frame tree unavailable: ${error.message}`);
+  }
+  for (const [id, context] of cdp.contexts) {
+    console.error(
+      `    context ${context.id} session=${context.sessionId ?? "<page>"} ${context.origin} "${context.name}"`,
+    );
+    if (!/stripe\.com/.test(context.origin ?? "")) continue;
+    try {
+      const said = await evaluateIn(
+        { contextId: id, sessionId: context.sessionId },
+        `(() => ({
+          href: location.href,
+          title: document.title,
+          html: document.documentElement ? document.documentElement.outerHTML.length : 0,
+          text: (document.body && document.body.innerText ? document.body.innerText : "").slice(0, 300),
+          frames: Array.from(document.querySelectorAll("iframe")).map((el) => el.src).slice(0, 5),
+        }))()`,
+      );
+      console.error(`      ${JSON.stringify(said)}`);
+    } catch (error) {
+      console.error(`      unreadable: ${error.message.slice(0, 120)}`);
+    }
+  }
+  for (const [, info] of cdp.targets) {
+    console.error(`    target ${info.type} ${info.url}`);
+  }
+  // The page's own view of its iframes: a mounted checkout is an element here whether or not Chrome
+  // gave it its own process, and an element with no size is a frame that never got a document.
+  try {
+    const mounted = await cdp.send("Runtime.evaluate", {
+      expression: `(() => ({
+        mount: (() => {
+          const host = document.querySelector("[data-stripe-mount]");
+          return host === null ? null : { html: host.innerHTML.length, boxes: host.querySelectorAll("iframe").length };
+        })(),
+        iframes: Array.from(document.querySelectorAll("iframe")).map((el) => ({
+          src: (el.src || "").split("?")[0],
+          w: el.clientWidth,
+          h: el.clientHeight,
+        })),
+        caption: (document.querySelector("[data-capture-frame-placeholder]")?.textContent ?? "").slice(0, 120),
+        refusal: (document.querySelector("[data-pay-refusal]")?.textContent ?? "").slice(0, 300),
+        panel: (document.querySelector("[data-create-plans]")?.textContent ?? "").slice(0, 400),
+      }))()`,
+      returnByValue: true,
+    });
+    console.error(`    page: ${JSON.stringify(mounted.result.value)}`);
+  } catch (error) {
+    console.error(`    page unreadable: ${error.message.slice(0, 120)}`);
+  }
+}
+
+/**
+ * Poll the provider's frame until its form is actually drawn, and return what it drew.
+ *
+ * A checkout is a document inside a document: Stripe injects `stripe.js`, that script fetches the
+ * session and mounts `/endive`'s own frame, and only then are there fields to type into. So the
+ * question is not "is there a frame" (there is one almost immediately, and it is empty) but "does a
+ * frame have a card field in it". Nothing here waits on a fixed sleep — it waits on the condition it
+ * needs, and it names the last thing it saw when the condition never comes.
+ */
+async function waitForCardFields({ timeout = 60000 } = {}) {
+  const deadline = Date.now() + timeout;
+  let lastSeen = null;
+  while (Date.now() < deadline) {
+    for (const [id, context] of cdp.contexts) {
+      if (!/stripe\.com/.test(context.origin ?? "")) continue;
+      if (context.auxData?.isDefault === false) continue;
+      const door = { contextId: id, sessionId: context.sessionId };
+      try {
+        const survey = await evaluateIn(
+          door,
+          `(() => {
+            const inputs = Array.from(document.querySelectorAll("input, select, textarea"));
+            const visible = inputs.filter((el) => el.type !== "hidden");
+            return {
+              ready: document.readyState,
+              fields: visible.map((el) => ({
+                tag: el.tagName.toLowerCase(),
+                type: el.type ?? "",
+                name: el.name ?? "",
+                id: el.id ?? "",
+                autocomplete: el.autocomplete ?? "",
+                placeholder: el.placeholder ?? "",
+                label: (el.labels && el.labels[0] && (el.labels[0].textContent || "").trim()) || "",
+              })),
+            };
+          })()`,
+        );
+        if (survey.fields.length > 0) return { fields: survey.fields, origin: context.origin };
+        lastSeen = `${context.origin} readyState=${survey.ready} 0 visible field(s)`;
+      } catch {
+        // A context that is being replaced mid-survey is a retry, not a failure.
+      }
+    }
+    await sleep(500);
+  }
+  if (lastSeen !== null) console.error(`! demo-flow: ${lastSeen}`);
+  return null;
+}
+
+/**
+ * Put a test card on file, in the provider's own frame, in **test mode**.
+ *
+ * The card is the card Stripe documents for test mode (`4242 4242 4242 4242`, any future expiry, any
+ * CVC). Nothing here decides a payment: the frame's own submit is what the provider answers, and the
+ * app resolves the method server-side from the session it minted (`onComplete` → `onResolve`), never
+ * from anything this file types.
+ *
+ * Returns what it did, so a step can record it — the transcript carries the field names and the
+ * values as they were entered, and never the client secret.
+ */
+async function fillCardFrame(send, { email }) {
+  // **Wait for the checkout document, not for the panel.** The panel's marker appears the moment the
+  // server mints a client secret; the provider then injects its script, fetches the session and mounts
+  // its form, which is a second or two later. Surveying at marker time finds the loader, not the card.
+  const ready = await waitForCardFields();
+  if (ready === null) {
+    await dumpFrameTopology();
+    return { filled: false, reason: "the provider's checkout never drew a card field" };
+  }
+
+  /** Run an expression in the provider's frame, surviving its context churn. */
+  async function inFrame(expression) {
+    let lastError = new Error("no provider frame attached");
+    for (let attempt = 0; attempt < 15; attempt += 1) {
+      const door = await cardFrameDoor({ timeout: 6000 });
+      if (door === null) {
+        await sleep(500);
+        continue;
+      }
+      try {
+        return await evaluateIn(door, expression);
+      } catch (error) {
+        lastError = error;
+        if (!/Cannot find context|context.*destroyed|Execution context/i.test(error.message)) {
+          throw error;
+        }
+        await sleep(400);
+      }
+    }
+    throw lastError;
+  }
+
+  const fields = ready.fields;
+
+  const wanted = {
+    email: /email/i,
+    card: /card.?number|number|cc-number/i,
+    expiry: /exp|cc-exp/i,
+    cvc: /cvc|cvv|security/i,
+    name: /name/i,
+    postal: /postal|zip|postcode/i,
+  };
+  const cardValues = {
+    email,
+    card: "4242424242424242",
+    expiry: "12/34",
+    cvc: "123",
+  };
+
+  const typed = {};
+  for (const [key, pattern] of Object.entries(wanted)) {
+    if (cardValues[key] === undefined) continue;
+    const field = fields.find(
+      (f) =>
+        f.tag === "input" &&
+        f.type !== "hidden" &&
+        (pattern.test(f.name) || pattern.test(f.autocomplete) || pattern.test(f.label)),
+    );
+    if (field === undefined) continue;
+    const selector = field.id !== "" ? `#${field.id}` : `input[name="${field.name}"]`;
+    // Type the way a person does — focus, then `Input.insertText` — and accept the value the field
+    // keeps. **A card field reformats as it fills** (`4242 4242 4242 4242`, `12 / 34`), so the
+    // verdict is the digits and slashes that landed, never a byte comparison against what was typed.
+    const focused = await inFrame(
+      `(() => {
+        const el = document.querySelector(${JSON.stringify(selector)});
+        if (el === null) return false;
+        el.focus();
+        return document.activeElement === el;
+      })()`,
+    );
+    if (focused !== true) continue;
+    await cdp.send("Input.insertText", { text: cardValues[key] });
+    let landed = await inFrame(
+      `document.querySelector(${JSON.stringify(selector)})?.value ?? null`,
+    );
+    // A headless window is not a focused one, so a synthetic keystroke can land nowhere. The native
+    // setter is the second door: same value, same `input` event, and the field is the judge either way.
+    if (typeof landed !== "string" || landed === "") {
+      await inFrame(
+        `(() => {
+          const el = document.querySelector(${JSON.stringify(selector)});
+          if (el === null) return false;
+          const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+          setter.call(el, ${JSON.stringify(cardValues[key])});
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+          return true;
+        })()`,
+      );
+      landed = await inFrame(
+        `document.querySelector(${JSON.stringify(selector)})?.value ?? null`,
+      );
+    }
+    const bare = (text) => String(text).replace(/[\s-]/g, "");
+    if (typeof landed === "string" && bare(landed) === bare(cardValues[key])) {
+      typed[key] = cardValues[key];
+    }
+  }
+
+  const submit = await inFrame(
+    `(() => {
+      const button = Array.from(document.querySelectorAll("button")).find(
+        (el) => el.type === "submit" || /pay|subscribe|start|continue|save/i.test(el.textContent || ""),
+      );
+      if (button === undefined) return null;
+      const text = (button.textContent || "").trim();
+      button.click();
+      return text;
+    })()`,
+  );
+
+  return {
+    filled: Object.keys(typed).length > 0,
+    typed,
+    submit,
+    fields: fields.length,
+    // What the frame drew, so a fill that matched nothing names what it saw instead of "no".
+    seen: fields
+      .filter((field) => field.type !== "hidden")
+      .slice(0, 8)
+      .map((field) => `${field.tag}[${field.type}]${field.name === "" ? "" : ` name=${field.name}`}`)
+      .join(", "),
+    frameUrl: normaliseRoute(ready.origin),
+  };
+}
+
+/**
+ * Walk stage 5's left column.
+ *
+ * The panel is three steps in one column and the send beside it is gated by the stage (#911): before
+ * a card is on file the column is `data-send-gate="locked"` and the confirm control is disabled. So
+ * a path that means to **send** has to complete the walk first, and a path that means to show the
+ * unpaid state stops at the card step on purpose.
+ */
+async function payWalk(send, { pathLabel, complete, plan }) {
+  await waitFor(send, payStep("plan"), { timeout: 25000, label: "the walk's plan panel" });
+
+  // A measured, already-paying account is drawn a summary instead of a radio group (#870).
+  const included = await evaluate(send, `!!document.querySelector("[data-pay-plan-included]")`);
+  if (included !== true) {
+    const chosen = await evaluate(
+      send,
+      `(() => {
+        const radios = Array.from(document.querySelectorAll('input[name="plan"]'));
+        if (radios.length === 0) return null;
+        const pick = radios.find((el) => el.value === ${JSON.stringify(plan)}) ?? radios[0];
+        pick.click();
+        return pick.value;
+      })()`,
+    );
+    if (chosen !== null) {
+      await record(send, {
+        action: "fill",
+        values: { plan: chosen },
+        expect: "the plan panel offers the membership plans and one is chosen",
+        name: `${pathLabel}-pay-plan`,
+      });
+    }
+  }
+
+  await click(send, '[data-pay-action="card"]', { navigate: false, timeout: 25000 });
+  await waitFor(send, payStep("card"), { timeout: 25000, label: "the walk's card panel" });
+
+  // The gate is the stage, so it is asserted here — before anything is put on file.
+  const gateBefore = await evaluate(send, SEND_GATE);
+  await record(send, {
+    action: "assert",
+    expect: "the send column is locked while no card is on file, and says what unlocks it",
+    ok: gateBefore === "locked",
+    actual: `data-send-gate=${String(gateBefore)}`,
+    name: `${pathLabel}-send-gate-locked`,
+  });
+
+  await click(send, '[data-pay-action="capture"]', { navigate: false, timeout: 40000 });
+  await waitFor(
+    send,
+    `!!document.querySelector('[data-capture-frame="embedded"]') || !!document.querySelector("[data-pay-hosted]") || !!document.querySelector("[data-pay-refusal]")`,
+    { timeout: 40000, label: "the card panel's frame" },
+  );
+
+  if (!complete) {
+    // The card step, left unresolved — which is the state the `unpaid` path exists to show.
+    const drawn = await text(send);
+    await record(send, {
+      action: "assert",
+      expect:
+        "the card step mounts the provider's frame in test mode, and leaving it unresolved leaves nothing on file",
+      ok: !/card (is )?on file/i.test(drawn),
+      actual: drawn.slice(0, 400),
+      name: `${pathLabel}-card-frame`,
+    });
+    return { completed: false };
+  }
+
+  const card = await fillCardFrame(send, { email: PERSONA.published.email });
+  await record(send, {
+    action: "fill",
+    values: card.typed ?? {},
+    expect:
+      "the payment step runs in Stripe test mode and the provider's own frame takes the test card",
+    ok: card.filled === true,
+    actual:
+      card.filled === true
+        ? `${Object.keys(card.typed).length} field(s) · submit "${card.submit}"`
+        : `${card.reason ?? "the frame drew no field the driver recognises"} · ${card.fields ?? 0} input(s) in ${card.frameUrl ?? "no frame"}${card.seen ? ` · saw ${card.seen}` : ""}`,
+    name: `${pathLabel}-card-filled`,
+  });
+
+  // The provider answers, the app resolves the method server-side, and the panel moves to its
+  // third step — which has no button, because the walk ends there.
+  const thanked = await waitFor(send, payStep("thanks"), { timeout: 60000, label: "the thank-you step" })
+    .then(() => true)
+    .catch(() => false);
+  const gateAfter = await evaluate(send, SEND_GATE);
+  await record(send, {
+    action: "assert",
+    expect: "the card on file ends the walk at the thank-you step and opens the send column",
+    ok: thanked && gateAfter === "open",
+    actual: `pay-step=${thanked ? "thanks" : "card"} · data-send-gate=${String(gateAfter)}`,
+    name: `${pathLabel}-card-on-file`,
+  });
+  return { completed: thanked && gateAfter === "open" };
+}
+
 /* ---- path 1: create-published ------------------------------------- */
 
 async function walkCreatePublished(send) {
@@ -1090,6 +1585,21 @@ async function walkCreatePublished(send) {
       actual: await url(send),
     });
     return;
+  }
+
+  // **Send is gated by stage 5's own pay walk (#911).** The confirm control is disabled until a card
+  // is on file, so the published path has to walk the three panels and put one there first —
+  // otherwise the click below is a click on a disabled button.
+  const paid = await payWalk(send, {
+    pathLabel: "published",
+    complete: true,
+    plan: "unlimited",
+  });
+  if (!paid.completed) {
+    finding("the published path could not put a card on file, so Send never unlocks", {
+      expected: "the pay walk reaches its thank-you step and data-send-gate=open",
+      actual: "the walk stopped before the send column opened",
+    });
   }
 
   const sendButton = await evaluate(
@@ -1221,6 +1731,9 @@ async function walkCreateDraft(send) {
     "create-draft",
     "the draft is listed on /dashboard/relationships and reopens in the editor",
   );
+  // A filtered run walks one path from a fresh browser; this path begins signed in, so it opens the
+  // session itself. In the full run the session is the one the published path established.
+  if (ONLY.length > 0) await demoSignIn(send, "initiator");
   await navigate(send, CREATE);
   await record(send, {
     action: "assert",
@@ -1358,6 +1871,8 @@ async function walkCreateDraft(send) {
 
 async function walkUnpaid(send) {
   const entry = begin("unpaid", "the Advanced trial, the claim, and the payment screens");
+  // Same as create-draft: walked alone, this path opens its own session.
+  if (ONLY.length > 0) await demoSignIn(send, "initiator");
 
   await navigate(send, CREATE);
   await walkCreateStages(send, PERSONA.unpaid, { mode: "advanced", setting: "full" });
@@ -1381,30 +1896,28 @@ async function walkUnpaid(send) {
     name: "advanced-trial-on-stage-5",
   });
 
-  const sendButton = await evaluate(
+  // **The unpaid path stops at the card panel on purpose (#911).** The walk opens on Advanced with
+  // its trial, reaches the card step, and leaves it there — the frame mounted, nothing on file.
+  await payWalk(send, { pathLabel: "unpaid", complete: false, plan: "unlimited" });
+
+  // The abandoned-payment screen: the send is still locked, and the sentence beside it says why.
+  const sendDrawn = await evaluate(send, `!!document.querySelector(${JSON.stringify(SEND_SELECTOR)})`);
+  const sendDisabled = await evaluate(
     send,
-    `!!document.querySelector(${JSON.stringify(SEND_SELECTOR)})`,
+    `document.querySelector(${JSON.stringify(SEND_SELECTOR)})?.disabled ?? null`,
   );
-  if (sendButton !== true) {
-    finding("unpaid: stage 5 draws no Send control", {
-      expected: SEND_SELECTOR,
-      actual: "absent",
-    });
-    return;
-  }
-  await click(send, SEND_SELECTOR, { timeout: 40000 });
-  await sleep(1500);
+  const gateState = await evaluate(send, SEND_GATE);
+  const abandoned = await text(send);
+  await record(send, {
+    action: "assert",
+    expect:
+      "abandoning the payment step leaves the relationship unpublished, with the send locked and the reason drawn beside it",
+    ok: sendDrawn === true && sendDisabled === true && gateState === "locked",
+    actual: `send drawn=${String(sendDrawn)} disabled=${String(sendDisabled)} · data-send-gate=${String(gateState)} · ${abandoned.slice(0, 260)}`,
+    name: "abandoned-payment-screen",
+  });
 
   const afterSend = await text(send);
-  const afterRoute = normaliseRoute(await url(send));
-  const published = /Published|Invitation|trial|Trial/i.test(afterSend) === true;
-  await record(send, {
-    action: "click",
-    expect: "publishing on Advanced opens the trial and leaves the relationship published",
-    ok: published,
-    actual: `${afterRoute} · ${afterSend.slice(0, 500)}`,
-    name: "published-on-advanced",
-  });
 
   // The invitation the counterparty has to claim: read the link off the screen, never type one.
   const invitation = await inviteUrlOnScreen(send);
@@ -1521,6 +2034,11 @@ async function walkUnpaid(send) {
   await demoSignIn(send, "initiator");
   await navigate(send, payerRoute);
   const payerText = await text(send);
+  // The relationship's own state, read from the detail's marker rather than from the copy beside it.
+  const payerStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
   await record(send, {
     action: "assert",
     expect: "the payer's relationship detail draws the payment state the publish left it in",
@@ -1658,8 +2176,12 @@ async function walkUnpaid(send) {
     name: "abandoned-payment",
   });
 
-  entry.terminal = `the abandoned payment at ${normaliseRoute(`${BASE}${payerRoute}`)} — completion gate ${afterSkip.gate}, method ${afterSkip.method}, sealed ${afterSkip.sealed}`;
-  entry.reached = published && captureControl === "clicked" && afterSkip.method === "missing";
+  entry.terminal = `the abandoned payment at ${normaliseRoute(`${BASE}${payerRoute}`)} — completion gate ${afterSkip.gate}, method ${afterSkip.method}, sealed ${afterSkip.sealed}, relationship ${String(payerStatus)}`;
+  // **Not published is the point.** #911 gates the send on the card, so the state this path exists to
+  // show is a relationship that owes a method and has therefore not been sent — the terminal screen
+  // is the owing one, not a published pairing.
+  entry.reached =
+    payerStatus !== "published" && captureControl === "clicked" && afterSkip.method === "missing";
 
   if (entry.reached) {
     // The lapsed state is the one screen a browser cannot walk to: `expired` is the *system's* move
@@ -1802,12 +2324,20 @@ async function main() {
     await page.send("Emulation.setEmulatedMedia", {
       features: [{ name: "prefers-reduced-motion", value: "reduce" }],
     });
+    // A headless window has no OS focus, and a synthetic keystroke goes nowhere without it. The card
+    // step is typed into, so the page is told to behave as the focused tab.
+    await page.send("Emulation.setFocusEmulationEnabled", { enabled: true }).catch(() => undefined);
 
     const steps = [
       ["create-published", walkCreatePublished],
       ["create-draft", walkCreateDraft],
       ["unpaid", walkUnpaid],
-    ];
+    ].filter(([name]) => ONLY.length === 0 || ONLY.includes(name));
+    if (steps.length === 0) {
+      throw new Error(
+        `DEMO_FLOW_ONLY names no path this driver walks (${ONLY.join(", ")}) — the three are create-published, create-draft, unpaid`,
+      );
+    }
     const failures = [];
     for (const [name, walk] of steps) {
       try {
