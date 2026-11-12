@@ -314,25 +314,29 @@ describe("stage 5 is not a dead end", () => {
     expect(html).toContain('data-create-send="true"');
   });
 
-  it("keeps Send enabled when only a plan notice is set (#834, #835)", () => {
+  it("keeps Send on screen when a plan notice is set — the walk gates it, not the notice (#834, #835, #911)", () => {
     const notice = createRefusal("mode-not-entitled", undefined, CONTEXT);
     const html = stage5({ notice: notice?.sentence ?? null, noticeLink: notice?.link ?? null });
     expect(html).toContain('data-create-notice="true"');
     expect(html).toContain('role="status"');
-    // A notice that disables the action is the old wall in new paint.
+    // The notice is information, not a wall: the send is still drawn and still posts. What keeps it
+    // disabled here is the walk (no card on file), and that is the only reason — the notice must not
+    // be the thing that greys it, which is what this asserts by naming the gate's own state.
     expect(html).toContain('data-create-send="true"');
-    expect(html).not.toMatch(/data-create-send="true"[^>]*\bdisabled\b/);
+    expect(html).toContain('data-send-gate="locked"');
+    expect(html).toContain('data-send-confirm="disabled"');
   });
 });
 
 describe("the walk asks only for the decision the account still has (#870)", () => {
-  const walk = (accountPlan?: { name: string; entitled: boolean }): string =>
+  const walk = (planIncluded?: { name: string; entitled: boolean }): string =>
     renderToStaticMarkup(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        draft: DRAFT,
-        account: createElement("p", null, "The invitation is sent from this account."),
-        ...(accountPlan === undefined ? {} : { accountPlan }),
+        relationshipId: "relationship-1",
+        paid: false,
+        onPaid: () => undefined,
+        ...(planIncluded === undefined ? {} : { planIncluded }),
       }),
     );
 
@@ -347,7 +351,7 @@ describe("the walk asks only for the decision the account still has (#870)", () 
     expect(html).toContain("data-pay-plan-included");
     expect(html).toContain("Principal");
     expect(html).not.toContain('name="plan"');
-    // The trial sentence stays: it is the promise the send rests on.
+    // The trial sentence stays: it is the promise the card step rests on.
     expect(html).toContain(itemLabel(sectionOf(assessmentCreatePageCopy, "plans"), "trial"));
   });
 
@@ -357,9 +361,9 @@ describe("the walk asks only for the decision the account still has (#870)", () 
     expect(html).not.toContain("data-pay-plan-included");
   });
 
-  it("never draws a card form, whichever panel is open", () => {
-    // The owner's rule: choosing a plan commits nothing and nothing here charges. A mock checkout
-    // is worse than no checkout, so a `card`/`cvc` input in the walk is a red suite.
+  it("never draws a card form of our own, whichever panel is open", () => {
+    // The owner's rule: the card fields are the provider's, mounted in the panel's shared frame
+    // (#911) — a `card`/`cvc` input written here would be the second capture UI the card forbids.
     for (const html of [walk(), walk({ name: "Principal", entitled: true })]) {
       expect(html).not.toMatch(/name="(card|cvc|cardnumber|expiry)"/i);
     }

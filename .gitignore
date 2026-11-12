@@ -60,3 +60,10 @@ tests/parity/artifacts/
 
 # Hermes profile/board state occasionally lands in a card workspace; never commit it.
 .hermes/
+
+# The audience and positioning canon is held outside this repository on purpose (#903): the repo
+# is public, and the note is a private copy handoff. The three copies stay on disk, untracked,
+# and this rule is what stops the next `git add -A` from publishing them.
+docs/specs/spec-design-page-rel-templates-v2/AUDIENCE-AND-POSITIONING.md
+docs/specs/spec-design-page-rel-templates-v2/home/AUDIENCE-AND-POSITIONING.md
+docs/specs/spec-design-page-rel-templates-v2/brand-profile/AUDIENCE-AND-POSITIONING.md

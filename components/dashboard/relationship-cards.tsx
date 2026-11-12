@@ -73,17 +73,25 @@ const ACTION_SMALL =
 /** A menu row's reason: the second line of the item, never a hover title. */
 const MENU_WHY = "block text-xs text-gray-500 dark:text-gray-400";
 
-/** The badge's word for a stored status, from the fixture's `status` section. */
-function statusLabel(status: PageCopySection, value: string): string {
-  const known = (status.items ?? []).find((item) => item.id === value);
+/**
+ * A chip's word for a **value** — the stored status, the invitation's derived view, the record's
+ * own kind. All three are tables in `data/pages/dashboard-relationships.ts` keyed by the value
+ * they spell, so the rule has one home: print the value's own word and never the name of the
+ * field it came from (#874 — the kind chip asked for a copy item that named the concept, so
+ * every relationship's first chip read "Template"). An unknown value reads as itself rather than
+ * as a blank chip, which is what makes a new stored state visible instead of invisible.
+ */
+function wordFor(section: PageCopySection, value: string): string {
+  const known = (section.items ?? []).find((item) => item.id === value);
   return known?.label ?? value;
 }
 
-/** The badge's word for the invitation's derived state. */
-function viewLabel(view: PageCopySection, value: string): string {
-  const known = (view.items ?? []).find((item) => item.id === value);
-  return known?.label ?? value;
-}
+/**
+ * The kind this list's rows are. A relationship is the two-party pairing; a Template is the
+ * product a person copies, and `/templates` is where that noun belongs. The chip reads this
+ * through the fixture's `kind` table, never through a literal (#874).
+ */
+const RECORD_KIND = "relationship";
 
 /** The other party's name, as the row knows it — a `null` falls back to the fixture's word. */
 function otherPartyOf(row: MemberRelationshipRow, card: PageCopySection): string {
@@ -101,6 +109,7 @@ function otherPartyOf(row: MemberRelationshipRow, card: PageCopySection): string
  */
 function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationshipRow }) {
   const statusCopy = sectionOf(copy, "status");
+  const kindCopy = sectionOf(copy, "kind");
   const viewCopy = sectionOf(copy, "view");
   const card = sectionOf(copy, "card");
 
@@ -118,12 +127,16 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
     >
       <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Chip variant="tint">{itemLabel(card, "template")}</Chip>
+          {/* #874 — the record's **kind**, printed as a value. This chip used to read the copy
+              item that named the concept, so every relationship's first chip said "Template". */}
+          <Chip variant="tint" data-relationship-kind={RECORD_KIND}>
+            {wordFor(kindCopy, RECORD_KIND)}
+          </Chip>
           <span className="flex flex-wrap items-center gap-2">
-            <Chip variant="soft">{statusLabel(statusCopy, row.status)}</Chip>
+            <Chip variant="soft">{wordFor(statusCopy, row.status)}</Chip>
             {row.membership.state === "lapsed" ? (
               <Chip variant="soft" data-membership-state="lapsed">
-                {statusLabel(statusCopy, "read-only")}
+                {wordFor(statusCopy, "read-only")}
               </Chip>
             ) : null}
             {/* #706 — whose seat this is, from the viewer's own party row. */}
@@ -151,7 +164,7 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
             {fillLabel(itemLabel(card, "aspects"), { count: String(row.aspectCount) })}
           </Chip>
           <Chip variant="soft" data-invite-view={row.view}>
-            {viewLabel(viewCopy, row.view)}
+            {wordFor(viewCopy, row.view)}
           </Chip>
         </div>
         <p className="mt-auto text-xs text-gray-500 dark:text-gray-400">

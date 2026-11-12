@@ -76,7 +76,7 @@ import {
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
-import { InviteWalk } from "./invite-walk";
+import { type CaptureHandlers } from "./invite-walk";
 import { StageAccount } from "./stage-account";
 import { StageColumn } from "./stage-column";
 import { StageInvite } from "./stage-invite";
@@ -328,7 +328,9 @@ export function CreateRelationship({
   accountAdvanceHref,
   instanceRecordId,
   publishAction,
-  payment,
+  capture,
+  initialPaid,
+  planIncluded,
   copyBlocked,
 }: {
   copy: PageCopy;
@@ -378,12 +380,16 @@ export function CreateRelationship({
    */
   publishAction?: ReactNode;
   /**
-   * Stage 5's payment walk (#771, #825, #870). The page builds it so the stage owns the layout and
-   * the page owns the entitlement — the account's plan is a database fact and this component must
-   * not reach for one. Absent, this stage falls back to the walk with no plan summary, which is
-   * what a rendered test with no database gets.
+   * Stage 5's gate (#911). The page passes the server's capture actions and the two facts the walk
+   * reads — whether a card is already on file, and what the account's plan already covers — because
+   * all three are the page's to know (a session, an entitlement, a row) and none of them can be read
+   * inside a client component.
    */
-  payment?: ReactNode;
+  capture?: CaptureHandlers;
+  /** A card is already on file for this relationship: the walk opens on the thank-you. */
+  initialPaid?: boolean;
+  /** What the account's plan already covers (#870), measured by the page. */
+  planIncluded?: { readonly name: string; readonly entitled: boolean };
   /**
    * **This template cannot be copied, so stage 1 must not collect anything (#870).**
    *
@@ -779,19 +785,9 @@ export function CreateRelationship({
               copy={copy}
               draft={draft}
               instanceRecordId={instanceRecordId ?? ""}
-              walk={
-                payment ?? (
-                  <InviteWalk
-                    copy={copy}
-                    draft={draft}
-                    account={
-                      <p className="text-xs text-gray-600 dark:text-gray-300">
-                        {itemLabel(accountSection, "signed-in-body")}
-                      </p>
-                    }
-                  />
-                )
-              }
+              {...(capture === undefined ? {} : { capture })}
+              {...(initialPaid === undefined ? {} : { initialPaid })}
+              {...(planIncluded === undefined ? {} : { planIncluded })}
               backHref={backHref}
               cancelHref={shell.closeHref}
               cancelLabel={cancelLabel}

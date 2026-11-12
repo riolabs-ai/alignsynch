@@ -18,13 +18,13 @@ superseded v5; each was approved in its turn and the decisions it carried are re
 
 ## The five stages
 
-| #   | Stage        | The screen asks                                                                                                      | Ends by                                    |
-| --- | ------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why                              | `Continue to Stage 2` (Settings)           |
-| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                  | `Continue to Stage 3` (Aspects)            |
-| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one | `Continue to Stage 4` (Account)            |
-| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                    | `Continue to Stage 5` (Invite)             |
-| 5   | **Invite**   | Sending the invitation, or keeping the draft for later                                                               | Send → the confirmation; or keep the draft |
+| #   | Stage        | The screen asks                                                                                                      | Ends by                                                                                          |
+| --- | ------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why                              | `Continue to Stage 2` (Settings)                                                                 |
+| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                  | `Continue to Stage 3` (Aspects)                                                                  |
+| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one | `Continue to Stage 4` (Account)                                                                  |
+| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                    | `Continue to Stage 5` (Invite)                                                                   |
+| 5   | **Invite**   | The pay walk — choose a membership plan, then the card — the invitation it unlocks, and the option to keep the draft | `send email to counterparty now` → the confirmation, once the card is on file; or keep the draft |
 
 **The foot is one shape on stages 1–5** (#760): `[Back][Cancel]` as a single left group and the act
 that advances the flow flush right. `Cancel` leaves the flow — it goes where the shell's close goes,
@@ -197,11 +197,35 @@ The relationship's shape — one template, two seats, the aspect count, the part
 drawn in this stage's right column, because those facts are all known before the account is chosen
 and repeating them on Invite is one card too many.
 
-## Stage 5, Invite — send, or keep the draft
+## Stage 5, Invite — the payment walk, and the send it unlocks
 
-Two actions, and the difference is the whole stage: **`Send and Continue`** pays if payment is due
-and sends the invitation; **`Continue as Draft`** keeps the relationship as a draft and sends
-nothing. Nothing is sent until Send is pressed, and keeping it as a draft costs nothing.
+Stage 5 is one decision drawn in two columns, and the gate between them is the stage (#911). The
+**left column is a three-step walk** (`components/assessment-flow/invite-walk.tsx`), in this order:
+
+| Step | The panel                                                                                                                                   | Ends by |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| 1    | **Plan** — the membership plans, and the two things the money buys: _join membership plan_ and _activate relationship_                      | `Next`  |
+| 2    | **Card** — the card, captured by `components/billing/stripe-frame.tsx`, the app's one implementation of a card                              | `Next`  |
+| 3    | **Thank you** — one message and **no button**. The walk ends here, and its sentence says where the reader goes next: the send, or the draft | nothing |
+
+**The right column is the send, and the walk gates it.** Before the card is on file the column is
+inactive — `data-send-gate="locked"`, a dashed border, a muted heading — and the confirm control is
+`disabled` **beside the sentence that says what unlocks it**, never a bare greyed button. Once the
+card is on file the column takes the action border and the confirm control enables, reading
+**`send email to counterparty now`**. The lock is enforced twice: the disabled attribute is the
+courtesy, and `sendDraftInvitation()` refuses a relationship with no captured method
+(`no-payment-method`) in the write, so a crafted POST cannot publish an unpaid draft.
+
+**Saving a card charges nothing.** The method goes on file and the trial starts; the fee is taken by
+the product's own completion path, never by the walk. The card step says so in as many words.
+
+**Keeping the draft is always the other choice.** An ordinary link beside the walk, present in both
+states at every step: no plan, no card, nothing charged, the relationship stays `draft` and the
+dashboard lists it. That link is what makes the locked state a decision instead of a dead end.
+
+**The words are the product**: _join membership plan_, _activate relationship_, _send email to
+counterparty now_. `purchase`, `buy` and `save payment method` appear nowhere in the stage — the
+thing being paid for is a membership plan and an activated relationship, and not a checkout.
 
 The confirmation that follows is **unnumbered**: it is proof the invitation left, not a sixth stage.
 It carries the resend control, the copy-link control, the waiting status (`Invited — waiting for
@@ -227,6 +251,11 @@ later visit.
 - `tests/invite-response-shell.test.tsx` renders the response stage through `StageShell` and fails
   if it stops drawing the five-stage rail at Account, drops off the shared stage column, gains a
   second progress band, or exits onto anything but the screens `afterClaimTarget()` names.
+- `tests/stage5-send-gate.test.tsx` renders stage 5 in both gate states and fails if the send is
+  ever enabled before a card is on file, if the locked column loses the sentence that explains the
+  disabled control, if the draft link is missing or disabled in either state, if
+  `sendDraftInvitation()` stops refusing `no-payment-method`, or if this file's stage-5 section
+  drifts back to send-or-draft.
 - `tests/flow-ui-parity.test.tsx` pins the conformance rules of the v7 pass (#760) to rendered
   markup: the panel's `lg:max-w-[880px]` cap, one foot per stage with `[Back][Cancel]` as a left
   group and the advance flush right, two `fieldset`s on Settings sharing one radio component, and

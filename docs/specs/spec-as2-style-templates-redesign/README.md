@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 templates redesign (handoff) · prev [AS2 redesign — asset sources and credits](../spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
+[Docs hub](../../README.md) › **Product** › AS2 templates redesign (handoff) · prev [/admin/brand (V2 package)](../spec-design-page-rel-templates-v2/admin-brand/README.md) · next [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->
 
@@ -28,6 +28,6 @@ The package is a design reference, not a deployment. Its card-start links show t
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 templates redesign (handoff) · prev [AS2 redesign — asset sources and credits](../spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
+[Docs hub](../../README.md) › **Product** › AS2 templates redesign (handoff) · prev [/admin/brand (V2 package)](../spec-design-page-rel-templates-v2/admin-brand/README.md) · next [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->

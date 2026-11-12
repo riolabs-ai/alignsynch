@@ -37,12 +37,20 @@
     // anything imports, so formatting it or linting its prototype markup would be a diff against a
     // document nobody should touch. Two entries, one rule — a per-file suppression is not the
     // answer here, and neither is widening the ignore to `docs/`.
+    //
+    // `docs/specs/spec-design-page-rel-templates-v2` is the third, and the rule holds unchanged:
+    // the V2 package's home mockup, brand profile, their stylesheets and the prose that ships beside
+    // them are a design handoff, committed byte-identical so the build can be matched against them
+    // (#903). Biome's markdown formatter wants to re-wrap their sentences and its HTML a11y rules
+    // want to fix the prototype's own `aria-label` — both are findings about a document this tree is
+    // not allowed to edit.
     "includes": [
       "**",
       "!pnpm-lock.yaml",
       "!docs/review/artifacts",
       "!docs/specs/spec-as2-style-home-redesign",
-      "!docs/specs/spec-as2-style-templates-redesign"
+      "!docs/specs/spec-as2-style-templates-redesign",
+      "!docs/specs/spec-design-page-rel-templates-v2"
     ]
   },
   "formatter": {
