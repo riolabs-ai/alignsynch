@@ -90,12 +90,28 @@ const messageOf = (cause: unknown): string =>
 /** `B5` is the one code this module mints; a bundle cannot collide with a store it does not know. */
 type CliIssueCode = "B5";
 
-type BundleErrorCode = "B1" | "B2" | "B3" | "B4" | "B5" | "B6" | "usage" | "io";
+type BundleErrorCode =
+  | "B1"
+  | "B2"
+  | "B3"
+  | "B4"
+  | "B5"
+  | "B6"
+  | "B7"
+  | "B8"
+  | "usage"
+  | "io"
+  /** Not a bundle's fault: the shell has no credential for the step that was asked for. */
+  | "capability";
 
 /**
  * A refusal a caller must surface — one line per problem, already formatted, because "the
  * import failed" with no path is the message this CLI exists to not print. `usage` exits 2
  * (how you called it), everything else 1 (what the file or the store says).
+ *
+ * `B7` and `B8` are minted by `scripts/bundle-platform.ts` (a package against this tree; a
+ * subset against its own references) and share this error type so every refusal prints the
+ * same way.
  */
 export class BundleError extends Error {
   constructor(
@@ -344,6 +360,12 @@ export function importBundleFile(file: string, options: ImportOptions = {}): Imp
   let materialized = false;
   let added: string | null = null;
 
+  if (bundle.kind === "platform") {
+    throw new BundleError("B1", [
+      "[B1] kind: this is a platform package (bundleVersion 2) — install it with `pnpm bundle:unpack <file.zip>`, which reads the manifest, checks the build and unpacks the media; `pnpm bundles import` moves records only",
+    ]);
+  }
+
   if (bundle.kind === "dataset") {
     // An install, not a merge: replace wholesale, so re-running it is idempotent and there
     // is no collision concept to fail on.
@@ -390,6 +412,14 @@ export interface ExportOptions {
 export interface ExportResult<T extends Bundle> {
   readonly file: string;
   readonly bundle: T;
+}
+
+/** The active set, as a dataset bundle — what `exportDataset` serializes, without writing it. */
+export function activeDataset(
+  options: { store?: string; appVersion?: string } = {},
+): DatasetBundle {
+  const active = activeRecords(options.store ?? STORE_FILE);
+  return buildDatasetBundle(active.records, options.appVersion ?? readAppVersion());
 }
 
 /** The active set, as a dataset bundle, written atomically. */

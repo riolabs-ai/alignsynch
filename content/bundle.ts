@@ -39,6 +39,21 @@
  * The codes here are `B1`–`B4`/`B6`; `B5` (a template import colliding with the active
  * store) needs a store to collide with, so it is minted in `scripts/bundles.ts`. All six
  * live in `scripts/rule-codes.ts` with one owner each, the same way the `E` codes do.
+ *
+ * **`bundleVersion: 2` — the platform package (#899).** One bundle could carry records; a
+ * tenant also needs the *configuration* around them, the people the demo flow signs in as,
+ * the media those records render, and a statement of which build the file belongs to. That
+ * is `kind: "platform"`: `content` (the same `zAssessment` / `zAssessmentInstance` schemas,
+ * never a copy), `config` (plans, prices, flags, options — an additive plain schema), `identities`
+ * (`{ email, displayName, role }` — **declared, never copied**: there is no password, hash or
+ * session field, and `B4` refuses one even if a future schema grows a place to put it),
+ * `media` (a path and its hash; the bytes ride in the container, not in the JSON) and `build`
+ * (`appVersion`, `schemaVersion`, `lockfileSha256` — what the package was made from, so an
+ * import can refuse a target that is not that build).
+ *
+ * Version 2 is additive and **version 1 still reads**: `PARSEABLE_BUNDLE_VERSIONS` is `[1, 2]`,
+ * and a v2 document must be `kind: "platform"` the way a v1 document must be a template or a
+ * dataset. Nothing in the v1 shape moved, so the committed demo bundle and E32 did not change.
  */
 import { z } from "zod";
 import { pathOf } from "./core";
@@ -58,19 +73,37 @@ import {
 export const BUNDLE_FORMAT = "alignsynch-bundle" as const;
 
 /**
- * The format version — the gate. A reader that does not know this number refuses the
- * file (`B6`) instead of half-reading it; `appVersion` below says which build wrote it
- * and is never compared against anything.
+ * The version `export` writes for a template or a dataset — unchanged since #147, and the
+ * version the committed demo bundle carries.
  */
 export const BUNDLE_VERSION = 1 as const;
 
-/** What a bundle carries: one TEMPLATE, or a DEMO DATASET of templates and instances. */
-export const zBundleKind = z.enum(["template", "dataset"]);
+/** The version the platform package writes (#899). Additive: v1 documents still parse. */
+export const PLATFORM_BUNDLE_VERSION = 2 as const;
+
+/**
+ * The versions this build reads, and the one gate. A reader that does not know the number
+ * refuses the file (`B6`) instead of half-reading it; `appVersion` below says which build
+ * wrote it and is provenance, never a refusal — except in a platform package, where `build`
+ * carries the `schemaVersion` and `lockfileSha256` that are a refusal (`B7`, in
+ * `scripts/bundle-platform.ts`).
+ */
+export const PARSEABLE_BUNDLE_VERSIONS = [BUNDLE_VERSION, PLATFORM_BUNDLE_VERSION] as const;
+
+export type BundleVersion = (typeof PARSEABLE_BUNDLE_VERSIONS)[number];
+
+/** What a bundle carries: one TEMPLATE, a DEMO DATASET, or the whole PLATFORM (#899). */
+export const zBundleKind = z.enum(["template", "dataset", "platform"]);
 
 export type BundleKind = z.infer<typeof zBundleKind>;
 
+/** The kinds each version may carry — a v1 platform and a v2 dataset are both refusals. */
+export function bundleKindsFor(version: number): readonly BundleKind[] {
+  return version === PLATFORM_BUNDLE_VERSION ? ["platform"] : ["template", "dataset"];
+}
+
 /**
- * The envelope every bundle carries, and nothing else: `strict()`, so a key this build
+ * The envelope every v1 bundle carries, and nothing else: `strict()`, so a key this build
  * does not know is a refusal rather than a field that silently fails to travel.
  */
 export const zBundleEnvelope = z
@@ -84,6 +117,18 @@ export const zBundleEnvelope = z
   .strict();
 
 export type BundleEnvelope = z.infer<typeof zBundleEnvelope>;
+
+/** The version-2 envelope: the same four keys, `bundleVersion: 2`, `kind: "platform"`. */
+export const zPlatformEnvelope = z
+  .object({
+    format: z.literal(BUNDLE_FORMAT),
+    bundleVersion: z.literal(PLATFORM_BUNDLE_VERSION),
+    kind: z.literal("platform"),
+    appVersion: z.string().min(1),
+  })
+  .strict();
+
+export type PlatformEnvelope = z.infer<typeof zPlatformEnvelope>;
 
 /* ------------------------------------------------------------------ *
  * The payload — the model's own schemas
@@ -139,7 +184,175 @@ export const zDatasetBundle = zDatasetBundleObject.superRefine((bundle, ctx) => 
 
 export type DatasetBundle = z.infer<typeof zDatasetBundleObject>;
 
-export type Bundle = TemplateBundle | DatasetBundle;
+/* ------------------------------------------------------------------ *
+ * The platform payload — records, config, declarations, media, build (#899)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The content group: exactly the dataset payload's two arrays, at the root of the platform
+ * payload rather than under `payload`. Parties, Aspects and Opinions travel *inside* an
+ * instance — they are `zAssessmentInstance`'s own fields — so there is no third copy of them
+ * here, and no place for one to drift.
+ */
+export const zPlatformContent = z
+  .object({
+    templates: z.array(zAssessment).min(1),
+    instances: z.array(zAssessmentInstance),
+  })
+  .strict();
+
+export type PlatformContent = z.infer<typeof zPlatformContent>;
+
+/**
+ * A plan, versioned with the package. Written here rather than imported from
+ * `data/billing-plans.ts` because `content/` is the model and `data/` is a tenant's values —
+ * the projection lives in `scripts/bundle-platform.ts`, the shape lives here.
+ *
+ * Every schema in this payload is **plain**: no `.default()`, no `.transform()`. The canonical
+ * serializer depends on it (a default would fill a field the file did not carry, and the
+ * round trip would no longer be a fixed point).
+ */
+export const zPlatformPlan = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    description: z.string().min(1),
+    monthlyCents: z.number().int().nonnegative(),
+    yearlyCents: z.number().int().nonnegative(),
+    features: z.array(z.string().min(1)),
+    limitations: z.array(z.string().min(1)),
+  })
+  .strict();
+
+export type PlatformPlan = z.infer<typeof zPlatformPlan>;
+
+/** One price row: a plan at an interval. The same projection `billing_plan` stores. */
+export const zPlatformPrice = z
+  .object({
+    planId: z.string().min(1),
+    interval: z.enum(["month", "year"]),
+    amountCents: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type PlatformPrice = z.infer<typeof zPlatformPrice>;
+
+/** A flag and what it ships as — the decision, not the resolver (`lib/flags.ts`). */
+export const zPlatformFlag = z
+  .object({
+    name: z.string().min(1),
+    default: z.boolean(),
+    templates: z.array(z.string().min(1)),
+    note: z.string(),
+  })
+  .strict();
+
+export type PlatformFlag = z.infer<typeof zPlatformFlag>;
+
+/**
+ * An option and its values: a closed list the content or a screen reads (mode, setting, …).
+ *
+ * The name field is `option`, not `key`, on purpose: `key` is on the forbidden-key list (`B4`)
+ * because a credential lives under that name far more often than a value list does, and the
+ * policy beats the convenience of a shorter field name.
+ */
+export const zPlatformOption = z
+  .object({
+    option: z.string().min(1),
+    values: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+export type PlatformOption = z.infer<typeof zPlatformOption>;
+
+export const zPlatformConfig = z
+  .object({
+    plans: z.array(zPlatformPlan),
+    prices: z.array(zPlatformPrice),
+    flags: z.array(zPlatformFlag),
+    options: z.array(zPlatformOption),
+  })
+  .strict();
+
+export type PlatformConfig = z.infer<typeof zPlatformConfig>;
+
+/**
+ * A declared identity — three facts and no fourth. Somebody the target creates through its
+ * own sign-up endpoint, which is what `pnpm db:seed` does; a password is generated on the
+ * target and never travels. `strict()` here plus `B4` over the whole document is the belt and
+ * the braces: neither the shape nor the policy has a place for a credential.
+ */
+export const zPlatformIdentity = z
+  .object({
+    email: z.email(),
+    /** The name the relationship's party rows carry, so a demo sign-in shows the right person. */
+    displayName: z.string().min(1),
+    role: z.enum(["member", "admin"]),
+  })
+  .strict();
+
+export type PlatformIdentity = z.infer<typeof zPlatformIdentity>;
+
+/**
+ * A media entry: where it sits in the container, and what its bytes hash to. The bytes are in
+ * the zip under `media/`, not in this JSON — a base64 blob would make the canonical document
+ * large and the diff unreadable.
+ */
+export const zPlatformMedia = z
+  .object({
+    path: z.string().min(1),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/, "a media entry carries the file's sha256"),
+    bytes: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type PlatformMedia = z.infer<typeof zPlatformMedia>;
+
+/**
+ * The build a package belongs to. `appVersion` is provenance, `schemaVersion` is the highest
+ * migration the source tree carried and `lockfileSha256` is the dependency set — the last two
+ * are what an import compares against its own tree and refuses on (`B7`).
+ */
+export const zBundleBuild = z
+  .object({
+    appVersion: z.string().min(1),
+    schemaVersion: z.number().int().nonnegative(),
+    lockfileSha256: z.string().regex(/^[0-9a-f]{64}$/, "build.lockfileSha256 is a sha256"),
+  })
+  .strict();
+
+export type BundleBuild = z.infer<typeof zBundleBuild>;
+
+export const zPlatformPayload = z
+  .object({
+    content: zPlatformContent,
+    config: zPlatformConfig,
+    identities: z.array(zPlatformIdentity),
+    media: z.array(zPlatformMedia),
+    build: zBundleBuild,
+  })
+  .strict();
+
+export type PlatformPayload = z.infer<typeof zPlatformPayload>;
+
+export const zPlatformBundleObject = zPlatformEnvelope
+  .extend({ payload: zPlatformPayload })
+  .strict();
+
+/** A platform package: the records, the config, the declarations, the media index, the build. */
+export const zPlatformBundle = zPlatformBundleObject.superRefine((bundle, ctx) => {
+  for (const issue of platformPayloadProblems(bundle.payload)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["payload", ...issue.path],
+      message: `[${issue.code}] ${issue.message}`,
+    });
+  }
+});
+
+export type PlatformBundle = z.infer<typeof zPlatformBundleObject>;
+
+export type Bundle = TemplateBundle | DatasetBundle | PlatformBundle;
 
 /* ------------------------------------------------------------------ *
  * Codes and issues
@@ -152,12 +365,17 @@ export type Bundle = TemplateBundle | DatasetBundle;
  *   B2  payload record — a `zAssessment` / `zAssessmentInstance` issue, path included
  *   B3  dataset collection — ids or slugs twice, a `templateId` outside the file, a copy that drifted
  *   B4  forbidden key — a key that names a credential, wherever it sits
- *   B6  `bundleVersion` — this build reads exactly 1
+ *   B6  `bundleVersion` — this build reads 1 and 2
+ *   B7  build identity — the package's `schemaVersion` / `lockfileSha256` is not this tree's
+ *   B8  a package that drops a record something it keeps still references (a persona its
+ *       relationships name, media a record renders)
  *
  * B5 is minted by `scripts/bundles.ts`: it is about the *store* the bundle is imported into,
- * and a bundle on its own cannot violate it.
+ * and a bundle on its own cannot violate it. B7 and B8 are minted by
+ * `scripts/bundle-platform.ts`: they compare a package with the tree it is opened on, which a
+ * document alone cannot do.
  */
-export type BundleIssueCode = "B1" | "B2" | "B3" | "B4" | "B6";
+export type BundleIssueCode = "B1" | "B2" | "B3" | "B4" | "B6" | "B7" | "B8";
 
 /** One refusal, shaped like a zod issue so a caller formats one way whatever fired. */
 export interface BundleIssue {
@@ -251,16 +469,123 @@ export function datasetCollectionProblems(payload: {
 }
 
 /* ------------------------------------------------------------------ *
+ * B3 / B8 — the platform payload's own references
+ * ------------------------------------------------------------------ */
+
+/**
+ * What a platform payload has to satisfy that a single record cannot see:
+ *
+ *   B3  the content is one store — the dataset rules, reused, not re-implemented; and no two
+ *       declarations or config rows share an identity (two identities with one email, a plan
+ *       id twice, a flag name twice, an option key twice, a media path twice)
+ *   B8  every reference resolves *inside the package* — a price names a plan in it, an
+ *       instance names a template in it, and media paths are relative, inside `media/`, and
+ *       hash-addressed
+ *
+ * B8 here is the static half. The half that needs a whole dataset — "this subset dropped a
+ * persona that a relationship it kept still names" — lives in `scripts/bundle-platform.ts`,
+ * because only the packer knows what was dropped.
+ */
+export function platformPayloadProblems(payload: {
+  readonly content: PlatformContent;
+  readonly config: PlatformConfig;
+  readonly identities: readonly PlatformIdentity[];
+  readonly media: readonly PlatformMedia[];
+}): BundleIssue[] {
+  const issues: BundleIssue[] = [...datasetCollectionProblems(payload.content)];
+
+  const once = (
+    key: string,
+    label: string,
+    path: readonly (string | number)[],
+    seen: Map<string, string>,
+  ) => {
+    const owner = seen.get(key);
+    if (owner !== undefined) {
+      issues.push({
+        code: "B3",
+        path,
+        message: `"${key}" is declared by both ${owner} and ${label} — one identity, one declaration`,
+      });
+      return;
+    }
+    seen.set(key, label);
+  };
+
+  const identities = new Map<string, string>();
+  payload.identities.forEach((identity, index) => {
+    once(identity.email, `identities[${index}]`, ["identities", index, "email"], identities);
+  });
+
+  const plans = new Map<string, string>();
+  payload.config.plans.forEach((plan, index) => {
+    once(plan.id, `config.plans[${index}]`, ["config", "plans", index, "id"], plans);
+  });
+
+  const flags = new Map<string, string>();
+  payload.config.flags.forEach((flag, index) => {
+    once(flag.name, `config.flags[${index}]`, ["config", "flags", index, "name"], flags);
+  });
+
+  const options = new Map<string, string>();
+  payload.config.options.forEach((option, index) => {
+    once(
+      option.option,
+      `config.options[${index}]`,
+      ["config", "options", index, "option"],
+      options,
+    );
+  });
+
+  const prices = new Map<string, string>();
+  payload.config.prices.forEach((price, index) => {
+    once(
+      `${price.planId}/${price.interval}`,
+      `config.prices[${index}]`,
+      ["config", "prices", index],
+      prices,
+    );
+    if (!payload.config.plans.some((plan) => plan.id === price.planId)) {
+      issues.push({
+        code: "B8",
+        path: ["config", "prices", index, "planId"],
+        message: `price names plan "${price.planId}", which this package does not carry — a price without a plan cannot be installed`,
+      });
+    }
+  });
+
+  const media = new Map<string, string>();
+  payload.media.forEach((entry, index) => {
+    once(entry.path, `media[${index}]`, ["media", index, "path"], media);
+    if (
+      !entry.path.startsWith("media/") ||
+      entry.path.includes("..") ||
+      entry.path.includes("\\")
+    ) {
+      issues.push({
+        code: "B8",
+        path: ["media", index, "path"],
+        message: `"${entry.path}" is not a relative path under media/ — the container has one media directory, and an entry cannot escape it`,
+      });
+    }
+  });
+
+  return issues;
+}
+
+/* ------------------------------------------------------------------ *
  * B4 — no key that names a credential, anywhere
  * ------------------------------------------------------------------ */
 
 /**
  * The keys a bundle may never carry, whatever a future schema says. Redundant with
  * `strict()` today — an unknown key is already an error — and meant to stay that way: this
- * is the policy, not a consequence of the current shape. `key` is matched exactly (a
- * domain key, not "any word containing key"), the rest as substrings of a key name.
+ * is the policy, not a consequence of the current shape. `key` and `pin` are matched exactly
+ * (a domain key and a four-digit secret are words, not fragments), the rest as substrings of
+ * a key name: `secret`, `token`, `apiKey`/`api-key`, `password` (which is also `passwordHash`),
+ * `credential`, `privateKey`/`private-key`.
  */
-const FORBIDDEN_KEY = /(^key$|secret|token|api-?key|password|credential|private-?key)/i;
+const FORBIDDEN_KEY = /(^key$|^pin$|secret|token|api-?key|password|credential|private-?key)/i;
 
 /** Every forbidden key in a document, at any depth, each naming its path. */
 export function forbiddenKeyProblems(
@@ -300,9 +625,12 @@ export function forbiddenKeyProblems(
 
 /**
  * The envelope with the payload left opaque, so "the envelope is wrong" and "a record is
- * wrong" are two errors with two codes instead of one zod dump.
+ * wrong" are two errors with two codes instead of one zod dump. Two shapes, one per version:
+ * a v2 document is an envelope with `kind: "platform"`, and it is checked by the v2 schema so
+ * a v1-only key cannot slip through it (or the reverse).
  */
-const zEnvelopeShape = zBundleEnvelope.extend({ payload: z.unknown() }).strict();
+const zV1EnvelopeShape = zBundleEnvelope.extend({ payload: z.unknown() }).strict();
+const zV2EnvelopeShape = zPlatformEnvelope.extend({ payload: z.unknown() }).strict();
 
 export type BundleParseResult =
   | { readonly ok: true; readonly bundle: Bundle }
@@ -367,12 +695,15 @@ export function parseBundle(text: string): BundleParseResult {
   }
 
   const version = (raw as Record<string, unknown>).bundleVersion;
-  if (typeof version === "number" && version !== BUNDLE_VERSION) {
+  if (
+    typeof version === "number" &&
+    !(PARSEABLE_BUNDLE_VERSIONS as readonly number[]).includes(version)
+  ) {
     return failure([
       {
         code: "B6",
         path: ["bundleVersion"],
-        message: `bundleVersion ${version}: this build reads ${BUNDLE_VERSION}`,
+        message: `bundleVersion ${version}: this build reads ${PARSEABLE_BUNDLE_VERSIONS.join(" and ")}`,
       },
     ]);
   }
@@ -380,12 +711,45 @@ export function parseBundle(text: string): BundleParseResult {
   const forbidden = forbiddenKeyProblems(raw);
   if (forbidden.length > 0) return failure(forbidden);
 
-  const shape = zEnvelopeShape.safeParse(raw);
+  if (version === PLATFORM_BUNDLE_VERSION) {
+    const shape = zV2EnvelopeShape.safeParse(raw);
+    if (!shape.success) return failure(zodIssues(shape.error.issues, "B1", []));
+
+    const platform = zPlatformPayload.safeParse(shape.data.payload);
+    if (!platform.success) return failure(zodIssues(platform.error.issues, "B2", ["payload"]));
+
+    const problems = platformPayloadProblems(platform.data);
+    if (problems.length > 0) return failure(problems);
+
+    return {
+      ok: true,
+      bundle: {
+        format: shape.data.format,
+        bundleVersion: PLATFORM_BUNDLE_VERSION,
+        kind: "platform",
+        appVersion: shape.data.appVersion,
+        payload: platform.data,
+      },
+    };
+  }
+
+  const shape = zV1EnvelopeShape.safeParse(raw);
   if (!shape.success) {
     return failure(zodIssues(shape.error.issues, "B1", []));
   }
 
   const envelope = shape.data;
+
+  if (envelope.kind === "platform") {
+    return failure([
+      {
+        code: "B6",
+        path: ["bundleVersion"],
+        message: `kind "platform" is bundleVersion ${PLATFORM_BUNDLE_VERSION}, and this file says ${BUNDLE_VERSION}`,
+      },
+    ]);
+  }
+
   const payloadSchema = envelope.kind === "template" ? zAssessment : zDatasetPayload;
   const payload = payloadSchema.safeParse(envelope.payload);
   if (!payload.success) {
@@ -397,7 +761,7 @@ export function parseBundle(text: string): BundleParseResult {
       ok: true,
       bundle: {
         format: envelope.format,
-        bundleVersion: envelope.bundleVersion,
+        bundleVersion: BUNDLE_VERSION,
         kind: "template",
         appVersion: envelope.appVersion,
         payload: payload.data as Assessment,
@@ -412,7 +776,7 @@ export function parseBundle(text: string): BundleParseResult {
     ok: true,
     bundle: {
       format: envelope.format,
-      bundleVersion: envelope.bundleVersion,
+      bundleVersion: BUNDLE_VERSION,
       kind: "dataset",
       appVersion: envelope.appVersion,
       payload: payload.data as DatasetPayload,
