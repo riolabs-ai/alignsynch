@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-11T22:56:55.653Z",
+  "recordedAt": "2026-11-12T06:13:21.028Z",
   "recorder": "pnpm health:record",
   "dbVerify": {
     "command": "pnpm db:verify",
-    "ranAt": "2026-11-11T22:55:28.925Z",
+    "ranAt": "2026-11-12T06:12:10.364Z",
     "database": "demo branch (NEON_BRANCH=demo, neondb) · host ep-crimson-truth-b4ppwxrp.c-6.us-east-2.aws.neon.tech",
     "exitCode": 0,
     "result": "pass",
-    "summary": "✓ db:verify — 16 session(s) checked, 16 template(s) resolved, 3 template version(s) parsed with every relationship bound to one, no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 454 source file(s) (a scored session is immutable), 2 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded session(s) complete, 2 party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows), 3 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (1 live subscription(s)), 3 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 50 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 0 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 2 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
+    "summary": "✓ db:verify — 4 session(s) checked, 4 template(s) resolved, 3 template version(s) parsed with every relationship bound to one, no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 456 source file(s) (a scored session is immutable), 1 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded session(s) complete, 2 party binding(s) resolve to an account, 2 seeded binding(s) intact, 0 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (0 live subscription(s)), 3 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 0 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 3 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 7 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
     "violations": []
   },
   "gate": {
     "lane": "code",
-    "seconds": 111.8,
-    "measuredAt": "2026-11-11T22:52:29.822Z",
+    "seconds": 219.8,
+    "measuredAt": "2026-11-12T06:07:32.813Z",
     "command": "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
     "yield": {
       "window": "2026-11-11",
-      "measuredAt": "2026-11-11T22:54:21.579Z",
+      "measuredAt": "2026-11-12T06:11:12.642Z",
       "command": "python3 docs/gate-baseline.py --window 2026-11-11",
-      "successes": 74,
-      "runs": 77,
-      "percent": 96.1,
+      "successes": 77,
+      "runs": 80,
+      "percent": 96.2,
       "runP50Seconds": 173,
-      "runP95Seconds": 365
+      "runP95Seconds": 314
     }
   },
   "production": {
     "state": "answering",
-    "version": "1.14.0",
-    "commit": "b857a4b957a1a57d69912741185d780a14a30c64",
+    "version": "1.15.0",
+    "commit": "5f658ac310c65990d0fbe4ae92f22c3c101173c7",
     "status": 200,
-    "measuredAt": "2026-11-11T22:52:29.821Z",
+    "measuredAt": "2026-11-12T06:07:32.813Z",
     "source": "GET https://alignsynch.com/api/version",
     "behindMain": 0
   },
   "tree": {
-    "packageVersion": "1.14.0",
-    "latestTag": "v1.14.0",
-    "headSha": "b857a4b957a1a57d69912741185d780a14a30c64",
-    "mainSha": "b857a4b957a1a57d69912741185d780a14a30c64",
-    "measuredAt": "2026-11-11T22:52:29.467Z"
+    "packageVersion": "1.15.0",
+    "latestTag": "v1.15.0",
+    "headSha": "5f658ac310c65990d0fbe4ae92f22c3c101173c7",
+    "mainSha": "5f658ac310c65990d0fbe4ae92f22c3c101173c7",
+    "measuredAt": "2026-11-12T06:07:32.302Z"
   }
 }
