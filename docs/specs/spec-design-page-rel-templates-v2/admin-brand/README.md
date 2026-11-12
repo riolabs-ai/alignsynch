@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › /admin/brand (V2 package) · prev [Admin notice banner (V2 package)](../banner/README.md) · next [AS2 home visual QA](../../../qa-as2-home/README.md)
+[Docs hub](../../../README.md) › **Product** › /admin/brand (V2 package) · prev [Admin notice banner (V2 package)](../banner/README.md) · next [AS2 templates redesign (handoff)](../../spec-as2-style-templates-redesign/README.md)
 
 <!-- docs-nav:end -->
 
@@ -276,6 +276,6 @@ file assumes.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › /admin/brand (V2 package) · prev [Admin notice banner (V2 package)](../banner/README.md) · next [AS2 home visual QA](../../../qa-as2-home/README.md)
+[Docs hub](../../../README.md) › **Product** › /admin/brand (V2 package) · prev [Admin notice banner (V2 package)](../banner/README.md) · next [AS2 templates redesign (handoff)](../../spec-as2-style-templates-redesign/README.md)
 
 <!-- docs-nav:end -->

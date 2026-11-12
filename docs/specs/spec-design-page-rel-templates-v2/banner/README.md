@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › Admin notice banner (V2 package) · prev [AS2 redesign — asset sources and credits](../../spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [/admin/brand (V2 package)](../admin-brand/README.md)
+[Docs hub](../../../README.md) › **Product** › Admin notice banner (V2 package) · prev [V2 brand and audience profile (handoff)](../brand-profile/README.md) · next [/admin/brand (V2 package)](../admin-brand/README.md)
 
 <!-- docs-nav:end -->
 
@@ -239,6 +239,6 @@ file assumes.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › Admin notice banner (V2 package) · prev [AS2 redesign — asset sources and credits](../../spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [/admin/brand (V2 package)](../admin-brand/README.md)
+[Docs hub](../../../README.md) › **Product** › Admin notice banner (V2 package) · prev [V2 brand and audience profile (handoff)](../brand-profile/README.md) · next [/admin/brand (V2 package)](../admin-brand/README.md)
 
 <!-- docs-nav:end -->
