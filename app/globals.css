@@ -139,6 +139,16 @@
     /* The one marketing measure (#539 item 8) — see `.marketing-container` below. */
     --container-marketing: 72rem;
 
+    /* The shared marketing header's row height (#853), and the only place it is written.
+       `components/marketing/marketing-header.tsx` draws the row at `h-20`, which is 5rem at the
+       16px root. The AS2 home page has a second sticky bar under that header, so every anchor
+       target on it needs a `scroll-margin-top` equal to both bars plus a hair of breathing room —
+       and the whole point of `.home-anchors` below is that the offset is *derived* from this one
+       value rather than retyped per section. `tests/as2-home.test.tsx` reads both files and fails
+       when they disagree, which is what makes the header's next height change a red build instead
+       of five anchors landing under a bar. */
+    --site-header-height: 5rem;
+
     /* The Gap scale (#539 item 2): graphite at 0, the green family at 4. The five steps and
        their measured contrast on white are in this file's header. */
     --gap-0: 200 17.9% 26.3%;
@@ -252,6 +262,63 @@
     max-width: var(--container-marketing);
     padding-inline: 1.5rem;
   }
+
+  /*
+   * The AS2 home page's two sticky bars (#853) — **one offset, derived from the bars themselves.**
+   *
+   * The page has the shared marketing header (sticky, `--site-header-height`) and its own in-page
+   * menu, which sticks directly under it. Both cover the top of the viewport, so an anchor that
+   * lands a target at `top: 0` hides the first ~9rem of it under two bars. The approved page's
+   * stylesheet solved this with `scroll-margin-top: calc(var(--site-header-height) +
+   * var(--section-nav-height) + 8px)` on `section[id]`, and the reason to keep that shape rather
+   * than a number per section is the thing that breaks: a per-section offset survives review and
+   * then lies the first time the header row grows, and the anchor targets are exactly the
+   * interaction a reader meets on the first click.
+   *
+   * So: the header height is `:root`'s `--site-header-height` (the same variable the sticky menu's
+   * `top` reads, so the two cannot drift), the menu's row height is declared here once, and every
+   * target carries `data-home-anchor` — including the two nested template groups, which are
+   * targets of their own and sit inside a band that is already a target. The extra 0.5rem is
+   * breathing room, not clearance: without it a heading touches the menu's hairline.
+   *
+   * **`scroll-behavior` lives on `html`, so the page asks for it with `:has()`** rather than by
+   * mutating the root element from a client component — a jump link needs no JavaScript, and this
+   * rule means the smooth scroll is on before the first click. `prefers-reduced-motion` restores
+   * the instant jump; the page otherwise has no animation to disable.
+   *
+   * Measured in a browser (`docs/qa-as2-home/probe.mjs`, 1440 and 390): the header's box is **81px**
+   * — 80 of row plus its own 1px bottom border — so the pinned menu, at `top: 80px`, overlaps that
+   * border by exactly 1px. That is deliberate and it is why the variable stays at the *row* height:
+   * the header paints at `z-10` and the menu at `z-5`, so the border draws over the menu's top edge
+   * and the two bars read as one chrome. A variable carrying the border would be a compound number
+   * that stops matching `h-20`, which is the coupling the test below is there to protect.
+   */
+  .home-anchors {
+    --home-section-nav-height: 3.25rem;
+    --home-anchor-offset: calc(var(--site-header-height) + var(--home-section-nav-height) + 0.5rem);
+  }
+
+  .home-anchors [data-home-anchor] {
+    scroll-margin-top: var(--home-anchor-offset);
+  }
+}
+
+/* The menu row is 48px on a phone, exactly as the approved page's `max-width: 767px` block says,
+   and the offset follows it because the offset is a function of it. */
+@media (max-width: 767px) {
+  .home-anchors {
+    --home-section-nav-height: 3rem;
+  }
+}
+
+html:has(.home-anchors) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.home-anchors) {
+    scroll-behavior: auto;
+  }
 }
 
 /*
@@ -275,6 +342,37 @@
     radial-gradient(1200px 460px at 6% -8%, hsl(var(--gap-0) / 0.26), transparent 70%),
     radial-gradient(1000px 420px at 94% -10%, hsl(var(--gap-4) / 0.34), transparent 68%),
     linear-gradient(180deg, hsl(var(--gap-0) / 0.05), hsl(var(--background) / 0));
+}
+
+/*
+ * The AS2 home page's three gradients (#853), and they are here for the reason the rule above
+ * exists: `scripts/brand-classes.mjs` fails a `bg-gradient-to-*` (or its arbitrary form) written in
+ * a component, because two stops typed into JSX are two colours the brand record does not own. So
+ * each one is a named class in the token layer, and each reads only roles the record paints.
+ *
+ *   .home-life-scrim   the hero cards' photograph scrim: a near-transparent navy at the top and
+ *                      `rgb(8 34 59 / 80%)` at the bottom, so the card's white title and kicker sit
+ *                      on the darkest part of any photograph. The stops are the approved page's,
+ *                      already in sRGB rather than in a brand role — they are a photographic
+ *                      treatment (the ink over a picture), not a surface, and no reader sees them as
+ *                      brand colour.
+ *   .home-idea-scrim   the model cards' shorter scrim, over the bottom 65% of the image only, so
+ *                      the step pill at the top stays on the photograph itself.
+ *   .home-scale-track  the Butter card's scale: deep teal → the brand's cyan → the marker green,
+ *                      left to right, exactly the yes→no range the panel labels. Reading it off the
+ *                      painted roles means the bar cannot describe a palette the brand does not
+ *                      have.
+ */
+.home-life-scrim {
+  background-image: linear-gradient(180deg, rgb(8 34 59 / 8%) 22%, rgb(8 34 59 / 80%) 100%);
+}
+
+.home-idea-scrim {
+  background-image: linear-gradient(180deg, transparent, rgb(9 37 58 / 42%));
+}
+
+.home-scale-track {
+  background-image: linear-gradient(90deg, hsl(var(--deep)), hsl(var(--accent)), hsl(var(--mark)));
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

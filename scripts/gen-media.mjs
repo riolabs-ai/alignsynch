@@ -124,7 +124,24 @@ function icoSize(buf) {
   return { width: buf.readUInt8(6) || 256, height: buf.readUInt8(7) || 256 };
 }
 
-const PARSERS = [pngSize, jpegSize, webpSize, svgSize, gifSize, icoSize];
+/**
+ * An AVIF (the `/home/*.avif` photographs, #853). AVIF is ISO BMFF, and the pixel size lives in
+ * the `ispe` ("image spatial extent") box that the mandatory `meta` box carries: a 4-byte box
+ * size, the four ASCII bytes `ispe`, a 4-byte version/flags field, then `width` and `height` as
+ * big-endian uint32. The box is found by its type rather than by walking the tree, because the
+ * tree differs per encoder (this and every later export lands somewhere else in `iprp/ipco`) and
+ * a size this reader cannot find aborts the run rather than being guessed.
+ */
+function avifSize(buf) {
+  if (buf.length < 32 || buf.toString("latin1", 4, 8) !== "ftyp") return undefined;
+  const at = buf.indexOf("ispe", 0, "latin1");
+  if (at < 0 || at + 16 > buf.length) return undefined;
+  const width = buf.readUInt32BE(at + 8);
+  const height = buf.readUInt32BE(at + 12);
+  return width > 0 && height > 0 ? { width, height } : undefined;
+}
+
+const PARSERS = [pngSize, jpegSize, webpSize, svgSize, gifSize, icoSize, avifSize];
 
 function sizeOf(file) {
   const buf = readFileSync(file);
@@ -161,8 +178,28 @@ const title = (stem) => stem.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toU
 /** A key `biome format` would leave unquoted (`placeholder`), so the output needs no reformat. */
 const keyText = (key) => (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) ? key : JSON.stringify(key));
 
+/**
+ * Authored alt text, for a file whose picture is not described by its name.
+ *
+ * The derivation below is a filename title-cased, which is right for artwork and wrong for a
+ * photograph: `/home/personal-life.avif` would read "Personal Life" to a screen reader while the
+ * image is two people at breakfast. `#853`'s approved page ships four of those, and the alt text
+ * is part of the design (it is written in the reference HTML), so the exceptions are listed here
+ * keyed by the exact public path — never a prefix, so a file that moves loses its sentence
+ * instead of silently inheriting a neighbour's. A row no file uses is dead text; the registry is
+ * generated from disk, so it simply disappears from the output.
+ */
+const ALT_OVERRIDES = {
+  "/home/personal-life.avif": "A couple talking together at home during breakfast",
+  "/home/business-life.avif": "Two colleagues reviewing documents together outdoors over coffee",
+  "/home/relationship-gaps.avif": "A couple having a serious conversation at their kitchen table",
+  "/home/opinions-scale.avif": "An older couple talking together at a table",
+};
+
 /** Alt text a screen reader can use. Decorative media legitimately carries none. */
 function altOf(path, kind) {
+  const authored = ALT_OVERRIDES[path];
+  if (authored !== undefined) return authored;
   const stem = path
     .split("/")
     .pop()

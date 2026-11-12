@@ -286,6 +286,11 @@
           "path": "specs/spec-as2-style-home-redesign/ASSET-SOURCES.md",
           "title": "AS2 redesign — asset sources and credits",
           "question": "Where did each photograph come from, who took it, and under which licence?"
+        },
+        {
+          "path": "qa-as2-home/README.md",
+          "title": "AS2 home visual QA",
+          "question": "Does the built front page match the approved page, and where do its anchor targets land?"
         }
       ]
     },
