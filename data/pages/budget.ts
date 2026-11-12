@@ -530,10 +530,15 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment",
     budget: 0,
   },
-  "/assessment/instances": {
-    page: "app/(mainlayout)/assessment/instances/page.tsx",
-    dirs: ["components/assessment-flow"],
-    fixture: "data/pages/assessment-instances",
+  // #877 — the member's assessment-session listing. Budget 0 from the first commit, like the
+  // dashboard record lists: the heading, the toolbar's eight labels, the four state tabs, the four
+  // row links, the two empty states, the console's filter band and the failure panel are all
+  // `data/pages/assessments.ts`, so the next literal written in `assessments-list.tsx` is a red
+  // build. Attribution is reachability, so this row counts the one component the page imports.
+  "/assessments": {
+    page: "app/(mainlayout)/assessments/page.tsx",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/assessments",
     budget: 0,
   },
   "/assessment/instances/[instanceId]": {

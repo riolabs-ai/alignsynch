@@ -214,6 +214,21 @@ const nextConfig = {
         destination: "/dashboard/templates?tab=mine",
         permanent: true,
       },
+      /**
+       * #877 — the member's assessment-session listing moved out of the record-kind tree.
+       *
+       * It lived at `/assessment/instances` and rendered `listRelationshipCards()` with no rail
+       * row and no nav entry, beside `/dashboard/relationships` doing the same thing over the same
+       * rows: that duplication is the confusion the owner filed. The listing is now `/assessments`
+       * (plural, a sibling of `/dashboard/relationships`), and this row is what keeps a bookmark,
+       * an external link or cached markup working. The page left the tree in the same commit —
+       * `tests/route-redirects.test.ts` fails a `permanent: true` row whose static source is still
+       * a route pattern, because a redirect runs before the filesystem route.
+       *
+       * **One segment, exact.** The session's own screen stays at `/assessment/instances/<id>`,
+       * and a `:path*` row would swallow it and every report under it.
+       */
+      { source: "/assessment/instances", destination: "/assessments", permanent: true },
       // `/testimonials/jessica.png` is deliberately NOT redirected any more (issue #155).
       // It pointed at `/avatars/mind.webp`, one of the nine shared avatar files #152
       // deleted, so it became a 308 to a 404 — worse than the 404 it replaced, because a

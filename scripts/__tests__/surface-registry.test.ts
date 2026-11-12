@@ -65,7 +65,6 @@ describe("the real surface registry", () => {
       // #478: the console moved out of `/v1` to `/admin/console`, so the index the registry had
       // declared pending now exists — behind `requireAdmin()`, and rendering the operator's rows.
       "/admin/console",
-      "/assessment/instances",
       "/assessment/instances/[instanceId]",
       // #R2 (#427): the acceptance is recorded now, so the surface that records it is live — the
       // write lands in `party.accepted_at` and the second acceptance completes the session.
@@ -74,6 +73,9 @@ describe("the real surface registry", () => {
       // seat Postgres resolved. It was `preview` while neither was true.
       "/assessment/instances/[instanceId]/answer",
       "/assessment/instances/[instanceId]/report",
+      // #877 — the member's assessment-session listing, plural and beside the relationships whose
+      // sessions it lists. It replaced `/assessment/instances`, which is a 308 here.
+      "/assessments",
       // #794 — the library moved under the template noun: `assessment` is a record *kind*, and a
       // template is not an assessment.
       "/templates/relationship",

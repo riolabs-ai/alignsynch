@@ -24,7 +24,7 @@
 import { describe, expect, it } from "vitest";
 
 import { overviewPageCopy } from "@/data/pages/overview";
-import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
+import { assessmentsPageCopy } from "@/data/pages/assessments";
 import type { MyInstance } from "@/lib/db/my-instances";
 import {
   OVERVIEW_FILTERS,
@@ -34,7 +34,7 @@ import {
   overviewFilterPath,
   overviewFiltered,
 } from "@/lib/flow/overview";
-import { MY_INSTANCES_PATH } from "@/lib/flow/paths";
+import { MY_ASSESSMENTS_PATH } from "@/lib/flow/paths";
 import { myInstanceStateOf } from "@/lib/flow/state";
 
 /** A row as the read produces it: the state is already derived from the counts. */
@@ -152,7 +152,7 @@ describe("the blind rule on the Overview", () => {
 describe("the filter contract between the card and the list", () => {
   it("every filter the card counts is a label the card can draw and a list the list page can name", () => {
     const counts = overviewPageCopy.sections?.find((section) => section.id === "counts");
-    const filters = myInstancesPageCopy.sections?.find((section) => section.id === "filter");
+    const filters = assessmentsPageCopy.sections?.find((section) => section.id === "filter");
 
     for (const filter of OVERVIEW_FILTERS) {
       expect((counts?.items ?? []).map((item) => item.id)).toContain(filter);
@@ -162,7 +162,7 @@ describe("the filter contract between the card and the list", () => {
 
   it("links each card to the filtered list, on the list's own path", () => {
     for (const filter of OVERVIEW_FILTERS) {
-      expect(overviewFilterPath(filter)).toBe(`${MY_INSTANCES_PATH}?filter=${filter}`);
+      expect(overviewFilterPath(filter)).toBe(`${MY_ASSESSMENTS_PATH}?filter=${filter}`);
     }
   });
 

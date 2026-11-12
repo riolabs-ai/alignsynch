@@ -129,20 +129,21 @@ describe("terminology: a reader is never told about an 'instance'", () => {
   });
 
   /**
-   * The page this card exists for. `/assessment/instances` lists the member's relationships, and
-   * its copy already agreed — heading, subtitle and every band said relationship or session. The
-   * word survives here only in the module comment and in the export handle
-   * `myInstancesPageCopy`, which `data/pages/index.ts` and the page read; neither is a word a
-   * reader sees, and neither is renamed in this pass. This case holds both halves: the handle
-   * stays, and nothing visible says instance.
+   * The page this card exists for. `/assessments` lists the member's assessment sessions — the
+   * listing that used to be `/assessment/instances` and moved in #877 — and its copy agrees:
+   * heading, subtitle and every band say session, assessment or relationship. The word instance
+   * survives in this repo's module names (`lib/db/my-instances.ts`, whose read feeds the console's
+   * Overview) and in route segments (`/assessment/instances/<id>`, the session's own screen);
+   * neither is a word a reader sees, and neither is renamed in this pass. This case holds both
+   * halves: the handle is `assessmentsPageCopy`, and nothing visible says instance.
    */
-  it("the relationship list agrees with itself", async () => {
-    const file = `${DIRECTORY}/assessment-instances.ts`;
+  it("the assessment listing agrees with itself", async () => {
+    const file = `${DIRECTORY}/assessments.ts`;
     const exports = (await import(
       /* @vite-ignore */ pathToFileURL(join(process.cwd(), file)).href
     )) as Record<string, unknown>;
 
-    expect(Object.keys(exports)).toContain("myInstancesPageCopy");
+    expect(Object.keys(exports)).toContain("assessmentsPageCopy");
     expect(offendersIn(file, exports)).toEqual([]);
 
     const strings: Visible[] = [];
@@ -150,7 +151,7 @@ describe("terminology: a reader is never told about an 'instance'", () => {
     const headings = strings
       .filter((entry) => entry.path.endsWith(".heading"))
       .map((entry) => entry.value);
-    expect(headings).toContain("Your relationships");
+    expect(headings).toContain("My Assessments");
     expect(strings.filter((entry) => OFFENDER.test(maskPlaceholders(entry.value)))).toEqual([]);
   });
 

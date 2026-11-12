@@ -21,6 +21,7 @@ import {
   BarChart3,
   BookOpen,
   ClipboardCheck,
+  ClipboardList,
   Compass,
   CreditCard,
   DollarSign,
@@ -474,6 +475,12 @@ function QuizHubMenu({
 const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
   dashboard: Gauge,
   relationships: HeartHandshake,
+  /**
+   * #877 — **My Assessments is `ClipboardList`.** A list of sessions, one line each, is exactly
+   * what the glyph draws; `HeartHandshake` is the relationship row's ("two people in agreement"),
+   * and reusing it here would say the two destinations are the same screen.
+   */
+  assessments: ClipboardList,
   templates: LayoutTemplate,
   library: Library,
   help: Workflow,

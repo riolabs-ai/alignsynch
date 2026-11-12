@@ -99,8 +99,8 @@ export type SurfaceStatus = z.infer<typeof zSurfaceStatus>;
 export const surfaceRegistry: readonly Surface[] = [
   /* ---- live: the read surfaces R1 ships (#409) ------------------------------- */
   {
-    route: "/assessment/instances",
-    label: "Your relationships",
+    route: "/assessments",
+    label: "My Assessments",
     area: "relationships",
     status: "live",
   },

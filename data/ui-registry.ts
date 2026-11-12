@@ -335,13 +335,13 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/instances",
+    surface: "/assessments",
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "Every relationship the signed-in account is a member of, as the My Quizzes card grid — the template, the stage, both parties, the session counts and the alignment once a session is complete.",
+      "The member's assessment sessions, one row each: the assessment it was copied from, the state it is in, the other party, the session counts and the alignment once a session is complete — with a link to the session, the assessment, the relationship, and (once both parties have accepted) its Gap.",
     notes:
-      "Scoped by relationship_member.user_id (or party.user_id for rows seeded before #340) against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. The stage, the counts and the search are derived per render; `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.",
+      "The listing moved from `/assessment/instances` (#877), which is a 308 here — it is plural because it is the member's record list, a sibling of `/dashboard/relationships` and `/dashboard/templates`, not a page under the `/assessment` record kind. It is the shell `components/dashboard/relationships-list.tsx` ships (heading, toolbar, state tabs, two empty states, 1/2/3 grid) over the same read `/assessment/instances` used — `listRelationshipCards()`, scoped by `relationship_member.user_id` (or `party.user_id` for rows seeded before #340) against the session, never a name, a query parameter or a role, so an admin sees their own list and no one else's. Every row is one session and every destination already existed; the Gap link is drawn only on a `complete` row because the report answers the locked page before acceptance. The card's figures are `relationshipCard()`'s: `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.",
   },
   {
     kind: "route",

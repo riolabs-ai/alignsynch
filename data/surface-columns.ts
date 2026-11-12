@@ -134,7 +134,9 @@ const rows: readonly SurfaceColumn[] = [
 
   // ── The relationship flow: the six stages, the acceptance, the answer sheet, the sent state. ─
   { path: "/assessment", mode: "column" },
-  { path: "/assessment/instances", mode: "column" },
+  // #877 — the member's assessment-session listing, moved out of the record-kind tree. It renders
+  // `StageColumn` like the dashboard record lists it sits beside, which is what `column` records.
+  { path: "/assessments", mode: "column" },
   { path: "/assessment/instances/[instanceId]", mode: "column" },
   { path: "/assessment/instances/[instanceId]/accept", mode: "column" },
   /**
