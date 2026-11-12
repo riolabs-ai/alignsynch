@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.15.0](v1-15-0.md)
+
+- **Released** 2026-11-12
+- **Tag** [`v1.15.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0)
+- **Pull requests named** 4
+- **Theme:** the create flow is five stages — the account becomes stage 4 and is the app's own sign-in form, the invitation becomes stage 5 and is the only place anything is sent, and the rail, the spec and the tests all count to five.
+- **Headline:** `feat(flow)` — Account is stage 4 and Invite is stage 5 — the five-cell rail (#825) (#828)
+
 ### [v1.14.0](v1-14-0.md)
 
 - **Released** 2026-11-11

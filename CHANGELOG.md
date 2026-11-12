@@ -6,6 +6,48 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.15.0] - 2026-11-12
+
+### Added
+
+- `feat(flow)` — Account is stage 4 and Invite is stage 5 — the five-cell rail (#825) ([#828](https://github.com/riolabs-ai/alignsynch/pull/828))
+- `feat(flow)` — the spec is five stages, and Stage 1 asks first and last names (#825, PR 1 of 2) ([#826](https://github.com/riolabs-ai/alignsynch/pull/826))
+
+### Fixed
+
+- `fix(flow)` — a Stage 1 control fills its cell, so the name pair stops overflowing (#825) ([#827](https://github.com/riolabs-ai/alignsynch/pull/827))
+
+### Maintenance
+
+- `chore(health)` — re-record the platform record at 1.14.0 ([#820](https://github.com/riolabs-ai/alignsynch/pull/820))
+
+### Known limits
+
+- **The flow takes no payment.** `Send and Continue` posts to
+  `/assessment/instances/[instanceId]/send`, which reissues the token and moves the row
+  `draft → published`; nothing in the five stages charges anything. The two plans on stage 5 are a
+  soft prompt — `data/pages/assessment-create.ts` says so in the `payment-flow` section, "a soft
+  prompt, not a checkout" — and buying a tier is `/pricing`
+  (`components/pricing/plan-checkout-button.tsx`). A real checkout inside the flow is #823 with #690.
+- **Stage 4 is only as good as the app's auth environment.** The stage mounts the real
+  `components/auth/login-view.tsx`, so its form submits to the app's own auth proxy: on a tree with no
+  `NEON_AUTH_*` the submit raises the configuration error rather than signing anybody in
+  (`lib/auth/session.ts::currentUser`). The gate carries no auth env by design, so this stage is
+  proven by a request, never by `pnpm build`.
+- **Stage 3 still cannot add or remove an Aspect.** V4 keeps the template's list fixed until #699:
+  the shared editor names `Add an Aspect` and `Remove {name}`, and stage 3 draws neither
+  (`data/pages/assessment-create.ts`).
+- **The Invite copy is not condensed.** #777 is open — stage 5 states the same promise several times,
+  and the OAuth button carries no provider mark.
+- **A kept draft sends nothing and has no surface of its own.** `Continue as Draft` leaves the
+  relationship at `status = 'draft'` with `published_at` NULL, no mail sent and no token handed out;
+  the confirmation that owns resend and copy-link is reached by sending, and a kept draft is picked up
+  from the dashboard's relationship detail.
+- **The retired account gate is a redirect, not a screen.** A bookmarked
+  `/templates/relationship/<slug>/create/account` answers a permanent 308 to `/create/commit`, the
+  stage that now asks for the account; the flow has five stages and nothing after the fifth
+  (`next.config.mjs`, `docs/specs/flow-stages.md`).
+
 ## [1.14.0] - 2026-11-11
 
 ### Added

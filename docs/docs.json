@@ -499,6 +499,11 @@
           "path": "changelog/v1-14-0.md",
           "title": "v1.14.0",
           "question": "Which release moved the catalogue onto the relationship noun, and put the plan's price on every card?"
+        },
+        {
+          "path": "changelog/v1-15-0.md",
+          "title": "v1.15.0",
+          "question": "Which release made the create flow five stages, with the account at stage 4 and the invitation at stage 5?"
         }
       ]
     },
