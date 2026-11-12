@@ -96,12 +96,10 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
   if (input.viewerRole === "coach") {
     return { ...counts, state: "coach", role: null, action: null };
   }
-  // #533 phase 3 — a lapsed membership is asked before the session's own freeze: the session may
-  // still be `answering`, but nothing may be written to it. The sheet is still drawn (the viewer's
-  // own scores are theirs); only the form is gone, and the band says whose membership ended.
-  if (input.membership?.state === "lapsed") {
-    return { ...counts, state: "lapsed", role: input.viewerRole, action: null };
-  }
+  // #848 — a lapsed trial closes the **Gap**, not the pairing. This used to take the form away, so
+  // the counterparty who opened the link on day eight could not answer at all and two people were
+  // stranded mid-session. The sheet stays writable; `screen.report` is what stays shut, because a
+  // report is built only for a `complete` session.
   if (!maySubmit(input.status, input.viewerAccepted)) {
     return { ...counts, state: "readonly", role: input.viewerRole, action: null };
   }
