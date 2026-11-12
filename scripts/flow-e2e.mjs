@@ -456,7 +456,10 @@ async function signUpCreator(jar, { name }) {
   }
   if (typeof userId === "string") createdAccounts.push({ email, userId });
   // A gated page answers 200 only with a live session; 307 is the signed-out redirect.
-  const gated = await jar.get("/assessment/instances");
+  // #867 — `/assessment/instances` is a 308 to `/assessments` since the list moved (one segment,
+  // `next.config.mjs`), so asserting 200 on the old address asserted a redirect. The new address is
+  // the gated one: signed out it answers `307 → /login?next=/assessments`.
+  const gated = await jar.get("/assessments");
   check(
     "and the session it returns is accepted by a gated page",
     gated.status === 200,
@@ -477,6 +480,45 @@ async function relationshipState(instanceRecordId) {
        JOIN session s ON s.relationship_id = r.id
       WHERE s.record_id = $1`,
     [instanceRecordId],
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * A fixture string as React writes it into a text node: `&` is `&amp;`, and the two quotes are
+ * entities. Needed because a title like "Staff & Manager" is *drawn* escaped — comparing the raw
+ * value against the markup would fail on a page that renders it correctly.
+ */
+function textOf(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;");
+}
+
+/**
+ * The words a template's stage 1 prints, read the way the page reads them
+ * (`lib/db/template-library.ts::LIBRARY_COLUMNS`): the **published version's** payload, falling
+ * back to the row's own copy for a template that has never been published. Reading `record.title`
+ * alone would assert a string the screen may not draw — the catalogue's types carry a live version
+ * whose `title` is what stage 1 renders.
+ */
+async function templateWords(slug) {
+  const { rows } = await db.query(
+    `SELECT COALESCE(live.payload->>'title', r.title)   AS title,
+            COALESCE(live.payload->>'summary', r.summary) AS summary
+       FROM record r
+       LEFT JOIN LATERAL (
+         SELECT v.payload
+           FROM template_version v
+          WHERE v.template_record_id = r.id
+          ORDER BY v.version DESC
+          LIMIT 1
+       ) live ON true
+      WHERE r.record_type = 'assessment' AND r.slug = $1`,
+    [slug],
   );
   return rows[0] ?? null;
 }
@@ -554,6 +596,72 @@ async function main() {
   const initiator = new Jar("initiator");
   const counterparty = new Jar("counterparty");
   const stranger = new Jar("stranger");
+
+  /* 0a. the catalogue's action survives the account gate (#867) -------- */
+  // The one moment in the product where intent already exists: a stranger has chosen a template
+  // and has no account. Before this card the action was a bare `/register`, so the account was
+  // created and the person arrived on the brand's landing page with the choice gone.
+  const visitor = new Jar("visitor");
+  const catalogue = await visitor.get("/relationship-types");
+  dumpPage("catalogue", catalogue.html);
+  check(
+    "the public catalogue renders for a signed-out visitor",
+    catalogue.status === 200,
+    `status ${catalogue.status}`,
+  );
+
+  // The action's own href, read off the page — never a path typed here.
+  const startHref = catalogue.html.match(/href="(\/register\?next=[^"]+)"/)?.[1] ?? "";
+  const chosenStem =
+    (startHref === "" ? null : new URL(startHref, BASE_URL).searchParams.get("next")) ?? "";
+  check(
+    "a card's use action carries the template it sells into the sign-up gate",
+    /^\/templates\/relationship\/[a-z-]+\/create$/.test(chosenStem),
+    startHref === "" ? "no `/register?next=` action on the page" : `href = "${startHref}"`,
+  );
+  const chosenSlug = chosenStem.split("/")[3] ?? "";
+  const words = chosenSlug === "" ? null : await templateWords(chosenSlug);
+
+  // The gate promises no wall: the destination is a screen whether or not an account exists
+  // (#690 — stage 1 never asked for one).
+  const stageOneFirst = await visitor.get(chosenStem);
+  check(
+    "the destination renders for the signed-out visitor too",
+    stageOneFirst.status === 200 && stageOneFirst.html.includes('data-wizard-rail="1"'),
+    `status ${stageOneFirst.status}`,
+  );
+
+  // The gate remembers it. `?next=` is the one parameter `/register` reads, and it puts what it
+  // will navigate to on the page (`signInDestination`) rather than the brand's default.
+  const gate = await visitor.get(startHref);
+  const gatePayload = gate.html.replaceAll('\\"', '"');
+  check(
+    "the account gate keeps that destination instead of the brand's landing page",
+    gate.status === 200 && gatePayload.includes(`"destination":"${chosenStem}"`),
+    `status ${gate.status}`,
+  );
+
+  // What the form does when it succeeds: the app's own sign-up endpoint, into the same jar.
+  await signUpCreator(visitor, { name: "Nadia Visitor" });
+
+  // …and then the view's `router.push(destination)` — the same address, now signed in.
+  const arrived = await visitor.get(chosenStem);
+  dumpPage("stage-1-after-signup", arrived.html);
+  check(
+    "signing up lands on stage 1 of the template the visitor chose",
+    arrived.status === 200 &&
+      arrived.html.includes('data-wizard-rail="1"') &&
+      arrived.html.includes('data-step-state="current"'),
+    `status ${arrived.status}`,
+  );
+  check(
+    "and that stage names the template, not an empty flow",
+    words !== null && arrived.html.includes(textOf(words.title)),
+    words === null ? `no template row for "${chosenSlug}"` : `title = "${words.title}"`,
+  );
+  note(
+    `#867 — intent carried: ${startHref} → sign-up → ${chosenStem} (stage 1 of "${words?.title ?? chosenSlug}")`,
+  );
 
   /* 0. an account — stage 4 writes the draft for one (#844) ----------- */
   // v9 has no account-less path: stage 4 is the Account stage, and the draft it writes is owned by
