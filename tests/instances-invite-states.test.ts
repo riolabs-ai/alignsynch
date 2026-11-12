@@ -15,12 +15,12 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
+import { assessmentsPageCopy } from "@/data/pages/assessments";
 import { INVITE_STATES } from "@/lib/flow/invite-state";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 describe("the relationships list — invite state labels", () => {
-  const inviteCopy = sectionOf(myInstancesPageCopy, "invite");
+  const inviteCopy = sectionOf(assessmentsPageCopy, "invite");
 
   it("has an item for every state the row can render", () => {
     const missing = INVITE_STATES.filter((state) => {

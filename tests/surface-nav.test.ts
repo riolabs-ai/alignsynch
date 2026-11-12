@@ -99,14 +99,17 @@ describe("the shell's menus", () => {
   it("keeps every alignment destination — a status never adds or removes a row", () => {
     expect(hrefsOf(navHtml("member"))).toEqual([
       "/dashboard/relationships",
+      // #877 — the member's assessment sessions, beside the relationships they belong to.
+      "/assessments",
       "/dashboard/templates",
       "/dashboard/help",
       "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
-      // #620: the reader's own two rows, then help, then the staff group — which leads with
+      // #620: the reader's own rows, then help, then the staff group — which leads with
       // the console hub that had no row anywhere before #542 phase 2.
       "/dashboard/relationships",
+      "/assessments",
       "/dashboard/templates",
       "/dashboard/help",
       "/dashboard/support",

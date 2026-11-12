@@ -38,7 +38,7 @@
  *
  * Pure: rows in, numbers out. No `pg`, no `process.env`, no clock.
  */
-import { MY_INSTANCES_PATH } from "@/lib/flow/paths";
+import { MY_ASSESSMENTS_PATH } from "@/lib/flow/paths";
 import type { MyInstanceState, UnlockMark } from "@/lib/flow/state";
 
 /**
@@ -112,7 +112,7 @@ export function overviewCountsOf(
 /**
  * The rows one filter keeps — the list page's half of the same rule.
  *
- * Generic so the caller keeps its own row type: `/assessment/instances` filters `MyInstance[]` and
+ * Generic so the caller keeps its own row type: `/assessments` filters `MyInstance[]` and
  * gets `MyInstance[]` back, because the component that draws a row needs the names and the title,
  * not just the two fields this predicate reads.
  */
@@ -139,5 +139,5 @@ export function overviewFilterOf(
 
 /** `/dashboard?filter=<id>` — where a card sends the reader, and where the list reads the filter. */
 export function overviewFilterPath(filter: OverviewFilter): string {
-  return `${MY_INSTANCES_PATH}?filter=${filter}`;
+  return `${MY_ASSESSMENTS_PATH}?filter=${filter}`;
 }

@@ -47,13 +47,17 @@ export function relationshipPath(relationshipId: string): string {
 }
 
 /**
- * `/assessment/instances` — the instances **this signed-in account** is a party to (#213).
+ * `/assessments` — the **assessment sessions** this signed-in account is a party to (#877).
  *
- * A static path beside the dynamic `/assessment/instances/[instanceId]`, not a child of it: the
- * list is its own surface, and a browser that types it gets the list rather than a 404 for an
- * instance id nobody holds.
+ * Plural, and a sibling of `/dashboard/relationships` and `/dashboard/templates`: the three are
+ * the member's own record lists, and the owner's correction was that this one is a *listing*
+ * (`assessments/`), not a page under the `/assessment` record-kind (`assessment/`). It replaced
+ * `/assessment/instances`, which is now a 308 here (`next.config.mjs`) — one listing, one address.
+ *
+ * It is not `instancePath()`'s base: a session is still addressed at
+ * `/assessment/instances/<record id>`, because that is the flow's own route and it did not move.
  */
-export const MY_INSTANCES_PATH = "/assessment/instances";
+export const MY_ASSESSMENTS_PATH = "/assessments";
 
 /** The create endpoint — a POST-only route handler. */
 export const CREATE_INSTANCE_PATH = "/assessment/new";

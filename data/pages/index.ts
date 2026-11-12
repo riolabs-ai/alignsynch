@@ -30,7 +30,7 @@ import { adminReportPageCopy } from "./admin-report";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
-import { myInstancesPageCopy } from "./assessment-instances";
+import { assessmentsPageCopy } from "./assessments";
 import { assessmentTemplatePageCopy } from "./assessment-template-new";
 import { templateDetailPageCopy } from "./assessment-template-detail";
 import { templateLibraryPageCopy } from "./assessment-templates";
@@ -101,7 +101,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/inbox": adminInboxPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
-  "/assessment/instances": myInstancesPageCopy,
+  // #877 — the member's assessment-session listing, plural and a sibling of `/dashboard/
+  // relationships`. It replaced `/assessment/instances`, which is a 308 here now; the three
+  // session routes below it did not move.
+  "/assessments": assessmentsPageCopy,
   "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
   "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
   // R1-E (#409) — the three write surfaces, shipped as in-progress UI.

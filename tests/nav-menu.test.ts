@@ -150,9 +150,10 @@ describe("the ladder decides the rows", () => {
     owner: hrefsFor("owner"),
   };
 
-  it("gives a member the four rows that are theirs, and no staff row", () => {
+  it("gives a member the five rows that are theirs, and no staff row", () => {
     expect(MENUS.member).toEqual([
       "/dashboard/relationships",
+      "/assessments",
       "/dashboard/templates",
       "/dashboard/help",
       "/dashboard/support",
@@ -161,15 +162,22 @@ describe("the ladder decides the rows", () => {
   });
 
   /**
-   * #620 — the Workspace group is **exactly two rows**, and the assertion is over the descriptor
-   * rather than a screenshot: a menu is data, and a count of two is the thing the issue asked for.
-   * The two ids are the owner's words, so a third row cannot be added back without naming it here.
+   * #620 — the Workspace group is **exactly three rows**, and the assertion is over the descriptor
+   * rather than a screenshot: a menu is data, and the count is the thing the issues asked for. The
+   * ids are the owner's words, so a row cannot be added back without naming it here — #877 added
+   * `my-assessments` ("My Assessments"), immediately after the relationships it lists the sessions
+   * of, and nothing else moved.
    */
-  it("draws exactly two Workspace rows — My Relationships and Templates, and nothing else", () => {
+  it("draws exactly three Workspace rows — My Relationships, My Assessments and Templates", () => {
     const workspace = ALIGN_MENU.find((group) => group.label === "group-app");
-    expect(workspace?.items.map((item) => item.id)).toEqual(["my-relationships", "templates"]);
+    expect(workspace?.items.map((item) => item.id)).toEqual([
+      "my-relationships",
+      "my-assessments",
+      "templates",
+    ]);
     expect(workspace?.items.map((item) => item.href)).toEqual([
       "/dashboard/relationships",
+      "/assessments",
       "/dashboard/templates",
     ]);
   });
@@ -195,7 +203,7 @@ describe("the ladder decides the rows", () => {
 
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    expect(counts).toEqual([4, 5, 13, 13]);
+    expect(counts).toEqual([5, 6, 14, 14]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);

@@ -42,6 +42,8 @@ export const NAV_DOCUMENT_VERSION = 1;
 export const NAV_ICON_NAMES = [
   "dashboard",
   "relationships",
+  // #877 — the member's assessment-session listing, beside the relationships they belong to.
+  "assessments",
   "templates",
   "library",
   "help",

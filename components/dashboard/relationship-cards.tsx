@@ -1,11 +1,13 @@
-// template-ancestor: components/assessment-flow/my-instances.tsx   (variation: the same relationship card — a `bg-gray-50` header block carrying the template pill and the state pill, a `text-lg font-semibold` title, a body of chips, and an `h-9` action row — with the two assessment actions on every card, the paid block and the four-metric grid left out because this read does not carry a session count)
+// template-ancestor: components/dashboard/assessments-list.tsx   (variation: the same relationship card — a `bg-gray-50` header block carrying the template pill and the state pill, a `text-lg font-semibold` title, a body of chips, and an `h-9` action row — with the two assessment actions on every card, the paid block and the four-metric grid left out because this read does not carry a session count)
 //
 // #841 part 2 split the *page* from this file. The shell above the cards — the `text-3xl` heading
 // with the create action, the toolbar, the six status tabs, the grid/list toggle and the
 // per-filter empty state — is `components/dashboard/relationships-list.tsx`, whose ancestor is
 // `components/my-quizzes/my-quizzes.tsx`. What lives here is only the record's card, which is why
-// this header still names `my-instances.tsx`: that is the card's own ancestor, and rebuilding the
-// *shell* out of its markup is what the card forbids — the shell is no longer this component.
+// this header names `assessments-list.tsx`: that is the card's own ancestor (it was
+// `components/assessment-flow/my-instances.tsx` until #877 moved the listing to `/assessments`),
+// and rebuilding the *shell* out of its markup is what the card forbids — the shell is not this
+// component.
 
 /**
  * `/dashboard/relationships` — one relationship's card (#620, #706, #841).
@@ -18,7 +20,7 @@
  * screen behind it is read-only for them; drawing `Publish Assessment` there would be an
  * affordance the server answers with `not-yours`.
  *
- * **The card is `my-instances.tsx`'s card, and the axis of variation is the data.** That card is
+ * **The card is `assessments-list.tsx`'s card, and the axis of variation is the data.** That card is
  * a projection of `RelationshipCard` (`lib/db/assessments.ts`): sessions, completion, mean Gap,
  * what was paid. This screen reads `MemberRelationshipRow` (`lib/member/relationships.ts`), which
  * carries the stored lifecycle, the invitation's derived view, the membership, the Aspect count —

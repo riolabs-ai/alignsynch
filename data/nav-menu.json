@@ -13,6 +13,13 @@
           "note": "#620 — the relationship and its assessment, in one list. The row this replaced was /dashboard (the Overview), which keeps answering but is no longer a rail row."
         },
         {
+          "id": "my-assessments",
+          "href": "/assessments",
+          "icon": "assessments",
+          "needs": "member",
+          "note": "#877 — the assessment sessions the member is a party to, immediately after the relationships they belong to. It replaced /assessment/instances, which is a 308 here: one listing, one address, and the session's own screen did not move."
+        },
+        {
           "id": "templates",
           "href": "/dashboard/templates",
           "icon": "templates",

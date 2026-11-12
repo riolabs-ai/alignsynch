@@ -18,7 +18,7 @@
  *
  * The behavioural half drives the projection directly, which is what the component no longer can:
  * the strings it would have computed are asserted on the builder, and the rendered page's own
- * suite (`tests/my-instances.test.ts`) keeps asserting that they reach the DOM — unchanged, which
+ * suite (`tests/assessments-list.test.ts`) keeps asserting that they reach the DOM — unchanged, which
  * is the proof that moving the formatting changed no sentence a reader sees.
  *
  * **The guard's scope is this surface.** `components/v1/admin-relationship-detail.tsx` still builds
@@ -30,14 +30,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
-import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
+import { assessmentsPageCopy } from "@/data/pages/assessments";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 import type { RelationshipCard } from "@/lib/db/assessments";
 import { instancePath } from "@/lib/flow/paths";
 import { CARD_ABSENT, type MemberCard, relationshipCard, sessionLabelOf } from "@/lib/member/card";
 import { catalogueCard, mineCard } from "@/lib/member/shelf";
 
-const VIEW = "components/assessment-flow/my-instances.tsx";
+const VIEW = "components/dashboard/assessments-list.tsx";
 
 /**
  * Source with the comments stripped: this module explains the rule it must obey.
@@ -110,7 +110,7 @@ describe("the card's figures are formatted by the projection, not by JSX", () =>
       ["a precision-formatted number", /\.toPrecision\(|Intl\.NumberFormat/],
     ];
     for (const [what, pattern] of forbidden) {
-      expect(view, `my-instances.tsx formats ${what}`).not.toMatch(pattern);
+      expect(view, `assessments-list.tsx formats ${what}`).not.toMatch(pattern);
     }
   });
 
@@ -123,7 +123,7 @@ describe("the card's figures are formatted by the projection, not by JSX", () =>
       "inviteState",
       "lastSessionAt",
     ]) {
-      expect(view, `my-instances.tsx still reads row.${field}`).not.toContain(field);
+      expect(view, `assessments-list.tsx still reads row.${field}`).not.toContain(field);
     }
   });
 
@@ -141,7 +141,7 @@ describe("the card's figures are formatted by the projection, not by JSX", () =>
       ["a local tile component", /function\s+MetricTile\b/],
     ];
     for (const [what, pattern] of forbidden) {
-      expect(view, `my-instances.tsx grew ${what}`).not.toMatch(pattern);
+      expect(view, `assessments-list.tsx grew ${what}`).not.toMatch(pattern);
     }
     expect(view).toContain("model.meta.map(");
   });
@@ -172,7 +172,7 @@ describe("there is one card projection type", () => {
     // The assignment is the assertion: if a relationship card and a template card were different
     // projections, one of these three would not be a `MemberCard` and this file would not compile.
     const cards: readonly MemberCard[] = [
-      relationshipCard(myInstancesPageCopy, rowOf()),
+      relationshipCard(assessmentsPageCopy, rowOf()),
       catalogueCard(dashboardTemplatesPageCopy, templateRow),
       mineCard(dashboardTemplatesPageCopy, {
         id: "record-mine",
@@ -191,7 +191,7 @@ describe("there is one card projection type", () => {
 
 describe("relationshipCard — the figures", () => {
   it("prints the ratio, the alignment and the Aspect count as one meta line", () => {
-    const meta = relationshipCard(myInstancesPageCopy, rowOf()).meta;
+    const meta = relationshipCard(assessmentsPageCopy, rowOf()).meta;
 
     expect(meta).toEqual(["1 of 1 Sessions", "Avg alignment 1.4", "5 Aspects"]);
   });
@@ -199,7 +199,7 @@ describe("relationshipCard — the figures", () => {
   it("never prints a percentage — the ratio already states the proportion", () => {
     // The tiles drew `1 of 1` and `100%`; the artifact's one line keeps one way of saying a count.
     const meta = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ sessionsOpened: 3, sessionsCompleted: 2 }),
     ).meta;
     expect(meta[0]).toBe("2 of 3 Sessions");
@@ -209,7 +209,7 @@ describe("relationshipCard — the figures", () => {
   it("says `No scored session yet` where the alignment has no figure, never `0`", () => {
     // One session open, none complete: the counts are facts, the Gap is not.
     const meta = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ sessionsCompleted: 0, alignment: null }),
     ).meta;
 
@@ -219,7 +219,7 @@ describe("relationshipCard — the figures", () => {
 
   it("prints `—` for a relationship with no session open, instead of dividing by zero", () => {
     const meta = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ sessionsOpened: 0, sessionsCompleted: 0, alignment: null }),
     ).meta;
 
@@ -230,7 +230,7 @@ describe("relationshipCard — the figures", () => {
 
 describe("relationshipCard — what else the card says", () => {
   it("makes the row's handles and addresses the projection's", () => {
-    const card = relationshipCard(myInstancesPageCopy, rowOf());
+    const card = relationshipCard(assessmentsPageCopy, rowOf());
     expect(card.id).toBe("assessment-instance-avery-rowan");
     expect(card.detail).toEqual({
       href: instancePath("assessment-instance-avery-rowan"),
@@ -243,13 +243,13 @@ describe("relationshipCard — what else the card says", () => {
   });
 
   it("names the other party from the seat the read resolved, never the reader", () => {
-    const initiator = relationshipCard(myInstancesPageCopy, rowOf()).relationship.party;
+    const initiator = relationshipCard(assessmentsPageCopy, rowOf()).relationship.party;
     const counterparty = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ viewerRole: "counterparty", initiatorName: "Avery", counterpartyName: "Rowan" }),
     ).relationship.party;
     const coach = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ viewerRole: "coach", initiatorName: "Avery", counterpartyName: "Rowan" }),
     ).relationship.party;
 
@@ -260,23 +260,23 @@ describe("relationshipCard — what else the card says", () => {
 
   it("says `Not claimed yet` for a relationship whose other seat does not exist", () => {
     const card = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ counterpartyName: null, viewerRole: "initiator", stage: "invited" }),
     );
     expect(card.relationship.party).toBe("With · Not claimed yet");
   });
 
   it("carries the state sentence, and the marker only on an unread complete row", () => {
-    expect(relationshipCard(myInstancesPageCopy, rowOf()).relationship.sentence).toBe(
+    expect(relationshipCard(assessmentsPageCopy, rowOf()).relationship.sentence).toBe(
       "You have both accepted — the Gap is open",
     );
-    expect(relationshipCard(myInstancesPageCopy, rowOf()).relationship.marker).toBeNull();
+    expect(relationshipCard(assessmentsPageCopy, rowOf()).relationship.marker).toBeNull();
 
-    const unseen = relationshipCard(myInstancesPageCopy, rowOf({ unlock: "unseen" })).relationship;
+    const unseen = relationshipCard(assessmentsPageCopy, rowOf({ unlock: "unseen" })).relationship;
     expect(unseen.marker).toBe("Complete since you last looked — open it to read the Gap");
 
     const awaiting = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ state: "awaiting-other", stage: "connected", sessionsCompleted: 0 }),
     ).relationship;
     expect(awaiting.sentence).toBe("Waiting for Rowan to answer.");
@@ -285,25 +285,25 @@ describe("relationshipCard — what else the card says", () => {
 
   it("draws what was paid for the Initiator, `—` when nothing was, and nothing for other seats", () => {
     const paid = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ paid: { plan: "household", purchasedAt: "2026-10-20T12:00:00.000Z" } }),
     ).relationship.paid;
     expect(paid).toEqual({ label: "Paid", statement: "household · bought Oct 20, 2026" });
 
     const nothing = relationshipCard(
-      myInstancesPageCopy,
+      assessmentsPageCopy,
       rowOf({ paid: { plan: null, purchasedAt: null } }),
     ).relationship.paid;
     expect(nothing).toEqual({ label: "Paid", statement: null });
 
     // The read hands `paid: null` to every non-Initiator: the block is absent, not blanked.
-    expect(relationshipCard(myInstancesPageCopy, rowOf({ paid: null })).relationship.paid).toBe(
+    expect(relationshipCard(assessmentsPageCopy, rowOf({ paid: null })).relationship.paid).toBe(
       null,
     );
   });
 
   it("states the last session as a pure function of the instant, with no clock", () => {
-    const card = relationshipCard(myInstancesPageCopy, rowOf());
+    const card = relationshipCard(assessmentsPageCopy, rowOf());
     expect(card.relationship.lastSession).toBe(
       `Last session ${sessionLabelOf("2026-10-28T18:30:00.000Z")}`,
     );
@@ -311,9 +311,9 @@ describe("relationshipCard — what else the card says", () => {
   });
 
   it("carries the mode, and the invitation only when the read handed one", () => {
-    expect(relationshipCard(myInstancesPageCopy, rowOf()).relationship.invite).toBeNull();
+    expect(relationshipCard(assessmentsPageCopy, rowOf()).relationship.invite).toBeNull();
 
-    const invited = relationshipCard(myInstancesPageCopy, rowOf({ inviteState: "claimed" }))
+    const invited = relationshipCard(assessmentsPageCopy, rowOf({ inviteState: "claimed" }))
       .relationship.invite;
     expect(invited).toEqual({ state: "claimed", label: "Accepted" });
   });

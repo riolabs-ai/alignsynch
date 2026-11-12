@@ -27,8 +27,9 @@ landmarks (6)
   main           1
   navigation     3
 
-links (16 unique, 32 total)
+links (17 unique, 33 total)
   /                                                    1
+  /assessments                                         1
   /dashboard/help                                      1
   /dashboard/relationships                             1
   /dashboard/support                                   1
@@ -46,8 +47,8 @@ links (16 unique, 32 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 2
 
 counts
-  elements  554
+  elements  564
   images    2
   buttons   18
   inputs    2
-  classes   251 (sha f34354b405d0)
+  classes   252 (sha 18e34b22a59f)

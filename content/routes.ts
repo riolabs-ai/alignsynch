@@ -38,7 +38,10 @@ const STATIC_ROUTES = [
   "/admin/inbox",
   "/affiliate",
   "/assessment",
-  "/assessment/instances",
+  // #877 — the member's assessment-session listing, a sibling of `/dashboard/relationships`. It
+  // replaced `/assessment/instances`, which is now a 308 here (`next.config.mjs`); the session's
+  // own page stays in `DYNAMIC_ROUTES` below.
+  "/assessments",
   "/battle",
   "/categories",
   "/chat",

@@ -195,6 +195,19 @@ export function sessionLabelOf(iso: string): string {
 }
 
 /**
+ * The latest session's instant, as milliseconds — the listing's one order key (#877).
+ *
+ * The assessments list orders rows newest-first and offers the reverse, and both are comparisons
+ * over this number. It lives here, beside `sessionLabelOf()`, because it is the same fact read the
+ * same way: a list that reached into `row.lastSessionAt` and called `Date.parse` itself would be
+ * the second place that decides what a session's instant means — and the component's own guard
+ * (`tests/member-card-projection.test.ts`) refuses exactly that.
+ */
+export function lastSessionInstant(row: RelationshipCard): number {
+  return Date.parse(row.lastSessionAt);
+}
+
+/**
  * The other side of the card, from the seat the read resolved for this request.
  *
  * Which name is "the other one" is the session's fact, not the row's: the same relationship
