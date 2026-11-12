@@ -226,6 +226,17 @@ export function templateDuplicatePath(slug: string): string {
 }
 
 /**
+ * The delete endpoint — a POST, and a separate address from `/status` on purpose.
+ *
+ * Archiving and deleting are two different promises ("hidden, and still recoverable" versus
+ * "gone"), and an address that carried either a state or an absence would make the same URL mean
+ * both a move and a destruction. The row's delete control posts here, and only here.
+ */
+export function templateDeletePath(slug: string): string {
+  return `${relationshipTemplatePath(slug)}/delete`;
+}
+
+/**
  * The template-saving endpoint — a POST-only route handler, so it is not a page and the manifest
  * does not list it (the same split as `/assessment/new`).
  *

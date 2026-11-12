@@ -79,6 +79,10 @@ type LibraryParams = {
   readonly archived?: string | string[];
   readonly unarchived?: string | string[];
   readonly duplicated?: string | string[];
+  /** #743 — a delete landed. Carries no title: the row it named is the one that is gone. */
+  readonly deleted?: string | string[];
+  /** #743 — the slug a delete was refused for, so the notice can name that row's title. */
+  readonly refused?: string | string[];
   readonly problem?: string | string[];
 };
 
@@ -102,6 +106,26 @@ function noticeOf(
   if (problem === "template-not-yours" || problem === "unknown-template") {
     return { id: problem === "template-not-yours" ? "refused" : "missing", title: null };
   }
+  /**
+   * #743 — the two delete refusals name the template, because their row still exists: the
+   * refusal is "this one cannot be destroyed", which is only useful with the row named and the
+   * alternative offered. `refused` carries the **slug** and the title is read off the list, the
+   * same way `archived` carries an id and never a title — a title in a query string is a
+   * sentence a crafted link could write onto somebody's screen.
+   */
+  if (problem === "template-has-versions" || problem === "template-has-relationships") {
+    const id = problem === "template-has-versions" ? "has-versions" : "has-relationships";
+    const named = first(params.refused) ?? "";
+    const found = templates.find((template) => template.slug === named);
+    if (found !== undefined) return { id, title: found.title };
+    // A refusal whose row this list no longer carries (a filter changed in another tab) still
+    // has to say what happened, so it says it without a title rather than not at all.
+    return { id, title: null };
+  }
+  // #743 — a delete landed. Its sentence carries no `{title}`: the row it would name is gone,
+  // and the value in the query string is only ever a flag (`1`), which the notice proves by
+  // ignoring it rather than echoing it.
+  if (first(params.deleted) !== undefined) return { id: "deleted", title: null };
   const archived = first(params.archived);
   if (archived !== undefined) {
     const found = templates.find((template) => template.id === archived);

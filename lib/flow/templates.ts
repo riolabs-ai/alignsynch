@@ -25,7 +25,7 @@ import { getPool } from "@/lib/db/client";
 import { readTemplateRowsWithin } from "@/lib/db/assessments";
 import { assessmentTemplateFromRows } from "@/lib/db/rows";
 import { snapshotTemplateVersion } from "@/lib/db/template-versions";
-import { canUseTemplate } from "@/lib/flow/template-library";
+import { authorshipOf, canUseTemplate } from "@/lib/flow/template-library";
 import type { TemplateDraft } from "@/lib/flow/template-draft";
 
 /** What a save answers with: enough for a redirect and a notice, nothing that is not stored. */
@@ -379,6 +379,128 @@ export async function duplicateTemplate(
         aspectCount: count.rows[0]?.aspects ?? 0,
       },
     };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Why a delete was refused, by name, so the screen has a sentence for each.
+ *
+ * `template-not-yours` is the author rule (`authorshipOf`); `template-has-relationships` and
+ * `template-has-versions` are the two foreign keys that would otherwise answer `23503` — which
+ * reaches a member as a 500, the one outcome worse than a refusal.
+ */
+export type TemplateDeleteRefusal =
+  | "unknown-template"
+  | "template-not-yours"
+  | "template-has-relationships"
+  | "template-has-versions";
+
+/** What a delete answers with: enough to report, and nothing that no longer exists. */
+export type DeleteResult =
+  | { readonly ok: true; readonly template: { readonly id: string; readonly title: string } }
+  | { readonly ok: false; readonly code: TemplateDeleteRefusal };
+
+/**
+ * Delete a template this account wrote, in one transaction — the half of #743 that archiving
+ * cannot do.
+ *
+ * **Only a template with no history is deletable, and that is the whole rule.** Three rows can
+ * point at a template, and two of them are refusals rather than cascades:
+ *
+ *   `session.template_record_id`   a relationship was started from it (`0001`, no `ON DELETE`).
+ *                                  Archiving is the answer: the parties' own answers live in the
+ *                                  copy, and the row that names what they started from is that
+ *                                  copy's provenance. Refused `template-has-relationships`.
+ *   `relationship.template_id`     the legacy shape `0026` backfilled, before relationships were
+ *                                  pointed at their own copy. Same refusal — it is the same fact.
+ *   `template_version`             it was published, and the version history is what the catalogue
+ *                                  offered. Refused `template-has-versions`: the console's own
+ *                                  delete made that call too (`lib/admin/templates.ts`,
+ *                                  `template-published`), and a draft differs from a published
+ *                                  template in exactly this way — a promise was made in one and
+ *                                  not the other.
+ *
+ * What is left is the row a member actually wants gone: the draft `createPrivateTemplate` wrote
+ * to `/dashboard/templates`, which is published nowhere, has no version, and that no relationship
+ * could have been started from (a template with no version cannot be copied). For the other two
+ * the refusal copy says "archive it instead", which is the action already beside delete.
+ *
+ * **One statement deletes it, and the cascade is the second half.** `item` and
+ * `response_option` cascade from `record` (`0001_content_model.sql:45,68`), so an explicit
+ * `DELETE FROM item` would do the same work twice — the console's delete is one statement for the
+ * same reason. The one record this must never reach is a relationship's private copy: that is a
+ * **different** `record`, named only by `relationship.template_id`, and no statement here
+ * touches it.
+ *
+ * The permission is read and the delete written under one `FOR UPDATE` of the same row, so "was
+ * I allowed" and "what did I write" are the same snapshot — the shape `setTemplateStatus` already
+ * uses. Nothing in this module writes an audit row, because archive does not either; the console's
+ * `template.delete` is the audited path, and a member's own draft is not a console operation.
+ */
+export async function deleteTemplate(
+  recordId: string,
+  viewerUserId: string,
+): Promise<DeleteResult> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const found = await client.query<WritableTemplateRow>(
+      `SELECT r.id, r.slug, r.title, r.summary, r.status, r.author_user_id
+         FROM record r
+        WHERE r.id = $1
+          AND r.record_type = 'assessment'
+          AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
+          FOR UPDATE OF r`,
+      [recordId],
+    );
+    const row = found.rows[0];
+    if (row === undefined) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "unknown-template" };
+    }
+
+    // The author column is the permission, read through the module's one rule rather than
+    // compared here. `authorshipOf` answers `mine` only for `author_user_id === viewer`, so a
+    // built-in (`NULL`) falls through the same branch — `canUseTemplate` would let it past, and
+    // *using* a template is not *owning* it.
+    if (authorshipOf(row.author_user_id, viewerUserId) !== "mine") {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "template-not-yours" };
+    }
+
+    // Both ways a relationship can name this template, in one read. Asked before the version row
+    // on purpose: when a legacy row answers both, "a relationship was started from it" is the
+    // truer sentence than "it was published".
+    const started = await client.query<{ started: number }>(
+      `SELECT (SELECT count(*) FROM session s WHERE s.template_record_id = $1)
+            + (SELECT count(*) FROM relationship rel WHERE rel.template_id = $1) AS started`,
+      [recordId],
+    );
+    if (Number(started.rows[0]?.started ?? 0) > 0) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "template-has-relationships" };
+    }
+
+    const versions = await client.query<{ version: number | null }>(
+      "SELECT max(version) AS version FROM template_version WHERE template_record_id = $1",
+      [recordId],
+    );
+    const publishedVersion = versions.rows[0]?.version ?? null;
+    if (publishedVersion !== null) {
+      await client.query("ROLLBACK");
+      return { ok: false, code: "template-has-versions" };
+    }
+
+    // The template's own Aspect rows go with it through the cascade; nothing else is named.
+    await client.query("DELETE FROM record WHERE id = $1", [recordId]);
+
+    await client.query("COMMIT");
+    return { ok: true, template: { id: row.id, title: row.title } };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
