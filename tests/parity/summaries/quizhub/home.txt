@@ -78,8 +78,8 @@ landmarks (3)
   contentinfo    1
   navigation     1
 
-links (72 unique, 90 total)
-  /                                                    1
+links (72 unique, 91 total)
+  /                                                    2
   /battle                                              1
   /categories                                          1
   /categories/animal                                   1
@@ -153,7 +153,7 @@ links (72 unique, 90 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 1
 
 counts
-  elements  2253
+  elements  2254
   images    16
   buttons   32
   inputs    5
