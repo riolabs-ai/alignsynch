@@ -113,7 +113,6 @@ export default async function MemberRelationshipPage({
         <RelationshipDetail
           copy={dashboardRelationshipDetailPageCopy}
           relationship={view}
-          backHref={MEMBER_RELATIONSHIPS_PATH}
           editPanel={
             editState === undefined || editState.closed ? undefined : (
               <RelationshipEditPanel
@@ -133,10 +132,10 @@ export default async function MemberRelationshipPage({
           onComplete={completeRelationshipAction}
           onFork={forkRelationshipTemplateAction}
           /*
-            #785 — where a forked copy lands. Passed rather than imported inside the component for
-            the reason `backHref` is: `TEMPLATE_LIBRARY_PATH` is exported by `lib/flow/paths.ts` (no
-            database), and the `?view=mine` tab is the one the copy is under — a fork is the
-            caller's, so the library's "Mine" tab is the honest destination and not the catalogue.
+            #785 — where a forked copy lands. Passed rather than imported inside the component:
+            `TEMPLATE_LIBRARY_PATH` is exported by `lib/flow/paths.ts` (no database), and the
+            `?view=mine` tab is the one the copy is under — a fork is the caller's, so the library's
+            "Mine" tab is the honest destination and not the catalogue.
           */
           templatesHref={`${TEMPLATE_LIBRARY_PATH}?view=mine`}
         />

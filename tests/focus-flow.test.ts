@@ -11,10 +11,14 @@
  *
  *   - **the routes on disk** — a pattern that names no route is a dead rule, so each one is
  *     resolved through the same matcher `data:check` uses (`matchRoute`);
- *   - **the list pages next to the flow pages** — `/dashboard/relationships` is a list and
- *     `/dashboard/relationships/<id>` is a flow. `*` matches exactly one segment, and that is the
+ *   - **the list pages next to the flow pages** — `/dashboard/templates` is a list and
+ *     `/dashboard/templates/<id>` is a flow. `*` matches exactly one segment, and that is the
  *     difference the card asks for: the rail comes back when you leave the editor, not when you
- *     open the list.
+ *     open the list;
+ *   - **the destination that is not a flow** — `/dashboard/relationships/<id>` reads like the
+ *     template editor's sibling and is not one: it is where a member lands and works, so #873
+ *     took it out of the list and it renders under the rail. The case is asserted the other way
+ *     round, so the pattern cannot return in silence.
  *
  * The chrome itself is a client decision (`components/layout/main-layout.tsx` reaches it through
  * `usePathname`), so the last case reads the mount rather than rendering a browser.
@@ -31,9 +35,8 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("the focused flows", () => {
-  it("covers the member's editor, publisher and both template authors", () => {
+  it("covers the member's template editor and both template authors", () => {
     for (const pathname of [
-      "/dashboard/relationships/abc123",
       "/dashboard/templates/abc123",
       // #794 — the template author's screens moved under the template noun.
       "/templates/relationship/new",
@@ -43,10 +46,26 @@ describe("the focused flows", () => {
     }
   });
 
+  it("leaves the relationship detail under the rail — a destination is not a flow (#873)", () => {
+    // The owner's three asks on #873, as one rule: the rail renders, the header's "Back to
+    // dashboard" control disappears with it, and the crumb is redundant. All three follow from
+    // this route not being a focused flow.
+    expect(
+      isFocusedFlow("/dashboard/relationships/relationship-assessment-instance-avery-rowan"),
+    ).toBe(false);
+    // Its list page was never a flow, and stays exactly that.
+    expect(isFocusedFlow("/dashboard/relationships")).toBe(false);
+    // The five-stage create wizard is still a flow, header and back control intact (#870 owns it).
+    expect(isFocusedFlow("/templates/relationship/avery/create")).toBe(true);
+    // And no pattern names a relationship at all, so the rule cannot return in silence.
+    expect(FOCUS_FLOW_PATTERNS.some((pattern) => pattern.includes("relationships"))).toBe(false);
+  });
+
   it("does not cover the list pages beside them", () => {
     for (const pathname of [
       "/dashboard",
       "/dashboard/relationships",
+      "/dashboard/relationships/abc123",
       "/dashboard/templates",
       "/dashboard/help",
       "/dashboard/support",
