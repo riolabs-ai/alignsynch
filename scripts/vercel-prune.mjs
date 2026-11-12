@@ -12,9 +12,12 @@
  *
  * What it protects, and it protects rather than guesses:
  *
- *   - **every deployment a domain is aliased to** — `alignsynch.com`, `demo.alignsynch.com` and
- *     the per-branch preview aliases. Deleting one of those takes a live URL down, so the alias
- *     table is read first and wins over every other rule.
+ *   - **every deployment a domain points at** — the aliases for `alignsynch.com` and the
+ *     per-deployment preview aliases, **and** each branch domain's newest deployment.
+ *     `demo.alignsynch.com` is the second kind: it carries `gitBranch: demo` and has no alias
+ *     record at all, so the alias table alone never protected it, and a run that trusted only that
+ *     table deleted the demo's deployment. Deleting one of these takes a live URL down, so the
+ *     live set is read first and wins over every other rule.
  *   - **the newest `--keep-latest` deployments** (default 3), which is the rollback buffer.
  *   - **anything younger than `--keep-days`** (default 1), so a cut made an hour ago is still
  *     there to roll back to.
@@ -98,7 +101,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
       "  --project <name>        Vercel project (default alignsynch)",
       "  --team <slug>           Vercel team slug (default riolabs-ais-projects)",
       "",
-      "Protected, whatever the flags say: every deployment a domain is aliased to.",
+      "Protected, whatever the flags say: every deployment a domain points at — an alias, or the newest deployment of the ref a branch domain carries.",
     ].join("\n"),
   );
   process.exit(0);
@@ -158,13 +161,32 @@ async function allDeployments(projectId, teamId) {
 }
 
 /** Deployments a domain points at. These are the ones a delete would break. */
-async function aliasedDeploymentIds(projectId, teamId) {
-  const body = await api(`/v4/aliases?projectId=${projectId}&teamId=${teamId}&limit=100`);
+async function liveDeploymentIds(projectId, teamId, deployments) {
   const ids = new Set();
-  for (const alias of body.aliases ?? []) {
+  const aliases = await api(`/v4/aliases?projectId=${projectId}&teamId=${teamId}&limit=100`);
+  for (const alias of aliases.aliases ?? []) {
     if (typeof alias.deploymentId === "string") ids.add(alias.deploymentId);
   }
-  return ids;
+
+  const aliased = ids.size;
+
+  // A **branch domain** is the second kind of live URL, and it has no alias record at all: a
+  // project domain carrying `gitBranch` (demo.alignsynch.com) resolves to the newest deployment
+  // whose `meta.githubCommitRef` is that branch. Read from the alias table alone, nothing but the
+  // newest-N buffer and the age window stands between such a deployment and deletion — and on
+  // 2026-11-12 there was no deployment for `demo`, so a verified, attached, correctly configured
+  // domain answered `404 DEPLOYMENT_NOT_FOUND`.
+  const domains = await api(`/v9/projects/${projectId}/domains?teamId=${teamId}&limit=100`);
+  const branches = new Set();
+  for (const domain of domains.domains ?? []) {
+    if (typeof domain.gitBranch !== "string" || domain.gitBranch === "") continue;
+    const newest = deployments.find((d) => d?.meta?.githubCommitRef === domain.gitBranch);
+    if (newest === undefined) continue;
+    ids.add(newest.uid);
+    branches.add(`${domain.gitBranch} → ${newest.url}`);
+  }
+
+  return { ids, aliased, branches: [...branches] };
 }
 
 async function main() {
@@ -174,10 +196,10 @@ async function main() {
 
   const deployments = await allDeployments(projectId, teamId);
   deployments.sort((a, b) => b.createdAt - a.createdAt);
-  const aliased = await aliasedDeploymentIds(projectId, teamId);
+  const live = await liveDeploymentIds(projectId, teamId, deployments);
 
   const now = Date.now();
-  const protectedIds = new Set(aliased);
+  const protectedIds = new Set(live.ids);
   for (const deployment of deployments.slice(0, keepLatest)) protectedIds.add(deployment.uid);
 
   const candidates = deployments.filter((deployment) => {
@@ -191,8 +213,11 @@ async function main() {
   const newest = candidates[0];
   console.log(`vercel-prune: ${projectName} on ${teamSlug}`);
   console.log(`  deployments        ${deployments.length}`);
+  console.log(`  aliased            ${live.aliased}`);
+  console.log(`  branch domains     ${live.branches.length}`);
+  for (const branch of live.branches) console.log(`                     ${branch}`);
   console.log(
-    `  protected          ${protectedIds.size} (${aliased.size} aliased, +${keepLatest} newest)`,
+    `  protected          ${protectedIds.size} of ${deployments.length} (live ∪ newest ${keepLatest})`,
   );
   console.log(`  younger than ${keepDays}d  kept`);
   console.log(`  candidates         ${candidates.length}`);
