@@ -45,7 +45,7 @@
     {
       "path": "unpaid",
       "terminal": "the abandoned payment at /dashboard/relationships/<instance> — completion gate null, method missing, sealed null, relationship draft",
-      "reached": true,
+      "reached": false,
       "steps": 21
     }
   ],
@@ -98,11 +98,11 @@
     {
       "n": 6,
       "path": "unpaid",
-      "title": "unpaid: the lapsed state is not reachable from a browser run",
+      "title": "unpaid: the payment step did not reach its terminal screen",
       "shot": "docs/qa-demo-flow/unpaid/55-abandoned-payment-1440.png",
-      "expected": "the relationship in its `expired` state, with the screen it draws",
-      "actual": "the run ends at the abandoned-payment state; nothing in the UI advances the clock",
-      "note": "`lib/relationship/status.ts` makes `published → expired` a **system** move driven by `lib/flow/payment-jobs.ts` against `current_period_end`. Driving it needs either a job run against a row whose window has passed (a seeded expired fixture, or `expired_at` written by the job) or a clock seam this tree does not have. This is a card for the lead, not a defect the driver can patch."
+      "expected": "the capture dialog, the provider's frame, and the abandoned-payment state behind it",
+      "actual": "absent; frame absent; {\"method\":\"missing\",\"gate\":null,\"sealed\":null,\"openDialog\":0}",
+      "note": null
     }
   ],
   "steps": [
@@ -115,9 +115,9 @@
       "shot": "docs/qa-demo-flow/create-published/01-signed-out-start-1440.png",
       "expect": "the walk starts signed out, on a page that is not the app shell's gated surface",
       "ok": true,
-      "sha256": "d1b77883360083a6bb14edfa6c99ee566ef7eee5260e60f285f72e5451ab0697",
+      "sha256": "fe2e981919ad38d805e9c192c17b4ee3b667b8e2de3d7dc5a818cb30bd9d0a9d",
       "w": 1440,
-      "h": 5655
+      "h": 5440
     },
     {
       "step": 2,
@@ -149,7 +149,7 @@
       "shot": "docs/qa-demo-flow/create-published/03-typed-the-details-1440.png",
       "expect": "every field holds what was typed",
       "ok": true,
-      "sha256": "56bfd703a16edbaaa4b820c31ef4f5fc4ef80952e4288496111ea0dfa8df07e6",
+      "sha256": "6c18cdbe7eca39d8832e84622075fe17b7a3e85116573c432d1b3392f178f45e",
       "w": 1440,
       "h": 900
     },
@@ -191,7 +191,7 @@
       "shot": "docs/qa-demo-flow/create-published/06-stage-3-aspects-1440.png",
       "expect": "stage 3 lists the template's Aspects",
       "ok": true,
-      "sha256": "4eae4bf1399704ee6050359988a3ceec793e374cbfd1242e063d58e48a63be1f",
+      "sha256": "cdc767ad1808a2ee238815a8566d7a3104c006d7d389cc7923a36f9e613f70ec",
       "w": 1440,
       "h": 900
     },
@@ -259,7 +259,7 @@
       "shot": "docs/qa-demo-flow/create-published/11-demo-unlocked-1440.png",
       "expect": "the PIN unlocks /login's three demo role buttons",
       "ok": true,
-      "sha256": "5df14dd0cfa868af2cd8ee1cd8677688974136a1966a7cc07db15eae58241159",
+      "sha256": "1f958c4006aced096bd1de4546070d9d3bd128a5f2b8cbd404b44542f2fc4162",
       "w": 1440,
       "h": 1099
     },
@@ -274,7 +274,7 @@
       "shot": "docs/qa-demo-flow/create-published/12-signed-in-initiator-1440.png",
       "expect": "the \"initiator\" role button signs this browser in",
       "ok": true,
-      "sha256": "74c861ac9dd38c462b73bd0da5fbaab2478eed4edd1deaf5b28a061c6329eb2f",
+      "sha256": "15196766319948f283f3d49bb0647d5e6ab42216cee41da0cf77e156e39bb7f7",
       "w": 1440,
       "h": 2945
     },
@@ -287,7 +287,7 @@
       "shot": "docs/qa-demo-flow/create-published/13-stage-4-signed-in-1440.png",
       "expect": "the creator returns to stage 4 signed in, with the review card drawn",
       "ok": true,
-      "sha256": "a5ad7486d8ddafcf8b93bc6ed05f2c52536fad966ae05e9233e3fc4cadfd4996",
+      "sha256": "7a9caa0f7533970d2d4c6e918e309cada005b5c7b4d2bde1bc7b3e71293e7b44",
       "w": 1440,
       "h": 900
     },
@@ -313,7 +313,7 @@
       "shot": "docs/qa-demo-flow/create-published/15-stage-5-invite-1440.png",
       "expect": "stage 5 offers Send and Continue and Continue as Draft",
       "ok": true,
-      "sha256": "53b2aa0983f670bda544908a147722566161e68873bfa6fde5bad02059c4190b",
+      "sha256": "d80fcf31c6c2e4b4b633378270a6580fe362e5928c8c2dc89e914c29254b0d16",
       "w": 1440,
       "h": 900
     },
@@ -354,7 +354,7 @@
       "shot": "docs/qa-demo-flow/create-published/18-published-card-filled-1440.png",
       "expect": "the payment step runs in Stripe test mode and the provider's own frame takes the test card",
       "ok": false,
-      "sha256": "31091f4d1ddff93e73d88eb145f4795f266a5416a38f2b0d3cba8616aee81999",
+      "sha256": "f6c9b962cb9c40ea6b7cfdbef87e34d62e67d570c1fb61d8ab0236cc05bbd949",
       "w": 1440,
       "h": 900,
       "actual": "the frame drew no field the driver recognises · 6 input(s) in https://js.stripe.com · saw input[text] name=cardNumber, input[text] name=cardExpiry, input[text] name=cardCvc, input[text] name=billingName, select[select-one] name=billingCountry, input[checkbox] name=enableStripePass"
@@ -368,7 +368,7 @@
       "shot": "docs/qa-demo-flow/create-published/19-published-card-on-file-1440.png",
       "expect": "the card on file ends the walk at the thank-you step and opens the send column",
       "ok": false,
-      "sha256": "50c8f254501cc67ec8f9fca410d528f0dbac388285671df44f0ba700ae6c8591",
+      "sha256": "1778b4ba16733167cb46a14a7cc836831adf564484aa8fcb90e17ea46dd4e578",
       "w": 1440,
       "h": 900,
       "actual": "pay-step=card · data-send-gate=locked"
@@ -382,7 +382,7 @@
       "shot": "docs/qa-demo-flow/create-published/20-invitation-sent-1440.png",
       "expect": "Send and Continue lands on the Sent screen, which draws the invitation link itself",
       "ok": false,
-      "sha256": "f5e00cc6b38fb8ff3542383c2b63781c7a81ce2ffad27fc12497b0315fb5adbc",
+      "sha256": "67522c3e3ccf71999dc10f39a4b6dbc7203c9b8757db0194ba1ec2e5998c8c41",
       "w": 1440,
       "h": 900,
       "actual": "/templates/relationship/relationship-basics/create/invite?instance=<instance> · invite link absent"
@@ -396,7 +396,7 @@
       "shot": "docs/qa-demo-flow/create-published/21-sent-door-opened-1440.png",
       "expect": "the Sent screen's door opens the record the send created",
       "ok": false,
-      "sha256": "67522c3e3ccf71999dc10f39a4b6dbc7203c9b8757db0194ba1ec2e5998c8c41",
+      "sha256": "1019b687741726f15a6bd2bbc51b0f48b89640842304e0fec2e692c76f9a5257",
       "w": 1440,
       "h": 900,
       "actual": "/templates/relationship/relationship-basics/create/invite?instance=<instance> · WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.16.0 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caug"
@@ -410,9 +410,9 @@
       "shot": "docs/qa-demo-flow/create-published/22-published-relationship-detail-1440.png",
       "expect": "the relationship detail reports the relationship as published",
       "ok": false,
-      "sha256": "5fbe226c5c57d35653a2a55b8ea11f0c2df83ec424ff74e62e964554fb236964",
+      "sha256": "1f6a29fc8ac22e73bd73eb8da99190b9ec1204bf502c03eb4e318c5a9b07c904",
       "w": 1440,
-      "h": 3751,
+      "h": 3770,
       "actual": "status draft · WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.16.0 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caug"
     },
     {
@@ -424,9 +424,9 @@
       "shot": "docs/qa-demo-flow/create-published/23-detail-names-the-pairing-1440.png",
       "expect": "the relationship detail names the two parties",
       "ok": false,
-      "sha256": "5fbe226c5c57d35653a2a55b8ea11f0c2df83ec424ff74e62e964554fb236964",
+      "sha256": "1f6a29fc8ac22e73bd73eb8da99190b9ec1204bf502c03eb4e318c5a9b07c904",
       "w": 1440,
-      "h": 3751,
+      "h": 3770,
       "actual": "neither \"Jordan Case\" nor \"Sam Wren\" is in the rendered text (WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.16.0 Settings A Recent Messages No messages Conversations will)"
     },
     {
@@ -438,7 +438,7 @@
       "shot": "docs/qa-demo-flow/create-draft/24-signed-in-stage-1-1440.png",
       "expect": "the draft walk starts signed in, on stage 1",
       "ok": true,
-      "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+      "sha256": "30bb63e42ea88d8a32206373248041c4a39b8148aebbbd1cedcff0a41635c609",
       "w": 1440,
       "h": 900
     },
@@ -451,7 +451,7 @@
       "shot": "docs/qa-demo-flow/create-draft/25-stage-1-details-1440.png",
       "expect": "stage 1 renders its seven fields and the five-cell rail reads Stage 1 of 5",
       "ok": true,
-      "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+      "sha256": "30bb63e42ea88d8a32206373248041c4a39b8148aebbbd1cedcff0a41635c609",
       "w": 1440,
       "h": 900
     },
@@ -472,7 +472,7 @@
       "shot": "docs/qa-demo-flow/create-draft/26-typed-the-details-1440.png",
       "expect": "every field holds what was typed",
       "ok": true,
-      "sha256": "141f6167f51b89751db4b6cff367f77dca96f8346fe28fd3cf33e1fcf8f615da",
+      "sha256": "ffc35acb61d980453c09bb2916a4ffe9dc1d53f262e9ab0a9daad6a93ae2c879",
       "w": 1440,
       "h": 900
     },
@@ -485,7 +485,7 @@
       "shot": "docs/qa-demo-flow/create-draft/27-stage-2-mode-1440.png",
       "expect": "Continue goes to stage 2 with both choice groups drawn",
       "ok": true,
-      "sha256": "3a532cdb0bc195ee199e7805788b248e248fde276e7d198050eb8857586cf61c",
+      "sha256": "56ed9c632dd1fb53b57217572731046d5682e8585c0e1a78c7b6f84fb70262ff",
       "w": 1440,
       "h": 900
     },
@@ -514,7 +514,7 @@
       "shot": "docs/qa-demo-flow/create-draft/29-stage-3-aspects-1440.png",
       "expect": "stage 3 lists the template's Aspects",
       "ok": true,
-      "sha256": "01d27bcedde49ab12814523fd97aa36145e63857b86c35738811d87cc8bf7df6",
+      "sha256": "d14161e59d9c190ae381809df5b8ed25fba382a0567762052c9912083bbca482",
       "w": 1440,
       "h": 900
     },
@@ -527,7 +527,7 @@
       "shot": "docs/qa-demo-flow/create-draft/30-stage-4-account-1440.png",
       "expect": "stage 4 is the Account stage",
       "ok": true,
-      "sha256": "b58ebabe10fa8da4ec346092b202b9875051dc0fd205d33ae059dabb906f55ab",
+      "sha256": "c952d2cde58610b271c01eb71dda00f2641cdcf15839914e050a0c6911f75f37",
       "w": 1440,
       "h": 900
     },
@@ -553,7 +553,7 @@
       "shot": "docs/qa-demo-flow/create-draft/32-draft-listed-1440.png",
       "expect": "Continue as Draft lands on /dashboard/relationships with the draft listed by its own title",
       "ok": true,
-      "sha256": "cffa83e2ff6fe87c0b4b501fbc333e49af002a8ca51a6c1ecc08e5b68ff48f0b",
+      "sha256": "e5f0497230f1430dbcf38fc02920a8365b86747a070adac42da9a3bbe6341e8a",
       "w": 1440,
       "h": 900
     },
@@ -566,9 +566,9 @@
       "shot": "docs/qa-demo-flow/create-draft/33-draft-reopened-1440.png",
       "expect": "the draft reopens in the editor",
       "ok": true,
-      "sha256": "c3c0c7526255bb694a35c5615355b175f895878917d0e196429c6d3efeedc102",
+      "sha256": "e14c530e7ba53dc5fc608530055a2724b63cb0cbeadc70b942380713896556a7",
       "w": 1440,
-      "h": 3751
+      "h": 3770
     },
     {
       "step": 34,
@@ -579,9 +579,9 @@
       "shot": "docs/qa-demo-flow/create-draft/34-draft-own-title-1440.png",
       "expect": "the relationship detail heads the draft with the title the creator gave it",
       "ok": false,
-      "sha256": "c3c0c7526255bb694a35c5615355b175f895878917d0e196429c6d3efeedc102",
+      "sha256": "e14c530e7ba53dc5fc608530055a2724b63cb0cbeadc70b942380713896556a7",
       "w": 1440,
-      "h": 3751,
+      "h": 3770,
       "actual": "the page reads \"WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support\" without \"Demo walk — draft\""
     },
     {
@@ -593,7 +593,7 @@
       "shot": "docs/qa-demo-flow/unpaid/35-stage-1-details-1440.png",
       "expect": "stage 1 renders its seven fields and the five-cell rail reads Stage 1 of 5",
       "ok": true,
-      "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+      "sha256": "30bb63e42ea88d8a32206373248041c4a39b8148aebbbd1cedcff0a41635c609",
       "w": 1440,
       "h": 900
     },
@@ -614,7 +614,7 @@
       "shot": "docs/qa-demo-flow/unpaid/36-typed-the-details-1440.png",
       "expect": "every field holds what was typed",
       "ok": true,
-      "sha256": "d5efa1d9f90dfa31a1934a9541ed27f36e5a9e7f0bd6371063d4208b1f0c52bd",
+      "sha256": "3c2c948c9408e3ead1eca73ce4fa2f86e16f080acbe84c3e73b4e33605307d83",
       "w": 1440,
       "h": 900
     },
@@ -627,7 +627,7 @@
       "shot": "docs/qa-demo-flow/unpaid/37-stage-2-mode-1440.png",
       "expect": "Continue goes to stage 2 with both choice groups drawn",
       "ok": true,
-      "sha256": "3a532cdb0bc195ee199e7805788b248e248fde276e7d198050eb8857586cf61c",
+      "sha256": "56ed9c632dd1fb53b57217572731046d5682e8585c0e1a78c7b6f84fb70262ff",
       "w": 1440,
       "h": 900
     },
@@ -656,7 +656,7 @@
       "shot": "docs/qa-demo-flow/unpaid/39-stage-3-aspects-1440.png",
       "expect": "stage 3 lists the template's Aspects",
       "ok": true,
-      "sha256": "01d27bcedde49ab12814523fd97aa36145e63857b86c35738811d87cc8bf7df6",
+      "sha256": "7e6fd679544432973afd80d758b69acce95ae7b91e500658febf5943e62d3dc4",
       "w": 1440,
       "h": 900
     },
@@ -736,7 +736,7 @@
       "shot": "docs/qa-demo-flow/unpaid/45-unpaid-card-frame-1440.png",
       "expect": "the card step mounts the provider's frame in test mode, and leaving it unresolved leaves nothing on file",
       "ok": true,
-      "sha256": "8cb7819f59a7d4cf7478cd6ca30c9316e4a31f62eb519e262ba7be4110368634",
+      "sha256": "97de71c63746b2ffa57210f6eb6a36c734f3b1674a0b16b82db65bf2feb9e3e3",
       "w": 1440,
       "h": 900
     },
@@ -749,7 +749,7 @@
       "shot": "docs/qa-demo-flow/unpaid/46-abandoned-payment-screen-1440.png",
       "expect": "abandoning the payment step leaves the relationship unpublished, with the send locked and the reason drawn beside it",
       "ok": true,
-      "sha256": "c179e0544f8b60a074865b94e005578fcb4afdb54e3fc29943f5443d69b8b254",
+      "sha256": "f49a8b0378672e566dca66248c2d3ba4e87f8d50e3e5b865ad1ed944b4adbdab",
       "w": 1440,
       "h": 900
     },
@@ -777,7 +777,7 @@
       "shot": "docs/qa-demo-flow/unpaid/48-demo-unlocked-1440.png",
       "expect": "the PIN unlocks /login's three demo role buttons",
       "ok": true,
-      "sha256": "a373089bb5af788d34f985f7c4e01fda0188da23741e2092b7ab1b452afc6646",
+      "sha256": "9ff7da71a56ec3ca99a870e3bd2edb7fd983dd7ed6223c46cdcfe6671c625b1c",
       "w": 1440,
       "h": 1099
     },
@@ -792,7 +792,7 @@
       "shot": "docs/qa-demo-flow/unpaid/49-signed-in-initiator-1440.png",
       "expect": "the \"initiator\" role button signs this browser in",
       "ok": true,
-      "sha256": "15196766319948f283f3d49bb0647d5e6ab42216cee41da0cf77e156e39bb7f7",
+      "sha256": "306d04296b248cf9b16e0e6ae8201cc6c1ed27f06c815edd24b9a20c7fd8cc72",
       "w": 1440,
       "h": 2945
     },
@@ -805,9 +805,9 @@
       "shot": "docs/qa-demo-flow/unpaid/50-payer-payment-state-1440.png",
       "expect": "the payer's relationship detail draws the payment state the publish left it in",
       "ok": true,
-      "sha256": "e496e5a95274d044fead3bebecb7c3ccda0931c3e8bc58580c2dbb3274f97975",
+      "sha256": "94c20218bc5e6142cf704e8a5347ba29fbc778c67a1250a50ddf1055dc049c65",
       "w": 1440,
-      "h": 3751
+      "h": 3770
     },
     {
       "step": 51,
@@ -817,10 +817,11 @@
       "values": {},
       "shot": "docs/qa-demo-flow/unpaid/51-capture-dialog-opened-1440.png",
       "expect": "the payer can open the \"Add a payment method\" dialog",
-      "ok": true,
-      "sha256": "7a1ef33605a1f3e204c448c0309c30b38fb5778bc2a26dddec9dc805be555d39",
+      "ok": false,
+      "sha256": "94c20218bc5e6142cf704e8a5347ba29fbc778c67a1250a50ddf1055dc049c65",
       "w": 1440,
-      "h": 3751
+      "h": 3770,
+      "actual": "absent"
     },
     {
       "step": 52,
@@ -830,10 +831,11 @@
       "values": {},
       "shot": "docs/qa-demo-flow/unpaid/52-capture-dialog-1440.png",
       "expect": "the capture dialog draws the plans and the trial sentence before any card field",
-      "ok": true,
-      "sha256": "90d6b5e8d766cb2fb0347bd6cd1e995f3997167f9a88efa1e59ec6ec7ae2e479",
+      "ok": false,
+      "sha256": "94c20218bc5e6142cf704e8a5347ba29fbc778c67a1250a50ddf1055dc049c65",
       "w": 1440,
-      "h": 3751
+      "h": 3770,
+      "actual": "stage null · WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.16.0 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. Relationship Basics Five Aspects of a relationship — time, housework, money, c"
     },
     {
       "step": 53,
@@ -843,10 +845,11 @@
       "values": {},
       "shot": "docs/qa-demo-flow/unpaid/53-stripe-test-mode-frame-1440.png",
       "expect": "the capture runs in Stripe test mode and mounts the provider's own card frame",
-      "ok": true,
-      "sha256": "d80ad98bf6ca92ebc1a18fbf9aeb0be650e9c4934e035e56146eebb6ff5dd768",
+      "ok": false,
+      "sha256": "94c20218bc5e6142cf704e8a5347ba29fbc778c67a1250a50ddf1055dc049c65",
       "w": 1440,
-      "h": 3751
+      "h": 3770,
+      "actual": "the control did not press"
     },
     {
       "step": 54,
@@ -856,10 +859,11 @@
       "values": {},
       "shot": "docs/qa-demo-flow/unpaid/54-test-mode-label-1440.png",
       "expect": "the frame is labelled as the provider's test mode",
-      "ok": true,
-      "sha256": "3ac2081a672ef8612915f9349474da85b17d8399b3497e0100109a842f59281b",
+      "ok": false,
+      "sha256": "94c20218bc5e6142cf704e8a5347ba29fbc778c67a1250a50ddf1055dc049c65",
       "w": 1440,
-      "h": 3751
+      "h": 3770,
+      "actual": "test-mode label absent"
     },
     {
       "step": 55,
@@ -869,18 +873,20 @@
       "values": {},
       "shot": "docs/qa-demo-flow/unpaid/55-abandoned-payment-1440.png",
       "expect": "leaving the payment step unresolved leaves the relationship owing a method, on a screen that says so",
-      "ok": true,
-      "sha256": "e496e5a95274d044fead3bebecb7c3ccda0931c3e8bc58580c2dbb3274f97975",
+      "ok": false,
+      "sha256": "94c20218bc5e6142cf704e8a5347ba29fbc778c67a1250a50ddf1055dc049c65",
       "w": 1440,
-      "h": 3751
+      "h": 3770,
+      "actual": "{\"method\":\"missing\",\"gate\":null,\"sealed\":null,\"openDialog\":0} · WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.16.0 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. Relationship Basics Five Asp"
     }
   ],
   "seed": {
-    "attempted": false
+    "attempted": true,
+    "ok": true
   },
   "summary": {
     "paths": 3,
-    "reached": 2,
+    "reached": 1,
     "steps": 55,
     "findings": 6
   },
@@ -891,14 +897,14 @@
       "accounts": 0
     },
     "before": {
-      "record": 38,
+      "record": 33,
       "relationship": 4,
       "session": 4,
       "party": 8,
       "demo_account": 3
     },
     "after": {
-      "record": 38,
+      "record": 33,
       "relationship": 4,
       "session": 4,
       "party": 8,
