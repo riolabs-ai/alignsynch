@@ -264,6 +264,27 @@
   }
 
   /*
+   * The AlignSynch front page's measure (#904) — deliberately **not** `.marketing-container`.
+   *
+   * The approved V2 page (`docs/specs/spec-design-page-rel-templates-v2/home/`, landed by #903) is
+   * drawn on `min(1180px, 100% - 48px)`: 1180px of content inside 24px gutters, and 18px gutters on
+   * a phone. The shared marketing measure is `max-width: 1152px` plus a 24px inline padding, which
+   * is 1152px of content — 28px narrower at every width above 1200, so every band on this page
+   * would sit 14px in from where the reference draws it, on both edges.
+   *
+   * Rather than move the shared token (six other public routes are laid out on it, and moving it
+   * would move their parity renders for a page they do not have), the page carries its own width,
+   * the same way it carries its own anchor offsets below.
+   *
+   * Width only, no padding: the reference's gutter *is* the difference between the measure and the
+   * viewport, so a padding here would double it.
+   */
+  .home-container {
+    margin-inline: auto;
+    width: min(1180px, calc(100% - 48px));
+  }
+
+  /*
    * The AS2 home page's two sticky bars (#853) — **one offset, derived from the bars themselves.**
    *
    * The page has the shared marketing header (sticky, `--site-header-height`) and its own in-page
@@ -308,6 +329,14 @@
 @media (max-width: 767px) {
   .home-anchors {
     --home-section-nav-height: 3rem;
+  }
+}
+
+/* The page's gutters narrow to 18px on a phone — the reference's own `max-width: 740px` block,
+   which is also where its per-band padding drops from 86px to 68px. */
+@media (max-width: 740px) {
+  .home-container {
+    width: min(1180px, calc(100% - 36px));
   }
 }
 
