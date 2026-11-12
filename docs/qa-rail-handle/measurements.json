@@ -1,0 +1,1321 @@
+{
+  "base": "http://127.0.0.1:4518",
+  "measuredAt": "2026-11-12T13:26:44.222Z",
+  "widths": {
+    "390": {
+      "expanded": {
+        "innerWidth": 390,
+        "scrollWidth": 390,
+        "aside": {
+          "x": 0,
+          "y": 0,
+          "w": 250,
+          "h": 900
+        },
+        "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-[250px]",
+        "handle": {
+          "label": "Collapse the rail",
+          "expanded": "true",
+          "type": "button",
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "centreX": 0
+        },
+        "brand": {
+          "x": 12,
+          "y": 17.5,
+          "w": 181,
+          "h": 28
+        },
+        "search": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "rows": [
+          {
+            "label": "My Relationships",
+            "title": "My Relationships",
+            "text": 16,
+            "x": 8,
+            "y": 104,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Templates",
+            "title": "Templates",
+            "text": 9,
+            "x": 8,
+            "y": 148,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "How It Works",
+            "title": "How It Works",
+            "text": 12,
+            "x": 8,
+            "y": 216,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Support",
+            "title": "Support",
+            "text": 7,
+            "x": 8,
+            "y": 260,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Logout",
+            "title": "Logout",
+            "text": 6,
+            "x": 8,
+            "y": 799.5,
+            "w": 233,
+            "h": 40
+          }
+        ],
+        "forms": 0
+      },
+      "states": {},
+      "console": []
+    },
+    "768": {
+      "expanded": {
+        "innerWidth": 768,
+        "scrollWidth": 768,
+        "aside": {
+          "x": 0,
+          "y": 0,
+          "w": 64,
+          "h": 900
+        },
+        "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-[250px]",
+        "handle": {
+          "label": "Collapse the rail",
+          "expanded": "true",
+          "type": "button",
+          "x": 51,
+          "y": 19.5,
+          "w": 24,
+          "h": 24,
+          "centreX": 63
+        },
+        "brand": {
+          "x": 11.5,
+          "y": 17.5,
+          "w": 40,
+          "h": 28
+        },
+        "search": {
+          "x": 88,
+          "y": 11.5,
+          "w": 256,
+          "h": 40
+        },
+        "rows": [
+          {
+            "label": "My Relationships",
+            "title": "My Relationships",
+            "text": 0,
+            "x": 8,
+            "y": 80,
+            "w": 47,
+            "h": 40
+          },
+          {
+            "label": "Templates",
+            "title": "Templates",
+            "text": 0,
+            "x": 8,
+            "y": 124,
+            "w": 47,
+            "h": 40
+          },
+          {
+            "label": "How It Works",
+            "title": "How It Works",
+            "text": 0,
+            "x": 8,
+            "y": 168,
+            "w": 47,
+            "h": 40
+          },
+          {
+            "label": "Support",
+            "title": "Support",
+            "text": 0,
+            "x": 8,
+            "y": 212,
+            "w": 47,
+            "h": 40
+          },
+          {
+            "label": "Logout",
+            "title": "Logout",
+            "text": 0,
+            "x": 8,
+            "y": 799.5,
+            "w": 47,
+            "h": 40
+          }
+        ],
+        "forms": 0
+      },
+      "states": {
+        "afterEnter": {
+          "innerWidth": 768,
+          "scrollWidth": 768,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 256,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 11.5,
+              "y": 80,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 11.5,
+              "y": 124,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 11.5,
+              "y": 168,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 11.5,
+              "y": 212,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "afterClick": {
+          "innerWidth": 768,
+          "scrollWidth": 768,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-[250px]",
+          "handle": {
+            "label": "Collapse the rail",
+            "expanded": "true",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 256,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 8,
+              "y": 80,
+              "w": 47,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 8,
+              "y": 124,
+              "w": 47,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 8,
+              "y": 168,
+              "w": 47,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 8,
+              "y": 212,
+              "w": 47,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 8,
+              "y": 799.5,
+              "w": 47,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "afterSpace": {
+          "innerWidth": 768,
+          "scrollWidth": 768,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 256,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 11.5,
+              "y": 80,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 11.5,
+              "y": 124,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 11.5,
+              "y": 168,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 11.5,
+              "y": 212,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "collapsed": {
+          "innerWidth": 768,
+          "scrollWidth": 768,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 256,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 11.5,
+              "y": 80,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 11.5,
+              "y": 124,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 11.5,
+              "y": 168,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 11.5,
+              "y": 212,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        }
+      },
+      "console": []
+    },
+    "1024": {
+      "expanded": {
+        "innerWidth": 1024,
+        "scrollWidth": 1024,
+        "aside": {
+          "x": 0,
+          "y": 0,
+          "w": 250,
+          "h": 900
+        },
+        "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-[250px]",
+        "handle": {
+          "label": "Collapse the rail",
+          "expanded": "true",
+          "type": "button",
+          "x": 237,
+          "y": 19.5,
+          "w": 24,
+          "h": 24,
+          "centreX": 249
+        },
+        "brand": {
+          "x": 16,
+          "y": 17.5,
+          "w": 204.3,
+          "h": 28
+        },
+        "search": {
+          "x": 274,
+          "y": 11.5,
+          "w": 320,
+          "h": 40
+        },
+        "rows": [
+          {
+            "label": "My Relationships",
+            "title": "My Relationships",
+            "text": 16,
+            "x": 8,
+            "y": 104,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Templates",
+            "title": "Templates",
+            "text": 9,
+            "x": 8,
+            "y": 148,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "How It Works",
+            "title": "How It Works",
+            "text": 12,
+            "x": 8,
+            "y": 216,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Support",
+            "title": "Support",
+            "text": 7,
+            "x": 8,
+            "y": 260,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Logout",
+            "title": "Logout",
+            "text": 6,
+            "x": 8,
+            "y": 799.5,
+            "w": 233,
+            "h": 40
+          }
+        ],
+        "forms": 0
+      },
+      "states": {
+        "afterEnter": {
+          "innerWidth": 1024,
+          "scrollWidth": 1024,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 320,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 39.5,
+              "y": 104,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 39.5,
+              "y": 148,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 39.5,
+              "y": 216,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 39.5,
+              "y": 260,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "afterClick": {
+          "innerWidth": 1024,
+          "scrollWidth": 1024,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 250,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-[250px]",
+          "handle": {
+            "label": "Collapse the rail",
+            "expanded": "true",
+            "type": "button",
+            "x": 237,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 249
+          },
+          "brand": {
+            "x": 16,
+            "y": 17.5,
+            "w": 204.3,
+            "h": 28
+          },
+          "search": {
+            "x": 274,
+            "y": 11.5,
+            "w": 320,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 16,
+              "x": 8,
+              "y": 104,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 9,
+              "x": 8,
+              "y": 148,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 12,
+              "x": 8,
+              "y": 216,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 7,
+              "x": 8,
+              "y": 260,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 6,
+              "x": 8,
+              "y": 799.5,
+              "w": 233,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "afterSpace": {
+          "innerWidth": 1024,
+          "scrollWidth": 1024,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 320,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 39.5,
+              "y": 104,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 39.5,
+              "y": 148,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 39.5,
+              "y": 216,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 39.5,
+              "y": 260,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "collapsed": {
+          "innerWidth": 1024,
+          "scrollWidth": 1024,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 320,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 39.5,
+              "y": 104,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 39.5,
+              "y": 148,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 39.5,
+              "y": 216,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 39.5,
+              "y": 260,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        }
+      },
+      "console": []
+    },
+    "1440": {
+      "expanded": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "aside": {
+          "x": 0,
+          "y": 0,
+          "w": 250,
+          "h": 900
+        },
+        "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-[250px]",
+        "handle": {
+          "label": "Collapse the rail",
+          "expanded": "true",
+          "type": "button",
+          "x": 237,
+          "y": 19.5,
+          "w": 24,
+          "h": 24,
+          "centreX": 249
+        },
+        "brand": {
+          "x": 16,
+          "y": 17.5,
+          "w": 204.3,
+          "h": 28
+        },
+        "search": {
+          "x": 274,
+          "y": 11.5,
+          "w": 384,
+          "h": 40
+        },
+        "rows": [
+          {
+            "label": "My Relationships",
+            "title": "My Relationships",
+            "text": 16,
+            "x": 8,
+            "y": 104,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Templates",
+            "title": "Templates",
+            "text": 9,
+            "x": 8,
+            "y": 148,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "How It Works",
+            "title": "How It Works",
+            "text": 12,
+            "x": 8,
+            "y": 216,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Support",
+            "title": "Support",
+            "text": 7,
+            "x": 8,
+            "y": 260,
+            "w": 233,
+            "h": 40
+          },
+          {
+            "label": "Logout",
+            "title": "Logout",
+            "text": 6,
+            "x": 8,
+            "y": 799.5,
+            "w": 233,
+            "h": 40
+          }
+        ],
+        "forms": 0
+      },
+      "states": {
+        "afterEnter": {
+          "innerWidth": 1440,
+          "scrollWidth": 1440,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 384,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 39.5,
+              "y": 104,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 39.5,
+              "y": 148,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 39.5,
+              "y": 216,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 39.5,
+              "y": 260,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "afterClick": {
+          "innerWidth": 1440,
+          "scrollWidth": 1440,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 250,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-[250px]",
+          "handle": {
+            "label": "Collapse the rail",
+            "expanded": "true",
+            "type": "button",
+            "x": 237,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 249
+          },
+          "brand": {
+            "x": 16,
+            "y": 17.5,
+            "w": 204.3,
+            "h": 28
+          },
+          "search": {
+            "x": 274,
+            "y": 11.5,
+            "w": 384,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 16,
+              "x": 8,
+              "y": 104,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 9,
+              "x": 8,
+              "y": 148,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 12,
+              "x": 8,
+              "y": 216,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 7,
+              "x": 8,
+              "y": 260,
+              "w": 233,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 6,
+              "x": 8,
+              "y": 799.5,
+              "w": 233,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "afterSpace": {
+          "innerWidth": 1440,
+          "scrollWidth": 1440,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 384,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 39.5,
+              "y": 104,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 39.5,
+              "y": 148,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 39.5,
+              "y": 216,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 39.5,
+              "y": 260,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        },
+        "collapsed": {
+          "innerWidth": 1440,
+          "scrollWidth": 1440,
+          "aside": {
+            "x": 0,
+            "y": 0,
+            "w": 64,
+            "h": 900
+          },
+          "asideClass": "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none lg:w-16",
+          "handle": {
+            "label": "Expand the rail",
+            "expanded": "false",
+            "type": "button",
+            "x": 51,
+            "y": 19.5,
+            "w": 24,
+            "h": 24,
+            "centreX": 63
+          },
+          "brand": {
+            "x": 11.5,
+            "y": 17.5,
+            "w": 40,
+            "h": 28
+          },
+          "search": {
+            "x": 88,
+            "y": 11.5,
+            "w": 384,
+            "h": 40
+          },
+          "rows": [
+            {
+              "label": "My Relationships",
+              "title": "My Relationships",
+              "text": 0,
+              "x": 39.5,
+              "y": 104,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Templates",
+              "title": "Templates",
+              "text": 0,
+              "x": 39.5,
+              "y": 148,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "How It Works",
+              "title": "How It Works",
+              "text": 0,
+              "x": 39.5,
+              "y": 216,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Support",
+              "title": "Support",
+              "text": 0,
+              "x": 39.5,
+              "y": 260,
+              "w": 40,
+              "h": 40
+            },
+            {
+              "label": "Logout",
+              "title": "Logout",
+              "text": 0,
+              "x": 11.5,
+              "y": 799.5,
+              "w": 40,
+              "h": 40
+            }
+          ],
+          "forms": 0
+        }
+      },
+      "console": []
+    }
+  }
+}
