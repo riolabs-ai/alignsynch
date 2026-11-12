@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Branch triage · prev [Orchestration rules](ORCHESTRATION.md) · next [The demo](DEMO.md)
+[Docs hub](README.md) › **Operations** › Branch triage · prev [QA links](QA-LINKS.md) · next [The demo](DEMO.md)
 
 <!-- docs-nav:end -->
 
@@ -443,6 +443,6 @@ copies are the pruner's business. Deleting a remote ref cannot remove a local br
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Branch triage · prev [Orchestration rules](ORCHESTRATION.md) · next [The demo](DEMO.md)
+[Docs hub](README.md) › **Operations** › Branch triage · prev [QA links](QA-LINKS.md) · next [The demo](DEMO.md)
 
 <!-- docs-nav:end -->
