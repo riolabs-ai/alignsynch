@@ -145,25 +145,43 @@ const ALIGNMENT_MENU = [
 ];
 
 /**
- * The operator's group, in order (#542 phase 2): the console hub first — the row that had no home
- * anywhere in the UI before this card — then the five the rail already carried, then the two staff
- * surfaces that were also unreachable, and the audit log last.
+ * The operator's group, in the owner's order restored by #929: the inbox first (the one queue a
+ * support seat works, now the group's lead row), then the console hub — the row that had no home
+ * anywhere in the UI before #542 phase 2 — then the console's destinations, the growth model and
+ * the docs home, and the audit log last.
+ *
+ * The review shelf and the health page are **not** here: #929 put them inside Support, and they are
+ * asserted there, in `ADMIN_RAIL` below.
  */
-const ADMIN_MENU = [
+const ADMIN_GROUP = [
+  "/admin/inbox",
   "/admin/console",
   "/admin/instances",
   "/admin/gaps",
-  // #920 — the growth model, between the Gap and the inbox.
+  // #920 — the growth model, between the Gap and Billing.
   "/admin/growth",
-  "/admin/inbox",
-  "/admin/health",
   "/admin/billing",
   "/admin/broadcast",
-  // #665 — the review shelf, between Broadcast and the audit log.
-  "/admin/review",
-  // #901 — the docs home, between the review shelf and the log.
+  // #901 — the docs home, after Broadcast and before the log.
   "/admin/docs",
   "/admin/audit",
+];
+
+/**
+ * What an admin's rail draws, start to finish (#929): the operator group, the member's three
+ * Workspace rows, then Support — where `review` and `admin-health` are admin-gated rows drawn among
+ * the help pair. One order for every role; a seat that cannot reach a row loses that row and
+ * nothing else moves.
+ */
+const ADMIN_RAIL = [
+  ...ADMIN_GROUP,
+  "/dashboard/relationships",
+  "/assessments",
+  "/dashboard/templates",
+  "/admin/review",
+  "/dashboard/help",
+  "/admin/health",
+  "/dashboard/support",
 ];
 
 describe("the quiz brand renders the menu it shipped", () => {
@@ -289,30 +307,34 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     expect(member).toContain(`>${itemLabelOf("my-relationships")}<`);
   });
 
-  it("draws every operator row for an admin, in one group, after the member's rows", () => {
+  it("draws the operator group first, then the member's rows, then Support", () => {
     /**
-     * #542 phase 2 replaced #539 item 10's order — operator group first — with the card's own:
-     * the reader's work, then help, then the staff group. What did not change is that the rows
-     * are one labelled group, and that the console hub leads it.
+     * #929 restored the owner's standard menu for every role: the operator group leads. What did
+     * not change is that every operator row is drawn for an admin, and that the whole rail is one
+     * document order — the member's rows keep their place inside it.
      */
-    expect(adminHrefs).toEqual([...ALIGNMENT_MENU, ...ADMIN_MENU]);
+    expect(adminHrefs).toEqual(ADMIN_RAIL);
     const admin = navHtml("alignsynch", navViewer("admin"));
-    for (const href of ADMIN_MENU) {
+    for (const href of [...ADMIN_GROUP, "/admin/review", "/admin/health"]) {
       expect(admin).toContain(`href="${href}"`);
     }
-    // The three group labels, from the fixture, in order: workspace, support, admin.
+    // The three group labels, from the fixture, in the owner's order: admin, workspace, support.
+    const staff = admin.indexOf(itemLabelOf("group-admin"));
     const workspace = admin.indexOf(itemLabelOf("group-app"));
     const support = admin.indexOf(itemLabelOf("group-support"));
-    const staff = admin.indexOf(itemLabelOf("group-admin"));
-    expect(workspace).toBeGreaterThan(-1);
+    expect(staff).toBeGreaterThan(-1);
+    expect(staff).toBeLessThan(workspace);
     expect(workspace).toBeLessThan(support);
-    expect(support).toBeLessThan(staff);
   });
 
-  it("keeps the member's rows a prefix of the admin's — same rows, same order", () => {
-    // The staff group is additive and comes last, so the member's six rows keep their place at
-    // the front of the admin's rail — the difference is the group, not a re-sort.
-    expect(adminHrefs.slice(0, memberHrefs.length)).toEqual(memberHrefs);
+  it("keeps the member's rows in the admin's rail, in the same order — one menu, one sequence", () => {
+    // #929 — `needs` gates visibility only. An admin's rail is the member's rows *filtered in*, in
+    // the member's own order: the difference between the two rails is which rows each seat may
+    // reach, never how the shared ones are sequenced.
+    const memberRows = adminHrefs.filter((href) => memberHrefs.includes(href));
+    expect(memberRows).toEqual(memberHrefs);
+    expect(memberHrefs[0]).toBe("/dashboard/relationships");
+    expect(adminHrefs[0]).toBe("/admin/inbox");
   });
 
   it("draws the console hub for an owner too — above an admin is not outside it", () => {

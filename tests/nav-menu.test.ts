@@ -10,11 +10,12 @@
  * the rendered rail second:
  *
  *   1. every row names a real fixture label and a real route: a row is not a string nobody checks;
- *   2. the Admin group leads with `/admin/console` and ends with `/admin/audit`, and no `/admin`
- *      destination exists outside it;
- *   3. the four rungs produce four different menus, and each one is a prefix of the next — a
- *      `support` seat sees the member's rows plus the queue they work, an `admin` sees those plus
- *      the console, and `owner` sees everything an `admin` sees;
+ *   2. the Admin group leads with the inbox and ends with `/admin/audit`, and every `/admin`
+ *      destination is in a staff group — the operator group, or one of the two staff rows #929
+ *      moved into Support;
+ *   3. the four rungs produce four different menus, each one the whole document **in the
+ *      document's order** with the rows that seat cannot reach removed — `needs` gates
+ *      visibility, never the sequence (#929);
  *   4. the rendered rail agrees with `menuFor`, because a descriptor nothing renders is a document.
  *
  * **Membership is not authorisation**, and this file does not pretend otherwise: every `/admin/*`
@@ -46,7 +47,7 @@ import { shellPageCopy } from "@/data/pages/shell";
 import { navViewer } from "@/lib/nav";
 import { ALIGN_MENU, allItems, menuFor } from "@/lib/nav-menu";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { USER_ROLES, type UserRole } from "@/content/role-ladder";
+import { USER_ROLES, roleAdmits, type UserRole } from "@/content/role-ladder";
 
 /** Every `href` in a rendered tree, in document order. */
 function hrefsOf(html: string): string[] {
@@ -102,42 +103,56 @@ describe("the menu descriptor", () => {
     expect(new Set(hrefs).size).toBe(hrefs.length);
   });
 
-  it("leads the Admin group with the console hub and ends it with the audit log", () => {
+  /**
+   * #929 — the owner's order, restored: the inbox leads the operator group and the log closes it.
+   * The two rows that left for `group-support` (the review shelf, the health page) are asserted
+   * **absent** here and present in Support below, because "moved" — not "deleted" — is the claim.
+   */
+  it("leads the Admin group with the inbox and ends it with the audit log", () => {
     const admin = ALIGN_MENU.find((group) => group.label === "group-admin");
     expect(admin).toBeDefined();
-    const hrefs = admin?.items.map((item) => item.href) ?? [];
-    expect(hrefs[0]).toBe("/admin/console");
-    expect(hrefs[hrefs.length - 1]).toBe("/admin/audit");
-    // The five the rail already carried are still there, and the two it could not reach before.
-    for (const href of [
+    expect(admin?.items.map((item) => item.href)).toEqual([
+      "/admin/inbox",
+      "/admin/console",
       "/admin/instances",
       "/admin/gaps",
       "/admin/growth",
       "/admin/billing",
       "/admin/broadcast",
-      "/admin/inbox",
-      "/admin/health",
-    ]) {
-      expect(hrefs).toContain(href);
-    }
+      "/admin/docs",
+      "/admin/audit",
+    ]);
   });
 
-  it("keeps every /admin destination inside the Admin group", () => {
-    const adminHrefs = new Set(
-      (ALIGN_MENU.find((group) => group.label === "group-admin")?.items ?? []).map(
-        (item) => item.href,
-      ),
-    );
+  /**
+   * #929 puts exactly **two** admin-gated rows inside `group-support` — the review shelf and the
+   * health page. So the invariant is narrower than it was and exact: every `/admin` destination is
+   * either in `group-admin` or one of those two named rows. A third escaping row, or one escaping
+   * into a member group, is still a failure.
+   */
+  it("keeps every /admin destination in a staff group, and only two outside the operator group", () => {
+    const STAFF_ROWS_IN_SUPPORT = ["/admin/review", "/admin/health"];
+    const supportHrefs = (
+      ALIGN_MENU.find((group) => group.label === "group-support")?.items ?? []
+    ).map((item) => item.href);
+    expect(supportHrefs.filter((href) => href.startsWith("/admin"))).toEqual(STAFF_ROWS_IN_SUPPORT);
+
     for (const group of ALIGN_MENU) {
-      if (group.label === "group-admin") continue;
+      if (group.label === "group-admin" || group.label === "group-support") continue;
       for (const item of group.items) {
-        expect(item.href.startsWith("/admin"), `${item.href} sits outside the Admin group`).toBe(
+        expect(item.href.startsWith("/admin"), `${item.href} sits outside the staff groups`).toBe(
           false,
         );
       }
     }
-    for (const href of allItems().filter((item) => item.href.startsWith("/admin"))) {
-      expect(adminHrefs.has(href.href)).toBe(true);
+    for (const item of allItems().filter((candidate) => candidate.href.startsWith("/admin"))) {
+      const staffGroupRow = (
+        ALIGN_MENU.find((group) => group.label === "group-admin")?.items ?? []
+      ).some((candidate) => candidate.href === item.href);
+      expect(
+        staffGroupRow || STAFF_ROWS_IN_SUPPORT.includes(item.href),
+        `${item.href} is in neither staff group`,
+      ).toBe(true);
     }
   });
 });
@@ -151,14 +166,52 @@ describe("the ladder decides the rows", () => {
     owner: hrefsFor("owner"),
   };
 
+  /** #929 — the operator group, as the owner ordered it: the inbox first, the log last. */
+  const ADMIN_GROUP = [
+    "/admin/inbox",
+    "/admin/console",
+    "/admin/instances",
+    "/admin/gaps",
+    "/admin/growth",
+    "/admin/billing",
+    "/admin/broadcast",
+    "/admin/docs",
+    "/admin/audit",
+  ];
+
+  /** #929 — the Support group, in the owner's order: two staff rows among the help pair. */
+  const SUPPORT_GROUP = ["/admin/review", "/dashboard/help", "/admin/health", "/dashboard/support"];
+
+  /** The three Workspace rows every rung above it shares (#620, #877). */
+  const WORKSPACE = ["/dashboard/relationships", "/assessments", "/dashboard/templates"];
+
+  /**
+   * **The rule the amendment added, and the one that is easy to lose in a "just move these six
+   * rows" edit.** `needs` gates visibility, never the sequence: what a role sees is the document
+   * filtered, so the document's order is the *only* order any role gets. A per-role reshuffle —
+   * moving the staff rows back to the top for an admin, or closing the gap for a member — fails
+   * here even though every individual row is still present.
+   */
+  it("gives every role the document's own order — needs gates visibility, never the sequence", () => {
+    const document = allItems();
+    for (const role of USER_ROLES) {
+      const visible = document
+        .filter((item) => roleAdmits(item.needs, role))
+        .map((item) => item.href);
+      expect(hrefsFor(role), `role "${role}" is a re-sort of the document`).toEqual(visible);
+      // And the groups a role sees are the document's groups, in the document's order.
+      expect(menuFor(role).map((group) => group.label)).toEqual(
+        ["group-admin", "group-app", "group-support"].filter((label) =>
+          (ALIGN_MENU.find((group) => group.label === label)?.items ?? []).some((item) =>
+            roleAdmits(item.needs, role),
+          ),
+        ),
+      );
+    }
+  });
+
   it("gives a member the five rows that are theirs, and no staff row", () => {
-    expect(MENUS.member).toEqual([
-      "/dashboard/relationships",
-      "/assessments",
-      "/dashboard/templates",
-      "/dashboard/help",
-      "/dashboard/support",
-    ]);
+    expect(MENUS.member).toEqual([...WORKSPACE, "/dashboard/help", "/dashboard/support"]);
     expect(MENUS.member.filter((href) => href.startsWith("/admin"))).toEqual([]);
   });
 
@@ -183,21 +236,28 @@ describe("the ladder decides the rows", () => {
     ]);
   });
 
-  it("gives a support seat the member's rows plus the one queue it works", () => {
-    expect(MENUS.support).toEqual([...MENUS.member, "/admin/inbox"]);
+  /**
+   * #929 — a support seat's rail opens on the operator group (where the one queue they work is the
+   * only row they can reach), then the member's own work, then Support. The row moved from the end
+   * of the menu to the front, and nothing around it was re-sorted.
+   */
+  it("gives a support seat the one queue it works, at the top of the document's order", () => {
+    expect(MENUS.support).toEqual(["/admin/inbox", ...MENUS.member]);
+    expect(menuFor("support").map((group) => group.label)).toEqual([
+      "group-admin",
+      "group-app",
+      "group-support",
+    ]);
   });
 
-  it("gives an admin the console group, after the member's rows and with the hub first", () => {
-    expect(MENUS.admin.slice(0, MENUS.member.length)).toEqual(MENUS.member);
-    const staff = MENUS.admin.slice(MENUS.member.length);
-    expect(staff[0]).toBe("/admin/console");
-    expect(staff[staff.length - 1]).toBe("/admin/audit");
-    // #665 — the review shelf joined the operator group, between Broadcast and the audit log;
-    // #901 put the docs home between it and the log, which is why both moved one place up.
-    expect(staff[staff.length - 2]).toBe("/admin/docs");
-    expect(staff[staff.length - 3]).toBe("/admin/review");
-    // #920 added the growth row to the operator group — 11 today.
-    expect(staff).toHaveLength(11);
+  it("gives an admin the operator group first, then the member's work, then Support", () => {
+    expect(MENUS.admin).toEqual([...ADMIN_GROUP, ...WORKSPACE, ...SUPPORT_GROUP]);
+    // The two admin-gated rows the owner moved into Support are drawn there, for an admin, with
+    // the help pair — #929's arrangement, asserted rather than assumed.
+    expect(MENUS.admin).toContain("/admin/review");
+    expect(MENUS.admin).toContain("/admin/health");
+    // #920's growth row and #901's docs row survived the move; nine rows in the operator group.
+    expect(ADMIN_GROUP).toHaveLength(9);
   });
 
   /**
@@ -237,11 +297,15 @@ describe("the ladder decides the rows", () => {
 
   it("draws no group heading over no rows", () => {
     expect(menuFor("member").map((group) => group.label)).toEqual(["group-app", "group-support"]);
-    expect(menuFor("support").map((group) => group.label)).toEqual([
-      "group-app",
-      "group-support",
-      "group-admin",
-    ]);
+    // #929 — the operator group leads the document, so it is the first heading every staff rung
+    // draws; a member's rail drops it entirely rather than drawing an empty Admin heading.
+    for (const role of ["support", "admin", "owner"] as const) {
+      expect(menuFor(role).map((group) => group.label)).toEqual([
+        "group-admin",
+        "group-app",
+        "group-support",
+      ]);
+    }
   });
 });
 
@@ -250,6 +314,27 @@ describe("the rendered rail", () => {
     for (const role of USER_ROLES) {
       expect(railHrefs(role)).toEqual(hrefsFor(role));
     }
+  });
+
+  /**
+   * #929's claim, read off the markup rather than the descriptor: the **operator group is the
+   * first thing an admin's rail draws**, and a member's rail opens on their own work because the
+   * empty operator group is dropped instead of being re-sorted to the bottom.
+   */
+  it("draws the operator group first for an admin, and opens on the member's work for a member", () => {
+    expect(railHrefs("admin")[0]).toBe("/admin/inbox");
+    expect(railHrefs("owner")[0]).toBe("/admin/inbox");
+    expect(railHrefs("support")[0]).toBe("/admin/inbox");
+    expect(railHrefs("member")[0]).toBe("/dashboard/relationships");
+    // The two staff rows inside Support are in the admin's markup, in the owner's order.
+    const admin = railHrefs("admin");
+    expect(admin.slice(-4)).toEqual([
+      "/admin/review",
+      "/dashboard/help",
+      "/admin/health",
+      "/dashboard/support",
+    ]);
+    expect(railHrefs("member")).not.toContain("/admin/review");
   });
 
   it("renders the console hub for an admin and an owner, and for nobody below them", () => {
