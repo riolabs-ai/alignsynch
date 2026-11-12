@@ -549,16 +549,29 @@ async function main() {
   // `Continue as Draft` is a link to the dashboard, not a server act — so the proof is that the
   // relationship is *still* an unpublished draft and that the dashboard lists it. That is the
   // "save it and come back" path the payment posture promises.
-  const dashboard = await initiator.get("/dashboard");
+  // #841 — follow the control's own href rather than a remembered path. The link used to go to
+  // `/dashboard`, the fixture-driven home, where the draft it had just saved could not appear; the
+  // list that renders rows is `/dashboard/relationships`.
+  const keepDraftTag = inviteStage.html.match(/<a[^>]*data-create-keep-draft[^>]*>/)?.[0] ?? "";
+  const keepDraftHref = keepDraftTag.match(/href="([^"]+)"/)?.[1] ?? "";
   check(
-    "keeping the draft lands the creator on the dashboard",
+    "Continue as Draft links at the relationships list, not the dashboard home",
+    keepDraftHref === "/dashboard/relationships",
+    `href = "${keepDraftHref}"`,
+  );
+  const dashboard = await initiator.get(
+    keepDraftHref === "" ? "/dashboard/relationships" : keepDraftHref,
+  );
+  dumpPage("relationships-list", dashboard.html);
+  check(
+    "keeping the draft lands the creator on that list",
     dashboard.status === 200,
     `status ${dashboard.status}`,
   );
   check(
     "and the draft is listed there by the title stages 1–3 chose",
     dashboard.html.includes("Avery and Rowan E2E"),
-    "title not found in the dashboard render",
+    "title not found in the list render",
   );
   const stillDraft = await relationshipState(instanceId);
   check(

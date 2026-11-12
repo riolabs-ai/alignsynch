@@ -23,6 +23,17 @@ export const ASSESSMENTS_PATH = "/assessment";
 export const OVERVIEW_PATH = "/dashboard";
 
 /**
+ * Where a member's relationships are **listed** (#841).
+ *
+ * `OVERVIEW_PATH` is the dashboard home, which is still fixture-driven; this is the page that
+ * renders rows — `listMyRelationships()`, drafts included, because its query filters only on
+ * `VIEWER_IS_PARTY`. The two were conflated, so stage 5's keep-as-draft control sent a creator to a
+ * home page that cannot show the draft it had just saved. A destination that promises "saved under
+ * your relationships" has to be the list.
+ */
+export const RELATIONSHIPS_PATH = `${OVERVIEW_PATH}/relationships`;
+
+/**
  * `/assessment/instances` — the instances **this signed-in account** is a party to (#213).
  *
  * A static path beside the dynamic `/assessment/instances/[instanceId]`, not a child of it: the
