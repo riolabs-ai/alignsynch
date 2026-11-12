@@ -115,3 +115,47 @@ describe("stage 5 — the send is gated by the walk", () => {
     expect(store).toMatch(/methodCaptured === null/);
   });
 });
+
+/**
+ * The spec is binding, and it described the stage this work replaced: *send, or keep the draft*, with
+ * a plan chosen beside the send and no card anywhere. #911's "doomed if" names both halves — a walk
+ * that does not gate the send, and a spec still saying the old thing — so the spec is read here.
+ */
+describe("the binding spec says what the stage is", () => {
+  const spec = readFileSync(join(process.cwd(), "docs/specs/flow-stages.md"), "utf8");
+  /** Stage 5's own section: from its heading to the next `## `. */
+  const section = spec.slice(spec.indexOf("## Stage 5"), spec.indexOf("## How this is enforced"));
+
+  it("names the three-step walk, in order", () => {
+    expect(section).toContain("three-step walk");
+    const plan = section.indexOf("**Plan**");
+    const card = section.indexOf("**Card**");
+    const thanks = section.indexOf("**Thank you**");
+    expect(plan).toBeGreaterThan(-1);
+    expect(card).toBeGreaterThan(plan);
+    expect(thanks).toBeGreaterThan(card);
+  });
+
+  it("gates the send on the walk, in the owner's words", () => {
+    expect(section).toContain("send email to counterparty now");
+    expect(section).toContain("data-send-gate");
+    expect(section).toContain("no-payment-method");
+    expect(section).toContain("draft");
+  });
+
+  it("no longer describes send-or-draft", () => {
+    expect(spec).not.toContain("Send and Continue");
+    expect(spec).not.toContain("Continue as Draft");
+    expect(spec).not.toContain("send, or keep the draft");
+  });
+
+  it("says the same thing as the fixture and the walk", () => {
+    // One shape, three files: the spec's step names are the walk's steps and its panels' headings.
+    const walk = readFileSync(
+      join(process.cwd(), "components/assessment-flow/invite-walk.tsx"),
+      "utf8",
+    );
+    expect(walk).toContain('PAY_FLOW_STEPS = ["plan", "card", "thanks"]');
+    expect(section).toContain(itemLabel(INVITE, "submit"));
+  });
+});
