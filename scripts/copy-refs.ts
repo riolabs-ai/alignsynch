@@ -198,6 +198,11 @@ export function importClosure(entry: string, sources: readonly SourceFile[]): st
  * element can carry `data-tour`. It is a *handle* — the id `lib/tour/steps.ts` joins a fixture step
  * to a real element by — not a sentence, and counting it would put a step id in a copy fixture,
  * which is the one place a handle must not be.
+ *
+ * `sizes` joins them for the reason `width` and `height` are already here (#889): it is a
+ * `srcset` descriptor — `"(max-width: 620px) 100vw, …"` — that tells the browser which candidate
+ * to fetch. No reader sees it, and it only means anything beside the markup that declares the
+ * image, so a fixture holding it would be a fixture an editor has to keep in sync with a layout.
  */
 const TECHNICAL_ATTRIBUTES = new Set([
   "accept",
@@ -228,6 +233,7 @@ const TECHNICAL_ATTRIBUTES = new Set([
   "role",
   "scope",
   "size",
+  "sizes",
   "src",
   "stackId",
   "stopColor",
