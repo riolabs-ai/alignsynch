@@ -150,7 +150,7 @@ links (72 unique, 91 total)
   /quiz/quiz-world-literature-classics                 1
   /register                                            1
   /terms                                               1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.16.0 1
 
 counts
   elements  2254
