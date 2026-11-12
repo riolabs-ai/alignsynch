@@ -150,6 +150,21 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Optional here. Publishing needs a method on file, and the plans page is where one is added.",
         },
+        /**
+         * #870 — the plan panel for an account that **already pays**. Asking somebody on a paid
+         * tier to choose plan is the same defect as asking them to buy twice, so the walk states
+         * what they are on and what it includes instead of drawing the radio group. `{plan}` is
+         * the tier's own name from `lib/billing` (#835's entitlement), never a word from here.
+         */
+        {
+          id: "included",
+          label:
+            "You are on {plan}. Advanced Mode is included, so there is nothing to choose here.",
+        },
+        {
+          id: "included-plan-label",
+          label: "Your plan",
+        },
       ],
     },
     {
@@ -453,9 +468,22 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label: "There is no template at that address, so there is nothing to copy.",
         },
         {
-          id: "template-not-published",
+          id: "template-archived",
+          // #870 — the status half of the old "template-not-published" sentence, split out. The
+          // store used to refuse an unpublished template with *"…is draft with no published
+          // version"*, which stated two facts as one and read like a contradiction. This is the
+          // status fact and it is true for `archived` and for the author-only `draft` alike, so
+          // the two states a `record.status` can hold do not need two sentences nobody can tell
+          // apart on screen.
           label:
-            "That template is not published. Only a published template can be copied into a relationship.",
+            "That template is not published, so nothing can copy it. Publish it and the create step opens.",
+        },
+        {
+          id: "template-not-published",
+          // #870 — the version half. A published template with no `template_version` row is a
+          // template nothing can copy (#502b), and after the split this sentence states only that.
+          label:
+            "That template has no published version yet. Publishing it writes one, and a relationship is copied from that version.",
         },
         {
           id: "template-has-no-aspects",
@@ -493,6 +521,33 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         // codes, because it points at the same page: the plan grid, which is where a tier is
         // chosen and where the checkout button for that tier lives. Neither sentence changed.
         { id: "plans", label: "See plans and prices" },
+        /**
+         * #870 — the doors a **template** refusal names. Before that card every one of the
+         * template codes drew `link: null`, so a band that said "that template is not published"
+         * offered nothing to press on a stage that had no other control either.
+         *
+         * Each label names the page it opens rather than the fix, because the two are not the
+         * same: `open-template` lands on the template's own page, where the publish control is the
+         * existing status transition, and `fix-aspects` lands on the member's editor, which is the
+         * only surface that can add one. `back-to-templates` is the library — the exit for a code
+         * with no fix at all (not yours, not there, already a relationship).
+         */
+        { id: "open-template", label: "Open this template" },
+        { id: "fix-aspects", label: "Edit this template's Aspects" },
+        { id: "back-to-templates", label: "Back to your templates" },
+        { id: "back-to-relationships", label: "Back to my relationships" },
+        /**
+         * #870 — the one-click publish a stage-1 refusal offers its author. The words are a
+         * *summary* of the fixture's own status transition (`setTemplateStatus`), not a second
+         * rule: pressing it posts `status=published` to the same endpoint the template page posts
+         * to, and comes back to stage 1.
+         */
+        { id: "publish-template", label: "Publish this template" },
+        {
+          id: "publish-template-note",
+          label:
+            "This writes the template's first published version from the Aspects it already has. Nothing else changes.",
+        },
       ],
     },
     {

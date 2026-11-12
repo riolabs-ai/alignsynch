@@ -271,8 +271,8 @@ class Jar {
  * handler resolves the posted id to the slug before it answers, so an assertion built from the id
  * would be asserting the address the app deliberately does not use.
  */
-function createStem() {
-  return `/templates/relationship/${TEMPLATE_SLUG}/create`;
+function createStem(templateSlug = TEMPLATE_SLUG) {
+  return `/templates/relationship/${templateSlug}/create`;
 }
 
 /**
@@ -320,9 +320,10 @@ async function createThroughStages(
     mode,
     setting = "soft",
     aspects,
+    templateSlug = TEMPLATE_SLUG,
   },
 ) {
-  const stem = createStem();
+  const stem = createStem(templateSlug);
 
   /* stage 1 — Who ---------------------------------------------------- */
   /* #825 — each seat is first + last now, so the post carries four halves rather than two names. */
@@ -501,6 +502,14 @@ const created = [];
  */
 const createdAccounts = [];
 const relationships = [];
+/**
+ * Templates this run **authored** (#870), which `DELETE FROM record` does not clean up on its own:
+ * a template is a parent of its `item` rows and of its `template_version`, and the version's FK
+ * would refuse the delete. Registered the moment the save's `?created=` id is readable, and removed
+ * by `cleanup()` children-first — the same rule the rest of this file follows, because the demo
+ * branch is shared and `pnpm db:seed` refuses on a stray authored record.
+ */
+const createdTemplates = [];
 /** One cleanup per run: the signal handler and the `finally` must not both sweep the branch. */
 let cleaned = false;
 
@@ -1605,6 +1614,187 @@ async function main() {
   note(
     `rendered: data-alignment-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
   );
+
+  /* 11. a template the member authored is usable (#870) -------------- */
+  // The report the card came from: the owner wrote a template in the app, walked four stages with
+  // it, and stage 5 answered "that template is not published" — four screens after the typing. The
+  // cause was a template with Aspects and no `template_version`: a relationship is bound to a
+  // version, so nothing could copy it.
+  //
+  // Step 0 of #870 makes authoring write v1 in the same transaction as the record and its Aspects.
+  // This walks it end to end rather than trusting that it does: author a template, read the version
+  // back, then take the create flow through stage 4 and assert stage 5 is a screen with the walk,
+  // the send and the keep-as-draft act on it.
+  //
+  // A **fresh account**, because the plan gate allows one active relationship on the free tier and
+  // every relationship this run has created so far belongs to the first creator.
+  const author = new Jar("author");
+  await signUpCreator(author, { name: "Avery Author" });
+
+  const authoredTitle = `E2E Authored ${Date.now()}`;
+  const authoredSave = await author.post("/templates/relationship/save", {
+    title: authoredTitle,
+    "aspect-1-prompt": "How often we speak",
+    "aspect-1-leftValue": "Rarely",
+    "aspect-1-rightValue": "Daily",
+    "aspect-2-prompt": "Who decides",
+    "aspect-2-leftValue": "Shared",
+    "aspect-2-rightValue": "Clear",
+    "aspect-3-prompt": "What we do when we disagree",
+    "aspect-3-leftValue": "Avoid",
+    "aspect-3-rightValue": "Name it",
+  });
+  const authoredId =
+    authoredSave.status === 303
+      ? (new URL(authoredSave.location ?? "/", BASE_URL).searchParams.get("created") ?? null)
+      : null;
+  // Registered before anything below can throw: a stray authored record is what makes `db:seed`
+  // refuse for the next card on this shared branch.
+  if (authoredId !== null) createdTemplates.push(authoredId);
+  check(
+    "authoring a template answers 303 with its new record's id",
+    authoredSave.status === 303 && authoredId !== null,
+    `${authoredSave.status} ${authoredSave.location}`,
+  );
+
+  const authoredRow =
+    authoredId === null
+      ? { rows: [] }
+      : await db.query("SELECT slug, status FROM record WHERE id = $1", [authoredId]);
+  const authoredSlug = authoredRow.rows[0]?.slug ?? "";
+  check(
+    "and the row it wrote is published and addressable by slug",
+    authoredRow.rows[0]?.status === "published" && authoredSlug !== "",
+    `${authoredRow.rows[0]?.status} / "${authoredSlug}"`,
+  );
+
+  // The step-0 assertion: exactly one version, numbered 1, carrying every Aspect that was typed.
+  const authoredVersions =
+    authoredId === null
+      ? { rows: [] }
+      : await db.query(
+          "SELECT version, payload FROM template_version WHERE template_record_id = $1 ORDER BY version",
+          [authoredId],
+        );
+  const authoredItems = authoredVersions.rows[0]?.payload?.items ?? [];
+  check(
+    "authoring writes exactly one template_version, numbered 1 (#870 step 0)",
+    authoredVersions.rows.length === 1 && authoredVersions.rows[0]?.version === 1,
+    `${authoredVersions.rows.length} row(s): ${authoredVersions.rows.map((row) => row.version).join(", ")}`,
+  );
+  check(
+    "and its payload carries every Aspect that was typed",
+    authoredItems.length === 3 && authoredItems[0]?.prompt === "How often we speak",
+    `${authoredItems.length} item(s): ${authoredItems.map((item) => item.prompt).join(" · ")}`,
+  );
+
+  const authoredAspects = authoredItems.map((item) => ({
+    id: item.id,
+    prompt: item.prompt,
+    leftValue: item.leftValue,
+    rightValue: item.rightValue,
+  }));
+
+  // The path the owner walked: their own template, four stages, stage 5.
+  const authoredCreate =
+    authoredId === null || authoredSlug === ""
+      ? { instanceId: null, location: "" }
+      : await createThroughStages(author, {
+          templateRecordId: authoredId,
+          templateSlug: authoredSlug,
+          initiatorFirst: "Avery",
+          initiatorLast: "Author",
+          counterpartyFirst: "Rowan",
+          counterpartyLast: "Author",
+          email: "rowan-author-e2e@example.test",
+          title: "Avery and Rowan, authored",
+          mode: "basic",
+          aspects: authoredAspects,
+        });
+  check(
+    "the create flow runs to stage 5 from a template this account authored (#870)",
+    authoredCreate.instanceId !== null,
+    authoredCreate.location,
+  );
+
+  const authoredInvite =
+    authoredCreate.location === ""
+      ? { status: 0, html: "" }
+      : await author.get(authoredCreate.location);
+  dumpPage("stage5-authored", authoredInvite.html);
+  check(
+    "and stage 5 draws the payment walk, the send and the keep-as-draft act (#870)",
+    authoredInvite.status === 200 &&
+      authoredInvite.html.includes("data-pay-step=") &&
+      authoredInvite.html.includes('data-create-send="true"') &&
+      authoredInvite.html.includes('data-create-keep-draft="true"'),
+    `status ${authoredInvite.status}`,
+  );
+  check(
+    "stage 5 of the authored path carries no refusal band",
+    !authoredInvite.html.includes('data-create-problem="true"'),
+    "a band at stage 5 — the template was refused after four stages",
+  );
+
+  // Stage 1 is the door, so the same template must be *accepted* there rather than refused: the
+  // guard asks the store's own question, and a published, versioned template answers it yes.
+  const authoredStageOne = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  check(
+    "stage 1 draws the form for it — the guard lets a copyable template through",
+    authoredStageOne.status === 200 &&
+      authoredStageOne.html.includes('name="templateRecordId"') &&
+      !authoredStageOne.html.includes('data-create-problem="true"'),
+    `status ${authoredStageOne.status}`,
+  );
+
+  // And the refusal that started all of this: archive the template, and stage 1 refuses **before**
+  // a field is collected, with the author's own publish control under the sentence.
+  const archivedPost = await author.post(`/templates/relationship/${authoredSlug}/status`, {
+    status: "archived",
+  });
+  check(
+    "archiving answers 303 to the library",
+    archivedPost.status === 303,
+    `${archivedPost.status} ${archivedPost.location}`,
+  );
+  const refusedStageOne = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  dumpPage("stage1-refused", refusedStageOne.html);
+  check(
+    "stage 1 refuses an archived template at the door, before any field is collected",
+    refusedStageOne.status === 200 &&
+      refusedStageOne.html.includes('data-create-problem="true"') &&
+      !refusedStageOne.html.includes('name="templateRecordId"'),
+    `status ${refusedStageOne.status}`,
+  );
+  check(
+    "and the refusal carries the author's one-click publish, pointed back at this stage",
+    refusedStageOne.html.includes('data-create-publish="true"') &&
+      refusedStageOne.html.includes(`action="/templates/relationship/${authoredSlug}/status"`) &&
+      refusedStageOne.html.includes('value="create"'),
+    "no publish control under the band",
+  );
+
+  // Pressing it is the existing status transition, and it comes back to stage 1 rather than the
+  // library — the person is mid-flow, not browsing.
+  const republished = await author.post(`/templates/relationship/${authoredSlug}/status`, {
+    status: "published",
+    return: "create",
+  });
+  check(
+    "publishing from the refusal answers 303 back to stage 1",
+    republished.status === 303 &&
+      new URL(republished.location ?? "/", BASE_URL).pathname ===
+        `/templates/relationship/${authoredSlug}/create`,
+    `${republished.status} ${republished.location}`,
+  );
+  const reopened = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  check(
+    "and stage 1 draws the form again — one click, no research project",
+    reopened.status === 200 &&
+      reopened.html.includes('name="templateRecordId"') &&
+      !reopened.html.includes('data-create-problem="true"'),
+    `status ${reopened.status}`,
+  );
 }
 
 /**
@@ -1662,12 +1852,23 @@ async function cleanup() {
       await db.query("DELETE FROM coach_invite WHERE relationship_id = ANY($1::text[])", [ids]);
     }
 
+    // The instance records: `DELETE FROM record` cascades the session, its parties, its opinions
+    // and its invitation — everything that hangs off the record itself.
     for (const instanceId of created) {
       await db.query("DELETE FROM record WHERE id = $1", [instanceId]);
     }
 
     if (strays.size > 0) {
       await db.query("DELETE FROM relationship WHERE id = ANY($1::text[])", [[...strays]]);
+    }
+
+    // #870 — the templates this run authored, children first. The `item` rows and the
+    // `template_version` both point at the record, so deleting the record alone refuses on the FK
+    // and leaves the row `pnpm db:seed` reports as a stray.
+    for (const templateId of createdTemplates) {
+      await db.query("DELETE FROM template_version WHERE template_record_id = $1", [templateId]);
+      await db.query("DELETE FROM item WHERE record_id = $1", [templateId]);
+      await db.query("DELETE FROM record WHERE id = $1", [templateId]);
     }
 
     if (createdAccounts.length > 0) {
@@ -1686,9 +1887,14 @@ async function cleanup() {
       }
     }
 
-    if (created.length > 0 || strays.size > 0 || createdAccounts.length > 0) {
+    if (
+      created.length > 0 ||
+      strays.size > 0 ||
+      createdAccounts.length > 0 ||
+      createdTemplates.length > 0
+    ) {
       console.log(
-        `· cleaned up ${created.length} instance(s), ${strays.size} relationship(s), ${createdAccounts.length} account(s)`,
+        `· cleaned up ${created.length} instance(s), ${strays.size} relationship(s), ${createdTemplates.length} template(s), ${createdAccounts.length} account(s)`,
       );
     }
   } catch (error) {
