@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**124 documents in 9 sections.** Every page carries the same nav block, generated
+**131 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,7 +31,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 6 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 29 documents
+- [Product](#product) — 36 documents
 - [Operations](#operations) — 9 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -111,6 +111,13 @@ What the product promises, and the specifications behind it.
 - [`specs/spec-as2-style-home-redesign/README.md`](specs/spec-as2-style-home-redesign/README.md) — **AS2 home redesign (handoff)** — What is in the approved home-redesign package, and how do I preview it?
 - [`specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md`](specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md) — **AS2 home redesign — implementation brief** — Which existing components does the redesign reuse, and what must not change?
 - [`specs/spec-as2-style-home-redesign/ASSET-SOURCES.md`](specs/spec-as2-style-home-redesign/ASSET-SOURCES.md) — **AS2 redesign — asset sources and credits** — Where did each photograph come from, who took it, and under which licence?
+- [`specs/spec-design-page-rel-templates-v2/README.md`](specs/spec-design-page-rel-templates-v2/README.md) — **V2 home and brand package (handoff)** — What is in the V2 package, which files ship with it, and what is it authoritative for?
+- [`specs/spec-design-page-rel-templates-v2/home/README.md`](specs/spec-design-page-rel-templates-v2/home/README.md) — **V2 home page (handoff)** — How do I preview the V2 home page, and which files make it up?
+- [`specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md`](specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md) — **V2 home page — implementation brief** — Which components, tokens and fixtures does the V2 home page reuse, and what must not change?
+- [`specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md`](specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md) — **V2 home page — asset sources and credits** — Where did each V2 home-page photograph come from, and under which licence?
+- [`specs/spec-design-page-rel-templates-v2/brand-profile/README.md`](specs/spec-design-page-rel-templates-v2/brand-profile/README.md) — **V2 brand and audience profile (handoff)** — How do I open the private brand profile, and which sections does it carry?
+- [`specs/spec-design-page-rel-templates-v2/banner/README.md`](specs/spec-design-page-rel-templates-v2/banner/README.md) — **Admin notice banner (V2 package)** — Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?
+- [`specs/spec-design-page-rel-templates-v2/admin-brand/README.md`](specs/spec-design-page-rel-templates-v2/admin-brand/README.md) — **/admin/brand (V2 package)** — Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?
 - [`specs/spec-as2-style-templates-redesign/README.md`](specs/spec-as2-style-templates-redesign/README.md) — **AS2 templates redesign (handoff)** — What is in the approved Templates-catalogue package, and how do I preview it?
 - [`specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md`](specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md) — **AS2 templates redesign — implementation brief** — Which existing components does the catalogue rewrite reuse, and what must not change?
 - [`specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md`](specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md) — **AS2 catalogue UI system** — What are the reusable realm tints, icon map, card anatomy and detail order?
