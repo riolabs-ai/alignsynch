@@ -394,7 +394,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
       // header menu items for now"*). Home is row one because it is row one up there, and Pricing
       // stands directly above Help — the column used to be these five minus Home and Pricing.
       "/",
-      "/relationship-types",
+      "/relationship-templates",
       "/#questions",
       "/pricing",
       "/help",
@@ -411,7 +411,7 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     const hrefs = footerHrefs("alignsynch", viewerWith("quiz-surfaces"));
     expect(hrefs.slice(0, 5)).toEqual([
       "/",
-      "/relationship-types",
+      "/relationship-templates",
       "/#questions",
       "/pricing",
       "/help",

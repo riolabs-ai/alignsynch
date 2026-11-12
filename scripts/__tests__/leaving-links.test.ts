@@ -384,8 +384,10 @@ describe("the real tree", () => {
       "/help",
       "/pricing",
       "/privacy",
-      // #794 — the public catalogue left the template noun: `/templates` is a 308 to this
-      // directory, and the library lives at `/templates/relationship` inside the app shell.
+      // #905 — the catalogue answers at `/relationship-templates`; `/relationship-types` is the
+      // retained #889 variation and the namespace the type pages live in (`/templates` is a 308
+      // to the catalogue, and the library is `/templates/relationship` inside the app shell).
+      "/relationship-templates",
       "/relationship-types",
       "/relationship-types/[slug]",
       // The worked example, one segment below the type it belongs to — a public page, so it has
