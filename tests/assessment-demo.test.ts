@@ -42,8 +42,13 @@ import {
   purchasableRelationshipType,
 } from "@/data/relationship-types";
 import { assessmentDemo } from "@/lib/assessment-demo";
-import { PRICING_PATH, relationshipTypeDemoPath, relationshipTypePath } from "@/lib/flow/paths";
-import { START_PATH } from "@/lib/template-catalogue";
+import {
+  PRICING_PATH,
+  createRelationshipPath,
+  relationshipTypeDemoPath,
+  relationshipTypePath,
+} from "@/lib/flow/paths";
+import { START_PATH, startPathFor } from "@/lib/template-catalogue";
 
 /** The two types with an authored sheet — the demo's whole reachable set today. */
 const DEMO_IDS = Object.keys(demoAnswersByType) as readonly string[];
@@ -95,15 +100,22 @@ describe("the worked example is one type's report, through the live projection",
     }
   });
 
-  it("points the Start CTA at a public destination, never into the app shell", () => {
+  it("points the Start CTA at the public gate, carrying this type's create step", () => {
     for (const id of DEMO_IDS) {
       const demo = assessmentDemo(id);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
-      // The example is a `(marketing)` page, so `/register` is the only honest action: the
-      // create form is a signed-in surface and a link to it is a sign-in wall.
-      expect(demo.startPath).toBe(START_PATH);
-      expect(demo.startPath).toBe("/register");
+      // The example is a `(marketing)` page, so `/register` is the honest action — the account is
+      // created **first**, and since #867 the gate is told which template the reader chose, so the
+      // sign-up lands on that template's stage 1 rather than on the brand's landing page.
+      expect(demo.startPath).toBe(startPathFor(id));
+      expect(demo.startPath.startsWith(`${START_PATH}?next=`)).toBe(true);
+      expect(new URL(demo.startPath, "http://x").searchParams.get("next")).toBe(
+        createRelationshipPath(id),
+      );
       expect(demo.startPath.startsWith("/v1/")).toBe(false);
+      // Never the in-app create address on its own: that is what the gate resolves to, not what a
+      // signed-out reader is handed.
+      expect(demo.startPath).not.toBe(createRelationshipPath(id));
     }
   });
 });
