@@ -29,6 +29,7 @@
  */
 import type { Metadata } from "next";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import {
   DashboardSupportView,
   type SupportOutcome,
@@ -84,13 +85,15 @@ export default async function DashboardSupportPage({
   const outcome: SupportOutcome | null = state === undefined ? null : { state, thread };
 
   return (
-    <DashboardSupportView
-      copy={dashboardSupportPageCopy}
-      name={user.name ?? user.email}
-      email={user.email}
-      startedAt={Date.now()}
-      action={sendSupportMessage}
-      outcome={outcome}
-    />
+    <StageColumn>
+      <DashboardSupportView
+        copy={dashboardSupportPageCopy}
+        name={user.name ?? user.email}
+        email={user.email}
+        startedAt={Date.now()}
+        action={sendSupportMessage}
+        outcome={outcome}
+      />
+    </StageColumn>
   );
 }

@@ -160,6 +160,24 @@ export type EditOutcome =
     }
   | { readonly ok: false; readonly code: string; readonly message?: string };
 
+/**
+ * #785 — the counterparty took the relationship's template into their own library.
+ *
+ * `reused` is not a failure: the second click on the same action answers "you already have this"
+ * with the row it already made, which is what keeps two clicks from becoming two templates with one
+ * title. `slug` is what the library addresses a template by (`relationshipTemplatePath`), so the
+ * screen can link to the row it just created without a second read.
+ */
+export type ForkOutcome =
+  | {
+      readonly ok: true;
+      readonly slug: string;
+      readonly title: string;
+      readonly aspectCount: number;
+      readonly reused: boolean;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
 /** The sentence a refusal draws: the server's own words, or the fixture's line for the code. */
 export function refusalSentence(
   code: string,

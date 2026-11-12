@@ -73,7 +73,7 @@ export function InviteView({
   const refusalLabel = refusalCode === undefined ? undefined : itemLabel(refusals, refusalCode);
 
   return (
-    <div className="container mx-auto max-w-xl px-4 py-12">
+    <div className="py-12">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{heading}</h1>
 
       {copy.subtitle === undefined || !claimable ? null : (

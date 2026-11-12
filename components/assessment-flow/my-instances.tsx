@@ -32,7 +32,6 @@
  */
 import Link from "next/link";
 
-import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { Chip } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
 import { STAGE_LABELS } from "@/content/stages";
@@ -131,22 +130,20 @@ export function MyInstances({
   if (unreadable !== null) {
     const failure = sectionOf(copy, "unreadable");
     return (
-      <StageColumn>
-        <div
-          data-my-instances-unreadable="true"
-          role="alert"
-          className="rounded-lg border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950"
-        >
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{failure.heading}</h1>
-          <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{sectionBody(failure)}</p>
-          <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{unreadable}</p>
-          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-            <a className="underline" href={MY_INSTANCES_PATH}>
-              {itemLabel(failure, "reload")}
-            </a>
-          </p>
-        </div>
-      </StageColumn>
+      <div
+        data-my-instances-unreadable="true"
+        role="alert"
+        className="rounded-lg border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950"
+      >
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{failure.heading}</h1>
+        <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{sectionBody(failure)}</p>
+        <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{unreadable}</p>
+        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+          <a className="underline" href={MY_INSTANCES_PATH}>
+            {itemLabel(failure, "reload")}
+          </a>
+        </p>
+      </div>
     );
   }
 
@@ -177,7 +174,7 @@ export function MyInstances({
   };
 
   return (
-    <StageColumn>
+    <>
       {/* Title row, then the action — the ancestor's stacking: the heading answers "what am I in
           the middle of", the button answers "where does another one start". */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -435,6 +432,6 @@ export function MyInstances({
           </ul>
         </section>
       )}
-    </StageColumn>
+    </>
   );
 }

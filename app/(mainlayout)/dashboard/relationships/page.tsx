@@ -20,6 +20,7 @@
  */
 import type { Metadata } from "next";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { RelationshipsList } from "@/components/dashboard/relationships-list";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { requireRole } from "@/lib/auth/require-role";
@@ -55,12 +56,14 @@ export default async function MemberRelationshipsPage() {
   }
 
   return (
-    <RelationshipsList
-      copy={dashboardRelationshipsPageCopy}
-      rows={rows}
-      templates={templates}
-      onCreate={createRelationshipAction}
-      unreadable={unreadable}
-    />
+    <StageColumn>
+      <RelationshipsList
+        copy={dashboardRelationshipsPageCopy}
+        rows={rows}
+        templates={templates}
+        onCreate={createRelationshipAction}
+        unreadable={unreadable}
+      />
+    </StageColumn>
   );
 }

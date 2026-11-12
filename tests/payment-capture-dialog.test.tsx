@@ -129,6 +129,8 @@ function viewOf(gate: CompletionGate): MemberRelationshipView {
     trialEndsAt: null,
     lapseSentence: null,
     inviteLinkAvailable: false,
+    /* #785 — the fork is not this file's subject; `tests/relationship-fork.test.tsx` drives it. */
+    canForkTemplate: false,
   };
 }
 
@@ -174,6 +176,8 @@ function mount(
         onCapture: capture,
         onResolve: resolve,
         onComplete: async () => ({ ok: false as const, code: "failed" }),
+        onFork: async () => ({ ok: false as const, code: "failed" }),
+        templatesHref: "/templates/relationship?view=mine",
       }),
     );
   });

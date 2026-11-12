@@ -42,6 +42,7 @@
  * its sentence handed to the view, and any other failure keeps throwing, because a row that fails
  * the model is a defect the gate is supposed to catch.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { MyInstances, flowStageOf } from "@/components/assessment-flow/my-instances";
 import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
 import { loginPathFor } from "@/lib/auth/paths";
@@ -101,13 +102,15 @@ export default async function MyInstancesPage({
   }
 
   return (
-    <MyInstances
-      copy={myInstancesPageCopy}
-      relationships={relationships}
-      unreadable={unreadable}
-      filter={filter}
-      stage={stage}
-      query={query}
-    />
+    <StageColumn>
+      <MyInstances
+        copy={myInstancesPageCopy}
+        relationships={relationships}
+        unreadable={unreadable}
+        filter={filter}
+        stage={stage}
+        query={query}
+      />
+    </StageColumn>
   );
 }

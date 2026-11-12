@@ -34,6 +34,7 @@ import { BillingRefusal } from "@/lib/billing/port";
 import type { Assessment } from "@/content/assessment";
 import { zAlignmentSetting, zAssessmentMode } from "@/content/assessment";
 import { baseUrl } from "@/lib/flow/email";
+import { forkRelationshipTemplate } from "@/lib/flow/templates";
 import {
   createRelationship,
   MemberCheckoutRequired,
@@ -58,6 +59,7 @@ import type {
   CompleteOutcome,
   EditOutcome,
   EditPreviewOutcome,
+  ForkOutcome,
   PublishOutcome,
   RelationshipCreateOutcome,
   RepublishOutcome,
@@ -334,6 +336,41 @@ export async function editRelationshipAction(payload: {
     }
     throw error;
   }
+}
+
+/**
+ * #785 — **take the relationship's template into this account's own library.**
+ *
+ * The Counterparty's one action on a relationship they did not configure: the Aspects they were
+ * asked to answer are worth keeping, and `duplicateTemplate` cannot reach them (the relationship's
+ * template is a private copy of the initiator's, which no library read lists). The write is
+ * `forkRelationshipTemplate`; this file supplies the actor from the session and nothing from the
+ * body, exactly as every other action here does — a crafted post cannot fork on somebody's behalf,
+ * and the seat the store checks is the session's own.
+ *
+ * `relationshipId` is taken as posted and re-checked inside the transaction: a screen that did not
+ * draw the control is not the enforcement.
+ */
+export async function forkRelationshipTemplateAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<ForkOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "not-yours" };
+
+  const result = await forkRelationshipTemplate(relationshipId, user.userId);
+  if (!result.ok) return { ok: false, code: result.code };
+
+  return {
+    ok: true,
+    slug: result.template.slug,
+    title: result.template.title,
+    aspectCount: result.template.aspectCount,
+    reused: result.reused,
+  };
 }
 
 /** The posted record, validated exactly as a save validates it — one validator, one answer. */
