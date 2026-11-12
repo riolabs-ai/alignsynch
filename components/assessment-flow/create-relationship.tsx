@@ -149,6 +149,47 @@ function ProblemBand({
 }
 
 /**
+ * A plan the stage is telling you about, **not refusing you** (#834).
+ *
+ * Same words as the refusal's (`problems.mode-not-entitled`), different job: after #834 a draft is
+ * written whatever Mode it asks for, and the plan question is asked here, on the stage that carries
+ * the send. So this is `role="status"`, drawn with `data-create-notice` rather than
+ * `data-create-problem`, and the stage's own action stays enabled — the point is that the person can
+ * still send, or keep the draft and read the plans, instead of meeting a wall one stage too early.
+ */
+function NoticeBand({
+  sentence,
+  link,
+}: {
+  sentence: string | null;
+  link?: { readonly href: string; readonly label: string } | null;
+}) {
+  if (sentence === null) return null;
+  return (
+    <div
+      data-create-notice="true"
+      role="status"
+      className="rounded-lg border border-gray-300 bg-gray-50 p-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+    >
+      <p id="create-notice">{sentence}</p>
+      {link === undefined || link === null ? null : (
+        <p className="mt-2">
+          <Link
+            href={link.href}
+            data-create-notice-link={link.href}
+            // 44px like every other in-card link (#745's floor): this one sits in its own line,
+            // so it can carry the box without breaking the sentence it is not inside.
+            className="inline-flex h-11 items-center font-medium text-action underline"
+          >
+            {link.label}
+          </Link>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * The commit form's id (#760). The stage foot's primary sits outside the form — the artifact
  * draws the one advancing act in the foot, not in the card — so it submits by id. A constant
  * rather than a literal in two places: E23 counts a string attribute as copy, and a form id is
@@ -254,6 +295,8 @@ export function CreateRelationship({
   backHref,
   problem,
   problemLink,
+  notice,
+  noticeLink,
   account,
   accountAdvanceHref,
   instanceRecordId,
@@ -276,6 +319,13 @@ export function CreateRelationship({
   problem: string | null;
   /** The page the refusal's sentence points at, when it names one (#618). */
   problemLink?: { readonly href: string; readonly label: string } | null;
+  /**
+   * A plan line the stage states without refusing anything (#834) — stage 5 tells a person their
+   * Mode is not on their plan, and lets them send or keep the draft anyway.
+   */
+  notice?: string | null;
+  /** The plans page the notice points at, when it names one. */
+  noticeLink?: { readonly href: string; readonly label: string } | null;
   /**
    * Stage 4's account column (#825). The page builds it: `LoginView` with `layout="embedded"` when
    * nobody is signed in, a confirmation when somebody is. Absent on every other stage.
@@ -411,6 +461,8 @@ export function CreateRelationship({
           </div>
 
           <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
+
+          <NoticeBand sentence={notice ?? null} link={noticeLink ?? null} />
 
           {stage === 1 ? (
             <>

@@ -27,6 +27,7 @@ import { CreateRelationship } from "@/components/assessment-flow/create-relation
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { readLibraryTemplate } from "@/lib/db/template-library";
+import { entitlementForAccount } from "@/lib/billing";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { createCommitPath, createRelationshipPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
@@ -87,6 +88,19 @@ export default async function TemplateCreateInvitePage({
    * name unchanged, and splitting a name on a space would invent a last name for somebody who has
    * two.
    */
+  /**
+   * #834 — the plan question is asked **here**, where the send is, not at stage 4 where the draft
+   * is written. A draft is unfunded and unsent; refusing it a stage before the screen that carries
+   * the plans and the checkout is a dead end, not an upsell. The words are the refusal's own
+   * fixture sentence — one sentence, one home — and this band does not block: Send stays enabled,
+   * and keeping the draft costs nothing.
+   */
+  const entitlement = viewer === null ? null : await entitlementForAccount(viewer.userId);
+  const modeNotOnPlan =
+    entitlement !== null && screen.mode === "advanced" && !entitlement.advancedMode;
+  // `undefined` for the field: this notice is not a field refusal, so no half is named.
+  const planNotice = modeNotOnPlan ? createRefusal("mode-not-entitled", undefined) : null;
+
   const draft = {
     initiatorFirst: screen.initiatorName,
     initiatorLast: "",
@@ -119,6 +133,8 @@ export default async function TemplateCreateInvitePage({
       backHref={commitPath}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
+      notice={planNotice?.sentence ?? null}
+      noticeLink={planNotice?.link ?? null}
     />
   );
 }
