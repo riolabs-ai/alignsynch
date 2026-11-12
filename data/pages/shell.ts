@@ -318,6 +318,12 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "review", label: "Review" },
           /**
+           * #901 — the docs home. `/admin/docs` renders the 117-page manifest and had no row, so the
+           * whole tree was URL-only. One word, like every other row in this group, and the page's
+           * own heading says what it is.
+           */
+          { id: "admin-docs", label: "Docs" },
+          /**
            * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
            * `group-support`, and the operator's rows under `group-admin` — "the reader's work,

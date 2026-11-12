@@ -122,6 +122,8 @@ describe("the shell's menus", () => {
       "/admin/broadcast",
       // #665 — the review shelf: published artifacts with their to-dos and feedback.
       "/admin/review",
+      // #901 — the docs home: the manifest's 117 pages had no way in but the address bar.
+      "/admin/docs",
       "/admin/audit",
     ]);
   });

@@ -107,6 +107,13 @@
           "note": "#665 — the review shelf: published artifacts, each with its to-dos and its feedback. One row, between Broadcast and the audit log."
         },
         {
+          "id": "admin-docs",
+          "href": "/admin/docs",
+          "icon": "library",
+          "needs": "admin",
+          "note": "#901 — the docs home renders the 117-page manifest and had no row, so the tree was URL-only. It sits after the review shelf and before the log: the reference you look things up in, then what the rows above it did."
+        },
+        {
           "id": "admin-audit",
           "href": "/admin/audit",
           "icon": "audit",

@@ -191,9 +191,25 @@ describe("the ladder decides the rows", () => {
     const staff = MENUS.admin.slice(MENUS.member.length);
     expect(staff[0]).toBe("/admin/console");
     expect(staff[staff.length - 1]).toBe("/admin/audit");
-    // #665 — the review shelf joined the operator group, between Broadcast and the audit log.
-    expect(staff[staff.length - 2]).toBe("/admin/review");
-    expect(staff).toHaveLength(9);
+    // #665 — the review shelf joined the operator group, between Broadcast and the audit log;
+    // #901 put the docs home between it and the log, which is why both moved one place up.
+    expect(staff[staff.length - 2]).toBe("/admin/docs");
+    expect(staff[staff.length - 3]).toBe("/admin/review");
+    expect(staff).toHaveLength(10);
+  });
+
+  /**
+   * #901 — `/admin/docs` renders the 117-page manifest and had **no** rail row, so the whole tree
+   * was reachable only by typing the address. The assertion is over both halves the defect needs:
+   * the descriptor carries the row, and the rail actually draws it for an operator and for nobody
+   * below one.
+   */
+  it("gives the docs home a row, for an operator and for nobody below one", () => {
+    expect(hrefsFor("admin")).toContain("/admin/docs");
+    expect(hrefsFor("owner")).toContain("/admin/docs");
+    expect(hrefsFor("support")).not.toContain("/admin/docs");
+    expect(railHrefs("admin")).toContain("/admin/docs");
+    expect(railHrefs("member")).not.toContain("/admin/docs");
   });
 
   it("gives an owner everything an admin sees — the top rung is not a second list", () => {
@@ -203,7 +219,7 @@ describe("the ladder decides the rows", () => {
 
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    expect(counts).toEqual([5, 6, 14, 14]);
+    expect(counts).toEqual([5, 6, 15, 15]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);
