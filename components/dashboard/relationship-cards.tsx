@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { formatDate } from "@/content/core";
-import { instancePath, relationshipPath } from "@/lib/flow/paths";
+import { createInviteForPath, instancePath, relationshipPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
 import { Archive, Copy, Eye, MoreHorizontal } from "lucide-react";
@@ -116,6 +116,23 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
   const relationshipHref = relationshipPath(row.id);
   const assessmentHref = row.sessionRecordId === null ? null : instancePath(row.sessionRecordId);
   const assessmentWhy = itemLabel(card, "open-assessment-why");
+
+  /*
+   * #912 — **a draft's two CTAs, and the address the pay modal answers.**
+   *
+   * The modal is stage 5's pay walk, and its own address needs both handles (#794): the
+   * relationship's copy in the path, the session in `?instance=`. A draft written by the create
+   * flow has both — stage 4 writes the session and a staged invitation, and stage 5 is where they
+   * go out. A draft written by this list's own create band has neither (no session, no seats), so
+   * there is no invitation to shape and the control says that instead of linking somewhere it
+   * would be refused.
+   */
+  const isDraft = row.status === "draft";
+  const payHref =
+    row.sessionRecordId === null
+      ? null
+      : createInviteForPath(row.templateSlug, row.sessionRecordId);
+  const payWhy = itemLabel(card, "invite-members-why");
 
   return (
     <li
@@ -181,12 +198,46 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
               {itemLabel(card, "open-assessment")}
             </Link>
           )}
+          {/*
+            #912 — **a draft's two CTAs, front and centre.** Every other row keeps one verb and a
+            menu; a draft is where both open decisions still are (the money, and the counterparty),
+            so both are drawn as controls rather than hidden behind the More menu.
+
+            `Invite Members` is the pay modal and nothing else: no card is taken here, and the
+            relationship detail no longer opens a capture of its own (`payment-capture-dialog.tsx`
+            is deleted). When the draft has no session there is no invitation to shape, so the
+            control is drawn inert *with its reason* rather than as a link that would bounce the
+            reader back to stage 1.
+          */}
+          {isDraft && row.isInitiator ? (
+            payHref === null ? (
+              <span
+                className={`${ACTION} cursor-not-allowed text-gray-400 dark:text-gray-500`}
+                aria-disabled="true"
+                data-invite-blocked={payWhy}
+                title={payWhy}
+              >
+                {itemLabel(card, "invite-members")}
+              </span>
+            ) : (
+              <Link
+                href={payHref}
+                className={ACTION}
+                data-invite-members="true"
+                data-pay-modal="true"
+              >
+                {itemLabel(card, "invite-members")}
+              </Link>
+            )
+          ) : null}
           <Link href={relationshipHref} className={ACTION_PRIMARY}>
-            {row.isInitiator
-              ? row.sessionRecordId === null
-                ? itemLabel(card, "publish-assessment")
-                : itemLabel(card, "complete-relationship")
-              : itemLabel(card, "open-relationship")}
+            {isDraft && row.isInitiator
+              ? itemLabel(card, "publish-to-counterparty")
+              : row.isInitiator
+                ? row.sessionRecordId === null
+                  ? itemLabel(card, "publish-assessment")
+                  : itemLabel(card, "complete-relationship")
+                : itemLabel(card, "open-relationship")}
           </Link>
         </div>
       </div>

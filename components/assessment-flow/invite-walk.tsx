@@ -13,9 +13,9 @@
  *           and the relationship activated — because a price without its purpose is what makes a
  *           checkout feel like a toll.
  *   card    Stripe's card fields, mounted **in this panel** from
- *           `components/billing/stripe-frame.tsx`. The app owns one implementation of a card (#748's
- *           dialog and this walk share it); there is no second capture surface and no second set of
- *           card fields.
+ *           `components/billing/stripe-frame.tsx`. Since #912 this walk is that module's **only**
+ *           caller — the dashboard's capture dialog is deleted, so the modal is the one way to pay
+ *           and there is no second capture surface and no second set of card fields.
  *   thanks  A thank-you with **no button**. The walk ends here, and the step's one sentence says
  *           where the reader goes next: the send control beside it, or the draft.
  *

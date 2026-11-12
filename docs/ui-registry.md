@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **92** — 56 static, 36 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 345 files under `components/`, 338 of them `.tsx`
+- component domains: **43** — 344 files under `components/`, 337 of them `.tsx`
 - route handlers: **31** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 70 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 46 · AlignSynch 45 · QuizHub 42 · No template yet 2
@@ -101,7 +101,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/dashboard/relationships/[id]` — **db**
   - capability: One relationship the member initiated: its status, its Aspects editor while `draft`/`pending`, save-as-pending, publish through a trial or a checkout, and the one-click re-publish that replaces an expired invite link.
-  - components: `components/assessment-flow`, `components/billing`, `components/dashboard`, `components/layout`, `components/relationship`, `components/ui`
+  - components: `components/assessment-flow`, `components/dashboard`, `components/layout`, `components/relationship`, `components/ui`
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/template-versions.ts`, `lib/db/user-profiles.ts` · an `/api` path — `app/(mainlayout)/dashboard/relationships/actions.ts`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/member/payment.ts`
   - notes: Reuses `components/admin/template-editor.tsx` in its `band="private"` shape for Aspects (`template-ancestor:` on the header), so there is one editor and not two. Every write is a server action over `act()`; the ownership refusal (`not-yours`) is decided in the action, not by hiding the form — the counterparty reaching this URL gets the same refusal a crafted POST gets.
 
@@ -529,8 +529,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/billing` — **mock**
   - capability: The provider's frame, and only the frame: `stripe-frame.tsx` mounts Stripe's embedded checkout for a client secret a server minted, draws the caption that sits under the mount point until the iframe lands, and reports completion or failure upward.
   - files (1): `stripe-frame.tsx`
-  - routes (6): `/dashboard/relationships/[id]`, `/templates/relationship/[slug]/create`, `/templates/relationship/[slug]/create/aspects`, `/templates/relationship/[slug]/create/commit`, `/templates/relationship/[slug]/create/invite`, `/templates/relationship/[slug]/create/mode`
-  - notes: Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces now take a card — the dashboard's capture dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. It is `mock` because it reads nothing: the key, the secret and every string arrive as props from the surface that owns the decision, and no copy is written here (E23). The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits.
+  - routes (5): `/templates/relationship/[slug]/create`, `/templates/relationship/[slug]/create/aspects`, `/templates/relationship/[slug]/create/commit`, `/templates/relationship/[slug]/create/invite`, `/templates/relationship/[slug]/create/mode`
+  - notes: Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces then took a card — that dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. **#912 retired the dialog**, so this is now the only surface in the app that mounts a card, and `tests/one-payment-surface.test.ts` holds that as an exact set. It is `mock` because it reads nothing: the key, the secret and every string arrive as props from the surface that owns the decision, and no copy is written here (E23). The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits.
 
 - `components/console` — **mock**
   - capability: The console's generic shapes: a stat-card grid of linked figures with the Overview built from it (a header naming the viewer, four counts and the honest empty state for an account with no relationships), and the response-analytics surface — a population's numbers as stat cards, one distribution per measure and a comparison axis, taking the aggregate as a prop so the measure is a plugin rather than a component.
@@ -733,7 +733,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (17): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `payment-capture-dialog.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - files (16): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
   - routes (4): `/assessments`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 

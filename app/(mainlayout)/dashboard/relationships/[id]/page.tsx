@@ -36,14 +36,12 @@ import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/rela
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
-  capturePaymentMethodAction,
   completeRelationshipAction,
   editRelationshipAction,
   forkRelationshipTemplateAction,
   previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
-  resolveCaptureAction,
   saveAspectsAction,
 } from "../actions";
 
@@ -127,8 +125,6 @@ export default async function MemberRelationshipPage({
           onSaveAspects={saveAspectsAction}
           onPublish={publishRelationshipAction}
           onRepublish={republishInviteAction}
-          onCapture={capturePaymentMethodAction}
-          onResolve={resolveCaptureAction}
           onComplete={completeRelationshipAction}
           onFork={forkRelationshipTemplateAction}
           /*
