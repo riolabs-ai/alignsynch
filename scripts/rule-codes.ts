@@ -205,6 +205,18 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner:
+      "rules 6 and 7 of the reference pattern set — numbers and empty states (scripts/ui-census.ts)",
+    // The rule *lives* in `ui-census.ts`: the numeric vocabulary, the record-list shape, the guard
+    // forms and the empty-block measurement are all pure derivations there. Two files for the same
+    // reason the leaving-links group has two — the finding carries `rule: "E40"`, and `data-check.ts`
+    // runs the walk and prints the census line beside the other floors.
+    files: ["ui-census.ts", "data-check.ts"],
+    codes: {
+      E40: "over the console's and the member dashboard's import closure: every numeric cell in a table or label/value list is right-aligned (`tabular-nums` or `text-right`), and every record list over data has a zero-or-positive length guard whose empty region draws a bordered/grey block with at most one action (`docs/specs/ux-reference-patterns.md` rules 6 and 7)",
+    },
+  },
+  {
     owner: "bundle import/export (scripts/bundles.ts, content/bundle.ts — issue #147)",
     // Two files, because the refusal is authored in the model and raised by the CLI: the
     // codes are *minted* where the rule lives (`content/bundle.ts` detects B1–B4/B6) and B5
