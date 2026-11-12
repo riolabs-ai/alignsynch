@@ -456,8 +456,12 @@ describe("the shell's rail remembers its width on the server", () => {
     const { readFile } = await import("node:fs/promises");
     const source = await readFile("components/layout/sidebar.tsx", "utf8");
     expect(source.match(/<button/g)).toHaveLength(3);
-    // The toggle is a form posting to a server action — not a click handler in the browser.
-    expect(source).toContain("action={toggleRail}");
+    // Comments are stripped: the file names the form it replaced, which is the lesson, not the
+    // offence.
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    // The toggle calls the server action from a click handler — never a form submission.
+    expect(code).toContain("toggleRail()");
+    expect(code).not.toContain("<form");
   });
 
   it("keeps the drawer wired to one trigger and one panel id", async () => {
@@ -468,5 +472,106 @@ describe("the shell's rail remembers its width on the server", () => {
     expect(header).toContain("aria-expanded={navigationOpen}");
     // One boolean, one drawer: the state the trigger reads is the state the panel is given.
     expect(layout).toContain("open={navigationOpen}");
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// #875 — the handle: a button that toggles, on the rail's border, left of the search
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * The owner's report was the DOM: a `<form>` with React's `javascript:throw new Error('A React
+ * form was unexpectedly submitted…')` in its `action`, wrapping a `type="submit"` button. That
+ * placeholder is what React writes for *any* function `action` once it hydrates, so the control
+ * was one native submission away from a throw — and a throw is not a collapse. The fix removes the
+ * form, so the failure mode cannot come back in a different costume: the width control is a
+ * `type="button"` whose `onClick` calls the same server action, which is the one thing a button
+ * does natively on both Enter and Space.
+ *
+ * The placement is pinned here as a class contract, because `jsdom` has no layout engine: the
+ * handle is `absolute` (so it takes no width from the row and cannot push the search) and
+ * `-right-3` with a 24px box, which centres it on the rail's 1px trailing border — half in, half
+ * out — without a negative margin and without the `overflow-hidden` the issue forbids. The pixel
+ * proof (x-coordinates at 1440/1024/768/390) is the PR's screenshots, not this file.
+ */
+describe("the width control is a button on the rail's border, not a form (#875)", () => {
+  /** The handle, in the rail as the shell draws it at one collapsed state. */
+  function toggle(collapsed: boolean): string {
+    const html = renderToStaticMarkup(
+      createElement(AppSidebar, {
+        copy: shellPageCopy,
+        brandId: "alignsynch",
+        viewer: PLATFORM_VIEWER,
+        collapsed,
+        open: false,
+        onClose: () => undefined,
+      }),
+    );
+    const rail = sectionOf(shellPageCopy, "rail");
+    const label = itemLabel(rail, collapsed ? "expand" : "collapse");
+    const labelAt = html.indexOf(`aria-label="${label}"`);
+    if (labelAt < 0) throw new Error(`no width control named "${label}"`);
+    const start = html.lastIndexOf("<button", labelAt);
+    return html.slice(start, html.indexOf("</button>", start));
+  }
+
+  it("is a button, and the rail renders no form at all", () => {
+    expect(toggle(false)).toContain('type="button"');
+    expect(toggle(false)).not.toContain('type="submit"');
+    const html = rail(false);
+    expect(html).not.toContain("<form");
+  });
+
+  it("carries the rail's own state in aria-expanded, and names the action it performs", () => {
+    // Expanded rail: the handle offers the collapse, and says the rail is expanded.
+    expect(toggle(false)).toContain('aria-expanded="true"');
+    expect(toggle(false)).toContain(itemLabel(sectionOf(shellPageCopy, "rail"), "collapse"));
+    // Collapsed rail: the claim flips with the state the server sent, not with a click.
+    expect(toggle(true)).toContain('aria-expanded="false"');
+    expect(toggle(true)).toContain(itemLabel(sectionOf(shellPageCopy, "rail"), "expand"));
+  });
+
+  it("straddles the rail's border: absolute, half out, and no clipping ancestor", async () => {
+    const handle = toggle(false);
+    // `-right-3` (12px) on a `size-6` (24px) box centres it on the border line itself.
+    expect(handle).toContain("absolute");
+    expect(handle).toContain("-right-3");
+    expect(handle).toContain("size-6");
+    // It takes no space in the row, which is why the search can never be pushed or overlapped.
+    expect(handle).toContain("top-1/2");
+    // Desktop only: below `md` the rail is a drawer, and half a handle would sit on the scrim.
+    expect(handle).toContain("hidden");
+    expect(handle).toContain("md:inline-flex");
+    // The rail must never hide the overhang.
+    expect(railClassName(false)).not.toContain("overflow-hidden");
+    expect(railClassName(false, true)).not.toContain("overflow-hidden");
+  });
+
+  it("is not at the bottom of the rail any more — no width control in the sign-out section", () => {
+    const html = rail(false);
+    const footer = html.slice(html.indexOf("border-t"));
+    // The bottom `border-t` block holds the sign-out row and the version badge, and nothing that
+    // toggles a width: the control moved to the top row.
+    expect(footer).not.toContain("Collapse the rail");
+    expect(footer).not.toContain('aria-expanded="true"');
+  });
+
+  it("keeps the collapsed top row inside the 64px column, so the mark is not clipped", () => {
+    // A 40px monogram window plus `lg:px-4` (32px) is 72px in a 64px column — the mark spilled
+    // past the rail's border. The narrow form centres it on the 8px padding the `md` rail uses.
+    const html = renderToStaticMarkup(
+      createElement(AppSidebar, {
+        copy: shellPageCopy,
+        brandId: "alignsynch",
+        viewer: PLATFORM_VIEWER,
+        collapsed: true,
+        open: false,
+        onClose: () => undefined,
+      }),
+    );
+    expect(html).toContain("lg:justify-center");
+    expect(html).not.toContain("lg:px-4");
+    // And the row it lives in is a positioning context for the handle, never a clip.
+    expect(html).toContain("relative flex h-16");
   });
 });

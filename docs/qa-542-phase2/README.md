@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Payment capture & completion](../qa-payment/README.md) · next [Brand lockup](../qa-brand-lockup/README.md)
+[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Payment capture & completion](../qa-payment/README.md) · next [Rail collapse handle](../qa-rail-handle/README.md)
 
 <!-- docs-nav:end -->
 
@@ -122,6 +122,6 @@ browser storage.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Payment capture & completion](../qa-payment/README.md) · next [Brand lockup](../qa-brand-lockup/README.md)
+[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Payment capture & completion](../qa-payment/README.md) · next [Rail collapse handle](../qa-rail-handle/README.md)
 
 <!-- docs-nav:end -->
