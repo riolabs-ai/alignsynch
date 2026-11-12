@@ -26,6 +26,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { PRIVATE_BAND, TemplateEditor } from "@/components/admin/template-editor";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { dashboardTemplateEditorPageCopy } from "@/data/pages/dashboard-template-editor";
@@ -52,39 +53,44 @@ export default async function MemberTemplatePage({ params }: { params: Promise<{
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("member-template: the template could not be read", error);
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">{dashboardTemplateEditorPageCopy.heading}</h1>
-        <p data-template-unreadable className="text-sm text-muted-foreground">
-          {dashboardTemplateEditorPageCopy.sections?.find((section) => section.id === "unreadable")
-            ?.body ?? ""}
-        </p>
-      </div>
+      <StageColumn>
+        <div className="space-y-6">
+          <h1 className="text-2xl font-semibold">{dashboardTemplateEditorPageCopy.heading}</h1>
+          <p data-template-unreadable className="text-sm text-muted-foreground">
+            {dashboardTemplateEditorPageCopy.sections?.find(
+              (section) => section.id === "unreadable",
+            )?.body ?? ""}
+          </p>
+        </div>
+      </StageColumn>
     );
   }
   if (view === undefined) notFound();
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-sm text-muted-foreground">{dashboardTemplateEditorPageCopy.heading}</p>
-        <h1 className="text-2xl font-semibold">{view.template.title}</h1>
-        {dashboardTemplateEditorPageCopy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {dashboardTemplateEditorPageCopy.subtitle}
-          </p>
-        )}
-      </header>
-      <TemplateEditor
-        copy={dashboardTemplateEditorPageCopy}
-        sheetCopy={assessmentInstancePageCopy}
-        template={view.template}
-        editable={view.editable}
-        status={view.template.status}
-        versions={[]}
-        catalogue={null}
-        band={PRIVATE_BAND}
-        onSave={savePrivate}
-      />
-    </div>
+    <StageColumn>
+      <div className="space-y-6">
+        <header className="space-y-2">
+          <p className="text-sm text-muted-foreground">{dashboardTemplateEditorPageCopy.heading}</p>
+          <h1 className="text-2xl font-semibold">{view.template.title}</h1>
+          {dashboardTemplateEditorPageCopy.subtitle === undefined ? null : (
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              {dashboardTemplateEditorPageCopy.subtitle}
+            </p>
+          )}
+        </header>
+        <TemplateEditor
+          copy={dashboardTemplateEditorPageCopy}
+          sheetCopy={assessmentInstancePageCopy}
+          template={view.template}
+          editable={view.editable}
+          status={view.template.status}
+          versions={[]}
+          catalogue={null}
+          band={PRIVATE_BAND}
+          onSave={savePrivate}
+        />
+      </div>
+    </StageColumn>
   );
 }

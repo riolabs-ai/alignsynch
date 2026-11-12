@@ -26,6 +26,7 @@
  */
 import type { Metadata } from "next";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { HowItWorks } from "@/components/onboarding/how-it-works";
 import { ReplayTour } from "@/components/tour/replay-tour";
 import { howItWorksPageCopy } from "@/data/pages/how-it-works";
@@ -44,21 +45,23 @@ export default async function DashboardHelpPage() {
   await requireRole("member", { next: DASHBOARD_HELP_PATH });
 
   return (
-    <div className="space-y-8 pb-8">
-      <HowItWorks copy={howItWorksPageCopy} />
+    <StageColumn>
+      <div className="space-y-8 pb-8">
+        <HowItWorks copy={howItWorksPageCopy} />
 
-      {/*
+        {/*
         Under the sequence, not above it: a reader who opens Help wants the steps first, and the
         replay is the second visit's errand. The band's heading and sentence are the tour fixture's
         (`data/pages/tour.ts`), so the callout the tour draws and the page that re-opens it use one
         set of words.
       */}
-      <section className="rounded-xl border border-border bg-card p-5 md:p-6">
-        <h2 className="text-lg font-semibold text-foreground">{tourPageCopy.heading}</h2>
-        <div className="mt-3">
-          <ReplayTour copy={tourPageCopy} />
-        </div>
-      </section>
-    </div>
+        <section className="rounded-xl border border-border bg-card p-5 md:p-6">
+          <h2 className="text-lg font-semibold text-foreground">{tourPageCopy.heading}</h2>
+          <div className="mt-3">
+            <ReplayTour copy={tourPageCopy} />
+          </div>
+        </section>
+      </div>
+    </StageColumn>
   );
 }

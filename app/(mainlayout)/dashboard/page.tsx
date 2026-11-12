@@ -40,6 +40,7 @@
  * links to it.
  */
 import { ConsoleOverview } from "@/components/console/overview";
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { FirstRunTour } from "@/components/tour/first-run-tour";
 import { DemoFill } from "@/components/tour/demo-fill";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
@@ -126,7 +127,7 @@ export default async function OverviewPage() {
   const demoAspects = demoTemplate === undefined ? [] : demoAspectsOf(demoTemplate);
 
   return (
-    <>
+    <StageColumn>
       <ConsoleOverview
         copy={overviewPageCopy}
         name={user.name}
@@ -150,6 +151,6 @@ export default async function OverviewPage() {
         a plain object. `components/tour/**` therefore imports no `data/` module and no zod.
       */}
       <FirstRunTour copy={tourPageCopy} start={start} />
-    </>
+    </StageColumn>
   );
 }
