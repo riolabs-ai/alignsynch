@@ -1,0 +1,897 @@
+{
+  "$doc": {
+    "schema": "demo-flow/v1",
+    "purpose": "A browser walked the create flow on the demo instance and wrote down every screen. Committed so a reviewer, and the /how-it-works replay (#898 card 2), can read what happened without re-running it.",
+    "topLevel": {
+      "$doc": "this block — the schema, in the file it describes",
+      "base": "the origin the walk ran against",
+      "paths": "one entry per path: { path, terminal (the screen the path must end on, in words), reached, steps }",
+      "findings": "behaviour the walk met that is not this driver's to fix: { n, path, title, shot, expected, actual, note }. A finding is a report, never a failure.",
+      "steps": "every screen, in order — see fields",
+      "seed": "what the run did about the demo dataset: { attempted, ok?, reason?, drift? }",
+      "summary": "what this run found: { paths, reached, steps, findings }",
+      "cleanup": "the branch before and after the walk: { created, before, after, leftover, unchanged }"
+    },
+    "fields": {
+      "step": "1..n, contiguous across the three paths",
+      "path": "create-published | create-draft | unpaid — a state, not a happy path",
+      "route": "where the step happened; run-specific ids are normalised to <instance> and <token>",
+      "action": "fill | click | assert",
+      "values": "verbatim what was entered; {} for clicks and asserts",
+      "shot": "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png",
+      "expect": "the assertion this step proved, in words",
+      "ok": "whether it held; `actual` carries what was measured when it did not",
+      "actual": "only present when ok is false",
+      "sha256": "the digest of the image this run wrote — evidence of the run, not an invariant",
+      "w": "the image's pixel width",
+      "h": "the image's pixel height"
+    },
+    "determinism": "steps and paths carry no timestamp, id or absolute path, and two runs on an unchanged tree write them identically — that is what `pnpm demo:flow:check` diffs, byte for byte. `summary`, `seed`, `cleanup` and each step's `sha256` are measurements of one run or of a shared branch, so the diff excludes them: screenshots are compared by the geometry in `w`/`h`, because a page prints a minted invitation token, mounts the provider's live frame and seeds placeholder art from a row's id — none of which is byte-stable."
+  },
+  "base": "http://localhost:3411",
+  "paths": [
+    {
+      "path": "create-published",
+      "terminal": "the published relationship detail at /dashboard/relationships/<instance> (status published, pairing not named)",
+      "reached": true,
+      "steps": 19
+    },
+    {
+      "path": "create-draft",
+      "terminal": "the draft reopened at /dashboard/relationships/<instance>",
+      "reached": true,
+      "steps": 11
+    },
+    {
+      "path": "unpaid",
+      "terminal": "the abandoned payment at /dashboard/relationships/<instance> — completion gate null, method missing, sealed null",
+      "reached": true,
+      "steps": 24
+    }
+  ],
+  "findings": [
+    {
+      "n": 1,
+      "path": "create-published",
+      "title": "the app shell draws a Logout row to a signed-out visitor",
+      "shot": "docs/qa-demo-flow/create-published/09-no-logout-for-stranger-1440.png",
+      "expected": "no sign-out control before a session exists",
+      "actual": "the sidebar's `Logout` row renders on the signed-out create stages",
+      "note": "components/layout/sidebar.tsx renders the row unconditionally at the foot of the rail; pressing it on a signed-out page has nothing to end."
+    },
+    {
+      "n": 2,
+      "path": "create-published",
+      "title": "the invitation link is composed with a fixed origin, not the request's",
+      "shot": "docs/qa-demo-flow/create-published/16-invitation-sent-1440.png",
+      "expected": "a link on http://localhost:3411",
+      "actual": "http://localhost:3000/invite/<token>",
+      "note": "composed from DEFAULT_BASE_URL in lib/flow/email.ts (http://localhost:3000); a demo served on any other port prints a link that does not resolve to the tree under test."
+    },
+    {
+      "n": 3,
+      "path": "create-published",
+      "title": "the relationship detail does not name either party, and is headed by the template's title",
+      "shot": "docs/qa-demo-flow/create-published/19-detail-names-the-pairing-1440.png",
+      "expected": "the detail naming Jordan Case and Sam Wren, under the title the creator gave the relationship",
+      "actual": "h1 reads \"Relationship Basics\" (the template); the names exist only in the RSC payload — status published",
+      "note": "the listing row for the same record prints \"Demo walk — published\" and its counterparty's name, so the two surfaces disagree about what the record is called and who is in it."
+    },
+    {
+      "n": 4,
+      "path": "create-draft",
+      "title": "create-draft: the relationship detail is headed by the template's name, not the draft's own title",
+      "shot": "docs/qa-demo-flow/create-draft/30-draft-own-title-1440.png",
+      "expected": "\"Demo walk — draft\" on the detail page",
+      "actual": "WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.16.0 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. Relationship Basics Five Asp",
+      "note": "the listing row prints the draft's own title, and the detail prints the template's (\"Relationship Basics\") — the row and the page disagree about what the record is called."
+    },
+    {
+      "n": 5,
+      "path": "unpaid",
+      "title": "unpaid: the lapsed state is not reachable from a browser run",
+      "shot": "docs/qa-demo-flow/unpaid/54-abandoned-payment-1440.png",
+      "expected": "the relationship in its `expired` state, with the screen it draws",
+      "actual": "the run ends at the abandoned-payment state; nothing in the UI advances the clock",
+      "note": "`lib/relationship/status.ts` makes `published → expired` a **system** move driven by `lib/flow/payment-jobs.ts` against `current_period_end`. Driving it needs either a job run against a row whose window has passed (a seeded expired fixture, or `expired_at` written by the job) or a clock seam this tree does not have. This is a card for the lead, not a defect the driver can patch."
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "path": "create-published",
+      "route": "/",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/01-signed-out-start-1440.png",
+      "expect": "the walk starts signed out, on a page that is not the app shell's gated surface",
+      "ok": true,
+      "sha256": "d1b77883360083a6bb14edfa6c99ee566ef7eee5260e60f285f72e5451ab0697",
+      "w": 1440,
+      "h": 5655
+    },
+    {
+      "step": 2,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/02-stage-1-details-1440.png",
+      "expect": "stage 1 renders its seven fields and the five-cell rail reads Stage 1 of 5",
+      "ok": true,
+      "sha256": "d6b24b2fec6f3aa67833924032ab451a95917ccc93909d12056b3511792e322e",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 3,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "fill",
+      "values": {
+        "title": "Demo walk — published",
+        "initiatorFirst": "Jordan",
+        "initiatorLast": "Case",
+        "counterpartyFirst": "Sam",
+        "counterpartyLast": "Wren",
+        "email": "sam.wren@demo.alignsynch.test",
+        "description": "A demo walk of the create flow, published end to end."
+      },
+      "shot": "docs/qa-demo-flow/create-published/03-typed-the-details-1440.png",
+      "expect": "every field holds what was typed",
+      "ok": true,
+      "sha256": "6c18cdbe7eca39d8832e84622075fe17b7a3e85116573c432d1b3392f178f45e",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 4,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/04-stage-2-mode-1440.png",
+      "expect": "Continue goes to stage 2 with both choice groups drawn",
+      "ok": true,
+      "sha256": "bf80b2b414ac8b3e35bf87afc02a21601d38e66dcdf7b089599b8d2c3b89b60b",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 5,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {
+        "mode": "basic",
+        "alignmentSetting": "full"
+      },
+      "shot": "docs/qa-demo-flow/create-published/05-chose-mode-and-setting-1440.png",
+      "expect": "the Mode and the Setting are both selected",
+      "ok": true,
+      "sha256": "b3929be46475c2719e26de8d21378fcc089cf0aaacad89421dc9fccb660d6b88",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 6,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/aspects",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/06-stage-3-aspects-1440.png",
+      "expect": "stage 3 lists the template's Aspects",
+      "ok": true,
+      "sha256": "cdc767ad1808a2ee238815a8566d7a3104c006d7d389cc7923a36f9e613f70ec",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 7,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/07-stage-4-account-1440.png",
+      "expect": "stage 4 is the Account stage",
+      "ok": true,
+      "sha256": "84fd754074b872b834cebb6c9632fe756d36baa0ef263f31d3bdae2289297a9b",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 8,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/08-account-gate-at-stage-4-1440.png",
+      "expect": "a signed-out creator is asked for an account at stage 4 (the #704 gate), not before it",
+      "ok": true,
+      "sha256": "c0f3fa6790494f4365eb4429ac72be51e73374b7fa37ebe1d75a65bb481819c9",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 9,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/09-no-logout-for-stranger-1440.png",
+      "expect": "a signed-out visitor is not offered a sign-out control",
+      "ok": false,
+      "sha256": "c0f3fa6790494f4365eb4429ac72be51e73374b7fa37ebe1d75a65bb481819c9",
+      "w": 1440,
+      "h": 900,
+      "actual": "the rail draws Logout for a signed-out visitor"
+    },
+    {
+      "step": 10,
+      "path": "create-published",
+      "route": "/demo",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/10-demo-gate-1440.png",
+      "expect": "the demo gate answers /demo with a PIN field",
+      "ok": true,
+      "sha256": "d54d48f75d1ab25cee3aac6d4469b30d049efa0dda6327f2c47e3b79bd4e925a",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 11,
+      "path": "create-published",
+      "route": "/login",
+      "action": "click",
+      "values": {
+        "pin": "<DEMO_PIN>"
+      },
+      "shot": "docs/qa-demo-flow/create-published/11-demo-unlocked-1440.png",
+      "expect": "the PIN unlocks /login's three demo role buttons",
+      "ok": true,
+      "sha256": "9ff7da71a56ec3ca99a870e3bd2edb7fd983dd7ed6223c46cdcfe6671c625b1c",
+      "w": 1440,
+      "h": 1099
+    },
+    {
+      "step": 12,
+      "path": "create-published",
+      "route": "/assessment/instances/assessment-instance-avery-rowan",
+      "action": "click",
+      "values": {
+        "role": "initiator"
+      },
+      "shot": "docs/qa-demo-flow/create-published/12-signed-in-initiator-1440.png",
+      "expect": "the \"initiator\" role button signs this browser in",
+      "ok": true,
+      "sha256": "306d04296b248cf9b16e0e6ae8201cc6c1ed27f06c815edd24b9a20c7fd8cc72",
+      "w": 1440,
+      "h": 2945
+    },
+    {
+      "step": 13,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/13-stage-4-signed-in-1440.png",
+      "expect": "the creator returns to stage 4 signed in, with the review card drawn",
+      "ok": true,
+      "sha256": "a5ad7486d8ddafcf8b93bc6ed05f2c52536fad966ae05e9233e3fc4cadfd4996",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 14,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/14-published-account-confirmed-1440.png",
+      "expect": "stage 4 draws the confirmation for the signed-in creator, not the account form",
+      "ok": true,
+      "sha256": "a5ad7486d8ddafcf8b93bc6ed05f2c52536fad966ae05e9233e3fc4cadfd4996",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 15,
+      "path": "create-published",
+      "route": "/templates/relationship/relationship-basics/create/invite?instance=<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/15-stage-5-invite-1440.png",
+      "expect": "stage 5 offers Send and Continue and Continue as Draft",
+      "ok": true,
+      "sha256": "08a23260e1b49cc6460f50948169eaabb52b9727e92e0e6edb6c9afb5e43318f",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 16,
+      "path": "create-published",
+      "route": "/assessment/instances/<instance>/sent?invite=sent",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/16-invitation-sent-1440.png",
+      "expect": "Send and Continue lands on the Sent screen, which draws the invitation link itself",
+      "ok": true,
+      "sha256": "939ae34c876b7af2ddb826573632f198966bcb4b89968a1d6f3d6192eab35bab",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 17,
+      "path": "create-published",
+      "route": "/assessment/instances/<instance>/sent?invite=sent",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/17-sent-door-opened-1440.png",
+      "expect": "the Sent screen's door opens the record the send created",
+      "ok": true,
+      "sha256": "c729c5d9a6de82804c0a79c54c7a61692d43a3f6ab4f8318e140c96c70fd72b1",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 18,
+      "path": "create-published",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/18-published-relationship-detail-1440.png",
+      "expect": "the relationship detail reports the relationship as published",
+      "ok": true,
+      "sha256": "6440a0fcc3d3a00e526df2d02019bf9c0ccc8248a546386b332a7b4c43ed704a",
+      "w": 1440,
+      "h": 3528
+    },
+    {
+      "step": 19,
+      "path": "create-published",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-published/19-detail-names-the-pairing-1440.png",
+      "expect": "the relationship detail names the two parties",
+      "ok": false,
+      "sha256": "6440a0fcc3d3a00e526df2d02019bf9c0ccc8248a546386b332a7b4c43ed704a",
+      "w": 1440,
+      "h": 3528,
+      "actual": "neither \"Jordan Case\" nor \"Sam Wren\" is in the rendered text (WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.16.0 Settings A Recent Messages No messages Conversations will)"
+    },
+    {
+      "step": 20,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/20-signed-in-stage-1-1440.png",
+      "expect": "the draft walk starts signed in, on stage 1",
+      "ok": true,
+      "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 21,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/21-stage-1-details-1440.png",
+      "expect": "stage 1 renders its seven fields and the five-cell rail reads Stage 1 of 5",
+      "ok": true,
+      "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 22,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "fill",
+      "values": {
+        "title": "Demo walk — draft",
+        "initiatorFirst": "Riley",
+        "initiatorLast": "Nolan",
+        "counterpartyFirst": "Alex",
+        "counterpartyLast": "Moreau",
+        "email": "alex.moreau@demo.alignsynch.test",
+        "description": "A demo walk of the create flow, kept as a draft."
+      },
+      "shot": "docs/qa-demo-flow/create-draft/22-typed-the-details-1440.png",
+      "expect": "every field holds what was typed",
+      "ok": true,
+      "sha256": "50db97b6f55ed98f77a57210b24ef0624dc21c3ec88296ef0e838edeabc668ae",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 23,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/23-stage-2-mode-1440.png",
+      "expect": "Continue goes to stage 2 with both choice groups drawn",
+      "ok": true,
+      "sha256": "56ed9c632dd1fb53b57217572731046d5682e8585c0e1a78c7b6f84fb70262ff",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 24,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {
+        "mode": "basic",
+        "alignmentSetting": "soft"
+      },
+      "shot": "docs/qa-demo-flow/create-draft/24-chose-mode-and-setting-1440.png",
+      "expect": "the Mode and the Setting are both selected",
+      "ok": true,
+      "sha256": "eba565093004d924b73aea6a870882ec555eb27fbab3488b57f7ddcde693a0dc",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 25,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/aspects",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/25-stage-3-aspects-1440.png",
+      "expect": "stage 3 lists the template's Aspects",
+      "ok": true,
+      "sha256": "7e6fd679544432973afd80d758b69acce95ae7b91e500658febf5943e62d3dc4",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 26,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/26-stage-4-account-1440.png",
+      "expect": "stage 4 is the Account stage",
+      "ok": true,
+      "sha256": "21ec779f6669201f501b2953706aa05defcd7fb5ac39e489b07bba954d3c72dc",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 27,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/27-draft-account-confirmed-1440.png",
+      "expect": "stage 4 draws the confirmation for the signed-in creator, not the account form",
+      "ok": true,
+      "sha256": "6d2da40cb8bda571ebcbbc107e8f10f55221ad7ef476cc6626e74f0df75c379a",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 28,
+      "path": "create-draft",
+      "route": "/dashboard/relationships",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/28-draft-listed-1440.png",
+      "expect": "Continue as Draft lands on /dashboard/relationships with the draft listed by its own title",
+      "ok": true,
+      "sha256": "79a37e5b26be2e5bfca46308fe865ff6b2129fee935b8929f19f6c5a667041a3",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 29,
+      "path": "create-draft",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/29-draft-reopened-1440.png",
+      "expect": "the draft reopens in the editor",
+      "ok": true,
+      "sha256": "4ea416de156b943cc07af09e18c262299c27a2a0b1c5f90daed943ca3ae8e7aa",
+      "w": 1440,
+      "h": 3751
+    },
+    {
+      "step": 30,
+      "path": "create-draft",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/30-draft-own-title-1440.png",
+      "expect": "the relationship detail heads the draft with the title the creator gave it",
+      "ok": false,
+      "sha256": "4ea416de156b943cc07af09e18c262299c27a2a0b1c5f90daed943ca3ae8e7aa",
+      "w": 1440,
+      "h": 3751,
+      "actual": "the page reads \"WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support\" without \"Demo walk — draft\""
+    },
+    {
+      "step": 31,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/31-stage-1-details-1440.png",
+      "expect": "stage 1 renders its seven fields and the five-cell rail reads Stage 1 of 5",
+      "ok": true,
+      "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 32,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "fill",
+      "values": {
+        "title": "Demo walk — unpaid",
+        "initiatorFirst": "Devon",
+        "initiatorLast": "Park",
+        "counterpartyFirst": "Casey",
+        "counterpartyLast": "Ives",
+        "email": "casey.ives@demo.alignsynch.test",
+        "description": "A demo walk of the create flow, published on Advanced and left unpaid."
+      },
+      "shot": "docs/qa-demo-flow/unpaid/32-typed-the-details-1440.png",
+      "expect": "every field holds what was typed",
+      "ok": true,
+      "sha256": "3c7fe00c76509292aa5685361bbf142277bcfa7af18e105c4e2843cee18fe1b4",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 33,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/33-stage-2-mode-1440.png",
+      "expect": "Continue goes to stage 2 with both choice groups drawn",
+      "ok": true,
+      "sha256": "56ed9c632dd1fb53b57217572731046d5682e8585c0e1a78c7b6f84fb70262ff",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 34,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {
+        "mode": "advanced",
+        "alignmentSetting": "full"
+      },
+      "shot": "docs/qa-demo-flow/unpaid/34-chose-mode-and-setting-1440.png",
+      "expect": "the Mode and the Setting are both selected",
+      "ok": true,
+      "sha256": "6c926ec11c0cbdb115c683d06e69cd2a81a9ad171a2610f6e72106d712c01434",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 35,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create/aspects",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/35-stage-3-aspects-1440.png",
+      "expect": "stage 3 lists the template's Aspects",
+      "ok": true,
+      "sha256": "7e6fd679544432973afd80d758b69acce95ae7b91e500658febf5943e62d3dc4",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 36,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/36-stage-4-account-1440.png",
+      "expect": "stage 4 is the Account stage",
+      "ok": true,
+      "sha256": "9a3df66e3996d632a6eeb059522e51ef790da7de32494ebda76511e0a1624bb8",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 37,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/37-unpaid-account-confirmed-1440.png",
+      "expect": "stage 4 draws the confirmation for the signed-in creator, not the account form",
+      "ok": true,
+      "sha256": "f196499135a316c5fa08289ce7892860ebdfa647f4f0099be8e46785bab6540a",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 38,
+      "path": "unpaid",
+      "route": "/templates/relationship/relationship-basics/create/invite?instance=<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/38-advanced-trial-on-stage-5-1440.png",
+      "expect": "stage 5 names the Advanced trial and the plan walk before anything is sent",
+      "ok": true,
+      "sha256": "9131bcb682927347f0822b44264c59073af30b4be331dc5cdbb0def527aed7c1",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 39,
+      "path": "unpaid",
+      "route": "/assessment/instances/<instance>/sent?invite=sent",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/39-published-on-advanced-1440.png",
+      "expect": "publishing on Advanced opens the trial and leaves the relationship published",
+      "ok": true,
+      "sha256": "84b1e4e7e86e96e4d1b2a5b7da26e3a0f45273f4c6f361bf0645aac15b0eeedb",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 40,
+      "path": "unpaid",
+      "route": "/invite/<token>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/40-invitation-opened-1440.png",
+      "expect": "the counterparty opens the invitation and lands on the first of its three steps",
+      "ok": true,
+      "sha256": "6aeedec5b0ddb1deaa14f15fff68dda3e6f44338b9776a91cb0d4264cf54af05",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 41,
+      "path": "unpaid",
+      "route": "/invite/<token>?step=3",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/41-invitation-confirm-step-1440.png",
+      "expect": "step 3 is the confirmation, and a signed-out counterparty is asked for an account there",
+      "ok": true,
+      "sha256": "6b98a7d6acbe9c9d3278b611f4479aa26b6806756924ce2e5d88ce7a77f6fd0b",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 42,
+      "path": "unpaid",
+      "route": "/demo",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/42-demo-gate-1440.png",
+      "expect": "the demo gate answers /demo with a PIN field",
+      "ok": true,
+      "sha256": "d54d48f75d1ab25cee3aac6d4469b30d049efa0dda6327f2c47e3b79bd4e925a",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 43,
+      "path": "unpaid",
+      "route": "/login",
+      "action": "click",
+      "values": {
+        "pin": "<DEMO_PIN>"
+      },
+      "shot": "docs/qa-demo-flow/unpaid/43-demo-unlocked-1440.png",
+      "expect": "the PIN unlocks /login's three demo role buttons",
+      "ok": true,
+      "sha256": "a373089bb5af788d34f985f7c4e01fda0188da23741e2092b7ab1b452afc6646",
+      "w": 1440,
+      "h": 1099
+    },
+    {
+      "step": 44,
+      "path": "unpaid",
+      "route": "/assessment/instances/assessment-instance-avery-rowan",
+      "action": "click",
+      "values": {
+        "role": "counterparty"
+      },
+      "shot": "docs/qa-demo-flow/unpaid/44-signed-in-counterparty-1440.png",
+      "expect": "the \"counterparty\" role button signs this browser in",
+      "ok": true,
+      "sha256": "77b5b7822d9b253750d4eabd20c8e496e76668299b9664c005e88e1777b1253d",
+      "w": 1440,
+      "h": 2787
+    },
+    {
+      "step": 45,
+      "path": "unpaid",
+      "route": "/dashboard",
+      "action": "click",
+      "values": {
+        "confirm": "accepted"
+      },
+      "shot": "docs/qa-demo-flow/unpaid/45-counterparty-claimed-1440.png",
+      "expect": "the counterparty confirms and the claim binds their account to the seat",
+      "ok": true,
+      "sha256": "938ff63c63cbc889363e406a27224d2328dc3ae5089a0d961b7cf5a0ff0979f4",
+      "w": 1440,
+      "h": 1346
+    },
+    {
+      "step": 46,
+      "path": "unpaid",
+      "route": "/demo",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/46-demo-gate-1440.png",
+      "expect": "the demo gate answers /demo with a PIN field",
+      "ok": true,
+      "sha256": "d54d48f75d1ab25cee3aac6d4469b30d049efa0dda6327f2c47e3b79bd4e925a",
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 47,
+      "path": "unpaid",
+      "route": "/login",
+      "action": "click",
+      "values": {
+        "pin": "<DEMO_PIN>"
+      },
+      "shot": "docs/qa-demo-flow/unpaid/47-demo-unlocked-1440.png",
+      "expect": "the PIN unlocks /login's three demo role buttons",
+      "ok": true,
+      "sha256": "5df14dd0cfa868af2cd8ee1cd8677688974136a1966a7cc07db15eae58241159",
+      "w": 1440,
+      "h": 1099
+    },
+    {
+      "step": 48,
+      "path": "unpaid",
+      "route": "/assessment/instances/assessment-instance-avery-rowan",
+      "action": "click",
+      "values": {
+        "role": "initiator"
+      },
+      "shot": "docs/qa-demo-flow/unpaid/48-signed-in-initiator-1440.png",
+      "expect": "the \"initiator\" role button signs this browser in",
+      "ok": true,
+      "sha256": "e00bf46e3b7db307b37b8e10dd2d0de1c9ad6e1410f01d54287b573b3f72978d",
+      "w": 1440,
+      "h": 2945
+    },
+    {
+      "step": 49,
+      "path": "unpaid",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/49-payer-payment-state-1440.png",
+      "expect": "the payer's relationship detail draws the payment state the publish left it in",
+      "ok": true,
+      "sha256": "2c32c4afbd991e1db1fb9a25e60b931e02565d8f7ae4bd9ae68f5e1288fc0c65",
+      "w": 1440,
+      "h": 3588
+    },
+    {
+      "step": 50,
+      "path": "unpaid",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/50-capture-dialog-opened-1440.png",
+      "expect": "the payer can open the \"Add a payment method\" dialog",
+      "ok": true,
+      "sha256": "5a361bc6f8e28fad2cae33cfdc35cd40abbf12e932b9438b8a64e936c8efc70c",
+      "w": 1440,
+      "h": 3588
+    },
+    {
+      "step": 51,
+      "path": "unpaid",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/51-capture-dialog-1440.png",
+      "expect": "the capture dialog draws the plans and the trial sentence before any card field",
+      "ok": true,
+      "sha256": "5a361bc6f8e28fad2cae33cfdc35cd40abbf12e932b9438b8a64e936c8efc70c",
+      "w": 1440,
+      "h": 3588
+    },
+    {
+      "step": 52,
+      "path": "unpaid",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/52-stripe-test-mode-frame-1440.png",
+      "expect": "the capture runs in Stripe test mode and mounts the provider's own card frame",
+      "ok": true,
+      "sha256": "2f16b1bbfeb5792c2f499262dc58ae3250588ea124c4fae9a5b9ba1a6b92a524",
+      "w": 1440,
+      "h": 3588
+    },
+    {
+      "step": 53,
+      "path": "unpaid",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/53-test-mode-label-1440.png",
+      "expect": "the frame is labelled as the provider's test mode",
+      "ok": true,
+      "sha256": "0a5eaa91b2e1ebad8cd95747d2a39ef80c9c60d969729ef49dd62a6e4d78f9b0",
+      "w": 1440,
+      "h": 3588
+    },
+    {
+      "step": 54,
+      "path": "unpaid",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/unpaid/54-abandoned-payment-1440.png",
+      "expect": "leaving the payment step unresolved leaves the relationship owing a method, on a screen that says so",
+      "ok": true,
+      "sha256": "2c32c4afbd991e1db1fb9a25e60b931e02565d8f7ae4bd9ae68f5e1288fc0c65",
+      "w": 1440,
+      "h": 3588
+    }
+  ],
+  "seed": {
+    "attempted": false,
+    "reason": "db:seed would refuse: 5 assessment record(s) the bundle does not author",
+    "drift": [
+      "474f6fd6-18d9-432d-a105-2770ae574778",
+      "9f24e5af-1224-4d42-b750-d1bb083d65f4",
+      "a6064ab9-78ea-438a-9fc5-381afa3023fc",
+      "assessment-788a1a9d-886b-459c-8650-17183fd24003",
+      "e532be3c-0da4-4121-958d-6c869adbb81d"
+    ]
+  },
+  "summary": {
+    "paths": 3,
+    "reached": 3,
+    "steps": 54,
+    "findings": 5
+  },
+  "cleanup": {
+    "created": {
+      "records": 3,
+      "relationships": 3,
+      "accounts": 0
+    },
+    "before": {
+      "record": 38,
+      "relationship": 4,
+      "session": 4,
+      "party": 8,
+      "demo_account": 3
+    },
+    "after": {
+      "record": 38,
+      "relationship": 4,
+      "session": 4,
+      "party": 8,
+      "demo_account": 3
+    },
+    "leftover": {
+      "records": 0,
+      "relationships": 0,
+      "sessions": 0
+    },
+    "unchanged": true
+  }
+}
