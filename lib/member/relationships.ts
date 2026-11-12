@@ -75,6 +75,7 @@ import {
 } from "@/lib/db/rows";
 import { emailLooksDeliverable } from "@/lib/flow/resend";
 import { invitationLink } from "@/lib/flow/email";
+import { RELATIONSHIPS_PATH } from "@/lib/flow/paths";
 import { hashToken, mintToken } from "@/lib/flow/tokens";
 import { readCompletionGate, type CompletionGate } from "@/lib/member/payment";
 import { freeSlug } from "@/lib/member/templates";
@@ -100,19 +101,13 @@ import {
   type PublishView,
 } from "@/lib/member/publish-basis";
 
-/** Where the relationship screens live. One place, because a redirect and a link agree. */
-export const MEMBER_RELATIONSHIPS_PATH = "/dashboard/relationships";
-
 /**
- * One relationship's own screen (#620).
+ * Where the relationship screens live. One place, because a redirect and a link agree.
  *
- * The only surface that configures or publishes a relationship, so both the card's title and its
- * `Publish Assessment` action point here — a path spelled in two components would be two copies of
- * one route, which is the drift `lib/flow/paths.ts` exists to prevent.
+ * The literal lives in `lib/flow/paths.ts` (`RELATIONSHIPS_PATH`) — that module is pure, so the
+ * card can import the child path from it without dragging `pg` into the browser graph (#841).
  */
-export function memberRelationshipPath(relationshipId: string): string {
-  return `${MEMBER_RELATIONSHIPS_PATH}/${relationshipId}`;
-}
+export const MEMBER_RELATIONSHIPS_PATH = RELATIONSHIPS_PATH;
 
 /**
  * The pool in the shape `lib/relationship/enforcement.ts` reads through.

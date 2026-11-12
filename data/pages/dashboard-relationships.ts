@@ -18,10 +18,22 @@
  *
  *   list       what the screen is, and what a relationship is
  *   columns    the table's headings, in the order the table draws them
+ *   controls   the toolbar: the search field's placeholder, the two selects, the view toggle
+ *   tabs       the six filters, in the order the rail draws them (`Drafts` filters `draft`)
  *   status     the seven lifecycle words, as the badges print them
  *   view       what the invitation's state reads as on a row (`live`, `expired`, `claimed`, …)
+ *   card       the card's own words, including the per-row menu's four acts and their reasons
  *   empty      no relationships yet
+ *   empty-filter  rows exist, none matching the search or the tab
  *   unreadable the database did not answer
+ *
+ * **The page is the record list My Quizzes draws (#841 part 2).** The header carries the create
+ * action, the toolbar carries the search, the two selects and the grid/list toggle, six status
+ * tabs filter the rows, and each row carries one primary action plus a menu — the shape
+ * `components/my-quizzes/my-quizzes.tsx` ships, over a relationship's stored lifecycle instead of
+ * a quiz's publication state. The approved artifact is
+ * `docs/review/artifacts/mockup-relationships-list-v1.html`; where this file and that artifact
+ * disagree, the artifact wins.
  *
  * **A status is drawn, never derived here.** `relationship.status` is stored (`0030`), the
  * invitation's state is `inviteStateOf()` over its two instants, and the two are one value on the
@@ -31,8 +43,7 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
   heading: "My Relationships",
-  subtitle:
-    "Every relationship you're a party to, newest first — the ones you started and the ones you were invited into. A draft is a configuration nobody has been invited to yet; publishing one opens the session and mints the invitation, and only the person who started it can publish.",
+  subtitle: "Every relationship you are part of, on both sides of the invitation",
   items: [
     { id: "aspects", label: "{count} Aspects" },
     { id: "open", label: "Open" },
@@ -54,6 +65,45 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "invited", label: "Invited" },
         { id: "created", label: "Started" },
         { id: "open", label: "Open" },
+      ],
+    },
+    {
+      /**
+       * #841 part 2 — the toolbar, verbatim from the approved artifact
+       * (`docs/review/artifacts/mockup-relationships-list-v1.html`).
+       *
+       * The two selects are the two real controls: the status one is the same filter the tabs
+       * write, and the sort one orders the rows the read already returned by `createdAt` — a
+       * client-side order over rows in hand, never a claim that the SQL sorts. There is no
+       * "Most popular" or "Highest revenue" here because the read carries neither.
+       */
+      id: "controls",
+      items: [
+        { id: "search", label: "Search your relationships…" },
+        { id: "status-label", label: "Status" },
+        { id: "all-statuses", label: "All statuses" },
+        { id: "sort-label", label: "Sort by" },
+        { id: "newest", label: "Newest" },
+        { id: "oldest", label: "Oldest" },
+        { id: "grid", label: "Grid view" },
+        { id: "list", label: "List view" },
+      ],
+    },
+    {
+      /**
+       * The six tabs the owner approved. Five are stored statuses (`draft`, `published`,
+       * `active`, `complete`, `expired`) — `running` reads stored `active` — and `all` is the
+       * default. `Drafts` is the tab's word, `Draft` is the badge's: one is a filter, the other
+       * is a state, and `data/pages` keeps both.
+       */
+      id: "tabs",
+      items: [
+        { id: "all", label: "All" },
+        { id: "draft", label: "Drafts" },
+        { id: "published", label: "Published" },
+        { id: "active", label: "Running" },
+        { id: "complete", label: "Complete" },
+        { id: "expired", label: "Expired" },
       ],
     },
     {
@@ -81,6 +131,13 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
      * Analysis`) and the note under them: the acts exist now, on the relationship's own screen,
      * and a card that cannot read the seal is the wrong place to draw them. `complete-relationship`
      * is the initiator's primary once the relationship has a session.
+     *
+     * #841 part 2 — the card keeps one primary act in its action row and moves the secondary ones
+     * into the per-row menu, exactly as the approved artifact draws it. `open-assessment` is the
+     * row's secondary while a session exists and the menu's disabled item — with
+     * `open-assessment-why` — while it does not; `view-relationship` and `copy-invite` are the
+     * other two acts, and `archive` is drawn disabled with its reason because no delete or
+     * archive path exists (#743). `view` is the footer's own control, the one My Quizzes draws.
      */
     {
       id: "card",
@@ -97,14 +154,32 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "role-counterparty", label: "Counterparty" },
         { id: "aspects", label: "{count} Aspects" },
         { id: "open-assessment", label: "Open Assessment" },
+        { id: "open-assessment-why", label: "No session yet — publish first" },
         { id: "publish-assessment", label: "Publish Assessment" },
         /**
          * #706 — the card's primary action for the seat that cannot publish. The destination is
          * the same screen; only the verb is honest for a reader who will not be writing.
          */
-        { id: "open-relationship", label: "View Relationship" },
+        { id: "open-relationship", label: "Open Relationship" },
         /** #739 — the initiator's primary once there is a session: the screen with the two acts. */
-        { id: "complete-relationship", label: "Complete & open the Gap" },
+        { id: "complete-relationship", label: "Complete Relationship" },
+        /** #841 part 2 — the three controls the per-row menu and the footer carry. */
+        { id: "view", label: "View" },
+        { id: "actions", label: "Actions" },
+        { id: "view-relationship", label: "View Relationship" },
+        { id: "copy-invite", label: "Copy invitation link" },
+        { id: "copy-invite-why", label: "Nothing sent yet" },
+        /**
+         * #220 — the link exists only at mint time (`invitationLink` from the publish outcome),
+         * so a row that was sent has nothing here to copy. The menu says so instead of offering
+         * a copy that would copy nothing.
+         */
+        {
+          id: "copy-invite-why-sent",
+          label: "The link is shown once, when it is sent — open the relationship",
+        },
+        { id: "archive", label: "Archive" },
+        { id: "archive-why", label: "Not built yet (#743)" },
         { id: "last-session", label: "Started {when}" },
       ],
     },
@@ -124,6 +199,8 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
       heading: "Start a relationship",
       body: "Pick one of your templates. The relationship gets its own copy of the Aspects, so tuning them here never changes the template you started from.",
       items: [
+        /** #841 part 2 — the header action's word, and the empty state's. */
+        { id: "start", label: "Start a relationship" },
         { id: "choose", label: "Template" },
         { id: "submit", label: "Start the relationship" },
         { id: "starting", label: "Starting…" },
@@ -146,6 +223,23 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
       id: "empty",
       heading: "No relationships yet",
       body: "Nobody has started one with you, and you have not started one. Start from a template you own — its Aspects are yours to tune until you publish it — or open the invitation somebody sends you, and it appears here.",
+    },
+    /**
+     * #841 part 2 — the second empty state, and the one the artifact draws: a list that has rows
+     * but none matching what the reader asked for. Two sentences, because the two ways to get here
+     * are different: a search that matched nothing, and a tab with nothing in it.
+     */
+    {
+      id: "empty-filter",
+      heading: "No relationships found",
+      items: [
+        {
+          id: "search",
+          label:
+            "Nothing matches “{query}”. Try a different search, or clear it to see all {count}.",
+        },
+        { id: "status", label: "You have no {status} relationships yet. Try another tab." },
+      ],
     },
     {
       id: "unreadable",

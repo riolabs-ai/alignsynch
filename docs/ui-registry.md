@@ -715,7 +715,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (15): `affiliate-dashboard.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `payment-capture-dialog.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - files (16): `affiliate-dashboard.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `payment-capture-dialog.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
   - routes (3): `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 
