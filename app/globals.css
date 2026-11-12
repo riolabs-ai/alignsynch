@@ -322,6 +322,50 @@ html:has(.home-anchors) {
 }
 
 /*
+ * The public Templates catalogue's two sticky bars (#889) — the same derivation as the block
+ * above, for the same reason, with this page's own menu height.
+ *
+ * `/relationship-types` draws the shared marketing header (sticky, `--site-header-height`) and its
+ * own realm menu, which sticks directly under it at `top-[var(--site-header-height)]`. Both cover
+ * the top of the viewport, so an anchor that lands a target at `top: 0` hides the first nine rem of
+ * it: the realm menu's seven anchors are the page's main navigation, and the first click is exactly
+ * where a retyped per-section number goes wrong. So the offset is a function of the two bars, and
+ * `--site-header-height` is the same variable the header's own `h-20` row is measured by.
+ *
+ * The menu row is 48px at every width (`min-h-12` in `components/templates/template-realm-nav.tsx`),
+ * unlike the home page's 52/48 split, so there is one value here and no breakpoint override — and
+ * if the row's height changes, this number is what changes with it.
+ *
+ * Targets: the seven realm headings (`data-templates-realm`) and the catalogue section itself
+ * (`data-templates-catalogue`), which is where the menu's `All` row lands. The explainer above the
+ * menu carries its own `scroll-mt` in the component, because when it is the target the menu is
+ * still below the viewport top and is not covering anything.
+ *
+ * `scroll-behavior` lives on `html`, so the page asks for it with `:has()` rather than by mutating
+ * the root element from a client component — a jump link needs no JavaScript. `prefers-reduced-motion`
+ * restores the instant jump.
+ */
+.templates-anchors {
+  --templates-nav-height: 3rem;
+  --templates-anchor-offset: calc(var(--site-header-height) + var(--templates-nav-height) + 0.5rem);
+}
+
+.templates-anchors [data-templates-realm],
+.templates-anchors [data-templates-catalogue] {
+  scroll-margin-top: var(--templates-anchor-offset);
+}
+
+html:has(.templates-anchors) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.templates-anchors) {
+    scroll-behavior: auto;
+  }
+}
+
+/*
  * The marketing hero's ground (#143, home v2). A gradient is a palette decision, so it lives
  * here in the token layer and not in a component: `scripts/brand-classes.mjs` bans a
  * `bg-gradient-*` utility on purpose, because two stops typed into a component are two colours

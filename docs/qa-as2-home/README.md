@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › AS2 home visual QA · prev [AS2 redesign — asset sources and credits](../specs/spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [Home review comments — the logo](../qa-home-comments/README.md)
+[Docs hub](../README.md) › **Product** › AS2 home visual QA · prev [AS2 templates redesign — source notes](../specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md) · next [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md)
 
 <!-- docs-nav:end -->
 
@@ -91,6 +91,6 @@ to settle, and reads where the target landed (`measurements.json`).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › AS2 home visual QA · prev [AS2 redesign — asset sources and credits](../specs/spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [Home review comments — the logo](../qa-home-comments/README.md)
+[Docs hub](../README.md) › **Product** › AS2 home visual QA · prev [AS2 templates redesign — source notes](../specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md) · next [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md)
 
 <!-- docs-nav:end -->
