@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**132 documents in 9 sections.** Every page carries the same nav block, generated
+**133 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
