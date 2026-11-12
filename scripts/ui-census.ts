@@ -240,6 +240,12 @@ export const MIN_LIST_SURFACES = 30;
  */
 export const NON_EMPTY_LISTS: readonly NonEmptyList[] = [
   {
+    file: "components/admin/growth-console.tsx",
+    receiver: "model.plans",
+    reason:
+      "#920 — the plan series of one chart, and `zGrowthModel.plans` is `.min(1)`: a model with no plan does not parse, so `readGrowthModel()` cannot hand this component one and the page draws its unreadable panel instead. A bordered empty block inside a chart frame would be a second failure panel for a state the schema already refuses",
+  },
+  {
     file: "components/admin/docs/docs-hub.tsx",
     receiver: "sections",
     reason:

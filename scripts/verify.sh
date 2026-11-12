@@ -479,6 +479,21 @@ if [ "$LANE" != "docs" ]; then
     skip_step "data:check" "no data:check script in package.json"
   fi
 
+  # The growth model (#920). `data/demo/growth-model.json` is generated from
+  # `content/growth-model.ts` by `pnpm growth`, and every number `/admin/growth` charts comes out of
+  # it — so a parameter edited without regenerating is a page describing a business the code no
+  # longer computes, and nothing above can see it: `typecheck` is happy, `data:check` has no
+  # invariant over the model, and the JSON parses. The step regenerates the model from the committed
+  # file's own parameters and diffs field by field, naming the first path that moved. ~0.6 s.
+  # It runs in the content lane because that is the lane a model or fixture edit classifies into —
+  # and in every other non-docs lane for the reason the steps above run everywhere: the content is
+  # `content/` + `data/`, the generator is `scripts/`, and the page is `app/`.
+  if has_script "growth:check"; then
+    run_step "growth:check (data/demo/growth-model.json is what this tree generates)" pnpm growth:check || fail
+  else
+    skip_step "growth:check" "no growth:check script in package.json"
+  fi
+
   # The demo dataset, end to end: seed it, drive the app, diff against
   # `data/verify/demo-expectations.json`. It is **not** a CI step — CI has no database and no
   # server — so the step runs in `--gate` mode: a full, hard check when the environment can

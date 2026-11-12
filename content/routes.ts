@@ -35,6 +35,9 @@ const STATIC_ROUTES = [
   // already walks. Its document route is a catch-all and lives in `DYNAMIC_ROUTES` below.
   "/admin/docs",
   "/admin/gaps",
+  // #920 — the growth model: 36 cohorts on the way to a $3M run-rate, charted from one committed
+  // artifact (`data/demo/growth-model.json`), with the sampled operational set beside it.
+  "/admin/growth",
   "/admin/health",
   "/admin/instances",
   // #665 — the console's review shelf: published artifacts, their to-dos and their feedback.

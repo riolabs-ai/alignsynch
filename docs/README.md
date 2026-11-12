@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**132 documents in 9 sections.** Every page carries the same nav block, generated
+**134 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -32,11 +32,11 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Product](#product) — 36 documents
-- [Operations](#operations) — 9 documents
+- [Operations](#operations) — 10 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 19 documents
-- [Records & QA](#records-qa) — 21 documents
+- [Records & QA](#records-qa) — 22 documents
 
 ## Start here
 
@@ -137,6 +137,7 @@ Deploying, releasing, demoing and running the fleet.
 - [`BRANCH-TRIAGE.md`](BRANCH-TRIAGE.md) — **Branch triage** — Which of the non-main heads is safe, and on what evidence?
 - [`DEMO.md`](DEMO.md) — **The demo** — How is the demo branch built, reset and bundled?
 - [`DEMO-AUTH.md`](DEMO-AUTH.md) — **Demo auth** — How do the demo roles and the PIN gate work?
+- [`GROWTH-MODEL.md`](GROWTH-MODEL.md) — **The growth model** — Where does the $3M demonstration business come from, and how is it proven?
 - [`RESEND-INBOUND.md`](RESEND-INBOUND.md) — **Resend inbound** — How do bounces, complaints and suppression marks reach us?
 - [`P3-EXIT.md`](P3-EXIT.md) — **P3 exit record** — Did bulk generation meet its gate, and with what numbers?
 
@@ -210,6 +211,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-lockup-2rem/README.md`](qa-lockup-2rem/README.md) — **Lockup 2rem** — Is the lockup 2rem in every expanded-header viewport?
 - [`qa-noun-crud/README.md`](qa-noun-crud/README.md) — **Templates and relationships after creation** — Can a template be revised and retired, and does a bound relationship keep the version it was answered under?
 - [`qa-recharts-3/README.md`](qa-recharts-3/README.md) — **recharts 3** — Do the pie labels still render after the recharts 3 bump?
+- [`qa-rel-detail-edit/README.md`](qa-rel-detail-edit/README.md) — **Relationship detail — the edit form is asked for** — Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?
 - [`qa-stage5/README.md`](qa-stage5/README.md) — **Stage 5, both states** — Does stage 5 offer the payment walk and send/draft instead of a band with no action?
 - [`qa-swiper-12/README.md`](qa-swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa-template-catalogue/README.md`](qa-template-catalogue/README.md) — **Template catalogue** — What do the catalogue pages look like from the AlignSynch build?

@@ -410,6 +410,11 @@
           "question": "How do the demo roles and the PIN gate work?"
         },
         {
+          "path": "GROWTH-MODEL.md",
+          "title": "The growth model",
+          "question": "Where does the $3M demonstration business come from, and how is it proven?"
+        },
+        {
           "path": "RESEND-INBOUND.md",
           "title": "Resend inbound",
           "question": "How do bounces, complaints and suppression marks reach us?"
@@ -701,6 +706,11 @@
           "path": "qa-recharts-3/README.md",
           "title": "recharts 3",
           "question": "Do the pie labels still render after the recharts 3 bump?"
+        },
+        {
+          "path": "qa-rel-detail-edit/README.md",
+          "title": "Relationship detail — the edit form is asked for",
+          "question": "Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?"
         },
         {
           "path": "qa-stage5/README.md",
