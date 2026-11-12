@@ -31,7 +31,7 @@ import { NextResponse } from "next/server";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { resolveTemplateHandle } from "@/lib/db/template-library";
-import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
+import { TEMPLATE_LIBRARY_PATH, relationshipTemplatePath } from "@/lib/flow/paths";
 import { setTemplateStatus } from "@/lib/flow/templates";
 import { parseRealmFilter } from "@/components/assessment-flow/template-card";
 import { parseLibraryStatus, parseLibraryView } from "@/lib/flow/template-library";
@@ -82,6 +82,21 @@ export async function POST(
   const result = await setTemplateStatus(handle.id, user.userId, status);
   if (!result.ok) {
     return NextResponse.redirect(libraryUrl(request, form, { problem: result.code }), 303);
+  }
+
+  /**
+   * **One extra destination, not one extra write (#870).** The create flow's stage 1 offers a
+   * one-click publish to the author of a template it cannot copy, and it has to come back to that
+   * stage rather than to the library: the person is mid-flow, not browsing. The value is a
+   * validated enum — `create` or nothing — and the address is rebuilt here from the slug, so this
+   * is not a `return`-URL parameter and cannot be pointed anywhere a caller likes.
+   */
+  const goBack = form.get("return") === "create";
+  if (goBack) {
+    return NextResponse.redirect(
+      new URL(`${relationshipTemplatePath(handle.slug)}/create`, request.url),
+      303,
+    );
   }
 
   const landed = status === "archived" ? "archived" : "unarchived";

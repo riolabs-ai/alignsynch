@@ -51,6 +51,7 @@ export function InviteWalk({
   copy,
   draft,
   account,
+  accountPlan,
   initialStep,
 }: {
   copy: PageCopy;
@@ -58,6 +59,19 @@ export function InviteWalk({
   draft: CreateDraft;
   /** The signed-in confirmation for the walk's account panel (#825). */
   account: ReactNode;
+  /**
+   * What the account already pays for (#870), when the page measured it.
+   *
+   * The walk's first panel used to always be the plan radio group, which asks somebody who is
+   * already on a paid tier to buy again. With this prop the panel becomes a **summary** — the tier's
+   * own name and the entitlement sentence (Advanced Mode is included) — and the walk starts at the
+   * decision it actually has left, which is the account, the method and the confirm.
+   *
+   * Absent means "not measured", and the panel is the radio group: a rendered test with no database
+   * must not be shown a plan summary nobody read. Nothing here charges either way — that is the
+   * owner's rule and `tests/payment-flow.test.ts` pins it.
+   */
+  accountPlan?: { readonly name: string; readonly entitled: boolean };
   /** Where the walk starts. Only a test passes this: the page always starts at the plan. */
   initialStep?: PayFlowStep;
 }) {
@@ -77,17 +91,42 @@ export function InviteWalk({
 
   /** The confirmation's recap: the plan's own name from the fixture, or the fixture's dash. */
   function planLabel(): string {
+    // A measured account answers with the tier it already holds (#870): the walk drew no radio
+    // group, so there is no chosen id to print.
+    if (accountPlan !== undefined && accountPlan.entitled) return accountPlan.name;
     if (plan === null) return itemLabel(review, "none");
     return `${itemLabel(plans, plan)} · ${itemLabel(plans, `${plan}-price`)}${itemLabel(plans, "per")}`;
   }
+
+  /** Is the first panel a summary of what the account already has, rather than a choice? */
+  const planIncluded = accountPlan !== undefined && accountPlan.entitled;
 
   const panels: Record<PayFlowStep, ReactNode> = {
     plan: (
       <>
         <p className={MUTED}>{sectionBody(plans)}</p>
-        <div ref={plansRef}>
-          <PlanChoices copy={copy} initial={plan ?? undefined} />
-        </div>
+        {/*
+         * A measured, already-paying account gets a **summary**, not the radio group (#870).
+         * Asking somebody on a paid tier to choose a plan is the upsell bug in reverse: the walk
+         * would be selling a tier they already hold, and the confirm panel would then print
+         * "—" for a plan they never picked. The words are the fixture's; `accountPlan.name` is
+         * the entitlement's own tier name, so a renamed tier cannot leave a stale label here.
+         */}
+        {planIncluded ? (
+          <div data-pay-plan-included="true">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {itemLabel(plans, "included-plan-label")}
+            </p>
+            <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">{accountPlan?.name}</p>
+            <p className={`mt-2 ${SMALL}`}>
+              {fillLabel(itemLabel(plans, "included"), { plan: accountPlan?.name ?? "" })}
+            </p>
+          </div>
+        ) : (
+          <div ref={plansRef}>
+            <PlanChoices copy={copy} initial={plan ?? undefined} />
+          </div>
+        )}
         <p className={SMALL}>{itemLabel(plans, "trial")}</p>
         <p className={SMALL}>{itemLabel(plans, "add-method-note")}</p>
         <button
