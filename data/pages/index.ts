@@ -17,6 +17,9 @@ import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { adminAuditPageCopy } from "./admin-audit";
 import { adminBillingPageCopy } from "./admin-billing";
 import { adminBroadcastPageCopy } from "./admin-broadcast";
+// #892 — the documentation home and one document of the tree under `docs/`.
+import { adminDocPageCopy } from "./admin-docs-document";
+import { adminDocsPageCopy } from "./admin-docs";
 import { adminGapsPageCopy } from "./admin-gaps";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
@@ -88,6 +91,11 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/broadcast": adminBroadcastPageCopy,
   // #505 — the billing control screen: one row per relationship, and the owner's comp.
   "/admin/billing": adminBillingPageCopy,
+  // #892 — the documentation home, and one document in it. Two fixtures because they say different
+  // things: the hub is a list with a filter, the document is its own chrome around a body the tree
+  // owns.
+  "/admin/docs": adminDocsPageCopy,
+  "/admin/docs/[...slug]": adminDocPageCopy,
   "/admin/gaps": adminGapsPageCopy,
   "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,

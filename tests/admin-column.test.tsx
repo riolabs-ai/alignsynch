@@ -1,6 +1,9 @@
 /**
  * The admin console's shared column (#717, C3 of the #714 wave) — one container, not eighteen.
  *
+ * (Twenty pages since #892 added the documentation hub and one document; the count in the first case
+ * is the floor on the walk, and every other case derives the list.)
+ *
  * The issue asked for the admin pages to adopt **one** container, and measured it the wrong way
  * round: `grep mx-auto 'app/(mainlayout)/admin' --include=page.tsx` returned 0 because the page
  * files are thin — they gate, read and hand the result to a view component — while the *view*
@@ -80,9 +83,12 @@ function isAdminView(path: string): boolean {
 }
 
 describe("the admin console's shared column", () => {
-  it("exists — eighteen pages today, and every one of them is a page module", () => {
+  it("exists — twenty pages today, and every one of them is a page module", () => {
+    // Eighteen from #717's wave, plus the documentation hub and one document (#892). The count is a
+    // floor on the walk, not a list: the two cases below derive the pages and hold each one to the
+    // rule, so a twenty-first page inherits it.
     const pages = adminPages();
-    expect(pages.length).toBe(18);
+    expect(pages.length).toBe(20);
   });
 
   it("is what every admin page renders inside", () => {
