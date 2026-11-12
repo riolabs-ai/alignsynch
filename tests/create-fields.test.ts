@@ -81,6 +81,7 @@ const FIELD_IDS = [
 const WHO = sectionOf(assessmentCreatePageCopy, "who");
 
 const TEMPLATE = {
+  slug: "relationship-basics",
   recordId: "template-relationship-basics",
   title: "Relationship Basics",
   summary: "Ten Aspects about how a working relationship feels and where it should go.",

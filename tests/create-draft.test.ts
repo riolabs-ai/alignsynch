@@ -11,7 +11,7 @@
  *      that is garbage parses to `null` instead of throwing during a render.
  *   3. **The screens** — stage 1 renders stage 1's form (posting to the save handler) with the
  *      saved values in the inputs; stage 2 renders the Mode form (posting to the create
- *      endpoint) with the saved choices selected, and its rail says Stage 2 of 6.
+ *      endpoint) with the saved choices selected, and its rail says Stage 2 of 5.
  *
  * The refusal sentence is composed by `lib/flow/create-copy.ts` from the field's own label, so a
  * rename in `data/pages/assessment-create.ts` moves the sentence — the test asserts the label is
@@ -75,6 +75,7 @@ function savedDraft() {
 }
 
 const TEMPLATE = {
+  slug: "relationship-basics",
   recordId: TEMPLATE_ID,
   title: "Relationship Basics",
   summary: "Ten Aspects about how a working relationship feels and where it should go.",
@@ -175,7 +176,7 @@ describe("stage 1 — Who", () => {
   it("is the flow's first stage in the rail", () => {
     const html = stageHtml(1);
     expect(html).toContain('data-wizard-rail="1"');
-    expect(html).toContain("Stage 1 of 6");
+    expect(html).toContain("Stage 1 of 5");
     // Stage 2's form is not on this screen.
     expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
   });
@@ -216,7 +217,7 @@ describe("stage 2 — Mode", () => {
   it("renders as stage 2 of the rail, saving and handing over to the Aspects", () => {
     const html = stageHtml(2, { ...savedDraft(), mode: "advanced", alignmentSetting: "full" });
     expect(html).toContain('data-wizard-rail="2"');
-    expect(html).toContain("Stage 2 of 6");
+    expect(html).toContain("Stage 2 of 5");
     // #689 — Mode no longer creates: it saves its two choices into the draft and stage 3 follows.
     expect(html).toContain(`action="${SAVE_MODE_PATH}"`);
     expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);

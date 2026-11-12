@@ -38,6 +38,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const TEMPLATE = {
+  slug: "relationship-basics",
   recordId: "template-relationship-basics",
   title: "Relationship Basics",
   summary: "Ten Aspects about how a working relationship feels and where it should go.",
@@ -148,7 +149,7 @@ describe("S2 — one foot on every stage", () => {
       itemLabel(sectionOf(assessmentCreatePageCopy, "aspects"), "submit"),
     );
     expect(stageHtml(4)).toContain(
-      itemLabel(sectionOf(assessmentCreatePageCopy, "commit"), "submit"),
+      itemLabel(sectionOf(assessmentCreatePageCopy, "account"), "submit"),
     );
     // The owner's words, verbatim (#760).
     expect(itemLabel(sectionOf(assessmentCreatePageCopy, "who"), "submit")).toBe(

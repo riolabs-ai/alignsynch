@@ -606,17 +606,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   },
   // #690 — stage 4 (Create) and the account gate that follows it. The same row shape, dirs and
   // fixture as the three stages above: one flow, one vocabulary, and a budget of 0 so the review
-  // card's labels, the two prices and the gate's form copy are a red build if they are typed into
-  // a component. The gate is not a stage and still reads the same fixture — the account step's
-  // words are this flow's words, not a second create vocabulary.
+  // card's labels, the two prices and the account stage's copy are a red build if they are typed
+  // into a component. #825 — the gate is retired and this is the account stage itself, which still
+  // reads the same fixture: its words are this flow's words, not a second create vocabulary.
   "/templates/relationship/[slug]/create/commit": {
     page: "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
-  "/templates/relationship/[slug]/create/account": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/account/page.tsx",
+  // #825 — stage 5, Invite. The same row again, for the same reason: one flow, one vocabulary.
+  "/templates/relationship/[slug]/create/invite": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,

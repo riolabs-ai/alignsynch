@@ -25,20 +25,20 @@
  * **It runs in the flow's one modal, on the flow's one rail** (#710). The invitation link is the
  * Counterparty's half of the same journey the Initiator started, so it gets the same presentation:
  * `StageShell` frames it (a fullscreen dialog at ≥1024, a full-height sheet at 390, close onto an
- * address) and `StageRail` draws the six stages above it. Nothing here is a second flow — the
+ * address) and `StageRail` draws the five stages above it. Nothing here is a second flow — the
  * three onboarding screens are this stage's body, and their action set is props.
  *
- * **`current` is Connect — stage 5 — and never 6.** `connect` is where the spec puts this screen
- * (`docs/specs/flow-stages.md`: the two seats exist and are connected, waiting on the
- * Counterparty), and `Align` is drawn unavailable because nothing is shared until both sheets are
- * sealed: `alignHref` is `null`, which is the rail's own conditional sixth cell rather than a
- * second rail that could disagree with it.
+ * **`current` is Account — stage 4 — and that is where the spec says this path enters** (#825).
+ * `docs/specs/flow-stages.md` → *The invitation is the response path, and it enters at Account*:
+ * the counterparty is the person the account is for, so the stage that asks for one is the stage
+ * they land on, and the stages above it are not available to them because the other person created
+ * the relationship and filled them in.
  *
- * **The three onboarding screens stay addressed, and the six-stage rail replaces their own.** The
+ * **The three onboarding screens stay addressed, and the five-stage rail replaces their own.** The
  * step is `?step=1|2|3` with the token in the path (`inviteStepPath`), so a refresh, a deep link
  * and the sign-in round trip all land on the same screen. Their numbered progress band is gone on
  * purpose: the flow has **one** progress pattern (the cell rail, #716), and a screen that drew a
- * second one above it would say `Stage 5 of 6` and `Step 2 of 3` at the same time.
+ * second one above it would say `Stage 4 of 5` and `Step 2 of 3` at the same time.
  *
  * A server component: the only interaction is a link or a form post, so nothing here needs
  * `"use client"` and the wizard ships no JavaScript of its own.
@@ -60,12 +60,15 @@ import { StageRail } from "./stage-rail";
 import { StageShell } from "./stage-shell";
 
 /**
- * The stage this screen is — **Connect**, the fifth of the six (`data/pages/lifecycle.ts`).
+ * The stage this screen is — **Account**, the fourth of the five (`data/pages/lifecycle.ts`).
  *
- * The invitation has gone out and both seats exist; what is left is the Counterparty saying yes.
- * A number, not a word: `StageRail` compares `current` against the fixture's item ids.
+ * The invitation has gone out and the Counterparty is the person being asked to join it: the one
+ * thing this path needs from them is the account the seat binds to. Under v9 that is stage 4 —
+ * numbered, inside the same sheet, with the same rail — so the band says `Stage 4 of 5` rather
+ * than the unnumbered gate the old post-commit screen drew. A number, not a word: `StageRail`
+ * compares `current` against the fixture's item ids.
  */
-const CONNECT_STAGE = 5;
+const RESPONSE_STAGE = 4;
 
 export function CounterpartyWizard({
   copy,
@@ -112,7 +115,7 @@ export function CounterpartyWizard({
       closeHref={OVERVIEW_PATH}
     >
       <StageColumn>
-        <StageRail copy={copy} current={CONNECT_STAGE} alignHref={null} />
+        <StageRail copy={copy} current={RESPONSE_STAGE} />
         <h1 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">{band.heading}</h1>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
 

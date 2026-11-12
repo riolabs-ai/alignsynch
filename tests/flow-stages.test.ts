@@ -1,21 +1,22 @@
 /**
- * The flow is six stages, and the spec that says so is binding (#735).
+ * The flow is five stages, and the spec that says so is binding (#735, #825).
  *
  * `docs/specs/flow-stages.md` fixes four things this file checks, and each of them has drifted
- * before: the six words and their order, the `Stage {n} of 6` line, the absence of a seventh
- * stage, and the fact that the sixth one — `Align` — is drawn only when there is something to
- * align. The card asked for a test that *bites*, so every assertion here is against what renders
- * or against the source the gate ships, never against a second copy of the words:
+ * before: the five words and their order, the `Stage {n} of 5` line, the absence of a seventh
+ * stage, and the fact that `Align` is **not a cell at all** — it is the dashboard's surface, and
+ * the rail that says where somebody is uses five words only.
+ *
+ * The card asked for a test that *bites*, so every assertion here is against what renders or
+ * against the source the gate ships, never against a second copy of the words:
  *
  *   words     `data/pages/lifecycle.ts`, the one home, read directly;
  *   count     the rendered rail, for every `current` it can be given;
  *   no seventh  the flow's copy and the whole `app/(mainlayout)/assessment` tree, scanned for
  *             the retired word and for an `ongoing` path segment — a rail word is one place a
  *             stage can come back, and a route is the other;
- *   conditional  `SentState` rendered over two real `projectScreen()` projections — one
- *             relationship nobody has claimed (nothing shared) and one with both seats bound
- *             and answering (shared) — because "Align is live only once an assessment is
- *             shared" is a claim about what a reader sees, not about a prop's type.
+ *   no Align  the rendered rail on every stage, and `SentState` over two real `projectScreen()`
+ *             projections: the confirmation draws the band at Invite and no sixth cell, because
+ *             #825 moved Align out of the flow.
  *
  * The projection is the shipped one (`lib/flow/screen.ts`), so the two screens are built the way
  * the route builds them and the status under test is `instanceStatusOf()`'s answer, not a string
@@ -25,7 +26,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SentState } from "@/components/assessment-flow/sent-state";
 import { StageRail } from "@/components/assessment-flow/stage-rail";
@@ -40,8 +41,16 @@ import { instancePath } from "@/lib/flow/paths";
 import { alignAvailableOf } from "@/lib/flow/stage";
 import type { ItemRow, PartyRow } from "@/lib/db/rows";
 
-/** The six words the spec fixes, in order — written once here so a rename is one line of diff. */
-const STAGES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"] as const;
+/**
+ * `StageShell`'s only Next dependency is `useRouter`, and nothing here navigates. Stubbing it
+ * keeps a render a render.
+ */
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+}));
+
+/** The five words the spec fixes, in order — written once here so a rename is one line of diff. */
+const STAGES = ["Details", "Settings", "Aspects", "Account", "Invite"] as const;
 
 /**
  * The copy the flow ships, and the components that draw it. The scan is deliberately the flow's
@@ -71,30 +80,30 @@ function tree(dir: string): string[] {
 /** The retired seventh word, matched case-insensitively: the defect is the word, not its case. */
 const RETIRED = /ongoing/i;
 
-describe("the six stage words", () => {
-  it("are Details · Settings · Aspects · Invite · Connect · Align, in that order", () => {
+describe("the five stage words", () => {
+  it("are Details · Settings · Aspects · Account · Invite, in that order", () => {
     expect(lifecycleStageSection.id).toBe("stages");
     expect(
       lifecycleStageSection.items
-        ?.filter((item) => /^[1-6]$/.test(item.id))
+        ?.filter((item) => /^[1-5]$/.test(item.id))
         .map((item) => item.label),
     ).toEqual([...STAGES]);
   });
 
-  it("print `Stage {n} of 6` for every stage the rail can show", () => {
+  it("print `Stage {n} of 5` for every stage the rail can show", () => {
     for (let current = 1; current <= STAGES.length; current += 1) {
       const html = renderToStaticMarkup(
         createElement(StageRail, { copy: assessmentCreatePageCopy, current }),
       );
-      expect(html, `stage ${current}`).toContain(`Stage ${current} of 6`);
+      expect(html, `stage ${current}`).toContain(`Stage ${current} of 5`);
     }
   });
 
-  it("draw six cells, however many the stage count says", () => {
+  it("draw five cells, however many the stage count says", () => {
     const html = renderToStaticMarkup(
       createElement(StageRail, { copy: assessmentCreatePageCopy, current: 1 }),
     );
-    expect(html.split("data-step-cell=").length - 1).toBe(6);
+    expect(html.split("data-step-cell=").length - 1).toBe(5);
     for (const name of STAGES) expect(html).toContain(name);
   });
 });
@@ -116,7 +125,7 @@ describe("there is no seventh stage", () => {
 });
 
 /* ---------------------------------------------------------------- *
- * Align is conditional
+ * Align is not a cell
  * ---------------------------------------------------------------- */
 
 const template: Assessment = (() => {
@@ -199,48 +208,40 @@ function sentHtml(screen: FlowScreen): string {
   );
 }
 
-/** The rail's sixth cell, cut out of a rendered page so a match cannot come from elsewhere. */
-function sixthCell(html: string): string {
+/** The rail's cells, cut out of a rendered page so a match cannot come from elsewhere. */
+function railOf(html: string): string {
   const start = html.indexOf("<nav");
-  const rail = html.slice(start, html.indexOf("</nav>", start));
-  const cell = rail.lastIndexOf('data-step-cell="6"');
-  if (cell < 0) throw new Error("the rail drew no sixth cell");
-  return rail.slice(rail.lastIndexOf("<", cell));
+  return html.slice(start, html.indexOf("</nav>", start));
 }
 
-describe("Align is the conditional stage", () => {
-  it("is drawn unavailable while nothing is shared", () => {
-    const screen = screenOver(unclaimedParties, 0);
-    expect(screen.status).toBe("awaiting_counterparty");
-    expect(alignAvailableOf(screen.status)).toBe(false);
-
-    const cell = sixthCell(sentHtml(screen));
-    expect(cell).toContain("Align");
-    expect(cell).toContain('data-step-state="unavailable"');
-    // The state a screen reader hears, from the fixture rather than from a literal here.
-    expect(cell).toContain("Not available yet");
-    expect(cell).not.toContain("<a ");
+describe("Align is the dashboard's surface, not a rail cell", () => {
+  it("is drawn at Invite on the confirmation, with no sixth cell and no conditional state", () => {
+    for (const screen of [screenOver(unclaimedParties, 0), screenOver(sharedParties, 1)]) {
+      const html = sentHtml(screen);
+      const rail = railOf(html);
+      // The count line sits under the band, outside `<nav>`; the cells are inside it.
+      expect(html).toContain("Stage 5 of 5");
+      expect(rail.split("data-step-cell=").length - 1).toBe(5);
+      expect(html).not.toContain('data-step-cell="6"');
+      expect(html).not.toContain(">Align<");
+      // Nothing in the band is drawn "unavailable" any more — the state the sixth cell used.
+      expect(html).not.toContain('data-step-state="unavailable"');
+    }
   });
 
-  it("opens the alignment view once an assessment is shared", () => {
-    const screen = screenOver(sharedParties, 1);
-    expect(screen.status).toBe("answering");
-    expect(alignAvailableOf(screen.status)).toBe(true);
-
-    const cell = sixthCell(sentHtml(screen));
-    expect(cell).toContain("Align");
-    expect(cell).not.toContain('data-step-state="unavailable"');
-    expect(cell).toContain(`href="${instancePath(INSTANCE_ID)}"`);
+  it("is not a step the create flow advances into either", () => {
+    for (let current = 1; current <= STAGES.length; current += 1) {
+      const html = renderToStaticMarkup(
+        createElement(StageRail, { copy: assessmentCreatePageCopy, current }),
+      );
+      expect(html, `stage ${current}`).not.toContain('data-step-cell="6"');
+      expect(html, `stage ${current}`).not.toContain('data-step-state="unavailable"');
+    }
   });
 
-  it("is not a step the wizard advances into — the create flow draws it unavailable", () => {
-    const html = renderToStaticMarkup(
-      createElement(StageRail, { copy: assessmentCreatePageCopy, current: 4 }),
-    );
-    expect(sixthCell(html)).toContain('data-step-state="unavailable"');
-  });
-
-  it("follows the status table the instance screen already derives", () => {
+  it("still answers the status question the dashboard asks — is there anything to align?", () => {
+    // The rule outlived the cell: a relationship has something to align once a second seat
+    // exists and the sheets are being filled. `docs/specs/flow-stages.md` states it.
     expect(alignAvailableOf("awaiting_counterparty")).toBe(false);
     expect(alignAvailableOf("voided")).toBe(false);
     expect(alignAvailableOf("answering")).toBe(true);

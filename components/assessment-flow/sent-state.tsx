@@ -44,7 +44,6 @@ import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { SENT_RETURN_VALUE } from "@/lib/flow/paths";
-import { alignAvailableOf } from "@/lib/flow/stage";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { InviteLink } from "./invite-link";
 import { ReinviteForm } from "./reinvite-form";
@@ -183,16 +182,12 @@ export function SentState({
     <StageColumn>
       <div className="space-y-6">
         {/*
-          Where the person is in the six stages: the relationship exists and its invitation is
-          out, so this is stage 5 — **Connect**. `Align` is live only when something is shared
-          on this relationship, and the status the read handed down is the one fact that says so
-          (`alignAvailableOf()`).
+          Where the person is in the five stages: the relationship exists and its invitation is
+          out, so this is stage 5 — **Invite**, the stage whose act produced this confirmation.
+          The confirmation is unnumbered in the *count* — it is not a sixth stage — but it is
+          still inside the sheet, so it draws the same band the artifact draws around it.
         */}
-        <StageRail
-          copy={copy}
-          current={5}
-          alignHref={alignAvailableOf(screen.status) ? openHref : null}
-        />
+        <StageRail copy={copy} current={5} />
 
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">

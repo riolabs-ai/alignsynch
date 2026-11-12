@@ -238,8 +238,8 @@ describe("the counterparty wizard", () => {
       viewerName: null,
     });
     expect(html).toContain("Avery invited you to answer Relationship Basics.");
-    // #710 — the rail is the flow's six stages, and this screen is Connect (stage 5).
-    expect(html).toContain("Stage 5 of 6");
+    // #825 — the rail is the flow's five stages, and this screen is Account (stage 4).
+    expect(html).toContain("Stage 4 of 5");
     expect(html).toContain('data-step-state="current"');
     expect(html).not.toContain('name="confirm"');
     expect(html).toContain('href="/invite/token-1?step=2"');
@@ -253,7 +253,7 @@ describe("the counterparty wizard", () => {
       step: 2,
       viewerName: null,
     });
-    expect(html).toContain("Stage 5 of 6");
+    expect(html).toContain("Stage 4 of 5");
     expect(html).toContain("You can change any opinion until you accept the session.");
     expect(html).toContain('href="/invite/token-1"');
     expect(html).toContain('href="/invite/token-1?step=3"');
@@ -267,7 +267,7 @@ describe("the counterparty wizard", () => {
       step: 3,
       viewerName: null,
     });
-    expect(html).toContain("Stage 5 of 6");
+    expect(html).toContain("Stage 4 of 5");
     expect(html).toContain("Accepting costs you nothing");
     expect(html).toContain(
       'href="/login?next=%2Finvite%2Ftoken-1%3Fstep%3D3&amp;intent=invite&amp;inviter=Avery"',

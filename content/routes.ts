@@ -122,11 +122,12 @@ const DYNAMIC_ROUTES = [
   // #689 — stage 3, the sibling the docstring above predicted. Same reason: an address that can be
   // reloaded, and the draft is what puts the person back on it.
   "/templates/relationship/[slug]/create/aspects",
-  // #690 — stage 4, Create: the review, the two plans and the conversion.
+  // #825 — stage 4, Account: the app's own sign-in form and the conversion that writes the
+  // relationship as a draft. It is the last screen before anything exists.
   "/templates/relationship/[slug]/create/commit",
-  // #690 — the account gate *after* stage 4. Not a stage (the spec is explicit), and the only
-  // screen in the flow that sits behind the create.
-  "/templates/relationship/[slug]/create/account",
+  // #825 — stage 5, Invite: send the invitation or keep the draft. It replaces the account gate
+  // that used to sit *after* the create (`…/create/account`, retired with #659's decision).
+  "/templates/relationship/[slug]/create/invite",
   // #542 phase 2 — the member's own CRUD detail pages, moved here from `STATIC_ROUTES` where
   // #533 phase 2 had filed them: a `[id]` pattern in the static list matches one literal string
   // and nothing else, so the list's own links were invisible to the route matcher.

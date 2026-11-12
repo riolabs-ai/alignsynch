@@ -50,6 +50,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const TEMPLATE = {
+  slug: "relationship-basics",
   recordId: "template-relationship-basics",
   title: "Relationship Basics",
   summary: "Ten Aspects about how a working relationship feels and where it should go.",
@@ -136,8 +137,8 @@ describe("the four create stages", () => {
     for (const stage of STAGES) {
       const html = stageHtml(stage);
       expect(html, `stage ${stage} draws the shell`).toContain('data-stage-shell="true"');
-      // The six words the rail owns are inside the panel, unchanged (#687).
-      for (const name of ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"]) {
+      // The five words the rail owns are inside the panel, unchanged (#687, #825).
+      for (const name of ["Details", "Settings", "Aspects", "Account", "Invite"]) {
         expect(html, `stage ${stage} keeps the rail's ${name}`).toContain(name);
       }
       expect(html, `stage ${stage} still draws its column`).toContain("max-w-[1126px]");
@@ -158,14 +159,21 @@ describe("the four create stages", () => {
 });
 
 describe("the surfaces the shell wraps outside the four stages", () => {
-  it("renders the account gate inside the same modal, closing onto the dashboard", () => {
-    const file = source("app/(mainlayout)/templates/relationship/[slug]/create/account/page.tsx");
-    expect(file).toContain("StageShell");
-    expect(file).toContain("<StageShell");
-    expect(file).toContain("closeHref={OVERVIEW_PATH}");
-    // An account already exists: the flow is finished, so it goes where the flow ends.
-    expect(file).toContain("if (viewer !== null) redirect(OVERVIEW_PATH);");
-    expect(file).toContain("destination={OVERVIEW_PATH}");
+  it("renders stage 4 inside the same modal, and stage 5 as its own route (#825)", () => {
+    // The account gate that used to sit behind the create is retired; the account is stage 4, so
+    // the assertion is that its page still draws the flow's one shell and reads the draft.
+    const commit = source("app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx");
+    expect(commit).toContain("<CreateRelationship");
+    expect(commit).toContain("stage={4}");
+    expect(commit).toContain("LoginView");
+    expect(commit).toContain("layout={EMBEDDED_LAYOUT}");
+    // Nothing is sent from this stage: it writes the draft and hands over.
+    expect(commit).toContain("createInviteForPath");
+
+    const invite = source("app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx");
+    expect(invite).toContain("<CreateRelationship");
+    expect(invite).toContain("stage={5}");
+    expect(invite).toContain("instanceRecordId={screen.instanceRecordId}");
   });
 
   it("renders Sent inside the shell, still as a stage that answers when asked for by URL", () => {

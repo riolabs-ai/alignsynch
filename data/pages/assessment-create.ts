@@ -96,47 +96,9 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The conversion (#690) — the one control on stage 4 that writes.
-       *
-       * A plain form posting to the create endpoint, like every other write in this flow: the
-       * draft already carries who, mode, setting and the list, so the post names the template and
-       * nothing else, and a reload of the refusal cannot create a second relationship.
-       *
-       * `submit-note` says what the press does *and* what it does not do. Payment is a soft prompt
-       * on this screen, so the sentence has to be true for the person who adds no method: the
-       * relationship is created and the invitation is sent either way.
-       */
-      id: "commit",
-      heading: "Create the relationship",
-      body: "Submitting now creates the relationship and sends the invitation. Nothing is charged yet.",
-      items: [
-        { id: "submit", label: "Create relationship and send invite" },
-        {
-          id: "submit-note",
-          label:
-            "Submitting copies these Aspects, creates the relationship and sends one invitation. Nobody has answered anything yet.",
-        },
-        {
-          id: "cta-heading",
-          label: "Send the invitation",
-        },
-        {
-          id: "cta-body",
-          label:
-            "One email with one link. The relationship waits at Invited until they accept — nothing is charged and nothing is visible to them until they claim the seat.",
-        },
-        {
-          id: "reassure",
-          label: "You can resend, edit the title, or withdraw the invitation at any point.",
-        },
-        { id: "back", label: "Back" },
-      ],
-    },
-    {
-      /**
-       * The stage foot's one shared word (#760). Every stage 1–4 draws `[Back][Cancel]` as one
-       * left group before the advancing act, and `Cancel` is the same word on all four — one row
-       * here rather than four copies that could drift, the way `stages.close` is the shell's one
+       * The stage foot's one shared word (#760). Every stage 1–5 draws `[Back][Cancel]` as one
+       * left group before the advancing act, and `Cancel` is the same word on all five — one row
+       * here rather than five copies that could drift, the way `stages.close` is the shell's one
        * close label.
        */
       id: "foot",
@@ -208,11 +170,6 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "continue", label: "Continue" },
         { id: "back", label: "Back" },
         { id: "account-heading", label: "Create your account" },
-        {
-          id: "account-note",
-          label:
-            "The relationship comes back to you, so this is where it is kept. The account is created when this stage finishes, and nothing here blocks the invitation.",
-        },
         { id: "method-heading", label: "Add a payment method" },
         {
           id: "method-note",
@@ -229,6 +186,9 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "confirm-plan", label: "Plan" },
         { id: "confirm-method", label: "Method" },
         { id: "confirm-method-draft", label: "Asked for at publish" },
+        { id: "confirm-to", label: "Sending to" },
+        { id: "confirm-to-value", label: "{name} · {email}" },
+        { id: "confirm-mode", label: "Mode and Setting" },
         {
           id: "confirm-body",
           label:
@@ -240,57 +200,82 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "done-body",
           label:
-            "Your relationship is ready to create. Nothing has been charged, and the method is asked for when you publish.",
+            "Your relationship is ready to send. Nothing has been charged, and the method is asked for when you publish.",
         },
-        { id: "connect-cta", label: "Complete and Connect" },
       ],
     },
     {
       /**
-       * The account gate (#690) — **after** stage 4, never before it.
+       * Stage 4 — **Account** (#825, superseding the gate that used to follow the create).
        *
-       * Until this card the gate sat on stage 1 and a signed-out visitor could not fill in the
-       * form at all (#618). The approved flow puts it behind the create instead: the relationship
-       * and its invitation exist first, and this screen is where a person keeps them. So the
-       * sentences say what has already happened — "the invitation is already out" — rather than
-       * promising a send that has already happened.
+       * #659 said "Account is not a stage" and the flow asked for the account *after* the
+       * relationship existed, on a second surface that did nothing else. v9 reverses that: the
+       * creator signs up **before** the row is written, so the Initiator is known when it is
+       * written instead of being attached to it afterwards.
        *
-       * `progress` is the strip's own label ("Account · step 2 of 3"), and the three step labels
-       * are the prototype's `s9.authStep1..3`. Step 3 is already done by the time the gate draws
-       * (the invite commits with the relationship), which is why the strip's third marker is a ✓
-       * rather than a circle: the account is the only step left, not the only step taken.
-       *
-       * `sign-in` is the second tab, and it is a link rather than a second form: the sign-in
-       * screen already exists, and a copy of it here would be a second place for the failure
-       * sentences to drift. It carries `next` = this gate, so signing in lands back on it.
+       * The sentences say three things a person deciding to hand over an account needs: what this
+       * stage is for, what is created when they continue, and that nothing they already typed is
+       * lost — the draft is a cookie on this device, and the sign-in round trip returns to this
+       * stage with it intact. `created-body` is the re-entered state (stage 5's `Back`), where the
+       * relationship already exists and there is nothing left to create.
        */
       id: "account",
-      heading: "Keep this relationship — create your account",
-      body: "The invitation is already out, so nothing is lost by waiting. An account is the sender the invitation carries and the address we can reach you at; without one, your seat lives in this browser.",
+      heading: "Create your account",
+      body: "The relationship comes back to you, so this is where it is kept. Your answers so far are saved on this device.",
       items: [
-        { id: "progress", label: "Account · step 2 of 3" },
-        { id: "step-1", label: "Relationship ready" },
-        { id: "step-2", label: "Your account" },
-        { id: "step-3", label: "Invitation sent" },
-        { id: "tab-create", label: "Create account" },
-        { id: "tab-sign-in", label: "Sign in" },
-        { id: "name", label: "Your name" },
-        { id: "name-help", label: "Shown to the person you invited." },
-        { id: "email", label: "Email address" },
-        { id: "password", label: "Password" },
-        { id: "password-help", label: "At least 10 characters." },
-        { id: "submit", label: "Create account and continue" },
-        { id: "submitting", label: "Creating…" },
+        { id: "signed-in-heading", label: "You're signed in" },
         {
-          id: "required",
-          label: "A name, an email address and a password are needed to create the account.",
-        },
-        {
-          id: "failed",
+          id: "signed-in-body",
           label:
-            "That account was not created. Check the address and the password, or sign in if you already have an account.",
+            "The invitation is sent from this account, and the relationship will be listed under yours.",
         },
-        { id: "back", label: "Back to the relationship" },
+        {
+          id: "saved-on-device",
+          label:
+            "Your answers are saved on this device. Signing in keeps them: you come back to this step.",
+        },
+        {
+          id: "created-body",
+          label:
+            "The relationship exists as a draft. The account it belongs to is the one you are signed in with.",
+        },
+        { id: "submit", label: "Continue to Stage 5" },
+        { id: "back", label: "Back" },
+      ],
+    },
+    {
+      /**
+       * Stage 5 — **Invite** (#825).
+       *
+       * Two acts, and the difference between them is the whole stage: `Send and Continue` publishes
+       * the draft and mails the one invitation; `Continue as Draft` keeps it, sends nothing and
+       * charges nothing. Both sentences under the card exist to make the second one safe to choose:
+       * the relationship already exists, and no email has gone out.
+       */
+      id: "invite",
+      heading: "Send the invitation",
+      body: "The relationship is ready. Send the invitation now, or keep it as a draft and send it when you are ready.",
+      items: [
+        { id: "cta-heading", label: "Send the invitation" },
+        {
+          id: "cta-body",
+          label:
+            "One email with one link. The relationship waits at Invited until they accept — nothing is charged and nothing is visible to them until they claim the seat.",
+        },
+        { id: "submit", label: "Send and Continue" },
+        { id: "draft", label: "Continue as Draft" },
+        { id: "note-heading", label: "What you can do later" },
+        {
+          id: "reassure",
+          label: "You can resend, edit the title, or withdraw the invitation at any point.",
+        },
+        {
+          id: "draft-help",
+          label:
+            "A draft sends nothing and charges nothing. It stays under My relationships until you send it.",
+        },
+        { id: "sent-to", label: "The invitation goes to" },
+        { id: "back", label: "Back" },
       ],
     },
     {

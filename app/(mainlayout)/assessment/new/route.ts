@@ -16,13 +16,14 @@ import {
 } from "@/lib/flow/store";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
 import {
-  afterCreateTarget,
   createCommitPath,
+  createInviteForPath,
   createModePath,
   createRelationshipPath,
   instancePath,
   RELATIONSHIP_TEMPLATES_PATH,
 } from "@/lib/flow/paths";
+import { loginPathFor } from "@/lib/auth/paths";
 import {
   createDraftCookieName,
   FLOW_COOKIE_MAX_AGE,
@@ -119,6 +120,10 @@ export async function POST(request: Request): Promise<Response> {
   const form = await request.formData();
   const value = (name: string) => String(form.get(name) ?? "");
   const templateRecordId = value("templateRecordId").trim();
+  // #825 — stage 4's form carries `draft=1`: write the relationship as a draft and send nothing,
+  // because stage 5 is where the send is decided. Every other caller (a `curl`, `flow-e2e.mjs`, the
+  // pre-v9 one-form create) omits it and keeps the create-and-send it always got.
+  const asDraft = value("draft") === "1";
   const viewer = await currentUserIfConfigured();
 
   // #688 — the draft stage 1 wrote, when this post came through the two-stage flow. A post
@@ -133,6 +138,16 @@ export async function POST(request: Request): Promise<Response> {
   // #794 — the screen a refusal names is addressed by the template's **slug**, while the post and
   // the draft cookie carry its **id**. Resolved once, before anything can refuse.
   const templateSlug = await templateSlugOf(templateRecordId);
+
+  // #825 — a draft belongs to an account, so there is nothing to write without one. The stage's
+  // page only draws the form for a signed-in reader, so this is the crafted post's answer: the
+  // sign-in screen, with this stage as the place to come back to.
+  if (asDraft && viewer === null && templateSlug !== "") {
+    return NextResponse.redirect(
+      new URL(loginPathFor(createCommitPath(templateSlug)), request.url),
+      303,
+    );
+  }
 
   // Stage 2's own validation, before the store is asked anything: the Mode and the Setting are
   // the only two fields that step owns, so a refusal names which one is wrong.
@@ -200,6 +215,8 @@ export async function POST(request: Request): Promise<Response> {
       // #258 — the address the unlock notice will reach this creator at when the Counterparty
       // submits last. Also the session's, never the form's: `email` above is the Counterparty's.
       viewerEmail: viewer?.email ?? null,
+      // #825 — stage 4 writes a draft and sends nothing; stage 5 decides.
+      draft: asDraft,
     });
   } catch (error) {
     if (error instanceof FlowError) {
@@ -232,6 +249,21 @@ export async function POST(request: Request): Promise<Response> {
   // than left to expire so a second create from the same template starts blank.
   if (templateRecordId !== "") jar.delete(createDraftCookieName(templateRecordId));
 
+  // #825 — stage 4 stops here. Nothing is sent, the row is a draft, and stage 5 is the screen that
+  // asks whether it goes out. The `?invite=` outcome has nothing to report yet, so it is not set.
+  if (asDraft) {
+    const slug = templateSlug.trim();
+    return NextResponse.redirect(
+      new URL(
+        slug === ""
+          ? instancePath(created.instanceRecordId)
+          : createInviteForPath(slug, created.instanceRecordId),
+        request.url,
+      ),
+      303,
+    );
+  }
+
   // `sendInvitation` reports three outcomes and never throws. The `.catch` is a belt and not
   // a path: if this function ever did throw, the creation already committed, so the screen
   // must still offer the link — which it does whenever `screen.invite.link` exists — and the
@@ -249,21 +281,11 @@ export async function POST(request: Request): Promise<Response> {
     return { outcome: "failed" as const };
   });
 
-  // #690 — a signed-out creator keeps what they just created: the gate is the screen that asks
-  // for an account *after* the commit, and it can only draw for a browser that holds this
-  // relationship's own initiator token (the cookie set above). The `invite` outcome is not carried
-  // there: the gate is about the account, and the relationship screen behind it draws the notice.
-  // The decision itself is `afterCreateTarget`, so it is a test rather than a claim.
-  const destination = afterCreateTarget({
-    viewerSignedIn: viewer !== null,
-    templateSlug,
-    instanceRecordId: created.instanceRecordId,
-  });
-  if (destination !== instancePath(created.instanceRecordId)) {
-    return NextResponse.redirect(new URL(destination, request.url), 303);
-  }
-
-  const target = new URL(destination, request.url);
+  // #825 — the gate that used to follow this create is retired, so a post that did not come from
+  // stage 4's draft form lands on the relationship itself, which draws the invitation's own state
+  // and its notice (#220). `afterCreateTarget()` is deleted with the gate: a destination that
+  // depended on which flow shape posted is a decision with no screen behind it now.
+  const target = new URL(instancePath(created.instanceRecordId), request.url);
   target.searchParams.set("invite", outcome.outcome);
   // 303: the browser follows with a GET, so a reload of the instance screen cannot create
   // a second instance.
