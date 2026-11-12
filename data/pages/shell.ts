@@ -290,6 +290,9 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "help", label: "Help" },
           { id: "console-gaps", label: "Gap Analysis" },
+          // #920 — the growth model, beside the Gap it aggregates over: the same operator's read,
+          // one level up (a business that is working rather than a pair that is aligned).
+          { id: "admin-growth", label: "Growth" },
           { id: "admin-instances", label: "Relationships" },
           /**
            * #542 phase 2 — the console hub, first in the operator group. `/admin/console` is where

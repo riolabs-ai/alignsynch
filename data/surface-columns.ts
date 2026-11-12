@@ -102,6 +102,9 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/admin/docs", mode: "column" },
   { path: "/admin/docs/[...slug]", mode: "column" },
   { path: "/admin/gaps", mode: "column" },
+  // #920 — the growth model. The charts are `aspect`-free (a fixed height inside the column), so the
+  // band that could have been wide stays at the console's width like every other admin page.
+  { path: "/admin/growth", mode: "column" },
   { path: "/admin/health", mode: "column" },
   { path: "/admin/inbox", mode: "column" },
   { path: "/admin/instances", mode: "column" },
