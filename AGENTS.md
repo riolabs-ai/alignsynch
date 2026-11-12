@@ -9,14 +9,18 @@ unset. `content/` holds the zod content model, `data/` holds the fixtures that m
 and `pnpm data:check` fails the build when a fixture drifts. Remote:
 `github.com/riolabs-ai/alignsynch`.
 
-## The flow is six stages, and that is a spec, not a preference
+## The flow is five stages, and that is a spec, not a preference
 
 Read [`docs/specs/flow-stages.md`](docs/specs/flow-stages.md) before touching any screen in the
-create-and-complete flow. It is binding: **1 Details · 2 Settings · 3 Aspects · 4 Invite ·
-5 Connect · 6 Align**, the rail prints `Stage {n} of 6`, `Align` is live only once one or more
-assessments are shared, and there is **no `Ongoing` stage** — completion lands on the relationship
-detail page in the member dashboard. The approved visual reference is the review artifact
-`prototype-relationship-lifecycle-v5` (`/admin/review?artifact=…`), and the build matches the
+create-and-complete flow. It is binding: **1 Details · 2 Settings · 3 Aspects · 4 Account ·
+5 Invite**, the rail prints `Stage {n} of 5`, and there is **no `Ongoing` stage** — completion lands
+on the relationship detail page in the member dashboard. **Account is a stage, before Invite**: the
+creator signs up first and the stage writes the relationship as a `draft` (#825, superseding #659's
+"Account is not a stage"). **Align is not a stage of the flow at all** — it lives on the dashboard
+and is live once one or more assessments are shared; the retired **Connect** stage's resend and
+copy-link controls live on the post-send confirmation and on the relationship detail. The approved
+visual reference is the review artifact
+`prototype-relationship-lifecycle-v9` (`/admin/review?artifact=…`), and the build matches the
 artifact, never the other way round. A screen that renames a stage, adds a seventh, adds a field the
 artifact does not draw, or drops one it does, is a defect — the spec file carries the stage table,
 stage 1's full field inventory, and the tests that enforce both.
