@@ -1293,7 +1293,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "mock",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.",
+      "The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions, and the OAuth provider mark (`provider-mark.tsx`, #777).",
     notes:
       "Renders only the props it is given; the tokens it paints with come from app/globals.css.",
   },
