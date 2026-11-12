@@ -120,6 +120,40 @@ export const zBrandColors = z
      * surface darkens to this (`#0693B8`, 3.58:1 against white, so it is a surface here too).
      */
     accentPress: zBrandColor.optional(),
+    /**
+     * The **surface** roles a marketing page paints with, added by #853 so the approved AS2 home
+     * page names its grounds, hairlines and one marker colour instead of typing nine hex values
+     * into JSX. All optional: a brand that names none has no such surfaces, and QuizHub names none
+     * — its page is unchanged, byte for byte.
+     *
+     * They are *surfaces*, not inks, with one exception that is stated below (`deep`). The
+     * contrast rules in `data/brands/alignsynch.ts` still decide which of them may carry text, and
+     * the answer for most of them is "none": a tint that is legible as a ground is invisible as a
+     * label.
+     */
+    paper: zBrandColor.optional(),
+    mist: zBrandColor.optional(),
+    sand: zBrandColor.optional(),
+    /** A hairline: borders, rules under a heading, the edge of a chip. Never a text colour. */
+    line: zBrandColor.optional(),
+    /**
+     * The palest tinted ground (the page's `#e5f5fa`) — the band behind a note, the scale panel.
+     * Its ink is `foreground`; nothing writes on it in any other colour.
+     */
+    pale: zBrandColor.optional(),
+    /**
+     * The marker colour — the green rule on a card's edge, the dot beside a group heading, the
+     * scale's middle point. **Decorative by measurement**: `#8DC63F` is 2.1:1 on white, so it can
+     * never be a label at any size, and the page uses it only where the shape carries the meaning
+     * and the words beside it are ink.
+     */
+    mark: zBrandColor.optional(),
+    /**
+     * The one *ink* in this group: the page's `#156898`, a deep teal that labels a step number or a
+     * card's kicker (5.7:1 on white). It is not the cyan `accent` — that token is a surface on this
+     * brand and its text use is banned — which is exactly why the page needed a second accent.
+     */
+    deep: zBrandColor.optional(),
   })
   .strict();
 

@@ -1,52 +1,98 @@
 route  /
 brand  alignsynch
 
-headings (21)
-  h1  "Know what your team will not say out loud."
-  h2  "One approach. Used with every relationship."
-  h3  "Create"
-  h3  "Invite both sides"
-  h3  "Run the session"
-  h2  "The same question, answered twice"
-  h2  "Start from the relationship you have."
-  h3  "Staff–Manager"
-  h3  "Co-founders"
-  h3  "Parent–Teacher"
-  h3  "Patient–Caregiver"
-  h3  "Parent–Child"
-  h3  "Friend A–Friend B"
-  h2  "Twenty-seven relationship types, across seven realms."
-  h3  "Business"
-  h3  "Personal"
-  h2  "You&#x27;re the coach on the relationship — a role, not a third answer."
-  h2  "What this page does not claim."
+headings (36)
+  h1  "Know the feelings. Handle the expectations."
+  h2  "Personal Life"
+  h2  "Business Life"
+  h2  "How AlignSynch works"
+  h3  "Choose the relationship"
+  h3  "Invite the other person"
+  h3  "Record your opinions"
+  h3  "Compare and discuss"
+  h2  "Start with a relationship"
+  h3  "Business &amp; Work"
+  h3  "Personal, School &amp; Community"
+  h2  "See how feelings, wishes, and assumptions can drift apart."
+  h3  "Four ways a gap can form"
+  h3  "Opinions fall along a scale"
+  h2  "A clearer view can open a conversation."
+  h3  "See where things stand"
+  h3  "Open a softer conversation"
+  h3  "Find more than yes or no"
+  h3  "Questions to ask"
+  h2  "Why healthy relationships matter"
+  h3  "— Less risk of losing connection"
+  h3  "— Stronger working relationships"
+  h3  "— Emotional well-being"
+  h3  "— Physical well-being"
+  h3  "— Less stress and anxiety"
+  h3  "— Connection over time"
+  h3  "— A sense of belonging"
+  h3  "— More happiness"
+  h3  "— Stronger self-esteem"
+  h3  "— Support through hard times"
+  h3  "— Better communication"
+  h3  "— A shared sense of purpose"
+  h2  "Reduce stress. Reduce surprises."
   h3  "Product news"
   h3  "Quick Links"
   h3  "Contact"
 
-landmarks (3)
-  banner         1
+landmarks (7)
+  banner         4
   contentinfo    1
-  navigation     1
+  navigation     2
 
-links (13 unique, 20 total)
+links (44 unique, 57 total)
+  #benefits                                            1
+  #business-relationships                              2
+  #how-it-works                                        2
+  #personal-relationships                              2
+  #questions                                           1
+  #relationship-templates                              6
+  #stories                                             1
   /                                                    1
   /#questions                                          2
-  /assessment/avery-rowan                              1
-  /assessment/marco-priya                              1
-  /assessment/ruth-sam                                 1
   /help                                                3
   /login                                               1
   /pricing                                             1
   /privacy                                             2
-  /register                                            2
-  /relationship-types                                  3
+  /register                                            1
+  /relationship-types                                  2
+  /relationship-types/brother-sister                   1
+  /relationship-types/brothers                         1
+  /relationship-types/business-partners                1
+  /relationship-types/co-founders                      1
+  /relationship-types/colleagues                       1
+  /relationship-types/customer-vendor-product          1
+  /relationship-types/customer-vendor-services         1
+  /relationship-types/father-daughter                  1
+  /relationship-types/father-son                       1
+  /relationship-types/friends                          1
+  /relationship-types/gal-friends                      1
+  /relationship-types/guy-friend-gal-friend            1
+  /relationship-types/guy-friends                      1
+  /relationship-types/hoa-board-owner                  1
+  /relationship-types/investor-entrepreneur            1
+  /relationship-types/mother-daughter                  1
+  /relationship-types/mother-son                       1
+  /relationship-types/parent-child                     1
+  /relationship-types/parent-teacher                   1
+  /relationship-types/patient-caregiver                1
+  /relationship-types/project-manager-member           1
+  /relationship-types/siblings                         1
+  /relationship-types/sisters                          1
+  /relationship-types/spouses                          1
+  /relationship-types/staff-manager                    1
+  /relationship-types/teacher-student                  1
+  /relationship-types/team                             1
   /terms                                               1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 1
 
 counts
-  elements  373
-  images    2
+  elements  378
+  images    6
   buttons   1
   inputs    4
-  classes   304 (sha e1f92897f3ac)
+  classes   391 (sha 8e2b065bd39a)
