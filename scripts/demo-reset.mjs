@@ -38,8 +38,15 @@
  *      creates a preserved branch holding this branch's pre-reset state and moves every child under
  *      it, so the branch this run restores comes out with no children and the next run sends the
  *      plain body. The preserved branch is a real branch — one against the project's limit and the
- *      storage its rows occupy, no compute — and the reset never deletes it: it is the recovery
- *      point the parameter exists to create.
+ *      storage its rows occupy, no compute — and it is a **recovery point**, so the reset never
+ *      deletes the newest one. It does bound the set: `scripts/demo-branch-prune.mjs` keeps the
+ *      newest preserved state per parent plus anything younger than
+ *      `DEMO_PRESERVED_MAX_AGE_DAYS` (7) and retires the rest **before** the restore is sent
+ *      (#909). Without that bound the reset's own recovery points filled the project's ten
+ *      branches and the plain restore died on `422 — branches limit exceeded` on two consecutive
+ *      nights (`99eedaba`, `7a531b43`): a restore needs one free branch slot even when it preserves
+ *      nothing, which run 43263203497 measured (`children none — the body carries no
+ *      preserve_under_name`) and a raw 422 never said.
  *
  *   3. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
  *      branch's* connection string and *this branch's* auth host. The seed reads
@@ -58,6 +65,11 @@
  *
  * ## What it refuses
  *
+ * - **A project with no free branch slot.** A restore spends one, so a project at its ceiling is
+ *   refused *before* `db:migrate` writes anything, in words that name the branches holding the
+ *   slots — never with the API's raw `422 — branches limit exceeded`. The pre-flight runs the
+ *   preserved-branch policy first (`demo-branch-prune.mjs`), so the refusal is what is left after
+ *   everything the policy sanctions has been retired.
  * - **The default branch** (`production`). The demo reset never touches it, by id and by name.
  * - **A source that is the default branch.** The source is the demo's whole supply of data, so a
  *   source of `production` would copy live rows and real accounts onto the branch a public URL
@@ -102,6 +114,10 @@
  * `production`: Neon does not allow a branch to be re-parented, so the source is named instead of
  * inherited. Pointing it at `production` is refused, by id.
  *
+ * `DEMO_BRANCH_LIMIT` (default 10, the project's plan), `DEMO_PRESERVED_MAX_AGE_DAYS` (default 7)
+ * and `DEMO_KEEP_BRANCHES` (comma- or space-separated names the prune must never delete) tune the
+ * branch-ceiling pre-flight; the policy itself is in `scripts/demo-branch-prune.mjs`.
+ *
  * Exit: 0 the demo is reset and seeded · 1 a step failed (the state is reported) · 2 usage or
  * a refused target · 3 `NEON_API_KEY` is not set.
  */
@@ -110,6 +126,15 @@ import { readFileSync } from "node:fs";
 import { register } from "node:module";
 import { Client } from "pg";
 import { repoRoot } from "./load-env.mjs";
+import {
+  branchLimit,
+  capacityRefusal,
+  KIND,
+  keepList,
+  preservedMaxAgeDays,
+  prunePlan,
+  prunePreservedBranches,
+} from "./demo-branch-prune.mjs";
 import { sourceRefusal } from "./demo-source-guard.mjs";
 import { restoreRequest } from "./demo-restore-plan.mjs";
 
@@ -162,6 +187,11 @@ The source is a branch name — \`DEMO_SOURCE_BRANCH=demo-base\`, or \`--source 
 must be the schema-only base: a source that is the project's default branch is refused, because a
 restore would copy live data onto the branch a public URL serves. With nothing named the branch's
 own parent is used.
+
+Before anything is written the project's branch ceiling is checked: a preserved branch that is not
+the newest for its parent, or older than DEMO_PRESERVED_MAX_AGE_DAYS (7), is retired first; a
+project still at its DEMO_BRANCH_LIMIT (10) is refused by name, listing the branches that hold the
+slots. DEMO_KEEP_BRANCHES names branches the prune must never delete.
 
 requires NEON_API_KEY (a Neon API key, or a CLI OAuth token). The key is never printed.`;
 
@@ -285,8 +315,7 @@ async function resolveProject(requested) {
  * at: if Neon moved the compute, a URL resolved before the reset addresses a host that is gone.
  */
 async function resolveBranch(projectId, name) {
-  const list = await neon("GET", `/projects/${projectId}/branches?limit=1000`);
-  const branches = list?.branches ?? [];
+  const branches = await listBranches(projectId);
   const branch = branches.find((candidate) => candidate.name === name);
   if (branch === undefined) {
     throw new Refused(
@@ -408,6 +437,142 @@ function assertTargetResettable(branch) {
 function assertSourceResettable(branch, source) {
   const refusal = sourceRefusal(branch, source);
   if (refusal !== null) throw new Refused(refusal);
+}
+
+/** Every branch in the project — one page, the same read `resolveBranch` and the pre-flight do. */
+async function listBranches(projectId) {
+  return (await neon("GET", `/projects/${projectId}/branches?limit=1000`))?.branches ?? [];
+}
+
+/**
+ * The refusal for a ceiling the pre-flight already predicted — computed from a *fresh* read, so a
+ * slot that filled up between the two calls is described with the branches that hold it.
+ */
+async function capacityRefusalNow(projectId, branchName) {
+  const plan = prunePlan({
+    branches: await listBranches(projectId),
+    now: new Date(),
+    branchName,
+    keep: keepList(),
+    maxAgeDays: preservedMaxAgeDays(),
+    ceiling: branchLimit(),
+  });
+  return capacityRefusal({
+    branchName,
+    count: plan.count,
+    ceiling: plan.ceiling,
+    prunable: plan.candidates,
+    kept: plan.kept,
+  });
+}
+
+/**
+ * The branch-ceiling pre-flight, and the prune that keeps the reset's own recovery points from
+ * filling the project (#909).
+ *
+ * A restore creates a branch, so it needs one free slot **even when it preserves nothing** — the
+ * nightly run at ten of ten was answered `422 — branches limit exceeded` with a body that carried
+ * no `preserve_under_name` at all (run 43263203497's log: `children none — the body carries no
+ * preserve_under_name`). Two things follow, and this does both before anything is written: the
+ * preserved-branch policy (`demo-branch-prune.mjs`) retires what it sanctions — a preserved state
+ * that is not the newest for its branch, and any older than `DEMO_PRESERVED_MAX_AGE_DAYS` — and a
+ * project that is still full is a **named** refusal: the count, the ceiling, the branches holding
+ * the slots and why each was kept, never the API's raw 422 after `db:migrate` has already run.
+ *
+ * `--dry-run` deletes nothing: it prints the same plan and the count it would remove, then decides
+ * capacity as if the deletes had happened, so a dry run answers "is tomorrow's run wedged?".
+ */
+async function preflightCapacity({ projectId, branch, dryRun }) {
+  const ceiling = branchLimit();
+  const maxAgeDays = preservedMaxAgeDays();
+  const plan = prunePlan({
+    branches: await listBranches(projectId),
+    now: new Date(),
+    branchName: branch.name,
+    keep: keepList(),
+    maxAgeDays,
+    ceiling,
+  });
+
+  step(
+    `branch capacity — ${plan.count} branch(es), limit ${plan.ceiling}; a restore needs 1 free slot`,
+  );
+  for (const candidate of plan.candidates) {
+    say(`  prune     ${candidate.name} — ${candidate.reason}`);
+  }
+  const keptBy = (kind) => plan.kept.filter((row) => row.kind === kind);
+  for (const row of keptBy(KIND.newestPreserved)) {
+    say(`  keep      ${row.name} — ${row.reason}`);
+  }
+  const core = [...keptBy(KIND.default), ...keptBy(KIND.core)];
+  if (core.length > 0) {
+    say(
+      `  keep      ${core.length} core branch(es): ${core.map((row) => row.name).join(", ")} — never pruned`,
+    );
+  }
+  const experiments = keptBy(KIND.experiment);
+  if (experiments.length > 0) {
+    say(
+      `  keep      ${experiments.length} experiment branch(es): ${experiments.map((row) => row.name).join(", ")} — the owner's call, never this job's`,
+    );
+  }
+  const listed = keptBy(KIND.keepList);
+  say(
+    `  keep      ${
+      listed.length === 0
+        ? "DEMO_KEEP_BRANCHES is empty — nothing else is kept by hand"
+        : `${listed.length} named in DEMO_KEEP_BRANCHES: ${listed.map((row) => row.name).join(", ")}`
+    }`,
+  );
+  const others = keptBy(KIND.notPreserved);
+  if (others.length > 0) {
+    say(
+      `  keep      ${others.length} branch(es) the policy does not own: ${others
+        .map((row) => row.name)
+        .join(", ")}`,
+    );
+  }
+
+  const result = await prunePreservedBranches({ projectId, plan, call: neon, dryRun });
+  for (const failure of result.failed) {
+    warn(`could not delete ${failure.name}: ${failure.error}`);
+  }
+  if (dryRun) {
+    say(
+      `  would prune ${plan.candidates.length} of ${plan.count} branch(es) — --dry-run, nothing is deleted`,
+    );
+  } else if (result.deleted.length > 0) {
+    say(
+      `  pruned    ${result.deleted.length} branch(es): ${result.deleted.map((row) => row.name).join(", ")}`,
+    );
+  } else {
+    say("  prune     nothing — no preserved branch is superseded or past the age limit");
+  }
+
+  // The number the restore has to fit in is the one that is true *after* the prune — the dry run
+  // decides on the same arithmetic, so it can say whether tomorrow's run would be refused.
+  const remaining = dryRun
+    ? plan.count - plan.candidates.length
+    : (await listBranches(projectId)).length;
+  const refusal = capacityRefusal({
+    branchName: branch.name,
+    count: remaining,
+    ceiling,
+    prunable: result.failed.map((failure) => ({
+      name: failure.name,
+      reason: `the DELETE failed: ${failure.error}`,
+    })),
+    kept: plan.kept,
+  });
+  if (refusal !== null) throw new Refused(refusal);
+
+  say(`  capacity  ${remaining} of ${ceiling} — ${ceiling - remaining} free`);
+  if (branch.childCount > 0 && ceiling - remaining < 2) {
+    warn(
+      `"${branch.name}" has ${branch.childCount} child branch(es), so this restore also creates a preserved branch and ${ceiling - remaining} free slot(s) may not be enough`,
+    );
+  }
+  return { count: remaining, ceiling, pruned: plan.candidates.length };
 }
 
 /**
@@ -556,11 +721,17 @@ function authBaseUrlFor(endpointHost, database) {
  * reset in `main()`, not assumed here.
  */
 async function restoreFromSource(projectId, branch, plan) {
-  const started = await neon(
-    "POST",
-    `/projects/${projectId}/branches/${branch.id}/restore`,
-    plan.body,
-  );
+  let started;
+  try {
+    started = await neon("POST", `/projects/${projectId}/branches/${branch.id}/restore`, plan.body);
+  } catch (error) {
+    // The pre-flight ran seconds ago, so this is a slot that filled up between the two calls (a
+    // sibling job, a preview branch). The API's `422 — branches limit exceeded` names nothing;
+    // the policy's sentence names the branches, and a refusal is the honest shape for it.
+    if (!/branches limit/i.test(error?.message ?? "")) throw error;
+    const refusal = await capacityRefusalNow(projectId, branch.name);
+    throw refusal === null ? error : new Refused(refusal);
+  }
 
   const operations = started?.operations ?? [];
   if (operations.length === 0) {
@@ -617,7 +788,7 @@ function printRestorePlan(plan, branchName) {
   );
   say(`  preserved ${plan.preservedUnder}`);
   say(
-    `            the state ${branchName} holds right now, kept as its own branch: one branch against the project's limit and the storage its rows occupy, no compute, and this script never deletes it`,
+    `            the state ${branchName} holds right now, kept as its own branch: one branch against the project's limit and the storage its rows occupy, no compute — kept while it is the newest for ${branchName} and younger than DEMO_PRESERVED_MAX_AGE_DAYS, retired after that by the pre-flight`,
   );
 }
 
@@ -1027,6 +1198,13 @@ async function main() {
         : `migrate ${source.name}${options.skipMigrate ? " (--skip-migrate)" : ""} → restore from source`
     } → ${options.skipSeed ? "nothing" : "reseed from the bundle"}`,
   );
+
+  // Capacity, before the first write (#909): a restore spends a branch slot, so a project at its
+  // ceiling is refused here — with the branches named — rather than by a raw 422 after the source
+  // has already been migrated.
+  if (!options.skipReset) {
+    await preflightCapacity({ projectId: project.id, branch, dryRun: options.dryRun });
+  }
 
   if (options.dryRun) {
     if (!options.skipReset) {
