@@ -87,7 +87,35 @@ content tables, `user_profile`, `demo_account` and `neon_auth`'s users go, in de
 inside one `BEGIN … COMMIT` on a branch that is already valid. It is deliberately in the reset
 script rather than in `db-seed`, whose refusal to delete a row it did not author is the right rule
 on **production** and the wrong one on a demo. The normal path empties nothing: the restore already
-landed on an empty branch.
+landed on an empty branch. Since #865 `db-seed` has exactly one bundle-scoped exception, described
+below: it sweeps `relationship` rows the bundle does not describe. A `record` row is still refused,
+never deleted.
+
+### A drifted branch converges instead of refusing (#865)
+
+The demo branch is shared fleet-wide, so it collects rows no seed authored — a killed `flow:e2e`
+used to leave its `relationship` row behind, because `DELETE FROM record` never took it: a
+relationship is keyed by the template, not by the instance. `pnpm db:seed` then aborted on them
+(`relationship: expected 4 row(s) … found 38`) _after_ phase 1 had removed the demo accounts, which
+is how the branch lost its only admin identity. Now phase 1 sweeps them:
+
+- **The predicate is the bundle, and nothing else.** Every `relationship` whose id is not
+  `relationship-<instance id>` for an instance in the source goes, children first —
+  `relationship_payment`, `relationship_member`, `coach_invite`, then `opinion`, `party`,
+  `session_invite`, `session`, then the `relationship` itself, because `0036` declares that FK with
+  no cascade. It is never a delete by email, by id prefix or by "looks like a test row".
+- **The exact-count assertion is unchanged.** Convergence is what makes it affordable; weakening it
+  is what would make the next drift invisible.
+- **`record` rows are still refused, not deleted.** A record this seed did not author is content
+  somebody may have meant: the seed names it and rolls back, and the sweep never touches `record`.
+- **`pnpm db:seed:check`** (or `node scripts/db-seed.mjs --check`) prints what the sweep _would_
+  remove and exits **1** on any drift — read-only, no advisory lock, no write, no auth call. It is
+  the safe question to ask about a branch every card shares, and it answers 0 when every
+  relationship row is the bundle's.
+
+`scripts/flow-e2e.mjs` also cleans up after itself — the relationship, its payment and membership
+rows, and the account it signed up — in a `finally` and on `SIGINT`/`SIGTERM`. The sweep is the net
+for a `kill -9`, not the plan.
 
 `demo-base` must never hold content rows, auth users or an app deployment. It is a schema, not an
 environment: nothing reads it directly, so a row written there is invisible until a restore copies
