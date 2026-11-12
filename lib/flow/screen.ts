@@ -143,6 +143,15 @@ export interface FlowSeat {
 
 export interface FlowScreen {
   readonly instanceRecordId: string;
+  /**
+   * The **relationship** row this instance was written for (#911).
+   *
+   * Distinct from `instanceRecordId`, and the distinction is not cosmetic: the create flow's URL
+   * carries the *record* id (`?instance=`), while every membership act — capturing a card, the
+   * payment gate behind stage 5's send — names the *relationship*. A screen that only knows the
+   * record id cannot start a capture, because the capture answers "no relationship holds the id".
+   */
+  readonly relationshipId: string;
   readonly slug: string;
   /** The template's words: an instance is a copy, and its title is the template's. */
   readonly title: string;
@@ -344,6 +353,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
 
   return {
     instanceRecordId: rows.record.id,
+    relationshipId: rows.instance.relationship_id,
     slug: rows.record.slug,
     title: template.title,
     summary: template.summary,

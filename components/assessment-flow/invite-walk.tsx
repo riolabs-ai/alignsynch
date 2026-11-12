@@ -220,7 +220,7 @@ export function InviteWalk({
         </div>
       ) : (
         <div ref={plansRef}>
-          <PlanChoices copy={copy} initial={plan ?? undefined} />
+          <PlanChoices copy={copy} initial={plan ?? undefined} onSelect={setPlan} />
         </div>
       )}
 

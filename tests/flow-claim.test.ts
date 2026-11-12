@@ -314,6 +314,7 @@ describe("the counterparty wizard", () => {
 function screen(role: "initiator" | "counterparty"): FlowScreen {
   return {
     instanceRecordId: "instance-1",
+    relationshipId: "relationship-1",
     slug: "relationship-basics-instance-1",
     title: "Relationship Basics",
     summary: "An instance between two people.",

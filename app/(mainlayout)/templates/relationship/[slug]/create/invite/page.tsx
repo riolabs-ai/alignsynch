@@ -166,6 +166,7 @@ export default async function TemplateCreateInvitePage({
       }
       draft={draft}
       instanceRecordId={screen.instanceRecordId}
+      relationshipId={screen.relationshipId}
       backHref={commitPath}
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
