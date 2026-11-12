@@ -26,6 +26,7 @@
  * prerender a page that needs `NEON_AUTH_*` — `pnpm build` passes with neither that nor
  * `DATABASE_URL` set, the same rule `/assessment/[slug]` follows.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { SettingsView } from "@/components/identity/settings-view";
 import { publicProfileOf } from "@/content/identity";
 import { settingsPageCopy } from "@/data/pages/settings";
@@ -58,14 +59,16 @@ export default async function SettingsPage() {
   const hasPassword = await accountHasPassword(user.userId);
 
   return (
-    <SettingsView
-      copy={settingsPageCopy}
-      email={user.email}
-      signedInName={user.name}
-      profile={profile === null ? null : publicProfileOf(profile)}
-      hasPassword={hasPassword}
-      savePassword={savePassword}
-      deleteAccount={deleteAccountAction}
-    />
+    <StageColumn>
+      <SettingsView
+        copy={settingsPageCopy}
+        email={user.email}
+        signedInName={user.name}
+        profile={profile === null ? null : publicProfileOf(profile)}
+        hasPassword={hasPassword}
+        savePassword={savePassword}
+        deleteAccount={deleteAccountAction}
+      />
+    </StageColumn>
   );
 }

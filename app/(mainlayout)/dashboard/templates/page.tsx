@@ -28,6 +28,7 @@
  */
 import type { Metadata } from "next";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { TemplateGallery } from "@/components/dashboard/template-gallery";
 import {
   TemplateShelf,
@@ -100,49 +101,51 @@ export default async function MemberTemplatesPage({
   const owned = mine.map((row) => mineCard(copy, row));
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">{copy.heading}</h1>
-        {copy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">{copy.subtitle}</p>
-        )}
-      </header>
-      <TemplateTabs copy={copy} current={tab} />
+    <StageColumn>
+      <div className="space-y-6">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold">{copy.heading}</h1>
+          {copy.subtitle === undefined ? null : (
+            <p className="max-w-3xl text-sm text-muted-foreground">{copy.subtitle}</p>
+          )}
+        </header>
+        <TemplateTabs copy={copy} current={tab} />
 
-      {tab === "catalogue" ? (
-        unreadable !== null ? (
+        {tab === "catalogue" ? (
+          unreadable !== null ? (
+            <TemplateShelfNotice section={sectionOf(copy, "unreadable")} reason={unreadable} />
+          ) : catalogue.length === 0 ? (
+            <TemplateShelfNotice section={sectionOf(copy, "catalogue-empty")} />
+          ) : (
+            <div className="space-y-4">
+              <TemplateShelfHeading section={sectionOf(copy, "catalogue")} />
+              <TemplateShelf cards={catalogue} />
+            </div>
+          )
+        ) : unreadable !== null ? (
           <TemplateShelfNotice section={sectionOf(copy, "unreadable")} reason={unreadable} />
-        ) : catalogue.length === 0 ? (
-          <TemplateShelfNotice section={sectionOf(copy, "catalogue-empty")} />
         ) : (
           <div className="space-y-4">
-            <TemplateShelfHeading section={sectionOf(copy, "catalogue")} />
-            <TemplateShelf cards={catalogue} />
-          </div>
-        )
-      ) : unreadable !== null ? (
-        <TemplateShelfNotice section={sectionOf(copy, "unreadable")} reason={unreadable} />
-      ) : (
-        <div className="space-y-4">
-          <TemplateShelfHeading section={sectionOf(copy, "mine")} />
-          {owned.length === 0 ? (
-            <TemplateShelfNotice section={sectionOf(copy, "mine-empty")} />
-          ) : (
-            <TemplateShelf cards={owned} />
-          )}
-          {/* The two ways to start a template. They are the shipped bands — `showList={false}`
+            <TemplateShelfHeading section={sectionOf(copy, "mine")} />
+            {owned.length === 0 ? (
+              <TemplateShelfNotice section={sectionOf(copy, "mine-empty")} />
+            ) : (
+              <TemplateShelf cards={owned} />
+            )}
+            {/* The two ways to start a template. They are the shipped bands — `showList={false}`
               keeps only those, because the shelf above already lists the rows. */}
-          <TemplateGallery
-            copy={copy}
-            rows={rows}
-            clonable={clonable}
-            unreadable={unreadable}
-            onCreate={createPrivate}
-            onClone={clonePublic}
-            showList={false}
-          />
-        </div>
-      )}
-    </div>
+            <TemplateGallery
+              copy={copy}
+              rows={rows}
+              clonable={clonable}
+              unreadable={unreadable}
+              onCreate={createPrivate}
+              onClone={clonePublic}
+              showList={false}
+            />
+          </div>
+        )}
+      </div>
+    </StageColumn>
   );
 }

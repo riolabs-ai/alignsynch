@@ -3,6 +3,7 @@ import {
   inviteNoticeOf,
   problemCodeOf,
 } from "@/components/assessment-flow/instance-view";
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
@@ -211,15 +212,17 @@ export default async function AssessmentInstancePage({
   const steps = await readStepsFor(detail);
 
   return (
-    <AssessmentInstanceView
-      screen={screen}
-      copy={assessmentInstancePageCopy}
-      paid={detail.paid}
-      steps={steps}
-      submitted={submitted === SUBMITTED_QUERY_VALUE}
-      {...(inviteNotice === undefined ? {} : { inviteNotice })}
-      {...(problemCode === undefined ? {} : { problem: problemCode })}
-      {...(refusedReinvite === undefined ? {} : { resendRefusal: refusedReinvite })}
-    />
+    <StageColumn>
+      <AssessmentInstanceView
+        screen={screen}
+        copy={assessmentInstancePageCopy}
+        paid={detail.paid}
+        steps={steps}
+        submitted={submitted === SUBMITTED_QUERY_VALUE}
+        {...(inviteNotice === undefined ? {} : { inviteNotice })}
+        {...(problemCode === undefined ? {} : { problem: problemCode })}
+        {...(refusedReinvite === undefined ? {} : { resendRefusal: refusedReinvite })}
+      />
+    </StageColumn>
   );
 }

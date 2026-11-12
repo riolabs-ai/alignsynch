@@ -26,6 +26,7 @@
     "ui:registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs",
     "ui:registry:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs --check",
     "ui:census": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/ui-census.js",
+    "columns:check": "node scripts/column-refs.ts --check",
     "release": "bash scripts/release.sh",
     "release:check": "bash scripts/release.sh --check",
     "changelog": "node scripts/changelog-view.mjs",
