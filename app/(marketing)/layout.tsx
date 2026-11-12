@@ -83,17 +83,23 @@ export default async function MarketingLayout({
     quizProduct: quizProductShipped(),
     role,
   });
-  return (
-    <div
-      className={`flex min-h-screen flex-col bg-white${notice ? ` ${ADMIN_NOTICE_SHELL_CLASS}` : ""}`}
-    >
+  /**
+   * The document a reader gets when the bar does not render — written as **the tree this layout
+   * shipped before #906**, character for character, and returned unmodified. It is not a
+   * convenience: a `{notice ? <Bar /> : null}` slot in the children of this `<div>` costs one extra
+   * child, and React derives the `useId` ids of the page's client components from that tree — so
+   * the slot alone moved every `radix-*` id on QuizHub's `/` (`radix-_R_ii_` → `radix-_R_152_`)
+   * without changing a single element. Measured: removing the slot restores both brands' hashes
+   * exactly. The two branches are therefore spelled out, and the comment block below says why.
+   */
+  const shell = (
+    <div className="flex min-h-screen flex-col bg-white">
       <MarketingHeader
         account={account}
         brand={brand}
         brandId={brandId}
         copy={publicChromeCopy(shellPageCopy, brandId)}
         mark={brandMark(brand.logo)}
-        notice={notice}
       />
       <div className="flex-1">{children}</div>
       {/*
@@ -109,14 +115,34 @@ export default async function MarketingLayout({
         hiddenNav={hiddenNavHrefs()}
         viewer={navViewer()}
       />
-      {/*
-        The admin notice bar (#906), **last**, and `fixed` in CSS. Two reasons, both parity: an
-        element placed before `{children}` shifts the ids `useId` hands the page's client
-        components (a Tabs trigger's `radix-_R_ii_` becomes `radix-_R_153_` — a byte diff nobody
-        sees), and `fixed` means the row needs no flow space here. The wrapper's `padding-top`
-        reserves exactly its height instead, so the header and the page start one bar down.
-      */}
-      {notice ? <AdminNoticeBar copy={shellPageCopy} viewerRole={role} /> : null}
+    </div>
+  );
+
+  if (!notice) return shell;
+
+  /**
+   * The same chrome, one row taller, for the one reader the bar exists for. The bar is `fixed` and
+   * first in the document, so an admin's Radix ids shift by one — an admin render is not in
+   * `pnpm parity`'s manifest, and it is the price of the row existing at all.
+   */
+  return (
+    <div className={`flex min-h-screen flex-col bg-white ${ADMIN_NOTICE_SHELL_CLASS}`}>
+      <AdminNoticeBar copy={shellPageCopy} viewerRole={role} />
+      <MarketingHeader
+        account={account}
+        brand={brand}
+        brandId={brandId}
+        copy={publicChromeCopy(shellPageCopy, brandId)}
+        mark={brandMark(brand.logo)}
+        notice
+      />
+      <div className="flex-1">{children}</div>
+      <Footer
+        brandId={brandId}
+        copy={shellPageCopy}
+        hiddenNav={hiddenNavHrefs()}
+        viewer={navViewer()}
+      />
     </div>
   );
 }

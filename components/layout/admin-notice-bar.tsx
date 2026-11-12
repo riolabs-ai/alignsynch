@@ -76,15 +76,19 @@ export function AdminNoticeBar({
   return (
     <div
       data-admin-notice
-      className="fixed inset-x-0 top-0 z-40 border-b border-border bg-foreground text-background"
+      className="fixed inset-x-0 top-0 z-40 flex min-h-[var(--admin-notice-h)] items-center bg-foreground text-background after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border"
     >
       {/*
-        `min-h` is the published height and `py-2` is the padding under it: at a wide viewport the
-        one line (20px) plus 16px of padding is 36px, so the min-height draws the 40px the spec
-        publishes; at 390 the row's published height is 56px and a label that wraps to two lines
-        fills that box exactly instead of being clipped. `items-center` centres both cases.
+        The published height lives on **this** element's `min-height`, not on the row inside it, and the
+        bottom hairline is a pseudo-element rather than a `border-b`. Both are arithmetic, not taste:
+        `banner/README.md` §4 publishes a *border-box* height of 40px (one 20px line plus two 8px
+        paddings, plus slack) and 56px at 390 (two 20px lines plus the same padding), the shell
+        reserves exactly that much `padding-top`, and a 1px border on the outside of a min-height box
+        makes the bar 41/57 — one pixel of the header's top edge painted over, measured at 1440 and
+        390 before this shape. Content is centred by the parent, so the row below is layout, not
+        height.
       */}
-      <div className="marketing-container flex min-h-[var(--admin-notice-h)] items-center gap-2 py-2">
+      <div className="marketing-container flex w-full items-center gap-2 py-2">
         <span aria-hidden="true" className="h-[7px] w-[7px] shrink-0 rounded-full bg-action" />
         <span className="text-[11px] font-semibold uppercase leading-5 tracking-[0.045em]">
           {itemLabel(section, "label")}
