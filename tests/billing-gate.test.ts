@@ -113,6 +113,42 @@ describe("a free account", () => {
   });
 });
 
+/**
+ * #834 — a draft is not gated, because the plan is sold on the send.
+ *
+ * Stage 4 writes the relationship as a `draft`: unsent, unfunded, invisible to the counterparty,
+ * and nothing is charged. The mode leg used to run here anyway, so a Free account that chose
+ * Advanced was refused *before* stage 5 — the stage that carries the plans and the checkout — which
+ * is a dead end where the product promises an upsell. These cases pin the exemption and pin it
+ * narrowly: the same inputs go back to being refused the moment the create is not a draft.
+ */
+describe("a draft (#834)", () => {
+  it("is written even when the Mode is not on the plan, and reaches the transaction", async () => {
+    await expect(
+      createInstanceFromTemplate(createInput({ mode: "advanced", draft: true })),
+    ).rejects.toThrow("REACHED_THE_TRANSACTION");
+    // The gate is before the transaction by design; reaching it is the proof the gate stood down.
+    expect(gate.poolConnects).toBe(1);
+  });
+
+  it("is written even when the plan's relationship limit is already spent", async () => {
+    gate.activeRelationships = 1;
+
+    await expect(createInstanceFromTemplate(createInput({ draft: true }))).rejects.toThrow(
+      "REACHED_THE_TRANSACTION",
+    );
+    expect(gate.poolConnects).toBe(1);
+  });
+
+  it("still refuses the same Mode on a create that goes out published", async () => {
+    // The exemption is the draft flag, not a hole: `draft: false` is the pre-#834 path.
+    await expect(
+      createInstanceFromTemplate(createInput({ mode: "advanced", draft: false })),
+    ).rejects.toMatchObject({ code: "mode-not-entitled" });
+    expect(gate.poolConnects).toBe(0);
+  });
+});
+
 describe("a paid account", () => {
   beforeEach(() => {
     gate.planId = "principal";
