@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuizHub — comments on aspect opinions, sessions and relationships</title>
+<style>
+  /* ===========================================================================
+     TOKENS — the app's, not a palette step.
+     `--action` is data/brand.ts :: quizHubBrand.colors.action, painted through
+     app/globals.css as `--action` / `bg-action`. No palette class appears in this
+     file: the brand has one home and this artifact reads it, it does not re-pick it.
+     Radii are the webapp's: card = rounded-lg (8px), button = rounded-md (6px),
+     base input = var(--radius) (5px).
+     =========================================================================== */
+  :root{
+    --action:#6366f1; --action-ink:#fff; --action-soft:rgba(99,102,241,.06);
+    --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --line-strong:#d1d5db;
+    --bg:#f9fafb; --panel:#fff; --ok:#15803d; --ok-soft:#f0fdf4; --warn:#b45309; --warn-soft:#fffbeb;
+    --radius-lg:8px; --radius-md:6px; --radius-input:5px;
+    --pad:24px; --gap:24px;
+    --stage-max:1126px; --rail:241px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+  a{color:var(--action)}
+  h1,h2,h3,h4{margin:0;line-height:1.25;font-weight:600}
+  h1{font-size:1.875rem} h2{font-size:1.125rem} h3{font-size:1rem}
+  p{margin:.35rem 0}
+  small,.muted{color:var(--muted);font-size:.875rem}
+  .meta{color:var(--muted);font-size:.75rem;margin:0}
+  .eyebrow{font-size:.6875rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin:0}
+  .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+  /* ---- shell: the QuizHub app chrome (data/pages/shell.ts nav words) ---- */
+  .shell{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);min-height:100vh}
+  .rail{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+  .brand{display:flex;gap:9px;align-items:center;margin-bottom:20px}
+  .mark{width:26px;height:26px;border-radius:6px;background:var(--action);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
+  .brand b{font-size:.9rem;display:block}
+  .brand span{font-size:.72rem;color:var(--muted)}
+  .nav-group{margin:0 0 14px}
+  .nav-group>label{display:block;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 8px 5px}
+  .nav a{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:0 10px;min-height:40px;border-radius:6px;font-size:.875rem;color:var(--ink);text-decoration:none}
+  .nav a[aria-current="page"]{background:var(--action);color:var(--action-ink);font-weight:600}
+  .nav .count{font-size:.72rem;color:var(--muted)}
+  .nav a[aria-current="page"] .count{color:var(--action-ink);opacity:.8}
+  main{padding:22px 40px 72px 24px;min-width:0}
+  .column{width:100%;max-width:var(--stage-max)}
+
+  /* ---- prototype chrome (this artifact's own controls, not product UI) ---- */
+  .proto-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+  .proto-lede{max-width:64ch;color:#374151;font-size:.875rem}
+  .toggles{display:grid;gap:10px;justify-items:end}
+  .segwrap{display:inline-flex;border:1px solid var(--line-strong);border-radius:var(--radius-md);overflow:hidden;background:#fff}
+  .seg{all:unset;cursor:pointer;padding:6px 12px;font-size:.78rem;font-weight:600;color:#4b5563}
+  .seg+.seg{box-shadow:inset 1px 0 0 var(--line)}
+  .seg[aria-pressed="true"]{background:var(--action);color:var(--action-ink)}
+  .seg:focus-visible,.tabs button:focus-visible{outline:2px solid var(--action);outline-offset:-2px}
+  .segwrap .lab{padding:6px 10px;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);box-shadow:inset -1px 0 0 var(--line)}
+  .tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden;background:#fff;margin:16px 0 6px}
+  .tabs button{all:unset;cursor:pointer;flex:1 1 0;text-align:center;padding:10px 8px;font-size:.8rem;font-weight:600;color:var(--muted);min-width:0}
+  .tabs button+button{box-shadow:inset 1px 0 0 var(--line)}
+  .tabs button[aria-selected="true"]{background:var(--action-soft);color:var(--ink);box-shadow:inset 0 -2px 0 var(--action)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:.72rem;color:var(--muted);margin:8px 0 20px}
+  .legend b{color:#374151}
+
+  /* ---- surfaces ---- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg)}
+  .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+  .card-body{padding:20px}
+  .chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:2px 9px;font-size:.75rem;font-weight:500;color:#374151;white-space:nowrap}
+  .chip.ok{border-color:#bbf7d0;background:var(--ok-soft);color:var(--ok)}
+  .chip.warn{border-color:#fde68a;background:var(--warn-soft);color:var(--warn)}
+  .chip.tight{border-style:dashed;border-color:var(--line-strong);color:var(--muted)}
+
+  /* ---- the three anchors ---- */
+  .orow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,240px);gap:20px;align-items:start}
+  .oaspect{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;min-width:0}
+  .opos{font-size:11px;font-weight:600;letter-spacing:.06em;color:#94a3b8;font-variant-numeric:tabular-nums;padding-top:4px}
+  .band{margin-top:6px;font-size:.8rem;color:#4b5563}
+  .band i{font-style:normal;color:#cbd5e1;padding:0 6px}
+  .ostatement{border-left:2px solid var(--line);padding-left:16px;min-width:0}
+  .who{display:flex;align-items:center;gap:8px;min-width:0}
+  .who b{font-size:.875rem;font-weight:600;overflow-wrap:anywhere}
+  .notches{display:inline-flex;align-items:center;gap:6px}
+  .notch{width:10px;height:10px;border-radius:50%;background:#e5e7eb}
+  .notch.on{background:var(--action)}
+  .oanswer{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:.875rem}
+  .oanswer b{font-variant-numeric:tabular-nums}
+
+  .verdict{border:1px solid #fde68a;background:var(--warn-soft);color:#78350f;border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:18px}
+  .verdict[data-verdict="aligned"]{border-color:#bbf7d0;background:var(--ok-soft);color:#14532d}
+  .verdict h3{font-size:.95rem}
+  .verdict .line{font-size:.95rem;font-weight:600;margin-top:2px}
+  table.gaps{width:100%;border-collapse:collapse;margin-top:4px}
+  table.gaps caption{text-align:left}
+  table.gaps th,table.gaps td{padding:6px 8px 6px 0;font-size:.875rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.gaps thead th{font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+  table.gaps th[scope="row"]{font-weight:500;color:#374151;white-space:nowrap}
+  table.gaps td.num{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;padding-right:0}
+  .tbl-head{font-size:.875rem;font-weight:600;margin:14px 0 2px}
+
+  .ident{display:flex;align-items:center;gap:12px;min-width:0}
+  .ident .names{min-width:0}
+  .ident h2{overflow-wrap:anywhere}
+  .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 4px}
+  .facts div{min-width:0}
+  .facts dt{font-size:.6875rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .facts dd{margin:2px 0 0;font-size:.875rem}
+  .sessions{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:8px}
+  .sessions li{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--radius-md);padding:10px 12px;min-width:0}
+  .sessions .sname{font-size:.875rem;font-weight:500;min-width:0;overflow-wrap:anywhere}
+  .sessions .sright{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+
+  /* ---- the thread (components/quiz/comment.tsx, hand-written) ---- */
+  .thread-inline{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+  .thread-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+  .thread-head h3{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .comments{list-style:none;margin:0;padding:0;display:grid;gap:10px;min-width:0}
+  .comment{border:1px solid var(--line);border-radius:var(--radius-md);padding:14px;min-width:0}
+  .comment.pending{border-color:var(--action);background:var(--action-soft)}
+  .chead{display:flex;align-items:flex-start;gap:12px;min-width:0}
+  .avatar{flex:0 0 auto;width:var(--s,40px);height:var(--s,40px);border-radius:50%;display:grid;place-items:center;font-size:.75rem;font-weight:700;color:#fff;letter-spacing:.02em}
+  .cbody{flex:1 1 auto;min-width:0}
+  .ctop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;min-width:0}
+  .cname{margin:0;font-size:.875rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+  .ctext{margin-top:6px;font-size:.875rem;overflow-wrap:anywhere}
+  .cactions{display:flex;align-items:center;gap:4px;margin-top:8px;flex-wrap:wrap}
+  .replies{margin-top:12px;padding-left:14px;border-left:2px solid var(--line)}
+  .reply{display:flex;align-items:flex-start;gap:10px;min-width:0}
+  .reply .cname{font-size:.8125rem}
+  .empty{border:1px dashed var(--line-strong);background:#fafafa;border-radius:var(--radius-md);padding:22px 16px;text-align:center;color:var(--muted);font-size:.875rem}
+  .lock{border:1px solid var(--line);background:#fafafa;border-radius:var(--radius-md);padding:12px 14px;font-size:.8125rem;color:#4b5563;margin-top:12px}
+
+  /* ---- controls: Button sm (32px) and the textarea, as the app draws them ---- */
+  .btn{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+       border-radius:var(--radius-md);font-weight:600;font-size:.8125rem;min-height:32px;padding:0 12px}
+  .btn.primary{background:var(--action);color:var(--action-ink)}
+  .btn.outline{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-strong)}
+  .btn.ghost{color:#4b5563;padding:0 6px;min-height:28px;font-weight:500}
+  .btn.ghost:hover{background:#f3f4f6;color:var(--ink)}
+  .btn.icon{width:28px;min-width:28px;padding:0;justify-content:center}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .btn:focus-visible{outline:2px solid var(--action);outline-offset:2px}
+  .field{display:block;margin-top:12px}
+  .field>span{display:block;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  textarea{width:100%;min-height:76px;padding:9px 10px;border:1px solid var(--line-strong);border-radius:var(--radius-input);
+           font:inherit;font-size:.875rem;background:#fff;color:var(--ink);resize:vertical}
+  textarea:focus{outline:2px solid var(--action);outline-offset:1px;border-color:var(--action)}
+  textarea[disabled]{opacity:.6}
+  .fieldfoot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .refusal{margin:0;font-size:.8125rem;font-weight:600;color:#b45309}
+  .status{margin:0;font-size:.75rem;color:var(--muted)}
+
+  /* ---- a placeholder string is marked, never smuggled in ---- */
+  .ph{border-bottom:1px dotted #9ca3af;text-decoration:none;cursor:help}
+
+  /* ---- variant B: the panel keeps the subject in view ---- */
+  .pair{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:var(--gap);align-items:start}
+  .pair-rail{min-width:0;position:sticky;top:16px}
+  .pair-rail .card{max-height:calc(100vh - 32px);overflow:auto}
+  .panel-tag{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);background:#fafafa;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+  .panel-tag span{font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+
+  /* ---- specimens ---- */
+  .specimen{margin:0 0 32px;scroll-margin-top:16px}
+  .specimen>figcaption{display:flex;gap:10px;align-items:baseline;margin-bottom:10px;font-size:.8rem;color:#374151}
+  .specimen>figcaption b{font-variant-numeric:tabular-nums;color:#94a3b8;font-size:.72rem;letter-spacing:.06em}
+  .affgrid{display:grid;gap:10px;margin-top:10px}
+  .aff{display:flex;gap:10px;align-items:flex-start;min-width:0}
+  .aff-tag{flex:0 0 92px;font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;padding-top:14px}
+  .aff .comment{flex:1 1 auto}
+
+  /* ---- 390: the phone the reviewer asks about ----
+     Driven by data-vw, so one toggle moves the whole drawing. The rail folds
+     away, the pair collapses to one column and the panel becomes a sheet that
+     sits under the subject — the width where wrapping is the question. */
+  body[data-vw="390"] .shell{grid-template-columns:minmax(0,1fr);max-width:390px;margin:0 auto;border:1px solid var(--line);min-height:100vh;background:var(--bg)}
+  body[data-vw="390"] .rail{display:none}
+  body[data-vw="390"] main{padding:16px 14px 48px}
+  body[data-vw="390"] .column{max-width:100%}
+  body[data-vw="390"] .toggles{justify-items:start}
+  body[data-vw="390"] .orow{grid-template-columns:minmax(0,1fr);gap:10px}
+  body[data-vw="390"] .ostatement{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:10px}
+  body[data-vw="390"] .pair{grid-template-columns:minmax(0,1fr)}
+  body[data-vw="390"] .pair-rail{position:static}
+  body[data-vw="390"] .pair-rail .card{max-height:none;border-radius:var(--radius-lg);border-top:3px solid var(--action)}
+  body[data-vw="390"] .tabs{flex-direction:column}
+  body[data-vw="390"] .tabs button+button{box-shadow:inset 0 1px 0 var(--line)}
+  body[data-vw="390"] .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body[data-vw="390"] .card-head,body[data-vw="390"] .card-body{padding:14px}
+  body[data-vw="390"] .aff{flex-direction:column}
+  body[data-vw="390"] .aff-tag{padding-top:0}
+  body[data-vw="390"] .sessions li{flex-direction:column;align-items:flex-start}
+  body[data-vw="390"] .cname{word-break:break-word}
+
+  /* ---- provenance ---- */
+  details.prov{margin-top:8px;border:1px solid var(--line);border-radius:var(--radius-lg);background:#fff}
+  details.prov>summary{cursor:pointer;padding:14px 20px;font-size:.875rem;font-weight:600}
+  details.prov .inner{padding:0 20px 20px}
+  table.prov{width:100%;border-collapse:collapse;font-size:.8125rem}
+  table.prov th,table.prov td{border-top:1px solid var(--line);padding:7px 10px 7px 0;text-align:left;vertical-align:top}
+  table.prov thead th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-top:0}
+  table.prov code{font-size:.78rem;background:#f3f4f6;padding:1px 4px;border-radius:4px}
+  @media (max-width:980px){
+    .pair{grid-template-columns:minmax(0,1fr)}
+    .pair-rail{position:static}
+  }
+</style>
+</head>
+<body data-vw="1440" data-variant="A" data-subject="opinion">
+
+<div class="shell" id="shell">
+  <aside class="rail">
+    <div class="brand">
+      <span class="mark">Q</span>
+      <span><b>QuizHub</b><span>Play, learn, discuss</span></span>
+    </div>
+    <div class="nav-group">
+      <label>Workspace</label>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#" aria-current="page">Quiz Discussions</a>
+        <a href="#">Home</a>
+        <a href="#">Explore Quizzes <span class="count">128</span></a>
+        <a href="#">My Quizzes</a>
+        <a href="#">Leaderboard <span class="count">12</span></a>
+        <a href="#">Quiz Tournament</a>
+      </nav>
+    </div>
+    <div class="nav-group">
+      <label>Support</label>
+      <nav class="nav" aria-label="Support navigation">
+        <a href="#">Support</a>
+        <a href="#">Help</a>
+        <a href="#">Logout</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main>
+    <div class="column">
+
+      <div class="proto-head">
+        <div>
+          <h1>Comments on an opinion, a session and a relationship</h1>
+          <p class="proto-lede">One thread component, three subjects. Variant <b>A</b> hangs the
+            thread under the thing it is about; variant <b>B</b> opens it beside the thing so the
+            subject stays in view. Every state the card asks for is drawn for every subject in both
+            variants — switch the subject, switch the placement, switch the viewport.</p>
+        </div>
+        <div class="toggles">
+          <div class="segwrap" role="group" aria-label="Placement variant">
+            <span class="lab">Variant</span>
+            <button class="seg" id="vA" aria-pressed="true" onclick="setVariant('A')">A · inline</button>
+            <button class="seg" id="vB" aria-pressed="false" onclick="setVariant('B')">B · side panel</button>
+          </div>
+          <div class="segwrap" role="group" aria-label="Viewport">
+            <span class="lab">Viewport</span>
+            <button class="seg" id="w1440" aria-pressed="true" onclick="setViewport('1440')">1440</button>
+            <button class="seg" id="w390" aria-pressed="false" onclick="setViewport('390')">390</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Subject">
+        <button role="tab" id="tab-opinion" aria-selected="true" aria-controls="stage" onclick="setSubject('opinion')">Aspect opinion</button>
+        <button role="tab" id="tab-assessment" aria-selected="false" aria-controls="stage" onclick="setSubject('assessment')">Assessment (session summary)</button>
+        <button role="tab" id="tab-relationship" aria-selected="false" aria-controls="stage" onclick="setSubject('relationship')">Relationship</button>
+      </div>
+      <div class="legend">
+        <span><b>States drawn:</b> empty · one comment · thread with a collapsed reply · the reader's own comment (none / edit / delete) · locked subject · long body at 390 · the composer's five states.</span>
+        <span><span class="ph">dotted underline</span> = placeholder copy — not in the app yet (see Provenance).</span>
+      </div>
+
+      <div id="stage" role="tabpanel" aria-live="polite"></div>
+
+      <details class="prov">
+        <summary>Provenance — every string in this drawing, real or placeholder</summary>
+        <div class="inner">
+          <table class="prov">
+            <thead><tr><th>String</th><th>Where it comes from</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><code>Replies</code> · <code>No replies on this issue yet.</code> shape, <code>Write a reply</code> · <code>Comment</code> · <code>Sending…</code></td><td><code>data/pages/admin-review.ts</code> — the audited-write composer this one copies</td><td>verbatim (the empty state is reworded below)</td></tr>
+              <tr><td><code>Reply</code> · <code>Show Replies (1)</code> · <code>Hide Replies</code> · <code>Cancel</code></td><td><code>components/quiz/comment.tsx</code></td><td>verbatim</td></tr>
+              <tr><td><code>A reply needs words before it can be posted.</code></td><td><code>data/pages/admin-review.ts:158</code> — the refusal the composer draws as a sentence</td><td>verbatim</td></tr>
+              <tr><td><code>Not committed yet — this reply becomes a row when the store answers.</code></td><td><code>data/pages/admin-review.ts</code> — the pending row</td><td>verbatim</td></tr>
+              <tr><td>The Gap Report · Where you stand · the three verdict sentences · Gap · The two Opinions it compares · Gap value · In Synch</td><td><code>data/pages/assessment-report.ts</code></td><td>verbatim templates, filled</td></tr>
+              <tr><td><code>Feelings and Wishes Differ</code> · <code>Desires To Change</code> · <code>Prediction Gaps and Analysis</code></td><td><code>content/gaps.ts</code> — the specification's own vocabulary</td><td>verbatim</td></tr>
+              <tr><td><code>Soft</code> / <code>Full</code> and their definitions; <code>Feel</code> / <code>Wish</code> / <code>Think</code> / <code>Guess</code>; the five Aspect prompts and their two band ends</td><td><code>content/assessment.ts</code>, <code>data/assessments.ts</code></td><td>verbatim</td></tr>
+              <tr><td><code>Relationship</code> · <code>State</code> · <code>Aspects</code> · <code>Started</code> · <code>Published</code> · <code>Where this stands</code> and its body · <code>Published. The other person has joined.</code> · <code>Initiator</code> / <code>Counterparty</code></td><td><code>data/pages/dashboard-relationship-detail.ts</code></td><td>verbatim</td></tr>
+              <tr><td><code>Complete</code> · <code>Running</code> · <code>Draft</code></td><td><code>data/pages/dashboard-relationship-detail.ts</code> — the lifecycle words</td><td>verbatim</td></tr>
+              <tr><td><code>Relationship Basics</code> · <code>Staff &amp; Manager</code></td><td><code>data/assessments.ts</code> — the two demo templates</td><td>verbatim</td></tr>
+              <tr><td>The nav words, <code>Main navigation</code></td><td><code>data/pages/shell.ts</code></td><td>verbatim</td></tr>
+              <tr><td><code>No replies yet.</code></td><td>the empty state, reworded for a subject that is not an issue</td><td>placeholder</td></tr>
+              <tr><td><code>Comments are closed on this session. Its replies stay readable; nothing new can be added.</code></td><td>the locked subject — no such sentence exists in the tree</td><td>placeholder</td></tr>
+              <tr><td><code>Edit</code> · <code>Delete</code> on the reader's own comment</td><td>the affordance question the owner is answering; drawn three ways, not chosen</td><td>placeholder</td></tr>
+              <tr><td>Every comment body, the long author name, the long unbroken identifier</td><td>drawn to a length, never quoted — marked <span class="ph">like this</span></td><td>placeholder</td></tr>
+              <tr><td><code>Shared sessions</code>, the specimen captions, the toggle labels, the legend</td><td>this prototype's own chrome</td><td>prototype</td></tr>
+            </tbody>
+          </table>
+          <p class="muted" style="margin-top:12px">The comment body is the only place the drawing invents prose, and it says
+            <b>Placeholder body</b> so a reviewer cannot mistake it for copy. Nothing in this file is product copy that a
+            build may ship: the feature is not specified until the owner names a variant.</p>
+        </div>
+      </details>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================================
+   PROVENANCE COMMENTS
+   template-ancestor (visual): components/quiz/comment.tsx — one comment
+   hand-written: avatar, author, long date, body, vote + reply controls, one
+   level of collapsible replies.
+   template-ancestor (write path): components/admin/review-thread.tsx — a server
+   callback, a pending row, and a refusal drawn as a sentence beside the field,
+   never a silent no-op.
+   This file draws both and edits neither.
+   ============================================================================ */
+
+/* ---- people: the demo pair the Gap report already names, and the reader ---- */
+const PEOPLE = {
+  iris:{ id:"party-iris-danforth", name:"Iris Danforth" },
+  noor:{ id:"party-noor-haddad", name:"Noor Haddad" },
+  you:{ id:"current-user", name:"You" },
+  long:{ id:"party-bartholomew-christophersen", name:"Bartholomew Christophersen-Iyengar" }
+};
+
+/* ---- instants: fixed, so the drawing is the same picture on every machine
+   (content/core.ts::DEMO_NOW_ISO is a fixture constant for the same reason) ---- */
+const AT = {
+  first:"2026-11-11T09:14:00.000Z",
+  reply:"2026-11-11T10:02:00.000Z",
+  own:"2026-11-11T14:26:00.000Z",
+  late:"2026-11-12T08:05:00.000Z"
+};
+
+const BODY = {
+  one:"Placeholder body — one comment on this Aspect, kept to a sentence so the row height stays honest.",
+  reply:"Placeholder reply — the one level of nesting the quiz discussion already draws.",
+  own:"Placeholder body — the reader's own comment, the row that carries the affordance question.",
+  long:"Placeholder body — a comment long enough to wrap several times over: the point of the specimen is that the column grows downwards and never sideways. It keeps going so that the paragraph reaches the bottom of a phone screen and then some, which is the only way to see that the thread's padding, the avatar gap and the reply rule all survive a body nobody would write on purpose.",
+  longWord:"Placeholder-identifier-without-any-spaces-AspectHouseworkAnsweredByBothPartiesOnTheFivePointBandSoTheRowMustWrap"
+};
+
+const WD=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const MO=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const p2=(n)=>String(n).padStart(2,"0");
+
+/** content/core.ts::formatDateTimeLong — `Wednesday, November 11 at 09:14 AM`, UTC, no clock read. */
+function dtLong(iso){
+  const d=new Date(iso);
+  const h=d.getUTCHours();
+  const h12=h%12===0?12:h%12;
+  return WD[d.getUTCDay()]+", "+MO[d.getUTCMonth()]+" "+d.getUTCDate()+" at "+p2(h12)+":"+p2(d.getUTCMinutes())+" "+(h<12?"AM":"PM");
+}
+
+/** The FNV-1a seed hash components/media/generated-avatar.tsx documents. */
+function seedHash(seed){
+  let h=0x811c9dc5;
+  for(let i=0;i<seed.length;i+=1){ h=(h^seed.charCodeAt(i))*0x01000193; h=h>>>0; }
+  return h>>>0;
+}
+
+/** GeneratedAvatar, drawn: initials over a wash that is a pure function of the person's id. */
+function avatar(person,size){
+  const h=seedHash(person.id);
+  const from=h%360, to=(from+32+(h>>>9)%96)%360, angle=45*(1+(h>>>17)%8), sat=52+(h>>>11)%17;
+  const pale=(h>>>5)%4===0;
+  const l1=pale?86:54, l2=pale?74:38;
+  const ink=pale?"#1f2937":"#ffffff";
+  const initials=person.name.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
+  return '<span class="avatar" style="--s:'+size+'px;color:'+ink+';background-image:linear-gradient('+angle+'deg,hsl('+from+' '+sat+'% '+l1+'%),hsl('+to+' '+sat+'% '+l2+'%))" aria-hidden="true">'+initials+'</span>';
+}
+
+/** A placeholder string: marked, titled, and never read as product copy. */
+function ph(text){ return '<span class="ph" title="Placeholder copy — not in the app yet">'+text+'</span>'; }
+
+const ICON = {
+  flag:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
+  vote:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg>',
+  reply:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  down:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  up:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>'
+};
+
+/* ============================================================================
+   THE THREE SUBJECTS — each is the real screen's shape, composed here.
+   ============================================================================ */
+
+function notches(value){
+  let out='<span class="notches" aria-hidden="true">';
+  for(let n=1;n<=5;n+=1) out+='<span class="notch'+(n===value?" on":"")+'"></span>';
+  return out+'</span>';
+}
+
+/** Aspect opinion — the opinion row: Aspect on the left, the party's statement on the right. */
+function subjectOpinion(extra){
+  return '<article class="card" data-subject-card="opinion">'
+    + '<div class="card-head">'
+      + '<div style="min-width:0"><p class="eyebrow">Aspect</p>'
+      + '<h2 style="overflow-wrap:anywhere">How is the work of the household divided?</h2></div>'
+      + '<span class="chip">Feel</span>'
+    + '</div>'
+    + '<div class="card-body">'
+      + '<div class="orow">'
+        + '<div class="oaspect">'
+          + '<span class="opos">02</span>'
+          + '<div style="min-width:0">'
+            + '<p class="band"><b>All mine</b><i>—</i><b>Evenly split</b></p>'
+            + '<p class="meta">One question, answered by both of you on the 1..5 band.</p>'
+          + '</div>'
+        + '</div>'
+        + '<div class="ostatement">'
+          + '<div class="who">'+avatar(PEOPLE.iris,28)+'<b>Iris Danforth</b></div>'
+          + '<div class="oanswer">'+notches(4)+'<b role="img" aria-label="Iris Feel: 4">4</b><span class="muted">Feel</span></div>'
+          + '<p class="meta">Saturday, November 7 at 03:20 PM</p>'
+        + '</div>'
+      + '</div>'
+      + extra
+    + '</div></article>';
+}
+
+/** Assessment — the session summary: the verdict band, then the Aspect table. */
+function subjectAssessment(extra){
+  return '<article class="card" data-subject-card="assessment">'
+    + '<div class="card-head">'
+      + '<div style="min-width:0"><p class="eyebrow">Session</p>'
+      + '<h2 style="overflow-wrap:anywhere">Relationship Basics</h2>'
+      + '<p class="meta">Wednesday, November 11 at 08:40 AM</p></div>'
+      + '<span class="chip ok">Complete</span>'
+    + '</div>'
+    + '<div class="card-body">'
+      + '<section class="verdict" data-verdict="unmet">'
+        + '<h3>Where you stand</h3>'
+        + '<p class="line">2 Gaps exceed Soft. The widest is a Gap of 3 on How is the work of the household divided?</p>'
+        + '<p class="meta" style="color:inherit">Soft Setting: Small Gap (1) OK – a satisfactory Setting.</p>'
+      + '</section>'
+      + '<h3 class="tbl-head">Feelings and Wishes Differ</h3>'
+      + '<table class="gaps"><caption class="sr">How is the work of the household divided? — Feelings and Wishes Differ</caption>'
+        + '<thead><tr><th scope="col">Gap</th><th scope="col">The two Opinions it compares</th><th scope="col" style="text-align:right">Gap value</th></tr></thead>'
+        + '<tbody>'
+          + '<tr><th scope="row">Feel Gap</th><td>Noor Feel 3 vs Iris Feel 4</td><td class="num">1</td></tr>'
+          + '<tr><th scope="row">Wish Gap</th><td>Noor Wish 2 vs Iris Wish 5</td><td class="num">3</td></tr>'
+        + '</tbody>'
+      + '</table>'
+      + extra
+    + '</div></article>';
+}
+
+/** Relationship — the detail page: the two parties, the state chip, the shared sessions. */
+function subjectRelationship(extra){
+  return '<article class="card" data-subject-card="relationship">'
+    + '<div class="card-head">'
+      + '<div class="ident">'
+        + '<span style="display:flex">'+avatar(PEOPLE.noor,36)+'</span>'
+        + '<div class="names"><p class="eyebrow">Relationship</p>'
+        + '<h2>Noor Haddad / Iris Danforth</h2>'
+        + '<p class="meta">Initiator / Counterparty</p></div>'
+      + '</div>'
+      + '<span class="chip ok">Published</span>'
+    + '</div>'
+    + '<div class="card-body">'
+      + '<p class="muted">Published. The other person has joined.</p>'
+      + '<dl class="facts">'
+        + '<div><dt>State</dt><dd>Published</dd></div>'
+        + '<div><dt>Aspects</dt><dd>5</dd></div>'
+        + '<div><dt>Started</dt><dd>October 26</dd></div>'
+      + '</dl>'
+      + '<h3 class="tbl-head">Where this stands</h3>'
+      + '<p>A draft is yours alone. A published relationship has an invitation out; the pair is working on it once the other person joins.</p>'
+      + '<h3 class="tbl-head">'+ph("Shared sessions")+'</h3>'
+      + '<ul class="sessions">'
+        + '<li><span class="sname">Relationship Basics</span><span class="sright"><span class="meta">November 11</span><span class="chip ok">Complete</span></span></li>'
+        + '<li><span class="sname">Staff &amp; Manager</span><span class="sright"><span class="meta">November 9</span><span class="chip">Draft</span></span></li>'
+      + '</ul>'
+      + extra
+    + '</div></article>';
+}
+
+function subjectCard(subject, extra){
+  if(subject==="assessment") return subjectAssessment(extra||"");
+  if(subject==="relationship") return subjectRelationship(extra||"");
+  return subjectOpinion(extra||"");
+}
+
+/* ============================================================================
+   THE COMMENT — components/quiz/comment.tsx, hand-written
+   ============================================================================ */
+
+function controls(opts){
+  const o=opts||{};
+  const vote=o.vote===false?"":'<button class="btn ghost" type="button" aria-label="Vote for this comment">'+ICON.vote+'<span>'+o.votes+'</span></button>';
+  const reply=o.reply===false?"":'<button class="btn ghost" type="button" aria-label="Reply to this comment">'+ICON.reply+'<span>Reply</span></button>';
+  const collapse=o.collapsed===undefined?"":'<button class="btn ghost" type="button" aria-label="'+(o.collapsed?"Show 1 reply":"Hide 1 reply")+'">'+(o.collapsed?ICON.down:ICON.up)+'<span>'+(o.collapsed?"Show Replies (1)":"Hide Replies")+'</span></button>';
+  return '<div class="cactions">'+vote+reply+collapse+'</div>';
+}
+
+function commentRow(cfg){
+  const p=cfg.person, body=cfg.body;
+  const flag=cfg.flag===false?"":'<button class="btn ghost icon" type="button" aria-label="Report this comment">'+ICON.flag+'</button>';
+  return '<li class="comment'+(cfg.pending?" pending":"")+'"'+(cfg.attr||"")+'>'
+    + '<div class="chead">'+avatar(p,cfg.size||40)
+      + '<div class="cbody">'
+        + '<div class="ctop"><div style="min-width:0">'
+          + '<h3 class="cname">'+p.name+'</h3>'
+          + '<p class="meta">'+dtLong(cfg.at)+'</p>'
+        + '</div>'+flag+'</div>'
+        + (cfg.pending?'<p class="meta" style="margin-top:4px">Sending…</p>':'')
+        + '<p class="ctext">'+body+'</p>'
+        + (cfg.controls!==undefined?cfg.controls:controls({votes:cfg.votes===undefined?12:cfg.votes,collapsed:cfg.collapsed}))
+        + (cfg.replies||'')
+      + '</div>'
+    + '</div></li>';
+}
+
+function replyRow(person,body,at,size){
+  return '<div class="replies"><div class="reply">'+avatar(person,size||28)
+    + '<div class="cbody"><h4 class="cname">'+person.name+'</h4><p class="meta">'+dtLong(at)+'</p>'
+    + '<p class="ctext">'+body+'</p></div></div></div>';
+}
+
+/** The composer — a label, a multiline field, a submit, and a refusal as a sentence. */
+function composer(mode){
+  const disabledEmpty = mode==="empty";
+  const submitting = mode==="submitting";
+  const value = mode==="filled" ? "Placeholder body — typed, not yet posted."
+    : mode==="refused" ? "Placeholder body — typed again after the refusal."
+    : mode==="long" ? "Placeholder body — a comment typed to a length that wraps the field at 390 CSS px, so the textarea grows and the submit stays reachable."
+    : "";
+  const label = "<span>Write a reply</span>";
+  const submitLabel = submitting ? "Sending…" : "Comment";
+  const disabled = disabledEmpty || submitting;
+  const refusal = mode==="refused"
+    ? '<p class="refusal" role="status">A reply needs words before it can be posted.</p>'
+    : "";
+  const status = submitting
+    ? '<p class="status">Not committed yet — this reply becomes a row when the store answers.</p>'
+    : "";
+  return '<form class="field" onsubmit="return false">'
+    + '<label for="composer-'+mode+'">'+label
+    + '<textarea id="composer-'+mode+'" rows="3"'+(submitting?" disabled":"")+(disabledEmpty?' aria-describedby="hint-'+mode+'"':"")+'>'+value+'</textarea>'
+    + '</label>'
+    + '<div class="fieldfoot">'
+      + '<button class="btn primary" type="submit"'+(disabled?" disabled":"")+'>'+submitLabel+'</button>'
+      + '<button class="btn outline" type="button">Cancel</button>'
+      + refusal
+    + '</div>'
+    + (disabledEmpty?'<p class="status" id="hint-'+mode+'">A reply needs words before it can be posted.</p>':"")
+    + status
+    + '</form>';
+}
+
+/* ---------------------------------------------------------------------------
+   One thread, in the state a specimen asks for.
+   --------------------------------------------------------------------------- */
+
+function threadRows(state){
+  if(state==="empty") return '<p class="empty">'+ph("No replies yet.")+'</p>';
+  if(state==="locked") return '<ul class="comments">'
+    + commentRow({person:PEOPLE.noor, at:AT.first, body:BODY.one, votes:4, collapsed:true})
+    + '</ul>';
+  if(state==="long") return '<ul class="comments">'
+    + commentRow({person:PEOPLE.long, at:AT.late, body:BODY.long+" "+BODY.longWord, votes:2, controls:""})
+    + '</ul>';
+  if(state==="composer") return '<p class="empty">'+ph("No replies yet.")+'</p>';
+  return '';
+}
+
+function threadBlock(spec){
+  const rows = spec.rows || "";
+  const head = '<div class="thread-head"><h3>Replies</h3>'
+    + (spec.count?'<span class="meta">'+spec.count+'</span>':"")
+    + '</div>';
+  const foot = spec.state==="locked"
+    ? '<p class="lock">'+ph("Comments are closed on this session. Its replies stay readable; nothing new can be added.")+'</p>'
+    : spec.state==="composer"
+      ? composerStates()
+      : composer(spec.composer || "empty");
+  return head + (rows || "") + foot;
+}
+
+/** The composer's five states, stacked and captioned — the specimen that answers "what does it do". */
+function composerStates(){
+  const cap=(label,note)=>'<p class="eyebrow" style="margin-top:16px">'+label+' <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#94a3b8">'+note+'</span></p>';
+  return cap("Empty","— submit disabled, and the reason is a sentence, not a dead button")+composer("empty")
+    + cap("Filled","— submit enabled")+composer("filled")
+    + cap("Submitting","— field disabled, the row above says it is not committed yet")+composer("submitting")
+    + cap("Refused","— the store's answer, beside the field")+composer("refused")
+    + cap("Long text","— the field grows, the submit stays reachable")+composer("long");
+}
+
+/* ============================================================================
+   THE SPECIMENS — the card's list, drawn for all three subjects
+   ============================================================================ */
+
+const SPECIMENS = [
+  { id:"empty", state:"empty", caption:"Empty — the first-comment invitation and the composer's disabled state",
+    rows:"" },
+  { id:"one", state:"one", caption:"One comment — avatar, author, the long fixture date, the body",
+    count:"1 reply",
+    rows:'<ul class="comments">'+commentRow({person:PEOPLE.noor, at:AT.first, body:BODY.one, votes:12, collapsed:true})+'</ul>' },
+  { id:"thread", state:"thread", caption:"Thread — a reply, collapsed and then expanded",
+    count:"2 replies",
+    rows:'<ul class="comments">'
+      + commentRow({person:PEOPLE.noor, at:AT.first, body:BODY.one, votes:12, collapsed:true,
+          replies:replyRow(PEOPLE.iris, BODY.reply, AT.reply)})
+      + commentRow({person:PEOPLE.iris, at:AT.own, body:BODY.own, votes:3, collapsed:undefined})
+      + '</ul>' },
+  { id:"own", state:"own", caption:"The reader's own comment — the affordance question, drawn three ways and not decided",
+    count:"2 replies",
+    rows:'<ul class="comments">'
+      + commentRow({person:PEOPLE.noor, at:AT.first, body:BODY.one, votes:12, collapsed:true})
+      + '</ul>'
+      + '<div class="affgrid">'
+        + '<div class="aff"><span class="aff-tag">a · none</span>'
+          + ownRow("") + '</div>'
+        + '<div class="aff"><span class="aff-tag">b · edit</span>'
+          + ownRow('<div class="cactions"><button class="btn ghost" type="button" aria-label="Edit your comment">Edit</button></div>') + '</div>'
+        + '<div class="aff"><span class="aff-tag">c · edit + delete</span>'
+          + ownRow('<div class="cactions"><button class="btn ghost" type="button" aria-label="Edit your comment">Edit</button><button class="btn ghost" type="button" aria-label="Delete your comment">Delete</button></div>') + '</div>'
+      + '</div>'
+      + '<p class="meta" style="margin-top:10px">The quiz comment carries a report flag, a vote and a reply; those are drawn on the rows above. '
+        + 'Whether this feature has votes, edits or deletes is the owner\'s decision — the three rows are the choice, not a recommendation.</p>' },
+  { id:"locked", state:"locked", caption:"Locked subject — the composer is withheld and a sentence says why",
+    count:"1 reply",
+    rows:'' },
+  { id:"long", state:"long", caption:"Long body and long author name at 390 — wrapping, no horizontal overflow",
+    count:"1 reply",
+    rows:'' },
+  { id:"composer", state:"composer", caption:"The composer's five states — empty, filled, submitting, refused, long text",
+    rows:'' }
+];
+
+function ownRow(controlsMarkup){
+  return '<div class="comment" style="flex:1 1 auto">'
+    + '<div class="chead">'+avatar(PEOPLE.you,40)
+      + '<div class="cbody"><div class="ctop"><div style="min-width:0">'
+        + '<h3 class="cname">You</h3><p class="meta">'+dtLong(AT.own)+'</p>'
+      + '</div></div>'
+      + '<p class="ctext">'+BODY.own+'</p>'
+      + controlsMarkup
+      + '</div></div></div>';
+}
+
+/* ============================================================================
+   RENDER
+   ============================================================================ */
+
+const state = { variant:"A", viewport:"1440", subject:"opinion", only:null };
+
+function specimenMarkup(spec){
+  if(state.variant==="B"){
+    return '<div class="pair">'
+      + subjectCard(state.subject,"")
+      + '<aside class="pair-rail" aria-label="The thread, beside the subject">'
+        + '<div class="card">'
+          + '<div class="panel-tag"><span>The thread · beside the subject</span><span>'+spec.id+'</span></div>'
+          + '<div class="card-body">'+threadBlock(spec)+'</div>'
+        + '</div>'
+      + '</aside>'
+    + '</div>';
+  }
+  return subjectCard(state.subject,'<section class="thread-inline">'+threadBlock(spec)+'</section>');
+}
+
+function render(){
+  const stage=document.getElementById("stage");
+  const shown = SPECIMENS.filter(s=>state.only===null||s.id===state.only);
+  stage.innerHTML = shown.map((spec,index)=>{
+    return '<figure class="specimen" id="spec-'+spec.id+'">'
+      + '<figcaption><b>'+String(SPECIMENS.indexOf(spec)+1).padStart(2,"0")+'</b><span>'+spec.caption+'</span></figcaption>'
+      + specimenMarkup(spec)
+      + '</figure>';
+  }).join("");
+  document.querySelectorAll(".tabs button").forEach(btn=>{
+    btn.setAttribute("aria-selected", btn.id==="tab-"+state.subject ? "true":"false");
+  });
+  document.getElementById("vA").setAttribute("aria-pressed", state.variant==="A"?"true":"false");
+  document.getElementById("vB").setAttribute("aria-pressed", state.variant==="B"?"true":"false");
+  document.getElementById("w1440").setAttribute("aria-pressed", state.viewport==="1440"?"true":"false");
+  document.getElementById("w390").setAttribute("aria-pressed", state.viewport==="390"?"true":"false");
+}
+
+function setVariant(v){ state.variant=v; document.body.dataset.variant=v; sync(); render(); }
+function setViewport(w){ state.viewport=w; document.body.dataset.vw=w; sync(); render(); }
+function setSubject(s){ state.subject=s; document.body.dataset.subject=s; sync(); render(); }
+
+/** The address carries the drawing, so a reviewer can send one exactly. */
+function sync(){
+  const q=new URLSearchParams();
+  q.set("variant",state.variant);
+  q.set("subject",state.subject);
+  q.set("viewport",state.viewport);
+  if(state.only) q.set("spec",state.only);
+  history.replaceState(null,"","?"+q.toString());
+}
+
+(function boot(){
+  const q=new URLSearchParams(location.search);
+  const v=q.get("variant"), s=q.get("subject"), w=q.get("viewport"), only=q.get("spec");
+  if(v==="A"||v==="B") state.variant=v;
+  if(s==="opinion"||s==="assessment"||s==="relationship") state.subject=s;
+  if(w==="1440"||w==="390") state.viewport=w;
+  if(only&&SPECIMENS.some(x=>x.id===only)) state.only=only;
+  document.body.dataset.vw=state.viewport;
+  document.body.dataset.variant=state.variant;
+  document.body.dataset.subject=state.subject;
+  render();
+  sync();
+})();
+</script>
+</body>
+</html>
