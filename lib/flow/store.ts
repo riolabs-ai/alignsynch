@@ -1276,7 +1276,17 @@ export async function resendInvite(input: ResendInput): Promise<ResendResult> {
  * of the same invitation is `resendInvite`'s job, and it has the cooldown and the refusal
  * vocabulary this path deliberately does not duplicate.
  */
-export type SendRefusal = "not-initiator" | "no-invitation" | "already-published";
+export type SendRefusal =
+  | "not-initiator"
+  | "no-invitation"
+  | "already-published"
+  /**
+   * #911 — the stage's send waits for the walk: a plan joined and a card on file. `resendInvite`
+   * cannot raise this (a re-invite is a different act on an already-sent relationship) and the send
+   * route redirects it into the same `?resend=` band the other two use, so it is a `ResendRefusal`
+   * too — one vocabulary per surface, read by one lookup.
+   */
+  | "no-payment-method";
 
 export type SendResult =
   | {
@@ -1302,9 +1312,15 @@ export async function sendDraftInvitation(input: {
   const client = await getPool().connect();
   let status: string | undefined;
   let relationshipId: string | undefined;
+  /** `relationship.method_captured_at` — null is "no card on file", which the send now waits for. */
+  let methodCaptured: Date | null = null;
   try {
-    const found = await client.query<{ relationship_id: string | null; status: string | null }>(
-      `SELECT ai.relationship_id, r.status
+    const found = await client.query<{
+      relationship_id: string | null;
+      status: string | null;
+      method_captured_at: Date | null;
+    }>(
+      `SELECT ai.relationship_id, r.status, r.method_captured_at
          FROM session ai
          LEFT JOIN relationship r ON r.id = ai.relationship_id
         WHERE ai.record_id = $1`,
@@ -1312,6 +1328,7 @@ export async function sendDraftInvitation(input: {
     );
     relationshipId = found.rows[0]?.relationship_id ?? undefined;
     status = found.rows[0]?.status ?? undefined;
+    methodCaptured = found.rows[0]?.method_captured_at ?? null;
   } finally {
     client.release();
   }
@@ -1352,6 +1369,22 @@ export async function sendDraftInvitation(input: {
       ok: false,
       code: "already-published",
       reason: `relationship "${relationshipId ?? "none"}" is ${status ?? "unreadable"}: its invitation is not a draft waiting to go out`,
+    };
+  }
+
+  /**
+   * #911 — **the send waits for the walk.** The invitation publishes the relationship and mails the
+   * other seat; the money side of the stage is a plan joined and a card on file, and the UI disables
+   * the control until both are done. That is the courtesy. This is the rule: a POST that skips the
+   * walk is refused here, where the write would happen, so "the send fired without payment" is not a
+   * state a crafted request can reach. Keeping the draft is untouched — it sends nothing, so it is
+   * never asked for a card.
+   */
+  if (methodCaptured === null) {
+    return {
+      ok: false,
+      code: "no-payment-method",
+      reason: `relationship "${relationshipId ?? "none"}" has no card on file: stage 5's send waits for the plan and the card`,
     };
   }
 
@@ -1458,6 +1491,11 @@ function resendReason(
       return `the last re-invite was at ${invite?.resent_at?.toISOString() ?? "an unknown instant"}, less than 24 hours before ${now.toISOString()}`;
     case "invalid-email":
       return `"${email ?? ""}" is not an address a message can be sent to`;
+    // #911 — unreachable from `resendInvite` (a re-invite is an act on a sent relationship); the
+    // code joins this vocabulary so the send route's redirect renders a sentence, and this arm keeps
+    // the switch total.
+    case "no-payment-method":
+      return "the relationship has no card on file, so stage 5's send has not run";
   }
 }
 

@@ -15,9 +15,9 @@
  *               reader to a JSON pointer instead of to the line an editor typed.
  *   --tree      the rail as ASCII, resolved through `lib/nav-menu.ts::menuFor` — the same filter
  *               the sidebar runs, so what it prints is what the shell draws for that rung.
- *   --unplaced  every `page.tsx` under `app/(mainlayout)/admin/**` with no rail row. Three today,
- *               on purpose: they are the live proof this verb works, and placing them is a
- *               separate change.
+ *   --unplaced  every `page.tsx` under `app/(mainlayout)/admin/**` with no rail row. Four today,
+ *               on purpose (the console's three sub-pages and `/admin/templates`): they are the live
+ *               proof this verb works, and placing them is a separate change.
  *
  * `--check` runs in every lane of `scripts/verify.sh` (it reads files only, ~0.1 s) and is never
  * a CI-only step: the YAML calls the gate script and nothing else.

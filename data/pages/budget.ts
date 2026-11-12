@@ -135,6 +135,24 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-review",
     budget: 0,
   },
+  // #892 — the documentation home. Budget 0: the filter's placeholder, the two singular/plural counts,
+  // the empty-filter sentence and the unreadable panel are `data/pages/admin-docs.ts`, so the next
+  // literal written in `docs-hub.tsx` is a red build. Attribution is the subdirectory, not the whole
+  // `components/admin` domain, because the row above already owns that number.
+  "/admin/docs": {
+    page: "app/(mainlayout)/admin/docs/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs",
+    budget: 0,
+  },
+  // …and one document: the way back, the sibling heading, the two step labels and the two panels are
+  // `data/pages/admin-docs-document.ts`. The body is the tree's, and markdown is not a literal.
+  "/admin/docs/[...slug]": {
+    page: "app/(mainlayout)/admin/docs/[...slug]/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs-document",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is
