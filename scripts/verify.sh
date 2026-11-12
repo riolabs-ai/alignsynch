@@ -421,6 +421,20 @@ else
   skip_step "docs:check" "no docs:check script in package.json"
 fi
 
+# The rail's document (`data/nav-menu.json`, #861) is the Admin sidebar: the groups, their rows,
+# their order, their rung and their visibility. The schema is `content/nav.ts`; this step is the
+# other half — every href resolves in `content/routes.ts`, every icon is a `NavIconName`, every
+# label id exists in `data/pages/shell.ts`, every `needs` is a rung, every hidden row says why, and
+# no id or href is drawn twice. It reads files only (~0.1 s), so it runs in every lane for the same
+# reason the steps above do: the document is `data/`, the schema is `content/`, the script and this
+# line are `scripts/` — three lanes, one check, and a malformed rail must fail the gate rather
+# than a request.
+if has_script "nav:menu"; then
+  run_step "nav:menu (data/nav-menu.json — routes, icons, labels, rungs)" pnpm nav:menu --check || fail
+else
+  skip_step "nav:menu" "no nav:menu script in package.json"
+fi
+
 if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi

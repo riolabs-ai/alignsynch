@@ -840,6 +840,12 @@ const uiSources = UI_ROOTS.flatMap((root) => {
  * not leave the gate. Naming the file (rather than walking all of `lib/`) keeps this a link scan:
  * `lib/` also holds paths built from constants and database modules, and widening E10 to them
  * would report `lib/`'s own relative imports as dead links.
+ *
+ * **The rail's rows moved to `data/nav-menu.json` (#861)** and E10 cannot read them there — its
+ * extractor matches `href:` as TypeScript source, and a JSON key is a quoted string. The file
+ * stays named because a literal `href` written back into the module is still a dead link E10 must
+ * catch, and `pnpm nav:menu --check` (a gate step in every lane) is what resolves the document's
+ * hrefs against this same manifest.
  */
 const LINK_ONLY_SOURCES = ["lib/nav-menu.ts"];
 
