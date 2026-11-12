@@ -173,13 +173,9 @@ describe("the approved reference is registered (#914)", () => {
     const history = reviewArtifacts.find((row) => row.id === historyId);
 
     expect(reference?.slug).toBe("prototype-relationship-lifecycle-v9");
-    expect(reference?.path).toBe(
-      "docs/review/artifacts/prototype-relationship-lifecycle-v9.html",
-    );
+    expect(reference?.path).toBe("docs/review/artifacts/prototype-relationship-lifecycle-v9.html");
     expect(history?.slug).toBe("prototype-relationship-lifecycle-v8");
-    expect(history?.path).toBe(
-      "docs/review/artifacts/prototype-relationship-lifecycle-v8.html",
-    );
+    expect(history?.path).toBe("docs/review/artifacts/prototype-relationship-lifecycle-v8.html");
 
     /* The row is the reference, not a draft: the shelf's title says so, so a reviewer reading the
        list cannot mistake the older drawing for the approved one. */
@@ -197,7 +193,10 @@ describe("the approved reference is registered (#914)", () => {
 
   it("serves both documents from the artifact route", async () => {
     const { GET } = await import("../app/review-artifacts/[id]/route");
-    for (const slug of ["prototype-relationship-lifecycle-v9", "prototype-relationship-lifecycle-v8"]) {
+    for (const slug of [
+      "prototype-relationship-lifecycle-v9",
+      "prototype-relationship-lifecycle-v8",
+    ]) {
       const response = await GET(new Request("http://localhost/review-artifacts/x"), {
         params: Promise.resolve({ id: slug }),
       });
@@ -219,7 +218,9 @@ describe("the approved reference is registered (#914)", () => {
       referenceId,
     );
 
-    const listed = shelf.groups.flatMap((group) => group.entries.map((entry) => entry.summary.artifact.id));
+    const listed = shelf.groups.flatMap((group) =>
+      group.entries.map((entry) => entry.summary.artifact.id),
+    );
     expect(listed.filter((id) => id === referenceId || id === historyId)).toHaveLength(2);
   });
 });

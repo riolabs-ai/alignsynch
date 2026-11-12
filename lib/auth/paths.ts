@@ -60,6 +60,26 @@ export function loginPathFor(next: string): string {
 }
 
 /**
+ * `/register?next=<path>` — the sign-up half of the same round trip (#867).
+ *
+ * The mirror of `loginPathFor`, and it exists because `/register` already reads `?next=`
+ * (`app/(auth)/register/page.tsx` → `signInDestination`) and always has: the Counterparty's
+ * onboarding wizard has sent `/register?next=<step 3>` since #t_0aa81144. What was missing was a
+ * **caller** — the public catalogue's "use this template" action pointed at a bare `/register`, so
+ * a visitor who had already chosen a template was sent to sign up and then dropped on the brand's
+ * default landing page with the choice discarded.
+ *
+ * **Why `next` and not a bespoke `?template=`.** A parameter only preserves intent if the route
+ * honours it; `/register` renders `?template=` nowhere, which is why `tests/templates-page.test.ts`
+ * forbids the page claiming that query. `next` is the one parameter this route already reads, keeps
+ * across both sign-up implementations (password and Google), and validates on the way out
+ * (`signInDestination`: same-site, then shipped-on-this-build).
+ */
+export function registerPathFor(next: string): string {
+  return `/register?next=${encodeURIComponent(safeNextPath(next))}`;
+}
+
+/**
  * The query parameter `/login` reads to know a Google sign-in could not be finished (#351 follow-up).
  *
  * The finish route fails closed — every exchange failure redirects to `/login` signed out, which is

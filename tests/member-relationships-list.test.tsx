@@ -30,6 +30,7 @@ import {
 } from "@/components/dashboard/relationships-list";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const copy = dashboardRelationshipsPageCopy;
 
@@ -193,6 +194,46 @@ describe("the relationships list", () => {
       ["expired", 1],
     ];
     for (const [status, count] of cases) expect(statusCount(rows, status)).toBe(count);
+  });
+});
+
+describe("the kind a relationship card names (#874)", () => {
+  /**
+   * The card's kind chip — the tone-`tint` label that says what the row *is*. Read off its own
+   * hook rather than off the whole render, because the card carries five chips and the defect
+   * was specifically the first one's word.
+   */
+  function kindChip(html: string): string {
+    const match = html.match(/<span[^>]*data-relationship-kind="([^"]+)"[^>]*>([\s\S]*?)<\/span>/);
+    if (match === null) throw new Error("a card drew no chip carrying the kind hook");
+    return match[2];
+  }
+
+  it("says Relationship on every card, on both seats", () => {
+    const html = render();
+    expect(kindChip(html)).toBe("Relationship");
+    // Every row's own card, not just the first: the chip is the card's, so a row that drew a
+    // different word would be a second defect behind the same assertion.
+    for (const one of rows) {
+      const from = html.slice(html.indexOf(`data-relationship-card="${one.id}"`));
+      expect(kindChip(from), one.id).toBe("Relationship");
+    }
+  });
+
+  it("never prints the word Template as a kind", () => {
+    const html = render();
+    expect(kindChip(html)).not.toBe("Template");
+    // The old defect in full: the word appeared as a chip on every card in the list.
+    expect(html).not.toContain(">Template<");
+  });
+
+  it("resolves the word from the fixture's kind table, not from a copy key on the card", () => {
+    // The chip's word is the **value** of the kind the list lists, spelled once in `data/pages`.
+    expect(itemLabel(sectionOf(copy, "kind"), "relationship")).toBe("Relationship");
+    // …and the `card` section no longer carries an item naming the concept the chip borrowed —
+    // the item that shipped as `{ id: "template", label: "Template" }` is what read as a kind.
+    const cardItemIds = (sectionOf(copy, "card").items ?? []).map((item) => item.id);
+    expect(cardItemIds).not.toContain("template");
   });
 });
 

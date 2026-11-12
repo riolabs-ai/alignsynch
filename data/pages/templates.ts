@@ -60,7 +60,7 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
      * named ends, `{count}` the Aspects the template asks — the same ids the front page's shelf
      * carries, worded for this surface's own action.
      */
-    { id: "template-use", label: "Use template" },
+    { id: "template-use", label: "Create Relationship" },
     { id: "template-details", label: "Details" },
     { id: "template-example", label: "Example" },
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },

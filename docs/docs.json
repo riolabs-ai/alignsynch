@@ -298,6 +298,41 @@
           "question": "Where did each photograph come from, who took it, and under which licence?"
         },
         {
+          "path": "specs/spec-design-page-rel-templates-v2/README.md",
+          "title": "V2 home and brand package (handoff)",
+          "question": "What is in the V2 package, which files ship with it, and what is it authoritative for?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/README.md",
+          "title": "V2 home page (handoff)",
+          "question": "How do I preview the V2 home page, and which files make it up?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md",
+          "title": "V2 home page — implementation brief",
+          "question": "Which components, tokens and fixtures does the V2 home page reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md",
+          "title": "V2 home page — asset sources and credits",
+          "question": "Where did each V2 home-page photograph come from, and under which licence?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/brand-profile/README.md",
+          "title": "V2 brand and audience profile (handoff)",
+          "question": "How do I open the private brand profile, and which sections does it carry?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/banner/README.md",
+          "title": "Admin notice banner (V2 package)",
+          "question": "Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/admin-brand/README.md",
+          "title": "/admin/brand (V2 package)",
+          "question": "Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?"
+        },
+        {
           "path": "specs/spec-as2-style-templates-redesign/README.md",
           "title": "AS2 templates redesign (handoff)",
           "question": "What is in the approved Templates-catalogue package, and how do I preview it?"
