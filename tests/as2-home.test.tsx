@@ -108,12 +108,16 @@ describe("the ordered bands", () => {
     expect(model.howItWorks.steps.every((step) => step.title && step.body)).toBe(true);
   });
 
-  test("twelve benefits, each with a sentence", () => {
-    expect(model.benefits.items).toHaveLength(12);
+  test("five benefits, each with a sentence — the reference's five (#904)", () => {
+    // The approved page's `.benefit-list` is five rows in a two-column grid with the callout
+    // spanning both. It was twelve rows of general wellbeing copy before #904; the count is the
+    // reference's, so a row added or dropped is a red test rather than a taller band.
+    expect(model.benefits.items).toHaveLength(5);
     for (const benefit of model.benefits.items) {
       expect(benefit.title.length).toBeGreaterThan(0);
       expect(benefit.body.length).toBeGreaterThan(0);
     }
+    expect(model.benefits.callout.length).toBeGreaterThan(0);
   });
 
   test("three reflections, and the quote counts stay asymmetric", () => {
@@ -205,8 +209,10 @@ describe("the composed page", () => {
     // The card's first "doomed if": a second header, footer or newsletter band on the page. The
     // composition cannot mount one, because it imports none — asserted below against the source.
     expect(count(html, "<footer")).toBe(0);
-    expect(count(html, "<header")).toBeGreaterThan(0); // each band's own `<header>` is fine…
-    expect(count(html, '<header class="mb-9')).toBeLessThanOrEqual(4); // …the shell's is not here
+    // Every `<header>` in this render is a band's own `SectionHead` — three bands draw one — and the
+    // shell's sticky header is not among them.
+    expect(count(html, '<header class="mb-[38px]')).toBe(3);
+    expect(count(html, "<header")).toBe(3);
   });
 
   test("the brand's surface roles are painted on the page, not on <html>", () => {
@@ -225,6 +231,23 @@ describe("the composed page", () => {
       expect(html).toContain(`href="${card.href}"`);
     }
   });
+
+  test("business leads — the two hero cards are business then personal (#904)", () => {
+    // The approved page opens on work and treats personal use as the secondary path. The order is
+    // the projection's (the cards are a fixed pair), and the grid draws them left to right, so this
+    // is the assertion that keeps the first card business the day someone "tidies" the array.
+    expect(model.hero.cards.map((card) => card.id)).toEqual(["business", "personal"]);
+    expect(html.indexOf('aria-label="Explore business relationship templates"')).toBeLessThan(
+      html.indexOf('aria-label="Explore personal relationship templates"'),
+    );
+  });
+
+  test("the counselor callout is drawn once, and only in the templates band", () => {
+    // The brief allows exactly one bounded callout for counselors, therapists and coaches. Two is
+    // the band becoming a practitioner pitch; none is the audience direction being dropped.
+    expect(count(html, "For counselors, therapists, and coaches:")).toBe(1);
+    expect(html).toContain(model.templates.counselor.rest);
+  });
 });
 
 describe("the arrow glyph", () => {
@@ -233,23 +256,30 @@ describe("the arrow glyph", () => {
   test("every AS2 arrow carries its own box instead of resolving against the flex line", () => {
     // An `<svg>` with a `viewBox` and no `width`/`height` is sized by its container. Inside
     // `components/ui/button` the primitive supplies `[&_svg]:size-4`, but the hero's two raw anchors
-    // are not buttons: before `size-4` existed on the glyph, the secondary CTA's arrow resolved to
-    // 59.891px square and made a 14px text link a **123.906 × 60** box at every width from `sm` up —
-    // 249.453px tall at 390, where the stacked column gave the glyph the whole 342px width to
-    // resolve against. The measurements are in `docs/qa-home-comments/measurements.json`.
-    const arrows = count(html, 'viewBox="0 0 20 20"');
-    expect(arrows).toBeGreaterThan(0);
-    expect(count(html, 'class="size-4 shrink-0"')).toBe(arrows);
+    // are not buttons: before an explicit size existed on the glyph, the secondary CTA's arrow
+    // resolved to 59.891px square and made a 14px text link a **123.906 × 60** box at every width
+    // from `sm` up — 249.453px tall at 390, where the stacked column gave the glyph the whole 342px
+    // width to resolve against. The measurements are in `docs/qa-home-comments/measurements.json`.
+    //
+    // The class is not always `size-4`: the reference draws the button arrow at 16px, the hero's
+    // secondary link at 15px and the card footer at 14px. What must hold is that **every** arrow
+    // carries a size of its own, so none can fall back to its container.
+    const arrows = html.match(/class="([^"]*)"[^>]*viewBox="0 0 20 20"/g) ?? [];
+
+    expect(arrows.length).toBeGreaterThan(0);
+    expect(count(html, 'viewBox="0 0 20 20"')).toBe(arrows.length);
+    for (const arrow of arrows) expect(arrow).toMatch(/class="[^"]*size-/);
   });
 
   test("the fix is the glyph's, and the secondary CTA keeps its 40px tap target", () => {
     // The card's "must not": no fixed height on the link. `min-h-10` is the 40px floor at 390 and
-    // `sm:min-h-0` drops it at ≥640, where the link is exactly its own 20px text line.
+    // above that the link is exactly its own text line. The reference drops the floor at 740, which
+    // is the breakpoint its own stylesheet uses — not `sm` (640).
     const hero = readFileSync(join(process.cwd(), "components/home/as2-hero.tsx"), "utf8");
     const secondary = hero.match(/inline-flex min-h-10[^"]*/)?.[0] ?? "";
 
     expect(secondary).toContain("min-h-10");
-    expect(secondary).toContain("sm:min-h-0");
+    expect(secondary).toContain("min-[741px]:min-h-0");
     expect(secondary).not.toMatch(/(^|\s)h-\d/);
   });
 });
@@ -295,5 +325,30 @@ describe("the structural promises, read off the source", () => {
       expect(read(`components/home/${file}`)).toContain("data-home-anchor");
       expect(read(`components/home/${file}`).includes("scroll-mt-[")).toBe(false);
     }
+  });
+
+  test("the type scale is the reference's, not the component's own", () => {
+    // A clone's failure mode is a "small improvement": 740 becomes 700 in one band, and the page is
+    // subtly wrong everywhere that band repeats. These numbers are read out of the approved
+    // stylesheet, so an edit to the reference fails here at the same moment it fails the design.
+    const css = read("docs/specs/spec-design-page-rel-templates-v2/home/css/homepage-redesign.css");
+    const hero = read("components/home/as2-hero.tsx");
+    const parts = read("components/home/as2-parts.tsx");
+    const stories = read("components/home/as2-stories.tsx");
+
+    expect(css).toContain("font-size: clamp(42px, 5vw, 60px);");
+    expect(css).toMatch(/\.hero h1 \{[^}]*font-weight: 760;/);
+    expect(hero).toContain("text-[clamp(42px,5vw,60px)]");
+    expect(hero).toContain("font-[760]");
+
+    expect(css).toMatch(/h2\.section-title \{[^}]*font-weight: 740;/);
+    expect(parts).toContain("font-[740]");
+
+    expect(css).toMatch(/\.story-card h3 \{[^}]*font-weight: 720;/);
+    expect(stories).toContain("font-[720]");
+
+    // The reference's body ink is a hex with no role in the brand record; one constant, not fifteen.
+    expect(css).toContain("--body: #59636e;");
+    expect(parts).toContain('export const BODY_INK = "text-[#59636e]";');
   });
 });
