@@ -313,6 +313,11 @@
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"
         },
         {
+          "path": "qa-templates-redesign/README.md",
+          "title": "AS2 templates catalogue visual QA",
+          "question": "Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?"
+        },
+        {
           "path": "qa-home-comments/README.md",
           "title": "Home review comments — the logo",
           "question": "Is the public header's brand lockup a link home, and what did the page look like before it was?"

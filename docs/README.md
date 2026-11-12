@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**120 documents in 9 sections.** Every page carries the same nav block, generated
+**121 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,7 +31,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 4 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 28 documents
+- [Product](#product) — 29 documents
 - [Operations](#operations) — 9 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -114,6 +114,7 @@ What the product promises, and the specifications behind it.
 - [`specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md`](specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md) — **AS2 catalogue UI system** — What are the reusable realm tints, icon map, card anatomy and detail order?
 - [`specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md`](specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md) — **AS2 templates redesign — source notes** — Which live routes, fixtures and assets did the approved catalogue read from?
 - [`qa-as2-home/README.md`](qa-as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
+- [`qa-templates-redesign/README.md`](qa-templates-redesign/README.md) — **AS2 templates catalogue visual QA** — Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?
 - [`qa-home-comments/README.md`](qa-home-comments/README.md) — **Home review comments — the logo** — Is the public header's brand lockup a link home, and what did the page look like before it was?
 
 ## Operations
