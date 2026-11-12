@@ -286,8 +286,10 @@ async function createThroughStages(
   jar,
   {
     templateRecordId,
-    initiatorName,
-    counterpartyName,
+    initiatorFirst,
+    initiatorLast,
+    counterpartyFirst,
+    counterpartyLast,
     email,
     title,
     mode,
@@ -298,16 +300,19 @@ async function createThroughStages(
   const stem = createStem();
 
   /* stage 1 — Who ---------------------------------------------------- */
+  /* #825 — each seat is first + last now, so the post carries four halves rather than two names. */
   const who = await jar.post("/assessment/new/who", {
     templateRecordId,
-    initiatorName,
-    counterpartyName,
+    initiatorFirst,
+    initiatorLast,
+    counterpartyFirst,
+    counterpartyLast,
     email,
     title,
     description: "",
   });
   check(
-    `stage 1 Who answers 303 to the Mode stage (${initiatorName})`,
+    `stage 1 Who answers 303 to the Mode stage (${initiatorFirst} ${initiatorLast})`,
     who.status === 303 && (who.location ?? "").endsWith(`${stem}/mode`),
     `${who.status} ${who.location}`,
   );
@@ -429,8 +434,10 @@ async function main() {
   // address either way, and that is where the flow continues.
   const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
-    initiatorName: "Avery E2E",
-    counterpartyName: "Rowan E2E",
+    initiatorFirst: "Avery",
+    initiatorLast: "E2E",
+    counterpartyFirst: "Rowan",
+    counterpartyLast: "E2E",
     email: "rowan-e2e@example.com",
     title: "Avery and Rowan E2E",
     mode: "basic",
@@ -1186,8 +1193,10 @@ async function main() {
   const advCounterparty = new Jar("advanced-counterparty");
   const advCreate = await createThroughStages(advInitiator, {
     templateRecordId: TEMPLATE_ID,
-    initiatorName: "Noor E2E",
-    counterpartyName: "Iris E2E",
+    initiatorFirst: "Noor",
+    initiatorLast: "E2E",
+    counterpartyFirst: "Iris",
+    counterpartyLast: "E2E",
     email: "iris-e2e@example.com",
     title: "Noor and Iris E2E",
     mode: "advanced",

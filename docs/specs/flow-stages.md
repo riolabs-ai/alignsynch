@@ -87,31 +87,41 @@ own surface and draw no rail.
 This is the part that has drifted before, so it is written out. The card head carries the template's
 name and its aspect count. **The completion order is the reading order** and is fixed:
 
-| #   | Field                   | Label                                                            | Required    | Help                                                                                        | Span |
-| --- | ----------------------- | ---------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------- | ---- |
-| 1   | Title                   | `Your Personalized Relationship Title`                           | **yes (✱)** | `The personalized name of the created Relationship.`                                        | 6    |
-| 2   | Initiator first name    | `Initiator First Name`                                           | **yes (✱)** | `The seat this relationship is created from.` (under the pair)                              | 3    |
-| 3   | Initiator last name     | `Initiator Last Name`                                            | **yes (✱)** | —                                                                                           | 3    |
-| 4   | Counterparty first name | `Counterparty First Name`                                        | **yes (✱)** | `They will complete their name preference when they claim the invitation.` (under the pair) | 3    |
-| 5   | Counterparty last name  | `Counterparty Last Name`                                         | no          | —                                                                                           | 3    |
-| 6   | Counterparty email      | `Counterparty Email for Invite` (placeholder `name@example.com`) | **yes (✱)** | —                                                                                           | 6    |
-| 7   | Description             | `Personalized Relationship Description`                          | no          | `Optional. Shown to both parties, never scored.`                                            | 12   |
+| #   | Field                   | Label                                                            | Required    | Help                                                                                        | Column |
+| --- | ----------------------- | ---------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------- | ------ |
+| 1   | Title                   | `Your Personalized Relationship Title`                           | **yes (✱)** | `The personalized name of the created Relationship.`                                        | 6      |
+| 2   | Initiator first name    | `Initiator First Name`                                           | **yes (✱)** | `The seat this relationship is created from.` (under the pair)                              | pair   |
+| 3   | Initiator last name     | `Initiator Last Name` (placeholder `Required`)                   | **yes (✱)** | —                                                                                           | pair   |
+| 4   | Counterparty first name | `Counterparty First Name` (placeholder `Their name`)             | **yes (✱)** | `They will complete their name preference when they claim the invitation.` (under the pair) | pair   |
+| 5   | Counterparty last name  | `Counterparty Last Name` (placeholder `Optional`)                | no          | —                                                                                           | pair   |
+| 6   | Counterparty email      | `Counterparty Email for Invite` (placeholder `name@example.com`) | **yes (✱)** | —                                                                                           | 6      |
+| 7   | Description             | `Personalized Relationship Description`                          | no          | `Optional. Shown to both parties, never scored.`                                            | 12     |
 
 The layout follows that order in two columns — the title beside the Initiator pair, the Counterparty
-pair beside the email, and the description closing the form full width — and a first/last pair
-collapses to one column below 720px. A pair's help line sits **under the pair**, never under one
-half of it, because half a column is too narrow to read a sentence in.
+pair beside the email, and the description closing the form full width. **A pair is two controls in
+one column** (title | pair, pair | email) and it collapses to one control each below 720px. A pair's
+help line sits **under the pair**, never under one half of it, because half a column is too narrow
+to read a sentence in.
 
 Three rules follow from the inventory:
 
 - **The title's default is derived, and it yields to the typist.** It reads `First L – First L`
   (`Daniel V – Rowan M`) from fields 2–5, recomputed on every keystroke, and it stops the moment
-  someone types in the title itself. It is a default, never a value that overwrites an answer.
-- **The description's default is the template's own sentence**, shown while the field is empty. It
-  is the template's `summary`; it is not a second fixture.
+  someone types in the title itself. It is a default, never a value that overwrites an answer — and
+  the "has been typed in" fact lives in the form's own state, never in `localStorage`, a second
+  cookie or a hidden key: a title the draft already carries is the answer, and a draft with no title
+  is a form that has not been typed in.
+- **The description opens carrying the template's own sentence** (`template.summary`), because that
+  is the sentence both people read on the card. It is the template's, not a second fixture; clearing
+  it stores nothing, and a description the person wrote is theirs.
 - **Required fields carry the red asterisk at the end of the label**, `aria-hidden` with a
-  visually-hidden "required" beside it, so the requirement is audible and not only visible. Optional
-  fields carry no marker and never the word "optional" in the label.
+  visually-hidden `required` beside it, so the requirement is audible and not only visible. The
+  inputs also carry the browser's own `required`. Optional fields carry no marker and never the word
+  "optional" in the label — the two `Required`/`Optional` **placeholders** above are the artifact's
+  own, and they sit on the two halves whose requirement is not obvious from the label.
+
+A refusal names the half it is about (`?field=initiator-last`), so the band says `Initiator Last Name
+is required.` rather than naming a seat's full name for a field the person can see.
 
 Heading `Relationship Details`, body `Name both people and the relationship. Everything here can
 change later.`, primary action `Continue to Stage 2`, secondary actions `Back` and `Cancel` in the
@@ -187,8 +197,12 @@ later visit.
   anywhere in the flow's copy or routes. It fails if the rail draws a `Connect` cell or an `Align`
   cell — neither is a stage of this flow.
 - `tests/create-fields.test.ts` pins the stage 1 inventory above against
-  `data/pages/assessment-create.ts` — field ids, labels, required markers and help, in order — so a
-  silent eighth field or a dropped sixth is red.
+  `data/pages/assessment-create.ts` — field ids, labels, placeholders, required markers and help,
+  in order — so a silent eighth field or a dropped seventh is red.
+- `tests/stage-one-title.test.tsx` mounts the form's fields in jsdom and types into them: the title
+  derives as `Daniel V – Rowan M`, drops an initial when a last name is missing, and **stops**
+  following the names the moment somebody types in it — and the module it drives names no browser
+  storage, so the derivation cannot survive a reload by writing one.
 - `data:check` E10 still holds every flow `href` to the route manifest, so a retired
   `/…/create/account` route cannot quietly return, and a `/…/ongoing` route cannot arrive.
 - `tests/invite-response-shell.test.tsx` renders the response stage through `StageShell` and fails

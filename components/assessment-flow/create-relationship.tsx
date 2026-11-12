@@ -77,6 +77,7 @@ import { PlanChoices } from "./plan-choices";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
 import { StageFour } from "./stage-four";
 import { StageColumn } from "./stage-column";
+import { StageOneFields } from "./stage-one-fields";
 import { StageRail } from "./stage-rail";
 import { StageShell } from "./stage-shell";
 
@@ -135,20 +136,6 @@ function ProblemBand({
     </div>
   );
 }
-
-/** The field's label above a control: one shape for every input on both stages. */
-function FieldLabel({ children }: { children: ReactNode }) {
-  return <span className="font-medium text-gray-700 dark:text-gray-200">{children}</span>;
-}
-
-/** The sentence under a control — helper text, or what the field is for. */
-function FieldHelp({ children }: { children: ReactNode }) {
-  return <span className="text-xs text-gray-500 dark:text-gray-400">{children}</span>;
-}
-
-/** The shared input shape — the shipped create form's own classes, not a second style. */
-const INPUT_CLASSES =
-  "rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-950";
 
 /**
  * The commit form's id (#760). The stage foot's primary sits outside the form — the artifact
@@ -370,7 +357,10 @@ export function CreateRelationship({
           <StageRail copy={copy} current={stage} alignHref={null} />
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            <h1
+              id="create-stage-heading"
+              className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+            >
               {heading}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
@@ -419,95 +409,54 @@ export function CreateRelationship({
               <form
                 action={SAVE_WHO_PATH}
                 method="post"
-                aria-labelledby="create-who-heading"
+                aria-labelledby="create-stage-heading"
                 className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
               >
-                <h2
-                  id="create-who-heading"
-                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                >
-                  {who.heading}
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(who)}</p>
-
                 {/* The template is the route's own fact; the form carries it so the POST names it. */}
                 <input type="hidden" name="templateRecordId" value={template.recordId} />
 
                 {/*
-                The inventory the spec fixes (`docs/specs/flow-stages.md` → *Stage 1, Details*):
-                initiator and counterparty on row 1, email and title on row 2, the description
-                across row 3 — four 6-span fields and one 12-span, in that order, and nothing else.
-                `tests/create-fields.test.ts` asserts the order and the spans, so a sixth field or
-                a moved one is red rather than a reviewer's memory.
+                The seven fields, and the one derivation in the flow (#825): the title follows the
+                four name inputs until somebody types in it. That is a keystroke-level behaviour, so
+                the controls live in a client component (`StageOneFields`) while the form, the
+                template band and the foot stay here.
+
+                The inventory is the spec's (`docs/specs/flow-stages.md` → *Stage 1, Details*), and
+                `tests/create-fields.test.ts` pins the order, the two columns and the five required
+                marks — a sixth field, a moved one or a bare required label is red rather than a
+                reviewer's memory.
               */}
-                <div className="grid gap-3 sm:grid-cols-12">
-                  <label
-                    className="grid gap-1 text-sm sm:col-span-6"
-                    htmlFor="create-initiator-name"
-                  >
-                    <FieldLabel>{itemLabel(who, "initiator-label")}</FieldLabel>
-                    <input
-                      id="create-initiator-name"
-                      name="initiatorName"
-                      defaultValue={draft.initiatorName}
-                      className={INPUT_CLASSES}
-                    />
-                    <FieldHelp>{itemLabel(who, "initiator-help")}</FieldHelp>
-                  </label>
-
-                  <label
-                    className="grid gap-1 text-sm sm:col-span-6"
-                    htmlFor="create-counterparty-name"
-                  >
-                    <FieldLabel>{itemLabel(who, "counterparty-label")}</FieldLabel>
-                    <input
-                      id="create-counterparty-name"
-                      name="counterpartyName"
-                      defaultValue={draft.counterpartyName}
-                      placeholder={itemLabel(who, "counterparty-placeholder")}
-                      className={INPUT_CLASSES}
-                    />
-                    <FieldHelp>{itemLabel(who, "counterparty-help")}</FieldHelp>
-                  </label>
-
-                  {/* No help line: the artifact draws none under the address (`email-help` is gone). */}
-                  <label className="grid gap-1 text-sm sm:col-span-6" htmlFor="create-email">
-                    <FieldLabel>{itemLabel(who, "email-label")}</FieldLabel>
-                    <input
-                      id="create-email"
-                      name="email"
-                      type="email"
-                      defaultValue={draft.email}
-                      placeholder={itemLabel(who, "email-placeholder")}
-                      className={INPUT_CLASSES}
-                    />
-                  </label>
-
-                  <label className="grid gap-1 text-sm sm:col-span-6" htmlFor="create-title">
-                    <FieldLabel>{itemLabel(who, "title-label")}</FieldLabel>
-                    <input
-                      id="create-title"
-                      name="title"
-                      defaultValue={draft.title}
-                      placeholder={itemLabel(who, "title-placeholder")}
-                      className={INPUT_CLASSES}
-                    />
-                    <FieldHelp>{itemLabel(who, "title-help")}</FieldHelp>
-                  </label>
-
-                  <label className="grid gap-1 text-sm sm:col-span-12" htmlFor="create-description">
-                    <FieldLabel>{itemLabel(who, "description-label")}</FieldLabel>
-                    <textarea
-                      id="create-description"
-                      name="description"
-                      rows={3}
-                      defaultValue={draft.description}
-                      placeholder={itemLabel(who, "description-placeholder")}
-                      className={INPUT_CLASSES}
-                    />
-                    <FieldHelp>{itemLabel(who, "description-help")}</FieldHelp>
-                  </label>
-                </div>
+                <StageOneFields
+                  copy={{
+                    titleLabel: itemLabel(who, "title-label"),
+                    titleHelp: itemLabel(who, "title-help"),
+                    initiatorFirstLabel: itemLabel(who, "initiator-first-label"),
+                    initiatorLastLabel: itemLabel(who, "initiator-last-label"),
+                    initiatorLastPlaceholder: itemLabel(who, "initiator-last-placeholder"),
+                    initiatorHelp: itemLabel(who, "initiator-help"),
+                    counterpartyFirstLabel: itemLabel(who, "counterparty-first-label"),
+                    counterpartyFirstPlaceholder: itemLabel(who, "counterparty-first-placeholder"),
+                    counterpartyLastLabel: itemLabel(who, "counterparty-last-label"),
+                    counterpartyLastPlaceholder: itemLabel(who, "counterparty-last-placeholder"),
+                    counterpartyHelp: itemLabel(who, "counterparty-help"),
+                    emailLabel: itemLabel(who, "email-label"),
+                    emailPlaceholder: itemLabel(who, "email-placeholder"),
+                    descriptionLabel: itemLabel(who, "description-label"),
+                    descriptionPlaceholder: itemLabel(who, "description-placeholder"),
+                    descriptionHelp: itemLabel(who, "description-help"),
+                    requiredNote: itemLabel(who, "required-note"),
+                  }}
+                  values={{
+                    initiatorFirst: draft.initiatorFirst,
+                    initiatorLast: draft.initiatorLast,
+                    counterpartyFirst: draft.counterpartyFirst,
+                    counterpartyLast: draft.counterpartyLast,
+                    title: draft.title,
+                    email: draft.email,
+                    description: draft.description,
+                  }}
+                  descriptionDefault={template.summary}
+                />
 
                 {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
                 <StageFoot

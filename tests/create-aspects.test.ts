@@ -224,12 +224,14 @@ describe("the draft object carries the list", () => {
   });
 
   it("reads a draft written before stage 3 existed — the list is simply absent", () => {
-    // The upgrade path: a cookie from #688 has no `aspects` key, and must still open stage 3 with
-    // the template's list rather than being thrown away.
+    // The upgrade path: a cookie written before the Aspects stage has no `aspects` key, and must
+    // still open stage 3 with the template's list rather than being thrown away.
     const old = Buffer.from(
       JSON.stringify({
-        initiatorName: "Avery",
-        counterpartyName: "Rowan",
+        initiatorFirst: "Avery",
+        initiatorLast: "Quinn",
+        counterpartyFirst: "Rowan",
+        counterpartyLast: "",
         email: "rowan@example.com",
         title: "Our house",
         description: "",

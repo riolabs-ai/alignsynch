@@ -29,6 +29,7 @@
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { PageCopy } from "@/content/pages";
+import { personName } from "@/lib/flow/names";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -324,9 +325,9 @@ export function StageFour({
           </span>
         );
       case "initiator":
-        return orNone(draft.initiatorName);
+        return orNone(personName(draft.initiatorFirst, draft.initiatorLast));
       case "counterparty":
-        return orNone(draft.counterpartyName);
+        return orNone(personName(draft.counterpartyFirst, draft.counterpartyLast));
       case "title":
         return orNone(draft.title);
       case "mode":

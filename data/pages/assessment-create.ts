@@ -35,13 +35,17 @@ import { lifecycleStageSection } from "./lifecycle";
 export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
   /**
    * Stage 1's heading, and the dialog's accessible name (#709). The owner renamed it from
-   * "Create a relationship" to the artifact's own `s4.heading` (#760): the four stages are
-   * **Relationship Details · Relationship Settings · Relationship Aspects · Create the
-   * relationship**, and a stage heading that disagrees with the screen the artifact draws is the
-   * drift `docs/specs/flow-stages.md` exists to catch.
+   * "Create a relationship" to the artifact's own `s4.heading` (#760): the stages are
+   * **Relationship Details · Relationship Settings · Relationship Aspects · Account · Invite**,
+   * and a stage heading that disagrees with the screen the artifact draws is the drift
+   * `docs/specs/flow-stages.md` exists to catch.
    */
   heading: "Relationship Details",
-  subtitle: "One template, two seats, and the two choices that shape every screen after this one.",
+  /**
+   * The sentence under the heading — the v9 artifact's `s4.body` (#825). It is the stage's own
+   * <p>, not a section's, because the field inventory below is a list of fields and nothing else.
+   */
+  subtitle: "Name both people and the relationship. Everything here can change later.",
   sections: [
     /**
      * The onboarding flow's rail (#687) — the six stages, with this screen as the first of them
@@ -291,48 +295,49 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * Stage 1 — **Details** (#688, named by #735; copy replaced by the owner's saved pass, #760).
+       * Stage 1's field inventory, v9 (#825) — **the fields, not the screen's words**. The
+       * heading and the sentence under it are the *page's* (`heading` / `subtitle` below), so
+       * the screen says "Relationship Details" once: before this the section repeated the page
+       * heading as an `<h2>` three lines under its own `<h1>`.
        *
-       * The prototype's `s4.*` block, verbatim where the words are the owner's: two seats, the
-       * counterparty's address, and the card title both of them read. The template band above the
-       * form is the record's own facts, not copy.
+       * The artifact draws each seat as **first + last**, the invitation address, the title and
+       * the description, in that completion order, and the five required fields carry a red
+       * asterisk (`*`, `aria-hidden`) with the word beside it for a screen reader —
+       * `required-note` is that word, and it is copy, not markup, because a reader hears it.
        *
-       * **The inventory is the spec's, field for field** (`docs/specs/flow-stages.md` → *Stage 1,
-       * Details*), and `tests/create-fields.test.ts` pins it: four fields on a 6/6 grid and the
-       * description across all twelve, `back` as the secondary action beside
-       * "Continue to Stage 2". Two lines the artifact does not draw were deleted here —
-       * `email-help` and `submit-note` — because an extra sentence is a spec change, not a copy
-       * improvement.
-       *
-       * **Every label is the owner's, not a clarified version of it** (#760). The v7 artifact's
-       * Edit-copy pass replaced five of them — the initiator's, the counterparty's, the address,
-       * the title and the description — and the build renders them character for character. The
-       * advance action is `Continue to Stage 2`: the stages are numbered on the rail, so the foot
-       * names the step it goes to rather than describing what that step asks.
+       * **The placeholders that say `Required` and `Optional` are the artifact's own.** They sit
+       * in the two halves whose requirement is not obvious from the label — the last names —
+       * rather than on every field, which is why the email and the title carry none.
        */
       id: "who",
-      heading: "Relationship Details",
-      body: "One template, two seats, and the facts that shape every screen after this one.",
       items: [
-        { id: "initiator-label", label: "Your Name as the Relationship Initiator" },
+        { id: "title-label", label: "Your Personalized Relationship Title" },
+        { id: "title-help", label: "The personalized name of the created Relationship." },
+        { id: "initiator-first-label", label: "Initiator First Name" },
+        { id: "initiator-last-label", label: "Initiator Last Name" },
+        { id: "initiator-last-placeholder", label: "Required" },
         { id: "initiator-help", label: "The seat this relationship is created from." },
-        { id: "counterparty-label", label: "Counterparty's Name as Seen on the Invite" },
-        { id: "counterparty-placeholder", label: "Their name" },
+        { id: "counterparty-first-label", label: "Counterparty First Name" },
+        { id: "counterparty-first-placeholder", label: "Their name" },
+        { id: "counterparty-last-label", label: "Counterparty Last Name" },
+        { id: "counterparty-last-placeholder", label: "Optional" },
         {
           id: "counterparty-help",
           label: "They will complete their name preference when they claim the invitation.",
         },
-        { id: "email-label", label: "Email Address used to send the Counterparty Invite" },
+        { id: "email-label", label: "Counterparty Email for Invite" },
         { id: "email-placeholder", label: "name@example.com" },
-        { id: "title-label", label: "Your Personalized Relationship Title" },
-        { id: "title-placeholder", label: "Relationship Basics" },
-        { id: "title-help", label: "The personalized name of the created Relationship." },
         { id: "description-label", label: "Personalized Relationship Description" },
         {
           id: "description-placeholder",
           label: "A sentence on why you are doing this — both of you read it on the card.",
         },
         { id: "description-help", label: "Optional. Shown to both parties, never scored." },
+        /**
+         * The required marker's audible half. The asterisk is `aria-hidden` — a glyph, not a
+         * word — so this is what a screen reader says instead, once per required field.
+         */
+        { id: "required-note", label: "required" },
         { id: "submit", label: "Continue to Stage 2" },
         /** The secondary action in the foot's left group — the artifact's `s4.back`. */
         { id: "back", label: "Back" },

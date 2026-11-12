@@ -24,6 +24,8 @@ import { CreateRelationship } from "@/components/assessment-flow/create-relation
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import {
   EMPTY_CREATE_DRAFT,
+  counterpartyNameOf,
+  initiatorNameOf,
   modeDraft,
   parseCreateDraft,
   serializeCreateDraft,
@@ -56,8 +58,10 @@ function form(values: Record<string, string>): (name: string) => string {
 }
 
 const WHO = {
-  initiatorName: "Avery",
-  counterpartyName: "Rowan",
+  initiatorFirst: "Avery",
+  initiatorLast: "Quinn",
+  counterpartyFirst: "Rowan",
+  counterpartyLast: "Mercer",
   email: "rowan@example.com",
   title: "Our house, not the dishes",
   description: "Because we keep having the same argument.",
@@ -95,11 +99,15 @@ describe("stage 1 — Who", () => {
   it("refuses each blank field by name, in the order the form asks", () => {
     expect(whoDraft(form({}))).toEqual({
       ok: false,
-      problem: { field: "initiator", reason: "required" },
+      problem: { field: "initiator-first", reason: "required" },
     });
-    expect(whoDraft(form({ initiatorName: "Avery" }))).toEqual({
+    expect(whoDraft(form({ initiatorFirst: "Avery" }))).toEqual({
       ok: false,
-      problem: { field: "counterparty", reason: "required" },
+      problem: { field: "initiator-last", reason: "required" },
+    });
+    expect(whoDraft(form({ ...WHO, counterpartyFirst: "  " }))).toEqual({
+      ok: false,
+      problem: { field: "counterparty-first", reason: "required" },
     });
     expect(whoDraft(form({ ...WHO, email: "   " }))).toEqual({
       ok: false,
@@ -115,19 +123,33 @@ describe("stage 1 — Who", () => {
     });
   });
 
+  it("lets the Counterparty's last name be blank — the one optional half", () => {
+    const step = whoDraft(form({ ...WHO, counterpartyLast: "" }));
+    expect(step.ok).toBe(true);
+    if (!step.ok) return;
+    expect(step.draft.counterpartyLast).toBe("");
+    // The seat still has a name: the first name alone, with no dangling space.
+    expect(counterpartyNameOf(step.draft)).toBe("Rowan");
+  });
+
   it("keeps what was typed, trimmed, with the Mode still unset", () => {
-    const step = whoDraft(form({ ...WHO, initiatorName: "  Avery  " }));
+    const step = whoDraft(form({ ...WHO, initiatorFirst: "  Avery  " }));
     expect(step.ok).toBe(true);
     if (!step.ok) return;
     expect(step.draft).toEqual({
-      initiatorName: "Avery",
-      counterpartyName: "Rowan",
+      initiatorFirst: "Avery",
+      initiatorLast: "Quinn",
+      counterpartyFirst: "Rowan",
+      counterpartyLast: "Mercer",
       email: "rowan@example.com",
       title: "Our house, not the dishes",
       description: "Because we keep having the same argument.",
       mode: "",
       alignmentSetting: "",
     });
+    // The two seats' stored names are composed from the four halves, once.
+    expect(initiatorNameOf(step.draft)).toBe("Avery Quinn");
+    expect(counterpartyNameOf(step.draft)).toBe("Rowan Mercer");
   });
 
   it("lets the description be blank", () => {
@@ -142,7 +164,9 @@ describe("stage 1 — Who", () => {
     // Server-rendered `defaultValue` reaches the browser as `value="…"`, so a reload on stage 1
     // shows what was typed rather than an empty form.
     expect(html).toContain('value="Avery"');
+    expect(html).toContain('value="Quinn"');
     expect(html).toContain('value="Rowan"');
+    expect(html).toContain('value="Mercer"');
     expect(html).toContain('value="rowan@example.com"');
     expect(html).toContain('value="Our house, not the dishes"');
     expect(html).toContain("Because we keep having the same argument.");
@@ -233,7 +257,7 @@ describe("the draft object", () => {
     expect(parseCreateDraft("not base64 at all!!")).toBeNull();
     expect(parseCreateDraft(b64({}))).toBeNull();
     expect(parseCreateDraft(b64({ initiatorName: "Avery" }))).toBeNull();
-    expect(EMPTY_CREATE_DRAFT.initiatorName).toBe("");
+    expect(EMPTY_CREATE_DRAFT.initiatorFirst).toBe("");
   });
 });
 
@@ -248,7 +272,15 @@ describe("a refusal names the field by its label", () => {
         itemLabel(who, "email-label"),
       ),
     );
-    expect(fieldSentence("initiator", "required")).toContain(itemLabel(who, "initiator-label"));
+    expect(fieldSentence("initiator-first", "required")).toContain(
+      itemLabel(who, "initiator-first-label"),
+    );
+    expect(fieldSentence("initiator-last", "required")).toContain(
+      itemLabel(who, "initiator-last-label"),
+    );
+    expect(fieldSentence("counterparty-last", "required")).toContain(
+      itemLabel(who, "counterparty-last-label"),
+    );
     expect(fieldSentence("mode", "required")).toContain(itemLabel(mode, "mode-label"));
     expect(fieldSentence("setting", "required")).toContain(itemLabel(mode, "setting-label"));
     // No raw column/form name reaches the sentence.
@@ -281,7 +313,7 @@ describe("a refusal names the field by its label", () => {
         copy: assessmentCreatePageCopy,
         stage: 1,
         template: TEMPLATE,
-        draft: { ...EMPTY_CREATE_DRAFT, initiatorName: "Avery" },
+        draft: { ...EMPTY_CREATE_DRAFT, initiatorFirst: "Avery" },
         backHref: createRelationshipPath(TEMPLATE_ID),
         problem: sentence,
         problemLink: null,
