@@ -175,6 +175,10 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "refused", label: "That Aspect was not saved." },
         { id: "add", label: "Add an Aspect" },
         { id: "remove", label: "Remove {name}" },
+        {
+          id: "last",
+          label: "A relationship asks at least one Aspect. Add another before removing this one.",
+        },
       ],
     },
     {

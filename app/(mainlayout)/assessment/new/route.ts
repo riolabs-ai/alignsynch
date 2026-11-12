@@ -207,8 +207,10 @@ export async function POST(request: Request): Promise<Response> {
       // the session row; a blank value falls to the schema's documented default (`soft`), so a
       // post that predates the radios still creates what it always created.
       alignmentSetting: draft?.alignmentSetting ?? value("alignmentSetting"),
-      // #689 — stage 3's list. The ids and the order stay the template's
-      // (`lib/flow/aspects.ts::aspectEditsFor` says why); what the person reworded is theirs.
+      // #689 — stage 3's list. Read as the person left it: `createInstanceFromTemplate` decides
+      // whether it is still the version's copy (ids and order kept, `aspects_authored_at` NULL) or
+      // the creator's own list (added, removed or reordered — written as given, with the instant
+      // recorded), and V4 is asked the matching question (#699).
       aspects: draft?.aspects,
       // Not `value("userId")`: there is no such field, and the session cannot be posted.
       viewerUserId: viewer?.userId ?? null,

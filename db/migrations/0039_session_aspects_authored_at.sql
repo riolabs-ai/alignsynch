@@ -1,0 +1,33 @@
+-- 0039_session_aspects_authored_at.sql — a copy records where its Aspect list came from (#699).
+--
+-- Stage 3 lets the creator add and remove Aspects, and V4 (`scripts/db-verify.mjs`) refuses a copy
+-- whose Aspects are not its pinned version's, id for id and in order. That rule is provenance and
+-- stays: a relationship's copy must not silently diverge from a published version. What it could
+-- not tell apart was **a copy that drifted** from **a list the creator wrote at create time** — and
+-- the second is a legitimate list, not drift.
+--
+--   session.aspects_authored_at   when the create wrote the Aspect list itself, instead of
+--                                 copying it from `relationship.template_version_id`.
+--
+-- **NULL means "copied from the version", and that is not a placeholder.** Every row that exists
+-- before this file was written by a create that copied the version's list, so NULL is the true
+-- answer for all of them; the column carries no DEFAULT and nothing is backfilled. A backfill here
+-- would invent history — the same rule `party.accepted_at` follows (0016, #427/R2), where a stamp
+-- written after the fact made four seeded sessions read `complete` they had never been.
+--
+-- **Read by V4, written by one INSERT, and by nothing else.** The create in
+-- `lib/flow/store.ts::createInstanceFromTemplate` stamps it in the same statement that writes the
+-- session; the dashboard's edit to a live relationship's Aspects does not touch it, because that
+-- edit writes a new version and moves the pin (`lib/relationship/edit.ts`) — so the copy and the
+-- version move together and the equality rule keeps applying. No `UPDATE session` path adds this
+-- column: V18's carve-out list is `voided_at`/`voided_by`/`name`, and this file does not widen it.
+--
+-- Additive on purpose: one nullable column, no rewrite, no default, no index. The rollback is
+-- `ALTER TABLE session DROP COLUMN aspects_authored_at;` — nothing reads a value it would lose
+-- except V4's split (an authored copy would then be reported as drift, which is what V4 said
+-- before this card).
+--
+-- Idempotent on purpose, like 0001–0038: `db:migrate` ledgers this file and skips what it applied,
+-- and a re-run of the file alone is still a no-op.
+
+ALTER TABLE session ADD COLUMN IF NOT EXISTS aspects_authored_at TIMESTAMPTZ;

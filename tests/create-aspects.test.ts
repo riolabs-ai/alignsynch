@@ -11,10 +11,11 @@
  *   2. **The seeding** — `workingAspects` distinguishes "the draft has no list" (seed from the
  *      template) from "the draft's list is empty" (the person emptied it), which is the one
  *      distinction that keeps a deleted Aspect deleted.
- *   3. **The reduction** — `aspectEditsFor` carries the person's words into the create while
- *      keeping the template's ids *and order*, because the copy is compared against the version it
- *      is bound to (db:verify V4). A list entry the template does not offer is ignored; a template
- *      Aspect the list lost is written from the template.
+ *   3. **The write** — `aspectsToWrite` answers which of two things the create writes (#699): a
+ *      list that only rewords the version's Aspects stays the version's copy (its ids and order,
+ *      compared by V4), and a list that added, removed or reordered one is written as the creator
+ *      left it, with an id minted for each added row and `aspects_authored_at` recorded. Neither
+ *      branch drops a row silently, and an emptied list is refused rather than written.
  *   4. **The screen** — stage 3 renders as stage 3 of the rail, every row collapsed, the count, and
  *      the create behind its own control.
  *
@@ -30,6 +31,10 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import {
   aspectEditsFor,
   aspectProblem,
+  aspectWriteProblem,
+  aspectsAreAuthored,
+  aspectsToWrite,
+  canRemoveAspect,
   moveAspect,
   normalizeAspect,
   parseAspects,
@@ -175,7 +180,7 @@ describe("what the draft holds, and what the create writes", () => {
     expect(workingAspects([TEMPLATE_ASPECTS[1]], TEMPLATE_ASPECTS)).toEqual([TEMPLATE_ASPECTS[1]]);
   });
 
-  it("carries the person's words, and keeps the template's ids and order", () => {
+  it("the copy branch keeps the version's ids and order, and carries the person's words", () => {
     const reworded = moveAspect(TEMPLATE_ASPECTS, "aspect-time", 0).map((row) =>
       row.id === "aspect-trust"
         ? { ...row, prompt: "Do we say the hard thing early?", leftValue: "Rarely" }
@@ -183,7 +188,7 @@ describe("what the draft holds, and what the create writes", () => {
     );
     const written = aspectEditsFor(reworded, TEMPLATE_ASPECTS);
 
-    // The order the person dragged is a draft fact; the copy keeps the version's order.
+    // The reduction itself is the copy's rule: the version's ids, in the version's order.
     expect(written.map((row) => row.id)).toEqual(TEMPLATE_ASPECTS.map((row) => row.id));
     // The words are theirs.
     expect(written[0]?.prompt).toBe("Do we say the hard thing early?");
@@ -193,23 +198,112 @@ describe("what the draft holds, and what the create writes", () => {
     expect(written[1]).toEqual(TEMPLATE_ASPECTS[1]);
   });
 
-  it("never invents a row and never deletes one", () => {
-    const withExtra = [...TEMPLATE_ASPECTS, { ...TEMPLATE_ASPECTS[0], id: "aspect-mine" }];
-    expect(aspectEditsFor(withExtra, TEMPLATE_ASPECTS).map((row) => row.id)).toEqual(
-      TEMPLATE_ASPECTS.map((row) => row.id),
-    );
-
-    const missingOne = TEMPLATE_ASPECTS.filter((row) => row.id !== "aspect-money");
-    const written = aspectEditsFor(missingOne, TEMPLATE_ASPECTS);
-    expect(written.map((row) => row.id)).toEqual(TEMPLATE_ASPECTS.map((row) => row.id));
-    expect(written[1]).toEqual(TEMPLATE_ASPECTS[1]);
-  });
-
   it("falls back to the template's words for a value the person blanked", () => {
     const blanked = TEMPLATE_ASPECTS.map((row) =>
       row.id === "aspect-money" ? { ...row, prompt: "   " } : row,
     );
     expect(aspectEditsFor(blanked, TEMPLATE_ASPECTS)[1]).toEqual(TEMPLATE_ASPECTS[1]);
+  });
+});
+
+/** A minter a test can name: the create mints `aspect-<uuid>` in production, one per added row. */
+function namedMinter(): () => string {
+  let minted = 0;
+  return () => `aspect-minted-${++minted}`;
+}
+
+/**
+ * **Two answers, not one** (#699).
+ *
+ * The card's defect is that `aspectEditsFor` used to be *the* write: an added Aspect was dropped
+ * and a removed one was restored, silently, while the stage's own copy promised "…and add one".
+ * `aspectsToWrite` asks which list this is — a copy, or the creator's own — and writes that one.
+ */
+describe("which list the create writes (#699)", () => {
+  it("a reworded list is still a copy: the version's ids and order", () => {
+    const reworded = TEMPLATE_ASPECTS.map((row) =>
+      row.id === "aspect-trust" ? { ...row, prompt: "Say the hard thing early?" } : row,
+    );
+
+    expect(aspectsAreAuthored(reworded, TEMPLATE_ASPECTS)).toBe(false);
+    const write = aspectsToWrite(reworded, TEMPLATE_ASPECTS, namedMinter());
+    expect(write.authored).toBe(false);
+    expect(write.aspects.map((row) => row.id)).toEqual(TEMPLATE_ASPECTS.map((row) => row.id));
+    expect(write.aspects[0]?.prompt).toBe("Say the hard thing early?");
+  });
+
+  it("an added Aspect is written, in the person's order, with an id of its own", () => {
+    const added: AspectDraft = {
+      id: "new-1",
+      prompt: "How often do you say thank you?",
+      leftValue: "Never",
+      rightValue: "Daily",
+    };
+    const draft = [TEMPLATE_ASPECTS[0], added, TEMPLATE_ASPECTS[1], TEMPLATE_ASPECTS[2]];
+
+    expect(aspectsAreAuthored(draft, TEMPLATE_ASPECTS)).toBe(true);
+    const write = aspectsToWrite(draft, TEMPLATE_ASPECTS, namedMinter());
+    expect(write.authored).toBe(true);
+    expect(write.aspects.map((row) => row.id)).toEqual([
+      "aspect-trust",
+      "aspect-minted-1",
+      "aspect-money",
+      "aspect-time",
+    ]);
+    expect(write.aspects[1]?.prompt).toBe("How often do you say thank you?");
+    expect(aspectWriteProblem(write.aspects)).toBeNull();
+  });
+
+  it("a removed Aspect stays removed, and the kept ids travel", () => {
+    const draft = TEMPLATE_ASPECTS.filter((row) => row.id !== "aspect-money");
+
+    const write = aspectsToWrite(draft, TEMPLATE_ASPECTS, namedMinter());
+    expect(write.authored).toBe(true);
+    expect(write.aspects.map((row) => row.id)).toEqual(["aspect-trust", "aspect-time"]);
+    expect(aspectWriteProblem(write.aspects)).toBeNull();
+  });
+
+  it("a dragged list keeps the order it was dragged into", () => {
+    const dragged = moveAspect(TEMPLATE_ASPECTS, "aspect-time", 0);
+
+    const write = aspectsToWrite(dragged, TEMPLATE_ASPECTS, namedMinter());
+    expect(write.authored).toBe(true);
+    expect(write.aspects.map((row) => row.id)).toEqual([
+      "aspect-time",
+      "aspect-trust",
+      "aspect-money",
+    ]);
+  });
+
+  it("a blank field on a kept row falls back to the version's, so a reword never empties a row", () => {
+    const draft = TEMPLATE_ASPECTS.map((row) =>
+      row.id === "aspect-money" ? { ...row, rightValue: "  " } : row,
+    );
+
+    const write = aspectsToWrite(draft, TEMPLATE_ASPECTS, namedMinter());
+    expect(write.aspects[1]).toEqual(TEMPLATE_ASPECTS[1]);
+  });
+
+  it("refuses a blank Aspect the person added instead of inventing its question", () => {
+    const draft = [
+      ...TEMPLATE_ASPECTS,
+      { id: "new-1", prompt: "   ", leftValue: "Never", rightValue: "Daily" },
+    ];
+    expect(aspectWriteProblem(draft)).toBe("blank");
+  });
+
+  it("refuses a repeated id", () => {
+    const draft = [...TEMPLATE_ASPECTS, { ...TEMPLATE_ASPECTS[0] }];
+    expect(aspectWriteProblem(draft)).toBe("duplicate");
+  });
+
+  it("refuses removing the last Aspect — a relationship asks at least one", () => {
+    // The flow's own state at the floor: one row, and the control that would empty it is refused.
+    expect(canRemoveAspect(1)).toBe(false);
+    expect(canRemoveAspect(2)).toBe(true);
+    // And the create refuses an emptied list rather than writing an instance `zAssessmentInstance`
+    // cannot parse (`items` is `.min(1)`).
+    expect(aspectWriteProblem([])).toBe("none");
   });
 });
 
@@ -286,6 +380,27 @@ describe("the screen", () => {
     // The two save endpoints are reachable from this screen and nowhere else in the flow.
     expect(SAVE_MODE_PATH).toBe(`${CREATE_INSTANCE_PATH}/mode`);
     expect(SAVE_ASPECTS_PATH).toBe(`${CREATE_INSTANCE_PATH}/aspects`);
+  });
+
+  it("draws the add and remove controls at stage 3 (#699)", () => {
+    const html = stageThreeHtml();
+    // The stage's own copy has promised "…and add one" since #689; these are the controls that make
+    // it true, on every row plus the list's own add.
+    expect(html).toContain('data-aspect-add="true"');
+    expect((html.match(/data-aspect-remove=/g) ?? []).length).toBe(TEMPLATE_ASPECTS.length);
+    // Three rows is above the floor, so nothing refuses a removal and no floor sentence is drawn.
+    expect(html).not.toContain("data-aspect-floor");
+  });
+
+  it("refuses removing the last Aspect, and says why (#699)", () => {
+    const html = stageThreeHtml([
+      TEMPLATE_ASPECTS[0] ?? { id: "x", prompt: "", leftValue: "", rightValue: "" },
+    ]);
+
+    expect(html).toContain('data-aspect-floor="true"');
+    expect(html).toContain(itemLabel(sectionOf(assessmentCreatePageCopy, "aspects"), "last"));
+    const removeTag = html.slice(html.indexOf("data-aspect-remove="));
+    expect(removeTag.slice(0, removeTag.indexOf(">"))).toContain("disabled");
   });
 
   it("draws the refusal band when the create refused, and keeps the list under it", () => {

@@ -9,9 +9,10 @@
  * Two things are asserted here, and they are deliberately opposite:
  *
  *   1. the same component now draws both screens, with the same row anatomy; and
- *   2. the one place the screens still differ — add and remove — stays a prop, because stage 3
- *      forbids it (V4, #699) and the dashboard has always allowed it. A test that let `addRemove`
- *      default to on would silently repeal the rule.
+ *   2. the one place the screens differ — add and remove — stays a prop. **Both** screens pass it
+ *      now (stage 3 since #699, the dashboard since it existed), so the default being off is not
+ *      about either of them: it is what stops a third mount of this editor from gaining two write
+ *      controls it never asked for.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -33,8 +34,8 @@ const ROW = {
   rightValue: "Plenty",
 };
 
-/** The markup the modal draws at stage 3: the row anatomy, and no list controls. */
-test("the create flow draws the shared editor without add or remove (V4)", () => {
+/** A mount with no `addRemove`: the row anatomy, and no list controls. */
+test("a mount without `addRemove` draws no add or remove (#774)", () => {
   const html = renderToStaticMarkup(
     <AspectList copy={assessmentCreatePageCopy} templateRecordId="template-1" aspects={[ROW]} />,
   );
@@ -47,6 +48,25 @@ test("the create flow draws the shared editor without add or remove (V4)", () =>
 
   assert.doesNotMatch(html, /data-aspect-add/);
   assert.doesNotMatch(html, /data-aspect-remove/);
+});
+
+/**
+ * #699 — stage 3 mounts the same editor **with** the two controls, so a creator can add and remove
+ * an Aspect. Read from the source rather than a render because the prop is what the test is about:
+ * a stage 3 that lost `addRemove` would still render the rows, and the promise in its own copy
+ * would be false again.
+ */
+test("the create flow's stage 3 passes `addRemove` (#699)", () => {
+  const source = readFileSync(
+    join(process.cwd(), "components/assessment-flow/create-relationship.tsx"),
+    "utf8",
+  );
+  const mount = source.slice(
+    source.indexOf("<AspectList"),
+    source.indexOf("/>", source.indexOf("<AspectList")),
+  );
+  assert.ok(mount.length > 0, "stage 3 does not mount AspectList");
+  assert.ok(mount.includes("addRemove"), "stage 3 mounts the editor without add or remove");
 });
 
 /** The markup the dashboard draws: the same anatomy, plus the two controls it has always had. */
@@ -101,6 +121,7 @@ test("the dashboard's editor section exists in its own fixture", () => {
     "refused",
     "add",
     "remove",
+    "last",
   ]) {
     assert.ok(ids.has(id), `the editor asks for "${id}", which the section does not declare`);
   }
