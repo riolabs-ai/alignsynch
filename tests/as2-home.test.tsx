@@ -227,6 +227,33 @@ describe("the composed page", () => {
   });
 });
 
+describe("the arrow glyph", () => {
+  const html = renderToStaticMarkup(<As2HomeView model={model} />);
+
+  test("every AS2 arrow carries its own box instead of resolving against the flex line", () => {
+    // An `<svg>` with a `viewBox` and no `width`/`height` is sized by its container. Inside
+    // `components/ui/button` the primitive supplies `[&_svg]:size-4`, but the hero's two raw anchors
+    // are not buttons: before `size-4` existed on the glyph, the secondary CTA's arrow resolved to
+    // 59.891px square and made a 14px text link a **123.906 × 60** box at every width from `sm` up —
+    // 249.453px tall at 390, where the stacked column gave the glyph the whole 342px width to
+    // resolve against. The measurements are in `docs/qa-home-comments/measurements.json`.
+    const arrows = count(html, 'viewBox="0 0 20 20"');
+    expect(arrows).toBeGreaterThan(0);
+    expect(count(html, 'class="size-4 shrink-0"')).toBe(arrows);
+  });
+
+  test("the fix is the glyph's, and the secondary CTA keeps its 40px tap target", () => {
+    // The card's "must not": no fixed height on the link. `min-h-10` is the 40px floor at 390 and
+    // `sm:min-h-0` drops it at ≥640, where the link is exactly its own 20px text line.
+    const hero = readFileSync(join(process.cwd(), "components/home/as2-hero.tsx"), "utf8");
+    const secondary = hero.match(/inline-flex min-h-10[^"]*/)?.[0] ?? "";
+
+    expect(secondary).toContain("min-h-10");
+    expect(secondary).toContain("sm:min-h-0");
+    expect(secondary).not.toMatch(/(^|\s)h-\d/);
+  });
+});
+
 describe("the structural promises, read off the source", () => {
   const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 

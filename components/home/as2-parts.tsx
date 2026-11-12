@@ -25,11 +25,24 @@ import type React from "react";
  * One glyph, `currentColor`, so it takes the fill of whatever it sits in — the graphite button, a
  * card's white footer, a text link — without a second styled copy. It is decorative: the label is
  * the accessible name of the control it sits in.
+ *
+ * **The glyph carries its own size, and that is not cosmetic.** An `<svg>` with a `viewBox` and no
+ * `width`/`height` is sized by its container: inside `components/ui/button` the primitive supplies
+ * `[&_svg]:size-4`, so the six arrows this page draws inside a button were already 16px — but the
+ * three on raw anchors are not buttons, and there the glyph resolved to the whole flex line, square
+ * by its 1:1 aspect ratio. Measured on `/` (alignsynch) before this class existed: **59.891 × 59.891
+ * inside the hero's secondary "See how it works" anchor**, which made a 14px text link a
+ * **123.906 × 60** box on every width from `sm` up — and **249.453 × 249.453 at 390**, where the
+ * stacked column gave the glyph the full 342px width to resolve against, so the link rendered 249px
+ * tall. The two hero cards drew 30 × 30 the same way. `size-4` is exactly what the `Button` primitive
+ * already gives the arrows that sit inside it, so the glyph now looks the same whether or not its
+ * container happens to size it.
  */
 export function Arrow(): React.ReactElement {
   return (
     <svg
       aria-hidden="true"
+      className="size-4 shrink-0"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
