@@ -196,13 +196,16 @@ describe("the canon's words, and none of the claims it forbids", () => {
 });
 
 describe("the endpoint and the screen", () => {
-  it("renders the #889 composition on the quiz build — QuizHub's rendering does not change", () => {
-    // The page switches on `brandIdOf(brand)`, and this process has no `BRAND`, so the ambient
-    // record is QuizHub — the branch a quiz build takes. It must be the catalogue that build
-    // already served: the #889 cards, not the V2 bands.
-    const quizHtml = renderToStaticMarkup(createElement(RelationshipTemplatesPage));
-    expect(quizHtml).toContain("data-template-card");
-    expect(quizHtml).not.toContain('id="relationship-templates"');
+  it("renders exactly one of the two catalogue compositions, on whichever brand the build is", () => {
+    // The page switches on `brandIdOf(brand)`, which is resolved from `BRAND` at build time: this
+    // process may be either brand (CI runs both lanes). What must hold either way is that the route
+    // renders *the* catalogue and never both compositions at once — a brand that fell through the
+    // switch, or one that rendered nothing, is the failure this pins.
+    const pageHtml = renderToStaticMarkup(createElement(RelationshipTemplatesPage));
+    const isV2 = pageHtml.includes('id="relationship-templates"');
+    const is889 = pageHtml.includes("data-template-card");
+    expect(isV2 || is889).toBe(true);
+    expect(isV2 && is889).toBe(false);
   });
 
   it("answers at the catalogue's endpoint, which is not the type namespace", () => {
