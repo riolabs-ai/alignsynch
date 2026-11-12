@@ -250,7 +250,7 @@ export function AdminGapsView({ copy, aggregate }: { copy: PageCopy; aggregate: 
   );
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
+    <div className="space-y-8">
       <PageHeader title={copy.heading} description={copy.subtitle} />
 
       <section className="space-y-3">
@@ -290,14 +290,12 @@ export function AdminGapsView({ copy, aggregate }: { copy: PageCopy; aggregate: 
 export function AdminGapsUnreadable({ copy, reason }: { copy: PageCopy; reason: string }) {
   const section = sectionOf(copy, "unreadable");
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
-      <Alert variant="warning" className="p-6" data-gap-unreadable="">
-        <h1 className="text-2xl font-bold">{section.heading}</h1>
-        <AlertDescription className="mt-2 space-y-2">
-          <p>{reason}</p>
-          <p>{sectionBody(section)}</p>
-        </AlertDescription>
-      </Alert>
-    </div>
+    <Alert variant="warning" className="p-6" data-gap-unreadable="">
+      <h1 className="text-2xl font-bold">{section.heading}</h1>
+      <AlertDescription className="mt-2 space-y-2">
+        <p>{reason}</p>
+        <p>{sectionBody(section)}</p>
+      </AlertDescription>
+    </Alert>
   );
 }

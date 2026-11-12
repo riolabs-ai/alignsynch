@@ -1,3 +1,4 @@
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 
 import { AdminAuditLog } from "@/components/admin/audit-log";
@@ -83,6 +84,13 @@ export default async function AdminAuditPage({
   }
 
   return (
-    <AdminAuditLog copy={adminAuditPageCopy} rows={rows} filter={filter} unreadable={unreadable} />
+    <StageColumn>
+      <AdminAuditLog
+        copy={adminAuditPageCopy}
+        rows={rows}
+        filter={filter}
+        unreadable={unreadable}
+      />
+    </StageColumn>
   );
 }

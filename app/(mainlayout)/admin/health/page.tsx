@@ -38,6 +38,7 @@
  * `robots` matters even behind the gate: a crawler that somehow held an admin's session must not
  * publish the build's commit and the state of production.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 
 import { PlatformHealth } from "@/components/admin/platform-health";
@@ -77,5 +78,9 @@ export default async function AdminHealthPage() {
     unreadable = error.reason;
   }
 
-  return <PlatformHealth copy={adminHealthPageCopy} facts={facts} unreadable={unreadable} />;
+  return (
+    <StageColumn>
+      <PlatformHealth copy={adminHealthPageCopy} facts={facts} unreadable={unreadable} />
+    </StageColumn>
+  );
 }

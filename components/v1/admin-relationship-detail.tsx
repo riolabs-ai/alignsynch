@@ -96,7 +96,7 @@ export function AdminRelationshipDetail({ relationshipId }: { relationshipId: st
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-5xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <LoadingState rows={4} />
       </div>
     );
@@ -105,12 +105,10 @@ export function AdminRelationshipDetail({ relationshipId }: { relationshipId: st
   const rel: V1Relationship | undefined = relationships.find((row) => row.id === relationshipId);
   if (rel === undefined) {
     return (
-      <div className="mx-auto max-w-3xl p-4 sm:p-8">
-        <NotFoundState
-          message={`No relationship "${relationshipId}" exists in the store.`}
-          back={ADMIN_RELATIONSHIPS_PATH}
-        />
-      </div>
+      <NotFoundState
+        message={`No relationship "${relationshipId}" exists in the store.`}
+        back={ADMIN_RELATIONSHIPS_PATH}
+      />
     );
   }
 
@@ -124,7 +122,7 @@ export function AdminRelationshipDetail({ relationshipId }: { relationshipId: st
   const sessions: readonly AdminSessionRow[] = adminSessionRows(rel, sessionFixtures);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
+    <div className="space-y-6">
       <div>
         <Link
           href={ADMIN_RELATIONSHIPS_PATH}
