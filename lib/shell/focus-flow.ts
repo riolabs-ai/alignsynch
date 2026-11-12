@@ -1,17 +1,22 @@
 /**
  * Which routes are a **focused flow**, and what chrome they get (#542 phase 2).
  *
- * Creating, editing and publishing are one job at a time. A member halfway through an Aspect edit
- * or a publish review does not want a rail offering them eleven other places to be: the flow owns
- * the width, and the way out is explicit. So the shell hides the rail while one of these routes is
- * current, and keeps the account header above the content (`components/layout/header.tsx`'s focus
- * form) so the page is never a dead end.
+ * Creating, editing and publishing a template are one job at a time. A member halfway through the
+ * create wizard or a publish review does not want a rail offering them eleven other places to be:
+ * the flow owns the width, and the way out is explicit. So the shell hides the rail while one of
+ * these routes is current, and keeps the account header above the content
+ * (`components/layout/header.tsx`'s focus form) so the page is never a dead end.
  *
- * **The list is data, and it is patterns rather than paths.** A member's editor is
- * `/dashboard/relationships/<id>` and its list is `/dashboard/relationships`: hiding the rail on
- * both would hide it on a plain list page, which is not a flow. `*` matches exactly one segment,
- * so the two are distinguishable without a regex per route and without a route-prefix rule that
+ * **The list is data, and it is patterns rather than paths.** A member's template editor is
+ * `/dashboard/templates/<id>` and its list is `/dashboard/templates`: hiding the rail on both
+ * would hide it on a plain list page, which is not a flow. `*` matches exactly one segment, so
+ * the two are distinguishable without a regex per route and without a route-prefix rule that
  * quietly covers a page added later.
+ *
+ * **A destination is not a flow (#873).** The relationship detail, `/dashboard/relationships/<id>`,
+ * is a place a member lands and works from, not a job with an end: it renders under the rail, with
+ * no back control, because the rail *is* the way back. The five-stage create wizard is the flow.
+ * The same test — does the page have an exit of its own once it is finished? — decides both.
  *
  * **Why it is not derived from the route manifest.** The manifest says a route exists; it cannot
  * say a page is a flow. A page that becomes one (a new publish step) says so here, in the same
@@ -30,8 +35,6 @@
 
 /** The focused flows, as segment patterns. `*` is exactly one segment (an id). */
 export const FOCUS_FLOW_PATTERNS: readonly (readonly string[])[] = [
-  // The member's relationship: Aspects, the publish panel, the one-click reissue.
-  ["dashboard", "relationships", "*"],
   // The member's own template: the console's editor in its `private` band.
   ["dashboard", "templates", "*"],
   // The template author's two screens: a blank template, and one started from a catalogue type.

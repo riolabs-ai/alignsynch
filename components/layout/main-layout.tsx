@@ -44,11 +44,16 @@ import { useCallback, useState } from "react";
  *
  * **A focused flow hides the rail and keeps the account header (#542 phase 2).** `isFocusedFlow`
  * is a pure pattern match over the current path (`lib/shell/focus-flow.ts`): while a member is
- * creating, editing or publishing, the content takes the whole width and the header carries the
+ * creating or editing a template, the content takes the whole width and the header carries the
  * wordmark, the account menu and one explicit "Back to dashboard". The rail is not rendered at all
  * — not collapsed to icons, not `hidden` — because a flow that offers eleven other places to be is
  * not focused, and a flow with no way out is a dead end. Leaving the pattern's routes restores the
  * rail on the next render, from the same cookie.
+ *
+ * **A destination keeps the rail (#873).** `/dashboard/relationships/<id>` is where a member lands
+ * and works, not a wizard with an end, so it is not a pattern and draws the ordinary branch below:
+ * rail, account header, no "Back to dashboard". The header's exit is the flow's escape hatch, and a
+ * page with a rail has already been given one.
  *
  * **The drawer's one boolean lives here**, because its two halves do not: the trigger is in the
  * header and the panel is the rail. They are brothers in this component, which is the nearest
