@@ -284,6 +284,19 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
         heading: "Template attribution",
         body: "These Terms of Service are adapted from a legal template by PolicyForge, Copyright (c) 2026 PolicyForge, used under the MIT License.",
       },
+      {
+        /**
+         * Photography credits. Neither the Unsplash License nor the Pexels License requires
+         * attribution, so this section is a courtesy — but a courtesy that has to be *true*: where
+         * the photographer is not recorded in the asset list the build was supplied with, the copy
+         * says so rather than naming somebody. `docs/specs/spec-as2-style-home-redesign/
+         * ASSET-SOURCES.md` carries the same record beside the files, and the two are updated
+         * together: a photo added without a row here is a photo with no provenance.
+         */
+        id: "photography",
+        heading: "Photography credits",
+        body: `The photographs on the public pages are used under free licences that do not require attribution. They are credited here as a courtesy, and because a licence can change: a reader should be able to tell where a picture came from.\n\n- Personal life — Unsplash, under the Unsplash License. The photographer is not recorded in the asset list this build was supplied with.\n- Business life — Pexels, under the Pexels License. Photograph by Ketut Subiyanto.\n- Relationship gaps — Unsplash, under the Unsplash License. The photographer is not recorded in the asset list this build was supplied with.\n- Opinions scale — Unsplash, under the Unsplash License. The photographer is not recorded in the asset list this build was supplied with.\n\nThe Unsplash License permits commercial and non-commercial use without permission and without attribution. The Pexels License does the same. The brand lockup and the product's own illustrations are ours and are credited to nobody.`,
+      },
     ],
   });
 

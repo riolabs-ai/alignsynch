@@ -25,7 +25,16 @@
     // a11y rules (`href="#"` on a prototype's own step controls) are findings about a design
     // document rather than about this tree — the same reason `lib/quizhub/**` is ignored, except
     // this directory is authored in-repo and the ignore is narrow to the artifacts, not to `docs/`.
-    "includes": ["**", "!pnpm-lock.yaml", "!docs/review/artifacts"]
+    // `docs/specs/spec-as2-style-home-redesign` is the same kind of thing: an approved design
+    // handoff kept as reference (a static HTML page, its own stylesheet) and never imported by the
+    // app. Linting its `<div aria-label>` is a finding about the artifact, and the artifact is not
+    // ours to edit — the build matches it, not the other way round.
+    "includes": [
+      "**",
+      "!pnpm-lock.yaml",
+      "!docs/review/artifacts",
+      "!docs/specs/spec-as2-style-home-redesign"
+    ]
   },
   "formatter": {
     "enabled": true,
