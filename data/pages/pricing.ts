@@ -72,7 +72,13 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "most-popular", label: "Recommended" },
         { id: "current-plan", label: "Your current plan" },
-        { id: "not-available", label: "Not available to buy right now." },
+        /**
+         * #912 — the word was "buy" ("Not available to buy right now."), and `/pricing` is a
+         * payment surface: the card retires "purchase", "buy" and "save payment method" from every
+         * one of them. The state this row names is a tier a signed-out or unentitled reader cannot
+         * start, which "Not available on this plan right now." says without the shop verb.
+         */
+        { id: "not-available", label: "Not available on this plan right now." },
         { id: "checkout-busy", label: "Opening checkout…" },
         { id: "checkout-error", label: "Checkout did not start — try again" },
         { id: "whats-included", label: "WHAT'S INCLUDED:" },

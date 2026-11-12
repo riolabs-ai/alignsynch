@@ -136,6 +136,7 @@ const relationshipRow: MemberRelationshipRow = {
   viewerRole: "initiator",
   isInitiator: true,
   templateId: "member-config-abc123",
+  templateSlug: "member-config-abc123",
   title: "Son Basics",
   summary: "What we want to ask each other every month.",
   createdAt: "2026-11-01T12:00:00.000Z",

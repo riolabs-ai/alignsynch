@@ -140,9 +140,10 @@ export default async function TemplateCreateInvitePage({
    *   `planIncluded` what the account's plan already covers, so an entitled account gets a summary
    *                  rather than a radio group selling a tier it holds.
    *
-   * **Nothing here charges, and there is no second card form.** The card is Stripe's, mounted inside
-   * the walk from `components/billing/stripe-frame.tsx` — the same component the dashboard's capture
-   * dialog mounts (#748). This page hands over actions; it never draws a field.
+   * **Nothing here charges, and this is the only card form.** The card is Stripe's, mounted inside
+   * the walk from `components/billing/stripe-frame.tsx` — since #912 the walk is that module's only
+   * caller, because the dashboard's capture dialog is deleted. This page hands over actions; it never
+   * draws a field.
    */
   const accountPlan =
     entitlement === null

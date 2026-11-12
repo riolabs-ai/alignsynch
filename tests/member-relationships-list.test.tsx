@@ -41,6 +41,7 @@ function row(overrides: Partial<MemberRelationshipRow> & { id: string }): Member
     viewerRole: "initiator",
     isInitiator: true,
     templateId: "member-config-abc123",
+    templateSlug: "member-config-abc123",
     title: "The template this was copied from",
     summary: "",
     createdAt: "2026-11-10T12:00:00.000Z",

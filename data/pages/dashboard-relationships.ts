@@ -174,6 +174,21 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "open-assessment-why", label: "No session yet — publish first" },
         { id: "publish-assessment", label: "Publish Assessment" },
         /**
+         * #912 — **a draft's two CTAs, and the owner's words for them.** A draft is where money and
+         * the counterparty both still have to be decided, so the card draws both acts front and
+         * centre instead of one verb and a menu:
+         *
+         *   invite-members        the pay modal (`…/create/invite?instance=`), which is the only
+         *                         surface that takes a card. It needs a session to open, which is
+         *                         the second label below: a draft written by this list's own create
+         *                         band has none, and the card says so rather than drawing a link that
+         *                         would land on stage 1 again.
+         *   publish-to-counterparty  the relationship's own screen, where the publish band is.
+         */
+        { id: "invite-members", label: "Invite Members" },
+        { id: "invite-members-why", label: "No invitation yet — this draft has no session" },
+        { id: "publish-to-counterparty", label: "Publish to Counterparty" },
+        /**
          * #706 — the card's primary action for the seat that cannot publish. The destination is
          * the same screen; only the verb is honest for a reader who will not be writing.
          */
