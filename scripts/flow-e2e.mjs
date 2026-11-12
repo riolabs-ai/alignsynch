@@ -1795,6 +1795,71 @@ async function main() {
       !reopened.html.includes('data-create-problem="true"'),
     `status ${reopened.status}`,
   );
+
+  /* 12. the other producer — a forked template must be usable too ------ */
+  // #785 added a second writer of templates: the Counterparty forks the relationship's template into
+  // their own library. It writes a `record` and its `item` rows, so it owes a `template_version` for
+  // exactly the reason authoring does, and it goes through the same `writeFirstVersion` — one
+  // writer, two callers. This asserts that, because the defect this card fixes is precisely a
+  // producer that forgot.
+  //
+  // Called in-process: the fork is a server action (`dashboard/relationships/actions.ts`), not a
+  // form post, so there is no HTTP shape to drive. The rows it writes are checked by the same read
+  // the create flow uses (`readLibraryTemplate`) and by the door guard's own input.
+  const { forkRelationshipTemplate } = await import("@/lib/flow/templates");
+  const { readLibraryTemplate } = await import("@/lib/db/template-library");
+  const { templateCopyRefusal } = await import("@/lib/flow/create-copy");
+
+  const boundRelationship = await relationshipState(instanceId);
+  const forked =
+    boundRelationship === null
+      ? null
+      : await forkRelationshipTemplate(boundRelationship.id, boundRelationship.initiator_user_id);
+  if (forked !== null && forked.ok) createdTemplates.push(forked.template.id);
+  check(
+    "forking a relationship's template answers with a template of the caller's own",
+    forked !== null && forked.ok && forked.template.aspectCount > 0,
+    JSON.stringify(forked),
+  );
+
+  const forkVersions =
+    forked === null || !forked.ok
+      ? { rows: [] }
+      : await db.query(
+          "SELECT version, payload FROM template_version WHERE template_record_id = $1 ORDER BY version",
+          [forked.template.id],
+        );
+  const forkItems = forkVersions.rows[0]?.payload?.items ?? [];
+  check(
+    "a fork carries exactly one template_version, numbered 1 (#785 + #870)",
+    forkVersions.rows.length === 1 && forkVersions.rows[0]?.version === 1,
+    `${forkVersions.rows.length} row(s): ${forkVersions.rows.map((row) => row.version).join(", ")}`,
+  );
+  check(
+    "and its payload is the version the parties were asked on",
+    forkItems.length === ASPECT_IDS.length && forkItems[0]?.id === ASPECT_IDS[0],
+    `${forkItems.length} item(s): ${forkItems.map((item) => item.id).join(" · ")}`,
+  );
+
+  const forkRead =
+    forked === null || !forked.ok
+      ? undefined
+      : await readLibraryTemplate(
+          forked.template.slug,
+          boundRelationship?.initiator_user_id ?? null,
+        );
+  check(
+    "and a relationship can be started from it — the door guard lets a fork through",
+    forkRead !== undefined &&
+      forkRead.hasVersion === true &&
+      templateCopyRefusal({
+        status: forkRead.template.status,
+        aspectCount: forkRead.aspects.length,
+        authorship: forkRead.template.authorship,
+        hasVersion: forkRead.hasVersion,
+      }) === null,
+    `${forkRead?.aspects.length ?? 0} aspect(s), hasVersion=${String(forkRead?.hasVersion)}`,
+  );
 }
 
 /**
