@@ -12,7 +12,7 @@
  *               own (realm, price), shown read-only
  *   aspects     the Aspect editor: its three fields and the row controls
  *   preview     the party's sheet, rendered from the draft and never from a saved row
- *   save        the reason field, the button and the two notices
+ *   save        the button and the two notices
  *   private     the band that replaces the console's publish controls
  *   refusals    one sentence per code the save can answer with
  *   locked      the panel an archived template draws instead of the editor
@@ -24,7 +24,7 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
   heading: "Your template",
   subtitle:
-    "Edit the words and the Aspects. Every save carries a reason and lands in the audit log in the same transaction as the change. The preview draws the draft you are editing, not a saved row.",
+    "Edit the words and the Aspects. A save lands in the audit log in the same transaction as the change, with a sentence written for you. The preview draws the draft you are editing, not a saved row.",
   items: [
     { id: "editable", label: "Editable" },
     { id: "locked", label: "Read-only" },
@@ -76,9 +76,8 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "save",
       heading: "Save",
-      body: "The reason is not optional — it is the audit row's own sentence, and a save without one is refused before anything is written.",
+      body: "A save lands in the audit log in the same transaction as the change. The sentence it carries is written for you — it names this template and this page — because there is nothing for you to justify when the draft is your own.",
       items: [
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Save the template" },
         { id: "saving", label: "Saving…" },
         { id: "saved", label: "Saved. Audit action {actionId}." },
@@ -109,12 +108,45 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "live", label: "Live version {version}" },
         { id: "history", label: "Highest version {version} — not offered" },
         { id: "never", label: "Never published" },
-        { id: "reason", label: "Why" },
         { id: "publish", label: "Publish a version" },
         { id: "unpublish", label: "Withdraw it" },
         { id: "working", label: "Working…" },
         { id: "published", label: "Published version {version}." },
         { id: "unpublished", label: "Withdrawn. Version {version} remains in the history." },
+        // #711 — declared because E23 binds this component's asks to every fixture its budget row
+        // names. The band is the console's (`band="catalogue"`), so a member's screen never draws
+        // these controls; the words are still the member's own, because a template they own is
+        // archived by an operator and never destroyed out from under a relationship.
+        { id: "retire", label: "Retire" },
+        {
+          id: "retire-body",
+          label:
+            "Retiring a template takes it out of use and keeps everything — its versions, and every relationship created from them.",
+        },
+        { id: "archive", label: "Archive the template" },
+        { id: "restore", label: "Restore the template" },
+        { id: "delete", label: "Delete permanently" },
+        { id: "delete-title", label: "Delete {title} permanently?" },
+        {
+          id: "delete-body",
+          label:
+            "This destroys the template and its Aspects. It is refused, and nothing is written, if any relationship was created from it or any version of it was published — archive those instead.",
+        },
+        { id: "delete-confirm", label: "Delete it" },
+        { id: "cancel", label: "Cancel" },
+        {
+          id: "archived",
+          label:
+            "Archived. Every relationship keeps the version it was created from. Audit action {actionId}.",
+        },
+        {
+          id: "restored",
+          label: "Restored as a working copy. Audit action {actionId}.",
+        },
+        {
+          id: "deleted",
+          label: "Deleted. The audit log holds the last copy of it. Audit action {actionId}.",
+        },
       ],
     },
     {
@@ -125,10 +157,25 @@ export const dashboardTemplateEditorPageCopy: PageCopy = zPageCopy.parse({
         { id: "no-such-template", label: "That template is not in this database." },
         { id: "not-yours", label: "That template belongs to another account." },
         { id: "slug-taken", label: "Another template already uses that slug." },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "role-too-low", label: "Your role may not edit a template." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The save did not go through." },
+        // #711 — the retire band's refusals, declared for the same reason its labels are.
+        { id: "already-archived", label: "That template is already archived." },
+        {
+          id: "not-archived",
+          label: "That template is not archived, so there is nothing to restore.",
+        },
+        {
+          id: "template-in-use",
+          label:
+            "A relationship was created from this template, so it is archived rather than destroyed.",
+        },
+        {
+          id: "template-published",
+          label:
+            "This template has a published version — its history is what the catalogue offered. Archive it.",
+        },
       ],
     },
     {

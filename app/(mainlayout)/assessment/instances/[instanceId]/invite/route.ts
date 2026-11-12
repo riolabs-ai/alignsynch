@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
-import { instancePath } from "@/lib/flow/paths";
+import { SENT_RETURN_VALUE, instancePath, sentPath } from "@/lib/flow/paths";
 import {
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
@@ -10,6 +10,19 @@ import {
   partyTokensFrom,
 } from "@/lib/flow/session";
 import { resendInvite } from "@/lib/flow/store";
+
+/**
+ * Where the re-invite's 303 lands (#691).
+ *
+ * The relationship screen by default — it is where this form was first drawn — and the **Sent**
+ * screen when the form carried `returnTo=sent`: the two draw the same invitation, and a person who
+ * pressed a button about the invitation should not be moved a stage forward by the answer. The
+ * field is a closed literal and not a URL the post supplies, so it cannot become an open redirect;
+ * anything else falls back to the relationship.
+ */
+function returnTarget(instanceId: string, posted: FormDataEntryValue | null | undefined): string {
+  return posted === SENT_RETURN_VALUE ? sentPath(instanceId) : instancePath(instanceId);
+}
 
 /**
  * `POST /assessment/instances/[instanceId]/invite` — reissue an unclaimed invitation (#275).
@@ -58,7 +71,7 @@ export async function POST(
     viewerUserId: viewer?.userId ?? null,
   });
 
-  const target = new URL(instancePath(instanceId), request.url);
+  const target = new URL(returnTarget(instanceId, form?.get("returnTo")), request.url);
   if (!result.ok) {
     target.searchParams.set("resend", result.code);
     return NextResponse.redirect(target, 303);

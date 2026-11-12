@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: a relationship per card — the same title row with the primary action at the right, the same search field in a filter row, the same stage tabs and the same card grid; the cover block becomes a stage band, the metric row translates Players → sessions `N of M`, Completion → session completion, Average Score → average alignment and `N Questions` → `N Aspects`, and what was paid is drawn on the Initiator's card alone)
+ * template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: a relationship per card in the same title row, filter row, stage tabs and card grid — the axes are the card's cover, which carries the relationship's stage word on the muted wash where a quiz card carries its image, and the relationship's working facts: the one meta line is the record's figures, and what was paid is drawn on the Initiator's card alone)
  * The /v1 prototype of the same variation — `relationships-list.tsx` and the metric row in its
  * Manage tab — is deleted (#478); this file is the port that replaced it, and the ancestor above is
  * the surface both varied.
@@ -11,7 +11,7 @@
  * `lib/db/**` or `pg` (#228, `data:check` E34). This file is the app's own expression of the same
  * variation: no `"use client"`, no state, no handler. The search and the stage tabs are plain
  * links and a GET form, so every state of the screen is a URL a `curl` can ask for — the same
- * reason `/assessment/templates` is built that way.
+ * reason `/templates/relationship` is built that way.
  *
  * **What a card may say is decided before it gets here.** `RelationshipCard` (`lib/db/
  * assessments.ts`) carries counts, a stage and — only when the latest session is complete — a
@@ -20,43 +20,42 @@
  * is drawn `—` and never `0`: absent and zero are different facts, and a relationship nobody has
  * scored has no figure.
  *
- * **Every number is derived.** The stage tabs count the rows this component was given, the card's
- * `N of M` is `sessionsCompleted of sessionsOpened`, and the completion percentage is those two
- * divided — there is no literal in this file, and E23 holds it to zero (`data/pages/
- * assessment-instances.ts` carries every word).
- *
- * **No total, and no clock.** What was paid is the plan and the instant it was bought, on the
- * Initiator's card only: one relationship, one purchase, nothing to sum. A date label is a pure
- * function of the ISO instant it read (`formatRelative` against the fixture clock, `formatDate`
- * for an instant past it), because a render path that asks the wall clock prints a label the
- * same rows would print differently a minute later.
+ * **The card is a projection, and this file computes nothing** (#795 F2, F4). `relationshipCard()`
+ * (`lib/member/card.ts`) turns a row into a `MemberCard`: the chips, the sentence, and the record's
+ * one meta line — `3 of 4 sessions`, `Avg alignment 2.4`, `5 Aspects`, every figure formatted once,
+ * there, beside the template shelf's cards, which are the same type and print the same line. The
+ * component below prints what it is handed and joins nothing; `tests/member-card-projection.test.ts`
+ * fails the build if a `toFixed`, a `Math.round` or a division of the two session counts comes back
+ * into this file, and it fails if the four-tile grid the artifact replaced comes back either. The
+ * stage tabs still count the rows this component was given, and the page's own copy is still the
+ * fixture's (E23).
  */
 import Link from "next/link";
 
-import { MODE_LABELS } from "@/content/assessment";
-import { DEMO_NOW_ISO, formatDate, formatRelative } from "@/content/core";
-import { STAGE_LABELS } from "@/content/stages";
+import { StageColumn } from "@/components/assessment-flow/stage-column";
+import { Chip } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
+import { STAGE_LABELS } from "@/content/stages";
 import type { RelationshipCard } from "@/lib/db/assessments";
 import { type OverviewFilter, matchesOverviewFilter } from "@/lib/flow/overview";
-import { MY_INSTANCES_PATH, instancePath } from "@/lib/flow/paths";
+import { MY_INSTANCES_PATH } from "@/lib/flow/paths";
 import { FLOW_STAGES, type FlowStage } from "@/lib/flow/stage";
+import {
+  CARD_ABSENT,
+  CARD_ACTIONS,
+  CARD_COVER,
+  CARD_COVER_WORD,
+  CARD_FRAME,
+  CARD_META,
+  CARD_TITLE,
+  relationshipCard,
+} from "@/lib/member/card";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
-/**
- * The one glyph an absent figure is drawn as.
- *
- * Not `0`, and not an empty cell: a metric that has no value and a metric whose value is zero are
- * different facts, and only one of them can be true of a relationship nobody has scored.
- */
-const ABSENT = "—";
-
-const CARD =
-  "flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900";
 const MUTED = "text-sm text-gray-600 dark:text-gray-300";
 const STRONG = "font-semibold text-gray-900 dark:text-gray-100";
-const CHIP =
-  "inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200";
+const OUTLINE =
+  "inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800";
 
 /**
  * The stage a `?stage=` value names, or `null` for "every relationship".
@@ -104,41 +103,6 @@ export function matchesQuery(row: RelationshipCard, query: string): boolean {
   );
 }
 
-/** The label a row's instant is drawn with — a pure function of the instant, never a clock. */
-const FIXTURE_CLOCK_MS = Date.parse(DEMO_NOW_ISO);
-
-export function sessionLabelOf(iso: string): string {
-  return Date.parse(iso) > FIXTURE_CLOCK_MS ? formatDate(iso) : formatRelative(iso);
-}
-
-/**
- * The other side of the card, from the seat the read resolved for this request.
- *
- * Which name is "the other one" is the session's fact, not the row's: the same relationship
- * renders as two different cards to its two parties, and neither card ever names its own reader
- * as the other person. A coach is neither, so they read both names in the direction the
- * relationship was created in.
- */
-function otherNameOf(row: RelationshipCard, copy: PageCopy): string {
-  const unnamed = itemLabel(sectionOf(copy, "row"), "unnamed-party");
-  if (row.viewerRole === "counterparty") return row.initiatorName ?? unnamed;
-  if (row.viewerRole === "initiator") return row.counterpartyName ?? unnamed;
-  return `${row.initiatorName ?? unnamed} → ${row.counterpartyName ?? unnamed}`;
-}
-
-/** One metric tile of the ancestor's stats grid: a label above a figure. */
-function MetricTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-md bg-gray-50 p-2 dark:bg-gray-800">
-      <dt className="mb-1 text-xs text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className={`text-base ${STRONG}`}>{value}</dd>
-      {hint === undefined ? null : (
-        <dd className="text-[10px] text-gray-500 dark:text-gray-400">{hint}</dd>
-      )}
-    </div>
-  );
-}
-
 export function MyInstances({
   copy,
   relationships,
@@ -167,7 +131,7 @@ export function MyInstances({
   if (unreadable !== null) {
     const failure = sectionOf(copy, "unreadable");
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-10">
+      <StageColumn>
         <div
           data-my-instances-unreadable="true"
           role="alert"
@@ -182,21 +146,15 @@ export function MyInstances({
             </a>
           </p>
         </div>
-      </div>
+      </StageColumn>
     );
   }
 
   const list = sectionOf(copy, "list");
-  const states = sectionOf(copy, "state");
-  const marker = sectionOf(copy, "marker");
   const empty = sectionOf(copy, "empty");
   const filters = sectionOf(copy, "filter");
   const stageCopy = sectionOf(copy, "stage");
   const search = sectionOf(copy, "search");
-  const metric = sectionOf(copy, "metric");
-  const card = sectionOf(copy, "card");
-  const paidCopy = sectionOf(copy, "paid");
-  const inviteCopy = sectionOf(copy, "invite");
 
   // The console's filter first, then the stage tab, then the search: three narrowings of one
   // array, each one a predicate over the rows the read produced.
@@ -219,7 +177,7 @@ export function MyInstances({
   };
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-10">
+    <StageColumn>
       {/* Title row, then the action — the ancestor's stacking: the heading answers "what am I in
           the middle of", the button answers "where does another one start". */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -371,141 +329,104 @@ export function MyInstances({
           <p className={`mt-2 ${MUTED}`}>{sectionBody(list)}</p>
 
           <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((instance) => {
-              const other = otherNameOf(instance, copy);
-              const sessions =
-                instance.sessionsOpened === 0
-                  ? ABSENT
-                  : `${instance.sessionsCompleted} of ${instance.sessionsOpened}`;
-              const completion =
-                instance.sessionsOpened === 0
-                  ? ABSENT
-                  : `${Math.round((instance.sessionsCompleted / instance.sessionsOpened) * 100)}%`;
-              const alignment =
-                instance.alignment === null ? ABSENT : instance.alignment.toFixed(1);
+            {shown.map((row) => {
+              // One projection call; the list prints what it returns and composes no figure, no
+              // name and no sentence of its own (#795 F2).
+              const model = relationshipCard(copy, row);
+              const rel = model.relationship;
 
               return (
                 <li
-                  key={instance.relationshipId}
-                  data-instance={instance.instanceRecordId}
-                  data-instance-state={instance.state}
-                  data-instance-stage={instance.stage}
-                  data-instance-unlock={instance.unlock}
-                  className={CARD}
+                  key={rel.relationshipId}
+                  data-instance={rel.instanceRecordId}
+                  data-instance-state={rel.state}
+                  data-instance-stage={rel.stage}
+                  data-instance-unlock={rel.unlock}
+                  className={CARD_FRAME}
                 >
-                  {/* The ancestor's cover-and-overlay block, without the image: a relationship
-                      carries a template, a stage and two names, not a thumbnail. */}
-                  <div className="flex flex-col gap-2 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/40">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={CHIP}>{instance.templateTitle}</span>
-                      <span data-stage-badge={instance.stage} className={CHIP}>
-                        {STAGE_LABELS[instance.stage]}
-                      </span>
-                    </div>
-                    <Link
-                      href={instancePath(instance.instanceRecordId)}
-                      className="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100"
-                    >
-                      {instance.name}
-                    </Link>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {itemLabel(card, "with")} ·{" "}
-                      {instance.counterpartyName === null && instance.viewerRole !== "counterparty"
-                        ? itemLabel(card, "not-claimed")
-                        : other}
-                    </p>
+                  {/* One card, and the same one as the template shelf: the frame, the 104 px cover
+                      slot, the title and the facts line come from `lib/member/card.ts`. The axis is
+                      what goes *in* the cover — the stage word where a template draws its monogram
+                      — because a relationship has no thumbnail. `aria-hidden` keeps it decoration:
+                      the chip below carries the stage as text. */}
+                  <div className={`${CARD_COVER} bg-gray-50 dark:bg-gray-800/40`}>
+                    <span className={CARD_COVER_WORD} aria-hidden="true">
+                      {rel.stageLabel}
+                    </span>
                   </div>
 
-                  <div className="flex flex-1 flex-col gap-4 p-4">
-                    <dl className="grid grid-cols-2 gap-2 text-center">
-                      <MetricTile
-                        label={itemLabel(metric, "sessions")}
-                        value={sessions}
-                        hint={
-                          instance.sessionsOpened === 0
-                            ? itemLabel(metric, "none-opened")
-                            : itemLabel(metric, "completed-of-opened")
-                        }
-                      />
-                      <MetricTile label={itemLabel(metric, "completion")} value={completion} />
-                      <MetricTile
-                        label={itemLabel(metric, "alignment")}
-                        value={alignment}
-                        hint={
-                          instance.alignment === null
-                            ? itemLabel(metric, "unscored")
-                            : itemLabel(metric, "mean-gap")
-                        }
-                      />
-                      <MetricTile
-                        label={itemLabel(metric, "aspects")}
-                        value={String(instance.aspectCount)}
-                      />
-                    </dl>
+                  <div className="flex flex-1 flex-col gap-3 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Chip variant="tint">{rel.templateTitle}</Chip>
+                      <Chip variant="tint" data-stage-badge={rel.stage}>
+                        {rel.stageLabel}
+                      </Chip>
+                    </div>
+                    <Link href={model.detail.href} className={CARD_TITLE}>
+                      {model.title}
+                    </Link>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{rel.party}</p>
+
+                    {/* The record's figures are the card's one meta line (#795 F4) — the same row
+                        the template shelf prints, handed over formatted by the projection. */}
+                    <div className={CARD_META}>
+                      {model.meta.map((fact, index) => (
+                        <span
+                          key={fact}
+                          className={index === 0 ? "" : "border-l border-gray-300 pl-2"}
+                        >
+                          {fact}
+                        </span>
+                      ))}
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={CHIP}>{MODE_LABELS[instance.mode]}</span>
-                      {instance.inviteState === null ? null : (
-                        <span data-invite-state={instance.inviteState} className={CHIP}>
-                          {itemLabel(inviteCopy, instance.inviteState)}
-                        </span>
+                      <Chip variant="neutral">{rel.mode}</Chip>
+                      {rel.invite === null ? null : (
+                        <Chip variant="soft" data-invite-state={rel.invite.state}>
+                          {rel.invite.label}
+                        </Chip>
                       )}
                     </div>
 
-                    {/* What was paid — the Initiator's card only, and no total anywhere. `paid`
-                        is `null` for every other viewer, so this block is not drawn from a
-                        value the read withheld; it was never handed one. */}
-                    {instance.paid === null ? null : (
+                    {/* What was paid — the Initiator's card only, and no total anywhere. The
+                        block is absent for every other viewer, not blanked: `paid` is `null`
+                        because the read never handed this seat the fact, and a statement of
+                        `null` is the different fact that nothing has been bought yet. */}
+                    {rel.paid === null ? null : (
                       <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs dark:border-gray-700 dark:bg-gray-800/40">
-                        <p className="text-gray-500 dark:text-gray-400">
-                          {itemLabel(paidCopy, "label")}
-                        </p>
-                        {instance.paid.plan === null && instance.paid.purchasedAt === null ? (
+                        <p className="text-gray-500 dark:text-gray-400">{rel.paid.label}</p>
+                        {rel.paid.statement === null ? (
                           <p data-paid-absent="true" className={STRONG}>
-                            {ABSENT}
+                            {CARD_ABSENT}
                           </p>
                         ) : (
-                          <p className={STRONG}>
-                            {fillLabel(itemLabel(paidCopy, "statement"), {
-                              plan: instance.paid.plan ?? itemLabel(paidCopy, "nothing"),
-                              date:
-                                instance.paid.purchasedAt === null
-                                  ? ABSENT
-                                  : formatDate(instance.paid.purchasedAt),
-                            })}
-                          </p>
+                          <p className={STRONG}>{rel.paid.statement}</p>
                         )}
                       </div>
                     )}
 
-                    <p className={`mt-auto ${MUTED}`}>
-                      {fillLabel(itemLabel(states, instance.state), { name: other })}
-                    </p>
+                    <p className={`mt-auto ${MUTED}`}>{rel.sentence}</p>
 
                     {/* The marker (#252): a quiet line on the row, never a toast, a modal or a
                         count in the header. It says the instance moved while this reader was
                         away — the one fact the state sentence above cannot carry. */}
-                    {instance.unlock === "unseen" ? (
+                    {rel.marker === null ? null : (
                       <p
-                        data-instance-marker="unseen"
+                        data-instance-marker={rel.unlock}
                         className="rounded border border-action/40 bg-action/5 px-2 py-1 text-sm font-medium text-action"
                       >
-                        {itemLabel(marker, "unseen")}
+                        {rel.marker}
                       </p>
-                    ) : null}
+                    )}
                   </div>
 
-                  <div className="mt-auto flex items-center justify-between gap-2 px-4 pb-4">
+                  <div className={`${CARD_ACTIONS} justify-between`}>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {fillLabel(itemLabel(card, "last-session"), {
-                        when: sessionLabelOf(instance.lastSessionAt),
-                      })}
+                      {rel.lastSession}
                     </span>
-                    <Link
-                      href={instancePath(instance.instanceRecordId)}
-                      className="inline-flex h-9 items-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-                    >
-                      {itemLabel(card, "view")}
+                    <Link href={model.detail.href} className={OUTLINE}>
+                      {model.detail.label}
                     </Link>
                   </div>
                 </li>
@@ -514,6 +435,6 @@ export function MyInstances({
           </ul>
         </section>
       )}
-    </div>
+    </StageColumn>
   );
 }

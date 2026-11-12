@@ -5,14 +5,24 @@
  * This is not part of `scripts/verify.sh`: the gate must stay database-free and build-free.
  * It is the dogfood the issue asks for, written down so it can be repeated:
  *
- *   1. create      an Instance from a published Template, over the create form
- *   2. invite      the invitation link is on the screen (no RESEND_API_KEY, so no email)
+ *   1. create      an Instance from a published Template through the **four stages** the create
+ *                  is (#688 Who → Mode, #689 Aspects, #690 Create), then follow whichever of the
+ *                  two redirect shapes the endpoint answers with: **Sent** for a signed-in
+ *                  creator, the **account gate** for a signed-out one (#704)
+ *   2. invite      the invitation link is on the screen — drawn whether or not this deployment
+ *                  has a mailer, because a send that did not happen must never make the link
+ *                  unshareable (#220)
  *   2b. self-claim the Initiator's own browser cannot claim its own invitation: the page
  *                  names them as the party they already are, the claim is refused with
  *                  `already-a-party`, and the token stays live (#202)
  *   3. claim       the Counterparty confirms joining as their own name; a claim that
  *                  confirms nothing, or the wrong name, is refused with `unconfirmed` and
  *                  spends nothing; the successful claim happens once (#202)
+ *   3a. response  the invitation renders inside the flow's modal (#710): the server's own HTML
+ *                  carries the shell, the six-stage rail reads Connect, a `?step=2` deep link
+ *                  lands on the same shell, and the completed claim leaves onto a screen that
+ *                  is never an `Ongoing` surface — `/dashboard` signed in, the relationship
+ *                  signed out
  *   3b. named      the instance screen names the answering party on every visit (#202)
  *   3c. cross-post a session bound as the Initiator that POSTs `role=counterparty` is
  *                  refused 403 and writes no Counterparty opinion (#202)
@@ -24,9 +34,13 @@
  *   6. hinge       both sheets are in and the report is still locked: acceptance, not submission,
  *                  is what completes a session (#R2)
  *   6b. accept     the Initiator accepts (still locked), the Counterparty accepts (the Gap opens);
- *                  the completing acceptance is the one that mails the other seat
+ *                  the completing acceptance is the one that mails the other seat. Both arrive
+ *                  through links and form actions **the app drew** — the confirmation band, the
+ *                  instance screen, the accept page — because posting `/accepts` by hand is what
+ *                  let the accept step ship with no entry point at all (#617)
  *   6c. locked     an edit after the seat accepted is a 409 and the stored row is unchanged
- *   6d. gap        both parties now see `data-feel-gap="3"` where Feel 2 meets Feel 5, and
+ *   6d. gap        both parties now see a Feel Gap of 3 where Feel 2 meets Feel 5 (the
+ *                  `data-alignment-gap` rows of stage 6, #692), and
  *                  "In synch" where they agree; an Advanced instance draws all eight kinds,
  *                  the four prediction ones against the other party's actual (#219)
  *   8. copy        editing the Template's prompt afterwards does not change the instance
@@ -37,11 +51,20 @@
  *
  * It creates its own instance and deletes it (and the Template edit) before it exits, so it
  * is safe to re-run against a database another process is reading.
+ *
+ * **A failed run prints what the demo branch looks like (#704).** The create commits a `record`
+ * row on the branch every card shares, so a throw before that row is registered for cleanup
+ * leaves it behind — and `pnpm db:seed` then refuses ("record holds assessment row(s) this seed
+ * does not author") until somebody deletes it by hand. The instance id is therefore registered the
+ * moment it is parsed, and a failure ends with the branch's own `session` / `party` / `record`
+ * counts, so "did this run leave a row" is answered by the output.
  */
 import { Client } from "pg";
 
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const TEMPLATE_ID = "assessment-relationship-basics";
+/** The same fixture row's `slug` — what every stage's URL carries since #794. */
+const TEMPLATE_SLUG = "relationship-basics";
 const TIME = "aspect-time-together";
 const MONEY = "aspect-money";
 
@@ -73,6 +96,58 @@ function rendered(html) {
   return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
 }
 
+/**
+ * The href of the anchor a reader clicks, found by the attribute the component gave it (#617).
+ *
+ * Nothing in this script types an acceptance path: the link is drawn on the page, this reads it,
+ * and the next request follows it. That is the half the earlier version of this file skipped — it
+ * POSTed `/accepts` directly, which proved the endpoint worked and never that a person could reach
+ * it, which is exactly how the accept step shipped unreachable.
+ */
+function anchorHref(html, attribute) {
+  const anchor = html.match(new RegExp(`<a\\b[^>]*\\b${attribute}="true"[^>]*>`))?.[0];
+  if (anchor === undefined) return null;
+  return anchor.match(/href="([^"]*)"/)?.[1] ?? null;
+}
+
+/**
+ * The `action` of the form that records an acceptance, read off the rendered page.
+ *
+ * Found by what it posts to rather than by position: the layout's own forms (sign-out, search)
+ * are in the same document, and a reader clicks the one button the acceptance page offers.
+ */
+function acceptFormAction(html) {
+  for (const form of html.match(/<form\b[^>]*>/g) ?? []) {
+    const action = form.match(/action="([^"]*)"/)?.[1];
+    if (action?.endsWith("/accepts")) return action;
+  }
+  return null;
+}
+
+/**
+ * The Alignment rows of one Aspect on the relationship screen (#692).
+ *
+ * The completed screen draws one `data-alignment-gap-kind` row per Gap the Aspect has, and each
+ * row prints the two Opinions it subtracts beside the number, so this reads the numbers off the
+ * markup instead of parsing a sentence — the same discipline the old `data-feel-gap` attributes
+ * carried. Returns `[[kind, gap], …]` in glossary order; `[]` when the Aspect is not drawn (the
+ * report is still locked, or the id is not on the page).
+ */
+function alignmentGaps(html, itemId) {
+  const start = html.indexOf(`data-alignment-aspect="${itemId}"`);
+  if (start === -1) return [];
+  const next = html.indexOf('data-alignment-aspect="', start + 1);
+  const section = html.slice(start, next === -1 ? undefined : next);
+  return [
+    ...section.matchAll(/data-alignment-gap-kind="([a-z-]+)"[\s\S]*?data-alignment-gap="(\d)"/g),
+  ].map((match) => [match[1], Number(match[2])]);
+}
+
+/** One kind's Gap out of a list `alignmentGaps()` returned, or `undefined`. */
+function gapOfKind(gaps, kind) {
+  return gaps.find(([name]) => name === kind)?.[1];
+}
+
 /* ------------------------------------------------------------------ *
  * A cookie jar, so two "people" can be two jars of one script
  * ------------------------------------------------------------------ */
@@ -101,7 +176,10 @@ class Jar {
   }
 
   async get(path) {
-    const response = await fetch(`${BASE_URL}${path}`, {
+    // A redirect's `Location` is absolute (Next builds it from the request URL); a link drawn on a
+    // page is root-relative. Both are followed the same way, so the caller never has to know which.
+    const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+    const response = await fetch(url, {
       redirect: "manual",
       headers: { cookie: this.header() },
     });
@@ -130,6 +208,173 @@ class Jar {
       html: await response.text(),
     };
   }
+
+  /**
+   * A JSON post — the shape `POST /assessment/new/aspects` takes (#689).
+   *
+   * Stage 3's list is the one step of the create that is not a form: it saves itself on each
+   * committed gesture and answers `{ok: true}`, so its reply is read as data rather than as a
+   * redirect or a page.
+   */
+  async postJson(path, body) {
+    const response = await fetch(`${BASE_URL}${path}`, {
+      method: "POST",
+      redirect: "manual",
+      headers: { cookie: this.header(), "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    this.absorb(response);
+    const text = await response.text();
+    let json = null;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // Not JSON: the assertion below reports the status and the body's first line instead.
+    }
+    return { status: response.status, body: json, html: text };
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * The four-stage create (#688 → #690), driven like a person drives it
+ * ------------------------------------------------------------------ */
+
+/**
+ * `/templates/relationship/<slug>/create` — the stem every create stage hangs off (#688, #794).
+ *
+ * The segment is the template's **slug**, because that is what the app redirects with: stage 1's
+ * handler resolves the posted id to the slug before it answers, so an assertion built from the id
+ * would be asserting the address the app deliberately does not use.
+ */
+function createStem() {
+  return `/templates/relationship/${TEMPLATE_SLUG}/create`;
+}
+
+/**
+ * The instance id in a create redirect, in **either** shape it has (#704).
+ *
+ * `…/assessment/instances/<id>` is the committed relationship (where a post that names no
+ * template lands, and where a signed-in creator is sent on from), and
+ * `…/create/account?instance=<id>` is the account gate a signed-out creator is sent to since
+ * #690. The id is in both addresses, so the flow continues from it either way — which shape the
+ * app answers with is the app's decision, and this reads it rather than picking one.
+ */
+function instanceIdIn(location) {
+  return (
+    location.match(/\/assessment\/instances\/([0-9a-f-]{36})/)?.[1] ??
+    location.match(/[?&]instance=([0-9a-f-]{36})/)?.[1] ??
+    null
+  );
+}
+
+/**
+ * One relationship, created through the four stages: Who, Mode, Aspects, then Create's own control.
+ *
+ * **The stages are the app's, not this script's.** A single post to `POST /assessment/new` still
+ * works — the endpoint keeps the pre-#688 shape for a post that carries no draft — and that is
+ * what this script used to do, which is how three slices of the create (#688 who, #689 aspects,
+ * #690 commit) shipped without the e2e ever seeing them (#704). What is driven here is what a
+ * person does: two form posts that only write a draft cookie, one JSON save from the list, and
+ * then the commit that writes.
+ *
+ * **The id is registered before anything after it can throw.** `created` is what `cleanup()`
+ * deletes, and a throw between the commit and the registration is what left `record` rows on the
+ * demo branch — where `pnpm db:seed` then refuses to run for every other card. So the parse and
+ * the push happen together, and the assertion about them comes after.
+ */
+async function createThroughStages(
+  jar,
+  {
+    templateRecordId,
+    initiatorFirst,
+    initiatorLast,
+    counterpartyFirst,
+    counterpartyLast,
+    email,
+    title,
+    mode,
+    setting = "soft",
+    aspects,
+  },
+) {
+  const stem = createStem();
+
+  /* stage 1 — Who ---------------------------------------------------- */
+  /* #825 — each seat is first + last now, so the post carries four halves rather than two names. */
+  const who = await jar.post("/assessment/new/who", {
+    templateRecordId,
+    initiatorFirst,
+    initiatorLast,
+    counterpartyFirst,
+    counterpartyLast,
+    email,
+    title,
+    description: "",
+  });
+  check(
+    `stage 1 Who answers 303 to the Mode stage (${initiatorFirst} ${initiatorLast})`,
+    who.status === 303 && (who.location ?? "").endsWith(`${stem}/mode`),
+    `${who.status} ${who.location}`,
+  );
+
+  /* stage 2 — Mode --------------------------------------------------- */
+  const modeScreen = await jar.get(who.location ?? `${stem}/mode`);
+  check(
+    "stage 2 Mode asks its two questions, and nothing was created to get here",
+    modeScreen.status === 200 &&
+      modeScreen.html.includes('name="mode"') &&
+      modeScreen.html.includes('name="alignmentSetting"'),
+    `status ${modeScreen.status}`,
+  );
+
+  const modePost = await jar.post("/assessment/new/mode", {
+    templateRecordId,
+    mode,
+    alignmentSetting: setting,
+  });
+  check(
+    "stage 2 answers 303 to the Aspects stage",
+    modePost.status === 303 && (modePost.location ?? "").endsWith(`${stem}/aspects`),
+    `${modePost.status} ${modePost.location}`,
+  );
+
+  /* stage 3 — Aspects ------------------------------------------------ */
+  const aspectsScreen = await jar.get(modePost.location ?? `${stem}/aspects`);
+  check(
+    "stage 3 Aspects renders the template's list",
+    aspectsScreen.status === 200 &&
+      aspectsScreen.html.includes('data-aspect-list="true"') &&
+      aspectsScreen.html.includes(`data-aspect-row="${aspects[0].id}"`),
+    `status ${aspectsScreen.status}, ${aspects.length} row(s) offered`,
+  );
+
+  const saved = await jar.postJson("/assessment/new/aspects", { templateRecordId, aspects });
+  check(
+    "stage 3 saves the list into the draft",
+    saved.status === 200 && saved.body?.ok === true,
+    `status ${saved.status} ${JSON.stringify(saved.body)}`,
+  );
+
+  /* stage 4 — Create ------------------------------------------------- */
+  const commitScreen = await jar.get(`${stem}/commit`);
+  check(
+    "stage 4 Create reviews what the three stages decided and offers the one control that writes",
+    commitScreen.status === 200 &&
+      commitScreen.html.includes('data-create-review="true"') &&
+      commitScreen.html.includes('data-create-commit="true"'),
+    `status ${commitScreen.status}`,
+  );
+
+  const committed = await jar.post("/assessment/new", { templateRecordId });
+  const location = committed.location ?? "";
+  const instanceId = instanceIdIn(location);
+  if (instanceId !== null) created.push(instanceId);
+  check(
+    "the commit on stage 4 answers 303 to the new relationship, in either of its two shapes",
+    committed.status === 303 && instanceId !== null,
+    `${committed.status} ${location}`,
+  );
+  return { location, instanceId };
 }
 
 /* ------------------------------------------------------------------ *
@@ -159,10 +404,18 @@ async function main() {
   await db.connect();
 
   const templateItems = await db.query(
-    "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
+    "SELECT item_id, prompt, left_value, right_value FROM item WHERE record_id = $1 ORDER BY position",
     [TEMPLATE_ID],
   );
   ASPECT_IDS = templateItems.rows.map((row) => row.item_id);
+  // The list stage 3 saves (#689): read before the run edits anything below, so a run that later
+  // touches the template's copy cannot put its own edit into the draft.
+  const templateAspects = templateItems.rows.map((row) => ({
+    id: row.item_id,
+    prompt: row.prompt,
+    leftValue: row.left_value,
+    rightValue: row.right_value,
+  }));
   check(
     "the template has the five Aspects the run answers",
     ASPECT_IDS.length === 5,
@@ -173,35 +426,56 @@ async function main() {
   const counterparty = new Jar("counterparty");
   const stranger = new Jar("stranger");
 
-  /* 1. create ------------------------------------------------------- */
-  const createdResponse = await initiator.post("/assessment/new", {
+  /* 1. create — the four stages: Who, Mode, Aspects, Create (#688 → #690) --- */
+  // #704 — the create is four screens, and its redirect has three shapes (#709): a signed-in
+  // creator is closed onto the dashboard, a signed-out one to the account gate, which names the
+  // relationship stage 4 just committed, and a post that named no template to the relationship
+  // itself. This run is signed out, so the gate is the shape it should meet; the id is in the
+  // address either way, and that is where the flow continues.
+  const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
-    initiatorName: "Avery E2E",
-    counterpartyName: "Rowan E2E",
+    initiatorFirst: "Avery",
+    initiatorLast: "E2E",
+    counterpartyFirst: "Rowan",
+    counterpartyLast: "E2E",
     email: "rowan-e2e@example.com",
-    // The create form's radios (#213). Without one the store refuses: a mode is chosen, never
-    // defaulted, so a post cannot pick a sheet the form did not offer.
+    title: "Avery and Rowan E2E",
     mode: "basic",
+    aspects: templateAspects,
   });
-  check(
-    "POST /assessment/new answers 303",
-    createdResponse.status === 303,
-    `status ${createdResponse.status}`,
-  );
-  const location = createdResponse.location ?? "";
-  const instanceMatch = location.match(/\/assessment\/instances\/([0-9a-f-]{36})/);
-  check("it redirects to the new instance", instanceMatch !== null, location);
-  if (instanceMatch === null) throw new Error("no instance id in the redirect");
-  const instanceId = instanceMatch[1];
-  created.push(instanceId);
+  if (firstCreate.instanceId === null) throw new Error("no instance id in the create redirect");
+  const instanceId = firstCreate.instanceId;
 
   const instancePath = `/assessment/instances/${instanceId}`;
-  const inviteNotice = new URL(location, BASE_URL).searchParams.get("invite");
+  const destination = new URL(firstCreate.location, BASE_URL);
+  const onTheGate = destination.pathname.endsWith("/create/account");
+  // #709 — the signed-in shape is the dashboard now: the flow closes onto it and the new
+  // relationship is listed there. This run is signed out, so it meets the gate; the other two
+  // shapes are still accepted so the check describes the endpoint rather than this one journey.
   check(
-    "with no RESEND_API_KEY the redirect says the emailer was not configured",
-    inviteNotice === "unset",
-    `invite=${inviteNotice}`,
+    "the create sends the creator to one of the three screens it has: the gate, the dashboard, or Sent",
+    (onTheGate && destination.searchParams.get("instance") === instanceId) ||
+      destination.pathname === "/dashboard" ||
+      destination.pathname === `${instancePath}/sent`,
+    `${destination.pathname}${destination.search}`,
   );
+
+  if (onTheGate) {
+    const gateScreen = await initiator.get(firstCreate.location);
+    check(
+      "the gate draws its own three-step strip and the account form, for the browser that committed",
+      gateScreen.status === 200 &&
+        gateScreen.html.includes('data-account-gate-progress="true"') &&
+        gateScreen.html.includes('data-account-gate-form="true"'),
+      `status ${gateScreen.status}`,
+    );
+    check(
+      "and it offers the way back into the relationship it just committed",
+      gateScreen.html.includes(`href="${instancePath}"`),
+      instancePath,
+    );
+  }
+
   check(
     "the initiator's party cookie is set",
     initiator.cookies.has(`flow_party_${instanceId}`),
@@ -219,9 +493,12 @@ async function main() {
   );
 
   /* 2. invite ------------------------------------------------------- */
-  // The creation redirect carries `?invite=unset` (no key in this run); the notice is a fact
-  // about that instant, so the probe reads the screen the redirect pointed at.
-  const initiatorScreen = await initiator.get(`${instancePath}?invite=${inviteNotice}`);
+  // The screen the create handed the creator to is the account gate, which is about the account
+  // and carries no mailer outcome; the relationship's own screen is one click behind it (the gate
+  // draws that link) and is what draws the invitation. **The link is what matters here** — it is
+  // drawn whether the mailer sent, refused or was never configured (#220), which is why this
+  // reads the screen rather than a `?invite=` sentence the create no longer hands along (#704).
+  const initiatorScreen = await initiator.get(instancePath);
   check(
     "the initiator's screen renders",
     initiatorScreen.status === 200,
@@ -229,14 +506,18 @@ async function main() {
   );
   const linkMatch = initiatorScreen.html.match(/http:\/\/[^\s"<>]+\/invite\/[A-Za-z0-9_-]{43}/);
   check(
-    "the screen shows the invitation link, because no email was sent",
+    "the screen shows the invitation link, so the invitation is shareable whatever the mailer did",
     linkMatch !== null,
     linkMatch?.[0],
   );
   if (linkMatch === null) throw new Error("no invitation link on the screen");
   const link = linkMatch[0];
   const token = link.split("/invite/")[1];
-  check("the screen says no email was sent", initiatorScreen.html.includes("No email was sent"));
+  check(
+    "and draws the invitation's own state beside it",
+    initiatorScreen.html.includes('data-invite-state="unclaimed"'),
+    initiatorScreen.html.match(/data-invite-state="([a-z]+)"/)?.[1] ?? "(no state)",
+  );
   // #220: the reader is told the outcome, never the deployment's configuration.
   check(
     "the screen names no environment variable",
@@ -318,10 +599,10 @@ async function main() {
   check(
     "the Initiator's own claim is refused with already-a-party",
     selfClaim.status === 303 &&
-      (selfClaim.location ?? "").endsWith(`/invite/${token}?claim=already-a-party`),
+      (selfClaim.location ?? "").endsWith(`/invite/${token}?step=3&claim=already-a-party`),
     `${selfClaim.status} ${selfClaim.location}`,
   );
-  const selfRefusal = await initiator.get(`/invite/${token}?claim=already-a-party`);
+  const selfRefusal = await initiator.get(`/invite/${token}?step=3&claim=already-a-party`);
   check(
     "the refusal says nothing was claimed and the link is still unused",
     selfRefusal.html.includes("Nothing was claimed") &&
@@ -361,9 +642,42 @@ async function main() {
   );
   check("it names the Initiator", invitePage.html.includes("Avery E2E"));
   check("it names the Template", invitePage.html.includes("Relationship Basics"));
+  // #t_0aa81144 — the invitation lands on step 1 of the onboarding wizard, not on a claim button.
+  // #710 — and that wizard now renders inside the flow's modal, under the six-stage rail at
+  // Connect, closing onto the dashboard. Three facts, because a shell that only *looks* modal
+  // (a client overlay that mounts after hydration) would still 404 the deep link.
   check(
-    "it says who the visitor is joining as, before anything is claimed",
-    invitePage.html.includes("You are joining as Rowan E2E, the Counterparty."),
+    "it opens on step 1 of the wizard",
+    invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+  );
+  check(
+    "the response renders inside the flow's modal, in the server's own HTML",
+    invitePage.html.includes('data-stage-shell="true"') &&
+      invitePage.html.includes('role="dialog"') &&
+      invitePage.html.includes('data-stage-close="/dashboard"'),
+  );
+  check(
+    "and under the six-stage rail, at Connect — stage 5 of 6",
+    invitePage.html.includes("Stage 5 of 6") &&
+      ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"].every((name) =>
+        invitePage.html.includes(name),
+      ),
+  );
+  const stepTwo = await counterparty.get(`/invite/${token}?step=2`);
+  check(
+    "a ?step=2 deep link survives a refresh and lands on the same shell",
+    stepTwo.status === 200 &&
+      stepTwo.html.includes("You can change any opinion until you accept the session.") &&
+      stepTwo.html.includes('data-stage-shell="true"') &&
+      stepTwo.html.includes("Stage 5 of 6"),
+    `status ${stepTwo.status}`,
+  );
+  const stepThree = await counterparty.get(`/invite/${token}?step=3`);
+  check(
+    "step 3 is the account gate and claims nothing on a GET",
+    stepThree.html.includes("Accepting costs you nothing") &&
+      stepThree.html.includes("You are joining as Rowan E2E, the Counterparty.") === false &&
+      stepThree.html.includes('data-stage-shell="true"'),
   );
   check(
     "it does not name an answering party for a browser that is not one",
@@ -382,14 +696,14 @@ async function main() {
   check(
     "a claim that confirms nothing is refused with unconfirmed",
     unconfirmed.status === 303 &&
-      (unconfirmed.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
+      (unconfirmed.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
     `${unconfirmed.status} ${unconfirmed.location}`,
   );
   const wrongName = await counterparty.post(`/invite/${token}/claim`, { confirm: "Avery E2E" });
   check(
     "a claim that confirms the other party's name is refused with unconfirmed",
     wrongName.status === 303 &&
-      (wrongName.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
+      (wrongName.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
     `${wrongName.status} ${wrongName.location}`,
   );
   const afterRefusals = await db.query(
@@ -405,10 +719,19 @@ async function main() {
   );
 
   const claim = await counterparty.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  // #710 — the exit is `afterClaimTarget()`: a signed-in claimer closes onto `/dashboard`, and a
+  // signed-out one (this run — it posted the endpoint directly, which the screens never offer
+  // because step 3 asks for an account) stays on the relationship it just bound, where the party
+  // cookie it was given is what makes the screen readable.
   check(
-    "claiming answers 303 to the instance screen",
-    claim.status === 303 && (claim.location ?? "").includes(instancePath),
+    "claiming answers 303 to the relationship for a signed-out claimer",
+    claim.status === 303 && (claim.location ?? "").endsWith(instancePath),
     `${claim.status} ${claim.location}`,
+  );
+  check(
+    "and the exit is never an `Ongoing` surface",
+    !/ongoing/i.test(claim.location ?? ""),
+    claim.location ?? "",
   );
   check(
     "the Counterparty's party cookie is set",
@@ -448,10 +771,14 @@ async function main() {
   );
 
   const secondClaim = await stranger.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  // The refusal keeps whatever step the wizard had reached (#538 put `?step=` on this URL), so the
+  // assertion is the page and the code, not the whole query string.
+  const secondClaimUrl = new URL(secondClaim.location ?? "http://invalid.invalid/");
   check(
     "a second claim of the spent token is refused",
     secondClaim.status === 303 &&
-      (secondClaim.location ?? "").endsWith(`/invite/${token}?claim=claimed`),
+      secondClaimUrl.pathname === `/invite/${token}` &&
+      secondClaimUrl.searchParams.get("claim") === "claimed",
     `${secondClaim.status} ${secondClaim.location}`,
   );
   const secondClaimPage = await stranger.get(`/invite/${token}?claim=claimed`);
@@ -542,10 +869,7 @@ async function main() {
     "the Counterparty's screen renders while the Initiator has answered",
     blindScreen.status === 200,
   );
-  check(
-    "the Counterparty sees no Gap at all",
-    !blindScreen.html.includes("data-feel-gap") && !blindScreen.html.includes("data-wish-gap"),
-  );
+  check("the Counterparty sees no Gap at all", !blindScreen.html.includes("data-alignment-gap"));
   check(
     "the Counterparty's page names no score of the Initiator's",
     !/aria-label="Avery E2E (feel|wish):/.test(blindScreen.html) &&
@@ -612,7 +936,7 @@ async function main() {
   // until both parties accept, which is the review window the accept page exists for.
   check(
     "both submitted: the report is still locked, with no Gap on the instance screen",
-    !afterBoth.html.includes("data-feel-gap") && !afterBoth.html.includes("data-wish-gap"),
+    !afterBoth.html.includes("data-alignment-gap"),
   );
   const editBeforeAccept = await initiator.post(
     `${instancePath}/answers`,
@@ -624,7 +948,62 @@ async function main() {
     `status ${editBeforeAccept.status}`,
   );
 
-  const initiatorAccept = await initiator.post(`${instancePath}/accepts`, {});
+  /* 5b. the way to the accept step, drawn on the pages (#617) ------------------------- */
+  // Every earlier version of this file posted `/accepts` by hand, so the suite proved the endpoint
+  // worked and never that a person could arrive at it — and the accept page shipped with no link
+  // anywhere in the tree. From here the script follows only anchors and form actions the app drew.
+  const submittedVisit = await counterparty.get(counterpartySubmit.location ?? instancePath);
+  check(
+    "the Counterparty's submit lands on the confirmation band",
+    submittedVisit.status === 200 && submittedVisit.html.includes("data-submitted-confirmation"),
+    `status ${submittedVisit.status}`,
+  );
+  const submittedAcceptHref = anchorHref(submittedVisit.html, "data-accept-link");
+  check(
+    "the confirmation band links to the accept step",
+    submittedAcceptHref === `${instancePath}/accept`,
+    `href ${submittedAcceptHref ?? "(no anchor)"}`,
+  );
+
+  // A party coming back later sees the same route on the instance screen — the confirmation band is
+  // drawn once, but the step it points at stays reachable.
+  const initiatorLaterScreen = await initiator.get(instancePath);
+  const initiatorAcceptHref = anchorHref(initiatorLaterScreen.html, "data-accept-link");
+  check(
+    "the instance screen links to the accept step on a later visit",
+    initiatorAcceptHref === `${instancePath}/accept`,
+    `href ${initiatorAcceptHref ?? "(no anchor)"}; status ${initiatorLaterScreen.status}; band ${/data-accept-step="([a-z]+)"/.exec(initiatorLaterScreen.html)?.[1] ?? "absent"}`,
+  );
+
+  const acceptanceBefore = await db.query(
+    "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
+    [instanceId],
+  );
+  note(
+    `party rows before any acceptance: ${acceptanceBefore.rows
+      .map((row) => `${row.role} accepted_at=${row.accepted_at === null ? "null" : "set"}`)
+      .join(", ")}`,
+  );
+
+  const initiatorAcceptPage = await initiator.get(initiatorAcceptHref ?? `${instancePath}/accept`);
+  check(
+    "following it answers 200 and draws the acceptance for this party",
+    initiatorAcceptPage.status === 200 &&
+      initiatorAcceptPage.html.includes('data-party="counterparty"') &&
+      initiatorAcceptPage.html.includes("Accept this session"),
+    `status ${initiatorAcceptPage.status}`,
+  );
+  const initiatorAcceptAction = acceptFormAction(initiatorAcceptPage.html);
+  check(
+    "the page's own form posts to the accept endpoint",
+    initiatorAcceptAction === `${instancePath}/accepts`,
+    `action ${initiatorAcceptAction ?? "(no form)"}`,
+  );
+
+  const initiatorAccept = await initiator.post(
+    initiatorAcceptAction ?? `${instancePath}/accepts`,
+    {},
+  );
   check(
     "the Initiator's acceptance answers 303 to the accept page",
     initiatorAccept.status === 303 &&
@@ -634,51 +1013,104 @@ async function main() {
   const afterFirstAccept = await initiator.get(instancePath);
   check(
     "one acceptance: the Gap is still sealed for both of you",
-    !afterFirstAccept.html.includes("data-feel-gap") &&
-      !afterFirstAccept.html.includes("data-wish-gap"),
+    !afterFirstAccept.html.includes("data-alignment-gap"),
   );
-  const counterpartyAccept = await counterparty.post(`${instancePath}/accepts`, {});
+  check(
+    "and the instance screen replaces the link with the wait",
+    anchorHref(afterFirstAccept.html, "data-accept-link") === null &&
+      afterFirstAccept.html.includes('data-accept-step="accepted"'),
+  );
+
+  const counterpartyLaterScreen = await counterparty.get(instancePath);
+  const counterpartyAcceptHref = anchorHref(counterpartyLaterScreen.html, "data-accept-link");
+  check(
+    "the Counterparty's screen still offers the accept step",
+    counterpartyAcceptHref === `${instancePath}/accept`,
+    `href ${counterpartyAcceptHref ?? "(no anchor)"}; band ${/data-accept-step="([a-z]+)"/.exec(counterpartyLaterScreen.html)?.[1] ?? "absent"}`,
+  );
+  const counterpartyAcceptPage = await counterparty.get(
+    counterpartyAcceptHref ?? `${instancePath}/accept`,
+  );
+  check(
+    "and that page reads the Initiator's seat as accepted",
+    counterpartyAcceptPage.status === 200 &&
+      counterpartyAcceptPage.html.includes('data-party="initiator" data-accepted="yes"'),
+    `status ${counterpartyAcceptPage.status}`,
+  );
+  const counterpartyAcceptAction = acceptFormAction(counterpartyAcceptPage.html);
+  const counterpartyAccept = await counterparty.post(
+    counterpartyAcceptAction ?? `${instancePath}/accepts`,
+    {},
+  );
   check(
     "the completing acceptance answers 303 to the report",
     counterpartyAccept.status === 303 &&
       (counterpartyAccept.location ?? "").endsWith(`${instancePath}/report`),
     `${counterpartyAccept.status} ${counterpartyAccept.location}`,
   );
-  const afterAcceptance = await initiator.get(instancePath);
 
-  const gapAttribute = afterAcceptance.html.match(
-    /data-aspect="aspect-time-together" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
+  const reportViaAccept = await counterparty.get(counterpartyAccept.location ?? instancePath);
+  check(
+    "the report the acceptance redirects to opens, with the Gap drawn",
+    reportViaAccept.status === 200 &&
+      reportViaAccept.html.includes("data-feel-gap") &&
+      !reportViaAccept.html.includes('data-report-gated="true"'),
+    `status ${reportViaAccept.status}`,
+  );
+
+  const acceptanceAfter = await db.query(
+    "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
+    [instanceId],
   );
   check(
+    "both seats now record party.accepted_at",
+    acceptanceAfter.rows.length === 2 &&
+      acceptanceAfter.rows.every((row) => row.accepted_at !== null),
+    acceptanceAfter.rows
+      .map((row) => `${row.role} accepted_at=${String(row.accepted_at)}`)
+      .join(", "),
+  );
+  note(
+    `party rows after both acceptances: ${acceptanceAfter.rows
+      .map((row) => `${row.role} accepted_at=${String(row.accepted_at)}`)
+      .join(", ")}`,
+  );
+
+  const afterAcceptance = await initiator.get(instancePath);
+  check(
+    "the session derives `complete` — the stage the report is opened by",
+    afterAcceptance.html.includes('data-stage-badge="sharing"'),
+  );
+
+  const gapAttribute = alignmentGaps(afterAcceptance.html, TIME);
+  check(
     "Feel 2 against Feel 5 renders a Gap of 3",
-    gapAttribute !== null && gapAttribute[1] === "3",
-    gapAttribute === null ? "attribute not found" : `data-feel-gap="${gapAttribute[1]}"`,
+    gapOfKind(gapAttribute, "feel") === 3,
+    `feel = ${String(gapOfKind(gapAttribute, "feel"))}`,
   );
   check(
     "Wish 5 against Wish 3 renders a Gap of 2",
-    gapAttribute !== null && gapAttribute[2] === "2",
-    gapAttribute === null ? "" : `data-wish-gap="${gapAttribute[2]}"`,
+    gapOfKind(gapAttribute, "wish") === 2,
+    `wish = ${String(gapOfKind(gapAttribute, "wish"))}`,
   );
-  const moneyRow = afterAcceptance.html.match(
-    /data-aspect="aspect-money" data-feel-gap="(\d)" data-wish-gap="(\d)"/,
-  );
+  const moneyRow = alignmentGaps(afterAcceptance.html, MONEY);
   check(
-    "the agreed Aspect renders 'In synch'",
-    moneyRow !== null && moneyRow[1] === "0" && afterAcceptance.html.includes("In Synch"),
-    moneyRow === null ? "" : "gap 0",
+    "the agreed Aspect renders 'In Synch'",
+    moneyRow.length > 0 &&
+      moneyRow.every(([, gap]) => gap === 0) &&
+      afterAcceptance.html.includes("In Synch"),
+    moneyRow.length === 0 ? "no difference rows" : `${moneyRow.length} rows, all 0`,
   );
   note(
-    `rendered: data-aspect="aspect-time-together" data-feel-gap="${gapAttribute?.[1]}" data-wish-gap="${gapAttribute?.[2]}"`,
+    `rendered: data-alignment-aspect="${TIME}" feel ${String(gapOfKind(gapAttribute, "feel"))} · wish ${String(gapOfKind(gapAttribute, "wish"))}`,
   );
 
   const counterpartyReport = await counterparty.get(instancePath);
-  const counterpartyGap = counterpartyReport.html.match(
-    /data-aspect="aspect-time-together" data-feel-gap="(\d)"/,
-  );
+  const counterpartyGap = gapOfKind(alignmentGaps(counterpartyReport.html, TIME), "feel");
   check(
     "both parties see the same Gap",
-    counterpartyGap?.[1] === "3",
-    `counterparty data-feel-gap="${counterpartyGap?.[1]}"`,
+    counterpartyGap === 3,
+    `counterparty feel gap = ${String(counterpartyGap)}`,
   );
 
   /* 7. the freeze, now per party (#R2) -------------------------------- */
@@ -759,22 +1191,19 @@ async function main() {
   // demo showed all four, and a newly created instance could not.
   const advInitiator = new Jar("advanced-initiator");
   const advCounterparty = new Jar("advanced-counterparty");
-  const advCreate = await advInitiator.post("/assessment/new", {
+  const advCreate = await createThroughStages(advInitiator, {
     templateRecordId: TEMPLATE_ID,
-    initiatorName: "Noor E2E",
-    counterpartyName: "Iris E2E",
+    initiatorFirst: "Noor",
+    initiatorLast: "E2E",
+    counterpartyFirst: "Iris",
+    counterpartyLast: "E2E",
     email: "iris-e2e@example.com",
+    title: "Noor and Iris E2E",
     mode: "advanced",
+    aspects: templateAspects,
   });
-  check(
-    "an Advanced instance is created with 303",
-    advCreate.status === 303,
-    `status ${advCreate.status}`,
-  );
-  const advMatch = (advCreate.location ?? "").match(/\/assessment\/instances\/([0-9a-f-]{36})/);
-  if (advMatch === null) throw new Error("no instance id in the advanced redirect");
-  const advInstanceId = advMatch[1];
-  created.push(advInstanceId);
+  if (advCreate.instanceId === null) throw new Error("no instance id in the advanced redirect");
+  const advInstanceId = advCreate.instanceId;
   const advPath = `/assessment/instances/${advInstanceId}`;
 
   const advScreen = await advInitiator.get(advPath);
@@ -866,7 +1295,7 @@ async function main() {
   );
   check(
     "and the Advanced report is still locked until both accept",
-    !(await advInitiator.get(advPath)).html.includes("data-feel-gap"),
+    !(await advInitiator.get(advPath)).html.includes("data-alignment-gap"),
   );
   const advAccept1 = await advInitiator.post(`${advPath}/accepts`, {});
   const advAccept2 = await advCounterparty.post(`${advPath}/accepts`, {});
@@ -877,30 +1306,31 @@ async function main() {
   );
 
   const advReport = await advInitiator.get(advPath);
-  const advRow = advReport.html.match(new RegExp(`<section[^>]*data-aspect="${TIME}"[^>]*>`))?.[0];
+  const advRow = alignmentGaps(advReport.html, TIME);
   check(
     "the Advanced report draws all eight Gap kinds (#219)",
-    advRow?.includes('data-feel-gap="3"') === true &&
-      advRow.includes('data-wish-gap="2"') &&
-      advRow.includes('data-initiator-gap="3"') &&
-      advRow.includes('data-counterparty-gap="2"') &&
+    advRow.length === 8 &&
+      gapOfKind(advRow, "feel") === 3 &&
+      gapOfKind(advRow, "wish") === 2 &&
+      gapOfKind(advRow, "initiator") === 3 &&
+      gapOfKind(advRow, "counterparty") === 2 &&
       // A prediction against the other party's actual: Initiator Think 4 vs Counterparty
       // Feel 5 → 1; Initiator Guess 1 vs Counterparty Wish 3 → 2; Counterparty Think 3 vs
       // Initiator Feel 2 → 1; Counterparty Guess 4 vs Initiator Wish 5 → 1.
-      advRow.includes('data-initiator-think-gap="1"') &&
-      advRow.includes('data-initiator-guess-gap="2"') &&
-      advRow.includes('data-counterparty-think-gap="1"') &&
-      advRow.includes('data-counterparty-guess-gap="1"'),
-    advRow?.slice(0, 260) ?? "no row",
+      gapOfKind(advRow, "initiator-think") === 1 &&
+      gapOfKind(advRow, "initiator-guess") === 2 &&
+      gapOfKind(advRow, "counterparty-think") === 1 &&
+      gapOfKind(advRow, "counterparty-guess") === 1,
+    `${advRow.length} rows: ${advRow.map(([kind, gap]) => `${kind} ${gap}`).join(" · ")}`,
   );
-  const advGapAttributes = (advReport.html.match(/data-[a-z]+(?:-[a-z]+)*-gap=/g) ?? []).length;
+  const advGapAttributes = (advReport.html.match(/data-alignment-gap="/g) ?? []).length;
   check(
     "every Aspect carries eight Gaps (5 × 8)",
     advGapAttributes === ASPECT_IDS.length * 8,
     `${advGapAttributes} gap attributes`,
   );
   note(
-    `rendered: data-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
+    `rendered: data-alignment-aspect="${TIME}" feel 3 · wish 2 · initiator 3 · counterparty 2 · I-think 1 · I-guess 2 · C-think 1 · C-guess 1`,
   );
 }
 
@@ -917,6 +1347,36 @@ async function cleanup() {
   }
 }
 
+/**
+ * What the demo branch looks like when the run failed (#704).
+ *
+ * Read **after** `cleanup()`, so the numbers are what this run left rather than what it made: a
+ * relationship whose id reached `created` is deleted above, one that never did is not. `session`
+ * and `party` are the two tables a stray create grows; `record` is the one `pnpm db:seed` refuses
+ * on ("record holds assessment row(s) this seed does not author"), and the branch is shared with
+ * every other card, so the three counts together answer the question an operator actually has —
+ * without a second probe against a branch somebody else may be using.
+ */
+async function reportBranch() {
+  try {
+    const { rows } = await db.query(
+      `SELECT (SELECT count(*) FROM session)::int AS sessions,
+              (SELECT count(*) FROM party)::int AS parties,
+              (SELECT count(*) FROM record WHERE record_type = 'assessment')::int AS records`,
+    );
+    const { sessions, parties, records } = rows[0];
+    console.log(
+      `! the demo branch holds ${sessions} session row(s), ${parties} party row(s), ${records} assessment record(s)`,
+    );
+    console.log(
+      `! registered for cleanup: ${created.length === 0 ? "(none)" : created.join(", ")}`,
+    );
+    console.log("! a stray record makes `pnpm db:seed` refuse — delete it before the next seed");
+  } catch (error) {
+    console.error(`! could not read the demo branch's counts: ${error.message}`);
+  }
+}
+
 try {
   await main();
 } catch (error) {
@@ -924,6 +1384,8 @@ try {
   console.error(error);
 } finally {
   await cleanup();
+  // #704 — a red run says what state it left the shared branch in, so nobody has to probe.
+  if (failures.length > 0) await reportBranch();
   await db.end();
   console.log(`\n${failures.length === 0 ? "PASS" : "FAIL"} — ${failures.length} failure(s)`);
   for (const failure of failures) console.log(`  ✘ ${failure}`);

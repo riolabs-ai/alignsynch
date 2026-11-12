@@ -120,6 +120,46 @@ export const settingsPageCopy: PageCopy = zPageCopy.parse({
         { id: "outcome-unauthorized", label: "Your session ended. Sign in again." },
       ],
     },
+    /**
+     * The delete-account card (#278).
+     *
+     * The words are §5 of `docs/ACCOUNT-DELETION-SPEC.md` and **nothing stronger**: deletion is
+     * immediate and irreversible, the survivor's assessment stays with the seat labelled
+     * "Deleted account", the answers stay as part of their completed report and are no longer
+     * linked to a name, an address or an account. It does not say "all your data is erased" —
+     * §2 and §6 retain the other participant's report, a suppression row and accounting records,
+     * and a sentence that overpromised would be the one thing the policy may not do.
+     *
+     * `confirm-phrase` is the string a person types. It is a fixture row rather than a constant in
+     * the action so the phrase a person reads and the phrase the server compares cannot be two
+     * different strings — `app/(mainlayout)/settings/delete-account-actions.ts` reads this item.
+     */
+    {
+      id: "deletion",
+      heading: "Delete your account",
+      body: "Deleting your account is immediate and irreversible, and you can do it yourself from Account settings while signed in: there is no grace period, and no way to restore what is deleted. Your profile, your invitations, and the details that identify you in any shared assessment are removed permanently. Assessments you took part in remain for the other participant, with your seat shown as \u201cDeleted account\u201d; your answers stay only as part of their completed report and are no longer linked to your name, email or account. Deletion cannot be undone and there is no grace period.",
+      items: [
+        { id: "confirm-phrase", label: "delete my account" },
+        { id: "confirm-label", label: "Type {phrase} to confirm" },
+        { id: "confirm-placeholder", label: "Type the phrase exactly" },
+        { id: "submit", label: "Delete my account" },
+        { id: "pending", label: "Deleting\u2026" },
+        { id: "outcome-deleted", label: "Your account is deleted. You are signed out." },
+        { id: "outcome-mismatch", label: "That phrase does not match, so nothing was deleted." },
+        { id: "outcome-unauthorized", label: "Your session ended. Sign in again." },
+        { id: "outcome-not-found", label: "This account no longer exists." },
+        {
+          id: "outcome-unavailable",
+          label:
+            "We couldn\u2019t finish the deletion. If you are still signed in, nothing was deleted and you can try again.",
+        },
+        {
+          id: "retained",
+          label:
+            "Accounting records and security audit entries are kept without your name or address. We also keep your email address on a marketing opt-out list, and nothing else from it, so that we do not email you again.",
+        },
+      ],
+    },
     {
       id: "links",
       heading: "Elsewhere",

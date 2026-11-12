@@ -22,7 +22,11 @@ export type RepairName = (typeof REPAIR_NAMES)[number];
 export interface RepairInput {
   readonly repair: string;
   readonly instanceRecordId: string;
-  readonly reason: string;
+  /**
+   * Why, when the caller has one. Optional since #732: the console no longer asks for a reason on
+   * any action form, and `act()` records `NULL` when nobody states one.
+   */
+  readonly reason?: string;
   readonly role?: string;
   readonly email?: string;
 }

@@ -6,10 +6,16 @@ import { AppVersion } from "@/components/layout/app-version";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
-import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
+import {
+  markBoxClass,
+  markGroundClass,
+  markTileClass,
+  MarkGlyph,
+} from "@/components/auth/mark-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +24,7 @@ import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
@@ -127,13 +134,17 @@ const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
  */
 export function LoginView({
   copy,
+  onSwitchToRegister,
   marks,
   markSrc,
   next,
+  prompt = null,
   googleFailure: googleFailureProp,
   demo,
   providerHint,
   startGoogle: startGoogleFlow,
+  layout = "page",
+  leaving = false,
 }: {
   copy: PageCopy;
   /**
@@ -150,7 +161,38 @@ export function LoginView({
    * the id exactly as it hands the copy down.
    */
   markSrc: string;
+  /**
+   * `page` is the sign-in page — a two-column hero beside a card, `min-h-screen`. `embedded` is
+   * the same form inside a stage column (#824): the hero is not drawn and the card takes the
+   * column's width, so one implementation serves both and the two cannot drift apart.
+   *
+   * The hero is gated here rather than by `hidden lg:flex` alone, because `lg:` reads the
+   * viewport and not the container: inside a 400px stage column on a wide screen the hero would
+   * still try to render and squeeze the form.
+   */
+  layout?: "page" | "embedded";
+  /**
+   * Whether the legal row leaves the app (#540, E39). `false` on `/login`, which is already
+   * outside the dashboard shell. `true` when the form is mounted inside `(mainlayout)` — stage 4
+   * of the create flow (#824) — because a dashboard mount that points at the public site must
+   * open a new tab: the person is mid-flow and must not lose the stage they were on.
+   */
+  leaving?: boolean;
+  /**
+   * Swaps to sign-up **in place** (#829). Present, the "Sign up" control under the form is a
+   * button that calls this instead of a link to `/register`; absent, `/login` keeps its link and
+   * its navigation, byte-identically (proven by `pnpm parity`). Stage 4 of the create flow needs
+   * the in-place form: a navigation there would leave the stage column and the review beside it.
+   */
+  onSwitchToRegister?: () => void;
   next: string;
+  /**
+   * The one sentence for a visitor who was accepting an invitation (#t_0aa81144), or `null` for
+   * every other visit — the words are the login fixture's (`lib/auth/invite-prompt.ts` decides
+   * which), and this view only places them above the form so the page says why the person is
+   * being asked to sign in instead of greeting them as if they had just arrived.
+   */
+  prompt?: string | null;
   /**
    * Whether this visit came back from a Google finish that failed. Read by the page from the
    * `?google=failed` query the finish route appends, so a failed attempt is not indistinguishable
@@ -313,14 +355,26 @@ export function LoginView({
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image */}
-      <div className="hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden">
+    <div className={layout === "embedded" ? "w-full" : "min-h-screen flex"}>
+      {/* Left Side - Image. Page layout only (#824): embedded is a stage column, not a page. */}
+      <div
+        className={
+          layout === "embedded"
+            ? "hidden"
+            : "hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden"
+        }
+      >
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="mb-8 max-w-md mx-auto">
-            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
-              <MarkGlyph id={marks.hero} src={markSrc} className="w-10 h-10 text-white" />
+            <div
+              className={`${markTileClass(marks.hero, "w-20 h-20")} bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm`}
+            >
+              <MarkGlyph
+                id={marks.hero}
+                src={markSrc}
+                className={`${markBoxClass(marks.hero, "w-10 h-10")} text-white`}
+              />
             </div>
             <h2 className="text-4xl font-bold mb-4">{copy.heading}</h2>
             <p className="text-xl text-white/90 leading-relaxed">{copy.subtitle}</p>
@@ -350,25 +404,43 @@ export function LoginView({
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-6 p-8 ">
+      <div
+        className={
+          layout === "embedded"
+            ? "w-full flex flex-col items-stretch gap-4"
+            : "w-full lg:w-1/2 flex flex-col items-center justify-center gap-6 p-8 "
+        }
+      >
         {/* The way out, above the card: a sign-in screen that offers no door to the site is a
-            dead end for anyone who followed a link and did not mean to sign in. */}
-        <div className="w-full max-w-md">
-          <AuthHomeLink label={itemLabel(home, "back")} />
-        </div>
-        <Card className="w-full max-w-md shadow-xl border-0">
+            dead end for anyone who followed a link and did not mean to sign in. Embedded, the
+            way out is the flow's own foot — `Back` and `Cancel` — so drawing a link home here
+            would be a second exit out of a stage. */}
+        {layout === "embedded" ? null : (
+          <div className="w-full max-w-md">
+            <AuthHomeLink label={itemLabel(home, "back")} />
+          </div>
+        )}
+        <FormSurface className={layout === "embedded" ? "w-full" : "w-full max-w-md"}>
           <CardHeader className="text-center pb-8">
             <div
-              className={`lg:hidden mx-auto mb-4 w-12 h-12 ${markGroundClass(marks.hero)} rounded-lg flex items-center justify-center`}
+              className={`lg:hidden mx-auto mb-4 ${markTileClass(marks.hero, "w-12 h-12")} ${markGroundClass(marks.hero)} rounded-lg flex items-center justify-center`}
             >
               <MarkGlyph
                 id={marks.hero}
                 src={markSrc}
-                className={`${tileMarkClass(marks.hero)} text-white`}
+                className={`${markBoxClass(marks.hero)} text-white`}
               />
             </div>
             <CardTitle className="text-3xl font-bold ">{form.heading}</CardTitle>
             <CardDescription>{form.body}</CardDescription>
+            {prompt === null ? null : (
+              <p
+                data-invite-prompt=""
+                className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              >
+                {prompt}
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-6">
             {/*
@@ -473,9 +545,19 @@ export function LoginView({
             </form>
             <div className="text-center text-sm ">
               {itemLabel(form, "signup-prompt")}{" "}
-              <Link href="/register" className="text-action">
-                {itemLabel(form, "signup-action")}
-              </Link>
+              {onSwitchToRegister === undefined ? (
+                <Link href="/register" className="text-action">
+                  {itemLabel(form, "signup-action")}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onSwitchToRegister}
+                  className="text-action hover:underline"
+                >
+                  {itemLabel(form, "signup-action")}
+                </button>
+              )}
             </div>
 
             {/* The demo surfaces, resolved on the server (#218). `off` renders nothing — no
@@ -483,7 +565,7 @@ export function LoginView({
             {demo.kind === "entry" && <DemoEntry copy={copy} />}
             {demo.kind === "roles" && <DemoRoles copy={copy} action={demo.action} />}
           </CardContent>
-        </Card>
+        </FormSurface>
 
         {/*
          * The running version, centred directly below the credentials card (issue #269). Below
@@ -499,13 +581,29 @@ export function LoginView({
          * carries, so a reader who lands here first is not the only one without them.
          */}
         <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
-          <Link href="/terms" className="hover:text-action hover:underline">
-            {itemLabel(legal, "terms")}
-          </Link>
+          {leaving ? (
+            <LeavingLink
+              href="/terms"
+              label={itemLabel(legal, "terms")}
+              className="hover:text-action hover:underline"
+            />
+          ) : (
+            <Link href="/terms" className="hover:text-action hover:underline">
+              {itemLabel(legal, "terms")}
+            </Link>
+          )}
           <span aria-hidden="true">·</span>
-          <Link href="/privacy" className="hover:text-action hover:underline">
-            {itemLabel(legal, "privacy")}
-          </Link>
+          {leaving ? (
+            <LeavingLink
+              href="/privacy"
+              label={itemLabel(legal, "privacy")}
+              className="hover:text-action hover:underline"
+            />
+          ) : (
+            <Link href="/privacy" className="hover:text-action hover:underline">
+              {itemLabel(legal, "privacy")}
+            </Link>
+          )}
         </div>
       </div>
     </div>

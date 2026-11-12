@@ -25,22 +25,24 @@
  * time. `onboarding@resend.dev` is Resend's own documented development sender, so an
  * unconfigured `RESEND_FROM` still sends something instead of failing on a missing header.
  *
- * The words are `data/pages/assessment.ts`'s `invitation-email` band (E23), filled through
- * `fillLabel()` like every other placeholder in this repo. The message carries exactly one
- * link, and the link is the only place the token appears.
+ * The words are template #2 in `lib/email/templates/invitation.ts`, rendered through the band
+ * (`lib/email/band.ts`, #548): plain text composed first, the HTML derived from that string. The
+ * message carries exactly one link, and the link is the only place the token appears.
  *
- * **The second message (#258)** is the unlock notice: when a submit makes an instance
- * `complete`, the other party is told, once, and on that transition only. Its words are
- * `data/pages/assessment-instance.ts`'s `unlock-email` band and its link is the instance's own
- * screen — no token, no answer, no score and no Gap value, because the blind rule does not stop
- * at the browser. Both messages go through `sendMail()`, so there is one transport, one set of
- * outcomes (`sent` / `unset` / `failed`) and one place that decides what may reach a log line.
+ * **The second message (#258)** is the report-ready notice: when the acceptance that completes an
+ * instance commits, the other party is told, once, and on that transition only. Its words are
+ * template #5 (`lib/email/templates/report-ready.ts`) and its link is the instance's own screen —
+ * no token, no answer, no score and no Gap value, because the blind rule does not stop at the
+ * browser. **The third (#548)** is the join notice (`lib/flow/join-notice.ts`), sent to the
+ * Initiator when a claim commits. All of them go through `sendMail()`, so there is one transport,
+ * one set of outcomes (`sent` / `unset` / `failed`) and one place that decides what may reach a
+ * log line.
  */
 import { brand } from "@/data/brand";
-import { assessmentPageCopy } from "@/data/pages/assessment";
 import { resetRequestPageCopy } from "@/data/pages/password-reset";
+import { invitationTemplate, renderTemplate } from "@/lib/email/templates";
 import { RESET_TTL_MINUTES } from "@/lib/auth/reset-token";
-import { instancePath } from "@/lib/flow/paths";
+import { instancePath, relationshipScreenPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** Resend's documented send endpoint. `fetch` is the client; no SDK, no dependency. */
@@ -108,6 +110,18 @@ export function instanceLink(instanceRecordId: string, base = baseUrl()): string
   return `${base.replace(/\/+$/, "")}${instancePath(instanceRecordId)}`;
 }
 
+/**
+ * The link a payment notice carries: the relationship's own screen, and no token.
+ *
+ * The recipient reached this address by signing in — the same credential the page reads — so the
+ * notice never mints, repeats or needs one. A money message with a bearer credential in the path
+ * would be the worst place in the product for one: a forwarded mail would carry a link that opens
+ * someone else's billing screen.
+ */
+export function relationshipLink(relationshipId: string, base = baseUrl()): string {
+  return `${base.replace(/\/+$/, "")}${relationshipScreenPath(relationshipId)}`;
+}
+
 export interface InvitationFields {
   readonly to: string;
   readonly initiatorName: string;
@@ -121,23 +135,29 @@ export interface InvitationMessage {
   readonly to: string;
   readonly subject: string;
   readonly text: string;
+  /**
+   * The HTML the band derived from `text` (#548). Present for the invitation, which goes through
+   * the band; absent for the password-reset message, which shares this shape and is text-only.
+   * It is never a hand-written body either way.
+   */
+  readonly html?: string;
   readonly link: string;
 }
 
-/** The message, built from the fixture — subject, body and one link. */
+/** The message, built from the band's template #2 — subject, text, HTML and one link. */
 export function invitationMessage(fields: InvitationFields): InvitationMessage {
-  const band = sectionOf(assessmentPageCopy, "invitation-email");
   const link = invitationLink(fields.token, fields.base);
-  const values = {
-    initiator: fields.initiatorName,
+  const rendered = renderTemplate(invitationTemplate, {
+    inviter: fields.initiatorName,
     counterparty: fields.counterpartyName,
     template: fields.templateTitle,
     link,
-  };
+  });
   return {
     to: fields.to,
-    subject: fillLabel(itemLabel(band, "subject"), values),
-    text: fillLabel(itemLabel(band, "body"), values),
+    subject: rendered.subject,
+    text: rendered.text,
+    html: rendered.html,
     link,
   };
 }
@@ -218,13 +238,29 @@ export interface MailMessage {
   readonly to: string;
   readonly subject: string;
   readonly text: string;
+  /**
+   * The HTML part, when the sender has one (#548).
+   *
+   * Optional because the transport predates the band and the flows that never needed HTML (the
+   * password reset, the news confirmation) still send text only. When it is present it is the
+   * band's `htmlFromText(text)` output and never a hand-written body: the band's call graph makes
+   * the HTML a function of the text, and this field only carries it.
+   */
+  readonly html?: string;
 }
 
 /** Which of this flow's messages is being sent — the log prefix, and the sentence's noun. */
-export type MailSender = "invite" | "unlock" | "reset" | "news" | "broadcast";
+export type MailSender =
+  | "invite"
+  | "joined"
+  | "unlock"
+  | "reset"
+  | "news"
+  | "broadcast"
+  | "payment";
 
 /**
- * The two senders' log sentences, in one table because they must stay parallel: the label
+ * The senders' log sentences, in one table because they must stay parallel: the label
  * distinguishes them in a log an operator greps, and the tail says what the app does instead.
  *
  * The invite's lines are the ones #220 shipped, word for word — a deployment's missing key has
@@ -233,6 +269,15 @@ export type MailSender = "invite" | "unlock" | "reset" | "news" | "broadcast";
  */
 const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: string }> = {
   invite: { noun: "invitation", unsent: "the link is shown in the app instead" },
+  /**
+   * The join notice (#548 template #4). Its `unsent` tail says what the app does instead: the
+   * Initiator's own screen already moves the instance out of `awaiting_counterparty`, so a mail
+   * that did not go out costs them a prompt, not the fact.
+   */
+  joined: {
+    noun: "join notice",
+    unsent: "the instance screen already shows both seats exist",
+  },
   unlock: {
     noun: "unlock notice",
     unsent: "the instance stays marked as complete in the app instead",
@@ -261,6 +306,16 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
   broadcast: {
     noun: "broadcast",
     unsent: "this recipient did not receive the notice",
+  },
+  /**
+   * The relationship fee's reminder and expiry notices (#619). The `unsent` tail is the one that
+   * matters most in this table: the stamp (`reminder_day3_at` / `reminder_day10_at`) is only
+   * written after a `sent`, so a line this says means the nag is still **owed** — the next run
+   * finds it due again — and never that it was quietly dropped.
+   */
+  payment: {
+    noun: "payment notice",
+    unsent: "the nag stays owed, so the next run attempts it again",
   },
 };
 
@@ -339,6 +394,9 @@ export async function sendMail(
         to: [message.to],
         subject: message.subject,
         text: message.text,
+        // The band's derived HTML, when the sender has it (#548). Text is always present; a client
+        // that cannot render HTML still gets the whole message.
+        ...(message.html === undefined ? {} : { html: message.html }),
       }),
     });
   } catch (error) {

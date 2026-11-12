@@ -1,5 +1,11 @@
 # Contact landing — the pages, looked at
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Brand lockup](../qa-brand-lockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
+
+<!-- docs-nav:end -->
+
 Six screenshots from the AlignSynch build (`BRAND=alignsynch pnpm build`, `next start` on
 `:3131`), captured at 1440×900 and 390×844 through Chrome's device emulation. They exist because
 a text assertion cannot prove a page: the markup can be right and the band can still be off the
@@ -24,3 +30,14 @@ seeded account and no credential was typed to manufacture a session. What that p
 layout: the band shows one button pointing at the form, and no form and no address. What it does
 not prove is the signed-in header (name, avatar) — the chrome renders signed out, which is why
 the header disc is neutral.
+
+## Related
+
+- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map the contact pages are variations of.
+- [ui-registry.md](../ui-registry.md) — the contact surfaces themselves.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Brand lockup](../qa-brand-lockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
+
+<!-- docs-nav:end -->

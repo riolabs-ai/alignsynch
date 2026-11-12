@@ -15,17 +15,120 @@
  * party's column with nothing on screen saying so, so this is a standing sentence and not a
  * one-time notice — it is drawn in all three states, before the report and while answering.
  *
- * `unlock-email` is the one message this screen's flow *sends* (#258) — the notice the other
- * party gets when a submit makes the instance `complete`. The words live here, beside the report
- * they announce, and not in `lib/flow/`; the sender fills `{other}`, `{recipient}`,
- * `{template}` and `{link}` through `fillLabel()`. It deliberately has no score, no Gap value
- * and no token-shaped placeholder to fill: the blind rule does not stop at the browser, so the
- * email names the instance and links to it, and the numbers stay behind the party cookie.
+ * The email copy is not here: since #548 every message the product sends is a template in
+ * `lib/email/templates/`, rendered through the band (`lib/email/band.ts`) so the plain text is
+ * composed first and the HTML derived from it. The `unlock-email` band this file used to carry
+ * moved to `report-ready.ts` with the rest of the set; the screen's own words stayed.
  */
-import { zPageCopy, type PageCopy } from "../../content/pages";
+import { zPageCopy, type PageCopy, type PageCopySection } from "../../content/pages";
+
+/**
+ * The invitation band (#691) — the words one invitation is drawn with, on two surfaces.
+ *
+ * Authored here, beside the screen that grew them, and *referenced* by the Sent screen's
+ * fixture (`data/pages/assessment-sent.ts`) rather than copied into it: `claimed`, `expired`,
+ * `resend-heading`, the four `resend` refusals and the copy control's three outcomes are one
+ * invitation's vocabulary, and two fixtures carrying them would be two places a sentence drifts.
+ * That is the same rule `data/pages/lifecycle.ts` states for the six stage names.
+ *
+ * Typed as `PageCopySection` and validated where it is used: each fixture runs it through
+ * `zPageCopy.parse`, so this module carries no second schema.
+ */
+export const inviteBandSection: PageCopySection = {
+  id: "invite",
+  items: [
+    { id: "sent", label: "Invitation emailed to {email}" },
+    // Two ways for a send not to happen, and they are not the same sentence (#220). `unset`
+    // is a deployment with no mailer — it may name that fact to an operator, but never the
+    // variable, whose name is in the server log. `failed` is a send that was attempted and
+    // refused: it says only that, because the cause (a rate limit, an unverified domain, a
+    // bad recipient) is not something the reader can see or act on.
+    {
+      id: "unset",
+      label:
+        "No email was sent — this deployment has no mail sender configured. Send this link yourself:",
+    },
+    { id: "failed", label: "The invitation could not be sent. Send this link yourself:" },
+    { id: "link-label", label: "Invitation for {counterparty}" },
+    // #257 — the copy control beside that link. Three sentences, because there are three
+    // things that can happen and only one of them is a success: the link is on the
+    // clipboard, the browser refused and the link's text is selected for the reader, or the
+    // browser refused *and* the text could not be selected. The last one claims no
+    // selection, because a message that says "it is selected now" when it is not is worse
+    // than no message — the reader would paste nothing.
+    { id: "copy", label: "Copy link" },
+    { id: "copy-done", label: "Link copied — paste it into a message to {counterparty}." },
+    {
+      id: "copy-manual",
+      label:
+        "Your browser would not let the page copy the link, so it is selected above — press Ctrl+C or ⌘C to copy it.",
+    },
+    {
+      id: "copy-unavailable",
+      label:
+        "Your browser would not copy the link, and it could not be selected for you — select it above and copy it yourself.",
+    },
+    { id: "claimed", label: "{counterparty} has claimed the invitation" },
+    // #266 — three states, and the two that are not `claimed` name the deadline, because
+    // "no invitation has been claimed yet" and "the invitation died last Tuesday" are the
+    // same sentence to a reader who cannot see the clock. `expired` is deliberately not
+    // silent about the consequence: the link is not drawn in that state (`readFlowScreen`
+    // withholds it), so the panel says why there is nothing to send.
+    {
+      id: "unclaimed",
+      label: "{counterparty} has not claimed the invitation yet (it expires {date})",
+    },
+    {
+      id: "expired",
+      label:
+        "This invitation expired on {date}. The link no longer works — send {counterparty} a new one below.",
+    },
+    // #275 — the re-invite. One action, and it is revoke-and-replace: the new link is the only
+    // live one, so the panel says the old link dies rather than leaving the Initiator to
+    // assume two links now work. The budget (`{count} of {cap}`) is drawn because a refusal
+    // that arrives as a surprise is the thing the issue's copy guidance forbids; the refusals
+    // themselves are below, one item per code in `RESEND_REFUSALS` and keyed by that code, so
+    // the panel looks up the sentence the store's refusal named.
+    { id: "resend-heading", label: "Send {counterparty} a new invitation" },
+    { id: "resend-email", label: "Their email address" },
+    { id: "resend-submit", label: "Send a new link" },
+    {
+      id: "resend-note",
+      label:
+        "The new link replaces the one in the last email: the old link stops working as soon as you send this.",
+    },
+    { id: "resend-count", label: "Re-invitations sent: {count} of {cap}" },
+    {
+      id: "cooldown",
+      label:
+        "A new invitation went out less than 24 hours ago, so this one was not sent. You can send another a day after that.",
+    },
+    {
+      id: "cap-reached",
+      label:
+        "This invitation has been sent three times, which is as many as this app allows. Start a new relationship with {counterparty} instead.",
+    },
+    {
+      id: "already-claimed",
+      label:
+        "This invitation has already been claimed, so there is nothing to send again — the link is spent.",
+    },
+    {
+      id: "instance-complete",
+      label:
+        "Both of you have answered, so this invitation is finished and there is nothing left to send.",
+    },
+    {
+      id: "invalid-email",
+      label: "That is not an address a message can be sent to. Check it and send again.",
+    },
+    { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
+    { id: "no-invite", label: "This relationship has no invitation to send again." },
+  ],
+};
 
 export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
-  heading: "Your instance",
+  heading: "Your session",
   sections: [
     {
       id: "viewer",
@@ -59,6 +162,16 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
           label: "Connected — you both have a seat; the answers are not both in yet.",
         },
         { id: "sharing", label: "Sharing — the report is open to both of you." },
+        /**
+         * #619 — both sheets are sealed and the relationship's fee is not settled. The Gap is
+         * still shut, so the `sharing` sentence would be false; the sentence says only what the
+         * status knows, and the plan and the payment are drawn by the publish panel below it.
+         */
+        {
+          id: "awaiting-payment",
+          label:
+            "Sharing — both sheets are sealed; the Gap opens when the assessment is published.",
+        },
         /**
          * #503 — a session an operator ended. The badge and the sentence are two items because
          * the badge sits beside the title where a stage name would go, and there is no stage name
@@ -108,6 +221,109 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
       id: "report",
       heading: "You have both answered",
       body: "The answers are frozen and the Gap is open to both of you. Nothing here is stored: every Gap is computed from the two scores beside it.",
+    },
+    /**
+     * #692 — stage 6, **Align**: the Alignment, Aspect by Aspect.
+     *
+     * The artifact of record (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`,
+     * `s10.*`) draws this as the relationship's own Gap card: one row per Aspect, both sheets
+     * side by side, the difference between them. The words are the owner's, narrowed to the three
+     * sentences this screen needs — the two verdicts are stated per Aspect *and* once for the
+     * relationship, because a couple reads the row first and the total second, and neither is a
+     * **composite metric**: the glossary's own grep (`docs/specs/ux-report.md`, acceptance 5) forbids
+     * a "Total Gap", so this band counts Gaps over the Setting and never adds them up.
+     *
+     * The two verdict sentences are deliberately worded differently from the report's own band
+     * (`data/pages/assessment-relationship-report.ts`): the report answers "are we aligned", this
+     * band answers "how much of it is over the line here", and a sentence copied between two
+     * fixtures is the drift `data/pages/lifecycle.ts` exists to stop. The glossary's vocabulary —
+     * `Aligned`, the four Opinion names, the eight Gap names, `Soft`/`Full` — is *not* here: it is
+     * authored once in `content/`, and this fixture is only the page's own prose.
+     */
+    {
+      id: "alignment",
+      heading: "Alignment",
+      body: "Both sheets are sealed. The Gap is what the two sets of answers disagree by, Aspect by Aspect.",
+      items: [
+        { id: "scope", label: "Lives in the dashboard" },
+        { id: "sheets", label: "The two sheets" },
+        { id: "difference", label: "Difference" },
+        { id: "gap", label: "Gap" },
+        { id: "scale", label: "Scale {min}–{max}" },
+        { id: "within", label: "Within the {setting} Setting" },
+        { id: "over", label: "{count} over the {setting} Setting" },
+        { id: "unscored", label: "Not answered" },
+        { id: "in-synch", label: "In Synch" },
+        { id: "no-gap", label: "No Gap is measurable on this Aspect — nothing was subtracted." },
+        { id: "verdict-aligned", label: "Every Gap here meets the {setting} Setting." },
+        {
+          id: "verdict-unmet",
+          label: "{count} of the {measured} Gaps here exceed the {setting} Setting.",
+        },
+        { id: "report-link", label: "Read every Gap on the report" },
+      ],
+    },
+    /**
+     * The confirmation a submit lands on (#t_0aa81144).
+     *
+     * The submit used to answer with a 303 to this screen and nothing else: the person had answered
+     * every Aspect and was handed a form or a blank wait, with no sentence saying their answers
+     * were saved, what the other party still had to do, or how to change their mind. This band is
+     * drawn *above* the ordinary screen for the one visit the submit created (`?submitted=1`), and
+     * only while the report is still closed — once both parties have accepted, the report is the
+     * answer and a "thank you, nothing is shown yet" band would be false.
+     */
+    {
+      id: "submitted",
+      heading: "Thank you — your answers are saved",
+      body: "Nothing you wrote is shown to {other} yet. You will both see the report once you have both answered and accepted.",
+      items: [
+        {
+          id: "waiting",
+          label: "What happens next",
+          body: "{other} answers the same questions from their side and accepts the session. When both of you have accepted, the report opens for you both.",
+        },
+        {
+          id: "change",
+          label: "How to change an opinion",
+          body: "Open your answer sheet and change any score before you accept. After you accept, your answers are sealed.",
+        },
+        { id: "change-link", label: "Open your answer sheet" },
+        { id: "session-link", label: "Back to the session" },
+        /**
+         * The entry point to the acceptance step (#617). The submit used to land here with the
+         * sheet and the session and nothing else, and nothing anywhere linked to `/accept` — so a
+         * person who had answered every Aspect had no way to accept, and a human-created session
+         * could never reach `complete`. This band is drawn for exactly that person: their own sheet
+         * is finished and their own acceptance is missing.
+         */
+        { id: "accept-link", label: "Review and accept this session" },
+      ],
+    },
+    {
+      /**
+       * The acceptance entry point on the ordinary instance screen (#617).
+       *
+       * `submitted` covers the visit a submit created; this section covers every later visit — the
+       * party who closed the tab, came back from the report link in an email, or answered on one
+       * device and opened the screen on another. Both draw their words from here rather than from
+       * a literal, so the one sentence that points at `/accept` is authored once.
+       *
+       * Drawn only while the session is `answering`, the viewer is a party, their sheet is complete
+       * and their own acceptance is missing: those are the facts the endpoint itself requires, so
+       * the link is offered exactly when the click would be recorded.
+       */
+      id: "accept",
+      heading: "Acceptance is the last step",
+      body: "Answering is not accepting. Your sheet is complete — review the session and accept it yourself, and the report opens for both of you once {other} accepts too.",
+      items: [
+        { id: "accept-link", label: "Review and accept this session" },
+        {
+          id: "you-accepted",
+          label:
+            "You accepted this session. The report opens for both of you when {other} accepts too.",
+        },
+      ],
     },
     {
       /**
@@ -205,109 +421,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         { id: "nothing", label: "Nothing has been paid on this relationship." },
       ],
     },
-    {
-      id: "unlock-email",
-      items: [
-        { id: "subject", label: "{other} has answered {template}" },
-        {
-          id: "body",
-          label:
-            "Hi {recipient},\n\n{other} has answered their side of {template}, and so have you. Every Aspect now has both answers, so the Gap is open to you both.\n\nOpen the instance: {link}\n\nThe answers are frozen now — neither of you can change one. Open it to read the Gap.",
-        },
-      ],
-    },
-    {
-      id: "invite",
-      items: [
-        { id: "sent", label: "Invitation emailed to {email}" },
-        // Two ways for a send not to happen, and they are not the same sentence (#220). `unset`
-        // is a deployment with no mailer — it may name that fact to an operator, but never the
-        // variable, whose name is in the server log. `failed` is a send that was attempted and
-        // refused: it says only that, because the cause (a rate limit, an unverified domain, a
-        // bad recipient) is not something the reader can see or act on.
-        {
-          id: "unset",
-          label:
-            "No email was sent — this deployment has no mail sender configured. Send this link yourself:",
-        },
-        { id: "failed", label: "The invitation could not be sent. Send this link yourself:" },
-        { id: "link-label", label: "Invitation for {counterparty}" },
-        // #257 — the copy control beside that link. Three sentences, because there are three
-        // things that can happen and only one of them is a success: the link is on the
-        // clipboard, the browser refused and the link's text is selected for the reader, or the
-        // browser refused *and* the text could not be selected. The last one claims no
-        // selection, because a message that says "it is selected now" when it is not is worse
-        // than no message — the reader would paste nothing.
-        { id: "copy", label: "Copy link" },
-        { id: "copy-done", label: "Link copied — paste it into a message to {counterparty}." },
-        {
-          id: "copy-manual",
-          label:
-            "Your browser would not let the page copy the link, so it is selected above — press Ctrl+C or ⌘C to copy it.",
-        },
-        {
-          id: "copy-unavailable",
-          label:
-            "Your browser would not copy the link, and it could not be selected for you — select it above and copy it yourself.",
-        },
-        { id: "claimed", label: "{counterparty} has claimed the invitation" },
-        // #266 — three states, and the two that are not `claimed` name the deadline, because
-        // "no invitation has been claimed yet" and "the invitation died last Tuesday" are the
-        // same sentence to a reader who cannot see the clock. `expired` is deliberately not
-        // silent about the consequence: the link is not drawn in that state (`readFlowScreen`
-        // withholds it), so the panel says why there is nothing to send.
-        {
-          id: "unclaimed",
-          label: "{counterparty} has not claimed the invitation yet (it expires {date})",
-        },
-        {
-          id: "expired",
-          label:
-            "This invitation expired on {date}. The link no longer works — send {counterparty} a new one below.",
-        },
-        // #275 — the re-invite. One action, and it is revoke-and-replace: the new link is the only
-        // live one, so the panel says the old link dies rather than leaving the Initiator to
-        // assume two links now work. The budget (`{count} of {cap}`) is drawn because a refusal
-        // that arrives as a surprise is the thing the issue's copy guidance forbids; the refusals
-        // themselves are below, one item per code in `RESEND_REFUSALS` and keyed by that code, so
-        // the panel looks up the sentence the store's refusal named.
-        { id: "resend-heading", label: "Send {counterparty} a new invitation" },
-        { id: "resend-email", label: "Their email address" },
-        { id: "resend-submit", label: "Send a new link" },
-        {
-          id: "resend-note",
-          label:
-            "The new link replaces the one in the last email: the old link stops working as soon as you send this.",
-        },
-        { id: "resend-count", label: "Re-invitations sent: {count} of {cap}" },
-        {
-          id: "cooldown",
-          label:
-            "A new invitation went out less than 24 hours ago, so this one was not sent. You can send another a day after that.",
-        },
-        {
-          id: "cap-reached",
-          label:
-            "This invitation has been sent three times, which is as many as this app allows. Start a new instance with {counterparty} instead.",
-        },
-        {
-          id: "already-claimed",
-          label:
-            "This invitation has already been claimed, so there is nothing to send again — the link is spent.",
-        },
-        {
-          id: "instance-complete",
-          label:
-            "Both of you have answered, so this invitation is finished and there is nothing left to send.",
-        },
-        {
-          id: "invalid-email",
-          label: "That is not an address a message can be sent to. Check it and send again.",
-        },
-        { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
-        { id: "no-invite", label: "This instance has no invitation to send again." },
-      ],
-    },
+    inviteBandSection,
     {
       id: "problems",
       items: [
@@ -320,13 +434,33 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Every Aspect needs a score for every opinion this mode asks — Feel and Wish in Basic Mode, all four in Advanced Mode.",
         },
-        { id: "not-a-party", label: "This instance is not yours to answer." },
-        { id: "no-such-instance", label: "No instance answers to that link." },
+        { id: "not-a-party", label: "This session is not yours to answer." },
+        { id: "no-such-instance", label: "No session answers to that link." },
+        // #752 — the two write refusals a *state* produces, each with its own sentence because
+        // the reader's next move differs: a voided session was ended by an operator and has no
+        // way back, a lapsed one was ended by the money and comes back with a payment. The union
+        // in `lib/flow/state.ts` names both; without this row the route threw instead of
+        // printing either, so a refusal became a 500.
+        {
+          id: "voided",
+          label: "An operator ended this session, so no answer can be changed.",
+        },
+        {
+          id: "lapsed",
+          label:
+            "The membership behind this relationship ended, so both sheets are read-only until the initiator's payment lands.",
+        },
+        // #619's code: the fee is taken when the sheets are published, and this is the sentence a
+        // reader gets when the account that started the relationship has no method on file.
+        {
+          id: "payment-method-required",
+          label: "This relationship needs a payment method before its sheets can be published.",
+        },
         // #478 — the Steps endpoint's two codes. A tick can name a row this relationship does not
         // hold (`no-such-step`), and a party can write a status the model does not allow (`invalid`).
         { id: "no-such-step", label: "That Step is not on this relationship." },
         { id: "invalid", label: "That change is not one a Step allows." },
-        { id: "back", label: "Back to the instance" },
+        { id: "back", label: "Back to the session" },
       ],
     },
   ],

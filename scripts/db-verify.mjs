@@ -59,13 +59,16 @@
  *       relationship, no session points at a relationship that does not exist.
  *   V18 a scored session is immutable (#340): there is no `UPDATE` path against `session` or
  *       `opinion` anywhere in `lib/`, `scripts/` or `app/` — the rows a score is read from can
- *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **One
- *       column pair is carved out (#503):** an `UPDATE session` whose SET list is exactly
- *       `voided_at` and/or `voided_by` is legal, because an operator's void adds an operator-state
- *       column that no score and no derivation over a score reads — `instanceStatusOf()` answers
- *       `voided` before it counts anything. The carve-out is a column allowlist, not a table one:
- *       an `UPDATE session SET mode = …`, `SET alignment_setting = …` or a SET list with the void
- *       columns plus anything else still fails here.
+ *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **Two column
+ *       sets are carved out.** An `UPDATE session` whose SET list is exactly `voided_at` and/or
+ *       `voided_by` is legal (#503), because an operator's void adds an operator-state column that
+ *       no score and no derivation over a score reads — `instanceStatusOf()` answers `voided`
+ *       before it counts anything. An `UPDATE session` whose SET list is exactly `name` is legal
+ *       (#278), because the deletion sweep must rewrite the free-text label so a survivor's session
+ *       stops naming a person who deleted their account — `name` is the console's optional label
+ *       and no derivation over answers reads it. The carve-outs are column lists, not table ones:
+ *       an `UPDATE session SET mode = …`, `SET alignment_setting = …`, `SET template_record_id = …`
+ *       or a SET list mixing an admitted column with anything else still fails here.
  *   V19 the membership's initiator (coach card): a relationship that has any member has exactly
  *       one `initiator` member — the backfill (0014) writes one for the bound Initiator, and a
  *       coach invited into a relationship with no initiator member is drift, not a relationship.
@@ -108,6 +111,36 @@
  *       `PRIMARY KEY (broadcast_id, email)` that makes one address one row per send, and its
  *       `(email, created_at DESC)` index exists because the cooldown read is an existence test per
  *       candidate address. Numbered after #506's V25, which landed on `main` first.
+ *   V27 no orphan profile (#278): every `user_profile.user_id` names a user `neon_auth` still has.
+ *       `public` holds no foreign key to the managed schema on purpose (`0003`'s header), so a
+ *       deletion that stopped half way — the auth user gone, the profile row left — is a row no
+ *       constraint can refuse and no read notices: `/profile/<handle>` keeps resolving to a person
+ *       who cannot sign in, and the handle stays taken. The sweep's own order makes this the one
+ *       half-state it can leave, so it is the one this check names.
+ *
+ *       The seat half of the spec's §7 step-5 rule is **V10's**, not a second code here: V10 fails
+ *       on any `party.user_id` the auth table does not have, which strictly contains "on a
+ *       `complete` session". Two codes for one fact make a failure line ambiguous, the same reason
+ *       V26 is not V25.
+ *   V28 an unfinished deletion has an owner (#278 follow-up): no `account_deletion_job` row with
+ *       `finished_at IS NULL` started more than `STUCK_DELETION_JOB_HOURS` (24 h) ago. #601 made a
+ *       failed scrub resumable by writing `{user_id, email, names, roles}` down before the
+ *       irreversible auth delete; V27 names the `user_profile` such an attempt can leave, but
+ *       nothing named the row itself, so a scrub that failed and was never resumed kept an address
+ *       `/privacy` calls "removed permanently" with no clock and no owner. The failure line names
+ *       the `user_id` and the age, **never the address**: `db:verify` output is pasted into cards,
+ *       logs and CI, and the row exists so an operator can find the id, not so the check can print
+ *       the person.
+ *   V29 the review store (#667): `review_artifact`, `review_todo`, `review_issue` and
+ *       `review_issue_comment` exist, `review_issue` carries the `UNIQUE (artifact_id, number)`
+ *       that makes an issue number trustworthy under two concurrent raisers, and **no issue is in
+ *       the impossible state** — `state = 'closed'` with no `closed_at`, or `'open'` with one.
+ *       `0037`'s CHECK refuses that pair at the insert and `zReviewIssue`'s refinement refuses it
+ *       on the read, so this rule is the third guard and the only one that *names* the row: a
+ *       database whose constraint was dropped by hand, or one migrated halfway, still has a reader
+ *       who will believe the list. The duplicate-number half is here for the same reason — the
+ *       constraint makes it impossible, and a rule that only checks what is already impossible is
+ *       how the constraint's absence goes unnoticed.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -115,6 +148,7 @@ import { Client } from "pg";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { allowlistedAdminProblems } from "./db-admin-allowlist.mjs";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 
 const CONTENT_TABLES = [
@@ -134,11 +168,23 @@ const fail = (code, message) => problems.push({ code, message });
  * The only columns an `UPDATE session` may set (#503): an operator's void, and nothing else.
  *
  * The V18 carve-out below is a **column** allowlist, so the rule keeps its teeth on the columns a
- * score is read from (`mode`, `alignment_setting`, `template_record_id`, `name`). `voided_at` and
+ * score is read from (`mode`, `alignment_setting`, `template_record_id`). `voided_at` and
  * `voided_by` are operator state: `instanceStatusOf()` answers `voided` before it counts an answer,
  * and no derivation over scores reads either column.
  */
 const VOID_COLUMNS = new Set(["voided_at", "voided_by"]);
+
+/**
+ * The deletion sweep's one write to `session` (#278): its optional **label**.
+ *
+ * `docs/ACCOUNT-DELETION-SPEC.md` §1.2 requires the label to be rewritten, because it is free text
+ * a person wrote (`"Run for Avery Rowan"`) and no `user_id` sweep reaches it — leaving it is leaving
+ * the deleted person's name on the survivor's session. It is not a score column: `name` is the
+ * console's optional label (`0011`), read by `/assessment/instances` and by no derivation over
+ * answers. So it gets a carve-out of its own rather than a place in `VOID_COLUMNS`, and the
+ * permitted line below says which of the two admitted this statement.
+ */
+const LABEL_COLUMNS = new Set(["name"]);
 
 /**
  * V18's scan: find every `UPDATE` statement that targets the `session` or `opinion` table in the
@@ -185,14 +231,21 @@ function scanForUpdatePaths() {
       const setColumns = [...statement.matchAll(/\b([a-z_][a-z0-9_]*)\s*=/gi)].map((assign) =>
         assign[1].toLowerCase(),
       );
-      // #503 — the one legal `UPDATE session`: an operator's void, and nothing else. A SET list
-      // that is not wholly the void pair (or is empty, which no UPDATE is) stays a violation.
-      if (
-        match[1].toLowerCase() === "session" &&
-        setColumns.length > 0 &&
-        setColumns.every((column) => VOID_COLUMNS.has(column))
-      ) {
-        allowed.push({ file, line, columns: setColumns });
+      // #503 / #278 — the two legal `UPDATE session` statements: an operator's void (a SET list
+      // wholly of the void pair) and the deletion sweep's label rewrite (exactly `name`). Anything
+      // else — `mode`, `alignment_setting`, `template_record_id`, a mixed list — stays a violation.
+      const isSession = match[1].toLowerCase() === "session";
+      const isVoid =
+        setColumns.length > 0 && setColumns.every((column) => VOID_COLUMNS.has(column));
+      const isLabel =
+        setColumns.length === 1 && setColumns.every((column) => LABEL_COLUMNS.has(column));
+      if (isSession && (isVoid || isLabel)) {
+        allowed.push({
+          file,
+          line,
+          columns: setColumns,
+          why: isVoid ? "an operator's void (#503)" : "the deletion sweep's label rewrite (#278)",
+        });
         continue;
       }
       violations.push({ file, line, table: match[1] });
@@ -271,6 +324,131 @@ function seededStatusDetail(row) {
   if (row.initiator_accepted === 0) details.push("the initiator's party.accepted_at is NULL");
   if (row.counterparty_accepted === 0) details.push("the counterparty's party.accepted_at is NULL");
   return details.join("; ");
+}
+
+/**
+ * V27 over two id lists — the whole rule, so a test can drive it with no database.
+ *
+ * `profileIds` is every `public.user_profile.user_id`; `authIds` is every id in
+ * `neon_auth."user"`. A profile whose account is gone is the half-deleted state
+ * `docs/ACCOUNT-DELETION-SPEC.md` §7 step 5 names: the sweep deletes the auth user first, so a
+ * scrub that then failed leaves exactly this row, and the public profile URL keeps resolving.
+ */
+export function orphanProfileProblems(profileIds, authIds) {
+  const known = new Set(authIds);
+  const problems = [];
+  for (const userId of profileIds) {
+    if (known.has(userId)) continue;
+    problems.push({
+      code: "V27",
+      message: `public.user_profile carries "${userId}", which neon_auth has no user for — a deleted account's profile survived the sweep, so /profile/<handle> still resolves to a person who cannot sign in`,
+    });
+  }
+  return problems;
+}
+
+/**
+ * The age at which an unfinished deletion stops reading as "in flight" (#278 follow-up).
+ *
+ * A scrub is one transaction over the rows one account owns: seconds, not hours. The failure V28
+ * watches for is therefore not a **slow** scrub but an **abandoned** one — the person's session
+ * dies with their auth user, so nothing in the product retries it and only an operator can (§7,
+ * "When the scrub does not land"). 24 h is picked for both ends of that gap:
+ *
+ *   - **not a false alarm.** No measured scrub, retry, deploy restart or overnight gap reaches it;
+ *     the window is orders of magnitude longer than the operation, so a line here always means
+ *     "nobody is coming", not "busy right now". A detector that fires on a normal window is a
+ *     detector whose output gets scrolled past.
+ *   - **not a permanent silence.** The row holds an address `/privacy` says is "removed
+ *     permanently". Within one day of the deletion that address either has an operator resuming it
+ *     or a named failure — long enough to be honest, short enough that the promise and the check
+ *     still point at the same week.
+ *
+ * It is a detector's number, not a retention rule: nothing deletes a row because of it (§6 keeps
+ * the row until it is resumed, and deleting it would destroy the only copy of the address the
+ * sweep keys on).
+ */
+export const STUCK_DELETION_JOB_HOURS = 24;
+
+const HOUR_MS = 60 * 60 * 1000;
+
+/**
+ * V28 over the table's open rows — the whole rule, so a test can drive it with no database.
+ *
+ * `jobs` is every `account_deletion_job` row with `finished_at IS NULL` as `pg` returns it
+ * (`user_id`, `started_at`, `finished_at`). The message names the **id** and the age and never
+ * `email`: this output is pasted into cards, issue threads and CI logs, and the row exists so an
+ * operator can act on an id. A check that prints the address would leak the very fact it reports.
+ */
+export function stuckDeletionJobProblems(jobs, now = Date.now()) {
+  const cutoff = now - STUCK_DELETION_JOB_HOURS * HOUR_MS;
+  const problems = [];
+  for (const job of jobs) {
+    if (job.finished_at !== null && job.finished_at !== undefined) continue;
+    const startedAt = new Date(job.started_at).getTime();
+    // A `started_at` the driver could not parse is not evidence of age; `started_at` is NOT NULL
+    // with a DEFAULT and `TIMESTAMPTZ`, so this is unreachable on a migrated database.
+    if (!Number.isFinite(startedAt) || startedAt > cutoff) continue;
+    const hours = Math.floor((now - startedAt) / HOUR_MS);
+    problems.push({
+      code: "V28",
+      message: `account_deletion_job has an unfinished deletion for "${job.user_id}" started ${hours} h ago — the auth user is gone and the sweep never landed, so the address recorded with it is still retained with no owner: resume it (docs/ACCOUNT-DELETION-SPEC.md §7)`,
+    });
+  }
+  return problems;
+}
+
+/**
+ * V29 over `review_issue`'s rows — the whole rule, so a test can drive it with no database.
+ *
+ * Three facts, and each one is a different way the list stops being trustworthy:
+ *
+ *   the pair          `closed` with no `closed_at` cannot be aged; `open` with one was reopened
+ *                     and forgot. `0037`'s CHECK refuses both at the insert and `zReviewIssue`
+ *                     refuses them on the read, so a row here means the constraint is gone —
+ *                     which is exactly the state a reader would still believe.
+ *   the vocabulary    a `state` outside `open`/`closed` is drift the CHECK also refuses.
+ *   the number        two issues sharing a number inside one artifact makes `#12 open` ambiguous,
+ *                     and the `UNIQUE (artifact_id, number)` is what prevents it. Repeated here
+ *                     because the constraint's absence is otherwise invisible until somebody
+ *                     quotes a number and lands on the wrong conversation.
+ *
+ * The failure line names the artifact and the number, never the body: this output is pasted into
+ * cards and CI, and a review issue can carry a client's words.
+ */
+export function reviewIssueProblems(issues) {
+  const problems = [];
+  const seen = new Map();
+  for (const issue of issues) {
+    const closed = issue.closed_at !== null && issue.closed_at !== undefined;
+    const ref = `${issue.artifact_id} #${issue.number}`;
+    if (issue.state !== "open" && issue.state !== "closed") {
+      problems.push({
+        code: "V29",
+        message: `review_issue "${issue.id}" (${ref}) carries state "${issue.state}" — the store's vocabulary is open|closed, so the list cannot say what it is`,
+      });
+    } else if (issue.state === "closed" && !closed) {
+      problems.push({
+        code: "V29",
+        message: `review_issue "${issue.id}" (${ref}) reads closed with no closed_at — the instant is what makes a closed issue ageable, and 0037's review_issue_state_pair refuses this pair (run \`pnpm db:migrate\` if the constraint is missing)`,
+      });
+    } else if (issue.state === "open" && closed) {
+      problems.push({
+        code: "V29",
+        message: `review_issue "${issue.id}" (${ref}) reads open and carries closed_at ${issue.closed_at} — reopening clears the instant in the same statement; a row with both says two things at once`,
+      });
+    }
+    const numbers = seen.get(issue.artifact_id) ?? new Set();
+    if (numbers.has(issue.number)) {
+      problems.push({
+        code: "V29",
+        message: `review_issue (${ref}) has two rows with the same number — every quote of "#${issue.number}" is ambiguous, which is what UNIQUE (artifact_id, number) exists to prevent`,
+      });
+    }
+    numbers.add(issue.number);
+    seen.set(issue.artifact_id, numbers);
+  }
+  return problems;
 }
 
 /**
@@ -409,7 +587,7 @@ async function main() {
     // the line and the columns are printed beside the census, exactly as V18's zero would be.
     for (const permitted of updatePaths.allowed) {
       console.log(
-        `  V18 permitted: ${permitted.file}:${permitted.line} UPDATEs session (${permitted.columns.join(", ")}) — an operator's void (#503)`,
+        `  V18 permitted: ${permitted.file}:${permitted.line} UPDATEs session (${permitted.columns.join(", ")}) — ${permitted.why}`,
       );
     }
 
@@ -1398,6 +1576,150 @@ async function main() {
       broadcastRecipients = broadcastCounts[0]?.recipients ?? 0;
     }
 
+    /* V27 — no orphan profile (#278).
+     *
+     * `public` holds no foreign key to `neon_auth` (`0003`'s header: "a profile whose user was
+     * deleted in the managed schema is an orphan row, not a broken constraint"), so this is the
+     * one half-deleted state no constraint refuses: the auth user gone and the profile row left.
+     * The sweep deletes the auth user **first** on purpose (`docs/ACCOUNT-DELETION-SPEC.md` §7
+     * step 3), so a scrub that failed after it leaves exactly this, and the person's public
+     * profile URL keeps resolving to an account nobody can sign in to.
+     *
+     * The users table is read from the catalogue rather than assumed (`user` on Neon, `users`
+     * elsewhere) — V10 does the same for `party.user_id`, and the two must agree about which
+     * table owns an account.
+     */
+    let profileRows = 0;
+    const { rows: profileOwners } = await client.query(
+      "SELECT user_id FROM user_profile ORDER BY user_id",
+    );
+    profileRows = profileOwners.length;
+    if (profileRows > 0) {
+      const { rows: authUserTables } = await client.query(
+        `SELECT table_name FROM information_schema.tables
+          WHERE table_schema = 'neon_auth' AND table_name IN ('user', 'users')
+          ORDER BY table_name`,
+      );
+      const usersTable = authUserTables[0]?.table_name;
+      if (usersTable === undefined) {
+        fail(
+          "V27",
+          `${profileRows} user_profile row(s) and no neon_auth users table to own them — run \`neon env pull\` against a branch that has auth before trusting a green profile check`,
+        );
+      } else {
+        const { rows: accounts } = await client.query(
+          `SELECT id::text AS id FROM neon_auth."${usersTable}"`,
+        );
+        for (const problem of orphanProfileProblems(
+          profileOwners.map((row) => row.user_id),
+          accounts.map((row) => row.id),
+        )) {
+          fail(problem.code, problem.message);
+        }
+      }
+    }
+
+    /* V28 — an unfinished deletion has an owner (#278 follow-up).
+     *
+     * #601 made a failed scrub resumable: `recordIntent()` writes `{user_id, email, names, roles}`
+     * to `account_deletion_job` **before** the irreversible auth delete, and `runAccountDeletion()`
+     * falls back to that row when `neon_auth` has no user left to read. What that mechanism cannot
+     * do is notice anything: the person's session died with their auth user, so nothing in the
+     * product retries the sweep, and an abandoned row keeps an address `/privacy` calls "removed
+     * permanently" for as long as nobody looks. V27 names the `user_profile` an interrupted attempt
+     * leaves; this names the interruption itself.
+     *
+     * The table is checked for existence first, the way V19 treats `relationship_member`: a
+     * database migrated without `0034` has nowhere to record an intent, so it also has nothing
+     * that could tell an operator a deletion is stuck — a green run there would be the claim this
+     * check exists to refuse. The rows are only the **open** ones (`finished_at IS NULL`); a
+     * finished row is an opaque id and two instants (§6), so it is not this check's business.
+     */
+    let openDeletionJobs = 0;
+    const { rows: deletionJobTable } = await client.query(
+      "SELECT to_regclass('public.account_deletion_job') AS table",
+    );
+    if (deletionJobTable[0]?.table === null) {
+      fail(
+        "V28",
+        "public.account_deletion_job does not exist — run `pnpm db:migrate` (0034): an interrupted deletion would have nowhere to record the identity it must be resumed with",
+      );
+    } else {
+      const { rows: openJobs } = await client.query(
+        `SELECT user_id, started_at, finished_at FROM account_deletion_job
+          WHERE finished_at IS NULL
+          ORDER BY started_at`,
+      );
+      openDeletionJobs = openJobs.length;
+      for (const problem of stuckDeletionJobProblems(openJobs)) {
+        fail(problem.code, problem.message);
+      }
+    }
+
+    /* V29 — the review store (#667).
+     *
+     * The store behind `/admin/review`: four tables, one constraint that makes an issue number
+     * trustworthy, and one pair of columns that must agree. The tables are checked by name from
+     * `information_schema`, the way V28 checks `account_deletion_job` — a database migrated without
+     * `0037` has nowhere to record a tick, so it also has nothing this rule could find, and a green
+     * run there would be the false evidence the rule exists to refuse.
+     *
+     * The rows are read in full (`review_issue` is a review screen's list, not an event log) and
+     * handed to `reviewIssueProblems()`, which is the rule in one place and the half a test can
+     * drive with no connection.
+     */
+    let reviewArtifacts = 0;
+    let reviewTodos = 0;
+    let reviewIssues = 0;
+    const { rows: reviewTables } = await client.query(
+      `SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name IN ('review_artifact', 'review_todo', 'review_issue', 'review_issue_comment')
+        ORDER BY table_name`,
+    );
+    const reviewTableNames = reviewTables.map((row) => row.table_name);
+    for (const table of [
+      "review_artifact",
+      "review_todo",
+      "review_issue",
+      "review_issue_comment",
+    ]) {
+      if (!reviewTableNames.includes(table)) {
+        fail(
+          "V29",
+          `public.${table} does not exist — run \`pnpm db:migrate\` (0037): a review TODO or issue would have nowhere to be written`,
+        );
+      }
+    }
+    if (reviewTableNames.includes("review_artifact")) {
+      const { rows: numberKey } = await client.query(
+        `SELECT c.conname FROM pg_constraint c
+          WHERE c.conrelid = 'public.review_issue'::regclass
+            AND c.contype = 'u'
+            AND pg_get_constraintdef(c.oid) = 'UNIQUE (artifact_id, number)'`,
+      );
+      if (numberKey.length === 0) {
+        fail(
+          "V29",
+          "public.review_issue has no UNIQUE (artifact_id, number) — two people raising an issue at the same moment could share a number, and every quote of it becomes ambiguous",
+        );
+      }
+      const { rows: reviewCounts } = await client.query(
+        `SELECT (SELECT count(*)::int FROM review_artifact) AS artifacts,
+                (SELECT count(*)::int FROM review_todo) AS todos,
+                (SELECT count(*)::int FROM review_issue) AS issues`,
+      );
+      reviewArtifacts = reviewCounts[0]?.artifacts ?? 0;
+      reviewTodos = reviewCounts[0]?.todos ?? 0;
+      reviewIssues = reviewCounts[0]?.issues ?? 0;
+      const { rows: issueRows } = await client.query(
+        `SELECT id, artifact_id, number, state, closed_at FROM review_issue ORDER BY artifact_id, number`,
+      );
+      for (const problem of reviewIssueProblems(issueRows)) {
+        fail(problem.code, problem.message);
+      }
+    }
+
     if (problems.length > 0) {
       console.error(`✗ db:verify — ${problems.length} violation(s)`);
       for (const problem of problems) console.error(`  ${problem.code}  ${problem.message}`);
@@ -1412,8 +1734,27 @@ async function main() {
           ? `${boundParties.length} party binding(s) resolve to an account, ${seededBindings} seeded binding(s) intact`
           : `${boundParties.length} party binding(s) resolve to an account, seeded bindings unchecked (no demo_account rows)`;
 
+    // The admin allowlist, as drift rather than as prose: an address that HAS an account on this
+    // branch and is not `admin` is exactly the state a seed exists to prevent, and a `pending`
+    // address (no account yet) is information, not a failure. `scripts/db-admin-allowlist.mjs` is
+    // the one implementation; this only asks it in check mode.
+    const allowlist = await allowlistedAdminProblems(client);
+    if (allowlist.notAdmin.length > 0) {
+      for (const row of allowlist.notAdmin) {
+        console.error(
+          `✗ ADMIN_EMAILS: ${row.email} has an account but its profile is not admin (${row.status}) — run \`pnpm admin:ensure\``,
+        );
+      }
+      process.exitCode = 1;
+    }
+    if (allowlist.pending.length > 0) {
+      console.log(
+        `  · allowlist: ${allowlist.pending.length} address(es) on ADMIN_EMAILS have no account on this branch yet (promoted on first sign-in)`,
+      );
+    }
+
     console.log(
-      `✓ db:verify — ${instances.length} instance(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded instance(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

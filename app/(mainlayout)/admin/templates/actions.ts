@@ -4,10 +4,15 @@
  * Template authoring, as four server actions (#502a, #502b).
  *
  * Two of them write a **draft** (`createTemplate`, `saveTemplate`); two publish and withdraw it
- * (`publishTemplateVersion`, `unpublishTemplateVersion`). All four name a reason, all four reach
- * `act()`, and each of the four lands its own `admin_action` row.
+ * (`publishTemplateVersion`, `unpublishTemplateVersion`). All four reach `act()` and land their own
+ * `admin_action` row, but only three name a reason: `createTemplate`, publish and withdraw are
+ * privileged acts — a catalogue row is opened, a version goes live — so the person performing them
+ * states why. `saveTemplate` does not (#625): its sentence is composed from the record by
+ * `lib/member/template-reasons.ts`, exactly as a member's create, clone and save are, so no save on
+ * either surface can answer `reason-too-short`.
  *
- * The component posts **the record it is editing** — a plain JSON body — plus a reason. This file
+ * The component posts **the record it is editing** — a plain JSON body — and a create adds a
+ * reason. This file
  * resolves who is asking, forces the two fields the console does not own (`type`, `status`), and
  * then asks `zAssessment` whether that body is a template. Every decision worth testing lives
  * further down: the schema decides what a template is, `act()` decides whether this actor may
@@ -42,14 +47,18 @@
  */
 import { ActRefused } from "@/lib/admin/act";
 import {
+  archiveTemplate,
   createTemplateDraft,
+  deleteTemplate,
   publishTemplate,
+  restoreTemplate,
   TemplateRefused,
   unpublishTemplate,
   updateTemplateDraft,
 } from "@/lib/admin/templates";
 import {
   slugify,
+  type TemplateCreatePayload,
   type TemplateFormPayload,
   type TemplateSaveOutcome,
   type TemplateVersionFormPayload,
@@ -59,6 +68,7 @@ import {
 import { ADMIN_TEMPLATES_PATH } from "@/lib/admin/paths";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { currentUser } from "@/lib/auth/session";
+import { templateWriteReason } from "@/lib/member/template-reasons";
 
 /** A payload field as a trimmed string; anything else is empty, so zod names the hole. */
 function text(value: unknown): string {
@@ -102,7 +112,7 @@ function refusalOf(error: unknown): TemplateSaveOutcome {
 }
 
 /** Create a draft, and answer with its id so the screen can open it. */
-export async function createTemplate(payload: TemplateFormPayload): Promise<TemplateSaveOutcome> {
+export async function createTemplate(payload: TemplateCreatePayload): Promise<TemplateSaveOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
   // The gate again, on the action: hiding a form is not enforcement.
@@ -142,7 +152,11 @@ export async function saveTemplate(payload: TemplateFormPayload): Promise<Templa
   try {
     const result = await updateTemplateDraft({
       actorUserId: user.userId,
-      reason: text(payload.reason),
+      reason: templateWriteReason({
+        action: "saved",
+        scope: "console",
+        title: parsed.record.title,
+      }),
       record: parsed.record,
     });
     return { ok: true, id: result.after.id, actionId: result.actionId };
@@ -217,6 +231,74 @@ export async function unpublishTemplateVersion(
 
   try {
     const result = await unpublishTemplate({
+      actorUserId: user.userId,
+      reason: text(payload.reason),
+      templateId,
+    });
+    return { ok: true, version: result.after.version ?? 0, actionId: result.actionId };
+  } catch (error) {
+    return versionRefusalOf(error);
+  }
+}
+
+/**
+ * Retire a template (#711), or put it back with `restoreTemplateVersion`.
+ *
+ * **Two actions rather than one toggle**, because `/admin/audit` filters on `action` and "who
+ * retired this template" and "who brought it back" are different questions about the same row. It
+ * is also what makes `already-archived` / `not-archived` honest refusals: a toggle has no order and
+ * so cannot say which way round a click was.
+ *
+ * Neither carries a typed reason — no action form does since #732. The audit row records the
+ * sentence when a caller has one and `NULL` when it does not.
+ */
+export async function archiveTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return versionWrite(payload, archiveTemplate);
+}
+
+/** Bring an archived template back as a working copy — `draft`, never `published`. */
+export async function restoreTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return versionWrite(payload, restoreTemplate);
+}
+
+/**
+ * Destroy a template no reader can reach (#711).
+ *
+ * The destructive one, and the gate is not the button: `deleteTemplate` refuses a row with a
+ * version or with any relationship naming it, and writes nothing when it refuses. The screen's
+ * `AlertDialog` is a confirmation, not the rule.
+ */
+export async function destroyTemplateVersion(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return versionWrite(payload, deleteTemplate);
+}
+
+/**
+ * The one body the three new version-writes share: signed out, gated, an id, `act()`, and a refusal
+ * mapped to its code. A copy per action is how the fourth one silently loses `requireAdmin`.
+ */
+async function versionWrite(
+  payload: TemplateVersionFormPayload,
+  write: (request: {
+    actorUserId: string;
+    reason?: string;
+    templateId: string;
+  }) => Promise<{ actionId: string; after: { version: number | null } }>,
+): Promise<TemplateVersionOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+  await requireAdmin({ next: ADMIN_TEMPLATES_PATH });
+
+  const templateId = text(payload.templateId);
+  if (templateId === "") return { ok: false, code: "no-such-template" };
+
+  try {
+    const result = await write({
       actorUserId: user.userId,
       reason: text(payload.reason),
       templateId,

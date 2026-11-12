@@ -8,15 +8,8 @@
  * subscription, the invitation row and the instant the caller decided to render — and the
  * transaction only carries out the answer.
  *
- * **Three questions live here, and they are deliberately different.**
+ * **Two questions live here, and they are deliberately different.**
  *
- *   publish basis   publish starts a 14-day trial **or** opens a checkout **or** needs neither,
- *                   because the account already pays. #533 says "starts the trial or opens Stripe
- *                   checkout"; the third case is the one the sentence leaves implicit and the one
- *                   a paying member hits on their second relationship. `publishBasisOf()` answers
- *                   which of the three, from the subscription row alone (there is no trial column:
- *                   a trial *is* `billing_subscription.status = 'trialing'`, `lib/relationship/
- *                   trial.ts`).
  *   aspect lock     Aspects are the initiator's until they publish. `aspectsEditable()` is
  *                   `draft` and `pending` only — after `published` the pair has been invited on
  *                   those words, and rewriting them would change what somebody else agreed to.
@@ -27,9 +20,16 @@
  *                   which must be said out loud rather than left to a reader to infer from two
  *                   columns.
  *
- * **No clock of its own.** `now` is an argument everywhere, so a test pins the trial's last
- * instant and the invitation's last instant exactly, and a page hands down the one instant it
- * decided to render (the repo's rule: a render never reads a clock).
+ * **The "publish basis" question used to live here and no longer does (#619).** It answered
+ * "does this publish start a trial, open a checkout, or need neither?" — the charge-at-creation
+ * model. Publishing now bills nothing (the invite is never blocked on a card), the fee belongs to
+ * **completion** (`lib/member/payment.ts`, `lib/flow/payment.ts`), and the function was removed
+ * rather than left beside the new trigger: two live billing triggers on one relationship would
+ * charge a payer twice for one product.
+ *
+ * **No clock of its own.** `now` is an argument everywhere, so a test pins the invitation's last
+ * instant exactly, and a page hands down the one instant it decided to render (the repo's rule: a
+ * render never reads a clock).
  *
  * Pure: no `pg`, no `process.env`, no `new Date()`, no React. `tests/member-publish.test.ts`
  * drives every branch below with literals.
@@ -37,23 +37,13 @@
 import { INVITE_TTL_MS } from "@/lib/flow/tokens";
 import { inviteStateOf, type InviteDisplayState } from "@/lib/flow/invite-state";
 import { isClosedRelationshipStatus, type RelationshipStatus } from "@/lib/relationship/status";
-import {
-  TRIAL_DAYS,
-  trialStateOf,
-  type TrialFacts,
-  type TrialState,
-} from "@/lib/relationship/trial";
+import { TRIAL_DAYS, type TrialState } from "@/lib/relationship/trial";
 
-/** #533's trial length, re-exported so a screen reads one number rather than importing two modules. */
+/** The trial's length, re-exported so a screen reads one number rather than importing two modules. */
 export const MEMBER_TRIAL_DAYS = TRIAL_DAYS;
 
 /** #533's invitation window, re-exported for the same reason (`INVITE_TTL_MS` is 7 days). */
 export const MEMBER_INVITE_TTL_MS = INVITE_TTL_MS;
-
-/** The trial's last instant, for the write that starts one. */
-export function trialEndsAt(startedAt: Date): Date {
-  return new Date(startedAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-}
 
 /** The instant an invitation minted at `startedAt` stops accepting a claim — seven days. */
 export function inviteExpiresAt(startedAt: Date): Date {
@@ -81,67 +71,6 @@ export function statusAfterSave(status: RelationshipStatus): RelationshipStatus 
   if (status === "draft") return "pending";
   if (status === "pending") return "pending";
   return null;
-}
-
-/* ------------------------------------------------------------------ *
- * Publish basis — trial, checkout, or already paid
- * ------------------------------------------------------------------ */
-
-/** Which of the three a publish needs. */
-export const PUBLISH_BASES = ["trial", "checkout", "paid"] as const;
-
-export type PublishBasisKind = (typeof PUBLISH_BASES)[number];
-
-export type PublishBasis =
-  /** No live subscription: the 14-day trial starts inside the publish transaction. */
-  | { readonly kind: "trial"; readonly endsAt: Date }
-  /** A trial already ran and lapsed, or nothing entitles the account: a checkout must complete. */
-  | { readonly kind: "checkout"; readonly because: "trial-expired" | "no-subscription" }
-  /** The account already pays (or is `past_due`, which still serves the product). */
-  | { readonly kind: "paid" };
-
-/**
- * What publishing this account's relationship needs, from the live subscription row.
- *
- * The three answers, in the order the product asks them:
- *
- *   1. **A trial is running → there is no basis at all.** #533 refuses a second publish while a
- *      trial runs ("one active trial per user"), and this is that refusal as a value:
- *      `{ kind: "trial-running" }`. The card's acceptance pastes the *server error*, so the write
- *      path turns this into a refusal naming the trial's last instant rather than a disabled
- *      button.
- *   2. **The account pays → `paid`.** A `trialing` subscription past its period end is *not* paid
- *      (`trialStateOf` answers `expired`), so it falls to the checkout arm; an `active` or
- *      `past_due` row is paid and no checkout is opened — charging a paying member again for the
- *      second relationship they were sold is the bug this arm prevents.
- *   3. **Nothing entitles the account → `checkout`.** Either there was never a trial or the trial
- *      lapsed; the difference is only the sentence, which `because` carries.
- *
- * `null` (no subscription at all) is the trial arm, not the checkout arm: a member's first
- * relationship is what the trial is for.
- */
-export type PublishBasisDecision =
-  | { readonly kind: "trial-running"; readonly endsAt: Date }
-  | PublishBasis;
-
-export function publishBasisOf(subscription: TrialFacts | null, now: Date): PublishBasisDecision {
-  const trial: TrialState = trialStateOf(subscription, now);
-  if (subscription === null) return { kind: "trial", endsAt: trialEndsAt(now) };
-
-  if (trial === "active") {
-    const endsAt =
-      subscription.currentPeriodEnd instanceof Date
-        ? subscription.currentPeriodEnd
-        : new Date(subscription.currentPeriodEnd);
-    return { kind: "trial-running", endsAt };
-  }
-  if (trial === "expired") return { kind: "checkout", because: "trial-expired" };
-
-  // Not `trialing`: either a paid row, or one that does not entitle.
-  if (subscription.status === "active" || subscription.status === "past_due") {
-    return { kind: "paid" };
-  }
-  return { kind: "checkout", because: "no-subscription" };
 }
 
 /* ------------------------------------------------------------------ *
@@ -281,11 +210,42 @@ export const MEMBER_REFUSALS = [
   "checkout-required",
   "slug-taken",
   /**
+   * #619 — pay to complete. Six codes, because the payer's six dead ends need six sentences: the
+   * fee is not armed (`payment-method-required`), the sheets are not both sealed
+   * (`not-ready-to-complete`), this account is not the one payer (`not-the-payer`), the card was
+   * refused (`charge-declined`), the window closed (`payment-expired`), or the tier cannot carry a
+   * relationship fee (`invalid-plan`).
+   */
+  "payment-method-required",
+  "not-ready-to-complete",
+  "not-the-payer",
+  "charge-declined",
+  "payment-expired",
+  "invalid-plan",
+  /**
    * #533 phase 3 — the membership paying for this relationship ended. Its own code because the
    * answer is not "try again later": the initiator has to subscribe before anything on this
    * relationship moves, and the sentence names the instant it ended.
    */
   "lapsed",
+  /**
+   * #623 — the edit surface's six dead ends, one code each because each has its own sentence.
+   *
+   *   unconfirmed-invalidation  the edit strands answers and nobody has confirmed the count
+   *   answers-sealed            a new Aspect on an answered sheet (a new round is the honest path)
+   *   mode-fixed                `mode`/`setting` on a session that exists (`db:verify` V18)
+   *   seat-claimed              the counterparty's seat is an account binding, not a text field
+   *   invalid-window            the invitation window is not 1..60 whole days
+   *   no-such-version           the pin names no version of this relationship's template
+   *   no-change                 the payload differs from the row in nothing
+   */
+  "unconfirmed-invalidation",
+  "answers-sealed",
+  "mode-fixed",
+  "seat-claimed",
+  "invalid-window",
+  "no-such-version",
+  "no-change",
   "failed",
 ] as const;
 

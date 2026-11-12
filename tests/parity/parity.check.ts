@@ -189,6 +189,18 @@ vi.mock("@/lib/db/admin-audit", () => ({
 }));
 
 /**
+ * `/admin/review`'s three reads (#665). The list is answered empty, like the audit log's: the
+ * boundary case measures the `product.admin` gate, and an empty shelf renders the screen's own
+ * empty state instead of a failure panel. `tests/review-artifacts.test.ts` pins the populated
+ * shapes, and #667's own suite pins the store.
+ */
+vi.mock("@/lib/db/review-artifacts", () => ({
+  listReviewArtifacts: async () => [],
+  readReviewArtifact: async () => null,
+  readReviewIssue: async () => null,
+}));
+
+/**
  * `/admin/broadcast`'s one read, answered with an empty list and zero counts (#507) — the same move
  * again: the boundary case measures the capability gate, and an empty console renders the screen's
  * own idle states. `tests/admin-broadcast.test.ts` is where the populated audience is pinned.

@@ -4,9 +4,11 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +16,14 @@ import type { PageCopy } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
-import { markGroundClass, MARK_ICONS, MarkGlyph } from "@/components/auth/mark-icon";
+import { loginPathFor } from "@/lib/auth/paths";
+import {
+  markBoxClass,
+  markGroundClass,
+  MARK_ICONS,
+  markTileClass,
+  MarkGlyph,
+} from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -53,12 +62,26 @@ export { MARK_ICONS };
  * The server hands over an `AuthMarkSet` (`lib/auth/marks.ts`) — ids, resolved to glyphs by
  * `MARK_ICONS` (`components/auth/mark-icon.tsx`, re-exported above) — and QuizHub's two ids are
  * the two components that used to be written here, so that brand renders what it always rendered.
+ *
+ * **The same view signs people up inside the create flow (#829).** Stage 4 mounts it with
+ * `layout="embedded"`, no hero and no page frame, because a second sign-up form inside the flow
+ * would be a second implementation of the account the flow exists to create. Two props make that
+ * work without a fork: `onSwitchToSignIn` turns the "Back to Login" control into an in-place swap
+ * instead of a navigation to `loginPathFor(destination)` — inside the flow that navigation would
+ * leave the stage column, the review and the draft cookie — and `leaving` routes the two documents
+ * on the last step through `LeavingLink`, since the mount is inside `(mainlayout)` (E39). Both
+ * default to the page's behaviour, which is why `/register` is byte-identical (`pnpm parity`).
  */
 export function RegisterView({
   copy,
   destination,
   marks,
   markSrc,
+  layout = "page",
+  onSwitchToSignIn,
+  leaving = false,
+  initialFirst,
+  initialLast,
 }: {
   copy: PageCopy;
   destination: string;
@@ -68,6 +91,33 @@ export function RegisterView({
    * mark, handed down for every brand and read by the one whose hero names that id.
    */
   markSrc: string;
+  /**
+   * `"page"` is `/register`; `"embedded"` is stage 4 of the create flow (#829), the same prop
+   * `LoginView` grew in #824. Same view, no hero panel and no page frame, sized for the stage
+   * column — one implementation of sign-up rather than a second form inside the flow.
+   */
+  layout?: "page" | "embedded";
+  /**
+   * Swaps to sign-in **in place**. Present, the "Back to login" control is a button that calls
+   * this; absent, it navigates to `loginPathFor(destination)` as it always has. The difference
+   * matters: inside the flow a navigation would drop the draft cookie's stage column and the
+   * review beside it.
+   */
+  onSwitchToSignIn?: () => void;
+  /**
+   * Whether the two documents on the last step leave the app (#540, E39). `false` on `/register`,
+   * which is already outside the dashboard shell. `true` when the form is mounted inside
+   * `(mainlayout)` — stage 4 of the create flow (#829) — because the person is mid-flow and must
+   * not lose the stage they were on. Same prop, same reason, as `LoginView`'s.
+   */
+  leaving?: boolean;
+  /**
+   * The names the flow already knows. Stage 1 collects the Initiator's first and last name, so a
+   * sign-up inside stage 4 opens with them filled in rather than asking the same question twice.
+   * Absent, both are empty, which is what `/register` wants.
+   */
+  initialFirst?: string;
+  initialLast?: string;
 }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -77,8 +127,8 @@ export function RegisterView({
     email: "",
 
     // Step 2: the name, then the credentials.
-    firstName: "",
-    lastName: "",
+    firstName: initialFirst ?? "",
+    lastName: initialLast ?? "",
     password: "",
     confirmPassword: "",
     terms: false,
@@ -184,71 +234,90 @@ export function RegisterView({
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image/Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-action relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
-          <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto">
-              <MarkGlyph id={marks.hero} src={markSrc} className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
-            <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="flex items-center space-x-4 mb-8">
-            {STEPS.map((stepId, index) => (
-              <div key={stepId} className="flex items-center">
-                <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= index + 1 ? "bg-white text-action border-white" : "border-white/50 text-white/70"}`}
-                >
-                  {index + 1}
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div
-                    className={`w-12 h-0.5 mx-2 ${currentStep > index + 1 ? "bg-white" : "bg-white/30"}`}
-                  ></div>
-                )}
+    <div className={layout === "embedded" ? "w-full" : "min-h-screen flex"}>
+      {/* Left Side - Image/Illustration. Page layout only (#829): embedded is a stage column. */}
+      {layout === "embedded" ? null : (
+        <div className="hidden lg:flex lg:w-1/2 bg-action relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
+            <div className="text-center mb-8">
+              <div
+                className={`${markTileClass(marks.hero, "w-24 h-24")} bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto`}
+              >
+                <MarkGlyph
+                  id={marks.hero}
+                  src={markSrc}
+                  className={`${markBoxClass(marks.hero, "w-12 h-12")} text-white`}
+                />
               </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <div className="text-lg font-semibold mb-2">
-              {itemLabel(stepsCopy, STEPS[currentStep - 1])}
+              <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
+              <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
             </div>
-            <div className="text-white/80">{itemValue(stepsCopy, STEPS[currentStep - 1])}</div>
-          </div>
 
-          {/* Decorative Elements */}
-          <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-24 h-24 bg-white/10 rounded-full blur-xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-10 w-16 h-16 bg-white/10 rounded-full blur-lg animate-pulse delay-500"></div>
+            {/* Progress Indicator */}
+            <div className="flex items-center space-x-4 mb-8">
+              {STEPS.map((stepId, index) => (
+                <div key={stepId} className="flex items-center">
+                  <div
+                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= index + 1 ? "bg-white text-action border-white" : "border-white/50 text-white/70"}`}
+                  >
+                    {index + 1}
+                  </div>
+                  {index < STEPS.length - 1 && (
+                    <div
+                      className={`w-12 h-0.5 mx-2 ${currentStep > index + 1 ? "bg-white" : "bg-white/30"}`}
+                    ></div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center">
+              <div className="text-lg font-semibold mb-2">
+                {itemLabel(stepsCopy, STEPS[currentStep - 1])}
+              </div>
+              <div className="text-white/80">{itemValue(stepsCopy, STEPS[currentStep - 1])}</div>
+            </div>
+
+            {/* Decorative Elements */}
+            <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute bottom-20 left-20 w-24 h-24 bg-white/10 rounded-full blur-xl animate-pulse delay-1000"></div>
+            <div className="absolute top-1/2 left-10 w-16 h-16 bg-white/10 rounded-full blur-lg animate-pulse delay-500"></div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Right Side - Registration Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 ">
-        <div className="w-full max-w-lg">
-          {/* The way back to the site, above everything else on the screen. */}
-          <div className="mb-6">
-            <AuthHomeLink label={itemLabel(home, "back")} />
-          </div>
+      <div
+        className={
+          layout === "embedded" ? "w-full" : "w-full lg:w-1/2 flex items-center justify-center p-8 "
+        }
+      >
+        <div className={layout === "embedded" ? "w-full" : "w-full max-w-lg"}>
+          {/* The way back to the site, above everything else. Page layout only: a stage column
+              sits inside the app already, so a "back to site" link there would leave it. */}
+          {layout === "embedded" ? null : (
+            <div className="mb-6">
+              <AuthHomeLink label={itemLabel(home, "back")} />
+            </div>
+          )}
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div
               className={`mx-auto mb-4 w-16 h-16 ${markGroundClass(marks.hero)} rounded-xl flex items-center justify-center`}
             >
-              <MarkGlyph id={marks.hero} src={markSrc} className="w-8 h-8 text-white" />
+              <MarkGlyph
+                id={marks.hero}
+                src={markSrc}
+                className={`${markBoxClass(marks.hero, "w-8 h-8")} text-white`}
+              />
             </div>
             <h1 className="text-3xl font-bold  mb-2">{mobile.heading}</h1>
             <p>{mobile.body}</p>
           </div>
 
           {/* Form Card */}
-          <Card className="shadow-xl border-0">
+          <FormSurface>
             <CardHeader className="pb-6">
               <CardTitle className="text-2xl font-bold">
                 {fillLabel(itemLabel(progressCopy, "label"), {
@@ -386,13 +455,29 @@ export function RegisterView({
                       />
                       <Label htmlFor="terms" className="text-sm ">
                         {itemLabel(account, "agree-prefix")}{" "}
-                        <Link href="/terms" className="text-action hover:underline">
-                          {itemLabel(account, "agree-terms")}
-                        </Link>{" "}
+                        {leaving ? (
+                          <LeavingLink
+                            href="/terms"
+                            label={itemLabel(account, "agree-terms")}
+                            className="text-action hover:underline"
+                          />
+                        ) : (
+                          <Link href="/terms" className="text-action hover:underline">
+                            {itemLabel(account, "agree-terms")}
+                          </Link>
+                        )}{" "}
                         {itemLabel(account, "agree-and")}{" "}
-                        <Link href="/privacy" className="text-action hover:underline">
-                          {itemLabel(account, "agree-privacy")}
-                        </Link>{" "}
+                        {leaving ? (
+                          <LeavingLink
+                            href="/privacy"
+                            label={itemLabel(account, "agree-privacy")}
+                            className="text-action hover:underline"
+                          />
+                        ) : (
+                          <Link href="/privacy" className="text-action hover:underline">
+                            {itemLabel(account, "agree-privacy")}
+                          </Link>
+                        )}{" "}
                         *
                       </Label>
                     </div>
@@ -415,7 +500,21 @@ export function RegisterView({
               )}
 
               <div className="flex justify-between pt-6">
-                <Button variant="outline" onClick={() => router.push("/login")}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // In place when the stage owns the switch (#829); a navigation on /register.
+                    if (onSwitchToSignIn !== undefined && currentStep === 1) {
+                      onSwitchToSignIn();
+                      return;
+                    }
+                    if (onSwitchToSignIn !== undefined) {
+                      setCurrentStep(currentStep - 1);
+                      return;
+                    }
+                    router.push(loginPathFor(destination));
+                  }}
+                >
                   <ArrowLeft className="w-4 h-4" />
                   <span>
                     {currentStep === 1
@@ -442,7 +541,7 @@ export function RegisterView({
                 )}
               </div>
             </CardContent>
-          </Card>
+          </FormSurface>
         </div>
       </div>
     </div>

@@ -18,13 +18,11 @@ import {
   MEMBER_TRIAL_DAYS,
   MemberRefused,
   publishable,
-  publishBasisOf,
   publishViewOf,
   PUBLISH_VIEWS,
   republishable,
   statusAfterSave,
   trialAlreadyRunningMessage,
-  trialEndsAt,
   trialRunningWithoutLiveInvite,
 } from "@/lib/member/publish-basis";
 import { RELATIONSHIP_STATUSES, type RelationshipStatus } from "@/lib/relationship/status";
@@ -37,82 +35,18 @@ describe("the two windows #533 names", () => {
   it("gives a trial fourteen days and an invitation seven", () => {
     expect(MEMBER_TRIAL_DAYS).toBe(14);
     expect(MEMBER_INVITE_TTL_MS).toBe(7 * DAY);
-    expect(trialEndsAt(NOW).toISOString()).toBe("2026-11-18T12:00:00.000Z");
     expect(inviteExpiresAt(NOW).toISOString()).toBe("2026-11-11T12:00:00.000Z");
   });
 });
 
-describe("publishBasisOf", () => {
-  it("starts a trial when the account holds no subscription at all", () => {
-    // `null` is the trial arm and not the checkout arm: a member's first relationship is what the
-    // trial is for, so a first publish must not be met with a paywall.
-    expect(publishBasisOf(null, NOW)).toEqual({
-      kind: "trial",
-      endsAt: new Date("2026-11-18T12:00:00.000Z"),
-    });
-  });
-
-  it("refuses while a trial is running, and names its last instant", () => {
-    // The refusal is what #533's acceptance pastes, so the value carries the instant rather than a
-    // boolean: a screen that says "a trial is already running" without saying until when is a
-    // dead end for the member reading it.
-    const decision = publishBasisOf(
-      { status: "trialing", currentPeriodEnd: "2026-11-18T12:00:00.000Z" },
-      NOW,
-    );
-    expect(decision.kind).toBe("trial-running");
-    expect(decision.kind === "trial-running" && decision.endsAt.toISOString()).toBe(
-      "2026-11-18T12:00:00.000Z",
-    );
-  });
-
-  it("treats the trial's own last instant as already over", () => {
-    // `current_period_end` is outside the window, not the end of it — the same boundary
-    // `trialStateOf` draws (phase 1), which is why one instant decides both.
-    expect(
-      publishBasisOf({ status: "trialing", currentPeriodEnd: NOW.toISOString() }, NOW).kind,
-    ).toBe("checkout");
-  });
-
-  it("asks for a checkout once a trial lapsed, and says which reason", () => {
-    expect(
-      publishBasisOf({ status: "trialing", currentPeriodEnd: "2026-11-01T12:00:00.000Z" }, NOW),
-    ).toEqual({ kind: "checkout", because: "trial-expired" });
-  });
-
-  it("needs nothing when the account already pays — no second charge, no second trial", () => {
-    // The case the card's sentence leaves implicit and the one a paying member hits on their
-    // second relationship.
-    for (const status of ["active", "past_due"] as const) {
-      expect(
-        publishBasisOf({ status, currentPeriodEnd: "2026-12-04T12:00:00.000Z" }, NOW),
-        status,
-      ).toEqual({ kind: "paid" });
-    }
-  });
-
-  it("asks for a checkout for a row that entitles nothing", () => {
-    for (const status of ["canceled", "incomplete"] as const) {
-      expect(
-        publishBasisOf({ status, currentPeriodEnd: "2026-12-04T12:00:00.000Z" }, NOW),
-        status,
-      ).toEqual({ kind: "checkout", because: "no-subscription" });
-    }
-  });
-
-  it("accepts the instant as a Date as well as an ISO string", () => {
-    // The reads return a `Date` from `pg` and a string from JSON, and both reach this function.
-    const fromDate = publishBasisOf(
-      { status: "trialing", currentPeriodEnd: new Date("2026-11-18T12:00:00.000Z") },
-      NOW,
-    );
-    const fromString = publishBasisOf(
-      { status: "trialing", currentPeriodEnd: "2026-11-18T12:00:00.000Z" },
-      NOW,
-    );
-    expect(fromDate).toEqual(fromString);
-  });
-});
+/*
+ * `publishBasisOf` lived here and was removed by #619.
+ *
+ * It answered "does this publish start a trial, open a checkout, or need neither?" — the
+ * charge-at-creation model. Publishing now bills nothing (the invitation is never blocked on a
+ * card), so there is no basis to decide and its seven cases are gone with the trigger. The fee's
+ * own arithmetic is pinned in `tests/flow-payment.test.ts`.
+ */
 
 describe("Aspects", () => {
   it("are editable in the two states before the invitation goes out", () => {

@@ -26,14 +26,22 @@
  * which is the string the store compares — so the post says out loud who it is joining.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { lifecycleStageSection } from "./lifecycle";
 
 export const invitePageCopy: PageCopy = zPageCopy.parse({
   heading: "You have been invited",
   subtitle: "{initiator} wants to compare notes with you on {template}.",
   sections: [
+    /**
+     * The six stage names, **referenced, never re-typed** (#710). The response path renders inside
+     * the flow's modal under the same rail every other stage draws, and `StageRail` asks for this
+     * section — so the invitation's fixture carries the one shared home rather than a second copy
+     * of `Details · Settings · Aspects · Invite · Connect · Align`.
+     */
+    lifecycleStageSection,
     {
       id: "viewer",
-      heading: "You already have a seat in this instance",
+      heading: "You already have a seat in this relationship",
       items: [
         { id: "initiator", label: "You are answering as {name}, the Initiator." },
         { id: "counterparty", label: "You are answering as {name}, the Counterparty." },
@@ -48,10 +56,84 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
         { id: "claim", label: "Accept and answer" },
       ],
     },
+    /**
+     * The onboarding wizard's three screens (#t_0aa81144).
+     *
+     * Before this, the claim dropped the Counterparty straight into the session: no sentence said
+     * who had invited them, what was about to happen, or why they were suddenly being asked for
+     * scores. Each step is one screen with one question answered, addressed by `?step=1|2|3`.
+     *
+     * **Their numbered progress band is gone (#710).** The response renders inside the flow's
+     * modal, under the six-stage rail, because it is stage 5 — Connect — of the *same* journey the
+     * Initiator started. The flow has one progress pattern (the cell rail), so this section now
+     * carries only the two controls the wizard keeps: Back and Continue.
+     *
+     * The copy never says the Counterparty pays, because they never do: `free` says who does.
+     */
+    {
+      id: "steps",
+      items: [
+        { id: "back", label: "Back" },
+        { id: "next", label: "Continue" },
+      ],
+    },
+    {
+      id: "step-1",
+      heading: "What this is",
+      body: "Someone you know wants to compare notes with you. It takes a few minutes, and nothing you write is shown to them until you have both finished.",
+      items: [
+        { id: "invited-by", label: "{initiator} invited you to answer {template}." },
+        {
+          id: "they-see",
+          label:
+            "They answer the same questions from their side. They never see your answers before you submit, and you never see theirs.",
+        },
+        {
+          id: "you-see",
+          label:
+            "You see the questions and your own answers. When you have both finished, you both see the report.",
+        },
+      ],
+    },
+    {
+      id: "step-2",
+      heading: "What happens next",
+      body: "Three things happen in order, and you can stop after any of them.",
+      items: [
+        {
+          id: "you-answer",
+          label: "You answer every question: how it feels now, and how you wish it to be.",
+        },
+        { id: "they-answer", label: "{initiator} answers the same questions from their side." },
+        {
+          id: "report",
+          label:
+            "When you have both answered and accepted, the report opens for both of you: every gap, computed from the two answers.",
+        },
+        {
+          id: "editable",
+          label:
+            "You can change any opinion until you accept the session. After you accept, your answers are sealed.",
+        },
+      ],
+    },
+    {
+      id: "step-3",
+      heading: "Your account",
+      body: "The answers are tied to an account so you can come back to them. If you are already signed in, this is the last step.",
+      items: [
+        { id: "free", label: "Accepting costs you nothing — {initiator} is the one who pays." },
+        { id: "signed-in", label: "You are signed in as {name}." },
+        { id: "sign-in", label: "Sign in to accept {initiator}'s invitation" },
+        { id: "register", label: "Create an account" },
+        { id: "accept", label: "Accept the invitation" },
+        { id: "confirm", label: "I am {counterparty}, and I am joining as the Counterparty." },
+      ],
+    },
     {
       id: "claimed",
       heading: "This invitation was used already",
-      body: "An invitation works once. Ask {initiator} to start a new instance with you.",
+      body: "An invitation works once. Ask {initiator} to start a new relationship with you.",
     },
     {
       id: "expired",
@@ -99,12 +181,12 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "already-a-party",
           label:
-            "Nothing was claimed: this browser already answers as one of the two parties to this instance, so this invitation is not yours to take. The link is still unused.",
+            "Nothing was claimed: this browser already answers as one of the two parties to this relationship, so this invitation is not yours to take. The link is still unused.",
         },
         {
           id: "already-bound",
           label:
-            "This instance already has both parties, so there is no seat left to claim. Ask {initiator} to start a new instance with you.",
+            "This relationship already has both parties, so there is no seat left to claim. Ask {initiator} to start a new relationship with you.",
         },
         {
           id: "unconfirmed",

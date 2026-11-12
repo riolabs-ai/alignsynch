@@ -48,6 +48,7 @@
  * (`dark:bg-gray-300`) measures 10.31:1 on the light card and 12.04:1 on the dark one, and
  * the notches keep the brand colour.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { OpinionKind } from "@/content/assessment";
 import { MODE_LABELS, SETTING_DEFINITIONS, SETTING_LABELS } from "@/content/assessment";
 import type { GapGroup, GapSource, GapSourceSide } from "@/content/gaps";
@@ -431,7 +432,7 @@ export function AssessmentReportView({ report }: { report: AssessmentReport }) {
   const setting = SETTING_LABELS[report.setting];
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
+    <StageColumn>
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{report.title}</h1>
         <p
@@ -448,7 +449,7 @@ export function AssessmentReportView({ report }: { report: AssessmentReport }) {
           <AspectRow key={row.itemId} row={row} limit={report.settingLimit} setting={setting} />
         ))}
       </div>
-    </div>
+    </StageColumn>
   );
 }
 

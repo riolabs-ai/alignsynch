@@ -132,6 +132,12 @@ const stub = vi.hoisted(() => {
   interface InviteRow {
     readonly email: string;
     readonly counterparty_name: string;
+    /**
+     * #691 — when the invitation was minted. The Sent screen's timeline dates its first moment from
+     * it, so the bundle selects it beside `expires_at`; absent here means a fixture written before
+     * that screen, which the projection defaults to "no date drawn".
+     */
+    readonly created_at?: Date;
     readonly claimed_at: Date | null;
     readonly expires_at: Date;
     readonly resent_at: Date | null;
@@ -196,7 +202,7 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("SELECT id, status, initiator_user_id, expired_at, lapse_reason")) {
       return { rows: [], rowCount: 0 };
     }
-    if (sql.startsWith("SELECT email, counterparty_name, claimed_at")) {
+    if (sql.startsWith("SELECT email, counterparty_name, created_at")) {
       return { rows: state.invite === undefined ? [] : [state.invite], rowCount: 1 };
     }
     if (sql.startsWith("SELECT p.role, (SELECT count(*) FROM opinion o")) {
@@ -243,6 +249,9 @@ const stub = vi.hoisted(() => {
 
 vi.mock("@/lib/db/client", () => ({
   getPool: () => ({ query: stub.query }),
+  // #619 — the screen's read also asks `relationship_payment`; this suite's stub answers every
+  // relationship query, so the payment read finds no row and the status stays what it was.
+  queryRows: async () => [],
   DatabaseUnavailableError: class DatabaseUnavailableError extends Error {},
 }));
 
@@ -301,6 +310,8 @@ function unclaimedInvitation(over: Partial<NonNullable<(typeof stub.state)["invi
   stub.state.invite = {
     email: "rowan@example.com",
     counterparty_name: "Rowan",
+    // #691 — the mint instant the Sent screen dates its first timeline moment from.
+    created_at: new Date("2026-11-08T09:00:00.000Z"),
     claimed_at: null,
     expires_at: EXPIRES_AT,
     resent_at: null,
@@ -323,7 +334,7 @@ describe("the instance bundle reads the invitation's deadline", () => {
     await initiatorScreen(BEFORE_EXPIRY);
 
     const [bundleQuery] = callsMatching(
-      /^SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count, revoked_at FROM session_invite/,
+      /^SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count, revoked_at FROM session_invite/,
     );
     expect(bundleQuery).toBeDefined();
     expect(bundleQuery.values).toEqual([INSTANCE_ID]);

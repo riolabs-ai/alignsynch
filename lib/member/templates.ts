@@ -33,7 +33,7 @@
  * the chosen template into a private record that the relationship names (`template_id`), and the
  * two list reads below exclude exactly those rows — `visibility = 'private' AND EXISTS
  * (relationship.template_id = r.id)`. Without the exclusion every relationship would add a phantom
- * "template" to this screen and to `/assessment/templates`, and a published *public* template a
+ * "template" to this screen and to `/templates/relationship`, and a published *public* template a
  * relationship copies is unaffected because its visibility is not private.
  */
 import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";

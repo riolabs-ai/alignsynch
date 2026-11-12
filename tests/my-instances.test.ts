@@ -270,7 +270,7 @@ describe("signed in", () => {
     const html = await render();
     const text = textOf(html);
 
-    expect(text).toContain("My Relationships");
+    expect(text).toContain("Your relationships");
     expect(text).toContain("Start a relationship");
     expect(text).not.toMatch(/assessment/i);
     expect(text).toContain("read the Gap once you&#x27;ve both accepted");
@@ -618,14 +618,14 @@ describe("the console's filter (Console 2/5)", () => {
   });
 });
 
-describe("the metric row (#409)", () => {
+describe("the metric row (#409, #795 F4)", () => {
   const signedIn = {
     userId: "52dfe892-be03-421b-ac34-1b35d74633dc",
     email: "initiator@demo.alignsynch.test",
     name: "Avery",
   };
 
-  it("prints `—` for a relationship with no scored session, and never `0`", async () => {
+  it("says `No scored session yet` where a relationship has no Gap, and never `0`", async () => {
     currentUser.mockResolvedValue(signedIn);
     listRelationshipCards.mockResolvedValue([unscoredRow]);
 
@@ -633,12 +633,10 @@ describe("the metric row (#409)", () => {
 
     // Named row: `relationship-5e7cf07d-…` (slug `relationship-basics-5e7cf07d`) has one session
     // open and none complete, so its alignment has no figure at all.
-    expect(row).toContain("Avg alignment");
-    expect(row).toContain("—");
+    expect(row).toContain("No scored session yet");
     expect(row).not.toContain("0.0");
     // Sessions does have a figure — 0 completed of 1 opened is a count of cycles, not a score.
-    expect(row).toContain("0 of 1");
-    expect(row).toContain("0%");
+    expect(row).toContain("0 of 1 Sessions");
   });
 
   it("prints the completed mean Gap, to one decimal, when the session is scored", async () => {
@@ -646,10 +644,20 @@ describe("the metric row (#409)", () => {
     listRelationshipCards.mockResolvedValue([completeRow]);
 
     const row = rowText(await render(), "complete");
-    expect(row).toContain("1.4");
-    expect(row).toContain("1 of 1");
-    expect(row).toContain("100%");
-    expect(row).toContain("5");
+    expect(row).toContain("Avg alignment 1.4");
+    expect(row).toContain("1 of 1 Sessions");
+    expect(row).toContain("5 Aspects");
+    // The tiles' percentage is gone with the tiles: `N of M` states the proportion once.
+    expect(row).not.toContain("100%");
+  });
+
+  it("prints the figures as one meta line, not a tile grid", async () => {
+    currentUser.mockResolvedValue(signedIn);
+    listRelationshipCards.mockResolvedValue([completeRow]);
+
+    const html = await render();
+    expect(html).toContain('class="flex flex-wrap items-center gap-2 text-xs text-gray-500');
+    expect(html).not.toMatch(/<dl[^>]*class="[^"]*grid-cols-2/);
   });
 
   it("draws what was paid on the Initiator's card and nothing at all for anybody else", async () => {

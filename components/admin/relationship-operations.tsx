@@ -1,19 +1,17 @@
 "use client";
 
 /**
- * template-ancestor: components/my-quizzes/quiz-details.tsx   (variation: the detail screen's per-row actions become five audited repairs — each band is a form with a required reason, the row's own facts decide which are offered, and the result is a refusal sentence or a one-time link)
+ * template-ancestor: components/my-quizzes/quiz-details.tsx   (variation: the detail screen's per-row actions become five audited repairs — each band is a form, the row's own facts decide which are offered, and the result is a refusal sentence or a one-time link)
  *
  * `/admin/instances/[id]` — the five relationship repairs (#503).
  *
  * The screen is the operator's answer to "this relationship is stuck": a header with the row's own
  * facts, the two seats with the three facts the repairs act on, the invitation, and then five
- * bands — unlock, reissue, withdraw, void, accept-on-behalf — each its own form with its own
- * reason.
+ * bands — unlock, reissue, withdraw, void, accept-on-behalf — each its own form.
  *
- * **The reason is a form field and a contract.** `minLength={reasonMin}` is the browser's
- * help, and it is not the enforcement: `act()` trims and refuses under eight characters before it
- * opens a transaction, and the same refusal maps back to a sentence here (`reason-too-short`). A
- * form attribute a caller can strip is a hint, never a rule.
+ * **A reason is optional, and the bands ask for none** (#732). `act()` records one when a caller
+ * still has it and `NULL` when nobody does, so a repair is a button, not a paragraph to write
+ * before the button works.
  *
  * **Which bands are offered comes from the row, which the row itself does not guarantee.** A seat
  * with no unlock mark offers nothing to clear; a claimed or missing invitation offers nothing to
@@ -69,6 +67,8 @@ type Phase = { readonly kind: "idle" } | { readonly kind: "done"; readonly outco
 const STATUS_COPY_ID: Record<InstanceStatus, string> = {
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
+  /* #619 — sealed and unpaid: the console reads it as its own state, not as an error. */
+  awaiting_payment: "awaiting-payment",
   complete: "complete",
   voided: "voided",
 };
@@ -162,7 +162,6 @@ function RepairBand({
   disabledReason,
   seatPicker,
   emailField,
-  reasonMin,
   onResult,
 }: {
   section: PageCopySection;
@@ -174,11 +173,8 @@ function RepairBand({
   disabledReason: string | null;
   seatPicker?: readonly AdminSeat[];
   emailField?: string | null;
-  /** `REASON_MIN_LENGTH`, handed down: importing it here would pull `pg` into the bundle (E34). */
-  reasonMin: number;
   onResult: (outcome: RepairOutcome) => void;
 }) {
-  const [reason, setReason] = useState("");
   const [seat, setSeat] = useState(seatPicker?.[0]?.role ?? "initiator");
   const [email, setEmail] = useState(emailField ?? "");
   const [busy, setBusy] = useState(false);
@@ -189,7 +185,6 @@ function RepairBand({
     const input: RepairInput = {
       repair,
       instanceRecordId,
-      reason,
       ...(repair === "unlock" || repair === "force-close" ? { role: seat } : {}),
       ...(repair === "resend" ? { email } : {}),
     };
@@ -197,7 +192,6 @@ function RepairBand({
     void action(input)
       .then((outcome) => {
         onResult(outcome);
-        if (outcome.ok) setReason("");
       })
       .finally(() => setBusy(false));
   };
@@ -241,21 +235,6 @@ function RepairBand({
               />
             </div>
           )}
-          <div className="space-y-1">
-            <Label htmlFor={`${repair}-reason`}>{itemLabel(formCopy, "reason")}</Label>
-            <Input
-              id={`${repair}-reason`}
-              name="reason"
-              required
-              minLength={reasonMin}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              autoComplete="off"
-            />
-            <p className="text-xs text-muted-foreground">
-              {say(formCopy, "reason-short", { min: reasonMin })}
-            </p>
-          </div>
           <Button type="submit" disabled={disabled || busy} variant="outline">
             {busy ? itemLabel(formCopy, "submitting") : itemLabel(section, "button")}
           </Button>
@@ -272,14 +251,11 @@ export function RelationshipOperations({
   copy,
   detail,
   action,
-  reasonMin,
 }: {
   copy: PageCopy;
   detail: AdminRelationshipDetail;
   /** The server action. Passed in rather than imported so this module never reaches `app/`. */
   action: (input: RepairInput) => Promise<RepairOutcome>;
-  /** `REASON_MIN_LENGTH` from the server page — importing it here would pull `pg` in (E34). */
-  reasonMin: number;
 }) {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
 
@@ -420,7 +396,6 @@ export function RelationshipOperations({
       <div className="grid gap-4 lg:grid-cols-2">
         <RepairBand
           section={unlockBand}
-          reasonMin={reasonMin}
           formCopy={formCopy}
           repair={repairOfBand(unlockBand)}
           instanceRecordId={detail.instanceRecordId}
@@ -432,7 +407,6 @@ export function RelationshipOperations({
         />
         <RepairBand
           section={resendBand}
-          reasonMin={reasonMin}
           formCopy={formCopy}
           repair={repairOfBand(resendBand)}
           instanceRecordId={detail.instanceRecordId}
@@ -457,7 +431,6 @@ export function RelationshipOperations({
         />
         <RepairBand
           section={revokeBand}
-          reasonMin={reasonMin}
           formCopy={formCopy}
           repair={repairOfBand(revokeBand)}
           instanceRecordId={detail.instanceRecordId}
@@ -474,7 +447,6 @@ export function RelationshipOperations({
         />
         <RepairBand
           section={voidBand}
-          reasonMin={reasonMin}
           formCopy={formCopy}
           repair={repairOfBand(voidBand)}
           instanceRecordId={detail.instanceRecordId}
@@ -485,7 +457,6 @@ export function RelationshipOperations({
         />
         <RepairBand
           section={forceBand}
-          reasonMin={reasonMin}
           formCopy={formCopy}
           repair={repairOfBand(forceBand)}
           instanceRecordId={detail.instanceRecordId}

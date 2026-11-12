@@ -28,15 +28,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { RelationshipOperations } from "@/components/admin/relationship-operations";
+import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
 import { adminRelationshipPageCopy } from "@/data/pages/admin-relationship";
 import { ADMIN_INSTANCES_PATH } from "@/lib/admin/instance-registry";
-import { REASON_MIN_LENGTH } from "@/lib/admin/act";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { readAdminRelationship } from "@/lib/db/admin-relationship";
+import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 
-import { performRepair } from "./actions";
+import { editRelationshipAsStaff, performRepair, previewRelationshipEditAsStaff } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ export default async function AdminRelationshipPage({
   params: Promise<{ id: string }>;
 }) {
   requireAdminProduct();
-  await requireAdmin({ next: `${ADMIN_INSTANCES_PATH}/[id]` });
+  const { user } = await requireAdmin({ next: `${ADMIN_INSTANCES_PATH}/[id]` });
 
   const { id } = await params;
 
@@ -76,12 +77,42 @@ export default async function AdminRelationshipPage({
 
   if (detail === undefined) notFound();
 
+  /*
+   * #623 — the console's edit surface, read as staff on somebody else's row.
+   *
+   * A separate read from `detail` because it is a separate question (every editable field, the
+   * pin's versions and the per-seat answer counts), and a failure here must not turn a repair
+   * screen into a 404: the five repairs stay usable while the edit band is absent.
+   */
+  let editState: Awaited<ReturnType<typeof readRelationshipEditState>>;
+  try {
+    editState = await readRelationshipEditState({
+      actorUserId: user.userId,
+      relationshipId: detail.relationshipId,
+      audience: "staff",
+    });
+  } catch (error) {
+    if (!(error instanceof DatabaseUnavailableError)) throw error;
+    console.error("admin-relationship: the edit state could not be read", error);
+    editState = undefined;
+  }
+
   return (
-    <RelationshipOperations
-      copy={adminRelationshipPageCopy}
-      detail={detail}
-      action={performRepair}
-      reasonMin={REASON_MIN_LENGTH}
-    />
+    <div className="space-y-6">
+      <RelationshipOperations
+        copy={adminRelationshipPageCopy}
+        detail={detail}
+        action={performRepair}
+      />
+      {editState === undefined || editState.closed ? null : (
+        <RelationshipEditPanel
+          copy={adminRelationshipPageCopy}
+          state={editState}
+          instanceRecordId={detail.instanceRecordId}
+          onPreview={previewRelationshipEditAsStaff}
+          onEdit={editRelationshipAsStaff}
+        />
+      )}
+    </div>
   );
 }

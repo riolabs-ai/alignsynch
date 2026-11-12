@@ -75,6 +75,22 @@ export interface FlowInvite {
    */
   readonly expiresAt: string;
   /**
+   * **When** the invitation was minted — the row's `created_at`, as an ISO instant (#691).
+   *
+   * The Sent screen's timeline dates its first moment from this, and it is the one instant a
+   * re-invite does not move: `resent_at` dates the live token, `created_at` dates the invitation.
+   *
+   * Optional for the same reason `FlowSeat.impersonated` is: the screen fixtures written before
+   * this field existed stay valid, and the production read always supplies it. A projection
+   * without it draws the timeline's first moment undated rather than inventing a date.
+   */
+  readonly sentAt?: string;
+  /**
+   * **When** the seat was filled — the row's `claimed_at`, as an ISO instant, or `null` while the
+   * invitation is unclaimed (#691). Optional for the same reason as `sentAt`.
+   */
+  readonly claimedAt?: string | null;
+  /**
    * **Which** of the three states the invitation is in, derived at read time by
    * `inviteStateOf()` — `unclaimed`, `expired` or `claimed` (#266).
    *
@@ -210,6 +226,15 @@ export interface ProjectInput {
    * "nothing known", which renders as no band rather than as a lapse.
    */
   readonly membership?: Membership | null;
+  /**
+   * #619 — does the relationship's fee arm completion? `undefined` is "not measured" (a
+   * relationship created before `relationship_payment` existed), `false` is "sealed and unpaid",
+   * which is the difference between `complete` and `awaiting_payment`.
+   *
+   * Optional for the same reason `membership` is: a projection built before this field existed
+   * still type-checks, and absent means nobody asked — never "paid" and never "unpaid".
+   */
+  readonly paymentArmed?: boolean;
 }
 
 /** The party row for a role, or `undefined` — the caller's "not your instance" branch. */
@@ -284,7 +309,9 @@ export function projectScreen(input: ProjectInput): FlowScreen {
   }
 
   const progress = progressOf(rows);
-  const status = instanceStatusOf(progress);
+  // #619 — the fee is the last gate: both sheets sealed and no money on file is `awaiting_payment`,
+  // with the report still shut and the blind rule still in force.
+  const status = instanceStatusOf({ ...progress, paymentArmed: input.paymentArmed });
 
   // The report is built from the same rows the read path always builds from, and only when
   // every party has answered every Aspect — `zAssessmentInstance` would reject a partial

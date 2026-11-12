@@ -1,0 +1,829 @@
+[
+  {
+    "name": "details",
+    "width": 390,
+    "height": 844,
+    "file": "docs/qa-modal-mobile/details-390.png",
+    "url": "/assessment/templates/assessment-relationship-basics/create",
+    "shell": true,
+    "overflowX": false,
+    "docScrollWidth": 390,
+    "bodyScrollWidth": 390,
+    "panel": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    "scroller": {
+      "x": 0,
+      "y": 60,
+      "w": 390,
+      "h": 784,
+      "clientH": 784,
+      "scrollH": 1349,
+      "clientW": 390,
+      "scrollW": 390
+    },
+    "rail": {
+      "cells": 6,
+      "bandWidth": 358,
+      "oneRow": true,
+      "labelsSpillingTheirCell": 0,
+      "cellWidth": 59.3,
+      "cellHeight": 37
+    },
+    "close": {
+      "w": 44,
+      "h": 44,
+      "right": 8,
+      "top": 8,
+      "label": "Close"
+    },
+    "closeOverlap": {
+      "hits": [],
+      "before": [
+        {
+          "tag": "span",
+          "label": "Align (the rail's sixth cell)",
+          "hit": {
+            "w": 35,
+            "h": 35,
+            "area": 1225
+          }
+        }
+      ],
+      "note": "box of every link, heading, cell, input and paragraph the 44px close covers at 390, area > 20px². `before` was measured on origin/main 2dd69e24."
+    },
+    "h1": "Create a relationship",
+    "actions390x844": [
+      {
+        "tag": "a",
+        "label": "Back",
+        "h": 44,
+        "w": 324,
+        "top": 1280,
+        "bottom": 1324,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(55, 65, 81)",
+        "visibleInViewport": false
+      },
+      {
+        "tag": "button",
+        "label": "Continue to mode and setting",
+        "h": 44,
+        "w": 324,
+        "top": 1332,
+        "bottom": 1376,
+        "disabled": false,
+        "bg": "rgb(55, 71, 79)",
+        "clr": "rgb(255, 255, 255)",
+        "visibleInViewport": false
+      }
+    ],
+    "reach390x500": {
+      "viewport": {
+        "w": 390,
+        "h": 500
+      },
+      "file": "docs/qa-modal-mobile/details-390x500.png",
+      "overflowX": false,
+      "docScrollWidth": 390,
+      "scroller": {
+        "x": 0,
+        "y": 60,
+        "w": 390,
+        "h": 440,
+        "clientH": 440,
+        "scrollH": 1349,
+        "clientW": 390,
+        "scrollW": 390
+      },
+      "scrollToBottom": {
+        "scrollTop": 909,
+        "scrollHeight": 1349,
+        "clientHeight": 440
+      },
+      "primary": {
+        "label": "Continue to mode and setting",
+        "top": 423,
+        "bottom": 467,
+        "inViewport": true
+      },
+      "rows": [
+        {
+          "label": "Back",
+          "top": 371,
+          "bottom": 415,
+          "inViewport": true
+        },
+        {
+          "label": "Continue to mode and setting",
+          "top": 423,
+          "bottom": 467,
+          "inViewport": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "settings",
+    "width": 390,
+    "height": 844,
+    "file": "docs/qa-modal-mobile/settings-390.png",
+    "url": "/assessment/templates/assessment-relationship-basics/create/mode",
+    "shell": true,
+    "overflowX": false,
+    "docScrollWidth": 390,
+    "bodyScrollWidth": 390,
+    "panel": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    "scroller": {
+      "x": 0,
+      "y": 60,
+      "w": 390,
+      "h": 784,
+      "clientH": 784,
+      "scrollH": 902,
+      "clientW": 390,
+      "scrollW": 390
+    },
+    "rail": {
+      "cells": 6,
+      "bandWidth": 358,
+      "oneRow": true,
+      "labelsSpillingTheirCell": 0,
+      "cellWidth": 59.3,
+      "cellHeight": 37
+    },
+    "close": {
+      "w": 44,
+      "h": 44,
+      "right": 8,
+      "top": 8,
+      "label": "Close"
+    },
+    "closeOverlap": {
+      "hits": [],
+      "before": [
+        {
+          "tag": "p",
+          "label": "Back to who",
+          "hit": {
+            "w": 36,
+            "h": 21,
+            "area": 738
+          }
+        }
+      ],
+      "note": "box of every link, heading, cell, input and paragraph the 44px close covers at 390, area > 20px². `before` was measured on origin/main 2dd69e24."
+    },
+    "h1": "Mode and setting",
+    "actions390x844": [
+      {
+        "tag": "a",
+        "label": "Back to who",
+        "h": 17,
+        "w": 82,
+        "top": 77,
+        "bottom": 94,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(55, 71, 79)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Continue to aspects",
+        "h": 44,
+        "w": 324,
+        "top": 845,
+        "bottom": 889,
+        "disabled": false,
+        "bg": "rgb(55, 71, 79)",
+        "clr": "rgb(255, 255, 255)",
+        "visibleInViewport": false
+      }
+    ],
+    "reach390x500": {
+      "viewport": {
+        "w": 390,
+        "h": 500
+      },
+      "file": "docs/qa-modal-mobile/settings-390x500.png",
+      "overflowX": false,
+      "docScrollWidth": 390,
+      "scroller": {
+        "x": 0,
+        "y": 60,
+        "w": 390,
+        "h": 440,
+        "clientH": 440,
+        "scrollH": 902,
+        "clientW": 390,
+        "scrollW": 390
+      },
+      "scrollToBottom": {
+        "scrollTop": 462,
+        "scrollHeight": 902,
+        "clientHeight": 440
+      },
+      "primary": {
+        "label": "Continue to aspects",
+        "top": 383,
+        "bottom": 427,
+        "inViewport": true
+      },
+      "rows": [
+        {
+          "label": "Back to who",
+          "top": -385,
+          "bottom": -368,
+          "inViewport": false
+        },
+        {
+          "label": "Continue to aspects",
+          "top": 383,
+          "bottom": 427,
+          "inViewport": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "aspects",
+    "width": 390,
+    "height": 844,
+    "file": "docs/qa-modal-mobile/aspects-390.png",
+    "url": "/assessment/templates/assessment-relationship-basics/create/aspects",
+    "shell": true,
+    "overflowX": false,
+    "docScrollWidth": 390,
+    "bodyScrollWidth": 390,
+    "panel": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    "scroller": {
+      "x": 0,
+      "y": 60,
+      "w": 390,
+      "h": 784,
+      "clientH": 784,
+      "scrollH": 824,
+      "clientW": 390,
+      "scrollW": 390
+    },
+    "rail": {
+      "cells": 6,
+      "bandWidth": 358,
+      "oneRow": true,
+      "labelsSpillingTheirCell": 0,
+      "cellWidth": 59.3,
+      "cellHeight": 37
+    },
+    "close": {
+      "w": 44,
+      "h": 44,
+      "right": 8,
+      "top": 8,
+      "label": "Close"
+    },
+    "closeOverlap": {
+      "hits": [],
+      "before": [
+        {
+          "tag": "p",
+          "label": "Back to mode",
+          "hit": {
+            "w": 36,
+            "h": 21,
+            "area": 738
+          }
+        }
+      ],
+      "note": "box of every link, heading, cell, input and paragraph the 44px close covers at 390, area > 20px². `before` was measured on origin/main 2dd69e24."
+    },
+    "h1": "Aspects",
+    "actions390x844": [
+      {
+        "tag": "a",
+        "label": "Back to mode",
+        "h": 17,
+        "w": 91,
+        "top": 77,
+        "bottom": 94,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(55, 71, 79)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Reorder How much time do you spend together in a normal week",
+        "h": 44,
+        "w": 32,
+        "top": 422,
+        "bottom": 466,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(156, 163, 175)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "How much time do you spend together in a normal week?Rare↔Co",
+        "h": 46,
+        "w": 266,
+        "top": 421,
+        "bottom": 467,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(54, 61, 73)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Reorder How is the work of the household divided?",
+        "h": 44,
+        "w": 32,
+        "top": 494,
+        "bottom": 538,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(156, 163, 175)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "How is the work of the household divided?All mine↔Evenly spl",
+        "h": 46,
+        "w": 266,
+        "top": 493,
+        "bottom": 539,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(54, 61, 73)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Reorder How are money and the decisions about it handled?",
+        "h": 44,
+        "w": 32,
+        "top": 566,
+        "bottom": 610,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(156, 163, 175)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "How are money and the decisions about it handled?Kept separa",
+        "h": 46,
+        "w": 266,
+        "top": 565,
+        "bottom": 611,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(54, 61, 73)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Reorder When there is a disagreement, how is it raised?",
+        "h": 44,
+        "w": 32,
+        "top": 638,
+        "bottom": 682,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(156, 163, 175)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "When there is a disagreement, how is it raised?Left unsaid↔S",
+        "h": 46,
+        "w": 266,
+        "top": 637,
+        "bottom": 683,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(54, 61, 73)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Reorder How often do you show affection?",
+        "h": 44,
+        "w": 32,
+        "top": 710,
+        "bottom": 754,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(156, 163, 175)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "How often do you show affection?Rarely↔Often",
+        "h": 46,
+        "w": 266,
+        "top": 709,
+        "bottom": 755,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(54, 61, 73)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "a",
+        "label": "Continue to create",
+        "h": 44,
+        "w": 358,
+        "top": 784,
+        "bottom": 828,
+        "disabled": false,
+        "bg": "rgb(55, 71, 79)",
+        "clr": "rgb(255, 255, 255)",
+        "visibleInViewport": true
+      }
+    ],
+    "reach390x500": {
+      "viewport": {
+        "w": 390,
+        "h": 500
+      },
+      "file": "docs/qa-modal-mobile/aspects-390x500.png",
+      "overflowX": false,
+      "docScrollWidth": 390,
+      "scroller": {
+        "x": 0,
+        "y": 60,
+        "w": 390,
+        "h": 440,
+        "clientH": 440,
+        "scrollH": 824,
+        "clientW": 390,
+        "scrollW": 390
+      },
+      "scrollToBottom": {
+        "scrollTop": 384,
+        "scrollHeight": 824,
+        "clientHeight": 440
+      },
+      "primary": {
+        "label": "Continue to create",
+        "top": 400,
+        "bottom": 444,
+        "inViewport": true
+      },
+      "rows": [
+        {
+          "label": "Back to mode",
+          "top": -307,
+          "bottom": -290,
+          "inViewport": false
+        },
+        {
+          "label": "How much time do you spend together in a normal we",
+          "top": 37,
+          "bottom": 83,
+          "inViewport": true
+        },
+        {
+          "label": "How is the work of the household divided?All mine↔",
+          "top": 109,
+          "bottom": 155,
+          "inViewport": true
+        },
+        {
+          "label": "How are money and the decisions about it handled?K",
+          "top": 181,
+          "bottom": 227,
+          "inViewport": true
+        },
+        {
+          "label": "When there is a disagreement, how is it raised?Lef",
+          "top": 253,
+          "bottom": 299,
+          "inViewport": true
+        },
+        {
+          "label": "How often do you show affection?Rarely↔Often",
+          "top": 325,
+          "bottom": 371,
+          "inViewport": true
+        },
+        {
+          "label": "Continue to create",
+          "top": 400,
+          "bottom": 444,
+          "inViewport": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "invite",
+    "width": 390,
+    "height": 844,
+    "file": "docs/qa-modal-mobile/invite-390.png",
+    "url": "/assessment/templates/assessment-relationship-basics/create/commit",
+    "shell": true,
+    "overflowX": false,
+    "docScrollWidth": 390,
+    "bodyScrollWidth": 390,
+    "panel": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    "scroller": {
+      "x": 0,
+      "y": 60,
+      "w": 390,
+      "h": 784,
+      "clientH": 784,
+      "scrollH": 1268,
+      "clientW": 390,
+      "scrollW": 390
+    },
+    "rail": {
+      "cells": 6,
+      "bandWidth": 358,
+      "oneRow": true,
+      "labelsSpillingTheirCell": 0,
+      "cellWidth": 59.3,
+      "cellHeight": 37
+    },
+    "close": {
+      "w": 44,
+      "h": 44,
+      "right": 8,
+      "top": 8,
+      "label": "Close"
+    },
+    "closeOverlap": {
+      "hits": [],
+      "before": [
+        {
+          "tag": "p",
+          "label": "Back to aspects",
+          "hit": {
+            "w": 36,
+            "h": 21,
+            "area": 738
+          }
+        }
+      ],
+      "note": "box of every link, heading, cell, input and paragraph the 44px close covers at 390, area > 20px². `before` was measured on origin/main 2dd69e24."
+    },
+    "h1": "Create the relationship",
+    "actions390x844": [
+      {
+        "tag": "a",
+        "label": "Back to aspects",
+        "h": 17,
+        "w": 106,
+        "top": 77,
+        "bottom": 94,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(55, 71, 79)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "a",
+        "label": "Add a payment method",
+        "h": 17,
+        "w": 156,
+        "top": 730,
+        "bottom": 747,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(55, 71, 79)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Create relationship and send invite",
+        "h": 44,
+        "w": 324,
+        "top": 843,
+        "bottom": 887,
+        "disabled": false,
+        "bg": "rgb(55, 71, 79)",
+        "clr": "rgb(255, 255, 255)",
+        "visibleInViewport": true
+      }
+    ],
+    "reach390x500": {
+      "viewport": {
+        "w": 390,
+        "h": 500
+      },
+      "file": "docs/qa-modal-mobile/invite-390x500.png",
+      "overflowX": false,
+      "docScrollWidth": 390,
+      "scroller": {
+        "x": 0,
+        "y": 60,
+        "w": 390,
+        "h": 440,
+        "clientH": 440,
+        "scrollH": 1268,
+        "clientW": 390,
+        "scrollW": 390
+      },
+      "scrollToBottom": {
+        "scrollTop": 828,
+        "scrollHeight": 1268,
+        "clientHeight": 440
+      },
+      "primary": {
+        "label": "Create relationship and send invite",
+        "top": 15,
+        "bottom": 59,
+        "inViewport": true
+      },
+      "rows": [
+        {
+          "label": "Back to aspects",
+          "top": -751,
+          "bottom": -734,
+          "inViewport": false
+        },
+        {
+          "label": "Add a payment method",
+          "top": -98,
+          "bottom": -81,
+          "inViewport": false
+        },
+        {
+          "label": "Create relationship and send invite",
+          "top": 15,
+          "bottom": 59,
+          "inViewport": true
+        }
+      ]
+    }
+  },
+  {
+    "name": "account-gate",
+    "width": 390,
+    "height": 844,
+    "file": "docs/qa-modal-mobile/account-gate-390.png",
+    "url": "/assessment/templates/assessment-relationship-basics/create/account?instance=1bcfc9a4-ba09-4a26-9d24-8bc1756384d8",
+    "shell": true,
+    "overflowX": false,
+    "docScrollWidth": 390,
+    "bodyScrollWidth": 390,
+    "panel": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    "scroller": {
+      "x": 0,
+      "y": 60,
+      "w": 390,
+      "h": 784,
+      "clientH": 784,
+      "scrollH": 845,
+      "clientW": 390,
+      "scrollW": 390
+    },
+    "rail": null,
+    "close": {
+      "w": 44,
+      "h": 44,
+      "right": 8,
+      "top": 8,
+      "label": "Close"
+    },
+    "closeOverlap": {
+      "hits": [],
+      "before": [],
+      "note": "box of every link, heading, cell, input and paragraph the 44px close covers at 390, area > 20px². `before` was measured on origin/main 2dd69e24."
+    },
+    "h1": "Keep this relationship — create your account",
+    "actions390x844": [
+      {
+        "tag": "a",
+        "label": "Back to the relationship",
+        "h": 17,
+        "w": 157,
+        "top": 77,
+        "bottom": 94,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(55, 71, 79)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Create account",
+        "h": 38,
+        "w": 126,
+        "top": 435,
+        "bottom": 473,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(17, 24, 39)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "a",
+        "label": "Sign in",
+        "h": 38,
+        "w": 69,
+        "top": 435,
+        "bottom": 473,
+        "disabled": false,
+        "bg": "rgba(0, 0, 0, 0)",
+        "clr": "rgb(75, 85, 99)",
+        "visibleInViewport": true
+      },
+      {
+        "tag": "button",
+        "label": "Create account and continue",
+        "h": 44,
+        "w": 225,
+        "top": 828,
+        "bottom": 872,
+        "disabled": false,
+        "bg": "rgb(55, 71, 79)",
+        "clr": "rgb(255, 255, 255)",
+        "visibleInViewport": true
+      }
+    ],
+    "reach390x500": {
+      "viewport": {
+        "w": 390,
+        "h": 500
+      },
+      "file": "docs/qa-modal-mobile/account-gate-390x500.png",
+      "overflowX": false,
+      "docScrollWidth": 390,
+      "scroller": {
+        "x": 0,
+        "y": 60,
+        "w": 390,
+        "h": 440,
+        "clientH": 440,
+        "scrollH": 845,
+        "clientW": 390,
+        "scrollW": 390
+      },
+      "scrollToBottom": {
+        "scrollTop": 405,
+        "scrollHeight": 845,
+        "clientHeight": 440
+      },
+      "primary": {
+        "label": "Create account and continue",
+        "top": 423,
+        "bottom": 467,
+        "inViewport": true
+      },
+      "rows": [
+        {
+          "label": "Back to the relationship",
+          "top": -328,
+          "bottom": -311,
+          "inViewport": false
+        },
+        {
+          "label": "Create account",
+          "top": 30,
+          "bottom": 68,
+          "inViewport": true
+        },
+        {
+          "label": "Sign in",
+          "top": 30,
+          "bottom": 68,
+          "inViewport": true
+        },
+        {
+          "label": "Create account and continue",
+          "top": 423,
+          "bottom": 467,
+          "inViewport": true
+        }
+      ]
+    }
+  }
+]

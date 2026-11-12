@@ -1,5 +1,11 @@
 # The two-party flow (#146)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › The two-party flow · prev [Data model](DATA-MODEL.md) · next [Stages](STAGES.md)
+
+<!-- docs-nav:end -->
+
 The first version two people use: an Initiator creates an Instance from a published Template,
 invites the Counterparty, both answer Feel and Wish on every Aspect, and the Gap unlocks for both
 at the instant both have submitted.
@@ -8,18 +14,44 @@ at the instant both have submitted.
 
 ## The routes
 
-| Route                                        | Method | What it does                                                              |
-| -------------------------------------------- | ------ | ------------------------------------------------------------------------- |
-| `/assessment`                                | GET    | the published Templates, each with its own create form                    |
-| `/assessment/new`                            | POST   | create an Instance (one transaction), then 303 to the screen              |
-| `/assessment/instances/[instanceId]`         | GET    | the one screen both parties share — answer, waiting, or report            |
-| `/assessment/instances/[instanceId]/answers` | POST   | one party's whole sheet, or **409** when the answers are frozen           |
-| `/assessment/instances/[instanceId]/invite`  | POST   | reissue an unclaimed invitation: new token, old link dead (**#275**)      |
-| `/invite/[token]`                            | GET    | what the invitation says; **claims nothing**                              |
-| `/invite/[token]/claim`                      | POST   | spend the single-use invitation, bind the Counterparty, 303 to the screen |
+| Route                                        | Method | What it does                                                               |
+| -------------------------------------------- | ------ | -------------------------------------------------------------------------- |
+| `/assessment`                                | GET    | the published Templates, each with its own create form                     |
+| `/assessment/new`                            | POST   | create an Instance (one transaction), then 303 to the screen               |
+| `/assessment/instances/[instanceId]`         | GET    | the one screen both parties share — answer, waiting, or report             |
+| `/assessment/instances/[instanceId]/answers` | POST   | one party's whole sheet, or **409** when the answers are frozen            |
+| `/assessment/instances/[instanceId]/invite`  | POST   | reissue an unclaimed invitation: new token, old link dead (**#275**)       |
+| `/invite/[token]`                            | GET    | step 1 of the Counterparty's onboarding wizard; **claims nothing**         |
+| `/invite/[token]?step=2`                     | GET    | what happens next — answer, answer, report; opinions editable until accept |
+| `/invite/[token]?step=3`                     | GET    | the account gate: sign in / sign up, or (signed in) the claim form         |
+| `/invite/[token]/claim`                      | POST   | spend the single-use invitation, bind the Counterparty, 303 to the screen  |
 
 `/invite/[token]` is inert on purpose: the token is single-use, and a GET that consumed it would
 be consumed by the first mail client to preview the link.
+
+## The Counterparty's onboarding (#t_0aa81144)
+
+The invitation used to be one button whose `POST` answered with the instance screen: a stranger was
+joined to a relationship and dropped into a questionnaire with no sentence saying who had invited
+them, what would happen, or whether anything was owed. It now opens a three-step wizard
+(`components/assessment-flow/counterparty-wizard.tsx`, varying the numbered stepper in
+`components/create/quiz-editor.tsx`):
+
+1. **what this is** — who invited you, which template, and what each of you will see;
+2. **what happens next** — you answer, they answer, then the report opens for both; opinions stay
+   editable until you accept;
+3. **your account** — sign in or create one, and the claim form appears only here, only signed in.
+
+Every step's URL is `/invite/<token>?step=N`, so the token stays in the path and the sign-in
+`next` is the step 3 URL itself: `safeNextPath`/`signInDestination` keep it, and the login page
+renders one sentence naming what the person was doing (`lib/auth/invite-prompt.ts`). A token that
+is spent, expired, revoked, lapsed or unknown still draws the refusal bands on `InviteView`, and a
+`?claim=` refusal is carried back to step 3.
+
+The claim is the **last** hop. A submit is no longer a bare 303 either: `POST …/answers` redirects
+to `/assessment/instances/<id>?submitted=1`, which draws the confirmation band
+(`components/assessment-flow/submission-confirmation.tsx`) above the screen — thank you, who is
+still to answer, and how to change an opinion before the answers are sealed.
 
 ## What the database holds
 
@@ -107,17 +139,43 @@ never the token and never the link. The instance screen prints the invitation li
 outcomes — email is attempted after the transaction commits, so a mailer that breaks is a
 degraded path, never a failed creation and never an unshareable invitation.
 
-### The unlock notice (#258)
+### The templates (#548)
 
-The second message goes the other way. When a submit makes an instance `complete`, the party who
-did **not** just submit is emailed once: `lib/flow/unlock-notice.ts` composes it, the answers route
-sends it after `submitAnswers` has committed, and `sendMail()` in `lib/flow/email.ts` is the same
-transport the invitation uses — one provider, one set of outcomes, no new dependency.
+Every message the product sends is a template in `lib/email/templates/`, registered in one index
+beside the release note. Each returns an `EmailDocument`, and the band (`lib/email/band.ts`)
+composes the **plain text first** and derives the HTML from that string — so the two parts cannot
+drift, and a template cannot carry a sentence the text half does not. All four flow templates are
+`transactional`: no unsubscribe line, and the band refuses to render one.
 
-- **Once, on the transition only.** `submitAnswers` returns `status: "complete"` on the write that
-  filled the last missing answer; the submit before it says `answering` and the submit after it is
-  refused `frozen` by the row lock. There is no `notified_at` column and no queue, because the
-  freeze already makes "complete" a one-shot event.
+| #   | template                  | sent when                                                                                        | recipient                            |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| 2   | `counterparty-invitation` | an invitation is minted (create, re-invite)                                                      | the address typed on the create form |
+| 3   | `invitation-reminder`     | 48 h before `expires_at` — **copy and due-window predicate only**; the scheduler is its own card | the Counterparty                     |
+| 4   | `counterparty-joined`     | `claimInvite()` commits                                                                          | the Initiator on the record          |
+| 5   | `gap-report-ready`        | the acceptance that completes the session                                                        | the other seat                       |
+
+The reminder's `reminderIsDue(expiresAt, now)` is pure: no clock is read in this module, so the
+scheduler decides _when_ and the template only says what is true (the deadline is the row's own
+`expires_at`, printed as a date).
+
+### The completion notice (#258, #548 template #5)
+
+The second message goes the other way. When the second **acceptance** completes an instance, the
+party who did **not** just accept is emailed once: `lib/flow/unlock-notice.ts` composes it through
+template #5 (`Your Gap report is ready`), the accepts route sends it after `acceptSession()` has
+committed, and `sendMail()` in `lib/flow/email.ts` is the same transport the invitation uses — one
+provider, one set of outcomes, no new dependency. Submission is not the hinge: both parties
+submitting leaves the report locked through the review window (#R2), which is why the send hangs
+on the acceptance and the subject can be true when it is sent.
+
+- **Once, on the transition only.** `acceptSession()` returns `completed: true` on the write that
+  made both seats accepted; the acceptance before it returns `false`, and the one after it is
+  refused `already-accepted` by the row lock. There is no `notified_at` column and no queue,
+  because the lock already makes "complete" a one-shot event.
+- **The join notice (#548 template #4)** is the same shape in the other direction: `claimInvite()`
+  returns `ok` once, the claim route sends after the row commits, and the recipient is the
+  record's Initiator seat. A create nobody signed in for has no Initiator address, so that notice
+  answers `no-address` and the instance screen is the delivery.
 - **What it carries.** The instance's title, the two party names, and a link to
   `/assessment/instances/<id>`. No answer, no score, no Gap value and no token: buying a mailbox is
   not the same as being a party, so the blind rule travels with the message.
@@ -137,7 +195,37 @@ claiming a send that never happened. Nothing sets it on a real deployment.
 ## The proof
 
 `pnpm flow:e2e` (not a gate step — the gate stays database-free) drives the running app over HTTP
-with three cookie jars: create, invite, a stranger's 404, the claim, a second claim refused, the
-Initiator answering alone (no Gap on the Counterparty's page), the Counterparty answering, the
-report (`data-feel-gap="3"` where Feel 2 meets Feel 5), a post-completion submit answering 409 with
-the rows unchanged, a Template edit that does not reach the Instance, and the hash-only columns.
+with three cookie jars. It opens with **the four-stage create** the app now has (#688 Who → Mode,
+#689 Aspects, #690 Create), then follows whichever redirect the endpoint answers with — the account
+gate for a signed-out creator (`…/create/account?instance=<id>`, #690), Sent for a signed-in one
+(`…/instances/<id>/sent`, #691) — and continues from the id in that address. The rest is the flow as
+before: invite, a stranger's 404, the claim, a second claim refused, the Initiator answering alone
+(no Gap on the Counterparty's page), the Counterparty answering, the report (`data-feel-gap="3"`
+where Feel 2 meets Feel 5), a post-completion submit answering 409 with the rows unchanged, a
+Template edit that does not reach the Instance, and the hash-only columns.
+
+**When to run it.** Nothing fails when it is skipped, which is how it stayed red at its first step
+across three slices (#704). Run it before merging a card that touches the create flow
+(`/assessment/new*`, `…/create/*`), the invitation, the answer sheet, acceptance or the report: the
+`tests/` suite pins the same rules without a server, and this is the only evidence that a person
+can reach those screens. It needs a build of the branch and the demo branch's env, on a port:
+
+```bash
+BASE_URL=http://localhost:3199 pnpm flow:e2e
+```
+
+The create commits a `record` row on the branch every card shares, so the script registers the
+relationship the moment the redirect is parsed and a red run ends with the branch's own `session` /
+`party` / `record` counts — "did it leave a row behind" is answered by the output, because a stray
+assessment row makes `pnpm db:seed` refuse.
+
+## Related
+
+- [lifecycle.md](diagrams/lifecycle.md) — every state the flow can reach, and the event that moves it.
+- [STAGES.md](STAGES.md) — the four stages a relationship passes through.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Architecture** › The two-party flow · prev [Data model](DATA-MODEL.md) · next [Stages](STAGES.md)
+
+<!-- docs-nav:end -->

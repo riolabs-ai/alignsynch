@@ -3,9 +3,15 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: one email field and one button, and the answer is a sentence rather than a session)
 
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
-import { markGroundClass, MarkGlyph, tileMarkClass } from "@/components/auth/mark-icon";
+import {
+  markBoxClass,
+  markGroundClass,
+  markTileClass,
+  MarkGlyph,
+} from "@/components/auth/mark-icon";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy } from "@/content/pages";
@@ -89,12 +95,12 @@ export function ForgotPasswordView({
     <div className="w-full max-w-md space-y-6">
       <header className="space-y-2 text-center">
         <div
-          className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${markGroundClass(mark)}`}
+          className={`mx-auto mb-4 flex ${markTileClass(mark, "h-12 w-12")} items-center justify-center rounded-xl ${markGroundClass(mark)}`}
         >
           <MarkGlyph
             id={mark}
             src={markSrc}
-            className={`${tileMarkClass(mark)} text-action-foreground`}
+            className={`${markBoxClass(mark)} text-action-foreground`}
           />
         </div>
         <h1 className="text-3xl font-bold">{copy.heading}</h1>
@@ -103,7 +109,7 @@ export function ForgotPasswordView({
         )}
       </header>
 
-      <Card>
+      <FormSurface>
         <CardHeader>
           <CardTitle>{band.heading}</CardTitle>
         </CardHeader>
@@ -141,7 +147,7 @@ export function ForgotPasswordView({
             </div>
           )}
         </CardContent>
-      </Card>
+      </FormSurface>
 
       <div className="flex items-center justify-between gap-4">
         <Link

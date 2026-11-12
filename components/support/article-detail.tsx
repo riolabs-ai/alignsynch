@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { PageCopy } from "@/content/pages";
 import { ContentBlocks } from "@/components/content/content-blocks";
-import { articlePath, type KbRecord } from "@/lib/article-records";
+import type { KbRecord } from "@/lib/article-records";
 import { categoryName } from "@/content/categories";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
@@ -35,9 +35,27 @@ interface ArticleDetailProps {
   /** Published articles sharing a category, newest first. Resolved by the route. */
   relatedArticles: readonly KbRecord[];
   copy: PageCopy;
+  /**
+   * Where the two breadcrumbs and the "browse articles" control go. The public article page passes
+   * `/help`; `/dashboard/support/articles/[slug]` passes its own list (#542). It is a prop rather
+   * than a literal because the same component now renders in both trees, and a marketing `href`
+   * spelled here would be a departure from the dashboard that E39 has to see — and refuses.
+   */
+  backHref: string;
+  /** Where a related entry opens; `articlePath`'s base unless a route says otherwise. */
+  articleHrefBase?: string;
 }
 
-export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailProps) {
+/** The public article path's base — what `lib/article-records`' `articlePath()` builds on. */
+const DEFAULT_ARTICLE_BASE = "/support/articles";
+
+export function ArticleDetail({
+  article,
+  relatedArticles,
+  copy,
+  backHref,
+  articleHrefBase = DEFAULT_ARTICLE_BASE,
+}: ArticleDetailProps) {
   const [helpful, setHelpful] = useState<boolean | null>(null);
 
   // The article's own words are the record; these are the bands the reader draws around it.
@@ -45,18 +63,18 @@ export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailP
   const relatedCopy = sectionOf(copy, "related-articles");
 
   return (
-    <div className="container max-w-4xl mx-auto py-4 ">
+    <div className="marketing-container max-w-4xl py-4">
       {/* Breadcrumb */}
       <div className="flex items-center text-sm mb-6">
         <Link
-          href="/help"
+          href={backHref}
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           {itemLabel(detail, "breadcrumb-support")}
         </Link>
         <ChevronLeft className="h-4 w-4 mx-2 text-muted-foreground rotate-180" />
         <Link
-          href="/help"
+          href={backHref}
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           {itemLabel(detail, "breadcrumb-knowledge-base")}
@@ -122,7 +140,7 @@ export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailP
               <p className="mb-2">{itemLabel(detail, "helpful-follow-up")}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link href="/help">{itemLabel(detail, "browse-articles")}</Link>
+                  <Link href={backHref}>{itemLabel(detail, "browse-articles")}</Link>
                 </Button>
                 <Button asChild size="sm">
                   <Link href="/support">{itemLabel(detail, "contact-support")}</Link>
@@ -159,7 +177,7 @@ export function ArticleDetail({ article, relatedArticles, copy }: ArticleDetailP
                 key={relatedArticle.id}
                 className="overflow-hidden border hover:border-primary/50 transition-colors"
               >
-                <Link href={articlePath(relatedArticle)} className="block p-4">
+                <Link href={`${articleHrefBase}/${relatedArticle.slug}`} className="block p-4">
                   <div className="flex items-center mb-2">
                     <BookOpen className="h-4 w-4 mr-2 text-primary" />
                     <Badge variant="outline" className="text-xs">

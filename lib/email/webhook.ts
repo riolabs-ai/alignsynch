@@ -67,7 +67,7 @@ export interface EmailEventWrite {
   readonly occurredAt: Date;
   readonly payload: unknown;
   readonly suppression: SuppressionMark;
-  /** The client's rate-limit bucket (`lib/contact/ip.ts`), never its address. */
+  /** The client's rate-limit bucket (`lib/forms/ip.ts`), never its address. */
   readonly ipHash: string;
 }
 

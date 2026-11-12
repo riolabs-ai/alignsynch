@@ -22,6 +22,8 @@ import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
 import { adminRelationshipPageCopy } from "./admin-relationship";
+// #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
+import { adminReviewPageCopy } from "./admin-review";
 import { adminTemplateEditorPageCopy } from "./admin-template-editor";
 import { adminTemplatesPageCopy } from "./admin-templates";
 import { adminReportPageCopy } from "./admin-report";
@@ -35,6 +37,7 @@ import { templateLibraryPageCopy } from "./assessment-templates";
 import { relationshipReportPageCopy } from "./assessment-relationship-report";
 import { assessmentAcceptPageCopy } from "./assessment-accept";
 import { assessmentAnswerPageCopy } from "./assessment-answer";
+import { assessmentSentPageCopy } from "./assessment-sent";
 import { assessmentCreatePageCopy } from "./assessment-create";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
@@ -43,6 +46,8 @@ import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { dailyChallengePageCopy } from "./daily-challenge";
 import { dashboardPageCopy } from "./dashboard";
+// #542 phase 1 — support and help, inside the dashboard.
+import { dashboardSupportPageCopy } from "./dashboard-support";
 // #533 phase 2 — the initiator's own templates and relationships.
 import { dashboardRelationshipDetailPageCopy } from "./dashboard-relationship-detail";
 import { dashboardRelationshipsPageCopy } from "./dashboard-relationships";
@@ -69,6 +74,9 @@ import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
+// The public catalogue — the page the header's `Templates` row names, and one template's page.
+import { templatesDetailPageCopy } from "./templates-detail";
+import { templatesPageCopy } from "./templates";
 import { tourPageCopy } from "./tour";
 import { tournamentDetailPageCopy } from "./tournament-detail";
 import { tournamentsPageCopy } from "./tournaments";
@@ -84,6 +92,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
+  // #665 — the review shelf, grouped by release; the manifest is the catalogue.
+  "/admin/review": adminReviewPageCopy,
   "/admin/templates": adminTemplatesPageCopy,
   "/admin/templates/[id]": adminTemplateEditorPageCopy,
   "/admin/instances/[id]/report": adminReportPageCopy,
@@ -97,10 +107,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
   "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,
   "/assessment/instances/[instanceId]/accept": assessmentAcceptPageCopy,
-  "/assessment/templates": templateLibraryPageCopy,
-  "/assessment/templates/[templateId]": templateDetailPageCopy,
-  "/assessment/templates/[templateId]/create": assessmentCreatePageCopy,
-  "/assessment/templates/new": assessmentTemplatePageCopy,
+  // #691 — stage 5, Sent. Its own fixture: the status sentences and the timeline exist on no other
+  // screen, and the two bands it shares (the six stage names, one invitation's vocabulary) are
+  // referenced from their own homes rather than copied here.
+  "/assessment/instances/[instanceId]/sent": assessmentSentPageCopy,
   "/battle": battlePageCopy,
   "/categories": categoriesPageCopy,
   "/categories/[slug]": categoryDetailPageCopy,
@@ -108,6 +118,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
   "/daily-challenge": dailyChallengePageCopy,
   "/dashboard": overviewPageCopy,
+  // #542 phase 1 — the work the dashboard used to leave the app to do.
+  "/dashboard/support": dashboardSupportPageCopy,
   // #533 phase 2 — the initiator's own templates and relationships. Four routes, four fixtures:
   // the two lists, the private template editor, and one relationship's detail.
   "/dashboard/relationships": dashboardRelationshipsPageCopy,
@@ -144,6 +156,27 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
   "/terms": legalPages.terms,
+  // #794 — the template library, one template and the six-stage create flow, under the template's
+  // own noun. The fixtures keep their names: `assessment-template-*` are the copy files for the
+  // screens, not the addresses, and renaming them would be a second rename inside a move.
+  "/templates/relationship": templateLibraryPageCopy,
+  "/templates/relationship/[slug]": templateDetailPageCopy,
+  "/templates/relationship/[slug]/create": assessmentCreatePageCopy,
+  // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
+  // drift into two vocabularies.
+  "/templates/relationship/[slug]/create/mode": assessmentCreatePageCopy,
+  // #689 — stage 3, the third register of the same fixture.
+  "/templates/relationship/[slug]/create/aspects": assessmentCreatePageCopy,
+  // #690 — stage 4 and stage 5 of one flow: the same fixture again, because a second copy of these
+  // words is how a flow grows two dialects. #825 — the account gate that used to sit behind the
+  // create is retired; stage 4 is the account and stage 5 is the invite.
+  "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
+  "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
+  "/templates/relationship/new": assessmentTemplatePageCopy,
+  // The public Relationship Types catalogue (#794) — the taxonomy the shop sells, addressed by
+  // `relationship-types.ts`'s own ids.
+  "/relationship-types": templatesPageCopy,
+  "/relationship-types/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,
   "/tournaments/[id]": tournamentDetailPageCopy,
   "/welcome": marketingPageCopy,

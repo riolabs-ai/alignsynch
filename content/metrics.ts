@@ -79,7 +79,7 @@ export const zMetricSnapshot = z
   .superRefine((snapshot, ctx) => {
     if (snapshot.unit === "percent" && (snapshot.value < 0 || snapshot.value > 100)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["value"],
         message: `a percent value is 0..100, got ${snapshot.value}`,
       });
@@ -87,7 +87,7 @@ export const zMetricSnapshot = z
     if (snapshot.unit === "percent" && snapshot.previous !== undefined) {
       if (snapshot.previous < 0 || snapshot.previous > 100) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["previous"],
           message: `a percent previous value is 0..100, got ${snapshot.previous}`,
         });
@@ -95,7 +95,7 @@ export const zMetricSnapshot = z
     }
     if (snapshot.unit === "currency" && !Number.isInteger(snapshot.value)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["value"],
         message: `currency is integer cents, got ${snapshot.value}`,
       });
@@ -106,21 +106,21 @@ export const zMetricSnapshot = z
       !Number.isInteger(snapshot.previous)
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["previous"],
         message: `currency is integer cents, got ${snapshot.previous}`,
       });
     }
     if (snapshot.previous === undefined && snapshot.delta === "percent") {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["delta"],
         message: "a delta mode needs a `previous` value to compare against",
       });
     }
     if (snapshot.previous !== undefined && snapshot.period === "allTime") {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["period"],
         message: "`allTime` has no previous period to compare against",
       });

@@ -18,7 +18,14 @@
   "files": {
     // pnpm-lock.yaml is generated: pnpm writes its own YAML quoting, so
     // letting the formatter touch it turns every `pnpm install` into a diff.
-    "includes": ["**", "!pnpm-lock.yaml"]
+    //
+    // `docs/review/artifacts/**` is a *review artifact* drop, not source (#665): the four files are
+    // the lifecycle prototype exactly as it was drawn, published so the review shelf has something
+    // versioned to point at. They are read in a sandboxed frame and never imported, so biome's HTML
+    // a11y rules (`href="#"` on a prototype's own step controls) are findings about a design
+    // document rather than about this tree — the same reason `lib/quizhub/**` is ignored, except
+    // this directory is authored in-repo and the ignore is narrow to the artifacts, not to `docs/`.
+    "includes": ["**", "!pnpm-lock.yaml", "!docs/review/artifacts"]
   },
   "formatter": {
     "enabled": true,

@@ -52,6 +52,10 @@ import { PLATFORM_VIEWER } from "@/lib/nav";
 const LOGO = "/brand/as2-logo_v2_cl.png";
 const ICON = "/brand/alignsynch-icon.svg";
 const APPLE = "/brand/alignsynch-apple-touch-icon.png";
+/** The icon-only surfaces the chrome must never wear: the PWA set and the tab. */
+const ICON_192 = "/brand/alignsynch-icon-192.png";
+const ICON_512 = "/brand/alignsynch-icon-512.png";
+const FAVICON = "/brand/alignsynch-favicon.ico";
 
 /**
  * The mark the icon set is generated **from** — the cropped AS monogram, and the one file whose
@@ -82,6 +86,13 @@ const SHA256: Record<string, string> = {
   [ICON]: "bda9b0a526103ea6b50eb412f4edef2844bf81f72598276a8c26ccbcacc09c9f",
   [APPLE]: "1edf9fab49e091bf7e3a179ff9dc321b98c2bdb94528fa468a86d6ed847d3a80",
   [MARK]: "7f73c77c2f9c0d7a2029f088f6c567207f7b41b9c901b3cdbb1650a3d95804c3",
+  // The PWA set and the tab. They are in this table because the chrome's lockup is a *different*
+  // file: a change that "fixes" the logo by re-rastering the icon set shows up here, and a change
+  // that swaps the chrome to the icon shows up in the render assertions below. Between them, the
+  // icon can only move on purpose.
+  [ICON_192]: "96578af75fda5dc8ab671a49da662347ef39f56822902646325e47c0c9eec824",
+  [ICON_512]: "3ee0aed19fd12e3c859b7b270e242d7f36b20557f39ffd5eeaa18c2a109057b0",
+  [FAVICON]: "897d0b432bc3a5751a22d783ca0ebf8760cdc8b0d1ca5345757913907b82d5ab",
 };
 
 /** A `public/` path as a repo-relative file. */
@@ -151,29 +162,105 @@ describe("the brand's three fixed assets", () => {
 });
 
 describe("the marketing chrome", () => {
-  it("draws the brand's lockup in the header, and no other image for the brand", () => {
-    const sources = imagePaths(headerHtml());
-    expect(sources).toEqual([LOGO]);
+  it("draws the brand's full lockup in the header — not the square mark", () => {
+    /**
+     * **Lockup-first chrome** (#539 item 1, corrected). The owner's instruction: *"resize existing
+     * full logo brand image — you replaced the logo with an icon, off brand."* The header is
+     * chrome that identifies the product, so the one image it draws is the 818×127 export, whole.
+     * A revert to the icon fails here by name: `imagePaths` would answer the mark's path, not the
+     * lockup's.
+     */
+    const html = headerHtml();
+    expect(imagePaths(html)).toEqual([LOGO]);
+
+    /**
+     * And it is scaled the only way a lockup may be: by height, with the aspect ratio the record
+     * itself carries. `next/image` emits the intrinsic width/height, and the height-driven class
+     * (`h-6`, `sm:h-7`) with `w-auto` is what keeps 818:127 the browser's arithmetic — a square
+     * box, an `object-cover` or a fixed width is how #470's crop came back. The expanded size is
+     * not a class: it is the one `data-brand-lockup` rule in `app/globals.css` (below), so the
+     * header and the footer cannot render two different heights.
+     */
+    const image = /<img\b[^>]*>/.exec(html)?.[0] ?? "";
+    expect(image).toMatch(/width="818"/);
+    expect(image).toMatch(/height="127"/);
+    expect(image).toMatch(/w-auto/);
+    expect(image).toMatch(/data-brand-lockup/);
+    expect(image).not.toMatch(/object-(cover|contain)/);
+
+    // The header reads the lockup, and never asks for the icon.
+    const source = readFileSync("components/marketing/marketing-header.tsx", "utf8");
+    expect(source).not.toMatch(/brandIconMark|alignsynch-icon|brand\.mark/);
+
+    // …and the route group hands it the lockup, which is the other way a chrome could "revert":
+    // the component stays honest and the layout passes `brand.mark`. Both halves are pinned.
+    const layout = readFileSync("app/(marketing)/layout.tsx", "utf8");
+    expect(layout).toMatch(/mark=\{brandMark\(brand\.logo\)\}/);
+    expect(layout).not.toMatch(/brand\.mark|alignsynch-icon|brandIconMark/);
   });
 
-  it("draws the mark the brand record names in the footer, and nothing else", () => {
+  it("draws the lockup the brand record names in the footer, and nothing else", () => {
     /**
      * The footer resolves `brandMark(brand.logo)` — the *build's* record, not an argument — so the
-     * expected value is this build's own mark: the AlignSynch lockup under `BRAND=alignsynch`
-     * (where it must equal `LOGO`, and the gate runs that lane), and the template's glyph under
-     * the default build, whose logo is a `fallback` entry and therefore draws no image at all.
-     * Either way, one source and no invented one.
+     * expected value is this build's own answer: the lockup under `BRAND=alignsynch`, and no image
+     * at all under the default build, whose logo is a `fallback` entry and whose footer keeps the
+     * book glyph it has always drawn. Either way, one source and no invented one.
      */
     const expected = brandMark(brand.logo)?.src;
     expect(imagePaths(footerHtml())).toEqual(expected === undefined ? [] : [expected]);
+    // This build on AlignSynch: the same file the header draws, and the one the record names.
+    if (brand.logo === LOGO) expect(expected).toBe(LOGO);
+
     // And the resolution is the record's, not a literal typed into the footer.
     const source = readFileSync("components/layout/footer.tsx", "utf8");
-    expect(source).toMatch(/brandMark\(brand\.logo\)/);
+    expect(source).toMatch(/const mark = brandMark\(brand\.logo\)/);
+    expect(source).not.toMatch(/brandIconMark|alignsynch-icon/);
   });
 
-  it("leaves the tab and home-screen icons derived from the record", () => {
+  it("sizes the lockup from one rule shared by the header and the footer", () => {
+    /**
+     * **One number, two surfaces** (t_f4e69dba). The header and the footer draw the same export,
+     * and each used to carry its own height utility (24/28/56px in the header, 48px in the
+     * footer), so the signature read three sizes on one page. Both `<img>`s now carry
+     * `data-brand-lockup` and the expanded height lives in exactly one place.
+     *
+     * The numbers are read out of the stylesheet rather than trusted: `height: 2rem` inside
+     * `@media (min-width: 992px)`, on an `img[data-brand-lockup]` selector — the bare attribute
+     * selector ties with a `.h-*` utility on specificity and the bundle puts Tailwind's
+     * responsive variants after this file, so a bare selector measured 28px where this reads
+     * 32px — and no unconditional `height` for the hook, which would out-rank the mobile
+     * utilities and render the lockup at its intrinsic 818×127 below the breakpoint.
+     */
+    if (brand.logo === LOGO) {
+      expect(/<img\b[^>]*data-brand-lockup[^>]*>/.test(headerHtml())).toBe(true);
+      expect(/<img\b[^>]*data-brand-lockup[^>]*>/.test(footerHtml())).toBe(true);
+    }
+
+    const css = readFileSync("app/globals.css", "utf8");
+    const rule = /@media\s*\(min-width:\s*992px\)\s*\{[^}]*img\[data-brand-lockup\][^}]*\}/.exec(
+      css,
+    )?.[0];
+    expect(rule).toBeDefined();
+    expect(rule).toMatch(/height:\s*2rem/);
+    expect(rule).toMatch(/width:\s*auto/);
+    // The hook appears once in code — inside the media block. A second, unconditional rule would
+    // be the mobile regression: it out-ranks `h-6`/`sm:h-7` and draws the 818×127 at full size.
+    const code = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(code.match(/\[data-brand-lockup\]/g)).toHaveLength(1);
+  });
+
+  it("keeps the square mark on the surfaces that need an icon", () => {
+    /**
+     * The other half of the rule. `brand.icon` is the tab, the PWA tile and the home-screen icon —
+     * the places a square asset is the correct answer — and those are derived from the record in
+     * `app/layout.tsx`. Nothing in `components/layout/` may reach for it: if the chrome ever wants
+     * an icon again, it is a design decision with this test in the diff, not a quiet edit.
+     */
     const source = readFileSync("app/layout.tsx", "utf8");
     expect(source).toMatch(/icon:\s*\[\{\s*url:\s*brand\.icon/);
     expect(source).toMatch(/apple:\s*\{\s*url:\s*brandIconPaths\(/);
+
+    const layout = readFileSync("components/layout/footer.tsx", "utf8");
+    expect(layout).not.toMatch(/alignsynch-icon/);
   });
 });

@@ -1,6 +1,7 @@
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimInvite } from "@/lib/flow/store";
-import { instancePath, invitePath } from "@/lib/flow/paths";
+import { sendJoinNotice } from "@/lib/flow/join-notice";
+import { afterClaimTarget, inviteStepPath } from "@/lib/flow/paths";
 import {
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
@@ -31,16 +32,25 @@ import { NextResponse } from "next/server";
  *   the confirmation   `confirm`, the counterparty's name: the checkbox the page renders
  *                      beside "You are joining as Rowan, the Counterparty"
  *
- * Success binds the Counterparty's party row, sets their party cookie, and redirects (303)
- * to the instance screen. Every refusal — unknown, claimed, expired, already-a-party,
- * already-bound, unconfirmed — redirects back to the invite page, which draws the band that
- * matches the code. The refusal is not a 4xx here because the person has done nothing
- * wrong: they followed a link that is not claimable *by them*, and the page they land on
- * says which of the six it is. `?claim=<code>` carries the store's code through the
- * redirect, so the page renders the store's own answer instead of re-deriving it.
+ * Success binds the Counterparty's party row, sets their party cookie, and redirects (303) —
+ * **onto `/dashboard` for a signed-in claimer** (#710: the flow's modal closes onto the console the
+ * joined relationship is listed on, the same exit the create takes) and onto the relationship for a
+ * signed-out one, who has a party cookie and no console to land in (`afterClaimTarget()` in
+ * `lib/flow/paths.ts` decides, so the target is a test rather than a claim about this handler). The
+ * form that posts here is step 3 of the onboarding wizard (`/invite/[token]?step=3`), which has
+ * rendered inside the flow's modal since #710. The invitation itself no longer lands anybody in a
+ * session directly: `/invite/[token]` renders the three steps, and `GET` still claims nothing.
  *
- * Nothing is written on any refusal: `claimed_at` stays NULL and no party row appears, so
- * the link still works for the person it was addressed to.
+ * Every refusal — unknown, claimed, expired, already-a-party, already-bound, unconfirmed, lapsed
+ * — redirects back to **step 3**, which draws the band that matches the code (a dead token falls
+ * back to `InviteView`'s state band, because the wizard only mounts for a live one). The refusal
+ * is not a 4xx here because the person has done nothing wrong: they followed a link that is not
+ * claimable *by them*, and the page they land on says which of the seven it is. `?claim=<code>`
+ * carries the store's code through the redirect, so the page renders the store's own answer
+ * instead of re-deriving it.
+ *
+ * Nothing is written on any refusal: `claimed_at` stays NULL and no party row appears, so the
+ * link still works for the person it was addressed to.
  */
 export async function POST(
   request: Request,
@@ -61,7 +71,7 @@ export async function POST(
   });
 
   if (!result.ok) {
-    const back = new URL(invitePath(token), request.url);
+    const back = new URL(inviteStepPath(token, 3), request.url);
     back.searchParams.set("claim", result.code);
     return NextResponse.redirect(back, 303);
   }
@@ -71,5 +81,26 @@ export async function POST(
     result.sessionToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
-  return NextResponse.redirect(new URL(instancePath(result.instanceRecordId), request.url), 303);
+
+  // #548 template #4 — the Initiator is told the seat exists. Attempted **after** the claim
+  // committed and after the claimer's cookie is set, so neither a provider refusal nor an
+  // unreachable host can cost the person their claim; the redirect below happens either way.
+  // `sendJoinNotice()` never throws and answers `no-address` when the create was signed out.
+  await sendJoinNotice({ instanceRecordId: result.instanceRecordId }).catch((error: unknown) => {
+    console.error(
+      "[joined] the notice could not be attempted after a claim — the claim is stored and the instance screen shows both seats",
+      error instanceof Error ? error.name : "unknown",
+    );
+  });
+
+  return NextResponse.redirect(
+    new URL(
+      afterClaimTarget({
+        viewerSignedIn: viewer !== null,
+        instanceRecordId: result.instanceRecordId,
+      }),
+      request.url,
+    ),
+    303,
+  );
 }

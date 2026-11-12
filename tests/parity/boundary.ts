@@ -34,6 +34,7 @@ import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
 import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
 import AdminInstancesPage from "@/app/(mainlayout)/admin/instances/page";
+import AdminReviewPage from "@/app/(mainlayout)/admin/review/page";
 import BattlePage from "@/app/(mainlayout)/battle/page";
 import CategoriesPage from "@/app/(mainlayout)/categories/page";
 import CategoryPage from "@/app/(mainlayout)/categories/[slug]/page";
@@ -249,6 +250,15 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
   {
     route: "/admin/instances",
     page: AdminInstancesPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    // #665 — the review shelf. Outside the `/admin/console` subtree, so it carries its own
+    // `requireAdminProduct()`; the catalogue is a file in the tree, so the open side renders the
+    // real list rather than a failure panel.
+    route: "/admin/review",
+    page: AdminReviewPage as unknown as ParityPage,
     params: {},
     open: "render",
   },

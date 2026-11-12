@@ -32,6 +32,15 @@ const HREF_ATTR = /href=(?:"([^"]*)"|\{\s*"([^"]*)"\s*\})/g;
 /** Client-side navigation to a literal: `router.push("/x")`, `redirect("/x")`. */
 const NAV_CALL = /\b(?:router\.(?:push|replace)|redirect)\(\s*"([^"]*)"\s*\)/g;
 
+/**
+ * `href: "/x"` — the **property** form, for a destination held as data rather than as JSX (#542
+ * phase 2). `components/layout/nav-menus.tsx` warns, correctly, that a menu moved into a table of
+ * records takes every route reference out of E10 without failing anything; the answer is not to
+ * keep the rows in JSX, it is to teach the gate the second spelling. The lookbehind keeps
+ * `data-href: "…"` and `xhref:` out, so only a real `href` property matches.
+ */
+const HREF_PROP = /(?<![\w$-])href:\s*"([^"]*)"/g;
+
 /** Any quoted literal — used only to hunt for `public/` asset paths. */
 const STRING_LITERAL = /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'/g;
 
@@ -87,12 +96,36 @@ function collect(
   return found;
 }
 
-/** Every literal the UI navigates to: `href` attributes plus `router.push`/`redirect`. */
+/** Every literal the UI navigates to: `href` attributes, `href:` properties, and nav calls. */
 export function navigationReferences(files: SourceFile[]): UiReference[] {
   return [
-    ...collect(files, HREF_ATTR, (match) => match[1] ?? match[2]),
+    ...hrefLiterals(files).map(({ at: _at, ...reference }) => reference),
+    ...collect(files, HREF_PROP, (match) => match[1]),
     ...collect(files, NAV_CALL, (match) => match[1]),
   ];
+}
+
+/**
+ * The `href` literals with their offsets, for a rule that needs to look at the element the
+ * literal sits in rather than only at its value (`scripts/leaving-links.ts`, E39).
+ */
+export function hrefLiterals(files: SourceFile[]): (UiReference & { at: number })[] {
+  const found: (UiReference & { at: number })[] = [];
+  for (const file of files) {
+    HREF_ATTR.lastIndex = 0;
+    for (
+      let match = HREF_ATTR.exec(file.source);
+      match !== null;
+      match = HREF_ATTR.exec(file.source)
+    ) {
+      const literal = match[1] ?? match[2];
+      if (literal === undefined) continue;
+      // The value's offset, not the match's: `href="` and `href={"` are different lengths.
+      const at = match.index + match[0].indexOf(literal, match[0].indexOf("="));
+      found.push({ file: file.path, line: lineAt(file.source, match.index), value: literal, at });
+    }
+  }
+  return found;
 }
 
 /** Every literal that looks like a `public/` asset path, wherever it is written. */

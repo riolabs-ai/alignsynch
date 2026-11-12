@@ -1,12 +1,13 @@
 /**
- * `/dashboard/relationships` — the relationships this member started (#533 phase 2).
+ * `/dashboard/relationships` — the relationships this member is a party to (#533 phase 2, #706).
  *
- * **Two reads, both keyed on the session.** `listMyRelationships` filters
- * `relationship.initiator_user_id = $1`; `listMyTemplates` feeds the create band's picker and is the
- * same read `/dashboard/templates` does, so the two screens cannot disagree about which templates
- * exist. Neither takes an id from the URL.
+ * **Two reads, both keyed on the session.** `listMyRelationships` lists every relationship the
+ * viewer is a party to — the ones they started and the ones they were invited into — and the card
+ * derives the seat from the row (`isInitiator`); `listMyTemplates` feeds the create band's picker
+ * and is the same read `/dashboard/templates` does, so the two screens cannot disagree about which
+ * templates exist. Neither takes an id from the URL.
  *
- * **The create band is above the table, and it is the only write on this page.** Starting a
+ * **The create band is above the cards, and it is the only write on this page.** Starting a
  * relationship copies a template into the relationship's own record; the copy is what makes the
  * detail screen's editor safe to use, and the band's copy says so. Nothing on this page edits
  * Aspects — that is one click away, on the detail screen, deliberately: a list that wrote would be
@@ -18,7 +19,7 @@
 import type { Metadata } from "next";
 
 import { RelationshipCreate } from "@/components/dashboard/relationship-create";
-import { RelationshipList } from "@/components/dashboard/relationship-list";
+import { RelationshipCards } from "@/components/dashboard/relationship-cards";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -33,7 +34,7 @@ import { createRelationshipAction } from "./actions";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "My relationships",
+  title: "My Relationships",
   robots: { index: false, follow: false },
 };
 
@@ -69,7 +70,11 @@ export default async function MemberRelationshipsPage() {
           onCreate={createRelationshipAction}
         />
       ) : null}
-      <RelationshipList copy={dashboardRelationshipsPageCopy} rows={rows} unreadable={unreadable} />
+      <RelationshipCards
+        copy={dashboardRelationshipsPageCopy}
+        rows={rows}
+        unreadable={unreadable}
+      />
     </div>
   );
 }

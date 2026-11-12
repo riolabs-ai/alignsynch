@@ -9,6 +9,22 @@ unset. `content/` holds the zod content model, `data/` holds the fixtures that m
 and `pnpm data:check` fails the build when a fixture drifts. Remote:
 `github.com/riolabs-ai/alignsynch`.
 
+## The flow is five stages, and that is a spec, not a preference
+
+Read [`docs/specs/flow-stages.md`](docs/specs/flow-stages.md) before touching any screen in the
+create-and-complete flow. It is binding: **1 Details · 2 Settings · 3 Aspects · 4 Account ·
+5 Invite**, the rail prints `Stage {n} of 5`, and there is **no `Ongoing` stage** — completion lands
+on the relationship detail page in the member dashboard. **Account is a stage, before Invite**: the
+creator signs up first and the stage writes the relationship as a `draft` (#825, superseding #659's
+"Account is not a stage"). **Align is not a stage of the flow at all** — it lives on the dashboard
+and is live once one or more assessments are shared; the retired **Connect** stage's resend and
+copy-link controls live on the post-send confirmation and on the relationship detail. The approved
+visual reference is the review artifact
+`prototype-relationship-lifecycle-v9` (`/admin/review?artifact=…`), and the build matches the
+artifact, never the other way round. A screen that renames a stage, adds a seventh, adds a field the
+artifact does not draw, or drops one it does, is a defect — the spec file carries the stage table,
+stage 1's full field inventory, and the tests that enforce both.
+
 ## Start every card with a fresh `main`
 
 A stale tree is a gate failure, not a style issue: a branch tested against a tree nobody
@@ -24,6 +40,25 @@ git switch -c <type>/<slug>  # branch from the tip you just fetched
 If `pull --ff-only` refuses, local `main` has diverged: do not merge it back into shape.
 `git switch -c backup/main-<date>` to keep the work, then `git switch main` +
 `git reset --keep origin/main`. Never open a card against a `main` that is behind.
+
+Then **prove** the tree is the one you think it is, before the first edit. Both checks, every card:
+
+```bash
+git rev-parse --abbrev-ref HEAD              # must print main (or your branch) — never HEAD
+git rev-parse HEAD                           # must equal: git rev-parse origin/main
+node -p "require('./package.json').version"  # must equal origin/main's package.json version
+```
+
+`HEAD` is the trap this repo has already paid for: **detached, `git push` succeeds and moves
+nothing**, so a branch can be green and exist only on the machine that made it. Measured
+2026-11-07 in the shared checkout — `HEAD` detached at `ae91ff69` while `origin/main` was
+`71561560`, local `package.json` `1.5.0` against main's `1.6.0`. A version that disagrees with
+`origin/main` is not a release that is ahead; it is a tree that is behind.
+
+**`git switch main` refusing with "already used by worktree" is the same trap in another
+coat.** A release worktree left on `main` pins the branch for everyone. Detach that worktree
+(`git -C <worktree> switch --detach`) so the shared checkout can hold `main` — never answer
+that refusal by working detached in the shared checkout.
 
 ## Commands (repo root, `pnpm` only — the lockfile is `pnpm-lock.yaml` v9)
 
@@ -42,7 +77,7 @@ If `pull --ff-only` refuses, local `main` has diverged: do not merge it back int
 | `pnpm db:verify`                 | exit 0, ~1 s         | the DB port of E31 (drift) plus the party rules, read through `lib/db/**`; exit 1 with a named failure per violation   |
 | `pnpm demo:verify`               | exit 0, ~50 s        | seeds the demo dataset, drives the app, diffs rows + 9 answers against `data/verify/demo-expectations.json`            |
 | `pnpm objstore:smoke`            | exit 0, <1 s         | put → get → bytes compared → deleted; reads `NEON_OBJSTORE_*` (falls back to the `AWS_*` names `neon env pull` writes) |
-| `pnpm lint`                      | exit 0, ~1.6–2.6 s   | `biome check` then `node scripts/lint-brand-classes.mjs`; **0 errors**, 203 warnings, 34 infos                         |
+| `pnpm lint`                      | exit 0, ~1.6–2.6 s   | `biome check` then `node scripts/lint-brand-classes.mjs`; **0 errors**, 221 warnings, 37 infos                         |
 | `pnpm format:check`              | exit 0, ~0.4 s       | `biome format`, 442 files; CI gate                                                                                     |
 | `pnpm build`                     | exit 0, ~50–76 s     | `next build`; `/assessment/[slug]` is request-time since #145 (no `generateStaticParams`, no build-time DB read)       |
 | `pnpm dev`                       | 200 on all 34 routes | `next dev --turbo`, port 3000                                                                                          |
@@ -67,9 +102,11 @@ bash scripts/verify.sh       # THE gate. ~150 s locally (code lane), green = shi
 
 It runs, in order, and stops at the first failure (printing the failing step and its exit
 code): `deps (pnpm install --frozen-lockfile)` → `glossary` (`pnpm glossary:check`) →
-`release:check` (`bash scripts/release.sh --check`) → `typecheck` (`next typegen && tsc --noEmit`) →
-`lint` (`biome check` + the brand rule, see below) → `format:check`
-(`biome format`) → `data:check` → `test` → `parity` → `build` (`next build`). `data:check`,
+`ui-registry` (`pnpm ui:registry:check`) → `release:check` (`bash scripts/release.sh --check`) →
+`changelog:check` (`pnpm changelog:check`) → `docs:check` (`pnpm docs:check`) → `typecheck`
+(`next typegen && tsc --noEmit`) → `lint` (`biome check` + the brand rule, see below) →
+`format:check` (`biome format`) → `data:check` → `demo:verify` (conditional: a printed skip when the
+environment cannot support it) → `test` → `parity` → `build` (`next build`). `data:check`,
 `test` and `parity` run only when `package.json` defines that script; otherwise they are
 skipped with a visible `○ … skipped` line, so the same script is correct on `main` (no
 `data:check` yet) and on branches that carry it.
@@ -279,6 +316,23 @@ process bug.
   a campaign names a slot that `data/quiz-catalogue.ts` renders (E17), and a generated quiz is in
   no shelf, so a generated one could never run — `data:check` E26 rejects a
   `data/generated/promotions.ts` and `pnpm gen` deletes a leftover.
+- **A link out of the dashboard opens a new tab; a form surface carries no shadow.** Two rules with
+  one home each, checked instead of corrected screen by screen. `components/layout/leaving-link.tsx`
+  is the only markup that leaves the app — `target="_blank"`, `rel="noopener noreferrer"`, the
+  external marker and an accessible name ending "opens in a new tab" — `lib/marketing-routes.ts` is
+  the runtime table of public routes (`data:check` **E39** holds it equal to the pages under
+  `app/(marketing)`), and E39 fails a dashboard literal `href` to a public page that does not carry
+  the pair, plus a dashboard mount of a shared surface (`Footer`) that forgets `leaving`. A form is
+  `components/ui/form-surface.tsx`: border + background contrast, **no shadow**, because the auth
+  screens drew `shadow-xl border-0` while the dashboard and marketing forms drew a flat card.
+  `scripts/brand-classes.mjs` (inside `pnpm lint`) fails a `shadow-*` on a form surface and a bare
+  `Card` under `components/auth/**`. **`Card` carries no shadow at all** since C1 (#715/#722): the
+  primitive is `rounded-lg border bg-card` and elevation is a border, not a shadow, on every raised
+  element — the measured reference draws one (`docs/specs/ux-reference-patterns.md` rule 3). A
+  surface that wants elevation asks for it explicitly with a `shadow-*` class and says why; the
+  default never supplies one. This replaced the earlier rule that left `Card`'s `shadow-sm` default
+  alone, which read as "forms only" while the marketing and quiz renders kept the shadow the
+  reference forbids.
 
 ### The template doctrine — one core, many expressions
 
@@ -386,8 +440,9 @@ noun in a component's name is the sign that question 3 was skipped. Full text:
   date and a reward window, so the census is empty and `W3`/`W5` were already 0. From here a non-zero
   `W` count is a regression, not the baseline: no date, question or window is invented to silence one,
   and the record of what each repair changed is in `docs/p1-migration/MIGRATION.md`.
-- 195 lint warnings / 34 infos are the current baseline (measured on `main` at `37c1d7c` and
-  unchanged by #145). Compare counts, not vibes: a new warning is a
+- 221 lint warnings / 37 infos are the current baseline (`main` at `4d581704`), measured with
+  `pnpm exec biome check 2>&1 | tail -3` — re-run it rather than trusting it, because a stale tree
+  reports its own count and not `main`'s. Compare counts, not vibes: a new warning is a
   regression even though `pnpm lint` exits 0.
 - Stop `pnpm dev` before `pnpm build` — both write `.next/` and a concurrent run corrupts it.
 
@@ -478,12 +533,20 @@ head cannot merge — see `docs/GATE.md` for the evidence and for why the classi
 ## Numbers
 
 Baseline and how to re-measure: `docs/GATE.md` — that file is the one home for these numbers,
-because a figure copied here has already gone stale once. Measured 2026-11-03 over the
-2026-11-02 CI window: run incl. queue p50 **144 s** / p95 **176 s**, first-pass yield
-**97.4 %** (185/190 head SHAs green on their first run); local full gate **138–152 s** (n=2).
-The 2026-10-29 figures (55 s a job, 81.8 %) are history rows in that file, not today's.
+because a figure copied here has already gone stale once. It carries the current window, the
+command that produced each figure, and the history rows; read it rather than a copy. The budget
+those figures are read against: **CI under 4 min holds**, and the local ceiling is the one
+`docs/ITERATION.md` states — `pnpm check:fast` for the inner loop, the full gate as the boundary
+at **≤ 3 min**. Do not make a step optional to buy time.
 
 ## Docs
+
+[`docs/README.md`](docs/README.md) is the hub: every document under `docs/`, listed once, grouped by
+the question it answers, with the previous/next page of its section on every page. The rows and the
+nav blocks are generated from `docs/docs.json` by `scripts/docs-nav.mjs` — adding a page means a row
+in that manifest then `pnpm docs:nav`, and `pnpm docs:check` (a gate step in every lane) fails by
+name when a page is missing from the hub, listed twice, has no nav block, or carries a link or image
+that does not resolve.
 
 `docs/ENV-SPEC.md` is the environment, team, integration and P1–P4 gate spec, and carries the P1
 completion record and QA evidence. Read it before adding tooling or a dependency.
@@ -494,3 +557,13 @@ are declared, the board is re-carded when it drains, and it records the traps th
 this repo a day — a PR URL in a kanban comment freezes that card for 24 h, after a reboot every
 `running` card must be `reclaim`ed before any status is trusted, and a `scratch` workspace makes a
 worker fall back to the operator's checkout.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

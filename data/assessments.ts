@@ -311,7 +311,7 @@ export const assessments: readonly Assessment[] = [...authoredTemplates, ...cata
  * `/` draws a card per template it is handed and heads the band "Four templates"
  * (`data/pages/home-alignsynch.ts`), so it is handed this list and not the 29-record collection:
  * the front page introduces the platform's starter set, while the catalogue at
- * `/assessment/templates` is what a practitioner shops from. The distinction is the card's own
+ * `/templates/relationship` is what a practitioner shops from. The distinction is the card's own
  * (`{templates}` is a count the read produces, not a constant the page trusts), so a fifth
  * hand-authored template still reaches the page by being authored here.
  */

@@ -16,7 +16,7 @@
 # One job, one script, four depths. The lane is resolved once, up front, from
 # the files that differ from $GATE_REF (default origin/main), highest wins:
 #
-#   lane=docs     docs/**, *.md            whitespace + relative links + biome
+#   lane=docs     docs/**, *.md            whitespace + biome (links run in every lane)
 #   lane=content  content/**, data/**, public/**
 #                                          + typecheck + data:check, NO next build
 #   lane=config   .github/**, scripts/**, package.json, tsconfig*, AGENTS.md
@@ -45,6 +45,11 @@
 # entry that names a version `package.json` does not carry, or that has lost its
 # Known limits block, is drift in a document people read. The file is docs, the
 # script is config, `package.json` is config — three lanes, one check, ~0.1 s.
+#
+# THE RELEASE BLOG STEP IS IN EVERY LANE TOO (#652). `docs/changelog/` is a view of
+# `CHANGELOG.md` — the date, the tag, the entry's sections and the Known limits block
+# are copied into each page by `scripts/changelog-view.mjs` — so the entry is docs,
+# the generator is config and the pages are docs: the same three lanes, one check.
 #
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
@@ -268,45 +273,6 @@ check_whitespace() {
   return "$rc"
 }
 
-# Every relative link/image in the markdown this branch touched must resolve.
-# Absolute URLs, anchors, and mailto: are not this gate's business.
-check_doc_links() {
-  local f target path bad=0 checked=0 files=0
-  while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    [ -f "$f" ] || continue
-    files=$((files + 1))
-    while IFS= read -r target; do
-      [ -n "$target" ] || continue
-      target="${target#<}"
-      target="${target%>}"
-      target="${target%% *}"
-      case "$target" in
-        '' | '#'* | '//'*) continue ;;
-        *://* | mailto:* | tel:* | data:*) continue ;;
-      esac
-      path="${target%%#*}"
-      case "$path" in
-        '' | *'{'* | *'}'* | *'<'* | *'$'*) continue ;; # template/placeholder links
-      esac
-      checked=$((checked + 1))
-      if [ "${path#/}" != "$path" ]; then
-        path="${path#/}" # root-relative: resolve from the repo root
-        [ -e "$path" ] || { printf '✗ %s: %s — no such path\n' "$f" "$target" >&2; bad=$((bad + 1)); }
-      else
-        [ -e "$(dirname -- "$f")/$path" ] || [ -e "$path" ] ||
-          { printf '✗ %s: %s — no such path\n' "$f" "$target" >&2; bad=$((bad + 1)); }
-      fi
-    done < <(grep -oE '\]\([^)[:space:]]+\)' "$f" 2>/dev/null | sed -e 's/^](//' -e 's/)$//' || true)
-  done < <(lane_changed '*.md')
-
-  if [ "$bad" -gt 0 ]; then
-    printf '✗ %s broken relative link(s)\n' "$bad" >&2
-    return 1
-  fi
-  printf '  %s relative link(s) in %s markdown file(s) resolve\n' "$checked" "$files"
-}
-
 # --- next build, at most QUIZHUB_BUILD_SLOTS at a time ------------------------
 BUILD_LOCK_DIR="${QUIZHUB_BUILD_LOCK_DIR:-$HOME/.cache/quizhub}"
 BUILD_SLOTS="${QUIZHUB_BUILD_SLOTS:-2}"
@@ -430,13 +396,37 @@ else
   skip_step "release:check" "no release:check script in package.json"
 fi
 
+# The release blog under `docs/changelog/` is a *view* of `CHANGELOG.md` (#652): the date, the tag,
+# the entry's own sections and the whole Known limits block are copied into the pages by
+# `scripts/changelog-view.mjs`, so an entry edited without regenerating the blog is drift in a
+# document people read — and a second opinion about a fact `release:check` already owns. In every
+# lane for the third time and the same reason as above: the entry is docs, the generator is config,
+# the pages are docs, and a lane that skipped it would be green over a red CI run. ~0.2 s.
+if has_script "changelog:check"; then
+  run_step "changelog:check (docs/changelog is a view of CHANGELOG.md)" pnpm changelog:check || fail
+else
+  skip_step "changelog:check" "no changelog:check script in package.json"
+fi
+
+# The docs hub (`docs/README.md`) and the nav block on every page are generated from `docs/docs.json`
+# by `scripts/docs-nav.mjs` (#651), and the same step is the docs graph's proof: every relative link
+# and image in the checkout resolves, every document under `docs/` is listed in the hub exactly once,
+# no page is an orphan, and every nav block matches the manifest. It replaces the old docs-lane
+# `links` step, which read only the markdown *this branch touched* — a link that was already broken
+# stayed broken, and it could not see a hub at all. In every lane for the fourth time and the same
+# reason: a new page is docs, its row is docs, the generator is config. ~0.3 s.
+if has_script "docs:check"; then
+  run_step "docs:check (hub, nav, links and images)" pnpm docs:check || fail
+else
+  skip_step "docs:check" "no docs:check script in package.json"
+fi
+
 if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi
 
 if [ "$LANE" = "docs" ]; then
   run_step "whitespace (git diff --check)" check_whitespace || fail
-  run_step "links (relative links resolve)" check_doc_links || fail
 else
   run_step "typecheck (next typegen && tsc --noEmit)" pnpm typecheck || fail
 fi

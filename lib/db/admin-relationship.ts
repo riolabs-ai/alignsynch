@@ -57,6 +57,13 @@ export interface AdminInvite {
 /** Everything the detail screen draws, in one value. */
 export interface AdminRelationshipDetail {
   readonly instanceRecordId: string;
+  /**
+   * The relationship the session belongs to (#623). The console's URL names the *session* record —
+   * one round of an assessment — while every edit is a relationship-level write, so the page needs
+   * the parent id to hand the edit surface. Read from `session.relationship_id`, never derived from
+   * the id's spelling.
+   */
+  readonly relationshipId: string;
   readonly slug: string;
   readonly name: string;
   readonly templateTitle: string;
@@ -72,6 +79,7 @@ export interface AdminRelationshipDetail {
 
 interface InstanceJson {
   readonly record_id: string;
+  readonly relationship_id: string;
   readonly slug: string;
   readonly name: string | null;
   readonly template_title: string | null;
@@ -101,6 +109,7 @@ interface InviteReadRow {
 const ADMIN_RELATIONSHIP_SQL = `
   SELECT
     ai.record_id                    AS record_id,
+    ai.relationship_id              AS relationship_id,
     r.slug                          AS slug,
     ai.name                         AS name,
     t.title                         AS template_title,
@@ -195,6 +204,7 @@ export async function readAdminRelationship(
 
   return {
     instanceRecordId: row.record_id,
+    relationshipId: row.relationship_id,
     slug: row.slug,
     name: row.name ?? row.template_title ?? row.slug,
     templateTitle: row.template_title ?? row.slug,

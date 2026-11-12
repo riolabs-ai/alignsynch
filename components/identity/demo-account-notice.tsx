@@ -1,5 +1,6 @@
 // template-ancestor: components/ui/badge.tsx   (variation: one chip rather than an alert panel — the demo account's standing, stated in place)
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { Badge } from "@/components/ui/badge";
 import type { PageCopy } from "@/content/pages";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -21,12 +22,12 @@ export function DemoAccountNotice({ copy }: { copy: PageCopy }) {
   const demo = sectionOf(copy, "demo");
 
   return (
-    <div className="container mx-auto max-w-6xl pt-6">
+    <StageColumn>
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
         <Badge variant="outline">{itemLabel(demo, "demo-badge")}</Badge>
         {demo.body !== undefined && <span>{demo.body}</span>}
         <span className="text-muted-foreground">{itemLabel(demo, "demo-note")}</span>
       </div>
-    </div>
+    </StageColumn>
   );
 }

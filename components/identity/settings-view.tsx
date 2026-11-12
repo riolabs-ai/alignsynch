@@ -2,17 +2,21 @@
 
 // template-ancestor: components/settings/account-settings.tsx   (variation: the settings page over the identity record — four cards, one form each)
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { SignOutButton } from "@/components/identity/sign-out-button";
+import { DeleteAccountCard } from "@/components/identity/delete-account-card";
 import { PasswordCard } from "@/components/identity/password-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import type { PublicProfile } from "@/content/identity";
 import type { PageCopy } from "@/content/pages";
+import type { DeleteAccountOutcome } from "@/app/(mainlayout)/settings/delete-account-actions";
 import type { ResetSetOutcome } from "@/lib/auth/reset-token";
 import { loginPathFor } from "@/lib/auth/paths";
 import { fillLabel, itemLabel, itemOf, sectionOf } from "@/lib/page-copy";
@@ -67,6 +71,11 @@ interface SettingsViewProps {
   hasPassword: boolean;
   /** The signed-in set-password action, wired by the page. Never an auth client call. */
   savePassword: (input: { password: string; confirmation: string }) => Promise<ResetSetOutcome>;
+  /**
+   * The signed-in delete-account action (#278). Server-side by construction: it re-resolves the
+   * session and re-checks the typed phrase, so this component holds no authority of its own.
+   */
+  deleteAccount: (confirmation: string) => Promise<DeleteAccountOutcome>;
 }
 
 export function SettingsView({
@@ -76,6 +85,7 @@ export function SettingsView({
   profile,
   hasPassword,
   savePassword,
+  deleteAccount,
 }: SettingsViewProps) {
   const router = useRouter();
   const identity = sectionOf(copy, "identity");
@@ -151,145 +161,153 @@ export function SettingsView({
   const publicHref = handle.trim() === "" ? undefined : `/profile/${handle.trim().toLowerCase()}`;
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-bold">{copy.heading}</h1>
-        {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}
-      </header>
+    <StageColumn>
+      <div className="space-y-6">
+        <header className="space-y-1">
+          <h1 className="text-3xl font-bold">{copy.heading}</h1>
+          {copy.subtitle !== undefined && <p className="text-muted-foreground">{copy.subtitle}</p>}
+        </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{identity.heading}</CardTitle>
-          {identity.body !== undefined && <CardDescription>{identity.body}</CardDescription>}
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={save} className="space-y-5">
-            <div className="flex items-center gap-4">
-              <GeneratedAvatar
-                name={displayName || signedInName}
-                seed={handle || email}
-                size={64}
-              />
-              <div className="text-sm text-muted-foreground">
-                {fillLabel(itemLabel(account, "signed-in-as"), { name: signedInName })}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="display-name">{itemLabel(identity, "display-name")}</Label>
-              <Input
-                id="display-name"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder={itemLabel(identity, "display-name-placeholder")}
-              />
-              <p className="text-xs text-muted-foreground">
-                {itemLabel(identity, "display-name-hint")}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="handle">{itemLabel(identity, "handle")}</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {itemLabel(identity, "handle-prefix")}
-                </span>
-                <Input
-                  id="handle"
-                  value={handle}
-                  onChange={(event) => setHandle(event.target.value)}
-                  placeholder={itemLabel(identity, "display-name-placeholder")}
-                  autoComplete="username"
+        <FormSurface>
+          <CardHeader>
+            <CardTitle>{identity.heading}</CardTitle>
+            {identity.body !== undefined && <CardDescription>{identity.body}</CardDescription>}
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={save} className="space-y-5">
+              <div className="flex items-center gap-4">
+                <GeneratedAvatar
+                  name={displayName || signedInName}
+                  seed={handle || email}
+                  size={64}
                 />
+                <div className="text-sm text-muted-foreground">
+                  {fillLabel(itemLabel(account, "signed-in-as"), { name: signedInName })}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">{itemLabel(identity, "handle-hint")}</p>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">{itemLabel(identity, "bio")}</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={(event) => setBio(event.target.value)}
-                placeholder={itemLabel(identity, "bio-placeholder")}
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground">{itemLabel(identity, "bio-hint")}</p>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="display-name">{itemLabel(identity, "display-name")}</Label>
+                <Input
+                  id="display-name"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder={itemLabel(identity, "display-name-placeholder")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {itemLabel(identity, "display-name-hint")}
+                </p>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="country">{itemLabel(identity, "country")}</Label>
-              <select
-                id="country"
-                value={countryCode}
-                onChange={(event) => setCountryCode(event.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="">{itemLabel(identity, "country-none")}</option>
-                {(countries.items ?? []).map((country) => (
-                  <option key={country.id} value={country.id}>
-                    {country.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-muted-foreground">{itemLabel(identity, "country-hint")}</p>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="handle">{itemLabel(identity, "handle")}</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {itemLabel(identity, "handle-prefix")}
+                  </span>
+                  <Input
+                    id="handle"
+                    value={handle}
+                    onChange={(event) => setHandle(event.target.value)}
+                    placeholder={itemLabel(identity, "display-name-placeholder")}
+                    autoComplete="username"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {itemLabel(identity, "handle-hint")}
+                </p>
+              </div>
 
-            <div className="flex items-center gap-3">
-              <Button type="submit" disabled={status.kind === "saving"}>
-                {status.kind === "saving"
-                  ? itemLabel(identity, "saving")
-                  : itemLabel(identity, "save")}
-              </Button>
-              {status.kind === "saved" && (
-                <Badge variant="secondary" className="gap-1">
-                  <Check className="h-3 w-3" />
-                  {itemLabel(identity, "saved")}
-                </Badge>
-              )}
-              {publicHref !== undefined && (
-                <Link
-                  href={publicHref}
-                  className="inline-flex items-center gap-1 text-sm text-action"
+              <div className="space-y-2">
+                <Label htmlFor="bio">{itemLabel(identity, "bio")}</Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(event) => setBio(event.target.value)}
+                  placeholder={itemLabel(identity, "bio-placeholder")}
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">{itemLabel(identity, "bio-hint")}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="country">{itemLabel(identity, "country")}</Label>
+                <select
+                  id="country"
+                  value={countryCode}
+                  onChange={(event) => setCountryCode(event.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
-                  {itemLabel(links, "public-profile")}
-                  <ExternalLink className="h-3 w-3" />
-                </Link>
+                  <option value="">{itemLabel(identity, "country-none")}</option>
+                  {(countries.items ?? []).map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  {itemLabel(identity, "country-hint")}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button type="submit" disabled={status.kind === "saving"}>
+                  {status.kind === "saving"
+                    ? itemLabel(identity, "saving")
+                    : itemLabel(identity, "save")}
+                </Button>
+                {status.kind === "saved" && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Check className="h-3 w-3" />
+                    {itemLabel(identity, "saved")}
+                  </Badge>
+                )}
+                {publicHref !== undefined && (
+                  <Link
+                    href={publicHref}
+                    className="inline-flex items-center gap-1 text-sm text-action"
+                  >
+                    {itemLabel(links, "public-profile")}
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
+              </div>
+              {status.kind === "error" && (
+                <p aria-live="polite" className="text-sm text-red-600">
+                  {status.message}
+                </p>
               )}
-            </div>
-            {status.kind === "error" && (
-              <p aria-live="polite" className="text-sm text-red-600">
-                {status.message}
-              </p>
-            )}
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </FormSurface>
 
-      <PasswordCard copy={copy} hasPassword={hasPassword} save={savePassword} />
+        <PasswordCard copy={copy} hasPassword={hasPassword} save={savePassword} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{account.heading}</CardTitle>
-          {account.body !== undefined && <CardDescription>{account.body}</CardDescription>}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label>{itemLabel(account, "email")}</Label>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm">{email}</span>
-              <Badge variant="outline">{itemLabel(account, "email-readonly")}</Badge>
+        <DeleteAccountCard copy={copy} remove={deleteAccount} />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{account.heading}</CardTitle>
+            {account.body !== undefined && <CardDescription>{account.body}</CardDescription>}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <Label>{itemLabel(account, "email")}</Label>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm">{email}</span>
+                <Badge variant="outline">{itemLabel(account, "email-readonly")}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{itemLabel(account, "email-hint")}</p>
             </div>
-            <p className="text-xs text-muted-foreground">{itemLabel(account, "email-hint")}</p>
-          </div>
-          <Separator />
-          <SignOutButton
-            label={itemLabel(account, "sign-out")}
-            pendingLabel={itemLabel(account, "signing-out")}
-            errorLabel={itemLabel(identity, "error-network")}
-          />
-        </CardContent>
-      </Card>
-    </div>
+            <Separator />
+            <SignOutButton
+              label={itemLabel(account, "sign-out")}
+              pendingLabel={itemLabel(account, "signing-out")}
+              errorLabel={itemLabel(identity, "error-network")}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </StageColumn>
   );
 }

@@ -7,7 +7,9 @@
  *     submission direction can mail the person who just submitted;
  *   * the body carries the instance's name and one link, and **no** answer, score, Gap value or
  *     invitation token — the assertion is that it contains no digit at all, which is what a score
- *     and a Gap value are, and no `/invite/` path, which is where a token could hide;
+ *     and a Gap value are, and no `/invite/` path, which is where a token could hide. Since #548
+ *     the words are template #5 (`lib/email/templates/report-ready.ts`) rendered through the band,
+ *     so the message is the report-ready notice: text composed first, HTML derived from it;
  *   * a send that cannot happen is an outcome, never a throw: `unset` (no mailer configured),
  *     `failed` (attempted and refused / unreachable), `no-address` (the seat has none).
  *
@@ -18,6 +20,7 @@
  * submit) is `pnpm flow:e2e`'s and the card's own stubbed-transport run, not this file.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { brand } from "@/data/brand";
 
 const stub = vi.hoisted(() => ({
   facts: undefined as unknown,
@@ -155,9 +158,9 @@ describe("the message names the instance and carries nothing else", () => {
       fetchImpl,
     });
 
-    expect(calls[0].subject).toBe("Rowan has answered Relationship Basics");
+    expect(calls[0].subject).toBe("Your Gap report is ready");
     expect(calls[0].text).toContain("Hi Avery,");
-    expect(calls[0].text).toContain("Rowan has answered their side of Relationship Basics");
+    expect(calls[0].text).toContain("Rowan accepted their side of Relationship Basics");
   });
 
   it("links to the instance and nowhere else", async () => {
@@ -171,7 +174,12 @@ describe("the message names the instance and carries nothing else", () => {
     });
 
     const links = calls[0].text.match(/https?:\/\/\S+/g) ?? [];
-    expect(links).toEqual([`${BASE}/assessment/instances/${INSTANCE}`]);
+    // The band's footer draws the site line on every message; the instance's own screen is the
+    // message's only link. The site line is compared whole: on the AlignSynch brand it shares an
+    // origin with a link on that domain, so a prefix filter would eat both.
+    expect(links.filter((href) => href !== `https://${brand.domain}`)).toEqual([
+      `${BASE}/assessment/instances/${INSTANCE}`,
+    ]);
   });
 
   it("carries no score, no Gap value, no digit and no invitation token", async () => {

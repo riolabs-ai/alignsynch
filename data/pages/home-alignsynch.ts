@@ -1,5 +1,6 @@
 /**
- * `/` for the AlignSynch build — the alignment page's copy, positioned as a practice (issue #143).
+ * `/` for the AlignSynch build — the alignment page's copy, pitched at the leader's outcome
+ * (issue #143).
  *
  * `data/pages/home.ts` is the QuizHub front page: categories, tournaments, leaderboards,
  * "Earn Rewards". This module is the other composition of the same route, and which one
@@ -7,12 +8,15 @@
  * on the brand the way `resolveBrand` does, so neither product inherits the other's front
  * page by accident.
  *
- * **The page leads with a practice, and the Gap is the proof underneath.** An earlier version
- * of this fixture opened on the two questions ("How do you feel, against how they feel?") and
- * sold a relationship curiosity. The words below sell the thing a practitioner charges for:
- * a template that is theirs, a blind two-sided answer, and a report that becomes the agenda
- * of the session they run. The `questions` and `templates` bands are unchanged — the Gap is
- * still the mechanism — but they now sit under a business framing rather than in front of it.
+ * **The page leads with a leadership outcome, and the Gap is the proof underneath.** An earlier
+ * version of this fixture opened on the two questions ("How do you feel, against how they feel?")
+ * and sold a relationship curiosity; the version after it sold a practice — a heading promising
+ * the reader a business they bill clients for — which made the reader a vendor before they had
+ * read a word about the work. The words below are pitched at the person accountable for the
+ * relationship — a lead, a manager, a partner — and the hero names what they cannot otherwise
+ * hear: what their team will not say to their face. The Gap is still the mechanism, and the
+ * `practice` band still describes running the cycle with each counterparty; the hero no longer
+ * sells a session.
  *
  * Why this is not an entry in `data/pages/index.ts`: the table is keyed by the route pattern
  * (`/`), and one route carries one `PageCopy` — the fixture the `"/"` budget entry in
@@ -54,28 +58,38 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const ALIGN_SYNCH_FEATURED_SLUG = "avery-rowan";
 
 /**
- * The `/` document title for this build — `"<brand> — Turn one relationship into a practice"`.
+ * The `/` document title for this build — `"<brand> — Relationship alignment for leaders and teams"`.
  *
  * A function of the brand, like `homeTitle`: the page names the product itself, and the
- * alignment page's tagline is the practice the product makes possible rather than the quiz
- * template's "Play, Share, Earn". Neither word is spelled in a `.tsx`.
+ * alignment page's tagline is the register the page speaks in — leadership, not a practitioner's
+ * practice — rather than the quiz template's "Play, Share, Earn". Neither word is spelled in a
+ * `.tsx`.
+ *
+ * The title and the hero share that register: who the page is for, and what the product is.
+ * Neither makes a claim the page does not make. Moving it is a one-line change here plus a
+ * parity summary, because the title is what a search result and a browser tab say.
  */
 export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
-  return `${brand.name} — Turn one relationship into a practice`;
+  return `${brand.name} — Relationship alignment for leaders and teams`;
 }
 
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
-  eyebrow: "Relationship alignment · for practitioners",
-  heading: "Turn one assessment into a practice you can charge for.",
+  eyebrow: "Relationship alignment · for leaders and teams",
+  heading: "Know what your team will not say out loud.",
   /**
-   * The hero's three pieces of copy divide one job each, and the division is the fix for a
-   * footnote that said the money three times: the heading states the promise ("charge for"), the
-   * subtitle states the mechanism (pick a type, both answer blind, you get the Gap), and the
-   * fineprint — one sentence, never two — states what a reader is buying. "Paid to run" and
-   * "yours to run" used to repeat the heading's business fact in the two lines beneath it.
+   * The hero's copy divides one job each: the eyebrow says who the page is for, the heading
+   * states the outcome a leader owns (the thing their team will not say to their face), the
+   * subtitle states the mechanism (two people answer the same questions blind, and where their
+   * answers part is the thing to act on), and the fineprint — one sentence, never two — states
+   * what a reader is buying.
+   *
+   * The register is leadership, not practice: the reader is accountable for the relationship and
+   * for what they do next, not selling a session to a client. So no line here prices the work.
+   * A heading about billing, "paid to run" and "yours to run" all made the sale the promise,
+   * which read as a business a practitioner runs rather than an advantage the reader holds.
    */
   subtitle:
-    "Pick a relationship type, write the Aspects you actually work on, and send it to a client and the person they're aligning with. Both answer blind. You get the Gap — and the agenda for the session.",
+    "Two people answer the same questions blind. You see where intention and experience part company — and what to do next.",
   /**
    * Two CTAs, and the order is the argument: creating the first relationship is what the reader
    * came to do, and the worked example is how they check the product can do it. Both are
@@ -90,7 +104,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
      * because `cardsOf()` reads every item of `practice` and `seats` as a titled card — an
      * eyebrow in those arrays would be a card with no paragraph, and the projection refuses it.
      */
-    { id: "eyebrow-practice", label: "How the practice works" },
+    { id: "eyebrow-practice", label: "How the work works" },
     { id: "eyebrow-questions", label: "The mechanism" },
     { id: "eyebrow-templates", label: "The catalogue" },
     { id: "eyebrow-families", label: "Scope" },
@@ -128,32 +142,28 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     /** The bars' accessible name: two numbers and who gave them. */
     { id: "worked-example-scores", label: "{you} {yours}, {them} {theirs}" },
     /**
-     * The templates band's three views. The values are markup (`catalogue`/`library`/`mine`);
-     * the words are here, because a tab is a label a reader reads.
+     * The templates band's one call to action. The band is capped at six cards (the shelf in
+     * `data/template-shelf.ts`) and this link is the whole navigation: the catalogue itself is
+     * the public `/templates` page, which lists every template by realm.
      */
-    { id: "templates-tab-catalogue", label: "Relationship templates" },
-    { id: "templates-tab-library", label: "Library templates" },
-    { id: "templates-tab-mine", label: "My relationships" },
+    { id: "templates-view-all", label: "View all relationship templates" },
     /** The two card actions, and the frame the two roles are joined by. */
-    { id: "template-use", label: "Use this template" },
-    { id: "template-example", label: "Read the example" },
+    { id: "template-use", label: "Start with this template" },
+    { id: "template-example", label: "See a worked example" },
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
     /**
-     * The third view, as a door: `/` is public, so it names no relationship and renders none.
-     * `value` is the route the door opens — `/assessment/instances` decides who may walk in.
+     * The card's one figure: the plan that includes every template, and its interval. `{plan}` and
+     * `{price}` come from `data/billing-plans.ts` through `cataloguePriceNote()` — the same string
+     * `/templates` and `/templates/<slug>` carry, because the three surfaces sell one plan (#798).
      */
-    {
-      id: "templates-mine",
-      label: "Open my relationships",
-      value: "/assessment/instances",
-      body: "Your relationships live behind your session, in the console — not on this page, which anyone can read. Sign in and the list is one click away.",
-    },
+    { id: "template-price", label: "{plan} · {price}/mo" },
     /**
      * Under the hero CTA: the two facts that make the button safe to press — one relationship is
      * bought once and every session after it is the reader's, and the reader's seat is the coach's
      * rather than a third answer. **One sentence**, because the three-line version repeated the
-     * heading's word ("charge for") twice ("paid to run", "yours to run") and buried the fact it
-     * was trying to make.
+     * purchase fact twice ("paid to run", "yours to run") and buried the fact it was trying to
+     * make. Since the heading now states an outcome rather than a sale, this line is the only
+     * place on the page that says what buying a relationship gets you.
      */
     {
       id: "hero-fineprint",
@@ -189,7 +199,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
   sections: [
     {
       id: "practice",
-      heading: "Create once. Run it with every client.",
+      heading: "One approach. Used with every relationship.",
       items: [
         {
           id: "practice-create",
@@ -204,7 +214,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
         {
           id: "practice-session",
           label: "Run the session",
-          body: "The report names every Gap by kind and size, and the Steps that follow from it. That's your agenda, and the reason the next session is billable.",
+          body: "The report names every Gap by kind and size, and the Steps that follow from it. That's your agenda, and why the next conversation has somewhere to go.",
         },
       ],
     },
@@ -229,8 +239,8 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "templates",
-      heading: "Start from a type, a template, or your own list.",
-      body: "The catalogue is every relationship type this product sells; the library is what this deployment has already built. A type is only offered if a template backs it, so nothing here is for sale that the product can't run.",
+      heading: "Start from the relationship you have.",
+      body: "A shelf of the catalogue's templates, one per realm a practice meets first: what each one asks, who it is between, and what it costs. Every template in the catalogue is one the product can run, so nothing here is for sale that it cannot.",
     },
     {
       id: "families",
@@ -262,7 +272,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     {
       id: "boundary",
       heading: "What this page does not claim.",
-      body: "No pay figures, no client counts, no logos. The product model is real and priced per relationship; what a practice brings in depends on what it charges and how many clients it runs.",
+      body: "No pay figures, no client counts, no logos. The product model is real, and the pricing page states what it costs.",
     },
   ],
 });

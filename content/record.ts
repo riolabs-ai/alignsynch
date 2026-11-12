@@ -35,7 +35,7 @@
  * instance can never be mistaken for the template it was copied from.
  */
 import { z } from "zod";
-import { zId, zIsoDateTime, zPublishStatus, zSlug } from "./core";
+import { pathOf, zId, zIsoDateTime, zPublishStatus, zSlug } from "./core";
 import { zUserId } from "./identity";
 
 /* ------------------------------------------------------------------ *
@@ -189,7 +189,7 @@ export function uniqueItemIds(
   record.items.forEach((item, index) => {
     if (seen.has(item.id)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["items", index, "id"],
         message: `duplicate item id "${item.id}" within record "${record.id}"`,
       });
@@ -281,7 +281,7 @@ export function templateProblems(template: TemplateLike): TemplateProblem[] {
     })),
   });
   if (result.success) return [];
-  return result.error.issues.map((issue) => ({ path: issue.path, message: issue.message }));
+  return result.error.issues.map((issue) => ({ path: pathOf(issue), message: issue.message }));
 }
 
 /* ------------------------------------------------------------------ *

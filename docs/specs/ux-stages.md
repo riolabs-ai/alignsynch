@@ -1,5 +1,11 @@
 # UX Spec — The Stage Display (Invited → Connected → Sharing → Aligned)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
+
+<!-- docs-nav:end -->
+
 **Recommendation: no stepper, no stage bar.** Show **one status sentence** naming the current
 stage and who acts next (derived, never stored), and render **Aligned only as a verdict on the
 report**, not as a fourth step. If a richer display is wanted later, use a **process list**
@@ -52,10 +58,13 @@ stepper is the obvious answer to "four stages". Against it:
     already says who; the stage sentence just names the stage).
   - `complete` → **"Sharing — the report is open to both of you."**
     Never add a count. The sentence goes in `data/pages/assessment-instance.ts` (E23).
-- **Report (both `AssessmentReportView` and the instance screen's complete band):** the
+- **Report (the `/assessment/[slug]` and demo surfaces' `AssessmentReportView`, and the
+  relationship's own Alignment — `components/assessment-flow/alignment-view.tsx`, #692):** the
   verdict, not a stage: **"Aligned under Soft"** / **"{n} Gaps exceed Full"** from
   `instanceAlignment` (see ux-report.md). This is where "Aligned" belongs — it is a property
-  of the numbers, computed only once both parties' opinions are readable anyway.
+  of the numbers, computed only once both parties' opinions are readable anyway. On the
+  relationship screen it is one row per Aspect (both sheets, both Opinions, the difference),
+  never a stage and never a total; the per-Gap tables stay on `…/report`, one link away.
 - **Optional process list (if §4.3's "derived and named" bar is ever wanted):** an `<ol>` on the
   instance screen, four items with the current one `aria-current="step"`, completed ones marked
   with a check **plus** the word "Complete" (never check-only — WCAG 1.4.1), pending ones
@@ -177,3 +186,14 @@ testing every transition, the same discipline as `myInstanceStateOf`.
 8. `bash scripts/verify.sh` exits 0; the parity manifest for the affected routes is updated with
    `pnpm parity:update --reason "stage sentence added"` only after review, or the harness
    change is documented in the PR (per tests/parity/README.md).
+
+## Related
+
+- [STAGES.md](../STAGES.md) — the two ladders behind the four stages.
+- [lifecycle.md](../diagrams/lifecycle.md) — the state chart these displays follow.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
+
+<!-- docs-nav:end -->

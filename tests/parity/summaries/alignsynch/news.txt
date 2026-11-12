@@ -27,13 +27,12 @@ landmarks (6)
   main           1
   navigation     3
 
-links (18 unique, 34 total)
+links (16 unique, 32 total)
   /                                                    1
-  /#templates                                          1
-  /assessment/instances                                1
-  /assessment/templates                                1
-  /dashboard                                           1
-  /how-it-works                                        1
+  /dashboard/help                                      1
+  /dashboard/relationships                             1
+  /dashboard/support                                   1
+  /dashboard/templates                                 1
   /news/10-strategies-for-creating-engaging-quizzes    2
   /news/ai-powered-quiz-creation-tools                 2
   /news/new-quiz-analytics-features                    2
@@ -44,12 +43,11 @@ links (18 unique, 34 total)
   /news/quiz-trends-2025                               4
   /news/summer-quiz-championship-announcement          2
   /settings                                            1
-  /support                                             1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.3.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 2
 
 counts
-  elements  557
+  elements  556
   images    2
-  buttons   17
+  buttons   18
   inputs    2
-  classes   245 (sha 63909cda4c5b)
+  classes   252 (sha 731338a0f89b)

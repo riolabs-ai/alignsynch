@@ -18,6 +18,8 @@
  * "every state change goes through `act()`" checkable from the screen rather than only in the log.
  */
 import type { TemplateSaveOutcome } from "@/lib/admin/template-draft";
+import type { EditInvalidation } from "@/lib/relationship/edit";
+import type { RelationshipEditState } from "@/lib/relationship/edit-view";
 
 /** A `zAssessment` finding, flattened to the field it names. */
 export interface OutcomeProblem {
@@ -73,6 +75,47 @@ export type PublishOutcome =
       readonly url?: string;
     };
 
+/**
+ * #619 — the payer completed: the fee was taken, the relationship is `complete` and the Gap is open
+ * to both parties.
+ *
+ * `payment-required` is not a failure: it carries the url the browser must visit to put a method on
+ * file, exactly as `PublishOutcome`'s checkout arm does — nothing was charged and the sheets stay
+ * sealed until the payer comes back.
+ */
+export type CompleteOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly status: string;
+      readonly chargedAt: string;
+      readonly amountCents: number;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string; readonly url?: string };
+
+/**
+ * #739 — putting a method on file, from the relationship screen.
+ *
+ * Three shapes, one arm each fact:
+ *
+ *   inline    `url` and `clientSecret` are both `null` and `captured` is `true`: the adapter
+ *             completed inside this request (the mock, and any offline one). Nothing else happens.
+ *   hosted    `url` is the page the browser must visit, exactly as `PublishOutcome`'s checkout arm.
+ *   embedded  `clientSecret` is the secret the screen mounts the provider's frame with (#748) —
+ *             nothing navigates — and `captureSessionId` is what the frame's completion hands back
+ *             so the method can be resolved by the same function the hosted return path uses.
+ */
+export type CaptureOutcome =
+  | {
+      readonly ok: true;
+      readonly url: string | null;
+      readonly captured?: boolean;
+      readonly clientSecret?: string | null;
+      readonly publishableKey?: string | null;
+      readonly captureSessionId?: string | null;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
 /** Reissuing a lapsed or revoked invitation — one click, no Aspects re-entered. */
 export type RepublishOutcome =
   | {
@@ -80,6 +123,40 @@ export type RepublishOutcome =
       readonly actionId: string;
       readonly inviteLink: string;
       readonly inviteExpiresAt: string;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/**
+ * #623 — what an edit *would* cost, asked before it is written.
+ *
+ * `blocked` is not a refusal of the request: it is the answer "this edit cannot be made at all",
+ * carrying the code whose sentence the screen prints (`answers-sealed`, `mode-fixed`). Asking it as
+ * a preview rather than discovering it on save is the whole shape of the card — the cost is
+ * stated **before** the write is committed, not after it fails.
+ */
+export type EditPreviewOutcome =
+  | {
+      readonly ok: true;
+      readonly blocked: {
+        readonly code: "mode-fixed" | "answers-sealed";
+        readonly message: string;
+      } | null;
+      readonly invalidations: readonly EditInvalidation[];
+      readonly state: RelationshipEditState;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/**
+ * #623 — the edit itself. `discardedAnswers` is the count the row records, so the screen can say
+ * what the confirmed write actually took rather than what it expected to take.
+ */
+export type EditOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly status: string;
+      readonly version: number | null;
+      readonly discardedAnswers: number;
     }
   | { readonly ok: false; readonly code: string; readonly message?: string };
 

@@ -59,6 +59,7 @@ import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Client } from "pg";
 import { syncBillingPlans } from "./billing-plans.mjs";
+import { reconcileAllowlistedAdmins } from "./db-admin-allowlist.mjs";
 import {
   SEED_LOCK_ID,
   SEED_LOCK_NAMESPACE,
@@ -894,6 +895,53 @@ async function seedAdminAccounts(client, { accounts, warnings, configured }, rot
 }
 
 /* ------------------------------------------------------------------ *\
+ * The review catalogue (#667)
+ * ------------------------------------------------------------------ */
+
+/**
+ * `data/review-artifacts.ts` → `review_artifact`, idempotently.
+ *
+ * The same rule the plans above follow: the list a surface renders is a fixture, so it is mirrored
+ * into rows rather than typed into SQL, and a re-run converges instead of counting.
+ *
+ * **Upsert, never delete-and-reinsert.** The artifact id is the identity the checklist items and
+ * the issues hang off (`ON DELETE CASCADE`), so a delete would take a reviewer's feedback with it —
+ * deleting a review artifact is not a seed's decision. An entry the fixture stops authoring is left
+ * alone for the same reason the seed leaves an unauthored `record`: somebody's work may be under it.
+ *
+ * Returns how many the fixture authors, which is what the run prints. It is **not** in `COUNT_SQL`:
+ * every other count there is asserted equal to the fixture, and this table's row count is a fact
+ * about the fixture rather than about the seed's fidelity — the todos and issues beside it are
+ * written by people and would make "identical on every run" false.
+ */
+async function syncReviewArtifacts(client) {
+  const { reviewArtifacts } = await import("../data/review-artifacts.ts");
+  for (const artifact of reviewArtifacts) {
+    await client.query(
+      `INSERT INTO review_artifact (id, slug, title, kind, version, path, captured_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (id) DO UPDATE SET
+         slug = EXCLUDED.slug,
+         title = EXCLUDED.title,
+         kind = EXCLUDED.kind,
+         version = EXCLUDED.version,
+         path = EXCLUDED.path,
+         captured_at = EXCLUDED.captured_at`,
+      [
+        artifact.id,
+        artifact.slug,
+        artifact.title,
+        artifact.kind,
+        artifact.version,
+        artifact.path,
+        artifact.capturedAt,
+      ],
+    );
+  }
+  return reviewArtifacts.length;
+}
+
+/* ------------------------------------------------------------------ *\
  * Counts
  * ------------------------------------------------------------------ */
 
@@ -1119,6 +1167,9 @@ async function main() {
     // in the migration: a migration is DDL and cannot import the fixture, and a price typed into
     // SQL would be a second copy of the number the page renders.
     await syncBillingPlans(client, billingFixtures);
+    // #667 — the review catalogue. After the content rows because nothing here references them; the
+    // todos and issues under an artifact are written by people at runtime and are never seeded.
+    const reviewArtifactCount = await syncReviewArtifacts(client);
 
     // "Only seeded rows": an assessment record this seed does not author is drift, and the
     // honest move is to name it rather than to delete a row someone may have meant.
@@ -1150,6 +1201,23 @@ async function main() {
     // The admin seats — durable, independent of DEMO_AUTH. Runs in phase 2 (with the other
     // writes) after phase 1 committed any stale-admin removals.
     const adminSeats = await seedAdminAccounts(client, admin, staleAdmins);
+
+    // The allowlist, enforced after the accounts exist — the seed half of
+    // `lib/auth/admin-allowlist.ts`, which can only promote on a *sign-in*. Without this a branch
+    // whose accounts were just created has zero admins until each address happens to sign in,
+    // which is how a local server and a fresh demo ended up with no operator at all.
+    const allowlist = await reconcileAllowlistedAdmins(client, { mode: "apply" });
+    if (allowlist.counts.total > 0) {
+      console.log(
+        `  ○ allowlist: ${allowlist.counts.total} address(es) on ADMIN_EMAILS — ${allowlist.counts.admin} already admin, ${allowlist.counts.changed} created or promoted, ${allowlist.counts.pending} pending first sign-in`,
+      );
+      for (const row of allowlist.rows) {
+        if (row.status === "pending" || row.status.startsWith("failed")) {
+          const mark = row.status.startsWith("failed") ? "!" : "·";
+          console.log(`  ${mark} allowlist: ${row.email} ${row.status}`);
+        }
+      }
+    }
 
     const actual = await counts(client);
     for (const [table, count] of Object.entries(expected)) {
@@ -1197,6 +1265,7 @@ async function main() {
     }
     console.log(`    ${"demo_account".padEnd(20)} ${report.totals.accounts}`);
     console.log(`    ${"template_version (new)".padEnd(20)} ${seededVersions}`);
+    console.log(`    ${"review artifact".padEnd(20)} ${reviewArtifactCount}`);
     console.log(`    ${"demo admin".padEnd(20)} ${report.totals.admins}`);
     console.log(`    ${"platform admin".padEnd(20)} ${report.totals.platform_admins}`);
     console.log(`    ${"party(user bound)".padEnd(20)} ${report.totals.bound_parties}`);

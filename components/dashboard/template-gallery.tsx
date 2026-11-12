@@ -70,6 +70,7 @@ export function TemplateGallery({
   unreadable,
   onCreate,
   onClone,
+  showList = true,
 }: {
   copy: PageCopy;
   rows: readonly MemberTemplateRow[];
@@ -77,8 +78,14 @@ export function TemplateGallery({
   clonable: readonly ClonableTemplate[];
   /** The database's refusal sentence, or `null` when the read answered. */
   unreadable: string | null;
-  onCreate: (payload: { record?: unknown; reason?: string }) => Promise<TemplateWriteOutcome>;
-  onClone: (payload: { templateId?: string; reason?: string }) => Promise<TemplateWriteOutcome>;
+  onCreate: (payload: { record?: unknown }) => Promise<TemplateWriteOutcome>;
+  onClone: (payload: { templateId?: string }) => Promise<TemplateWriteOutcome>;
+  /**
+   * Whether the "Your templates" card is drawn. #620's Templates tab lists the member's rows in
+   * the shared shelf above this form, so the tab passes `false` and keeps only the two create
+   * bands — one list, two presentations, never two lists of the same rows on one screen.
+   */
+  showList?: boolean;
 }) {
   const list = sectionOf(copy, "list");
   const blank = sectionOf(copy, "new");
@@ -93,13 +100,11 @@ export function TemplateGallery({
   const [prompt, setPrompt] = useState("");
   const [left, setLeft] = useState("");
   const [right, setRight] = useState("");
-  const [reason, setReason] = useState("");
   const [outcome, setOutcome] = useState<{ kind: CreateKind; value: TemplateWriteOutcome } | null>(
     null,
   );
 
   const [cloneId, setCloneId] = useState("");
-  const [cloneReason, setCloneReason] = useState("");
   const [cloneOutcome, setCloneOutcome] = useState<TemplateWriteOutcome | null>(null);
 
   /**
@@ -120,7 +125,6 @@ export function TemplateGallery({
           date: new Date().toISOString(),
           aspects: [{ prompt, leftValue: left, rightValue: right }],
         }),
-        reason,
       });
       setOutcome({ kind: "blank", value: answer });
       if (answer.ok) {
@@ -136,7 +140,7 @@ export function TemplateGallery({
   function submitClone(): void {
     setCloneOutcome(null);
     startTransition(async () => {
-      const answer = await onClone({ templateId: cloneId, reason: cloneReason });
+      const answer = await onClone({ templateId: cloneId });
       setCloneOutcome(answer);
       if (answer.ok) setCloneId("");
     });
@@ -151,57 +155,59 @@ export function TemplateGallery({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{list.heading}</CardTitle>
-          <CardDescription>{sectionBody(list)}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {unreadable !== null ? (
-            <div data-templates-unreadable>
-              <p className="text-sm font-medium">{unreadableCopy.heading}</p>
-              <p className="text-sm text-muted-foreground">{unreadable}</p>
-            </div>
-          ) : rows.length === 0 ? (
-            <div data-templates-empty>
-              <p className="text-sm font-medium">{empty.heading}</p>
-              <p className="text-sm text-muted-foreground">{sectionBody(empty)}</p>
-            </div>
-          ) : (
-            <ul data-templates-list className="grid gap-3 sm:grid-cols-2">
-              {rows.map((row) => (
-                <li key={row.id} className="rounded-lg border p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <p className="font-medium">{row.title}</p>
-                      <p className="text-sm text-muted-foreground">{row.summary}</p>
+      {showList ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{list.heading}</CardTitle>
+            <CardDescription>{sectionBody(list)}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {unreadable !== null ? (
+              <div data-templates-unreadable>
+                <p className="text-sm font-medium">{unreadableCopy.heading}</p>
+                <p className="text-sm text-muted-foreground">{unreadable}</p>
+              </div>
+            ) : rows.length === 0 ? (
+              <div data-templates-empty>
+                <p className="text-sm font-medium">{empty.heading}</p>
+                <p className="text-sm text-muted-foreground">{sectionBody(empty)}</p>
+              </div>
+            ) : (
+              <ul data-templates-list className="grid gap-3 sm:grid-cols-2">
+                {rows.map((row) => (
+                  <li key={row.id} className="rounded-lg border p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="font-medium">{row.title}</p>
+                        <p className="text-sm text-muted-foreground">{row.summary}</p>
+                      </div>
+                      <span className="font-mono text-xs text-muted-foreground">{row.slug}</span>
                     </div>
-                    <span className="font-mono text-xs text-muted-foreground">{row.slug}</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <span>
-                      {fillLabel(pageItemOf(copy, "aspects").label, {
-                        count: String(row.aspectCount),
-                      })}
-                    </span>
-                    <span>
-                      {fillLabel(pageItemOf(copy, "relationships").label, {
-                        count: String(row.relationshipCount),
-                      })}
-                    </span>
-                    <Link
-                      className="underline underline-offset-4"
-                      href={`/dashboard/templates/${row.id}`}
-                    >
-                      {pageItemOf(copy, "open").label}
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span>
+                        {fillLabel(pageItemOf(copy, "aspects").label, {
+                          count: String(row.aspectCount),
+                        })}
+                      </span>
+                      <span>
+                        {fillLabel(pageItemOf(copy, "relationships").label, {
+                          count: String(row.relationshipCount),
+                        })}
+                      </span>
+                      <Link
+                        className="underline underline-offset-4"
+                        href={`/dashboard/templates/${row.id}`}
+                      >
+                        {pageItemOf(copy, "open").label}
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -252,14 +258,6 @@ export function TemplateGallery({
                 onChange={(event) => setRight(event.target.value)}
               />
             </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="template-reason">{itemLabel(blank, "reason")}</Label>
-            <Input
-              id="template-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-            />
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <Button type="button" onClick={submitBlank} disabled={pending}>
@@ -327,14 +325,6 @@ export function TemplateGallery({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="clone-reason">{itemLabel(clone, "reason")}</Label>
-                <Input
-                  id="clone-reason"
-                  value={cloneReason}
-                  onChange={(event) => setCloneReason(event.target.value)}
-                />
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <Button

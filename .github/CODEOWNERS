@@ -1,0 +1,21 @@
+# CODEOWNERS — who gets the review request on the surfaces where a mistake is quiet.
+#
+# This routes a review request; it does not gate a merge on its own. Requiring an approving
+# review is a ruleset setting (an owner decision), not something this file can do.
+#
+# Both handles are user accounts (`owner_type: User`), which is what CODEOWNERS accepts.
+
+# Schema-shaped SQL. A migration that lands wrong is the one change no build can see.
+/db/migrations/ @riolabs-ai @jadenblack
+
+# Session and credential handling.
+/lib/auth/ @riolabs-ai @jadenblack
+
+# Pool, row mapping and the assessment reads the one database route depends on.
+/lib/db/ @riolabs-ai @jadenblack
+
+# The db:* scripts read and write a shared branch — seeds, migrations, verification.
+/scripts/db-* @riolabs-ai @jadenblack
+
+# The gate itself: a change here changes what every other change is measured against.
+/.github/workflows/ @riolabs-ai @jadenblack

@@ -1,6 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
+import { templateSlugOf } from "@/lib/db/template-library";
+import {
+  counterpartyNameOf,
+  initiatorNameOf,
+  modeDraft,
+  parseCreateDraft,
+} from "@/lib/flow/create-draft";
 import {
   createInstanceFromTemplate,
   FlowError,
@@ -8,8 +15,17 @@ import {
   type FlowErrorCode,
 } from "@/lib/flow/store";
 import { invitationMessage, sendInvitation } from "@/lib/flow/email";
-import { createRelationshipPath, instancePath, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
+  createCommitPath,
+  createInviteForPath,
+  createModePath,
+  createRelationshipPath,
+  instancePath,
+  RELATIONSHIP_TEMPLATES_PATH,
+} from "@/lib/flow/paths";
+import { loginPathFor } from "@/lib/auth/paths";
+import {
+  createDraftCookieName,
   FLOW_COOKIE_MAX_AGE,
   flowCookieOptions,
   inviteCookieName,
@@ -23,14 +39,50 @@ import {
  * else), so a crafted post cannot put words of its own into a page another person opens. A post
  * that named no template has nowhere to go back to and lands on the library instead, which is
  * the screen that lists what can be copied.
+ *
+ * **Which step it returns to is the draft's own fact (#688, #689, #690).** A post that came through
+ * the flow (the draft cookie exists) was sent from **stage 4, Create** — the conversion is the
+ * last screen before the create since #690 — so the refusal belongs there, above the review card
+ * the person just pressed. A post that never went through the draft — `scripts/flow-e2e.mjs`, a
+ * `curl`, the pre-#688 form — is returned to the Who screen, which is the only stage it ever saw.
+ *
+ * **The target is built from the slug (#794).** An empty slug — no template named, or a row this
+ * build could not resolve — is the library.
  */
-function refusalTarget(request: Request, templateRecordId: string, code: FlowErrorCode): URL {
-  const id = templateRecordId.trim();
+function refusalTarget(
+  request: Request,
+  templateSlug: string,
+  code: FlowErrorCode,
+  fromDraft: boolean,
+): URL {
+  const slug = templateSlug.trim();
+  const back =
+    slug === ""
+      ? RELATIONSHIP_TEMPLATES_PATH
+      : fromDraft
+        ? createCommitPath(slug)
+        : createRelationshipPath(slug);
+  const target = new URL(back, request.url);
+  target.searchParams.set("problem", code);
+  return target;
+}
+
+/**
+ * A stage-2 refusal that names one field (#688) — `?problem=<reason>&field=<field>`.
+ *
+ * The person is on the Mode screen, so the band is drawn there: `mode` or `setting` for a value
+ * the form did not offer, never a store code. `lib/flow/create-copy.ts` turns the pair into the
+ * sentence with the field's own label. The address is built from the slug (#794); an unresolvable
+ * template falls back to the library rather than a path with an empty segment.
+ */
+function fieldTarget(request: Request, templateSlug: string, field: string, reason: string): URL {
+  const slug = templateSlug.trim();
   const target = new URL(
-    id === "" ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(id),
+    slug === "" ? RELATIONSHIP_TEMPLATES_PATH : createModePath(slug),
     request.url,
   );
-  target.searchParams.set("problem", code);
+  target.searchParams.set("problem", reason);
+  target.searchParams.set("field", field);
   return target;
 }
 
@@ -67,28 +119,104 @@ function refusalTarget(request: Request, templateRecordId: string, code: FlowErr
 export async function POST(request: Request): Promise<Response> {
   const form = await request.formData();
   const value = (name: string) => String(form.get(name) ?? "");
+  const templateRecordId = value("templateRecordId").trim();
+  // #825 — stage 4's form carries `draft=1`: write the relationship as a draft and send nothing,
+  // because stage 5 is where the send is decided. Every other caller (a `curl`, `flow-e2e.mjs`, the
+  // pre-v9 one-form create) omits it and keeps the create-and-send it always got.
+  const asDraft = value("draft") === "1";
   const viewer = await currentUserIfConfigured();
+
+  // #688 — the draft stage 1 wrote, when this post came through the two-stage flow. A post
+  // that carries no draft is the pre-#688 one-form create (and every script that posts the
+  // endpoint directly): its values come from the form, exactly as they always did.
+  const jar = await cookies();
+  const draft =
+    templateRecordId === ""
+      ? null
+      : parseCreateDraft(jar.get(createDraftCookieName(templateRecordId))?.value);
+
+  // #794 — the screen a refusal names is addressed by the template's **slug**, while the post and
+  // the draft cookie carry its **id**. Resolved once, before anything can refuse.
+  const templateSlug = await templateSlugOf(templateRecordId);
+
+  // #825 — a draft belongs to an account, so there is nothing to write without one. The stage's
+  // page only draws the form for a signed-in reader, so this is the crafted post's answer: the
+  // sign-in screen, with this stage as the place to come back to.
+  if (asDraft && viewer === null && templateSlug !== "") {
+    return NextResponse.redirect(
+      new URL(loginPathFor(createCommitPath(templateSlug)), request.url),
+      303,
+    );
+  }
+
+  // Stage 2's own validation, before the store is asked anything: the Mode and the Setting are
+  // the only two fields that step owns, so a refusal names which one is wrong.
+  //
+  // #689 — since Aspects sits between Mode and the create, the post that arrives here comes from
+  // the Aspects stage and carries no radios: the two choices are the **draft's**. The validation
+  // did not move, only the place the values are read from, so a draft missing either is still
+  // refused with the field named and the Mode screen is still where it is fixed.
+  if (draft !== null) {
+    const fromDraft = (name: string) =>
+      name === "mode" ? draft.mode : name === "alignmentSetting" ? draft.alignmentSetting : "";
+    const choice = modeDraft(fromDraft, draft);
+    if (!choice.ok) {
+      return NextResponse.redirect(
+        fieldTarget(request, templateSlug, choice.problem.field, choice.problem.reason),
+        303,
+      );
+    }
+  }
+
+  /**
+   * Who this relationship is for: stage 1's draft when there is one, the form's own fields
+   * otherwise. Read once and used twice — the store writes the seats and the invitation email
+   * addresses them — so the two can never disagree about who was named.
+   */
+  const who =
+    draft === null
+      ? {
+          initiatorName: value("initiatorName"),
+          counterpartyName: value("counterpartyName"),
+          email: value("email"),
+        }
+      : {
+          initiatorName: initiatorNameOf(draft),
+          counterpartyName: counterpartyNameOf(draft),
+          email: draft.email,
+        };
 
   let created: CreatedInstance;
   try {
     created = await createInstanceFromTemplate({
-      templateRecordId: value("templateRecordId"),
-      initiatorName: value("initiatorName"),
-      counterpartyName: value("counterpartyName"),
-      email: value("email"),
+      templateRecordId,
+      initiatorName: who.initiatorName,
+      counterpartyName: who.counterpartyName,
+      email: who.email,
+      // #688 — stage 1's card title and description. Absent on a direct post, which keeps the
+      // store's template-derived title and its generated summary.
+      title: draft?.title ?? value("title"),
+      description: draft?.description ?? value("description"),
       // The create form's radios (#213). A post without one is refused by the store —
       // "mode must be basic or advanced" — rather than defaulted to Basic, so a crafted
-      // POST cannot choose a mode the form never offered.
-      mode: value("mode"),
+      // POST cannot choose a mode the form never offered. #689 — when the post came through the
+      // flow, the choice is the draft's (validated above), because the Aspects stage carries no
+      // radios; a direct post still names them itself.
+      mode: draft?.mode ?? value("mode"),
       // #427 — the Setting the same form asks for. The store parses it and writes the choice on
       // the session row; a blank value falls to the schema's documented default (`soft`), so a
       // post that predates the radios still creates what it always created.
-      alignmentSetting: value("alignmentSetting"),
+      alignmentSetting: draft?.alignmentSetting ?? value("alignmentSetting"),
+      // #689 — stage 3's list. The ids and the order stay the template's
+      // (`lib/flow/aspects.ts::aspectEditsFor` says why); what the person reworded is theirs.
+      aspects: draft?.aspects,
       // Not `value("userId")`: there is no such field, and the session cannot be posted.
       viewerUserId: viewer?.userId ?? null,
       // #258 — the address the unlock notice will reach this creator at when the Counterparty
       // submits last. Also the session's, never the form's: `email` above is the Counterparty's.
       viewerEmail: viewer?.email ?? null,
+      // #825 — stage 4 writes a draft and sends nothing; stage 5 decides.
+      draft: asDraft,
     });
   } catch (error) {
     if (error instanceof FlowError) {
@@ -97,14 +225,13 @@ export async function POST(request: Request): Promise<Response> {
       // the template it refused; a post that named no template at all has no screen to return to
       // and goes to the library, which lists what can be copied.
       return NextResponse.redirect(
-        refusalTarget(request, value("templateRecordId"), error.code),
+        refusalTarget(request, templateSlug, error.code, draft !== null),
         303,
       );
     }
     throw error;
   }
 
-  const jar = await cookies();
   jar.set(
     partyCookieName(created.instanceRecordId),
     created.initiatorToken,
@@ -118,15 +245,34 @@ export async function POST(request: Request): Promise<Response> {
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
 
+  // #688 — the draft has become a relationship; there is nothing left to resume. Deleted rather
+  // than left to expire so a second create from the same template starts blank.
+  if (templateRecordId !== "") jar.delete(createDraftCookieName(templateRecordId));
+
+  // #825 — stage 4 stops here. Nothing is sent, the row is a draft, and stage 5 is the screen that
+  // asks whether it goes out. The `?invite=` outcome has nothing to report yet, so it is not set.
+  if (asDraft) {
+    const slug = templateSlug.trim();
+    return NextResponse.redirect(
+      new URL(
+        slug === ""
+          ? instancePath(created.instanceRecordId)
+          : createInviteForPath(slug, created.instanceRecordId),
+        request.url,
+      ),
+      303,
+    );
+  }
+
   // `sendInvitation` reports three outcomes and never throws. The `.catch` is a belt and not
   // a path: if this function ever did throw, the creation already committed, so the screen
   // must still offer the link — which it does whenever `screen.invite.link` exists — and the
   // notice says only that the send failed, because a thrown error is not a diagnosis.
   const outcome = await sendInvitation(
     invitationMessage({
-      to: value("email").trim(),
-      initiatorName: value("initiatorName").trim(),
-      counterpartyName: value("counterpartyName").trim(),
+      to: who.email.trim(),
+      initiatorName: who.initiatorName.trim(),
+      counterpartyName: who.counterpartyName.trim(),
       templateTitle: created.templateTitle,
       token: created.inviteToken,
     }),
@@ -135,6 +281,10 @@ export async function POST(request: Request): Promise<Response> {
     return { outcome: "failed" as const };
   });
 
+  // #825 — the gate that used to follow this create is retired, so a post that did not come from
+  // stage 4's draft form lands on the relationship itself, which draws the invitation's own state
+  // and its notice (#220). `afterCreateTarget()` is deleted with the gate: a destination that
+  // depended on which flow shape posted is a decision with no screen behind it now.
   const target = new URL(instancePath(created.instanceRecordId), request.url);
   target.searchParams.set("invite", outcome.outcome);
   // 303: the browser follows with a GET, so a reload of the instance screen cannot create

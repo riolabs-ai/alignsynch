@@ -1,7 +1,7 @@
 /**
- * `/assessment/templates/new` — the form that authors a template (#255).
+ * `/templates/relationship/new` — the form that authors a template (#255).
  *
- * The route's surface is `app/(mainlayout)/assessment/templates/new/page.tsx` plus
+ * The route's surface is `app/(mainlayout)/templates/relationship/new/page.tsx` plus
  * `components/assessment-flow/template-form.tsx`; the words are here so the component holds none
  * (E23). The refusals live here too, for the same reason: `lib/flow/template-draft.ts` decides
  * *whether* a draft can be saved and answers with a code, and these are the sentences a person
@@ -44,7 +44,7 @@ export const assessmentTemplatePageCopy: PageCopy = zPageCopy.parse({
     {
       id: "copy-note",
       heading: "What a template is",
-      body: "A template is a copy, not a live source. An instance takes its own copy of these Aspects when it is created, so nothing you save here can ever change a question somebody has already answered — which is also why a saved template cannot be edited.",
+      body: "A template is a copy, not a live source. A relationship takes its own copy of these Aspects when it is created, so nothing you save here can ever change a question somebody has already answered — which is also why a saved template cannot be edited.",
     },
     {
       id: "problems",

@@ -28,14 +28,14 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship operations",
   subtitle:
-    "Five repairs on one relationship: clear a party's unlock mark, reissue or withdraw the invitation, end the session, or accept it on a seat's behalf. Every one of them needs a reason, and every one of them is written to the audit log in the same transaction as the change.",
+    "Five repairs on one relationship: clear a party's unlock mark, reissue or withdraw the invitation, end the session, or accept it on a seat's behalf. Every one of them is written to the audit log in the same transaction as the change.",
   sections: [
     {
       id: "facts",
       heading: "This relationship",
       body: "What the row is right now. Nothing on this screen reads either party's answers — a repair changes a mark, an invitation or an acceptance, never a score.",
       items: [
-        { id: "id", label: "Instance" },
+        { id: "id", label: "Relationship" },
         { id: "template", label: "Template" },
         { id: "mode", label: "Mode" },
         { id: "setting", label: "Setting" },
@@ -49,6 +49,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "awaiting-counterparty", label: "Awaiting counterparty" },
         { id: "answering", label: "Answering" },
+        { id: "awaiting-payment", label: "Awaiting payment" },
         { id: "complete", label: "Complete" },
         { id: "voided", label: "Voided" },
       ],
@@ -90,7 +91,7 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "op-unlock",
       heading: "Unlock a party",
-      body: 'Clears a seat\'s unlock mark, so the "complete since you last looked" marker shows again for that party. This is the V11 repair — a mark that is set on an instance that is not complete is a row the database gate names, and clearing it is this button.',
+      body: 'Clears a seat\'s unlock mark, so the "complete since you last looked" marker shows again for that party. This is the V11 repair — a mark that is set on a session that is not complete is a row the database gate names, and clearing it is this button.',
       items: [
         { id: "button", label: "Clear the mark" },
         { id: "party", label: "Which seat" },
@@ -128,11 +129,9 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "form",
-      heading: "Reason",
-      body: "Required, and at least eight characters. It is stored on the audit row with the before and after values, so the next person to read this log knows why.",
+      heading: "Recording the repair",
+      body: "The change and its audit row commit in one transaction, with the before and after values stored beside it, so the next person to read this log knows what moved.",
       items: [
-        { id: "reason", label: "Why this repair" },
-        { id: "reason-short", label: "A reason of at least {min} characters is required." },
         { id: "submit", label: "Record it" },
         { id: "submitting", label: "Recording…" },
       ],
@@ -160,10 +159,6 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
           label: "That seat has not answered every Aspect — a sheet is accepted whole.",
         },
         { id: "invalid-email", label: "That is not an address a message can be sent to." },
-        {
-          id: "reason-too-short",
-          label: "The reason is too short. At least {min} characters, please.",
-        },
         { id: "role-too-low", label: "This repair needs a higher role than yours." },
         { id: "signed-out", label: "The sign-in expired while this form was open." },
         { id: "failed", label: "The repair did not commit. Nothing was changed." },
@@ -177,6 +172,114 @@ export const adminRelationshipPageCopy: PageCopy = zPageCopy.parse({
         { id: "logged", label: "Written to the audit log as {action}." },
         { id: "link", label: "New invitation link — copy it now, it is not shown again" },
         { id: "audit", label: "Open the audit log" },
+      ],
+    },
+    {
+      id: "edit",
+      heading: "Edit this relationship",
+      body: "Every field the row carries, on somebody else's relationship. A change that would alter what a party has already answered is priced from the rows first: check the cost, read what it takes, confirm it, then save. The audit row records the confirmed cost and the answer count it discarded.",
+      items: [
+        { id: "title", label: "Title" },
+        { id: "summary", label: "Summary" },
+        { id: "mode", label: "Mode" },
+        { id: "mode-basic", label: "Basic" },
+        { id: "mode-advanced", label: "Advanced" },
+        { id: "setting", label: "Setting" },
+        { id: "setting-soft", label: "Soft" },
+        { id: "setting-full", label: "Full" },
+        {
+          id: "locked-mode",
+          label:
+            "Mode and Setting are fixed: they were written on the session when it opened, and a scored session is never rewritten (db:verify V18). A change of mode is a new relationship.",
+        },
+        {
+          id: "mode-help",
+          label:
+            "Mode and Setting are chosen at publish. Until then this relationship has no session to carry them.",
+        },
+        { id: "aspects", label: "Aspects" },
+        { id: "prompt", label: "What is asked" },
+        { id: "left", label: "Left Value (1)" },
+        { id: "right", label: "Right Value (5)" },
+        { id: "add", label: "Add an Aspect" },
+        { id: "remove", label: "Remove" },
+        { id: "pin", label: "Version" },
+        /**
+         * #711 — which version this relationship was answered under. The revision flow is safe
+         * because publishing N+1 never reaches a bound row; this is the line that proves it on the
+         * screen, not just in the audit log.
+         */
+        { id: "version", label: "Answered under version {version}" },
+        {
+          id: "version-none",
+          label: "No published version is bound to this relationship.",
+        },
+        { id: "pin-current", label: "Keep the bound version" },
+        { id: "pin-option", label: "Move to version {version}, saved {instant}" },
+        {
+          id: "pin-help",
+          label:
+            "The pin is what every party-facing read parses. Moving it applies that version's words and Aspects; the cost below is what it takes.",
+        },
+        { id: "invitee", label: "Counterparty name" },
+        { id: "invitee-email", label: "Counterparty address" },
+        { id: "window", label: "Invitation window (days)" },
+        {
+          id: "window-help",
+          label:
+            "The window is the invitation's own fact; moving it touches no Aspect and no answer.",
+        },
+        {
+          id: "claimed",
+          label:
+            "The seat is claimed. It is a party row bound to an account — a name or address typed here would be a second truth, so the repair is a re-invite, not an edit.",
+        },
+        { id: "preview", label: "Check the cost" },
+        { id: "previewing", label: "Checking…" },
+        { id: "save", label: "Save the change" },
+        { id: "saving", label: "Saving…" },
+        {
+          id: "saved",
+          label:
+            "Saved at version {version}. {discarded} answer(s) discarded. Audit action {actionId}.",
+        },
+        { id: "cost-heading", label: "What this change costs" },
+        {
+          id: "cost-discards",
+          label: "Turning off “{aspect}” discards {answers} answer(s) from {name}.",
+        },
+        {
+          id: "cost-rewrites",
+          label:
+            "Rewording “{aspect}” leaves {answers} answer(s) from {name} answering words that changed.",
+        },
+        { id: "cost-adds", label: "“{aspect}” is a new question." },
+        { id: "cost-mode", label: "The mode moves from {from} to {to}." },
+        { id: "cost-setting", label: "The Setting moves from {from} to {to}." },
+        { id: "confirm", label: "I have read the cost and want it written." },
+        {
+          id: "blocked-adds",
+          label:
+            "A new Aspect on an answered sheet would leave it incomplete for whoever already answered. The honest path is a new round, not an edit.",
+        },
+        {
+          id: "blocked-mode",
+          label:
+            "Mode and Setting cannot move once the session exists — it decided which questions were asked.",
+        },
+        { id: "unconfirmed-invalidation", label: "The cost has not been confirmed." },
+        { id: "answers-sealed", label: "A new question cannot join an answered sheet." },
+        { id: "mode-fixed", label: "Mode and Setting are fixed once the session exists." },
+        { id: "seat-claimed", label: "The seat is claimed — an account holds it." },
+        { id: "invalid-window", label: "The window is 1 to 60 whole days." },
+        { id: "no-such-version", label: "No such version on this relationship's template." },
+        { id: "no-change", label: "Nothing in this form differs from the row." },
+        { id: "not-yours", label: "Only the initiator or an admin may edit this row." },
+        { id: "not-editable", label: "A closed relationship is not a form." },
+        { id: "invalid-draft", label: "The model refused these Aspects — check each field." },
+        { id: "invalid-counterparty", label: "The invitation needs a name and a real address." },
+        { id: "signed-out", label: "The sign-in expired while this form was open." },
+        { id: "failed", label: "The edit did not commit. Nothing was changed." },
       ],
     },
     {

@@ -1,0 +1,1801 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlignSynch — the relationship lifecycle, six stages</title>
+<style>
+  /* Geometry measured from docs/specs/spec-ux-repo-patterns/ (see docs/specs/ux-reference-patterns.md):
+     content 1126px left-justified, 12-col grid @24px gutter, cards 1px border radius 6 padding 24
+     with no shadow, labels 12px muted above 40px controls, progress as a cell rail (never numbered
+     circles), one accent primary action per view. Brand colour stays the app's token: #37474f. */
+  :root{
+    --action:#37474f; --action-ink:#fff; --action-soft:#eef1f3;
+    --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --line-strong:#d1d5db;
+    --bg:#f9fafb; --panel:#fff; --ok:#15803d; --ok-soft:#f0fdf4; --warn:#b45309; --warn-soft:#fffbeb;
+    --paypal:#003087;
+    /* radii copied from the webapp: card + dialog = rounded-lg (8px), buttons = rounded-md (6px),
+     base inputs = var(--radius) = 0.3125rem (5px) */
+  --radius-dialog:8px;   /* dialogue.tsx / alert-dialog.tsx / card.tsx  -> rounded-lg */
+  --radius:6px;          /* button.tsx                                  -> rounded-md */ --pad:24px; --gap:24px; --gutter:24px;
+    --stage-max:1126px; --rail:241px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif; color:var(--ink); background:var(--bg)}
+  a{color:var(--action)}
+  h1,h2,h3,h4{margin:0; line-height:1.25; font-weight:600}
+  h1{font-size:1.875rem} h2{font-size:1.125rem} h3{font-size:1rem}
+  p{margin:.35rem 0}
+  small,.muted{color:var(--muted); font-size:.875rem}
+  .meta{color:var(--muted); font-size:.75rem}
+
+  /* ---- shell ---- */
+  .shell{display:grid; grid-template-columns:var(--rail) minmax(0,1fr); min-height:100vh}
+  .rail{background:var(--panel); border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto}
+  .brand{display:flex; gap:9px; align-items:center; margin-bottom:20px}
+  .mark{width:26px; height:26px; border-radius:6px; background:var(--action); display:grid; place-items:center; color:#fff; font-size:11px; font-weight:700}
+  .brand b{font-size:.9rem; display:block}
+  .brand span{font-size:.72rem; color:var(--muted)}
+  .nav-group{margin:0 0 14px}
+  .nav-group>label{display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 8px 5px}
+  .nav a{display:flex; justify-content:space-between; gap:8px; align-items:center; padding:0 10px; min-height:40px; border-radius:6px; font-size:.875rem; color:var(--ink); text-decoration:none}
+  .nav a[aria-current="page"]{background:var(--action); color:var(--action-ink); font-weight:600}
+  .nav a:hover{background:#f3f4f6}
+  .nav a[aria-current="page"]:hover{background:var(--action)}
+  .nav .count{font-size:.72rem; color:var(--muted)}
+  .nav a[aria-current="page"] .count{color:var(--action-ink); opacity:.8}
+
+  main{padding:22px 40px 72px 24px; min-width:0}
+  .column{width:100%; max-width:var(--stage-max)}
+
+  /* ---- progress: CELL RAIL (reference §4b) ---- */
+  .steps{display:flex; align-items:stretch; margin:0 0 20px; padding:0; list-style:none;
+         border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--panel)}
+  .steps li{flex:1 1 0; min-width:0; display:flex}
+  .steps button{all:unset; cursor:pointer; display:flex; flex-direction:column; gap:1px;
+    align-items:center; justify-content:center;
+                width:100%; min-height:39px; padding:0 6px; font-size:.75rem; color:var(--muted);
+                background:var(--panel); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .steps li+li button{box-shadow:inset 1px 0 0 var(--line)}
+  .steps button:hover{background:#f6f7f8}
+  .steps li[data-state="now"] button{background:var(--bg); color:var(--ink); font-weight:600; font-size:.8rem}
+  .steps li[data-state="done"] button{color:var(--ink)}
+  .steps button:focus-visible{outline:2px solid var(--action); outline-offset:-2px}
+  .steps .stage-n{font-weight:600; font-size:.72rem; letter-spacing:.02em; text-transform:uppercase;
+    line-height:1.1; white-space:nowrap}
+  .steps .stage-name{font-size:.68rem; color:#6b7280; line-height:1.1; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; max-width:100%}
+  .steps li[data-state="now"] .stage-name{color:var(--ink)}
+  .steps li[data-state="todo"] .stage-n{color:#94a3b8}
+  /* The count line under the band, measured off the build's WizardSteps: uppercase, tracked, muted.
+     It is the one place the position is said in words, which is what keeps it readable at 390 where
+     the cell names are hidden. */
+  .steps-count{margin:10px 20px 0; font-size:.72rem; font-weight:600; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--muted)}
+  .steps-count:empty{display:none}
+
+  /* ---- surfaces ---- */
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius)}
+  .card>.head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:var(--pad); border-bottom:1px solid var(--line)}
+  .card>.body{padding:var(--pad)}
+  .card>.foot{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px var(--pad);
+              border-top:1px solid var(--line); background:#fcfcfd; border-radius:0 0 var(--radius) var(--radius)}
+  .chip{display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); background:#fff;
+        border-radius:999px; padding:2px 9px; font-size:.75rem; font-weight:500; color:#374151}
+  .chip.ok{border-color:#bbf7d0; background:var(--ok-soft); color:var(--ok)}
+  .chip.warn{border-color:#fde68a; background:var(--warn-soft); color:var(--warn)}
+  .chip.gap{border-color:#fecaca; background:#fef2f2; color:#b91c1c}
+  .stack{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap)}
+  .tight{display:grid; gap:12px}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .between{display:flex; justify-content:space-between; align-items:center; gap:12px}
+  .grid12{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--gutter)}
+  .span3{grid-column:span 3} .span4{grid-column:span 4} .span5{grid-column:span 5}
+  .span6{grid-column:span 6} .span7{grid-column:span 7} .span8{grid-column:span 8} .span12{grid-column:span 12}
+  label.field{display:block}
+  /* A field title is a title: bold and at ink weight, with its help text staying muted beneath it. */
+  label.field>span{display:block; font-size:.75rem; font-weight:700; color:var(--ink); margin-bottom:8px}
+  label.field>em{display:block; font-size:.78rem; color:var(--muted); font-style:normal; margin-top:6px}
+  input[type=text],input[type=email],input[type=password],textarea,select{
+    width:100%; min-height:40px; padding:9px 10px; border:1px solid var(--line-strong);
+    border-radius:8px; font:inherit; background:#fff; color:var(--ink)}
+  textarea{min-height:76px; resize:vertical}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--action); outline-offset:1px; border-color:var(--action)}
+  .btn{all:unset; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+       min-height:40px; padding:0 16px; border-radius:6px; font-size:.875rem; font-weight:600; text-align:center}
+  .btn:focus-visible{outline:2px solid var(--action); outline-offset:2px}
+  /* `all:unset` above resets box-sizing to content-box, which made every width:100% control
+     wider than the card that holds it. Pin it back, once, for all four unset controls. */
+  .btn,.sheet .close,.seg button,.steps button{box-sizing:border-box}
+  .btn.primary{background:var(--action); color:var(--action-ink)}
+  .btn.secondary{background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line-strong)}
+  .btn.ghost{color:var(--action); padding:0 4px; min-height:32px}
+  .btn.paypal{background:var(--paypal); color:#fff}
+  .btn[disabled]{opacity:.5; cursor:not-allowed}
+  .choice{display:flex; gap:12px; align-items:flex-start; padding:16px; border:1px solid var(--line-strong);
+          border-radius:var(--radius); cursor:pointer; background:#fff}
+  .choice[aria-checked="true"]{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action); background:#fbfcfc}
+  /* Both choices on this stage are the same control — one row of two equal cells, side by side —
+     because Mode and Setting are two dimensions of equal weight, not a card and a toolbar. They
+     stack only when the sheet is too narrow to hold two. */
+  .choice-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media (max-width:560px){
+    .choice-grid{grid-template-columns:1fr}
+  }
+  .choice .price{display:flex; align-items:baseline; gap:1px; font-weight:700; font-size:1rem;
+    color:var(--ink); white-space:nowrap; flex:0 0 auto}
+  .choice .price i{font-style:normal; font-weight:500; font-size:.72rem; color:#6b7280}
+  .choice .dot{width:16px; height:16px; border-radius:50%; border:1px solid var(--line-strong); margin-top:3px; flex:0 0 auto; display:grid; place-items:center}
+  .choice[aria-checked="true"] .dot{border-color:var(--action)}
+  .choice[aria-checked="true"] .dot::after{content:""; width:8px; height:8px; border-radius:50%; background:var(--action)}
+  .choice b{display:block; font-size:.9rem}
+  .tpl{display:flex; flex-direction:column; gap:10px; padding:var(--pad); border:1px solid var(--line);
+       border-radius:var(--radius); background:#fff; cursor:pointer; height:100%}
+  .tpl[aria-checked="true"]{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action)}
+  .tpl h3{font-size:1rem}
+  .tpl .thumb{height:104px; border-radius:var(--radius); border:1px solid var(--line); background:var(--bg);
+              display:grid; place-items:center; color:var(--muted); font-size:.75rem}
+  .divider{height:1px; background:var(--line); margin:4px 0}
+  .emb{border:1px dashed var(--line-strong); border-radius:var(--radius); padding:12px; background:#fbfcfd}
+  .emb-bar{display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:.78rem;
+    font-weight:600; margin-bottom:6px}
+  .emb-frame{border:1px solid var(--line); border-radius:var(--radius); background:#fff; padding:18px 12px;
+    margin:8px 0; display:flex; flex-direction:column; gap:2px; align-items:center; text-align:center;
+    font-size:.78rem; color:#6b7280}
+  .emb-frame b{color:#374151; font-weight:600}
+  .skip-link{all:unset; cursor:pointer; display:block; width:100%; text-align:center; font-size:.8rem;
+    color:var(--action); text-decoration:underline; text-underline-offset:2px; padding:4px 0}
+  .skip-link:hover{color:var(--ink)}
+  .skip-link:focus-visible{outline:2px solid var(--action); outline-offset:2px; border-radius:4px}
+  .aspect{border:1px solid var(--line); border-radius:var(--radius); padding:16px; background:#fff}
+  /* collapsed = one compact line: position · handle · name + question · the two opinion labels ·
+     edit. The position is the aspect's order (01, 02 …) at the far left, drawn from the row's index
+     so a reorder renumbers it; the edit control is an icon at the far right. */
+  .aspect.compact{display:grid; grid-template-columns:auto 22px minmax(0,1fr) auto auto;
+    align-items:center; gap:12px; padding:10px 12px}
+  .aspect.compact .a-pos{font-size:11px; font-weight:600; letter-spacing:.06em; color:#94a3b8;
+    font-variant-numeric:tabular-nums; min-width:18px; text-align:left; user-select:none}
+  .aspect.compact .a-edit{min-width:32px; padding:0 8px; justify-content:center; font-size:14px;
+    color:var(--muted)}
+  .aspect.compact .a-edit:hover{color:var(--ink)}
+  .aspect.compact .a-main{min-width:0}
+  .aspect.compact .a-name{display:block; font-weight:600; font-size:14px; line-height:1.3}
+  .aspect.compact .a-q{display:block; font-size:12px; color:#6b7280; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; line-height:1.3}
+  .aspect.compact .a-scale{display:flex; align-items:center; gap:6px; font-size:11px; color:#6b7280; white-space:nowrap}
+  .aspect.compact .a-scale i{font-style:normal; color:#cbd5e1}
+  .aspect .grip{width:22px; height:38px; display:flex; align-items:center; justify-content:center;
+    color:#94a3b8; cursor:grab; touch-action:none; user-select:none; border-radius:4px; font-size:15px; line-height:1}
+  .aspect .grip:hover{background:#f1f5f9; color:#475569}
+  .aspect.dragging{opacity:.55; border-style:dashed}
+  .aspect.dropover{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action)}
+  @media (max-width:860px){
+    /* Narrow rows: the same five cells as the wide layout — position · handle · name · opinions ·
+       edit — with the question line dropped. */
+    .aspect.compact{grid-template-columns:auto 26px minmax(0,1fr) auto auto; gap:8px}
+    .aspect.compact .a-q{display:none}
+    .aspect.compact .a-scale{grid-column:auto; font-size:11px}
+    .aspect .grip{width:26px; height:44px}
+  }
+  /* This has to come after the 860px block above: same specificity, so the later declaration wins,
+     and a 560px rule written earlier was silently overruled at 390. Four cells on one line leave the
+     name 49px wide there, so the opinions take a second line under it instead of crushing the name. */
+  @media (max-width:560px){
+    /* Four tracks for five children, with the opinions explicitly on row two — left to auto-placement
+       they fell to rows three and four and the "compact" row grew to 135px. */
+    .aspect.compact{grid-template-columns:auto 26px minmax(0,1fr) auto}
+    .aspect.compact .a-scale{grid-column:2 / span 3; grid-row:2; margin-top:4px}
+  }
+  .aspect header{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px}
+  .two-up{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .meter{height:6px; border-radius:999px; background:#eef0f2; overflow:hidden}
+  .meter>i{display:block; height:100%; background:var(--action)}
+  .mini{font-size:.78rem; color:var(--muted)}
+  .note{border-left:3px solid var(--line-strong); padding:2px 0 2px 10px; color:var(--muted); font-size:.84rem}
+  .banner{display:flex; gap:10px; align-items:flex-start; padding:14px 16px; border-radius:var(--radius);
+          border:1px solid #bbf7d0; background:var(--ok-soft); font-size:.875rem}
+  .kv{display:grid; grid-template-columns:auto 1fr; gap:6px 16px; font-size:.875rem}
+  .kv dt{color:var(--muted)} .kv dd{margin:0; text-align:right; font-weight:600}
+  .stage-foot{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-wrap:wrap; margin-top:var(--gap); padding-top:16px; border-top:1px solid var(--line)}
+  /* Two acts leave the flow and they sit left as a pair; the act that advances it sits right.
+     The pairing is structural, not a coincidence of order, so it survives every width. Back and
+     Cancel are the same fixed width so the group reads as one control, not two ragged buttons. */
+  .stage-foot .foot-left{display:flex; align-items:center; gap:8px; flex:0 0 auto; min-width:0}
+  .stage-foot .foot-left .btn{flex:0 0 auto; min-width:132px; padding:0 16px}
+  .stage-foot .btn{min-height:44px}
+  /* the advancing act hugs its own label and is pushed right — it is never stretched to fill */
+  .stage-foot .btn.primary{flex:0 0 auto; margin-left:auto; width:auto}
+  /* The footer rides the viewport, not an inner scrollport: the page is what scrolls now, so the
+     last thing the owner needs in reach is pinned while the stage moves under it. */
+  .sheet .stage-foot{position:sticky; bottom:0; z-index:3; margin:16px -20px -20px;
+    padding:12px 20px; background:var(--panel); border-top:1px solid var(--line);
+    box-shadow:0 -6px 12px rgb(15 23 42 / .04)}
+  .tabs{display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:var(--gap)}
+  .tabs button{all:unset; cursor:pointer; padding:10px 16px; font-size:.875rem; color:var(--muted); border-bottom:2px solid transparent}
+  .tabs button[aria-selected="true"]{color:var(--ink); font-weight:600; border-bottom-color:var(--action)}
+  .hidden{display:none !important}
+
+  /* ---- stage 10: seats, billing, and the §9 band ---- */
+  .seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:var(--radius); overflow:hidden; background:#fff}
+  .seg button{all:unset; cursor:pointer; display:inline-flex; align-items:center; min-height:40px; padding:0 14px;
+              font-size:.875rem; color:var(--muted); white-space:nowrap}
+  .seg button+button{box-shadow:inset 1px 0 0 var(--line)}
+  .seg button[aria-checked="true"]{background:var(--action); color:var(--action-ink); font-weight:600}
+  .seg button:focus-visible{outline:2px solid var(--action); outline-offset:-2px}
+  .band{display:flex; flex-direction:column; gap:8px; padding:16px 18px; border:1px solid var(--line);
+        border-radius:var(--radius); background:var(--panel); font-size:.875rem}
+  .band.danger{border-color:#fecaca; background:#fef2f2}
+  .band.danger h2{font-size:1rem; color:#991b1b}
+  .band.ok{border-color:#bbf7d0; background:var(--ok-soft)}
+  .band.ok h2{font-size:1rem; color:var(--ok)}
+  .proto{border-left:3px dashed var(--line-strong); padding:4px 0 4px 12px; color:var(--muted); font-size:.78rem}
+  .fields{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px}
+  .fields .f-wide{grid-column:1 / -1}
+
+  /* ---- provenance ledger: documentation, not product copy ---- */
+  .ledger{margin-top:32px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel);
+          padding:14px 18px; font-size:.8rem}
+  .ledger summary{cursor:pointer; font-weight:600; font-size:.85rem}
+  .ledger table{width:100%; border-collapse:collapse; margin-top:10px}
+  .ledger th,.ledger td{text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top}
+  .ledger th{font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
+  .ledger td:last-child{white-space:nowrap; color:var(--muted)}
+  .ledger code{font-size:.75rem}
+
+  /* ---- the two contexts ----------------------------------------------------------
+     A new customer has no dashboard yet: nothing to put a flow in. So the create flow
+     is a full-screen sheet over whatever chrome exists —
+       public  : no rail at all, the sheet IS the page, close returns to the gallery;
+       member  : the dashboard stays visible behind a dimmed backdrop, cancel returns to
+                 the Templates listing.
+     The rail only appears once a dashboard exists: after the invite is sent, or after the
+     flow is abandoned back to the gallery. */
+  body[data-shell="public"] .rail{display:none}
+  body[data-shell="public"] .shell{grid-template-columns:minmax(0,1fr)}
+  /* An onboarding MODAL, the way signup draws it: a gradient page, and the wizard floating on it at
+     roughly two thirds of the screen. Both shells share it — public just has no dashboard behind. */
+  body[data-shell="public"]{
+    background:
+      radial-gradient(1100px 520px at 50% -8%, #e6edf0 0%, rgb(230 237 240 / 0) 62%),
+      linear-gradient(158deg, #f7f9fa 0%, #eaf0f2 52%, #dde6ea 100%);
+    background-attachment:fixed; min-height:100vh}
+  /* The wizard grows with its content and the PAGE scrolls. The sheet used to be an 80vh box with
+     its own scrolling body, which made a long stage a scroll box inside a box and clipped the rest
+     at 80vh; now the backdrop is in document flow, the sheet has no height ceiling and no interior
+     scrollport, and the footer pins to the viewport while the page moves under it. */
+  body{position:relative}
+  .backdrop{position:absolute; top:0; right:0; left:0; min-height:100vh; background:
+      radial-gradient(1100px 520px at 50% -8%, #e6edf0 0%, rgb(230 237 240 / 0) 62%),
+      linear-gradient(158deg, #f7f9fa 0%, #eaf0f2 52%, #dde6ea 100%);
+    display:flex; align-items:flex-start; justify-content:center; z-index:30; overflow:visible;
+    padding:24px 24px 32px}
+  body[data-shell="public"] .backdrop{position:absolute; top:0; right:0; left:0; padding:24px 24px 32px}
+  /* A wizard is read as one column, so the sheet stops growing well before the viewport does: 880px
+     is a comfortable ceiling for a two-column field grid, and on a 3400px screen it is the same 880px
+     it is on a 1440px one. It used to be min(66vw, 1080px), which kept stretching to 1080 and put the
+     form's labels and their fields too far apart to read as a pair. */
+  .sheet{background:var(--panel); width:min(100% - 48px, 880px); max-width:880px;
+    max-height:none; min-height:0; height:auto;
+         display:flex; flex-direction:column; overflow:visible; border:1px solid var(--line);
+         border-radius:var(--radius-dialog); box-shadow:0 24px 60px rgb(15 23 42 / .18)}
+  .sheet>.steps{flex:0 0 auto; margin:14px 20px 0}
+  .tagrow{flex:0 0 auto; display:flex; justify-content:flex-end; padding:8px 20px 0}
+  .authprog{display:flex; gap:8px; list-style:none; margin:10px 0 0; padding:0; flex-wrap:wrap}
+  .authprog li{display:flex; align-items:center; gap:6px; font-size:.75rem; color:#9aa4ae; flex:1 1 auto}
+  .authprog li[data-state="done"]{color:var(--ink)}
+  .authprog li[data-state="now"]{color:var(--ink); font-weight:600}
+  .authprog .dot{width:8px; height:8px; border-radius:999px; background:#d7dde2; flex:0 0 auto}
+  .authprog li[data-state="done"] .dot{background:#4b8f6b}
+  .authprog li[data-state="now"] .dot{background:var(--action)}
+  .pill{display:inline-flex; align-items:center; min-height:24px; padding:0 10px; border-radius:999px;
+    background:var(--bg); border:1px solid var(--line); color:var(--ink); font-size:.72rem;
+    font-weight:600; letter-spacing:.01em}
+  .sheet>#sheetstage{flex:0 0 auto; overflow:visible; padding:16px 20px 20px}
+  body[data-shell="public"] .sheet{border-right:1px solid var(--line)}
+  .sheet>.bar{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px}
+  .sheet .close{all:unset; cursor:pointer; min-height:36px; padding:0 12px; border-radius:6px; font-size:.875rem;
+                font-weight:600; color:var(--muted); box-shadow:inset 0 0 0 1px var(--line-strong); background:#fff}
+  .sheet .close:hover{color:var(--ink)}
+  .ctx{display:inline-flex; gap:6px; align-items:center; font-size:.78rem; color:var(--muted)}
+
+  /* ---- copy editor ---- */
+  #editor{position:fixed; right:18px; bottom:18px; z-index:40; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+          background:var(--panel); border:1px solid var(--line-strong); border-radius:999px; padding:8px 12px;
+          box-shadow:0 6px 20px rgb(16 24 40 / .12); font-size:.8rem}
+  #editor .dot-live{width:8px; height:8px; border-radius:50%; background:var(--ok)}
+  body[data-editing="on"] [data-copy]{outline:1px dashed #9ca3af; outline-offset:2px; border-radius:3px}
+  body[data-editing="on"] [data-copy]:focus{outline:2px solid var(--action); background:#fffdf5}
+  #toast{position:fixed; left:22px; bottom:18px; z-index:41; background:var(--ink); color:#fff; padding:8px 12px;
+         border-radius:6px; font-size:.8rem; opacity:0; transform:translateY(6px); transition:.18s; max-width:60ch}
+  #toast.show{opacity:1; transform:none}
+
+  @media (max-width:1024px){ :root{--stage-max:100%} .span4,.span5,.span7,.span8{grid-column:span 6} }
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .rail{position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); padding:12px 14px}
+    .rail .nav,.rail .brand span{display:none}
+    main{padding:16px 16px 84px}
+    .backdrop{padding:12px}
+    .sheet,body[data-shell="public"] .sheet{width:92vw; max-height:none}
+    .sheet>.steps{margin:10px 14px 0}
+    .sheet>#sheetstage{padding:14px 14px 18px}
+    /* `1fr` is minmax(auto,1fr): it re-introduces a min-content floor and a nowrap chip
+       pushes the whole card past the column at 390. minmax(0,1fr) can shrink. */
+    .grid12,.two-up{grid-template-columns:minmax(0,1fr)}
+    .between{flex-wrap:wrap}
+    .kv dd{text-align:left}
+    .span3,.span4,.span5,.span6,.span7,.span8,.span12{grid-column:auto}
+    .steps button{min-height:40px; padding:3px 2px}
+    .steps .stage-n{font-size:.62rem}
+    /* The name IS the second line at this width — the band is the only place the stage is named,
+       and the dot it used to draw instead named nothing at all. */
+    .steps .stage-name{display:block; font-size:.6rem; line-height:1.05; max-width:100%}
+    .steps li[data-state="now"] button{font-size:.75rem; padding:3px 8px}
+    .sheet .stage-foot{bottom:0; margin:14px -14px -18px; padding:10px 14px}
+    .seg{width:100%}    .seg button{flex:1 1 0; justify-content:center; padding:0 8px; font-size:.8rem}
+
+    #editor{right:10px; left:10px; bottom:10px; justify-content:center}
+  }
+  @media (max-width:430px){
+    /* six cells in 390 leaves ~52px each: the active cell's extra padding was enough to ellipsise
+       "Settings", and a stage name that clips is not a stage name. */
+    .steps .stage-name{font-size:.54rem}
+    .steps li[data-state="now"] button{padding:3px 3px}
+  }
+  /* The footer holds one row for as long as the three buttons actually fit, which is why this
+     fallback is its own narrower query instead of riding the 860px one — at 820px the row is 447px
+     wide inside a 737px sheet, so stacking there would be premature. Below ~560px it cannot fit:
+     the advancing act takes its own full-width row on top (thumb reach first), and [Back][Cancel]
+     split the row beneath, still a pair at the same width as each other. */
+  @media (max-width:560px){
+    .stage-foot{align-items:stretch; gap:8px}
+    .stage-foot .foot-left{order:2; flex:1 1 100%}
+    .stage-foot .foot-left .btn{flex:1 1 0; min-width:0; min-height:48px}
+    .stage-foot .btn.primary{order:1; flex:1 1 100%; margin-left:0; width:auto; min-height:48px}
+  }
+  /* Stage 4's payment flow swaps the left card step by step; each step fades in so the change of
+     surface reads as a transition rather than a redraw (owner, comment 3). */
+  .pfade{animation:pfade .22s ease both}
+  @keyframes pfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body data-editing="off">
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark">AS</div>
+      <div><b data-copy="brand.name">AlignSynch</b><span data-copy="brand.tagline">Relationship Alignment Platform</span></div>
+    </div>
+    <div class="nav">
+      <div class="nav-group"><label data-copy="nav.workspace">Workspace</label>
+        <a href="#" data-goto="0"><span data-copy="nav.dashboard">Dashboard</span></a>
+        <a href="#" data-goto="9"><span data-copy="nav.relationships">My Relationships</span><span class="count" data-copy="nav.relationshipsCount">1</span></a>
+        <a href="#" data-goto="1" aria-current="page"><span data-copy="nav.templates">Templates</span></a>
+      </div>
+      <div class="nav-group"><label data-copy="nav.account">Account</label>
+        <a href="#"><span data-copy="nav.support">Support</span></a>
+        <a href="#"><span data-copy="nav.settings">Settings</span></a>
+      </div>
+    </div>
+  </aside>
+  <main><div class="column">
+    <ol class="steps" id="steps" aria-label="Relationship lifecycle"></ol>
+    <div id="stage"></div>
+  <details class="ledger">
+    <summary>Copy provenance — what is the owner's wording, what is proposed</summary>
+    <table>
+      <thead><tr><th>string</th><th>where it comes from</th><th>status</th></tr></thead>
+      <tbody>
+        <tr><td><code>Publish Assessment</code></td><td><code>data/pages/dashboard-relationships.ts:80</code></td><td>verbatim</td></tr>
+        <tr><td><code>Activate Relationship</code></td><td><code>data/pages/dashboard-relationships.ts:81</code></td><td>verbatim</td></tr>
+        <tr><td><code>Nothing has been paid on this relationship.</code></td><td><code>data/pages/assessment-instance.ts:275</code></td><td>verbatim</td></tr>
+        <tr><td><code>Waiting for {name} to answer.</code></td><td><code>data/pages/assessment-instances.ts:155</code> — shape of the counterparty sentence</td><td>verbatim shape</td></tr>
+        <tr><td><code>Full</code> / <code>Soft</code>, mode and setting help</td><td><code>MODE_LABELS</code>, <code>SETTING_LABELS</code></td><td>verbatim</td></tr>
+        <tr><td>five Aspect names</td><td><code>data/assessments.ts</code></td><td>verbatim</td></tr>
+        <tr><td><code>Waiting for Daniel to publish.</code></td><td>ADR-8's counterparty sentence — no fixture row carries it; drawn, not quoted</td><td>s</td></tr>
+        <tr><td><code>Your bank needs you before this payment can go through</code> · the body · <code>Approve payment</code> · the 7-day line</td><td>SPEC §9 — the copy this card exists to settle</td><td>proposed</td></tr>
+        <tr><td><code>Card number</code>, <code>Expiry</code>, <code>CVC</code>, <code>Name on card</code></td><td>the minimum a capture surface needs; no such copy exists in the tree</td><td>proposed</td></tr>
+        <tr><td>stage names, <code>Viewing as</code>, <code>What both seats see</code>, plan/fee/method labels</td><td>this prototype</td><td>proposed</td></tr>
+      </tbody>
+    </table>
+    <p class="proto" style="margin-top:10px">Every reader-visible string above is a key in the JSON at the top of this file —
+      edit any of them in place with <b>Edit copy</b>, then <b>Save .json</b>. This table is provenance, not product copy.</p>
+  </details>
+  </div></main>
+</div>
+
+<div id="editor">
+  <span class="dot-live"></span>
+  <span class="ctx">
+    <button class="btn ghost" id="ctxToggle" data-copy="editor.ctx">Viewing as: new visitor</button>
+  </span>
+  <span id="editorState" data-copy="editor.live">Copy loads from JSON</span>
+  <button class="btn ghost" id="toggleNa" data-copy="editor.na">§9 state: off</button>
+  <button class="btn ghost" id="editToggle" data-copy="editor.edit">Edit copy</button>
+  <button class="btn ghost" id="saveJson" data-copy="editor.save">Save .json</button>
+  <button class="btn ghost" id="loadJsonBtn" data-copy="editor.load">Load</button>
+  <input type="file" id="loadJson" accept="application/json" class="hidden">
+  <button class="btn ghost" id="resetCopy" data-copy="editor.reset">Reset</button>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================================
+   COPY — every reader-visible string, one object, loaded and saved as JSON.
+   ============================================================================ */
+const DEFAULT_COPY = {
+  "brand.name":"AlignSynch","brand.tagline":"Relationship Alignment Platform",
+  "nav.workspace":"Workspace","nav.dashboard":"Dashboard","nav.relationships":"My Relationships",
+  "nav.relationshipsCount":"1","nav.templates":"Templates","nav.account":"Account",
+  "nav.support":"Support","nav.settings":"Settings",
+  "editor.live":"Copy loads from JSON","editor.edit":"Edit copy","editor.save":"Save .json",
+  "editor.load":"Load","editor.reset":"Reset","editor.ctx":"Viewing as: new visitor",
+  "ctx.sheetTitle":"Create a relationship","ctx.close":"Close","ctx.cancel":"Cancel",
+
+  "step.1":"Gallery","step.2":"Detail","step.3":"Account","step.4":"Details","step.5":"Settings",
+  "step.6":"Aspects","step.7":"Invite","step.8":"Connect","step.9":"Align","step.10":"Align",
+
+  /* 1 — discovery: the two places a template is chosen from */
+  "s1.heading":"Relationship Templates",
+  "s1.body":"Two ways in: the public gallery shows what a template asks, and the dashboard lists the ones your workspace can copy.",
+  "s1.tabGallery":"Gallery",
+  "s1.tabDashboard":"My templates",
+  "s1.galleryNote":"Public: anyone can read what a template asks before creating an account.",
+  "s1.dashboardNote":"In your workspace: every template you can copy, with its last use and who owns it.",
+  "s1.search":"Search templates",
+  "s1.searchPlaceholder":"Search by name or aspect",
+  "s1.count":"3 templates",
+  "s1.owned":"Owned by you","s1.shared":"Shared",
+  "s1.choose":"Open",
+  "s1.empty":"No template matches that search yet.",
+  "s1.tplBasics":"Relationship Basics","s1.tplBasicsDesc":"Time together, housework, money, conflict, affection — the five things most couples disagree about without naming.",
+  "s1.tplStaff":"Staff & Manager","s1.tplStaffDesc":"Work priorities, feedback, workload, growth, and the weekly rhythm of a reporting line.",
+  "s1.tplParent":"Parent & Child","s1.tplParentDesc":"Chores, screen time, school, independence, and how decisions get made at home.",
+  "s1.aspects":"5 Aspects","s1.seats":"Two seats","s1.updated":"Updated 2 Nov",
+
+  /* 2 — template detail */
+  "s2.heading":"Relationship Basics",
+  "s2.desc":"A five-Aspect template for couples. Both parties answer the same five questions on a 1–5 scale; the report shows only where the two readings differ.",
+  "s2.aboutHeading":"About this template",
+  "s2.aspectsHeading":"What it asks",
+  "s2.aspectHelp":"Each Aspect is one question, answered by both seats.",
+  "s2.seatsHeading":"The two seats",
+  "s2.seatInitiator":"Initiator — the seat the relationship is created from",
+  "s2.seatCounterparty":"Counterparty — the seat filled when they claim the invitation",
+  "s2.meta":"Version 3 · 5 Aspects · used 128 times",
+  "s2.back":"Back to templates","s2.next":"Create Relationship",
+  "pre.chip":"Pre-stage · template landing",
+  "pre.note":"Templates are pre-stage views. The relationship flow begins at Stage 1 when the visitor presses Create Relationship.",
+
+  /* 3 — account */
+  "s3.heading":"Create your account",
+  "s3.body":"You need an account to create a relationship — the invitation is sent from it, and the report is kept on it.",
+  "s3.tabSignup":"Create account","s3.tabSignin":"Sign in",
+  "s3.google":"Continue with Google",
+  "s3.or":"or",
+  "s3.name":"Your name","s3.nameHelp":"Shown to the person you invite.",
+  "s3.email":"Email address","s3.password":"Password",
+  "s3.passwordHelp":"At least 10 characters.",
+  "s3.terms":"By creating an account you accept the Terms and the Privacy notice.",
+  "s3.signupBtn":"Create account and continue",
+  "s3.signinBtn":"Sign in and continue",
+  "s3.haveAccount":"Already have an account?","s3.noAccount":"No account yet?",
+  "s3.stageNote":"Stage 1 of 8. The account exists so the invitation has a sender and the report has a home.",
+  "s3.back":"Back","s3.next":"Continue",
+
+  /* 4 — who and how, with description */
+  "s4.heading":"Relationship Details",
+  "s4.body":"One template, two seats, and the facts that shape every screen after this one.",
+  "s4.templateRow":"Template",
+  "s4.initiator":"Your Name as the Relationship Initiator",
+  "s4.initiatorHelp":"The seat this relationship is created from.",
+  "s4.counterparty":"Counterparty's Name as Seen on the Invite",
+  "s4.counterpartyPlaceholder":"Their name",
+  "s4.counterpartyHelp":"They will complete their name preference when they claim the invitation.",
+  "s4.email":"Email Address used to send the Counterparty Invite",
+  "s4.emailPlaceholder":"name@example.com",
+  "s4.title":"Your Personalized Relationship Title",
+  "s4.titlePlaceholder":"Relationship Basics",
+  "s4.titleHelp":"The personalized name of the created Relationship.",
+  "s4.description":"Personalized Relationship Description",
+  "s4.descriptionPlaceholder":"A sentence on why you are doing this — both of you read it on the card.",
+  "s4.descriptionHelp":"Optional. Shown to both parties, never scored.",
+  "s4.back":"Back","s4.next":"Continue to Stage 2",
+
+  /* 5 — mode and setting */
+  "s5.heading":"Relationship Settings",
+  "s5.body":"Two independent choices: Mode decides how many Opinion questions each Aspect asks, and Setting decides how strictly the Gap analysis is judged.",
+  "s5.modeHeading":"Opinions Mode",
+  "s5.modeFixed":"Fixed at creation",
+  "s5.modeBasic":"Basic","s5.modeBasicHelp":"Two Opinion questions per Aspect.",
+  "s5.modeAdvanced":"Advanced","s5.modeAdvancedHelp":"Four Opinion questions per Aspect.",
+  "s5.settingHeading":"Alignment Setting",
+  "s5.settingHelp":"How strictly the Gap analysis is judged — a lens over the Gaps, never a question.",
+  "s5.settingSoft":"Soft","s5.settingFull":"Full",
+  "s5.settingSoftHelp":"Small Gap (1) OK — a satisfactory Setting.",
+  "s5.settingFullHelp":"No Gap OK — an exceptional Setting.",
+  "s5.settingNote":"Soft tolerates a Small Gap (1); Full accepts only In Synch.",
+  "s5.back":"Back","s5.next":"Continue to Stage 3",
+
+  /* 6 — aspects: view and edit */
+  "s6.heading":"Relationship Aspects",
+  "s6.body":"Copied from the template. You can rename or reword an Aspect here, and add one — it is yours from the moment the relationship is created.",
+  "s6.editHeading":"Edit an Aspect",
+  "s6.nameLabel":"Aspect name",
+  "s6.questionLabel":"The question both seats answer",
+  "s6.scaleLabel":"Scale",
+  "s6.scaleValue":"1 to 5",
+  "s6.add":"Add an Aspect",
+  "s6.remove":"Remove",
+  "s6.save":"Save Aspect",
+  "s6.copied":"Copied from the template",
+  "s6.edited":"Edited",
+  "s6.added":"Added",
+  "s6.leftLabel":"Left opinion label","s6.leftHelp":"The low end of the scale — what a 1 means.",
+  "s6.rightLabel":"Right opinion label","s6.rightHelp":"The high end — what a 5 means.",
+  "s6.opinions":"Opinion labels",
+  "s6.editInline":"Edit","s6.dragHint":"Drag to Reorder Aspects","s6.cancel":"Cancel","s6.tapToEdit":"Tap an Aspect to edit it in place.",
+  "s6.count":"5 Aspects",
+  "s6.back":"Back","s6.next":"Continue to Stage 4",
+
+
+  /* 8 — review and invite */
+  "s8.heading":"Create the relationship",
+  "s8.body":"Submitting now creates the relationship and sends the invitation. Nothing is charged yet.",
+  "s8.templateRow":"Template","s8.initiatorRow":"Initiator","s8.counterpartyRow":"Counterparty",
+  "s8.titleRow":"Title","s8.descriptionRow":"Description","s8.modeRow":"Mode","s8.settingRow":"Setting",
+  "s8.aspectsRow":"Aspects",
+  "s8.none":"—",
+  "s8.back":"Back","s8.submit":"Continue to Stage 5",
+  "s8.pitch":"One decision left: send the invitation now, or keep it as a draft you can finish later.",
+  "s8.whatHeading":"What gets created",
+  "s8.ctaHeading":"Send the invitation",
+  "s8.ctaBody":"Rowan gets one email with one link. The relationship waits at Invited until they accept — nothing is charged and nothing is visible to them until they claim the seat.",
+  "s8.draft":"Keep as a draft",
+  "s8.payHeading":"Payment is optional here",
+  "s8.authHeading":"Sign in to keep this relationship",
+  "s8.authBody":"You can send the invitation without an account — but the relationship comes back to you, so this is where it is kept. Nothing here blocks the invite.",
+  "s8.plansHeading":"How you would pay",
+  "s8.payBody":"Add a way to pay now and publishing is one click later — or skip it and pay when you submit the assessment. Nothing is charged today.",
+  "s8.planLabel":"How you would pay",
+  "s8.planPayg":"One relationship",
+  "s8.planUnlimited":"Unlimited relationships",
+  "s8.planPaygNote":"One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
+  "s8.planUnlimitedNote":"Every relationship you open, for as long as you keep the plan.",
+  "s8.pricePayg":"$9.95",
+  "s8.priceUnlimited":"$19.85",
+  "s8.pricePer":"/mo",
+  "s8.saveBadge":"best value",
+  "s8.trial":"7 days free — the trial starts only when you add a method, and nothing is charged until you publish.",
+  "s8.trialShort":"7 days free",
+  "s8.addMethod":"Add a payment method",
+  "s8.embBar":"Secure payment · Stripe",
+  "s8.embMode":"test mode",
+  "s8.embBody":"The card fields are Stripe's, drawn in a frame inside this page — you never leave it and no card detail touches our code. Nothing is charged today; the 7-day trial starts when the method is saved.",
+  "s8.embFrame":"Stripe Embedded Checkout renders here",
+  "s8.embFrameNote":"ui_mode: embedded · return_url: this screen",
+  "s8.embSave":"Save the payment method",
+  "s8.embCancel":"Cancel",
+  "s8.embReturn":"Returned from Stripe — the method is on file.",
+  "s8.methodOnFile":"Payment method on file · Visa ending 4242",
+  "s8.skip":"Skip for now — I'll pay when I submit the assessment",
+  "s8.reassure":"You can resend, edit the title, or withdraw the invitation at any point.",
+  "s8.continue":"Continue",
+  "s8.stepAccount":"Create your account",
+  "s8.accountNote":"The relationship comes back to you, so this is where it is kept. It is one step, and nothing here blocks the invitation.",
+  "s8.stepMethod":"Add a payment method",
+  "s8.stepConfirm":"Confirm payment",
+  "s8.confirmPlan":"Plan",
+  "s8.confirmMethod":"Method",
+  "s8.methodValue":"Visa ending 4242",
+  "s8.confirmBody":"Nothing is charged today. The 7-day trial starts when you confirm, and the first charge lands only when you publish the assessment.",
+  "s8.confirmCta":"Confirm and pay",
+  "s8.changePlan":"Change plan",
+  "s8.confirmed":"Payment confirmed — nothing charged today.",
+  "s8.stepDone":"You're all set",
+  "s8.thanksBody":"The plan is active, the method is on file and the trial has started. Send the invitation when you are ready — the button on the right is now Complete and Connect.",
+  "s8.connect":"Complete and Connect",
+
+  /* 9 — invite sent */
+  "s9.heading":"Invitation sent",
+  "s9.body":"Rowan has an email with one link. The relationship waits at Invited until they accept.",
+  "s9.status":"Invited — waiting for Rowan to accept",
+  "s9.sentTo":"Sent to rowan@example.com",
+  "s9.nextHeading":"What happens next",
+  "s9.next1":"They accept, and the seat is filled.",
+  "s9.next2":"You both answer the same five Aspects.",
+  "s9.next3":"When both sheets are sealed, the report opens to both of you.",
+  "s9.resend":"Resend the invitation",
+  "s9.copy":"Copy the invite link",
+  "s9.open":"Continue to Stage 6",
+  "s9.authHeading":"One step before the invitation goes out",
+  "s9.authBody":"Your draft is kept exactly as you left it. Create the account, or step back and finish anything about the relationship first.",
+  "s9.authStep1":"Relationship ready",
+  "s9.authStep2":"Your account",
+  "s9.authStep3":"Invitation sent",
+  "s9.authProgress":"Account · step 2 of 3",
+  "s9.authNotNow":"Not now",
+  "s9.authNotNowBody":"Nothing is sent until you finish this step. Both ways back are free.",
+  "s9.authBack":"Back to Stage 4 — check the relationship",
+  "s9.authLogin":"Use the sign-in form instead",
+  "s9.accountHeading":"Keep this relationship — create your account",
+  "s9.accountBody":"The invitation is already out, so nothing is lost by waiting: this is where the relationship comes back to you. Signing in reveals what happens next.",
+  "s9.accountSignedNote":"Signed in as Daniel — the relationship is on your dashboard.",
+  "s9.goHeading":"Where to go next",
+  "s9.goBody":"The relationship is on your dashboard at Invited. The report opens here, to both of you, the moment both sheets are sealed.",
+  "s9.dashboardNote":"Your dashboard is now available — it holds this relationship from here on.",
+  "s9.back":"Back","s9.next":"Open the relationship",
+
+  /* 10 — alignment */
+  "s10.heading":"Alignment",
+  "s10.body":"Both sheets are sealed. The Gap is what the two sets of answers disagree by, Aspect by Aspect.",
+  "s10.sealed":"Sharing — the report is open to both of you.",
+  "s10.gapHeading":"The Gap",
+  "s10.gapSubline":"Aligned under Soft · 1 Gap exceeds Full",
+  "s10.a1":"Time together","s10.a2":"Housework","s10.a3":"Money","s10.a4":"Conflict","s10.a5":"Affection",
+  "s10.you":"You","s10.them":"Rowan","s10.verdict":"Aligned","s10.verdictGap":"Gap",
+  "s10.total":"Total Gap",
+  "s10.inDashboard":"Lives in the dashboard",
+  "s10.completeHeading":"Relationship Aspect complete Alignment",
+  "s10.completeBody":"Every Aspect has now been answered by both seats and read by both seats. This is the end of the flow — nothing further is required of either party.",
+  "s10.back":"Back","s10.finish":"Finish",
+  /* 10 — the relationship after the arc: one moment, two seats, billing on one of them */
+  "s11.heading":"Relationship Basics",
+  "s11.sub":"Both sheets are sealed. The report is shared; the billing is not.",
+  "s11.seatLabel":"Viewing as",
+  "s11.seatPayer":"Daniel — payer",
+  "s11.seatCounterparty":"Rowan — counterparty",
+  "s11.seatNote":"The same moment from each seat — switch it and watch what disappears.",
+  "s11.statusSharing":"Sharing",
+  "s11.statusNeeds":"Needs action",
+  "s11.statusPublished":"Published",
+  "s11.statusReady":"Ready to publish",
+  "s11.sharedHeading":"What both seats see",
+  "s11.counterHeading":"What happens next",
+  "s11.waitPublish":"Waiting for Daniel to publish.",
+  "s11.cp1":"Daniel publishes the assessment.",
+  "s11.cp2":"The Gap opens for both of you.",
+  "s11.cp3":"You read every Aspect, one by one.",
+  "s11.protoBlind":"Prototype note: this seat renders no plan, no fee, no method, no amount, no decline word and no countdown. The blind rule, drawn.",
+  "s11.billingHeading":"Payment",
+  "s11.planLabel":"Plan","s11.planValue":"Basic · $8.95",
+  "s11.feeLabel":"Fee","s11.feeValue":"$8.95 per completed relationship",
+  "s11.methodLabel":"Method",
+  "s11.methodNone":"No method on file",
+  "s11.methodCard":"Visa •••• 4242",
+  "s11.nothingPaid":"Nothing has been paid on this relationship.",
+  "s11.activate":"Activate Relationship",
+  "s11.publish":"Publish Assessment",
+  "s11.publishHelp":"Publishing waits until a method is on file.",
+  "s11.publishBlocked":"Publish is locked until a payment method is on file — the Gap analysis and the parity views stay closed until then. Both seats can still answer.",
+  "s11.publishHelpMethod":"The fee is taken 7 days after the method was captured. Nothing is taken today.",
+  "s11.methodHeading":"Add a payment method",
+  "s11.chooseCard":"Card","s11.chooseCardHelp":"Visa, Mastercard, Amex.",
+  "s11.choosePaypal":"PayPal","s11.choosePaypalHelp":"You approve in PayPal and come back here — no card details are stored.",
+  "s11.paypalBtn":"Continue with PayPal",
+  "s11.paypalNote":"You will be taken to PayPal to approve, then returned to this screen.",
+  "s11.cardNumber":"Card number","s11.expiry":"Expiry","s11.cvc":"CVC","s11.cardName":"Name on card",
+  "s11.naHeading":"Your bank needs you before this payment can go through",
+  "s11.naBody":"The $8.95 fee for this relationship was attempted on the card you saved and your bank asked for a check only you can give. Nothing has been taken. Both sheets stay sealed and the Gap stays shut until it clears.",
+  "s11.naApprove":"Approve payment",
+  "s11.naHelp":"The check stays open for 7 days — the same window the charge retries in. After that the relationship expires and you are told once.",
+  "s11.naApproved":"Payment approved",
+  "s11.naApprovedBody":"$8.95 was taken. The assessment is published and the Gap is open for both of you.",
+  "editor.na":"§9 state: off","editor.naOn":"§9 state: on"
+};
+
+/* Screen index → copy key. The six stages are the screens at indices 3..8 — Details · Settings ·
+   Aspects · Invite · Connect · Align. Indices 0-2 are the pre-stage views (gallery, template
+   detail, account gate), so they keep their own labels and are never numbered. */
+/* One entry per screen, and the entry names the copy key for THAT screen, so STEPS[3] is the
+   key for the screen at index 3. `step.N` is the stage number in words: 4 Details · 5 Settings ·
+   6 Aspects · 7 Invite · 8 Connect · 9 Align, per docs/specs/flow-stages.md. */
+const STEPS = ["step.1","step.2","step.3","step.4","step.5","step.6","step.7","step.8","step.9","step.10"];
+/* The template screens are PRE-STAGE views — a marketing template landing page and the
+   template detail a dashboard member opens. They are not numbered steps of the create
+   flow; pressing "Create Relationship" is the conversion that enters Stage 1. */
+const FLOW_START = 2;   // below this a screen is a pre-stage view (template landing/detail)
+/* The flow, in order. SIX stages, the owner's words: 1 Details · 2 Settings · 3 Aspects ·
+   4 Invite · 5 Connect · 6 Align. Screen 3 (the template detail) is a pre-stage view.
+   Align (screen 9) is live only once one or more assessments are shared; it is never a
+   stage the wizard advances into. There is no `Ongoing`: the living work of a completed
+   relationship is its own page in the dashboard. */
+/* The six stage SCREENS are state indices 3..8: 3 Details (s4Who) · 4 Settings (s5Mode) ·
+   5 Aspects (s6Aspects) · 6 Invite (s7Commit) · 7 Connect (s8Sent) · 8 Align (s9Dashboard).
+   The rail cell's number is its position in this list, and the cell's name is STEPS[i] — which is
+   why both must be indexed by the SCREEN, not by the stage number. They were one place apart, so
+   every cell opened the stage after the one it named. */
+const FLOW = [3, 4, 5, 6, 7, 8];
+/* v4: the copy edits an owner makes in the pane are session overrides held under this key, so a
+   stale override can shadow the defaults in this file and make the artifact disagree with itself.
+   Bumping the key retires those overrides when the wording they replaced has been folded back in
+   here — that is why it moved to v4 with the Stage 1 copy pass (2026-11-09). */
+const STORE = "alignsynch.prototype.copy.v6";
+/* The Aspects are data, not copy: they carry an order (drag), a question and two opinion labels.
+   Kept under their own key so a copy reset never silently reshuffles somebody's list. */
+const ASP_STORE = "alignsynch.prototype.aspects.v1";
+function loadAspects(){
+  try { const s = localStorage.getItem(ASP_STORE);
+    if (s) { const a = JSON.parse(s); if (Array.isArray(a) && a.length) return a; } } catch(e){}
+  return BASE_ASPECTS.map(x => ({...x}));
+}
+function persistAspects(){ try { localStorage.setItem(ASP_STORE, JSON.stringify(state.aspects)); } catch(e){} }
+/* Stage indices that run inside the create sheet. Before index 2 you are browsing public pages;
+   from 8 on you have a dashboard, because the relationship exists. */
+/* The overlay covers the six stages — Details (3) through Connect (7) — and the dashboard begins at
+   Align (8), which is a dashboard screen and not a step the wizard advances into. */
+const SHEET_FROM = 2, SHEET_TO = 7, DASH_FROM = 8;
+
+const TEMPLATES = [
+  { id:"basics", nameKey:"s1.tplBasics", descKey:"s1.tplBasicsDesc", aspects:5, own:"s1.owned" },
+  { id:"staff",  nameKey:"s1.tplStaff",  descKey:"s1.tplStaffDesc",  aspects:5, own:"s1.shared" },
+  { id:"parent", nameKey:"s1.tplParent", descKey:"s1.tplParentDesc", aspects:5, own:"s1.shared" }
+];
+const BASE_ASPECTS = [
+  { key:"s10.a1", q:"How satisfied are you with the time you spend together?", left:"Never enough", right:"Plenty", origin:"s6.copied" },
+  { key:"s10.a2", q:"How fairly is the housework split?", left:"All on me", right:"Even", origin:"s6.copied" },
+  { key:"s10.a3", q:"How well do you handle money decisions?", left:"We avoid it", right:"We plan together", origin:"s6.copied" },
+  { key:"s10.a4", q:"How well do you resolve conflict?", left:"It escalates", right:"We repair", origin:"s6.copied" },
+  { key:"s10.a5", q:"How satisfied are you with affection?", left:"Rare", right:"Constant", origin:"s6.copied" }
+];
+const SCORES = [ {you:4,them:3},{you:2,them:4},{you:5,them:4},{you:3,them:3},{you:4,them:2} ];
+
+let copy = load();
+function stageFromHash(){ const m=/stage=(\d+)/.exec(location.hash||""); return m?Math.min(9,Math.max(0,+m[1]-1)):0; }
+let state = {
+  stage: stageFromHash(), tab: "gallery", authTab: "signup",
+  signedIn: /signedin=1/.test(location.hash || ""),
+  hasMethod: /method=1/.test(location.hash || ""),
+  template:"basics", mode:"basic", setting:"soft", method:"card",
+  /* the relationship's own description, mirrored as the Stage 1 subtitle while it is typed */
+  desc: "",
+  aspects: loadAspects(),
+  /* null = every Aspect collapsed; the stage opens as a compact list, not a stack of forms */
+  editingAspect: null,
+  payPanel: false,
+  payStep: null,
+  plan: (()=>{ try { return localStorage.getItem("alignsynch.prototype.plan") || "payg"; } catch(e){ return "payg"; } })(),
+  /* stage 10 — the seat you are reading the relationship as, and the billing state behind it */
+  seat: "payer", published: false, needsAction: false, approved: false,
+  /* "public" = no account yet, so no dashboard to host the flow; "member" = dashboard behind it */
+  shell: "public",
+  /* a dashboard exists once creation completes, or once the flow is broken off back to the gallery.
+     Opening `#stage=9`/`#stage=10` directly is "creation already completed", so it starts as member. */
+  hasDashboard: stageFromHash() >= DASH_FROM
+};
+
+function load(){ try{ const s=localStorage.getItem(STORE); if(s) return Object.assign({},DEFAULT_COPY,JSON.parse(s)); }catch(e){} return Object.assign({},DEFAULT_COPY); }
+function c(k){ return copy[k] ?? "⟨"+k+"⟩"; }
+function esc(s){ return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+function T(k,tag){ const t=tag||"span"; return "<"+t+' data-copy="'+k+'">'+esc(c(k))+"</"+t+">"; }
+function H(k,tag){ const t=tag||"span"; return "<"+t+' data-copy="'+k+'">'+esc(c(k))+"</"+t+">"; }
+
+function paintSteps(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (state.stage < FLOW_START) {
+    /* a template screen: name the boundary rather than pretending to be step 1 of a wizard */
+    el.innerHTML = '<li data-state="pre"><span class="chip">'+esc(c("pre.chip"))+'</span>'
+      + '<span class="mini" style="margin-left:10px">'+esc(c("pre.note"))+'</span></li>';
+    return;
+  }
+  el.innerHTML = FLOW.map((i,j)=>{
+    const k = STEPS[i];
+    const st = i<state.stage ? "done" : i===state.stage ? "now" : "todo";
+    const name = "Stage " + (j + 1) + " of 6 · " + c(k);
+    /* the tab label is the STAGE NUMBER; the name sits under it, and the copy editor still owns
+       the name (the number is structure, not copy) */
+    return '<li data-state="'+st+'"><button data-goto="'+i+'" aria-current="'+(i===state.stage?"step":"false")+'" title="'+esc(name)+'" aria-label="'+esc(name)+'">'
+      + '<span class="stage-n">Stage '+(j + 1)+'</span>'
+      + '<span class="stage-name" data-copy="'+k+'">'+esc(c(k))+'</span></button></li>';
+  }).join("");
+  /* The count line under the band: "Stage 3 of 6". The cells print the number and the name; this
+     says the position in words once, which is what the spec asks the rail to print. */
+  if (id === "steps2") {
+    const count = document.getElementById("stepsCount");
+    if (count) {
+      const pos = FLOW.indexOf(state.stage) + 1;
+      count.textContent = pos > 0 ? "Stage " + pos + " of 6" : "";
+    }
+  }
+}
+function renderSteps(){ paintSteps("steps"); }
+
+function render(){
+  const railExists = state.shell === "member" || state.hasDashboard;
+  document.body.dataset.shell = railExists ? "member" : "public";
+
+  /* index 2 was the standalone account page; that page is gone (the auth step owns sign-in), so
+     the slot renders the gate. Kept as a slot so no stage number or deep link moves. */
+  const views=[s1Gallery,s2Detail,sAuthGate,s4Who,s5Mode,s6Aspects,s7Commit,s8Sent,s9Dashboard,s10Relationship];
+  const inSheet = state.stage >= SHEET_FROM && state.stage <= SHEET_TO;
+  const content = views[state.stage]();
+  const pageRail = document.getElementById("steps");
+
+  /* ONE rail per screen. A sheet carries its own (#steps2), so the page-level rail is emptied
+     rather than drawn behind it — two rails is a double header, not a breadcrumb. */
+  if (inSheet) {
+    if (pageRail) { pageRail.innerHTML = ""; pageRail.hidden = true; }
+  } else {
+    if (pageRail) pageRail.hidden = false;
+    renderSteps();
+  }
+
+  if (inSheet) {
+    /* The flow is a full-screen sheet. Public: the sheet is the page (no rail exists yet).
+       Member: the dashboard stays behind a dimmed backdrop, and Close/Cancel breaks off. */
+    /* The bar names WHERE you are, not what the page is: the page's own h1 already says that.
+       "Create a relationship" over "Create the relationship" is the same header twice. */
+    const pos = FLOW.indexOf(state.stage) + 1;
+    const here = pos > 0 ? c(STEPS[state.stage]) : c("ctx.sheetTitle");
+
+    /* Every stage footer carries its own two exits ([Back][Cancel], a left-justified pair) and its
+       own advancing act on the right, so the footer is the one place a stage's controls live —
+       nothing is injected into a screen after it rendered. */
+    document.getElementById("stage").innerHTML =
+      '<div class="backdrop"><div class="sheet">'
+      + '<ol class="steps" id="steps2" aria-label="Create a relationship"></ol>'
+      /* the position in words, under the band, exactly as the build's WizardSteps prints it: the
+         cells are short at 390 and lose their names there, so the count line is what still says
+         where the reader is (docs/specs/flow-stages.md: the rail prints `Stage {n} of 6`). */
+      + '<p class="steps-count" id="stepsCount"></p>'
+      + '<div id="sheetstage">' + content + '</div>'
+      + '</div></div>';
+    paintSteps("steps2");
+  } else {
+    document.getElementById("stage").innerHTML = content;
+  }
+
+  if (document.body.dataset.editing==="on") document.querySelectorAll("[data-copy]").forEach(el=>el.contentEditable="true");
+  const na = document.getElementById("toggleNa");
+  if (na) na.textContent = state.needsAction ? c("editor.naOn") : c("editor.na");
+  const t = document.getElementById("ctxToggle");
+  if (t) t.textContent = state.shell === "member" ? "Viewing as: signed-in customer" : "Viewing as: new visitor";
+}
+
+/* ---------- 1: discovery ---------- */
+function s1Gallery(){
+  const isGallery = state.tab === "gallery";
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s1.heading">'+esc(c("s1.heading"))+'</h1><p class="muted" data-copy="s1.body">'+esc(c("s1.body"))+'</p></div>'
+   + '<div class="card"><div class="head" style="padding-bottom:0;border-bottom:0">'
+     + '<div class="tabs" role="tablist">'
+       + '<button role="tab" aria-selected="'+isGallery+'" data-tab="gallery" data-copy="s1.tabGallery">'+esc(c("s1.tabGallery"))+'</button>'
+       + '<button role="tab" aria-selected="'+(!isGallery)+'" data-tab="dashboard" data-copy="s1.tabDashboard">'+esc(c("s1.tabDashboard"))+'</button>'
+     + '</div><span class="meta" data-copy="s1.count">'+esc(c("s1.count"))+'</span></div>'
+   + '<div class="body stack">'
+     + '<p class="note" data-copy="'+(isGallery?"s1.galleryNote":"s1.dashboardNote")+'">'+esc(c(isGallery?"s1.galleryNote":"s1.dashboardNote"))+'</p>'
+     + '<label class="field"><span data-copy="s1.search">'+esc(c("s1.search"))+'</span>'
+       + '<input type="text" placeholder="'+esc(c("s1.searchPlaceholder"))+'"></label>'
+     + '<div class="grid12">'
+       + TEMPLATES.map((t,i)=>{
+           const span = i===0 ? "span12" : "span6";
+           return '<div class="'+span+'"><div class="tpl" role="radio" tabindex="0" aria-checked="'+(state.template===t.id)+'" data-tpl="'+t.id+'">'
+             + '<div class="thumb" data-copy="s1.thumbPlaceholder">Template preview</div>'
+             + '<div class="between"><h3 data-copy="'+t.nameKey+'">'+esc(c(t.nameKey))+'</h3><span class="chip" data-copy="'+t.own+'">'+esc(c(t.own))+'</span></div>'
+             + '<p class="muted" data-copy="'+t.descKey+'">'+esc(c(t.descKey))+'</p>'
+             + '<div class="between"><div class="row"><span class="chip" data-copy="s1.aspects">'+esc(c("s1.aspects"))+'</span>'
+               + '<span class="chip" data-copy="s1.seats">'+esc(c("s1.seats"))+'</span></div>'
+               + '<button class="btn secondary" data-goto="1" data-copy="s1.choose">'+esc(c("s1.choose"))+'</button></div>'
+           + '</div></div>';
+         }).join("")
+     + '</div>'
+   + '</div></div>'
+   + '<p class="mini" data-copy="s1.empty">'+esc(c("s1.empty"))+'</p>'
+  + '</div>';
+}
+
+/* ---------- 2: template detail ---------- */
+function s2Detail(){
+  const t = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
+  return '<div class="stack">'
+   + '<div class="row" style="justify-content:space-between">'
+     + '<button class="btn ghost" data-goto="0" data-copy="s2.back">'+esc(c("s2.back"))+'</button>'
+     + '<div class="row"><span class="chip" data-copy="pre.chip">'+esc(c("pre.chip"))+'</span>'
+       + '<span class="meta" data-copy="s2.meta">'+esc(c("s2.meta"))+'</span></div></div>'
+   + '<div class="grid12">'
+     + '<div class="span8 stack">'
+       + '<div><h1 data-copy="'+t.nameKey+'">'+esc(c(t.nameKey))+'</h1></div>'
+       + '<div class="card"><div class="head"><h2 data-copy="s2.aboutHeading">'+esc(c("s2.aboutHeading"))+'</h2></div>'
+         + '<div class="body"><p class="muted" data-copy="s2.desc">'+esc(c("s2.desc"))+'</p></div></div>'
+       + '<div class="card"><div class="head"><h2 data-copy="s2.aspectsHeading">'+esc(c("s2.aspectsHeading"))+'</h2>'
+         + '<span class="chip" data-copy="s1.aspects">'+esc(c("s1.aspects"))+'</span></div>'
+         + '<div class="body tight">'
+           + state.aspects.map((a,i)=>'<div class="between" style="padding:10px 0;border-bottom:1px solid var(--line)">'
+               + '<b data-copy="'+a.key+'">'+esc(c(a.key))+'</b><span class="mini">'+esc(a.q)+'</span></div>').join("")
+           + '<p class="mini" data-copy="s2.aspectHelp">'+esc(c("s2.aspectHelp"))+'</p>'
+         + '</div></div>'
+     + '</div>'
+     + '<aside class="span4 stack">'
+       + '<div class="card"><div class="head"><h2 data-copy="s2.seatsHeading">'+esc(c("s2.seatsHeading"))+'</h2></div>'
+         + '<div class="body tight">'
+           + '<p class="mini" data-copy="s2.seatInitiator">'+esc(c("s2.seatInitiator"))+'</p>'
+           + '<p class="mini" data-copy="s2.seatCounterparty">'+esc(c("s2.seatCounterparty"))+'</p>'
+           /* Create Relationship enters STAGE 1 (Who, screen index 3). Screen 2 is the account view,
+              which is no longer a step — it survives only as a deep link. */
+           + '<button class="btn primary" data-goto="3" data-copy="s2.next" style="width:100%">'+esc(c("s2.next"))+'</button>'
+         + '</div></div>'
+     + '</aside>'
+   + '</div></div>';
+}
+
+/* ---------- 3: account ---------- */
+function authCard(){
+  const signup = state.authTab === "signup";
+  return '<div class="card"><div class="body stack">'
+    + '<div class="tabs" role="tablist">'
+      + '<button role="tab" aria-selected="'+signup+'" data-authtab="signup" data-copy="s3.tabSignup">'+esc(c("s3.tabSignup"))+'</button>'
+      + '<button role="tab" aria-selected="'+(!signup)+'" data-authtab="signin" data-copy="s3.tabSignin">'+esc(c("s3.tabSignin"))+'</button></div>'
+    + '<button class="btn secondary" style="width:100%" data-copy="s3.google">'+esc(c("s3.google"))+'</button>'
+    + '<p class="meta" style="text-align:center" data-copy="s3.or">'+esc(c("s3.or"))+'</p>'
+    + (signup ? '<label class="field"><span data-copy="s3.name">'+esc(c("s3.name"))+'</span><input type="text" value="Daniel"><em data-copy="s3.nameHelp">'+esc(c("s3.nameHelp"))+'</em></label>' : '')
+    + '<label class="field"><span data-copy="s3.email">'+esc(c("s3.email"))+'</span><input type="email" placeholder="you@example.com"></label>'
+    + '<label class="field"><span data-copy="s3.password">'+esc(c("s3.password"))+'</span><input type="password" placeholder="••••••••••">'
+      + (signup ? '<em data-copy="s3.passwordHelp">'+esc(c("s3.passwordHelp"))+'</em>' : '')+'</label>'
+    + (signup ? '<p class="mini" data-copy="s3.terms">'+esc(c("s3.terms"))+'</p>' : '')
+    + '<button class="btn primary" data-signin="1" style="width:100%" data-copy="'+(signup?"s3.signupBtn":"s3.signinBtn")+'">'+esc(c(signup?"s3.signupBtn":"s3.signinBtn"))+'</button>'
+  + '</div><div class="foot"><span class="mini" data-copy="'+(signup?"s3.haveAccount":"s3.noAccount")+'">'+esc(c(signup?"s3.haveAccount":"s3.noAccount"))+'</span>'
+    + '<button class="btn ghost" data-authtab="'+(signup?"signin":"signup")+'" data-copy="'+(signup?"s3.tabSignin":"s3.tabSignup")+'">'+esc(c(signup?"s3.tabSignin":"s3.tabSignup"))+'</button>'
+  + '</div></div>';
+}
+
+/* 1 — Account: the seat this relationship is created from. The template screens are PRE-STAGE
+   views, so pressing Create Relationship on the template detail lands here, as Stage 1. */
+function s3Account(){
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s3.heading">'+esc(c("s3.heading"))+'</h1>'
+     + '<p class="muted" data-copy="s3.body">'+esc(c("s3.body"))+'</p></div>'
+   + '<div class="grid12"><div class="span7">'+authCard()+'</div>'
+     + '<aside class="span5"><div class="card"><div class="body stack">'
+       + '<p class="mini" data-copy="s3.stageNote">'+esc(c("s3.stageNote"))+'</p>'
+     + '</div></div></aside></div>'
+   + '<div class="stage-foot"><button class="btn secondary" data-goto="1" data-copy="s3.back">'+esc(c("s3.back"))+'</button>'
+     + '<button class="btn primary" data-goto="3" data-copy="s3.next">'+esc(c("s3.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 4: who and how ---------- */
+function s4Who(){
+  const t = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s4.heading">'+esc(c("s4.heading"))+'</h1><p class="muted" id="s4Sub" data-copy="s4.body">'+esc(state.desc.trim()||c("s4.body"))+'</p></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="'+t.nameKey+'">'+esc(c(t.nameKey))+'</h2>'
+     + '<span class="chip" data-copy="s1.aspects">'+esc(c("s1.aspects"))+'</span></div>'
+   + '<div class="body stack">'
+     + '<div class="grid12">'
+       + '<label class="field span6"><span data-copy="s4.initiator">'+esc(c("s4.initiator"))+'</span><input type="text" value="Daniel">'
+         + '<em data-copy="s4.initiatorHelp">'+esc(c("s4.initiatorHelp"))+'</em></label>'
+       + '<label class="field span6"><span data-copy="s4.counterparty">'+esc(c("s4.counterparty"))+'</span>'
+         + '<input type="text" placeholder="'+esc(c("s4.counterpartyPlaceholder"))+'">'
+         + '<em data-copy="s4.counterpartyHelp">'+esc(c("s4.counterpartyHelp"))+'</em></label>'
+       + '<label class="field span6"><span data-copy="s4.email">'+esc(c("s4.email"))+'</span>'
+         + '<input type="email" placeholder="'+esc(c("s4.emailPlaceholder"))+'"></label>'
+       + '<label class="field span6"><span data-copy="s4.title">'+esc(c("s4.title"))+'</span>'
+         + '<input type="text" value="'+esc(c("s4.titlePlaceholder"))+'">'
+         + '<em data-copy="s4.titleHelp">'+esc(c("s4.titleHelp"))+'</em></label>'
+       + '<label class="field span12"><span data-copy="s4.description">'+esc(c("s4.description"))+'</span>'
+         + '<textarea id="s4Desc" placeholder="'+esc(c("s4.descriptionPlaceholder"))+'">'+esc(state.desc)+'</textarea>'
+         + '<em data-copy="s4.descriptionHelp">'+esc(c("s4.descriptionHelp"))+'</em></label>'
+     + '</div>'
+   + '</div></div>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="1" data-copy="s4.back">'+esc(c("s4.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
+     + '<button class="btn primary" data-goto="4" data-copy="s4.next">'+esc(c("s4.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 5: mode and setting ---------- */
+function s5Mode(){
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s5.heading">'+esc(c("s5.heading"))+'</h1><p class="muted" data-copy="s5.body">'+esc(c("s5.body"))+'</p></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="s5.modeHeading">'+esc(c("s5.modeHeading"))+'</h2>'
+     + '<span class="chip warn" data-copy="s5.modeFixed">'+esc(c("s5.modeFixed"))+'</span></div>'
+     + '<div class="body"><div class="choice-grid">'
+       + [["basic","s5.modeBasic","s5.modeBasicHelp"],["advanced","s5.modeAdvanced","s5.modeAdvancedHelp"]].map(([id,k,hk])=>
+         '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.mode===id)+'" data-mode="'+id+'">'
+         + '<span class="dot"></span><span><b data-copy="'+k+'">'+esc(c(k))+'</b><span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span></div>').join("")
+     + '</div></div></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="s5.settingHeading">'+esc(c("s5.settingHeading"))+'</h2></div>'
+   + '<div class="body"><p class="muted" data-copy="s5.settingHelp">'+esc(c("s5.settingHelp"))+'</p>'
+     + '<div class="choice-grid">'
+       + [["soft","s5.settingSoft","s5.settingSoftHelp"],["full","s5.settingFull","s5.settingFullHelp"]].map(([id,k,hk])=>
+         '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.setting===id)+'" data-setting="'+id+'">'
+         + '<span class="dot"></span><span><b data-copy="'+k+'">'+esc(c(k))+'</b><span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span></div>').join("")
+     + '</div><p class="note" style="margin-top:12px" data-copy="s5.settingNote">'+esc(c("s5.settingNote"))+'</p></div></div>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="3" data-copy="s5.back">'+esc(c("s5.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
+     + '<button class="btn primary" data-goto="5" data-copy="s5.next">'+esc(c("s5.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 6: aspects — view, and edit IN PLACE ---------- */
+function s6Aspects(){
+  const list = state.aspects.map((asp,i)=>{
+    const open = i === state.editingAspect;
+    const originChip = asp.origin === "s6.copied" ? "" : '<span class="chip'+(asp.origin==="s6.edited"?" warn":" ok")+'" data-copy="'+asp.origin+'">'+esc(c(asp.origin))+'</span>';
+
+    if (!open) {
+      /* COLLAPSED: the whole Aspect readable on one line, so five of them fit without scrolling */
+      return '<div class="aspect compact" data-aspect="'+i+'">'
+        /* the position leads the row: it is the aspect's order (01, 02 …) read off the index, so a
+           drag renumbers it, and it is a plain span — never an input, never editable copy */
+        + '<span class="a-pos">'+String(i+1).padStart(2,"0")+'</span>'
+        + '<span class="grip" data-grip="'+i+'" role="button" tabindex="0" aria-label="Reorder '+esc(c(asp.key))+'" title="'+esc(c("s6.dragHint"))+'">⠿</span>'
+        + '<div class="a-main"><b class="a-name" data-copy="'+asp.key+'">'+esc(c(asp.key))+'</b>'
+          + '<span class="a-q">'+esc(asp.q)+'</span></div>'
+        + '<div class="a-scale"><span>'+esc(asp.left||"Not enough")+'</span><i>↔</i><span>'+esc(asp.right||"Too much")+'</span>'+originChip+'</div>'
+        + '<button class="btn ghost a-edit" data-aspect="'+i+'" aria-label="'+esc(c("s6.editInline"))+'" title="'+esc(c("s6.editInline"))+'">✎</button>'
+      + '</div>';
+    }
+
+    /* OPEN: the same row, expanded in place */
+    return '<div class="aspect" data-aspect="'+i+'" style="border-color:var(--action);box-shadow:inset 0 0 0 1px var(--action)">'
+      + '<header><b data-copy="'+asp.key+'">'+esc(c(asp.key))+'</b>'+originChip+'</header>'
+      + '<div class="stack">'
+        + '<div class="grid12">'
+          + '<label class="field span6"><span data-copy="s6.nameLabel">'+esc(c("s6.nameLabel"))+'</span>'
+            + '<input type="text" data-asp-name="'+i+'" value="'+esc(c(asp.key))+'"></label>'
+          + '<label class="field span6"><span data-copy="s6.questionLabel">'+esc(c("s6.questionLabel"))+'</span>'
+            + '<input type="text" data-asp-q="'+i+'" value="'+esc(asp.q)+'"></label>'
+          + '<label class="field span6"><span data-copy="s6.leftLabel">'+esc(c("s6.leftLabel"))+'</span>'
+            + '<input type="text" data-asp-left="'+i+'" value="'+esc(asp.left||"Not enough")+'">'
+            + '<em data-copy="s6.leftHelp">'+esc(c("s6.leftHelp"))+'</em></label>'
+          + '<label class="field span6"><span data-copy="s6.rightLabel">'+esc(c("s6.rightLabel"))+'</span>'
+            + '<input type="text" data-asp-right="'+i+'" value="'+esc(asp.right||"Too much")+'">'
+            + '<em data-copy="s6.rightHelp">'+esc(c("s6.rightHelp"))+'</em></label>'
+        + '</div>'
+        + '<div class="row"><button class="btn primary" data-save-aspect="'+i+'" data-copy="s6.save">'+esc(c("s6.save"))+'</button>'
+          + '<button class="btn secondary" data-remove-aspect="'+i+'" data-copy="s6.remove">'+esc(c("s6.remove"))+'</button>'
+          + '<button class="btn ghost" data-cancel-aspect="'+i+'" data-copy="s6.cancel">'+esc(c("s6.cancel"))+'</button></div>'
+      + '</div></div>';
+  }).join("");
+
+  return '<div class="stack">'
+   + '<div class="between"><div><h1 data-copy="s6.heading">'+esc(c("s6.heading"))+'</h1>'
+     + '<p class="muted" data-copy="s6.body">'+esc(c("s6.body"))+'</p></div>'
+     + '</div>'
+   + '<p class="mini" data-copy="s6.dragHint">'+esc(c("s6.dragHint"))+'</p>'
+   + '<div class="stack" id="aspectList" style="gap:8px">'+list+'</div>'
+   + '<button class="btn secondary" data-add-aspect="1">+ '+esc(c("s6.add"))+'</button>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="4" data-copy="s6.back">'+esc(c("s6.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
+     + '<button class="btn primary" data-goto="6" data-copy="s6.next">'+esc(c("s6.next"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 7: the conversion — this is the call to action, not a review page ---------- */
+/* ---------- Stage 4's left column: the payment flow, in place ----------
+   Owner, comment 3: choosing a plan must not bounce anyone to a Pricing page. The plan, the account,
+   the method, the confirmation and the thank-you all happen inside this card, one panel at a time and
+   each fading in; the right-hand CTA changes with them — "Keep as a draft" until the method is
+   confirmed, then "Complete and Connect". No step here is a separate stage, and nothing navigates. */
+function payFlowCard(){
+  const step = state.payStep || "plan";
+  const unlimited = state.plan === "unlimited";
+  const planName = c(unlimited ? "s8.planUnlimited" : "s8.planPayg");
+  const planPrice = c(unlimited ? "s8.priceUnlimited" : "s8.pricePayg") + c("s8.pricePer");
+  const head = (key, chip) => '<div class="head"><h2 data-copy="'+key+'">'+esc(c(key))+'</h2>'
+    + (chip ? '<span class="chip ok" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span>' : '') + '</div>';
+  const back = (to, key) => '<button class="btn ghost" data-paystep="'+to+'" data-copy="'+key+'">'+esc(c(key))+'</button>';
+
+  if (step === "account") {
+    /* the same account card Stage 1 uses, in place — this is the "fade to login/signup" step */
+    return '<div class="stack pfade" data-paystep-panel="account">'
+      + '<div class="row" style="justify-content:space-between;align-items:baseline">'
+        + '<h2 data-copy="s8.stepAccount">'+esc(c("s8.stepAccount"))+'</h2>'
+        + '<span class="chip ok" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span></div>'
+      + authCard()
+      + '<div class="card"><div class="body stack">'
+        + '<p class="mini" data-copy="s8.accountNote">'+esc(c("s8.accountNote"))+'</p>'
+        + '<div class="row" style="gap:8px">'+back("plan","s8.back")
+          + '<button class="btn primary" data-paystep="method" data-copy="s8.continue">'+esc(c("s8.continue"))+'</button></div>'
+      + '</div></div></div>';
+  }
+
+  if (step === "method") {
+    return '<div class="card pfade" data-paystep-panel="method">'+head("s8.stepMethod", true)
+      + '<div class="body stack">'
+        + '<p class="mini"><b>'+esc(planName)+'</b> · '+esc(planPrice)+'</p>'
+        + '<div class="emb"><div class="emb-bar"><span data-copy="s8.embBar">'+esc(c("s8.embBar"))+'</span>'
+            + '<span class="chip" data-copy="s8.embMode">'+esc(c("s8.embMode"))+'</span></div>'
+          + '<p class="mini" data-copy="s8.embBody">'+esc(c("s8.embBody"))+'</p>'
+          + '<div class="emb-frame"><b data-copy="s8.embFrame">'+esc(c("s8.embFrame"))+'</b>'
+            + '<span data-copy="s8.embFrameNote">'+esc(c("s8.embFrameNote"))+'</span></div></div>'
+        + '<div class="row" style="gap:8px">'+back("account","s8.back")
+          + '<button class="btn primary" data-savecard="1" data-copy="s8.embSave">'+esc(c("s8.embSave"))+'</button></div>'
+      + '</div></div>';
+  }
+
+  if (step === "confirm") {
+    return '<div class="card pfade" data-paystep-panel="confirm">'+head("s8.stepConfirm", false)
+      + '<div class="body stack">'
+        + '<dl class="kv">'
+          + '<dt data-copy="s8.confirmPlan">'+esc(c("s8.confirmPlan"))+'</dt><dd>'+esc(planName)+' · '+esc(planPrice)+'</dd>'
+          + '<dt data-copy="s8.confirmMethod">'+esc(c("s8.confirmMethod"))+'</dt><dd data-copy="s8.methodValue">'+esc(c("s8.methodValue"))+'</dd>'
+        + '</dl>'
+        + '<p class="mini" data-copy="s8.confirmBody">'+esc(c("s8.confirmBody"))+'</p>'
+        + '<div class="row" style="gap:8px">'+back("method","s8.changePlan")
+          + '<button class="btn primary" data-confirmpay="1" data-copy="s8.confirmCta">'+esc(c("s8.confirmCta"))+'</button></div>'
+      + '</div></div>';
+  }
+
+  if (step === "done") {
+    return '<div class="card pfade" data-paystep-panel="done">'+head("s8.stepDone", false)
+      + '<div class="body stack">'
+        + '<div class="row" style="gap:8px"><span class="chip ok">✓</span>'
+          + '<span class="mini" data-copy="s8.methodOnFile">'+esc(c("s8.methodOnFile"))+'</span></div>'
+        + '<p class="mini" data-copy="s8.thanksBody">'+esc(c("s8.thanksBody"))+'</p>'
+        + '<p class="mini">'+esc(planName)+' · '+esc(planPrice)+'</p>'
+      + '</div></div>';
+  }
+
+  return '<div class="card pfade" data-paystep-panel="plan">'+head("s8.plansHeading", true)
+    + '<div class="body stack">'
+      + '<p class="mini" data-copy="s8.payBody">'+esc(c("s8.payBody"))+'</p>'
+      + [["payg","s8.planPayg","s8.planPaygNote","s8.pricePayg"],
+          ["unlimited","s8.planUnlimited","s8.planUnlimitedNote","s8.priceUnlimited"]].map(([id,k,hk,pk])=>
+          '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.plan===id)+'" data-plan="'+id+'">'
+          + '<span class="dot"></span>'
+          + '<span style="flex:1;min-width:0"><b data-copy="'+k+'">'+esc(c(k))+'</b>'
+            + '<span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span>'
+          + '<span class="price"><span data-copy="'+pk+'">'+esc(c(pk))+'</span><i data-copy="s8.pricePer">'+esc(c("s8.pricePer"))+'</i></span>'
+          + '</div>').join("")
+      + '<p class="mini" data-copy="s8.trial">'+esc(c("s8.trial"))+'</p>'
+      + '<button class="btn primary" data-paystep="account" style="width:100%" data-copy="s8.continue">'+esc(c("s8.continue"))+'</button>'
+    + '</div></div>';
+}
+
+function s7Commit(){
+  const tpl = TEMPLATES.find(x=>x.id===state.template)||TEMPLATES[0];
+  const rows = [
+    ["s8.templateRow", c(tpl.nameKey) + " · " + state.aspects.length + " Aspects"],
+    ["s8.initiatorRow", "Daniel"],
+    ["s8.counterpartyRow", "Rowan"],
+    ["s8.titleRow", c("s4.titlePlaceholder")],
+    ["s8.modeRow", c(state.mode==="advanced"?"s5.modeAdvanced":"s5.modeBasic")],
+    ["s8.settingRow", c(state.setting==="soft"?"s5.settingSoft":"s5.settingFull")]
+  ];
+
+  /* RIGHT column: what gets created, where the send-invitation stack used to sit (owner, 2026-11-07,
+     comment 4), with the conversion under it. */
+  const whatCard =
+      '<div class="card"><div class="head"><h2 data-copy="s8.whatHeading">'+esc(c("s8.whatHeading"))+'</h2></div>'
+    + '<div class="body"><dl class="kv">'
+      + rows.map(([k,v])=>'<dt data-copy="'+k+'">'+esc(c(k))+'</dt><dd>'+esc(v)+'</dd>').join("")
+    + '</dl></div></div>';
+
+  const sendCard = '<div class="card" style="border-color:var(--action)">'
+    + '<div class="head"><h2 data-copy="s8.ctaHeading">'+esc(c("s8.ctaHeading"))+'</h2></div>'
+    + '<div class="body stack">'
+      + '<span class="chip ok" style="align-self:flex-start" data-copy="s8.trialShort">'+esc(c("s8.trialShort"))+'</span>'
+      + '<p class="mini" data-copy="s8.ctaBody">'+esc(c("s8.ctaBody"))+'</p>'
+      + '<button class="skip-link" data-goto="7" data-copy="s8.skip">'+esc(c("s8.skip"))+'</button>'
+      + (state.payStep === "done"
+          ? '<button class="btn primary" data-goto="7" data-copy="s8.connect" style="width:100%">'+esc(c("s8.connect"))+'</button>'
+          : '<button class="btn secondary" data-goto="0" data-copy="s8.draft" style="width:100%">'+esc(c("s8.draft"))+'</button>')
+      + '<p class="mini" data-copy="s8.reassure">'+esc(c("s8.reassure"))+'</p>'
+    + '</div></div>';
+
+  /* LEFT column: the payment flow that never leaves this screen (payFlowCard), and the right column
+     carrying the CTA that changes with it. */
+  const left = payFlowCard();
+
+  return '<div class="stack">'
+   + '<div><h1 data-copy="s8.heading">'+esc(c("s8.heading"))+'</h1>'
+     + '<p class="muted" data-copy="s8.pitch">'+esc(c("s8.pitch"))+'</p></div>'
+   + '<div class="grid12">'
+     + '<div class="span7 stack">'+left+'</div>'
+     + '<aside class="span5 stack">'+sendCard+whatCard+'</aside>'
+   + '</div>'
+   + '<div class="stage-foot"><div class="foot-left">'
+     + '<button class="btn secondary" data-goto="5" data-copy="s8.back">'+esc(c("s8.back"))+'</button>'
+     + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
+     + '<button class="btn primary" data-goto="7" data-copy="s8.submit">'+esc(c("s8.submit"))+'</button></div>'
+  + '</div>';
+}
+
+/* ---------- 8: sent — and straight into the dashboard ---------- */
+function sAuthGate(){
+  /* After Stage 4 the flow needs an account before anything is sent. This is that step: a progress
+     strip, the account form itself, and two ways out — back to Stage 4, or the sign-in page. */
+  return '<div class="stack">'
+   + '<div class="banner"><span>→</span><div><b data-copy="s9.authHeading">'+esc(c("s9.authHeading"))+'</b>'
+     + '<div class="mini" data-copy="s9.authBody">'+esc(c("s9.authBody"))+'</div></div></div>'
+   + '<div class="card"><div class="body tight">'
+     + '<span class="meta" data-copy="s9.authProgress">'+esc(c("s9.authProgress"))+'</span>'
+     + '<ol class="authprog">'
+       + [["done","s9.authStep1"],["now","s9.authStep2"],["todo","s9.authStep3"]].map(([st,k])=>
+           '<li data-state="'+st+'"><span class="dot"></span><span data-copy="'+k+'">'+esc(c(k))+'</span></li>').join("")
+     + '</ol></div></div>'
+   + '<div class="grid12">'
+     + '<div class="span7">'+authCard()+'</div>'
+     + '<aside class="span5 stack"><div class="card"><div class="head"><h2 data-copy="s9.authNotNow">'+esc(c("s9.authNotNow"))+'</h2></div>'
+       + '<div class="body stack"><p class="mini" data-copy="s9.authNotNowBody">'+esc(c("s9.authNotNowBody"))+'</p>'
+         + '<button class="btn secondary" data-goto="6" data-copy="s9.authBack" style="width:100%">'+esc(c("s9.authBack"))+'</button>'
+         + '<button class="btn ghost" data-authtab="signin" data-copy="s9.authLogin" style="width:100%">'+esc(c("s9.authLogin"))+'</button>'
+       + '</div></div></aside>'
+   + '</div></div>';
+}
+
+function s8Sent(){
+  /* The account lives on SENT, not on Create: the invitation goes out account-free, and the
+     screen that follows is where a person claims it. Signed in, this column reveals the
+     ordinary "what happens next" content. */
+  const nextCard = '<div class="card"><div class="head"><h2 data-copy="s9.nextHeading">'+esc(c("s9.nextHeading"))+'</h2></div>'
+    + '<div class="body tight">'
+      + ['s9.next1','s9.next2','s9.next3'].map((k,i)=>'<div class="row"><span class="chip">'+(i+1)+'</span>'
+        + '<span class="muted" data-copy="'+k+'">'+esc(c(k))+'</span></div>').join("")
+    + '</div><div class="foot"><button class="btn secondary" data-copy="s9.resend">'+esc(c("s9.resend"))+'</button>'
+    + '<button class="btn ghost" data-copy="s9.copy">'+esc(c("s9.copy"))+'</button></div></div>';
+
+  if (!state.signedIn) return sAuthGate();
+
+  const left = state.signedIn
+    ? nextCard
+    : '<div class="stack"><div><h2 style="margin:0 0 4px" data-copy="s9.accountHeading">'+esc(c("s9.accountHeading"))+'</h2>'
+        + '<p class="muted" style="margin:0" data-copy="s9.accountBody">'+esc(c("s9.accountBody"))+'</p></div>'
+        + authCard() + '</div>';
+
+  return '<div class="stack">'
+   + '<div class="banner"><span>✓</span><div><b data-copy="s9.status">'+esc(c("s9.status"))+'</b>'
+     + '<div class="mini" data-copy="s9.sentTo">'+esc(c("s9.sentTo"))+'</div></div></div>'
+   + '<div class="grid12">'
+     + '<div class="span7">'+left+'</div>'
+     + '<aside class="span5"><div class="card" style="border-color:var(--action)">'
+       + '<div class="head"><h2 data-copy="s9.goHeading">'+esc(c("s9.goHeading"))+'</h2>'
+         + (state.signedIn ? '<span class="chip ok" data-copy="s9.accountSignedNote">'+esc(c("s9.accountSignedNote"))+'</span>' : '')
+       + '</div>'
+       + '<div class="body stack"><p class="mini" data-copy="s9.goBody">'+esc(c("s9.goBody"))+'</p>'
+       + '<p class="mini" data-copy="s9.dashboardNote">'+esc(c("s9.dashboardNote"))+'</p>'
+       + '</div></div></aside>'
+       + '</div>'
+       + '<div class="stage-foot"><div class="foot-left">'
+       + '<button class="btn secondary" data-goto="6" data-copy="s9.back">'+esc(c("s9.back"))+'</button>'
+       + '<button class="btn ghost" data-close="1" data-copy="ctx.cancel">'+esc(c("ctx.cancel"))+'</button></div>'
+       + '<button class="btn primary" data-goto="8" data-copy="s9.open">'+esc(c("s9.open"))+'</button></div>'
+       + '</div>';
+}
+
+/* ---------- 9: alignment — a DASHBOARD screen, not a wizard step ---------- */
+function s9Dashboard(){
+  const total = state.aspects.reduce((n,a,i)=> n + Math.abs((SCORES[i]||{you:3,them:3}).you - (SCORES[i]||{you:3,them:3}).them), 0);
+  return '<div class="stack">'
+   + '<div class="between"><div><h1 data-copy="s10.heading">'+esc(c("s10.heading"))+'</h1>'
+     + '<p class="muted" data-copy="s10.body">'+esc(c("s10.body"))+'</p></div>'
+     + '<span class="chip ok" data-copy="s10.sealed">'+esc(c("s10.sealed"))+'</span></div>'
+   + '<div class="card"><div class="head"><div><h2 data-copy="s10.gapHeading">'+esc(c("s10.gapHeading"))+'</h2>'
+     + '<span class="muted" data-copy="s10.gapSubline">'+esc(c("s10.gapSubline"))+'</span></div>'
+     + '<span class="chip"><span data-copy="s10.inDashboard">'+esc(c("s10.inDashboard"))+'</span></span></div>'
+     + '<div class="body stack">'
+       + state.aspects.map((a,i)=>{ const s = SCORES[i]||{you:3,them:3}; const gap = Math.abs(s.you-s.them);
+           return '<div class="aspect"><header><b data-copy="'+a.key+'">'+esc(c(a.key))+'</b>'
+             + '<span class="chip'+(gap>=2?" gap":"")+'"><span data-copy="'+(gap>=2?"s10.verdictGap":"s10.verdict")+'">'
+             + esc(c(gap>=2?"s10.verdictGap":"s10.verdict"))+'</span> · '+gap+'</span></header>'
+             + '<div class="two-up"><div><span class="mini" data-copy="s10.you">'+esc(c("s10.you"))+'</span>'
+               + '<div class="meter"><i style="width:'+(s.you/5*100)+'%"></i></div>'
+               + '<div class="row" style="justify-content:space-between;margin-top:4px">'
+                 + '<span class="mini">'+esc(a.left||"Not enough")+'</span><span class="mini">'+esc(a.right||"Too much")+'</span></div></div>'
+               + '<div><span class="mini" data-copy="s10.them">'+esc(c("s10.them"))+'</span>'
+               + '<div class="meter"><i style="width:'+(s.them/5*100)+'%;background:#94a3b8"></i></div>'
+               + '<div class="row" style="justify-content:space-between;margin-top:4px">'
+                 + '<span class="mini">'+esc(a.left||"Not enough")+'</span><span class="mini">'+esc(a.right||"Too much")+'</span></div></div></div></div>';
+         }).join("")
+     + '</div>'
+     + '<div class="foot"><span class="mini"><span data-copy="s10.total">'+esc(c("s10.total"))+'</span> <b>'+total+'</b></span>'
+       + '<span class="chip">'+state.aspects.length+' Aspects</span></div></div>'
+   + '<div class="card"><div class="head"><h2 data-copy="s10.completeHeading">'+esc(c("s10.completeHeading"))+'</h2></div>'
+     + '<div class="body"><p class="muted" data-copy="s10.completeBody">'+esc(c("s10.completeBody"))+'</p></div>'
+     + '<div class="foot"><button class="btn secondary" data-goto="7" data-copy="s10.back">'+esc(c("s10.back"))+'</button>'
+     + '<button class="btn primary" data-copy="s10.finish">'+esc(c("s10.finish"))+'</button></div></div>'
+  + '</div>';
+}
+
+
+/* ---------- 10: the relationship after the arc — one moment, two seats ----------
+   Payment left the create flow in v4, so this is where money lives: on the payer's seat of
+   a relationship that already exists. The counterparty seat renders from the same data and
+   carries no plan, fee, method, amount, decline or countdown — ADR-8 drawn as a screen. */
+function s10Relationship(){
+  const payer = state.seat === "payer";
+  const statusChip = state.published
+    ? '<span class="chip ok" data-copy="s11.statusPublished">'+esc(c("s11.statusPublished"))+'</span>'
+    : state.needsAction && payer
+      ? '<span class="chip gap" data-copy="s11.statusNeeds">'+esc(c("s11.statusNeeds"))+'</span>'
+      : '<span class="chip" data-copy="s11.statusReady">'+esc(c("s11.statusReady"))+'</span>';
+
+  /* the §9 band: only ever on the payer's seat, and only while the charge needs the cardholder */
+  const band = (!payer || (!state.needsAction && !state.approved)) ? "" :
+    state.approved
+      ? '<section class="band ok"><h2 data-copy="s11.naApproved">'+esc(c("s11.naApproved"))+'</h2>'
+        + '<p class="muted" data-copy="s11.naApprovedBody">'+esc(c("s11.naApprovedBody"))+'</p></section>'
+      : '<section class="band danger"><h2 data-copy="s11.naHeading">'+esc(c("s11.naHeading"))+'</h2>'
+        + '<p data-copy="s11.naBody">'+esc(c("s11.naBody"))+'</p>'
+        + '<div class="row"><button class="btn primary" data-approve="1" data-copy="s11.naApprove">'+esc(c("s11.naApprove"))+'</button></div>'
+        + '<p class="mini" data-copy="s11.naHelp">'+esc(c("s11.naHelp"))+'</p></section>';
+
+  /* the billing panel — payer only, and the whole of what the counterparty never receives */
+  const billing = !payer ? "" :
+    '<div class="card"><div class="head"><h2 data-copy="s11.billingHeading">'+esc(c("s11.billingHeading"))+'</h2>'+statusChip+'</div>'
+    + '<div class="body tight">'
+      + '<dl class="kv">'
+        + '<dt data-copy="s11.planLabel">'+esc(c("s11.planLabel"))+'</dt><dd data-copy="s11.planValue">'+esc(c("s11.planValue"))+'</dd>'
+        + '<dt data-copy="s11.feeLabel">'+esc(c("s11.feeLabel"))+'</dt><dd data-copy="s11.feeValue">'+esc(c("s11.feeValue"))+'</dd>'
+        + '<dt data-copy="s11.methodLabel">'+esc(c("s11.methodLabel"))+'</dt>'
+        + '<dd data-copy="'+(state.hasMethod?"s11.methodCard":"s11.methodNone")+'">'+esc(c(state.hasMethod?"s11.methodCard":"s11.methodNone"))+'</dd>'
+      + '</dl>'
+      /* the card widget appears only while there is nothing on file — it is the capture surface */
+      + (state.hasMethod ? '' :
+          '<div style="border-top:1px solid var(--line);padding-top:16px"><p class="mini" data-copy="s11.methodHeading">'+esc(c("s11.methodHeading"))+'</p>'
+          /* two methods, as asked for: a card captured here, or PayPal and back */
+          + '<div class="stack" style="gap:8px;margin-top:8px">'
+            + [["card","s11.chooseCard","s11.chooseCardHelp"],["paypal","s11.choosePaypal","s11.choosePaypalHelp"]].map(([id,k,hk])=>
+                '<div class="choice" role="radio" tabindex="0" aria-checked="'+(state.method===id)+'" data-method="'+id+'">'
+                + '<span class="dot"></span><span><b data-copy="'+k+'">'+esc(c(k))+'</b>'
+                + '<span class="mini" data-copy="'+hk+'">'+esc(c(hk))+'</span></span></div>').join("")
+          + '</div>'
+          + (state.method === "paypal"
+              ? '<div class="stack" style="gap:8px;margin-top:12px">'
+                  + '<button class="btn paypal" data-activate="1" data-copy="s11.paypalBtn" style="width:100%">'+esc(c("s11.paypalBtn"))+'</button>'
+                  + '<p class="mini" data-copy="s11.paypalNote">'+esc(c("s11.paypalNote"))+'</p></div>'
+              : '')
+          + (state.method === "paypal" ? '' : '<div class="fields" style="margin-top:12px">'
+            + '<label class="field f-wide"><span data-copy="s11.cardNumber">'+esc(c("s11.cardNumber"))+'</span><input type="text" inputmode="numeric" value="4242 4242 4242 4242"></label>'
+            + '<label class="field"><span data-copy="s11.expiry">'+esc(c("s11.expiry"))+'</span><input type="text" inputmode="numeric" value="04 / 29"></label>'
+            + '<label class="field"><span data-copy="s11.cvc">'+esc(c("s11.cvc"))+'</span><input type="text" inputmode="numeric" value="123"></label>'
+            + '<label class="field f-wide"><span data-copy="s11.cardName">'+esc(c("s11.cardName"))+'</span><input type="text" value="Daniel Okafor"></label>'
+          + '</div>')
+          + ((state.method === "paypal" || state.hasMethod) ? '' :
+              '<button class="btn primary" data-activate="1" data-copy="s11.activate" style="width:100%;margin-top:12px">'+esc(c("s11.activate"))+'</button>')
+          + '</div>')
+      + '<p class="mini">' + '<span data-copy="'+(state.hasMethod?"s11.publishHelpMethod":"s11.nothingPaid")+'">'
+          + esc(c(state.hasMethod?"s11.publishHelpMethod":"s11.nothingPaid"))+'</span></p>'
+      + (state.hasMethod
+          ? '<button class="btn primary" data-publish="1" data-copy="s11.publish" style="width:100%">'+esc(c("s11.publish"))+'</button>'
+          : '<button class="btn primary" disabled aria-disabled="true" style="width:100%;cursor:not-allowed">'+esc(c("s11.publish"))+'</button>'
+            + '<p class="mini" data-copy="s11.publishBlocked">'+esc(c("s11.publishBlocked"))+'</p>')
+    + '</div></div>';
+
+  /* the counterparty's right-hand column: the process, in the words that name no money */
+  const counterparty = payer ? "" :
+    '<div class="card"><div class="head"><h2 data-copy="s11.counterHeading">'+esc(c("s11.counterHeading"))+'</h2>'
+    + '<span class="chip" data-copy="s11.statusSharing">'+esc(c("s11.statusSharing"))+'</span></div>'
+    + '<div class="body tight">'
+      + '<p><b data-copy="s11.waitPublish">'+esc(c("s11.waitPublish"))+'</b></p>'
+      + ['s11.cp1','s11.cp2','s11.cp3'].map((k,i)=>'<div class="row"><span class="chip">'+(i+1)+'</span>'
+          + '<span class="muted" data-copy="'+k+'">'+esc(c(k))+'</span></div>').join("")
+      + '<p class="proto" data-copy="s11.protoBlind">'+esc(c("s11.protoBlind"))+'</p>'
+    + '</div></div>';
+
+  const total = state.aspects.reduce((n,a,i)=> n + Math.abs((SCORES[i]||{you:3,them:3}).you - (SCORES[i]||{you:3,them:3}).them), 0);
+
+  return '<div class="stack">'
+   + '<div class="between" style="align-items:flex-start"><div><h1 data-copy="s11.heading">'+esc(c("s11.heading"))+'</h1>'
+     + '<p class="muted" data-copy="s11.sub">'+esc(c("s11.sub"))+'</p></div>'
+     + '<span class="chip ok" data-copy="s10.sealed">'+esc(c("s10.sealed"))+'</span></div>'
+
+   /* the seat switch: the same moment, and the only thing that changes is what you are entitled to read */
+   + '<div class="card"><div class="body between" style="gap:16px">'
+     + '<div class="row"><span class="meta" data-copy="s11.seatLabel">'+esc(c("s11.seatLabel"))+'</span>'
+       + '<div class="seg" role="radiogroup" aria-label="'+esc(c("s11.seatLabel"))+'">'
+         + '<button role="radio" data-seat="payer" aria-checked="'+payer+'" data-copy="s11.seatPayer">'+esc(c("s11.seatPayer"))+'</button>'
+         + '<button role="radio" data-seat="counterparty" aria-checked="'+(!payer)+'" data-copy="s11.seatCounterparty">'+esc(c("s11.seatCounterparty"))+'</button>'
+       + '</div></div>'
+     + '<span class="meta" data-copy="s11.seatNote">'+esc(c("s11.seatNote"))+'</span>'
+   + '</div></div>'
+
+   + band
+
+   + '<div class="grid12">'
+     + '<div class="span7"><div class="card"><div class="head"><h2 data-copy="s11.sharedHeading">'+esc(c("s11.sharedHeading"))+'</h2>'
+       + '<span class="chip">'+state.aspects.length+' Aspects</span></div>'
+       + '<div class="body tight">'
+         + state.aspects.map((a,i)=>{ const s = SCORES[i]||{you:3,them:3}; const gap = Math.abs(s.you-s.them);
+             return '<div class="between" style="padding:10px 0;border-bottom:1px solid var(--line)">'
+               + '<div><b data-copy="'+a.key+'">'+esc(c(a.key))+'</b>'
+               + '<div class="mini">'+esc(a.left||"Not enough")+' ↔ '+esc(a.right||"Too much")+'</div></div>'
+               + '<span class="chip'+(gap>=2?" gap":"")+'"><span data-copy="'+(gap>=2?"s10.verdictGap":"s10.verdict")+'">'
+               + esc(c(gap>=2?"s10.verdictGap":"s10.verdict"))+'</span> · '+gap+'</span></div>';
+           }).join("")
+         + '<div class="between" style="padding-top:10px"><span class="mini"><span data-copy="s10.total">'+esc(c("s10.total"))+'</span> <b>'+total+'</b></span>'
+         + '<button class="btn secondary" data-goto="8" data-copy="s10.heading">'+esc(c("s10.heading"))+'</button></div>'
+       + '</div></div></div>'
+     + '<aside class="span5">' + (payer ? billing : counterparty) + '</aside>'
+   + '</div>'
+  + '</div>';
+}
+
+/* ---------- events ---------- */
+/* ── drag to reorder, with a mouse or a finger ────────────────────────────────────────────────
+   Pointer events (not HTML5 dnd) because touch needs them. The dragged row keeps its capture and
+   the OTHER rows move around it, so the gesture survives every reflow; the order is read off the
+   DOM once, on release. */
+let dragEl = null, dragFrom = null;
+document.addEventListener("pointerdown", e => {
+  const grip = e.target.closest("[data-grip]");
+  if (!grip) return;
+  const row = grip.closest(".aspect");
+  const list = document.getElementById("aspectList");
+  if (!row || !list) return;
+  e.preventDefault();
+  dragEl = row; dragFrom = +row.dataset.aspect;
+  row.classList.add("dragging");
+  /* a synthetic event has no active pointer to capture; a real one does */
+  try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+  state.editingAspect = null;
+}, {passive: false});
+
+document.addEventListener("pointermove", e => {
+  if (!dragEl) return;
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const over = under && under.closest(".aspect");
+  if (!over || over === dragEl || !over.parentElement) return;
+  const r = over.getBoundingClientRect();
+  const after = e.clientY > r.top + r.height / 2;
+  over.parentElement.insertBefore(dragEl, after ? over.nextSibling : over);
+});
+
+document.addEventListener("pointerup", () => {
+  if (!dragEl) return;
+  const list = document.getElementById("aspectList");
+  dragEl.classList.remove("dragging");
+  const order = list ? Array.from(list.querySelectorAll(".aspect")).map(el => +el.dataset.aspect) : [];
+  dragEl = null;
+  if (order.length === state.aspects.length && order.some((v,i)=>v !== i)) {
+    state.aspects = order.map(i => state.aspects[i]);
+    persistAspects(); render();
+    const moved = order.findIndex((v,i)=>v !== i);
+    toast("Reordered — Aspect " + (moved+1) + " moved");
+  } else {
+    render();
+  }
+});
+
+/* What the open row's fields say right now, and whether that differs from what is stored. The name
+   is reader-visible copy (it lives in `copy` under the aspect's key); the question and the two
+   opinion labels live on the aspect itself. Cancel and switching rows both ask this, so a row that
+   was opened and not touched never prompts. */
+function aspectDraft(i){
+  const field = sel => document.querySelector(sel + '="' + i + '"]');
+  const a = state.aspects[i];
+  if (!a) return null;
+  const name = field("[data-asp-name"), q = field("[data-asp-q"),
+        left = field("[data-asp-left"), right = field("[data-asp-right");
+  return {
+    name: name ? name.value.trim() : c(a.key),
+    q: q ? q.value.trim() : a.q,
+    left: left ? left.value.trim() : (a.left || "Not enough"),
+    right: right ? right.value.trim() : (a.right || "Too much"),
+  };
+}
+function aspectDirty(i){
+  const a = state.aspects[i], d = aspectDraft(i);
+  if (!a || !d) return false;
+  return d.name !== c(a.key) || d.q !== a.q
+    || d.left !== (a.left || "Not enough") || d.right !== (a.right || "Too much");
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("#ctxToggle")) {
+    /* prototype-only control: the same stages, with and without a dashboard behind them */
+    state.shell = state.shell === "member" ? "public" : "member";
+    if (state.shell === "member") state.hasDashboard = true;
+    render(); return;
+  }
+  if (e.target.closest("[data-close]")) {
+    /* breaking the flow off: back to the gallery, and a dashboard now exists either way —
+       the account and the draft relationship are already real at this point */
+    state.stage = 0; state.hasDashboard = true; render(); window.scrollTo({top:0});
+    toast("Flow closed — the dashboard is now available"); return;
+  }
+  const tab = e.target.closest("[data-tab]");
+  if (tab) { state.tab = tab.dataset.tab; render(); return; }
+  const at = e.target.closest("[data-authtab]");
+  if (at) { state.authTab = at.dataset.authtab; render(); return; }
+  if (e.target.closest("[data-signin]")) {
+    /* prototype-only stand-in for the real form: signing in on Stage 1 advances to Stage 2 */
+    state.signedIn = true;
+    if (state.stage === 2) state.stage = 3;
+    render();
+    toast("Signed in — continue to who you are asking");
+    return;
+  }
+  const asp = e.target.closest("[data-aspect]");
+  if (asp && !asp.dataset.addAspect) {
+    /* Save / Remove / Cancel live INSIDE the open row, so their click also matches this row. They
+       are handled below and must not be treated as a dismiss. */
+    if (!e.target.closest("[data-save-aspect],[data-remove-aspect],[data-cancel-aspect]")) {
+      const i = +asp.dataset.aspect;
+      /* An open row stays open: clicking it (or any field in it) is an edit, not a collapse. It
+         closes only through Save or Cancel, which is what the owner asked for — the old toggle
+         shut the row on the first click into a field, so nothing could be typed at all. */
+      if (state.editingAspect !== i) {
+        if (state.editingAspect !== null && aspectDirty(state.editingAspect)
+            && !confirm("Discard the unsaved changes to this Aspect?")) return;
+        state.editingAspect = i; render();
+      }
+      return;
+    }
+  }
+  if (e.target.closest("[data-add-aspect]")) {
+    const n = state.aspects.length + 1;
+    state.aspects.push({ key:"s10.a"+n, q:"A new question both seats answer.", origin:"s6.added" });
+    copy["s10.a"+n] = "New Aspect";
+    state.editingAspect = n - 1; persist(); render();
+    toast("Aspect added — edit it on the right"); return;
+  }
+  const saveBtn = e.target.closest("[data-save-aspect]");
+  if (saveBtn) {
+    const i = +saveBtn.dataset.saveAspect;
+    const a = state.aspects[i];
+    const g = sel => document.querySelector(sel);
+    const name = g('[data-asp-name="'+i+'"]'), q = g('[data-asp-q="'+i+'"]');
+    const left = g('[data-asp-left="'+i+'"]'), right = g('[data-asp-right="'+i+'"]');
+    if (a && name) {
+      copy[a.key] = name.value.trim() || c(a.key);
+      a.q = (q && q.value.trim()) || a.q;
+      a.left = (left && left.value.trim()) || a.left || "Not enough";
+      a.right = (right && right.value.trim()) || a.right || "Too much";
+      a.origin = "s6.edited"; state.editingAspect = null; persistAspects(); persist(); render();
+      toast("Aspect saved and collapsed — drag the handle to reorder");
+    }
+    return;
+  }
+  const cancelBtn = e.target.closest("[data-cancel-aspect]");
+  if (cancelBtn) {
+    const i = +cancelBtn.dataset.cancelAspect;
+    if (aspectDirty(i) && !confirm("Discard the changes to this Aspect?")) return;
+    state.editingAspect = null; render(); toast("Reverted — nothing about that Aspect changed");
+    return;
+  }
+  const rm = e.target.closest("[data-remove-aspect]");
+  if (rm) {
+    const i = +rm.dataset.removeAspect;
+    if (state.aspects.length > 1) {
+      state.aspects.splice(i,1);
+      state.editingAspect = null; persistAspects(); persist(); render(); toast("Aspect removed");
+    } else { toast("A relationship needs at least one Aspect"); }
+    return;
+  }
+  /* Every control the delegated handler answers MUST be listed here: a new attribute that is not in
+     this selector resolves to null and the click is dropped silently — measured by pressing Stage 4's
+     Continue and watching the panel not move. */
+  const t = e.target.closest("[data-goto],[data-tpl],[data-mode],[data-setting],[data-method],[data-seat],[data-activate],[data-publish],[data-approve],[data-plan],[data-paystep],[data-confirmpay],[data-addmethod],[data-savecard],[data-closepay],#editToggle,#toggleNa,#saveJson,#loadJsonBtn,#resetCopy");
+  if (!t) return;
+  if (t.dataset.goto !== undefined) e.preventDefault();   /* the hash is ours, not the anchor's */
+  if (t.dataset.goto !== undefined) {
+    state.stage = +t.dataset.goto;
+    /* reaching the sent/alignment stages means the relationship exists, so a dashboard does too */
+    if (state.stage >= DASH_FROM) state.hasDashboard = true;
+    render(); window.scrollTo({top:0}); return;
+  }
+  if (t.dataset.tpl) { state.template = t.dataset.tpl; render(); return; }
+  if (t.dataset.mode) { state.mode = t.dataset.mode; render(); return; }
+  if (t.dataset.setting) { state.setting = t.dataset.setting; render(); return; }
+  if (t.dataset.pay) { state.pay = t.dataset.pay; render(); return; }
+  if (t.dataset.method) { state.method = t.dataset.method; render(); return; }
+  if (t.dataset.plan) { state.plan = t.dataset.plan;
+    try { localStorage.setItem("alignsynch.prototype.plan", state.plan); } catch(e){} render(); return; }
+  if (t.dataset.paystep !== undefined) { state.payStep = t.dataset.paystep || null; render(); return; }
+  if (t.dataset.confirmpay) {
+    /* the last step: the method is saved, the trial is running, and the CTA becomes Complete and Connect */
+    state.hasMethod = true; state.payStep = "done"; persist(); render();
+    toast(c("s8.confirmed"));
+    return;
+  }
+  if (t.dataset.addmethod) { state.payPanel = true; render(); return; }
+  if (t.dataset.closepay) { state.payPanel = false; render(); return; }
+  if (t.dataset.savecard) {
+    /* what the return_url lands on: the method is saved, so the next panel is the confirmation —
+       still in this card, still on this screen */
+    state.hasMethod = true; state.payPanel = false; state.payStep = "confirm"; persist(); render();
+    toast(c("s8.embReturn"));
+    return;
+  }
+  if (t.dataset.seat) {
+    /* switching seat is the prototype's whole point on this screen: same data, different entitlement */
+    state.seat = t.dataset.seat; render(); window.scrollTo({top:0});
+    toast(state.seat === "payer" ? "Payer seat — the billing panel is here" : "Counterparty seat — no plan, fee, method or amount");
+    return;
+  }
+  if (t.dataset.activate) { state.hasMethod = true; render(); toast("Method captured — Publish Assessment is now the one action"); return; }
+  if (t.dataset.publish) { state.published = true; render(); toast("Published — the Gap is open on both seats"); return; }
+  if (t.dataset.approve) { state.needsAction = false; state.approved = true; state.published = true; render(); toast("Approved — nothing further on this seat"); return; }
+  if (t.id === "toggleNa") {
+    /* prototype-only: raise the SPEC §9 state, and watch the counterparty seat not move */
+    state.needsAction = !state.needsAction; state.approved = false;
+    document.getElementById("toggleNa").textContent = state.needsAction ? c("editor.naOn") : c("editor.na");
+    render(); return;
+  }
+  if (t.id === "editToggle") { toggleEdit(); return; }
+  if (t.id === "saveJson") { saveJson(); return; }
+  if (t.id === "loadJsonBtn") { document.getElementById("loadJson").click(); return; }
+  if (t.id === "resetCopy") { copy = Object.assign({},DEFAULT_COPY); persist(); render(); toast("Copy reset to the shipped JSON"); return; }
+});
+document.addEventListener("keydown", e => {
+  if ((e.key==="Enter"||e.key===" ") && e.target.matches('[role="radio"]')) { e.preventDefault(); e.target.click(); }
+});
+function toggleEdit(){
+  const on = document.body.dataset.editing !== "on";
+  document.body.dataset.editing = on ? "on" : "off";
+  document.querySelectorAll("[data-copy]").forEach(el=>{ el.contentEditable = on?"true":"false"; if(on) el.setAttribute("spellcheck","false"); });
+  document.getElementById("editorState").textContent = on ? "Editing — blur writes back to JSON" : "Copy loads from JSON";
+  if (on) toast("Click any label to edit it; blur writes it into the JSON");
+}
+document.addEventListener("blur", e => {
+  const el = e.target;
+  if (document.body.dataset.editing !== "on" || !el.dataset || !el.dataset.copy) return;
+  const next = el.textContent.trim();
+  if (!next) { el.textContent = c(el.dataset.copy); return; }
+  copy[el.dataset.copy] = next; persist(); toast("Saved “"+el.dataset.copy+"”");
+}, true);
+function persist(){ try{ localStorage.setItem(STORE, JSON.stringify(copy)); }catch(e){} }
+/* The Stage 1 subtitle is the relationship's own description, mirrored as it is typed (owner,
+   2026-11-09). `s4.body` stays the fallback sentence for an empty description, so the field and
+   the header never say two different things — one value, two places it is read. */
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (!el || el.id !== "s4Desc") return;
+  state.desc = el.value;
+  const sub = document.getElementById("s4Sub");
+  if (sub) sub.textContent = el.value.trim() || c("s4.body");
+}, true);
+/* Save writes INTO the repository, not to a download (owner, 2026-11-09). A browser cannot write
+   to a repo, and a `file://` page's download lands nowhere in an embedded pane — so `pnpm
+   prototype:save` runs a sink on 127.0.0.1 that rewrites this page's own DEFAULT_COPY (value by
+   value, keeping the comments), writes a `.copy.json` snapshot beside it, and appends a dated entry
+   to PROTOTYPE-CHANGES.md with every changed key, old beside new. That log is the record the
+   implementation works from. If the sink is not running, the button still exports the JSON and the
+   toast says which of the two happened. */
+const SAVE_SINK = "http://127.0.0.1:8791/copy";
+const SAVE_PAGE = "prototype-relationship-lifecycle-v7.html";
+async function saveJson(){
+  try {
+    const res = await fetch(SAVE_SINK, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({page: SAVE_PAGE, copy: copy, aspects: state.aspects}),
+    });
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error || "refused");
+    toast("Saved to the repo — " + out.changes + " change(s) at " + out.savedAt + " · PROTOTYPE-CHANGES.md");
+    return;
+  } catch (e) {
+    /* fall through: a reviewer with no sink running still gets the JSON */
+  }
+  const blob = new Blob([JSON.stringify(copy,null,2)],{type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "alignsynch-copy.json"; a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Sink not running — exported alignsynch-copy.json instead ("+Object.keys(copy).length+" strings). Start it with: pnpm prototype:save");
+}
+document.getElementById("loadJson").addEventListener("change", ev => {
+  const f = ev.target.files && ev.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = () => { try { const p = JSON.parse(fr.result); copy = Object.assign({},DEFAULT_COPY,p); persist(); render(); toast("Loaded "+Object.keys(p).length+" strings"); } catch(e){ toast("That file is not valid JSON"); } };
+  fr.readAsText(f);
+});
+/* typing a new #stage= is a same-document navigation, so the hash listener is what makes the
+   deep link honest: without it the URL changes and the screen does not. */
+window.addEventListener("hashchange", () => {
+  const n = stageFromHash();
+  if (n !== state.stage) { state.stage = n; if (n >= DASH_FROM) state.hasDashboard = true; render(); window.scrollTo({top:0}); }
+});
+let toastTimer;
+function toast(m){ const el=document.getElementById("toast"); el.textContent=m; el.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),2400); }
+render();
+</script>
+
+<!-- ── DEV ONLY: change-request notepad + live reload. Not part of the design. ── -->
+<script>
+(function(){
+  const KEY = "alignsynch.cr.v1";
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)||"[]"); } catch(e){ return []; } };
+  /* sandboxed (review frame) there is no storage: a change request still lists in the page,
+     it just cannot outlive the load */
+  const save = (rows) => { try { localStorage.setItem(KEY, JSON.stringify(rows)); } catch(e){} };
+  let rows = load();
+
+  const wrap = document.createElement("div");
+  wrap.id = "crWrap";
+  wrap.innerHTML =
+    '<style>'
+    + '#crBar{position:fixed;left:18px;bottom:18px;z-index:99999;font:500 12px/1.4 ui-sans-serif,system-ui,sans-serif}'
+    + '#crBar button{background:#111827;color:#fff;border:0;border-radius:6px;padding:9px 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.22)}'
+    + '#crBar .n{display:inline-block;min-width:16px;padding:0 4px;margin-left:6px;border-radius:8px;background:#37474f;text-align:center}'
+    + '#crPanel{position:fixed;right:18px;bottom:60px;z-index:99999;width:360px;max-height:70vh;overflow:auto;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.18);font:400 12px/1.5 ui-sans-serif,system-ui,sans-serif;display:none}'
+    + '#crPanel.open{display:block}'
+    + '#crPanel h3{margin:0;padding:12px 14px;border-bottom:1px solid #e5e7eb;font:600 12px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.02em;text-transform:uppercase;color:#6b7280}'
+    + '#crPanel .body{padding:12px 14px}'
+    + '#crPanel textarea{width:100%;min-height:64px;box-sizing:border-box;border:1px solid #d1d5db;border-radius:6px;padding:8px;font:inherit;resize:vertical}'
+    + '#crPanel .row{display:flex;gap:8px;margin-top:8px}'
+    + '#crPanel .row button{flex:1;border:1px solid #d1d5db;background:#f9fafb;border-radius:6px;padding:7px 10px;cursor:pointer;font:inherit}'
+    + '#crPanel .row button.primary{background:#37474f;border-color:#37474f;color:#fff}'
+    + '#crPanel ol{margin:10px 0 0;padding:0;list-style:none}'
+    + '#crPanel li{border-top:1px solid #e5e7eb;padding:8px 0;display:flex;gap:8px;align-items:flex-start}'
+    + '#crPanel li .txt{flex:1;white-space:pre-wrap}'
+    + '#crPanel li .meta{display:block;color:#6b7280;font-size:11px;margin-top:2px}'
+    + '#crPanel li .x{border:0;background:none;color:#9ca3af;cursor:pointer;font-size:14px;line-height:1}'
+    + '#crHint{position:fixed;right:18px;bottom:18px;transform:translateY(-46px);z-index:99998;background:#eef2f5;color:#37474f;border-radius:6px;padding:5px 9px;font:500 11px/1.3 ui-sans-serif,system-ui,sans-serif;display:none}'
+    + '#crHint.on{display:block}'
+    + '</style>'
+    + '<div id="crHint">reloaded — file changed on disk</div>'
+    + '<div id="crPanel"><h3>Change requests<span id="crCount"></span></h3><div class="body">'
+      + '<textarea id="crText" placeholder="What should change? Name the stage, the element, and the string. ⌘/Ctrl+Enter adds it."></textarea>'
+      + '<div class="row"><button id="crAdd" class="primary">Add request</button><button id="crCopy">Copy JSON</button></div>'
+      + '<div class="row"><button id="crDl">Download .json</button><button id="crClear">Clear</button></div>'
+      + '<ol id="crList"></ol>'
+    + '</div></div>'
+    + '<div id="crBar"><button id="crToggle">Change requests<span class="n" id="crBadge">0</span></button></div>';
+  document.body.appendChild(wrap);
+
+  const panel = document.getElementById("crPanel");
+  const text  = document.getElementById("crText");
+  const list  = document.getElementById("crList");
+
+  function stageNow(){
+    /* file a request against the FLOW numbering, not the raw #stage index: #stage=3 is
+       Stage 1 · Account, and the two template screens are pre-stage views. */
+    const m = location.hash.match(/stage=(\d+)/);
+    const idx = m ? Math.min(9, Math.max(0, +m[1] - 1)) : 0;
+    if (idx < FLOW_START) return "pre-stage · " + (copy[STEPS[idx]] || "template");
+    return "Stage " + (FLOW.indexOf(idx) + 1) + " · " + (copy[STEPS[idx]] || "");
+  }
+  function paint(){
+    document.getElementById("crBadge").textContent = rows.length;
+    document.getElementById("crCount").textContent = rows.length ? " · " + rows.length : "";
+    list.innerHTML = rows.map((r,i) =>
+      '<li><span class="txt">' + r.text.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))
+      + '<span class="meta">' + r.stage + ' · ' + r.at + '</span></span>'
+      + '<button class="x" data-i="' + i + '" title="delete">×</button></li>').join("");
+  }
+  function add(){
+    const v = text.value.trim();
+    if (!v) return;
+    rows.push({ text: v, stage: stageNow(), at: new Date().toISOString().slice(0,16).replace("T"," ") });
+    save(rows); text.value = ""; paint();
+  }
+  document.getElementById("crToggle").onclick = () => panel.classList.toggle("open");
+  document.getElementById("crAdd").onclick = add;
+  text.addEventListener("keydown", e => { if ((e.metaKey||e.ctrlKey) && e.key === "Enter") add(); });
+  list.addEventListener("click", e => {
+    const b = e.target.closest("[data-i]"); if (!b) return;
+    rows.splice(+b.dataset.i, 1); save(rows); paint();
+  });
+  document.getElementById("crCopy").onclick = async () => {
+    const json = JSON.stringify(rows, null, 2);
+    try { await navigator.clipboard.writeText(json); document.getElementById("crCopy").textContent = "Copied"; }
+    catch(e){ window.prompt("Copy this JSON:", json); }
+    setTimeout(() => document.getElementById("crCopy").textContent = "Copy JSON", 1400);
+  };
+  document.getElementById("crDl").onclick = () => {
+    const blob = new Blob([JSON.stringify(rows, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "change-requests.json"; a.click();
+  };
+  document.getElementById("crClear").onclick = () => { if (confirm("Clear all change requests?")) { rows = []; save(rows); paint(); } };
+  paint();
+
+  /* live reload: poll the served file's Last-Modified, reload when it moves */
+  let stamp = null;
+  async function tick(){
+    try {
+      const r = await fetch(location.pathname, {method:"HEAD", cache:"no-store"});
+      const lm = r.headers.get("last-modified");
+      if (lm && stamp && lm !== stamp) {
+        document.getElementById("crHint").classList.add("on");
+        setTimeout(() => location.reload(), 500);
+        return;
+      }
+      if (lm) stamp = lm;
+    } catch(e){}
+    setTimeout(tick, 1500);
+  }
+  tick();
+})();
+</script>
+</body>
+</html>

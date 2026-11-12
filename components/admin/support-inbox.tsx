@@ -68,7 +68,6 @@ export function SupportInbox({
   thread,
   selectedId,
   action,
-  reasonMin,
   selfUserId,
 }: {
   copy: PageCopy;
@@ -76,8 +75,6 @@ export function SupportInbox({
   thread: InboxThread | null;
   selectedId: string | null;
   action: (input: InboxOperationInput) => Promise<InboxOperationOutcome>;
-  /** `REASON_MIN_LENGTH`, handed down: importing it here would pull the pool (E34). */
-  reasonMin: number;
   selfUserId: string;
 }) {
   const listCopy = sectionOf(copy, "list");
@@ -186,7 +183,6 @@ export function SupportInbox({
           thread={thread}
           seats={source.seats}
           action={action}
-          reasonMin={reasonMin}
           selfUserId={selfUserId}
         />
       )}

@@ -34,7 +34,6 @@ import type { AdminRelationshipDetail, AdminSeat } from "@/lib/db/admin-relation
 const UNLOCK_INSTANT = "2026-11-01T10:00:00.000Z";
 const EXPIRY_INSTANT = "2026-11-09T10:00:00.000Z";
 const REVOKED_INSTANT = "2026-11-02T09:32:00.000Z";
-const REASON_MIN = 8;
 
 /** One seat, defaulted to an answered, accepted, marked seat. */
 function seat(overrides: Partial<AdminSeat> = {}): AdminSeat {
@@ -54,6 +53,7 @@ function seat(overrides: Partial<AdminSeat> = {}): AdminSeat {
 function detail(overrides: Partial<AdminRelationshipDetail> = {}): AdminRelationshipDetail {
   return {
     instanceRecordId: "inst-1",
+    relationshipId: "relationship-inst-1",
     slug: "avery-rowan",
     name: "Avery & Rowan",
     templateTitle: "Parent & Child",
@@ -83,7 +83,6 @@ function render(row: AdminRelationshipDetail = detail()): string {
       action={async () => ({ ok: false, code: "failed" })}
       copy={adminRelationshipPageCopy}
       detail={row}
-      reasonMin={REASON_MIN}
     />,
   );
 }
@@ -125,14 +124,17 @@ describe("the three invitation repairs are reachable, each with a reason", () =>
     expect(html).toContain('data-repair="revoke"');
   });
 
-  it("gives every band a reason input with the server's minimum, and a submit button", () => {
+  it("gives every band a submit button and no reason input at all (#732)", () => {
     const html = render();
     for (const repair of ["unlock", "resend", "revoke"] as const) {
       const markup = band(html, repair);
-      const input = /<input[^>]*name="reason"[^>]*>/.exec(markup);
-      expect(input, `${repair} band has no reason input`).not.toBeNull();
-      expect(input?.[0]).toContain('required=""');
-      expect(input?.[0]).toContain(`minLength="${REASON_MIN}"`);
+      // The owner's rule: no action form asks for a reason, so the band asks for none — not a
+      // required field, not an optional one.
+      expect(
+        /<input[^>]*name="reason"[^>]*>/.test(markup),
+        `${repair} band has a reason input`,
+      ).toBe(false);
+      expect(markup).toContain("<button");
       expect(isDisabled(markup)).toBe(false);
     }
   });

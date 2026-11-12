@@ -1,5 +1,11 @@
 # Resend inbound — bounces, complaints and the suppression marks (#439b)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Resend inbound · prev [Demo auth](DEMO-AUTH.md) · next [P3 exit record](P3-EXIT.md)
+
+<!-- docs-nav:end -->
+
 The app sends mail through Resend (`lib/flow/email.ts`). A `2xx` from the send API means the provider
 **accepted** the message; it says nothing about whether a mailbox took it. Bounces and complaints
 arrive later, on a webhook, and before this endpoint nothing recorded them — so an address that
@@ -85,3 +91,14 @@ The payload contains the recipient's address. The endpoint's log lines carry the
 `svix-id` and nothing else — no body, no subject, no address, no signature, no secret. The store logs
 a driver **code** on failure, never the driver's message, because a `pg` CHECK violation quotes the
 failing row's values.
+
+## Related
+
+- [flow-emails.md](specs/flow-emails.md) — which mail the app sends, and when.
+- [DEPLOYING.md](DEPLOYING.md) — where the webhook and its secret live.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Resend inbound · prev [Demo auth](DEMO-AUTH.md) · next [P3 exit record](P3-EXIT.md)
+
+<!-- docs-nav:end -->

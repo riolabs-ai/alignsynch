@@ -76,23 +76,40 @@ export function MarketingHeader({
 }) {
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-6">
-        <span className="flex items-center gap-2">
+      <div className="marketing-container flex h-20 items-center justify-between gap-6">
+        <span className="flex min-w-0 items-center gap-3">
           {mark ? (
             /**
-             * The official lockup, whole — and never squeezed.
+             * The brand's **lockup**, whole — mark *and* wordmark (#539 item 1, corrected).
              *
-             * `max-h-8 w-auto` rather than `h-8 w-auto`: a fixed height with a shrinkable width
-             * lets the flex row *compress* the mark instead of scaling it, which is exactly what
-             * happened at 390 — the logo rendered 190×32 where its own 818×127 ratio asks for
-             * 206×32, an 8 % squash in the one place the brand is most looked at. With both
-             * dimensions auto and only max constraints, the browser scales the file down when the
-             * row is narrow and keeps its aspect ratio (owner's rule: place the asset, correct
-             * aspect ratio, clear space).
+             * The polish cohort read "2–2.5× larger" as an instruction about the icon and swapped
+             * this slot to the square mark at a 96px box with the name set in type beside it. The
+             * owner's correction: *"resize existing full logo brand image — you replaced the logo
+             * with an icon, off brand."* The lockup is the signature on the chrome that identifies
+             * the product; the square mark belongs on the surfaces that need an icon (the tab,
+             * the home-screen tile, the avatar). So this is the 818×127 export again, and the only
+             * thing that changed is its size.
+             *
+             * **Sized by height, width follows.** `h-*` with `w-auto`, plus the intrinsic
+             * `width`/`height` `next/image` is handed, so the 818:127 ratio is the browser's
+             * arithmetic and not a class someone can get wrong. No square box, no `object-cover`,
+             * no window: the whole file is placed, which is what #470 fixed the first time.
+             *
+             * **The expanded size is not set here** (t_f4e69dba). Every viewport where the header
+             * is expanded draws the lockup at `2rem` / 206.1px from the one `img[data-brand-lockup]`
+             * rule in `app/globals.css`, shared with the footer, which used to draw the same file
+             * at 48px. The `h-6` / `sm:h-7` below are the sizes *below* that breakpoint, where the
+             * header is collapsed and the criterion does not apply; measured 24px at 390 and 28px
+             * at 768, both unchanged by this card.
+             *
+             * The header row is `h-20` (80px), so no size here can make it taller — 32px is well
+             * inside it, and the brand slot keeps the room it had (376.8px at 1440, 193px at 768
+             * where `PublicNav` reappears, 171.7px at 390 before the account pair).
              */
             <Image
               alt={brand.name}
-              className="max-h-8 w-auto"
+              className="h-6 w-auto shrink-0 sm:h-7"
+              data-brand-lockup
               height={mark.height}
               priority
               src={mark.src}

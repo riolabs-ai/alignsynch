@@ -108,6 +108,23 @@ const nextConfig = {
    */
   outputFileTracingIncludes: {
     "/admin/health": ["./data/health/**"],
+    /**
+     * The review shelf (#665): `/admin/review` reads `docs/review/artifacts.json` at request time and
+     * `/review-artifacts/[id]` serves the file that manifest names, both through constants in
+     * `lib/review/artifacts.ts` — a path the tracer cannot follow statically. Naming the two
+     * directories here is what makes a deployment carry the manifest and the four prototypes instead
+     * of rendering the screen's honest "the catalogue could not be read" panel.
+     */
+    "/admin/review": [
+      "./docs/review/artifacts.json",
+      "./docs/review/artifacts/**",
+      "./docs/changelog/releases.json",
+    ],
+    "/review-artifacts/[id]": [
+      "./docs/review/artifacts.json",
+      "./docs/review/artifacts/**",
+      "./docs/changelog/releases.json",
+    ],
   },
   // typescript: {
   //   ignoreBuildErrors: true,
@@ -184,6 +201,19 @@ const nextConfig = {
       { source: "/earnings", destination: "/dashboard/user?tab=wallet", permanent: true },
       { source: "/analytics", destination: "/dashboard/user?tab=my-quizzes", permanent: true },
       { source: "/signup", destination: "/register", permanent: true },
+      /**
+       * #620 — the member's menu went from four rows to two, and `Library` was one of the three
+       * "templates" doors that became the second tab of `/dashboard/templates`. The page is gone
+       * (not hidden behind this redirect: a `permanent: true` source runs before the filesystem
+       * route, so a page left in `app/` would be built and unreachable — the rule
+       * `tests/route-redirects.test.ts` exists for). A bookmark, an external link or cached
+       * markup still lands on the shelf that absorbed it.
+       */
+      {
+        source: "/dashboard/library",
+        destination: "/dashboard/templates?tab=mine",
+        permanent: true,
+      },
       // `/testimonials/jessica.png` is deliberately NOT redirected any more (issue #155).
       // It pointed at `/avatars/mind.webp`, one of the nine shared avatar files #152
       // deleted, so it became a 308 to a 404 — worse than the 404 it replaced, because a
@@ -214,6 +244,131 @@ const nextConfig = {
       {
         source: "/support/articles/kb-:slug",
         destination: "/support/articles/:slug",
+        permanent: true,
+      },
+      /**
+       * #794 — `assessment` is a record **kind**, and a template is not an assessment: it is the
+       * thing an assessment is copied from. Every row below moves a template's address under
+       * `/templates/relationship`, and the public catalogue out of the template noun entirely.
+       *
+       * **Enumerated, no `:path*`, and one row per real screen.** A wildcard would 308
+       * `/assessment/templates/<anything>/junk` into a 404, which is worse than the 404 — the same
+       * judgment that removed `/testimonials/jessica.png` above. The create tree is therefore five
+       * exact rows (`create`, `create/mode`, `create/aspects`, `create/commit`, `create/account`)
+       * rather than one over a `:stage` segment, because `:stage` is any one segment and the set
+       * that exists is four literals plus the bare stage 1. `create/account` is the one row whose
+       * destination is not itself a page under v9 (#825): the post-commit gate is retired, so that
+       * bookmark lands on `create/commit`, which is the stage that asks for the account.
+       *
+       * **The segment is `:slug`, and the destination carries whatever it was given.** A
+       * bookmarked id-shaped URL 308s with the id still in it: a redirect row cannot look a row up,
+       * so `[slug]`'s read matches `slug OR id` and the page itself answers a 307 to the slug form.
+       * That is the one canonicalisation this migration needs, and it lives in the page because it
+       * needs a query.
+       *
+       * **`/templates` is a redirect, not a page.** `tests/route-redirects.test.ts` fails a
+       * `permanent: true` row whose *static* source is also a route pattern — a redirect runs
+       * before the filesystem route, so a page kept there would be built and unreachable. The
+       * catalogue that owned this address moved to `/relationship-types` in the same commit as this
+       * row (`content/routes.ts`, `lib/marketing-routes.ts`, `data/pages/budget.ts`).
+       */
+      { source: "/assessment/templates", destination: "/templates/relationship", permanent: true },
+      {
+        source: "/assessment/templates/new",
+        destination: "/templates/relationship/new",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/save",
+        destination: "/templates/relationship/save",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug",
+        destination: "/templates/relationship/:slug",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/status",
+        destination: "/templates/relationship/:slug/status",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/duplicate",
+        destination: "/templates/relationship/:slug/duplicate",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create",
+        destination: "/templates/relationship/:slug/create",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create/mode",
+        destination: "/templates/relationship/:slug/create/mode",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create/aspects",
+        destination: "/templates/relationship/:slug/create/aspects",
+        permanent: true,
+      },
+      {
+        source: "/assessment/templates/:slug/create/commit",
+        destination: "/templates/relationship/:slug/create/commit",
+        permanent: true,
+      },
+      {
+        // #825 — the gate that used to follow the create is retired; the account is stage 4, so a
+        // bookmarked gate address lands on the stage that now asks for the account.
+        source: "/assessment/templates/:slug/create/account",
+        destination: "/templates/relationship/:slug/create/commit",
+        permanent: true,
+      },
+      // #794 — the public catalogue stops owning the template noun. One row per page: the
+      // directory and one type.
+      { source: "/templates", destination: "/relationship-types", permanent: true },
+      //
+      // **The type row excludes `relationship`, and that exclusion is load-bearing.** `/templates`
+      // is no longer a page but a namespace, and the library now lives one segment inside it
+      // (`/templates/relationship`). A bare `:typeId` would match that segment — redirects are
+      // checked *before* the filesystem route, so the library page would be a 308 to
+      // `/relationship-types/relationship`, a 404, with `next build` still listing the route. The
+      // negative lookahead is the shape the Next docs use for exactly this (`/:path((?!page$).*)`),
+      // `[^/]+` keeps it a single segment so no child of the library is caught either, and
+      // `tests/route-redirects.test.ts` compiles every source against every live route so a future
+      // edit to this row cannot reintroduce the shadow silently.
+      {
+        source: "/templates/:typeId((?!relationship(?:/|$))[^/]+)",
+        destination: "/relationship-types/:typeId",
+        permanent: true,
+      },
+      /**
+       * #794 follow-up — the worked example was the last surface left hanging off the record
+       * *kind*. `/assessment/demo/[type]` is the public report for one relationship type, so it
+       * moved under the catalogue noun: `/relationship-types/[slug]/demo`. The page is gone (not
+       * hidden behind this row — a `permanent: true` source runs before the filesystem route, so a
+       * page left in `app/` would be built and unreachable), and a bookmark, an external link or
+       * cached markup lands on the report instead of a 404.
+       *
+       * **One segment, no `:path*`, no lookahead.** Nothing else lives under `/assessment/demo` and
+       * nothing ever lived below it: `/assessment/demo/<type>/junk` has always been a plain 404,
+       * and a wildcard here would answer it with a 308 into a second 404 — the judgment that
+       * removed `/testimonials/jessica.png`. The same width is why the row can sit under
+       * `/assessment` at all: it is pinned to the literal `demo`, so `/assessment/instances/**`
+       * (which does not move in this pass) is untouchable by it, and `tests/route-redirects.test.ts`
+       * asserts both halves — the old address 308s for every type in
+       * `data/relationship-types.ts`, and no instance address is caught.
+       *
+       * A type with no worked example (`/relationship-types/<type>/demo` answers a 404 — the report
+       * needs the type's demo answers) still gets the 308 from its *old* address: the row maps an
+       * address family to its canonical shape and cannot look a record up, exactly as
+       * `/assessment/templates/:slug` cannot. The destination is the type's own page, so a reader
+       * one hop later is on the catalogue rather than on a stale URL.
+       */
+      {
+        source: "/assessment/demo/:type",
+        destination: "/relationship-types/:type/demo",
         permanent: true,
       },
     ];

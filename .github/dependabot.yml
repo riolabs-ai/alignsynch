@@ -1,0 +1,57 @@
+# Dependabot — dependency and action updates for the one lockfile this repo ships.
+#
+# The gate is `bash scripts/verify.sh` (CI runs the same script), so every PR these open is
+# checked exactly like a hand-written one. Nothing here merges itself: there is no auto-merge
+# key and CI's required check still applies.
+#
+# `commit-message` prefixes are deliberate: `scripts/release.sh` generates CHANGELOG.md from
+# `git log` subjects and only files conventional prefixes, so an unprefixed "Bump x from a to b"
+# would be dropped from the release notes instead of recorded as a chore.
+#
+# CADENCE — one cohort a week, three at a time, majors only.
+# Every merge used to mint a fresh batch of update PRs and each batch minted its own triage
+# card (#570-#574, then #580-#584). A weekly pass capped at three, carrying only major bumps,
+# is the one queue a human actually reads. `open-pull-requests-limit` bounds *version* updates
+# only: the options reference says security-update PRs have "a separate, fixed limit of 10 open
+# pull requests, which cannot be configured using `open-pull-requests-limit`", so this number
+# can never starve a fix.
+#
+# MINORS AND PATCHES DON'T DISAPPEAR — they stop riding the schedule and arrive only when they
+# close an advisory, as Dependabot *security updates*. Those are driven by the repository
+# setting (`dependabot_security_updates`), not by this file: GitHub's "About Dependabot
+# security updates" states "There is no interaction between the settings specified in the
+# `dependabot.yml` file and Dependabot security alerts". The `ignore` below is scoped to
+# `update-types`, and both the options reference and the "Controlling which dependencies are
+# updated by Dependabot" how-to say verbatim: "`update-types` only affects _version_ updates,
+# not _security_ updates." A `dependency-name`- or `versions`-scoped ignore carries no such
+# carve-out — do not rewrite this rule into one, or the security path goes quiet.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore(deps)
+    ignore:
+      # Majors only. Minor and patch drift is now security-update territory, so the
+      # `minor-and-patch` group this file used to carry is gone: a group whose every member is
+      # ignored can never match, and keeping it would advertise a path that no longer exists.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore(ci)
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch

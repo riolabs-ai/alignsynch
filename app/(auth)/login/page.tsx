@@ -4,6 +4,7 @@ import { loginPageCopy } from "@/data/pages/login";
 import { demoMode } from "@/lib/auth/demo-mode";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
 import { demoCopyFor, demoSurfaceFor } from "@/lib/auth/demo-surface";
+import { invitePromptFor } from "@/lib/auth/invite-prompt";
 import { readDemoUnlock } from "@/lib/auth/demo-unlock-cookie";
 import { signInDestination } from "@/lib/auth/next-path";
 import { AFTER_SIGN_IN_BY_BRAND, GOOGLE_FAILURE_VALUE } from "@/lib/auth/paths";
@@ -82,9 +83,14 @@ export const metadata: Metadata = {
 export default async function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[]; google?: string | string[] }>;
+  searchParams: Promise<{
+    next?: string | string[];
+    google?: string | string[];
+    intent?: string | string[];
+    inviter?: string | string[];
+  }>;
 }) {
-  const { next, google } = await searchParams;
+  const { next, google, intent, inviter } = await searchParams;
   const target = Array.isArray(next) ? next[0] : next;
   const googleFailure = (Array.isArray(google) ? google[0] : google) === GOOGLE_FAILURE_VALUE;
 
@@ -95,6 +101,20 @@ export default async function AuthPage({
    */
   const brandId = brandIdOf(brand);
   const destination = AFTER_SIGN_IN_BY_BRAND[brandId];
+  /** The one validated `next` this render uses — for the form, the Google path and the prompt. */
+  const settled = signInDestination(target, destination);
+
+  /**
+   * The invitation sentence (#t_0aa81144), decided here for the same reason the destination is:
+   * the view is a client module, the fixture is zod-bearing server code, and a login page that has
+   * forgotten why somebody is there is the defect this card filed. Read from `intent`/`inviter`
+   * plus the **validated** `next` path, so an older link with only `?next=/invite/…` still gets it.
+   */
+  const invitePrompt = invitePromptFor(loginPageCopy, {
+    intent: Array.isArray(intent) ? intent[0] : intent,
+    inviter: Array.isArray(inviter) ? inviter[0] : inviter,
+    next: settled,
+  });
 
   /**
    * The panel's mark and the mobile header's (#225's pattern, extended here): ids, resolved from
@@ -124,7 +144,8 @@ export default async function AuthPage({
       copy={demoCopyFor(surface, loginCopyFor(loginPageCopy, brandId), loginPageCopy)}
       marks={marks}
       markSrc={markSrc}
-      next={signInDestination(target, destination)}
+      next={settled}
+      prompt={invitePrompt}
       googleFailure={googleFailure}
       demo={demo}
       providerHint={isGoogleOnlySignIn}

@@ -1,19 +1,29 @@
-// template-ancestor: components/support/help-page.tsx   (variation: the contact band — an outcome line, the one form and nothing else)
+// template-ancestor: components/support/help-page.tsx   (variation: the contact row — the one form, with the band about a person as its second column)
 
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { PageCopy } from "@/content/pages";
 import type { ContactState } from "@/lib/contact/validation";
 import { itemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import Link from "next/link";
 import { ContactForm } from "./contact-form";
 
 /**
- * `/help`'s contact band: the heading, the outcome line and the one form.
+ * `/help`'s contact row: the heading, the outcome line and the one form in the first column, and
+ * the band that says where a person is in the second.
  *
  * **A section, not a page.** The route already renders the help centre
  * (`components/support/help-page.tsx`, the split's public half); this band is mounted under it so
  * a reader who did not find an answer can send a message without leaving the page. The page file
  * decides the order, this file decides the form's surroundings, and `contact-form.tsx` draws the
  * three fields.
+ *
+ * **The band beside the form, not under it** (owner, 2026-11-04). "Need a person?" used to be a
+ * full-width strip at the foot of the help centre, then a `md:flex` strip inside a stacked
+ * container — in both shapes a reader reached the form first and the alternative to it last. It is
+ * now the row's second column, in the same `md:grid-cols-[…]` grammar the answers above use, so
+ * the two ways to get an answer sit at one eye line: write to us, or open Support. It stacks under
+ * the form below `md`, which is the order a phone reads best.
  *
  * **The outcome is a query value.**
  * `/help?contact=sent|received|failed|invalid|throttled` is what `app/api/contact/route.ts`'s 303
@@ -24,8 +34,8 @@ import { ContactForm } from "./contact-form";
  * refused.
  *
  * **No words here.** The heading, the sentence, the labels, the placeholders, the note, the
- * submit and the five outcomes all resolve from `data/pages/help.ts`; `data:check` E23 holds this
- * directory to a budget of zero literals.
+ * submit, the five outcomes and the "need a person" band all resolve from `data/pages/help.ts`;
+ * `data:check` E23 holds this directory to a budget of zero literals.
  */
 export function ContactSection({
   copy,
@@ -42,6 +52,8 @@ export function ContactSection({
   const contact = sectionOf(copy, "contact");
   const form = sectionOf(copy, "form");
   const states = sectionOf(copy, "states");
+  const human = sectionOf(copy, "human");
+  const humanCta = human.cta;
   /**
    * Resolved by id from the `states` band. `state` is already narrowed to `ContactState` by
    * `contactStateOf()` and the fixture carries one item per state, so this cannot miss; the
@@ -52,43 +64,68 @@ export function ContactSection({
   const settled = state === "sent" || state === "received";
 
   return (
-    <section id="contact" className="container mx-auto pb-16">
-      <div className="max-w-3xl">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {contact.heading}
-        </h2>
-        {contact.body !== undefined && (
-          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-            {sectionBody(contact)}
-          </p>
-        )}
-      </div>
-
+    <section id="contact" className="marketing-container pb-16">
       {/*
-        The outcome band sits directly under the heading, above the form a reader may be about to
-        fill in again. `role="status"` because it is a state being told, not an alert demanding
-        action, and the colour is `action` for a settled answer and `amber` for one that needs a
-        retry — the same two hues the app uses everywhere else.
+        One row, two columns: the form is the wide one, the person is the aside at `md` and up.
+        `md:items-start` keeps the band the height of its own words instead of stretching it to
+        the form's, and `min-w-0` on the form's column keeps a long field name from widening the
+        track. Below `md` the grid is one column and the band follows the form.
       */}
-      {band !== undefined && (
-        <div
-          role="status"
-          className={
-            settled
-              ? "mt-6 max-w-3xl rounded-md border border-action/40 bg-muted p-4"
-              : "mt-6 max-w-3xl rounded-md border border-amber-300 bg-amber-50 p-4"
-          }
-        >
-          <h3 className="font-semibold text-foreground">{band.label}</h3>
-          {band.body !== undefined && (
-            <p className="mt-1 text-sm text-muted-foreground">{band.body}</p>
-          )}
-        </div>
-      )}
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] md:items-start">
+        <div className="min-w-0">
+          <div className="max-w-2xl">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              {contact.heading}
+            </h2>
+            {contact.body !== undefined && (
+              <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                {sectionBody(contact)}
+              </p>
+            )}
+          </div>
 
-      <Card className="mt-8 max-w-3xl p-6 sm:p-8">
-        <ContactForm copy={form} startedAt={startedAt} />
-      </Card>
+          {/*
+            The outcome band sits directly under the heading, above the form a reader may be about
+            to fill in again. `role="status"` because it is a state being told, not an alert
+            demanding action, and the colour is `action` for a settled answer and `amber` for one
+            that needs a retry — the same two hues the app uses everywhere else.
+          */}
+          {band !== undefined && (
+            <div
+              role="status"
+              className={
+                settled
+                  ? "mt-6 max-w-2xl rounded-md border border-action/40 bg-muted p-4"
+                  : "mt-6 max-w-2xl rounded-md border border-amber-300 bg-amber-50 p-4"
+              }
+            >
+              <h3 className="font-semibold text-foreground">{band.label}</h3>
+              {band.body !== undefined && (
+                <p className="mt-1 text-sm text-muted-foreground">{band.body}</p>
+              )}
+            </div>
+          )}
+
+          <Card className="mt-8 p-6 sm:p-8">
+            <ContactForm copy={form} startedAt={startedAt} />
+          </Card>
+        </div>
+
+        {/*
+          The one band about a person. Its words are the fixture's (`human`), and its destination
+          is the account page — `/support`, which redirects a signed-out click back here. The band
+          says that out loud, so the redirect is a stated rule rather than a surprise.
+        */}
+        <aside className="rounded-lg border bg-muted/40 p-6">
+          <h2 className="text-xl font-semibold">{human.heading}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{sectionBody(human)}</p>
+          {humanCta !== undefined && (
+            <Button asChild className="mt-4">
+              <Link href={humanCta.href}>{humanCta.label}</Link>
+            </Button>
+          )}
+        </aside>
+      </div>
     </section>
   );
 }

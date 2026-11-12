@@ -27,7 +27,9 @@ import { describe, expect, it } from "vitest";
 
 import { AlignmentHomeView } from "@/components/home/alignment-home";
 import type { PageCopy } from "@/content/pages";
+import { formatCurrency } from "@/content/core";
 import { assessmentInstances, assessments } from "@/data/assessments";
+import { billingPlan } from "@/data/billing-plans";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import {
@@ -43,11 +45,9 @@ import {
   relationshipScope,
   relationshipTypeOf,
 } from "@/lib/alignment-home";
-import {
-  TEMPLATE_LIBRARY_PATH,
-  assessmentDemoPath,
-  createRelationshipPath,
-} from "@/lib/flow/paths";
+import { relationshipTypeDemoPath } from "@/lib/flow/paths";
+import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
+import { CATALOGUE_PATH } from "@/lib/template-catalogue";
 import { leafLiterals } from "@/scripts/copy-refs";
 
 const model = alignmentHome(
@@ -60,8 +60,14 @@ const model = alignmentHome(
 
 const html = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
 
-/** The four records the page is allowed to list — never a fifth, never a subset. */
-const templateTitles = assessments.map((template) => template.title);
+/**
+ * The one plan the shelf prices: Basic's month, from `data/billing-plans.ts`. The same chip the
+ * member shelf and `/assessment/templates` print — the band sells a template, and the template is
+ * included in the plan, so the figure is the plan's and not the template's (#798).
+ */
+const basic = billingPlan("basic");
+if (basic === undefined) throw new Error('data/billing-plans.ts has no "basic" plan');
+const PLAN_CHIP = `${basic.name} · ${formatCurrency(basic.monthlyCents)}/mo`;
 
 /**
  * The purchasable types, counted here a second way — `purchasable && !EXCLUDED_TYPE_IDS` — so
@@ -116,32 +122,17 @@ describe("relationship types are read from the templates, not invented", () => {
   });
 });
 
-describe("the library view: the four templates, and the one nobody answered", () => {
-  it("lists exactly the four records, in the fixture's order", () => {
-    expect(model.templates.library.map((template) => template.title)).toEqual(templateTitles);
-  });
-
-  it("gives every template a create route, and a relationship link only where one answered it", () => {
-    const bySlug = new Map(model.templates.library.map((template) => [template.slug, template]));
-
-    const basics = bySlug.get("relationship-basics");
-    expect(basics?.link?.href).toBe("/assessment/avery-rowan");
-    expect(basics?.note).toBeUndefined();
-    expect(basics?.create).toBe("/assessment/templates/assessment-relationship-basics/create");
-
-    const blank = bySlug.get("blank-template");
-    expect(blank?.link).toBeUndefined();
-    expect(blank?.note?.body).toContain("Nobody has answered this template yet");
-    expect(blank?.create).toBe("/assessment/templates/assessment-blank-template/create");
-
-    // Every link the page draws names a slug the route can prerender.
-    for (const template of model.templates.library) {
-      if (template.link === undefined) continue;
-      const slug = template.link.href.replace("/assessment/", "");
-      expect(assessmentInstances.some((instance) => instance.slug === slug)).toBe(true);
-    }
-  });
-
+/**
+ * The hero's two promises, and the band that used to be three tabs.
+ *
+ * The templates band is now a **shelf**: six curated cards and one call to action, pointing at
+ * `/relationship-types` (#794 — the public catalogue; `/templates` is the template namespace and
+ * belongs to the signed-in library). What it must never be again is what it was — a tablist whose
+ * third view was a signed-in reader's own list, rendered on a page anyone can open. So the
+ * assertions here are about a cap, a curation, a single action, and the absence of the two
+ * user-owned views.
+ */
+describe("the templates band: a capped shelf, one call to action", () => {
   it("says which relationship it leads with, and says it from the record", () => {
     const featured = assessmentInstances.find(
       (instance) => instance.slug === ALIGN_SYNCH_FEATURED_SLUG,
@@ -157,63 +148,80 @@ describe("the library view: the four templates, and the one nobody answered", ()
     expect(model.workedExample.title).toBe(`Worked example · ${featured.title}`);
     expect(model.workedExample.note).toContain("the Gap");
   });
-});
 
-describe("the catalogue and the two doors beside the library", () => {
-  it("projects every purchasable type, and only those", () => {
-    expect(model.templates.catalogue.map((type) => type.id)).toEqual(
-      relationshipTypes
-        .filter((type) => type.purchasable && !EXCLUDED_TYPE_IDS.includes(type.id))
-        .map((type) => type.id),
-    );
-    // The three dating rows are excluded by the product decision, so the shelf is smaller.
-    expect(model.templates.catalogue.length).toBeLessThan(relationshipTypes.length);
+  it("draws the curated shelf, in the order the shelf names the types", () => {
+    expect(model.templates.featured.map((card) => card.id)).toEqual(FEATURED_TEMPLATE_TYPE_IDS);
   });
 
-  it("counts aspects and formats the price instead of typing either", () => {
-    const staffManager = model.templates.catalogue.find((type) => type.id === "staff-manager");
+  it("caps the band at six, and every card is one the shop sells", () => {
+    expect(model.templates.featured.length).toBeGreaterThanOrEqual(4);
+    expect(model.templates.featured.length).toBeLessThanOrEqual(6);
+    for (const card of model.templates.featured) {
+      const record = relationshipTypes.find((type) => type.id === card.id);
+      expect(record, `"${card.id}" is not a relationship type`).toBeDefined();
+      expect(record?.purchasable).toBe(true);
+      expect(EXCLUDED_TYPE_IDS).not.toContain(card.id);
+    }
+  });
+
+  it("counts aspects and prices the plan instead of typing either", () => {
+    const staffManager = model.templates.featured.find((card) => card.id === "staff-manager");
     const record = relationshipTypes.find((type) => type.id === "staff-manager");
     expect(staffManager?.aspects).toBe(`${record?.aspects.length} Aspects`);
-    expect(staffManager?.price).toBe("$9.99");
+    // The band's one figure is Basic's month, named with its plan and its interval (#798).
+    expect(staffManager?.priceNote).toBe(PLAN_CHIP);
     expect(staffManager?.realm).toBe("Office");
+    expect(staffManager?.roles).toBe("Staff ↔ Manager");
   });
 
-  it("points every card at the create route, and offers an example only where a demo exists", () => {
-    for (const type of model.templates.catalogue) {
-      const record = assessments.find((template) => template.slug === type.id);
-      // The live create entry for the type's own template record — never a `/v1` address (#478).
-      expect(type.href).toBe(
-        record === undefined ? TEMPLATE_LIBRARY_PATH : createRelationshipPath(record.id),
-      );
-      expect(type.href.startsWith("/v1/")).toBe(false);
-      if (type.example === undefined) continue;
-      expect(type.example).toBe(assessmentDemoPath(type.id));
-      expect(type.example.startsWith("/v1/")).toBe(false);
-      expect(demoAnswersByType[type.id]).toBeDefined();
+  it("points every card at a public destination, and offers an example only where one exists", () => {
+    for (const card of model.templates.featured) {
+      // `/register` makes the account that buys the relationship. Never a create form behind a
+      // session — that is the sign-in wall this page exists to remove.
+      expect(card.start).toBe("/register");
+      if (card.example === undefined) continue;
+      expect(card.example).toBe(relationshipTypeDemoPath(card.id));
+      expect(demoAnswersByType[card.id]).toBeDefined();
     }
-    // The fallback must not be masking a missing record: every card resolves to one.
+    // Exactly the fixture's demo sheets among the six, and no third claim.
     expect(
-      model.templates.catalogue.filter(
-        (type) => assessments.find((template) => template.slug === type.id) === undefined,
-      ),
-    ).toEqual([]);
-    // Exactly the fixture's demo sheets, and no third claim.
-    expect(
-      model.templates.catalogue
-        .filter((type) => type.example !== undefined)
-        .map((type) => type.id)
+      model.templates.featured
+        .filter((card) => card.example !== undefined)
+        .map((card) => card.id)
         .sort(),
     ).toEqual(Object.keys(demoAnswersByType).sort());
   });
 
-  it("opens on the catalogue, and the third view is a door rather than a list", () => {
-    expect(model.templates.tabs.map((tab) => tab.value)).toEqual(["catalogue", "library", "mine"]);
-    expect(model.templates.tabs[0]?.label).toBe("Relationship templates");
-    expect(model.templates.mine.link.href).toBe("/assessment/instances");
-    // No relationship of the console's is rendered on a public page: the panel carries words
-    // and a link, and the page body carries no row marker of the sort a list would emit.
-    expect(html).not.toContain("data-relationship=");
-    expect(html).not.toContain("data-relationship-row");
+  it("has one call to action, and it is the catalogue page", () => {
+    expect(model.templates.viewAll.href).toBe(CATALOGUE_PATH);
+    expect(model.templates.viewAll.label).toBe("View all relationship templates");
+    // The action is in the served markup, and it is the only link the shelf draws: the cards are
+    // not linked, so the band offers one destination instead of seven.
+    expect(html).toContain('data-templates-view-all=""');
+    // #794 — the band's one destination is the public catalogue's new noun.
+    expect(html).toContain('href="/relationship-types"');
+    expect(html).not.toContain(model.templates.featured[0]?.useLabel ?? "\u0000");
+  });
+
+  it("carries none of the user-owned views on a public page", () => {
+    // The two tabs that were removed, by the words they carried and by the control that held them.
+    expect(html).not.toContain("My relationships");
+    expect(html).not.toContain("My templates");
+    expect(html).not.toContain('role="tablist"');
+    // And the console's list is not reachable from the band: no link into the app's own lists.
+    expect(html).not.toContain('href="/assessment/instances"');
+    // #794 — and no link into the signed-in template *library* either, under either of its
+    // addresses: the old one is a 308 now, the new one is a login wall.
+    expect(html).not.toContain('href="/assessment/templates');
+    expect(html).not.toContain('href="/templates/relationship');
+  });
+
+  it("draws every featured card, joined back to the taxonomy by its own id", () => {
+    for (const card of model.templates.featured) {
+      const escaped = card.name.replace(/&/g, "&amp;");
+      expect(html).toContain(escaped);
+      expect(html).toContain(`data-template-card="${card.id}"`);
+    }
   });
 });
 
@@ -274,14 +282,17 @@ describe("the page is six bands, in the order the argument runs", () => {
     expect(card.mode).toBe("Answered in Basic mode");
   });
 
-  it("leads with the hero the practice framing asks for", () => {
-    expect(model.hero.heading).toBe("Turn one assessment into a practice you can charge for.");
+  it("leads with the hero the leadership framing asks for", () => {
+    expect(model.hero.eyebrow).toBe("Relationship alignment · for leaders and teams");
+    expect(model.hero.heading).toBe("Know what your team will not say out loud.");
     expect(model.hero.reassurance).toBe("Free to start · no card");
     /**
-     * The fineprint is **one sentence** carrying the three facts a buyer needs, and the heading's
-     * money word appears once on the page rather than three times: the old footnote said "bought
-     * once", "yours to run" and the subtitle said "paid to run" underneath a heading that already
-     * said "charge for". A second full stop here is a regression, which is what the split counts.
+     * The fineprint is **one sentence** carrying the purchase facts, and since the heading states
+     * an outcome instead of a sale it is the only place on the page that says what buying a
+     * relationship gets you. The old footnote said "bought once", "yours to run" and the subtitle
+     * said "paid to run" underneath a heading about billing — the sale was the promise three times
+     * over, in a page pitched at practitioners rather than at the leader who owns the
+     * relationship. A second full stop here is a regression, which is what the split counts.
      */
     expect(model.hero.fineprint).toContain("One relationship is bought once");
     expect(model.hero.fineprint).toContain("named as its coach");
@@ -358,7 +369,9 @@ describe("the scope band counts the fixture", () => {
       assessments,
       assessmentInstances,
       ALIGN_SYNCH_FEATURED_SLUG,
-      purchasableRelationshipTypes.slice(1),
+      // A type the shelf does not name: the shelf's ids are checked against this list, so
+      // dropping one of the six is a different claim (the shelf would refuse, by design).
+      purchasableRelationshipTypes.filter((type) => type.id !== "colleagues"),
     );
     expect(fewer.families.scope.types).toBe(model.families.scope.types - 1);
     expect(fewer.families.heading).toContain(
@@ -368,19 +381,20 @@ describe("the scope band counts the fixture", () => {
   });
 
   it("follows a changed fixture: losing a realm changes the realm count too", () => {
-    const withoutSocial = alignmentHome(
+    const withoutProperty = alignmentHome(
       alignSynchBrand,
       alignSynchHomeCopy,
       assessments,
       assessmentInstances,
       ALIGN_SYNCH_FEATURED_SLUG,
-      purchasableRelationshipTypes.filter((type) => type.realm !== "Social"),
+      // The realm no curated card names — see the comment above on why that matters here.
+      purchasableRelationshipTypes.filter((type) => type.realm !== "Property"),
     );
-    expect(withoutSocial.families.scope.realms).toBe(model.families.scope.realms - 1);
-    expect(withoutSocial.families.scope.byRealm.map((group) => group.realm)).not.toContain(
-      "Social",
+    expect(withoutProperty.families.scope.realms).toBe(model.families.scope.realms - 1);
+    expect(withoutProperty.families.scope.byRealm.map((group) => group.realm)).not.toContain(
+      "Property",
     );
-    expect(withoutSocial.families.heading).toContain(
+    expect(withoutProperty.families.heading).toContain(
       `across ${countWord(model.families.scope.realms - 1)} realms.`,
     );
   });
@@ -421,18 +435,14 @@ describe("the scope band counts the fixture", () => {
 });
 
 describe("the render", () => {
-  it("carries the catalogue in the served markup, and the library behind its tab", () => {
-    // The band opens on the catalogue, so every purchasable type is in the served HTML.
-    for (const type of model.templates.catalogue) {
-      const escaped = type.name.replace(/&/g, "&amp;");
+  it("carries the shelf and the catalogue link in the served markup", () => {
+    for (const card of model.templates.featured) {
+      const escaped = card.name.replace(/&/g, "&amp;");
       expect(html).toContain(escaped);
-      expect(html).toContain(`data-catalogue-type="${type.id}"`);
+      expect(html).toContain(`data-template-card="${card.id}"`);
     }
-    // The library is the second view: its four records are the model's, and the toggle — not a
-    // second page — is what reveals them. An inactive `TabsContent` is not in the served markup,
-    // which is why the titles are asserted on the model and the trigger on the render.
-    expect(model.templates.library.map((template) => template.title)).toEqual(templateTitles);
-    expect(html).toContain('data-template-tab="library"');
+    // The one action, and the proof link the hero still carries.
+    expect(html).toContain('href="/relationship-types"');
     expect(html).toContain("/assessment/avery-rowan");
   });
 
@@ -465,18 +475,34 @@ describe("the render", () => {
   });
 
   /**
-   * The one place a `$` legitimately appears: the catalogue card's price.
+   * The one place a `$` legitimately appears: the shelf card's plan price.
    *
-   * The owner's product catalogue sells one relationship for a fixed price, so the card carries
-   * it (`{type.price}`, `formatCurrency` over the fixture's integer cents). That is not the claim
-   * the absence rule exists to stop — what a practice *earns* — so the assertion is the set and
-   * not the symbol's absence: every dollar figure on the page is one of the catalogue's own.
+   * The band sells a template, and every template is included in the same plan, so the card
+   * carries one figure — Basic's month, from `data/billing-plans.ts`. That is not the claim the
+   * absence rule exists to stop (what a practice *earns*), so the assertion is the set and not
+   * the symbol's absence: every dollar figure on the page is that plan's monthly one, and the
+   * per-relationship figure the pricing page does not sell appears nowhere in the render.
    */
-  it("prints money only as the catalogue's own price", () => {
+  it("prints money only as the plan's monthly price", () => {
     const printed = [...html.matchAll(/\$[\d.,]+/g)].map((match) => match[0]);
-    const prices = new Set(model.templates.catalogue.map((type) => type.price));
-    expect(printed.length).toBe(model.templates.catalogue.length);
-    for (const price of printed) expect(prices.has(price)).toBe(true);
+    expect(printed.length).toBe(model.templates.featured.length);
+    for (const price of printed) expect(price).toBe(formatCurrency(basic.monthlyCents));
+
+    // The band's six cards all carry the same chip, and it names the plan and its interval.
+    for (const card of model.templates.featured) {
+      expect(card.priceNote).toBe(PLAN_CHIP);
+      expect(html).toContain(card.priceNote);
+    }
+
+    // What a reader gets, not only what the model holds (#798).
+    const text = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(text.toLowerCase()).not.toContain("per relationship");
+    expect(text).not.toContain("999");
+    expect(text).not.toContain("$9.99");
+    expect(html).not.toContain(formatCurrency(999));
   });
 
   it("names nobody who is not on a relationship it links", () => {

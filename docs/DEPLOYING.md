@@ -1,5 +1,11 @@
 # Deploying
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Deploying · next [Releasing](RELEASING.md)
+
+<!-- docs-nav:end -->
+
 `alignsynch.com` is a Vercel project (`alignsynch`, team `riolabs-ai`) that builds this repository.
 Whether a **push** produces that build is a setting on the project, not a property of this tree: on
 2026-11-01 the project reported deployment creation switched off; on 2026-11-03 two merges to `main`
@@ -13,6 +19,56 @@ to get wrong, and both have already cost a day: **what a deployment is allowed t
 Neither is visible to `bash scripts/verify.sh`. The gate is network-free by contract — it "never
 opens a connection" ([`AGENTS.md`](../AGENTS.md)) — so it cannot see a deployment, and a green gate
 is not a claim about production. It is a claim about the tree.
+
+## The runtime: Node 24, in four places
+
+**Production, CI and every `pnpm` command in this tree run Node 24.** That is one decision recorded in
+four places, and a change that touches one has to touch all four:
+
+| Place                                        | States                                   | Read by                                                                                                                           |
+| -------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| [`.nvmrc`](../.nvmrc)                        | `24`                                     | `scripts/verify.sh` (runtime parity: it refuses to gate a shell on another major) and `actions/setup-node` in all three workflows |
+| `package.json` → `engines.node`              | `24.x`                                   | Vercel's build image, `pnpm install`, and anyone asking what the tree supports                                                    |
+| [`.github/workflows/`](../.github/workflows) | `node-version-file: .nvmrc` — no literal | GitHub Actions; three workflows set Node up and each reads the file                                                               |
+| the Vercel project `alignsynch`              | `nodeVersion: "24.x"`                    | every deployment of this repository                                                                                               |
+
+Until #682 the last row said **26.x** while the other three said 24, so a green check and a green gate
+were evidence about a runtime production did not use: a dependency could pass CI and fail in
+production, and nothing in the record said which runtime ran. The build log named the mechanism:
+
+```
+Warning: Detected "engines": { "node": ">=20.9.0" } in your `package.json` that will
+automatically upgrade when a new major Node.js Version is released.
+```
+
+An open-ended range is an invitation, not a floor: Vercel read it, took the newest major it offered and
+moved production to 26 with no commit behind the change. `24.x` is a pin, so adopting the next major
+is now a card with a gate run on it rather than something the platform does to the deploy.
+
+The two halves are verified differently, and the difference is the point:
+
+- **the three files are a unit test.** [`tests/runtime-pin.test.ts`](../tests/runtime-pin.test.ts) fails
+  when `.nvmrc`, `engines.node` and the workflows stop agreeing, so the invariant is enforced by the
+  gate instead of by this paragraph.
+- **the project setting is not in the repository**, so nothing offline can read it. It is `nodeVersion`
+  on the project record — `GET https://api.vercel.com/v9/projects/alignsynch` with the team id from
+  `~/.local/share/com.vercel.cli/config.json` — and the CLI does not print it. Read it there before
+  believing any claim about the runtime, and read it again after a project transfer.
+
+**A setting change does not rebuild what is serving.** The deployment production runs keeps the
+runtime it was built with; a new `nodeVersion` applies to the next build. So the proof is the
+deployment that follows the change — and Vercel prints it, because the first build after it cannot
+reuse a cache made by another runtime:
+
+```
+Skipping build cache since Node.js version changed from "26.x" to "24.x"
+```
+
+Measured on 2026-11-08 on the first deployment after the project moved from `26.x` to `24.x`
+(preview `alignsynch-i38xd7umh`), which also no longer carries the `engines` warning above. That log
+line is the only self-describing record a deployment makes of its runtime — `/api/version` reports the
+commit, not the runtime — so a later deployment that prints nothing about the cache is reusing a cache
+built by 24 and agrees with it.
 
 ## 1. What a deployment is allowed to build: production, plus one branch named in the file
 
@@ -101,11 +157,78 @@ a general lever, and pushing any other branch still produces no build to share. 
 enables is not serving anything yet (see the last paragraph of this section): the branch does not
 exist on `origin`, the domain is not attached, and creation is still disabled upstream.
 
-The trade-off is real and it is nearly all this rule costs: **there is no shareable preview URL for
-someone who is not on this machine**, with that one exception. If a shareable preview is ever needed
-for a _branch under review_ — a review with someone outside the team, a bug that only reproduces on
-Vercel's edge — it comes back as a deliberate opt-in argued on a card, not as a default that spends
-a deployment on every push.
+The trade-off is real and it is nearly all this rule costs: **a push produces no shareable preview
+URL**, with that one exception — so a branch is normally reviewed by reading it and running it. When
+a shareable preview _is_ needed for a branch under review — feedback on a screen from someone who is
+not at this checkout, a bug that only reproduces on Vercel's edge — it is a deliberate opt-in argued
+on a card and taken by hand, never a default that spends a deployment on every push. Since #664 that
+opt-in is one command: [`scripts/preview.mjs`](#a-preview-for-review-one-command-and-the-toolbar-with-it).
+
+### A preview for review: one command, and the toolbar comes with it
+
+The project's own Ignored Build Step string already ended with the answer, before this script
+existed: _"Run `vercel deploy` by hand if you need a preview."_ [`scripts/preview.mjs`](../scripts/preview.mjs)
+is that sentence with the parts a hand-run gets wrong made mechanical — it links the checkout when
+`.vercel/project.json` is missing, deploys with `--yes`, takes the URL out of the CLI's own output,
+and refuses `--prod` outright so a preview can never become a production deployment:
+
+```bash
+node scripts/preview.mjs            # → preview:  https://alignsynch-<hash>-riolabs-ais-projects.vercel.app
+node scripts/preview.mjs --json     # the same facts as one object, for a PR body or a script
+```
+
+Measured on 2026-11-07, against the deployment that command created:
+
+| Fact                             | Measurement                                                                                                                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| it spends one deployment         | the script prints the counter from `scripts/deploy-check.mjs` (`N / 100 in the last 24h — M remaining`), never a zero                                                                          |
+| it shows the **tree**, not a SHA | a CLI deployment carries no git metadata, so the preview's `GET /api/version` answers `{"version":"1.6.0","commit":"unknown"}`; the script prints the tree's own `HEAD` beside the URL instead |
+| a cold build is ~40 s            | `● Ready` in 40 s, environment `Preview`                                                                                                                                                       |
+| the toolbar is on it             | `enablePreviewFeedback: true` on the project (API), and `vercel.live/_next-live/feedback/feedback.js` in the preview's rendered DOM                                                            |
+
+**The toolbar is already Vercel's, and `@vercel/toolbar` is deliberately not a dependency.** Vercel
+injects the Toolbar into every preview deployment by default; the npm package is the _production and
+localhost_ path, where nothing is injected. Mounting it in this tree would ship toolbar code into the
+production bundle to duplicate a preview behaviour that already exists, so #664 changed no product
+code and added no dependency — this page and the one script are the whole change.
+
+**The issue's acceptance grep measures the wrong surface.** `curl -s <url> | grep -c vercel-toolbar`
+answers `0` on production **and** on a preview, because the injection is client-side: the server HTML
+carries nothing on either, and the loader is added when the document runs. The honest instrument is a
+rendered DOM:
+
+```bash
+google-chrome --headless=new --dump-dom <preview-url>   | grep -c 'vercel.live'   # 1 — the toolbar
+google-chrome --headless=new --dump-dom https://alignsynch.com | grep -c 'vercel.live'   # 0 — production
+```
+
+Both were measured on 2026-11-07 against a preview this script created and against the live
+production alias. The two server HTMLs are identical in this respect, so no `curl` can tell them
+apart; a rendered DOM can.
+
+**Comments need a person, and one dashboard setting.** The toolbar asks you to sign in to Vercel, so
+a comment thread belongs to a team member with access to that deployment, and the Toolbar's Preview
+visibility is a project setting — _Settings → General → Vercel Toolbar_ on the project, or the same
+row team-wide — which this project already reports as `On` (`enablePreviewFeedback: true`). A
+preview under a **custom alias domain** (`demo.alignsynch.com` is one) needs the Toolbar opted in
+explicitly in project settings; a `*.vercel.app` preview URL does not. None of that is a commit,
+which is why a card that lands a preview workflow names the click instead of claiming it done.
+
+**A preview of an ordinary branch has no environment.** Preview variables are scoped per branch
+(§3: `--target preview --branch demo`) and every variable this project holds on Preview is scoped to
+`demo`. So a preview of any other branch renders what needs no secrets and redirects or refuses what
+does — measured on the same 2026-11-07 preview:
+
+| Route          | Answer                      |
+| -------------- | --------------------------- |
+| `/`            | `200`                       |
+| `/login`       | `200`                       |
+| `/dashboard`   | `307` → `/login`            |
+| `/api/version` | `200`, `"commit":"unknown"` |
+
+Feedback on a public or marketing screen therefore works on any branch's preview; a signed-in screen
+needs a preview that carries the demo environment, which is the `demo` branch and the second rule in
+§1 above.
 
 The Vercel schema caps `ignoreCommand` at 256 characters; this rule is 105, measured from the file
 (109 as written in the JSON, where each `"` inside the command is escaped). The branch test is the
@@ -142,6 +265,18 @@ record** rather than the working switch: it is the reviewable statement of what 
 nothing, and it becomes the effective gate the moment preview creation is allowed again or the
 project is transferred.
 
+**Re-measured on 2026-11-07: still off, and now said out loud in the dashboard.** The project API
+answers `previewDeploymentsDisabled: true` with `gitProviderOptions.createDeployments: "disabled"`,
+and the dashboard's Ignored Build Step — the one `vercel.json` overrides, §1 above — has been
+rewritten to state the decision instead of hiding it: _"Preview deployments are disabled; only main
+builds. Run `vercel deploy` by hand if you need a preview."_ That last sentence is the route
+[below](#a-preview-for-review-one-command-and-the-toolbar-with-it) automates.
+
+A branch push on that date produced **no record at all**, not a `CANCELED` one: `vercel ls` was
+identical before and after pushing `alignsynch/t_34d47fd0-…` and waiting three minutes, so the
+`ignoreCommand` was never consulted. Disabled creation is upstream of the rule, which is why a
+preview has to be asked for.
+
 Turning previews on takes two changes that have to agree, and only one of them is in this
 repository:
 
@@ -150,6 +285,14 @@ repository:
   rule. While both stand, a branch push creates no deployment record and `ignoreCommand` is never
   consulted, so the `demo` exemption is inert;
 - **name the branch in this file** — done, for `demo` and for nothing else.
+
+Those two are the price of an **automatic** preview per push, and both are still refused. A preview
+on demand costs neither, which is why it is the route this page documents: `vercel deploy` — and
+`scripts/preview.mjs`, which is the same thing with the footguns removed — builds a preview from any
+branch with no dashboard change, no per-branch literal, and no record created for the pushes nobody
+asked about. Measured 2026-11-07: `● Ready` in 40 s, environment `Preview`. The one thing it cannot
+do is carry `demo`'s environment, because preview variables are branch-scoped — see
+[A preview for review](#a-preview-for-review-one-command-and-the-toolbar-with-it).
 
 "Production only" is still the deliberate position: widening it was a card, argued and measured, not
 a default that drifted. Exactly one branch is exempt, and because that exemption is a literal in
@@ -266,3 +409,42 @@ This is not a gate step. `scripts/env-sync.mjs` is a `scripts/**` change, so `pn
 `pnpm format:check` and `pnpm typecheck` keep it honest, but `scripts/verify.sh` and CI never run
 it: the gate is network-free and has no credentials, by contract. A write is also not a deploy —
 the run ends with `a new deployment is required on <target> for these to take effect`.
+
+## 4. Function Storage: deployments accumulate, so prune them
+
+Vercel's **Function Storage** is the sum of every retained deployment's serverless functions,
+across the project's production deployments and its one preview branch. It is not traffic, not
+runtime memory and not bandwidth — nothing the running app does moves it. Deployments do, and the
+free tier prunes none of them.
+
+Measured on 2026-11-08, when the team hit **100 % of the 10 GB allowance**: **454 deployments in
+9.6 days**, 360 of them on `main` — 10 GB ÷ 454 ≈ 22 MB a deployment. The deploy rule in §1 is why:
+production builds on every merge, and this repo merges many times a day. A full Function Storage
+quota is not a slow site, it is a **release that cannot deploy**, so the prune belongs before the
+next merge rather than after the next failure.
+
+```bash
+pnpm deploy:prune                            # the plan — lists what would go, deletes nothing
+pnpm deploy:prune -- --apply                 # delete the candidates
+pnpm deploy:prune -- --apply --keep-days 7   # a week of rollbacks kept instead of a day
+```
+
+`scripts/vercel-prune.mjs` protects three things, and takes no argument that overrides them:
+
+- **every deployment a domain is aliased to** — `alignsynch.com`, `demo.alignsynch.com` and the
+  per-branch preview aliases. The alias table is read first, so a live URL cannot be deleted.
+- **the newest three deployments** (`--keep-latest`) — the rollback buffer.
+- **anything younger than a day** (`--keep-days`) — yesterday's cut is still there to roll back to.
+
+Its first run, on 2026-11-08, took the project from 454 deployments to 69: all 46 aliases still
+resolved and production kept serving the same commit. Its credential is `VERCEL_TOKEN`, or the
+Vercel CLI's own `auth.json`; the script prints neither and refuses with the variable name to set.
+
+This is not a gate step — it wants the network and a credential, and the gate has neither by
+contract. Run it when Function Storage passes roughly 70 %, or before a release cut.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Deploying · next [Releasing](RELEASING.md)
+
+<!-- docs-nav:end -->

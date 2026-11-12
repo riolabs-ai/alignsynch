@@ -104,7 +104,7 @@ export function CategoriesPage({
       <CategoriesHowItWorks copy={sectionOf(copy, "how-it-works")} />
 
       {/* Footer */}
-      <Footer copy={shellCopy} hiddenNav={hiddenNav} />
+      <Footer copy={shellCopy} hiddenNav={hiddenNav} leaving />
     </div>
   );
 }

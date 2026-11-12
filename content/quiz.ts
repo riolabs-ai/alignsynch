@@ -66,14 +66,14 @@ export const zQuestion = z
     const ids = question.options.map((option) => option.id);
     if (!ids.includes(question.correctOptionId)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["correctOptionId"],
         message: `correctOptionId "${question.correctOptionId}" does not name an option (have: ${ids.join(", ")})`,
       });
     }
     if (new Set(ids).size !== ids.length) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["options"],
         message: `duplicate option ids (${ids.join(", ")})`,
       });
@@ -176,7 +176,7 @@ function seatsWithinCapacity(
 ): void {
   if (stats.capacity !== undefined && stats.plays > stats.capacity) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["capacity"],
       message: `capacity (${stats.capacity}) < plays (${stats.plays}) — spotsLeft would go negative`,
     });
@@ -209,6 +209,18 @@ export const zQuizStatsObject = z
 /** Validated stats: the object rule above plus the cross-field seat check. */
 export const zQuizStats = zQuizStatsObject.superRefine(seatsWithinCapacity);
 
+/**
+ * The stats of a record nobody has played — every field at the default the schema gives it.
+ *
+ * Zod 4 types `.default()` against the schema's OUTPUT, not its input, so the `{}` this field
+ * used to default to no longer typechecks: once the field defaults apply, `plays`,
+ * `isTournament` and `recentPlayers` are required. Parsing `{}` mints that output from the
+ * same field-level defaults instead of restating them in a second literal that could drift.
+ */
+export function emptyQuizStats(): z.infer<typeof zQuizStatsObject> {
+  return zQuizStatsObject.parse({});
+}
+
 /* ------------------------------------------------------------------ *
  * Quiz (content)
  * ------------------------------------------------------------------ */
@@ -226,7 +238,7 @@ export const zQuiz = zContentBase
      */
     questions: z.array(zQuestion),
     settings: zQuizSettings,
-    stats: zQuizStats.default({}),
+    stats: zQuizStats.default(() => emptyQuizStats()),
   })
   .strict()
   .superRefine((quiz, ctx) => {
@@ -234,7 +246,7 @@ export const zQuiz = zContentBase
     quiz.questions.forEach((question, index) => {
       if (seen.has(question.id)) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["questions", index, "id"],
           message: `duplicate question id "${question.id}" within quiz "${quiz.id}"`,
         });
@@ -253,7 +265,7 @@ export const zQuiz = zContentBase
      */
     for (const problem of templateProblems(quizAsTemplate(quiz))) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["record", ...problem.path],
         message: `record model: ${problem.message}`,
       });
@@ -306,7 +318,7 @@ export const zQuizPromotion = zQuizPromotionObject.superRefine((promotion, ctx) 
     new Date(promotion.endsAt).getTime() <= new Date(promotion.startsAt).getTime()
   ) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["endsAt"],
       message: `endsAt (${promotion.endsAt}) must be after startsAt (${promotion.startsAt}) — the window is [startsAt, endsAt)`,
     });
@@ -319,7 +331,7 @@ export const zQuizPromotion = zQuizPromotionObject.superRefine((promotion, ctx) 
     promotion.plays > promotion.capacity
   ) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["capacity"],
       message: `capacity (${promotion.capacity}) < plays (${promotion.plays}) — spotsLeft would go negative`,
     });
@@ -337,7 +349,7 @@ export const zQuizPromotionCollection = z.array(zQuizPromotion).superRefine((pro
   promotions.forEach((promotion, index) => {
     if (ids.has(promotion.id)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: [index, "id"],
         message: `duplicate promotion id "${promotion.id}"`,
       });
@@ -346,7 +358,7 @@ export const zQuizPromotionCollection = z.array(zQuizPromotion).superRefine((pro
     const key = `${promotion.quizId}::${promotion.slot}`;
     if (slots.has(key)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: [index, "slot"],
         message: `(quizId, slot) "${key}" is carried by two promotions — a second campaign on a slot is an edit`,
       });

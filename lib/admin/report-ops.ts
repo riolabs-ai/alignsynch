@@ -53,7 +53,7 @@ import { reportDocument, reportJson, type ReportDocument } from "@/lib/report/do
 /**
  * Why a report operation was refused — every value is a fact about the rows, not a permission.
  *
- * Permissions are `act()`'s (`ActRefused`), and a bad reason is `act()`'s too. These are the
+ * Permissions are `act()`'s (`ActRefused`). These are the
  * cases where the operator asked for something the row cannot do: a session that does not exist,
  * one that is not complete (so there is no report), one an operator ended, or a copy whose
  * template no longer resolves.
@@ -99,7 +99,8 @@ function refusalFor(source: ReportSource): ReportOpRefusal {
 export interface ReportOpRequest {
   readonly actorUserId: string;
   readonly instanceRecordId: string;
-  readonly reason: string;
+  /** Why, when the screen had one. Optional since #732: `act()` records `NULL` otherwise. */
+  readonly reason?: string;
 }
 
 /**
@@ -299,7 +300,7 @@ export async function readSubmission(
       actorUserId: request.actorUserId,
       action: "read_submission",
       target: { table: "party", id: `${request.instanceRecordId}:${request.role}` },
-      reason: request.reason.trim() === "" ? DEFAULT_READ_REASON : request.reason,
+      reason: (request.reason ?? "").trim() === "" ? DEFAULT_READ_REASON : request.reason,
       mutate: async (sql) => {
         const submission = await readPartySubmission(
           request.instanceRecordId,

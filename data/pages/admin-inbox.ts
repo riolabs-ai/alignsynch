@@ -12,7 +12,7 @@
  *               acceptance item, and the one an operator would otherwise have to guess at
  *   thread      the conversation: the person's message, every reply, and the state each reply is
  *               in (`sending`, `sent`, `failed` with the provider's own words)
- *   reply       the reply form: the body, the reason, the button and the two outcomes
+ *   reply       the reply form: the body, the button and the two outcomes
  *   triage      the status form
  *   assign      the seat form
  *   refusals    one sentence per refusal code, so a refusal is a sentence and never the server's
@@ -43,7 +43,7 @@ export const adminInboxPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "list",
       heading: "The queue",
-      body: "Newest first. Selecting a message opens its thread below the list; the status is the queue's own word, and every change to it is written to the audit log with your reason.",
+      body: "Newest first. Selecting a message opens its thread below the list; the status is the queue's own word, and every change to it is written to the audit log.",
       items: [
         { id: "column-message", label: "Message" },
         { id: "column-status", label: "Status" },
@@ -150,7 +150,6 @@ export const adminInboxPageCopy: PageCopy = zPageCopy.parse({
       body: "The reply goes out under the site's own sending identity, with the original message quoted under it. The send is attempted after the reply is stored; a refusal is shown here and on the row, never swallowed.",
       items: [
         { id: "body", label: "Your reply" },
-        { id: "reason", label: "Why (recorded in the audit log)" },
         { id: "button", label: "Send reply" },
         { id: "sending", label: "Sending…" },
         { id: "accepted", label: "Accepted by the provider — recorded as sent at {at}." },
@@ -164,10 +163,9 @@ export const adminInboxPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "triage",
       heading: "Triage",
-      body: "Move the message between the four statuses. The change and your reason are one audit row; a same-status change is refused rather than logged.",
+      body: "Move the message between the four statuses. The change and its audit row are written together; a same-status change is refused rather than logged.",
       items: [
         { id: "status", label: "Status" },
-        { id: "reason", label: "Why (recorded in the audit log)" },
         { id: "button", label: "Save status" },
         { id: "saving", label: "Saving…" },
         { id: "done", label: "Saved. The audit row is {id}." },
@@ -180,7 +178,6 @@ export const adminInboxPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "seat", label: "Seat" },
         { id: "none", label: "Nobody" },
-        { id: "reason", label: "Why (recorded in the audit log)" },
         { id: "button", label: "Save seat" },
         { id: "saving", label: "Saving…" },
         { id: "done", label: "Saved. The audit row is {id}." },
@@ -202,10 +199,6 @@ export const adminInboxPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "complained",
           label: "This person marked our mail as spam, so the console will not send again.",
-        },
-        {
-          id: "reason-too-short",
-          label: "The reason is too short. At least {min} characters, please.",
         },
         { id: "role-too-low", label: "That action needs a higher role than yours." },
         { id: "signed-out", label: "The sign-in expired while this form was open." },

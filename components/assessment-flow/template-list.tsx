@@ -5,7 +5,7 @@
  * #409).
  *
  * The **card** is not this file's: it is `TemplateCard` in `template-card.tsx`, shared with
- * `/assessment/templates`. This file owns what the picker adds — the create form per template, the
+ * `/templates/relationship`. This file owns what the picker adds — the create form per template, the
  * notice a save leaves, and the copy object the card draws with, resolved from
  * `data/pages/assessment.ts` (E23, budget 0) — so the two catalogue surfaces render one card and
  * two action rows rather than two cards that drift.
@@ -15,6 +15,7 @@
  * posted against the wrong one. Plain HTML forms, `name`d fields, no `"use client"` — which is also
  * what makes the flow drivable with `curl` and two plain browser sessions.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
 import { ASSESSMENT_MODES } from "@/content/assessment";
 import { formatCurrency } from "@/content/core";
@@ -28,7 +29,7 @@ import {
   type TemplateGroupId,
 } from "./template-card";
 
-const CARD = "rounded-lg border border-border bg-card p-5";
+const CARD = "rounded-lg border border-border bg-card p-6";
 const MUTED = "text-sm text-muted-foreground";
 const PRIMARY =
   "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
@@ -86,7 +87,7 @@ export function TemplateList({
   const created = sectionOf(copy, "created");
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-10">
+    <StageColumn>
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">{copy.heading}</h1>
         {copy.subtitle === undefined ? null : <p className={`mt-3 ${MUTED}`}>{copy.subtitle}</p>}
@@ -197,6 +198,6 @@ export function TemplateList({
           />
         )}
       </section>
-    </div>
+    </StageColumn>
   );
 }

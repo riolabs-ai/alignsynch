@@ -246,7 +246,7 @@ export function PricingPlans({
 
   return (
     <section className="py-10 xl:py-20">
-      <div className="container px-4 mx-auto">
+      <div className="marketing-container">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">{copy.heading}</h1>
           <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">

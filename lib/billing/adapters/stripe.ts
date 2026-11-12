@@ -53,9 +53,14 @@ import {
 } from "@/lib/billing/host";
 import { BillingRefusal, type BillingPort } from "@/lib/billing/port";
 import type {
+  ChargeOutcome,
   CheckoutRequest,
   CheckoutSession,
   Entitlement,
+  MethodCaptureRequest,
+  MethodCaptureSession,
+  RelationshipChargeRequest,
+  ResolvedMethod,
   Subscription,
   SubscriptionStatus,
   WebhookOutcome,
@@ -110,9 +115,10 @@ export interface StripeCredentials {
    * `pk_test_…`, when the deployment has one.
    *
    * Hosted Checkout does not need it in the browser — the server creates the session and the
-   * browser is redirected to the provider's own page — so nothing reads this today. It is carried
-   * because an operator who set it deserves an honest answer about whether the adapter saw it, and
-   * because a later card that builds embedded Elements would otherwise invent a second name.
+   * browser is redirected to the provider's own page — so the hosted path never reads it. The
+   * **embedded** capture does (#748): the frame is initialised with `loadStripe(publishableKey)`,
+   * and this adapter refuses an embedded capture that has none by name, because a frame that
+   * cannot start is worse than a sentence naming the variable.
    */
   readonly publishableKey: string | null;
 }
@@ -257,11 +263,31 @@ export function verifyStripeSignature(input: {
 interface StripeCheckoutSessionObject {
   readonly id: string;
   readonly url?: string | null;
+  /**
+   * Embedded Checkout's mount secret (#748) — present only for a session created with
+   * `ui_mode: embedded`. It is a per-session token, not a credential: it authorises mounting this
+   * one frame, and it is never written to a row or a log.
+   */
+  readonly client_secret?: string | null;
   readonly mode?: string | null;
+  readonly status?: string | null;
   readonly subscription?: string | { readonly id?: string } | null;
   readonly customer?: string | { readonly id?: string } | null;
   readonly client_reference_id?: string | null;
   readonly metadata?: Record<string, string> | null;
+  readonly setup_intent?:
+    | string
+    | { readonly payment_method?: string | { readonly id?: string } | null }
+    | null;
+  readonly livemode?: boolean | null;
+}
+
+/** A PaymentIntent, as far as this adapter reads it (#619's charge). */
+interface StripePaymentIntentObject {
+  readonly id: string;
+  readonly status?: string | null;
+  readonly amount?: number | null;
+  readonly livemode?: boolean | null;
 }
 
 interface StripeSubscriptionItem {
@@ -462,6 +488,225 @@ export class StripeBillingAdapter implements BillingPort {
       // page and this adapter's webhook applies the event. No surface may depend on this flag.
       completed: false,
     };
+  }
+
+  /**
+   * Capture a payment method, charging nothing (#619), hosted or embedded (#748).
+   *
+   * `mode: "setup"` is the point: the session saves a card to a customer and takes no money, which
+   * is exactly #619's "a method on file, the fee later".
+   *
+   * **Two presentations, one session.** The default (`hosted`, and what every caller before #748
+   * asked for) sends the browser to the provider's own page: `success_url` / `cancel_url`, and
+   * `{CHECKOUT_SESSION_ID}` comes back in the return URL so `resolveMethodCapture()` can read the
+   * ids back — nothing the return URL *claims* is trusted. `presentation: "embedded"` asks for
+   * `ui_mode: embedded` instead: the provider draws the same form in a frame **inside our page**,
+   * so there is no `success_url` to leave for, only a `return_url` for the one case that must
+   * navigate (an SCA challenge). The session then answers a `client_secret`, which is what the
+   * browser's `initEmbeddedCheckout()` needs — and a session that completed in the frame is
+   * resolved through exactly the same `resolveMethodCapture()` the hosted path uses, keyed by `id`.
+   *
+   * The publishable key is required for embedded and refused by name when it is absent: the
+   * browser's loader cannot initialise a frame without it, and a capture that "started" and then
+   * rendered nothing is worse than a sentence naming the variable to set. It is not needed by the
+   * hosted path, which is why it stayed unread until now.
+   *
+   * `metadata.host` rides on the session **and** on the setup intent, for the same reason every
+   * subscription event carries it: the two hosts share one test sandbox, so a capture that did not
+   * say whose it was could be resolved by either deployment.
+   */
+  async startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession> {
+    if (request.successUrl === "" || request.cancelUrl === "") {
+      throw new BillingRefusal(
+        "invalid-request",
+        "a capture needs a success URL and a cancel URL to send the browser back to",
+      );
+    }
+    const embedded = request.presentation === "embedded";
+    const publishableKey = this.credentials.publishableKey;
+    if (embedded && (publishableKey === null || publishableKey === "")) {
+      throw new BillingRefusal(
+        "not-configured",
+        "STRIPE_TEST_PUBLISHABLE_KEY is not set — the in-page capture has no key to load the " +
+          "provider's frame with. The hosted capture does not need it; this one does",
+      );
+    }
+
+    const separator = request.successUrl.includes("?") ? "&" : "?";
+    const form = new URLSearchParams({
+      mode: "setup",
+      client_reference_id: request.userId,
+      "metadata[user_id]": request.userId,
+      "metadata[relationship_id]": request.relationshipId,
+      "metadata[host]": this.host,
+      "setup_intent_data[metadata][host]": this.host,
+      "setup_intent_data[metadata][relationship_id]": request.relationshipId,
+    });
+    if (embedded) {
+      // `ui_mode: embedded_page` + `return_url` is the provider's embedded Checkout: the form is
+      // drawn in a frame on our own screen, and `if_required` means a normal save never navigates
+      // while an SCA challenge still can — the one case a frame cannot show.
+      //
+      // The value was `embedded` until the provider renamed it; a request carrying the old word is
+      // refused at the API with "The ui_mode value `embedded` is no longer supported. Use
+      // `embedded_page` instead." (measured 2026-11-08 against the test keys). The approved
+      // artifact's frame caption still reads `ui_mode: embedded` — that is the artifact's copy and
+      // this adapter does not edit copy — but the request has to carry the word the API accepts.
+      form.set("ui_mode", "embedded_page");
+      form.set("return_url", request.successUrl);
+      form.set("redirect_on_completion", "if_required");
+      // An embedded page renders the session's own amount line, so the provider requires the
+      // currency even in `setup` mode where nothing is charged — measured as "Missing required
+      // param: currency" (2026-11-08). `STRIPE_CURRENCY` is this adapter's one authored answer.
+      form.set("currency", STRIPE_CURRENCY);
+    } else {
+      form.set("success_url", `${request.successUrl}${separator}capture={CHECKOUT_SESSION_ID}`);
+      form.set("cancel_url", request.cancelUrl);
+    }
+    if (request.email !== undefined && request.email !== "") {
+      form.set("customer_email", request.email);
+    }
+
+    const session = await this.post<StripeCheckoutSessionObject>("/checkout/sessions", form);
+
+    if (embedded) {
+      if (typeof session.client_secret !== "string" || session.client_secret === "") {
+        throw new BillingRefusal(
+          "not-configured",
+          `the provider returned an embedded capture session (${session.id}) with no client secret — ` +
+            "nothing could mount the frame, and no method was saved",
+        );
+      }
+      return {
+        id: session.id,
+        // Nobody leaves the page: the frame is drawn inside it, and completion is resolved by id.
+        url: null,
+        provider: "stripe",
+        completed: false,
+        clientSecret: session.client_secret,
+        publishableKey,
+      };
+    }
+
+    if (typeof session.url !== "string" || session.url === "") {
+      throw new Error(`stripe returned a setup session (${session.id}) with no URL to redirect to`);
+    }
+    return { id: session.id, url: session.url, provider: "stripe", completed: false };
+  }
+
+  /**
+   * Read a captured method back from the provider (#619).
+   *
+   * Three refusals, each a different fact: the session is not complete (the browser came back from
+   * an abandoned page), the session claims another deployment (a shared sandbox — `metadata.host`
+   * is what `handleWebhook` already filters on), or the session carries no customer/payment method
+   * (the provider saved nothing and the capture did not happen). A resolved method is the provider's
+   * own objects, never a value the return URL supplied.
+   */
+  async resolveMethodCapture(sessionId: string): Promise<ResolvedMethod> {
+    if (sessionId.trim() === "") {
+      throw new BillingRefusal("invalid-request", "a capture session id is required");
+    }
+    const session = await this.get<StripeCheckoutSessionObject>(
+      `/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=setup_intent.payment_method`,
+    );
+    if (session.status !== "complete") {
+      throw new BillingRefusal(
+        "invalid-request",
+        `capture session "${session.id}" is ${session.status ?? "in an unknown state"}: no method was saved`,
+      );
+    }
+    const metadata = session.metadata ?? {};
+    if (metadata.host !== this.host) {
+      throw new BillingRefusal(
+        "invalid-request",
+        `capture session "${session.id}" belongs to "${metadata.host ?? "no host"}", not to this deployment ("${this.host}")`,
+      );
+    }
+    const customerId =
+      typeof session.customer === "string" ? session.customer : (session.customer?.id ?? "");
+    const setupIntent =
+      typeof session.setup_intent === "object" && session.setup_intent !== null
+        ? session.setup_intent
+        : null;
+    const paymentMethodId =
+      typeof setupIntent?.payment_method === "string"
+        ? setupIntent.payment_method
+        : (setupIntent?.payment_method?.id ?? "");
+    if (customerId === "" || paymentMethodId === "") {
+      throw new BillingRefusal(
+        "invalid-request",
+        `capture session "${session.id}" completed without a customer and a payment method`,
+      );
+    }
+    return {
+      relationshipId: metadata.relationship_id ?? null,
+      userId: metadata.user_id ?? null,
+      customerId,
+      paymentMethodId,
+      // The object's own flag; an absent one is test mode, never money.
+      livemode: session.livemode === true,
+    };
+  }
+
+  /**
+   * Charge the method on file — the relationship's fee (#619).
+   *
+   * Off-session and confirmed in one call: the payer is not on the page, and the product's promise
+   * is that the fee is taken when both sheets are sealed. `idempotencyKey` is the caller's
+   * (`relationship-<id>`), so a retried completion cannot take the fee twice — the provider's own
+   * guarantee, beside the database's `charged_at IS NULL`.
+   *
+   * A **4xx is a decline** and is returned, not thrown: a card that says no is the outcome the
+   * retry ladder exists for. A 5xx or transport failure still throws, because that is not the
+   * payer's card failing and the ladder must not count it as an attempt.
+   */
+  async chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome> {
+    if (request.amountCents <= 0) {
+      throw new BillingRefusal(
+        "invalid-request",
+        `a relationship fee is a positive amount of cents; this charge asked for ${request.amountCents}`,
+      );
+    }
+    if (request.customerId === "" || request.paymentMethodId === "") {
+      return {
+        ok: false,
+        code: "no-method",
+        message: "no customer and payment method are on file for this relationship",
+      };
+    }
+    const form = new URLSearchParams({
+      amount: String(request.amountCents),
+      currency: STRIPE_CURRENCY,
+      customer: request.customerId,
+      payment_method: request.paymentMethodId,
+      off_session: "true",
+      confirm: "true",
+      description: request.description,
+      "metadata[user_id]": request.userId,
+      "metadata[relationship_id]": request.relationshipId,
+      "metadata[host]": this.host,
+    });
+
+    let intent: StripePaymentIntentObject;
+    try {
+      intent = await this.post<StripePaymentIntentObject>("/payment_intents", form, {
+        "idempotency-key": request.idempotencyKey,
+      });
+    } catch (error) {
+      if (error instanceof BillingRefusal) {
+        return { ok: false, code: "declined", message: error.message };
+      }
+      throw error;
+    }
+    if (intent.status !== "succeeded") {
+      return {
+        ok: false,
+        code: "declined",
+        message: `payment intent "${intent.id}" came back ${intent.status ?? "without a status"}`,
+      };
+    }
+    return { ok: true, chargeId: intent.id, amountCents: intent.amount ?? request.amountCents };
   }
 
   /**
@@ -726,8 +971,16 @@ export class StripeBillingAdapter implements BillingPort {
   }
 
   /** `POST` a form-encoded body. */
-  private async post<T>(path: string, form: URLSearchParams): Promise<T> {
-    return this.request<T>(path, { method: "POST", body: form.toString() });
+  private async post<T>(
+    path: string,
+    form: URLSearchParams,
+    headers?: Readonly<Record<string, string>>,
+  ): Promise<T> {
+    return this.request<T>(path, {
+      method: "POST",
+      body: form.toString(),
+      ...(headers === undefined ? {} : { headers }),
+    });
   }
 
   /**
@@ -739,9 +992,13 @@ export class StripeBillingAdapter implements BillingPort {
    * failure is a bare `Error`, because "the provider is down" is not the caller's request being
    * wrong and a route should answer it differently.
    */
-  private async request<T>(path: string, init: { method: string; body?: string }): Promise<T> {
+  private async request<T>(
+    path: string,
+    init: { method: string; body?: string; headers?: Readonly<Record<string, string>> },
+  ): Promise<T> {
     const headers: Record<string, string> = {
       authorization: `Bearer ${this.credentials.secretKey}`,
+      ...init.headers,
     };
     if (init.body !== undefined) headers["content-type"] = "application/x-www-form-urlencoded";
 

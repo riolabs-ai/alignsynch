@@ -36,7 +36,6 @@ import type { Metadata } from "next";
 import { BillingControl } from "@/components/admin/billing-control";
 import { adminBillingPageCopy } from "@/data/pages/admin-billing";
 import { BILLING_PLAN_IDS, billingPlan, billingPlans } from "@/data/billing-plans";
-import { REASON_MIN_LENGTH } from "@/lib/admin/act";
 import { ADMIN_BILLING_PATH } from "@/lib/admin/paths";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { entitlementForPlan } from "@/lib/billing/entitlements";
@@ -105,7 +104,6 @@ export default async function AdminBillingPage() {
       role={role}
       unreadable={unreadable}
       action={performComp}
-      reasonMin={REASON_MIN_LENGTH}
     />
   );
 }

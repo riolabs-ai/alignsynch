@@ -35,7 +35,7 @@ import {
   setMessageStatus,
 } from "@/lib/admin/inbox-ops";
 import type { ReplyMail, ReplySend } from "@/lib/contact/reply";
-import { CONTACT_RATE_MAX, CONTACT_RATE_WINDOW_MS } from "@/lib/contact/limits";
+import { CONTACT_RATE_MAX, CONTACT_RATE_WINDOW_MS } from "@/lib/forms/guard";
 import type { InboxMessage } from "@/lib/db/admin-inbox";
 
 /* ------------------------------------------------------------------ *
@@ -143,7 +143,7 @@ class FakeInbox {
   readonly state: MessageState;
   readonly statements: { text: string; values: readonly unknown[] }[] = [];
   readonly replies: { id: string; state: string; error: string | null; sentAt: Date | null }[] = [];
-  readonly audits: { action: string; reason: string; target: string }[] = [];
+  readonly audits: { action: string; reason: string | null; target: string }[] = [];
   role = "support";
   seatRole: string | null = "support";
   failAudit = false;
@@ -250,7 +250,7 @@ class FakeInbox {
       // Columns by name, not by position: a new column must not renumber an assertion.
       this.audits.push({
         action: String(values[2]),
-        reason: String(values[5]),
+        reason: values[5] === null ? null : String(values[5]),
         target: String(values[4]),
       });
       return rows([{ id: `audit-${this.audits.length}` }]);
@@ -470,15 +470,16 @@ describe("setMessageStatus", () => {
     expect(fake.audits).toEqual([]);
   });
 
-  it("is refused by act() for a reason shorter than the floor, before any statement", async () => {
+  it("records a status change with no reason, and writes NULL on the audit row (#732)", async () => {
     const fake = new FakeInbox();
-    await expect(
-      setMessageStatus(
-        { actorUserId: ACTOR, messageId: MESSAGE_ID, reason: "short", status: "closed" },
-        { runner: fake.runner() },
-      ),
-    ).rejects.toMatchObject({ name: "ActRefused", reason: "reason-too-short" });
-    expect(fake.statements).toEqual([]);
+    // The triage band posts no reason now; the change is still audited, and the row says plainly
+    // that nobody stated one.
+    await setMessageStatus(
+      { actorUserId: ACTOR, messageId: MESSAGE_ID, status: "closed" },
+      { runner: fake.runner() },
+    );
+    expect(fake.state.status).toBe("closed");
+    expect(fake.audits).toEqual([{ action: "message.status", reason: null, target: MESSAGE_ID }]);
   });
 });
 

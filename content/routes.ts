@@ -30,6 +30,8 @@ const STATIC_ROUTES = [
   "/admin/gaps",
   "/admin/health",
   "/admin/instances",
+  // #665 — the console's review shelf: published artifacts, their to-dos and their feedback.
+  "/admin/review",
   // #502a — template authoring: the console's authored catalogue and one template's editor.
   "/admin/templates",
   // #506 — the support inbox: the contact form's queue, one thread, the reply.
@@ -37,8 +39,6 @@ const STATIC_ROUTES = [
   "/affiliate",
   "/assessment",
   "/assessment/instances",
-  "/assessment/templates",
-  "/assessment/templates/new",
   "/battle",
   "/categories",
   "/chat",
@@ -47,12 +47,15 @@ const STATIC_ROUTES = [
   "/creator-tips",
   "/daily-challenge",
   "/dashboard",
+  // #542 phase 1 — the destinations the rail used to reach on the marketing site.
+  "/dashboard/help",
+  "/dashboard/support",
   // #533 phase 2 — the initiator's own CRUD: their private templates and the relationships they
-  // started. Both detail routes exist so a link out of a list is a manifest route, not a 404.
+  // started. Both *lists* are static routes; their detail pages are in `DYNAMIC_ROUTES` below,
+  // because a `[id]` segment filed as a static route matches only its own literal spelling and
+  // every real `/dashboard/relationships/<id>` link would read as a 404 to `data:check` E10.
   "/dashboard/relationships",
-  "/dashboard/relationships/[id]",
   "/dashboard/templates",
-  "/dashboard/templates/[id]",
   "/dashboard/user",
   "/demo",
   "/demo/admin",
@@ -69,10 +72,19 @@ const STATIC_ROUTES = [
   "/privacy",
   "/quiz-discussions",
   "/register",
+  // The public Relationship Types catalogue — the header's `Templates` row and the front page
+  // band's one call to action. The taxonomy, not the templates: it used to own `/templates`, and
+  // #794 moved it here so the template noun means the template records.
+  "/relationship-types",
   "/reset/complete",
   "/search",
   "/settings",
   "/support",
+  // #794 — the template library and its authoring form. The library used to sit under
+  // `/assessment/templates`, which named a record *kind* a template is not; `/templates` itself is
+  // **not** a route any more (it 308s to `/relationship-types`), so only its children are listed.
+  "/templates/relationship",
+  "/templates/relationship/new",
   "/terms",
   "/tournaments",
   "/welcome",
@@ -89,7 +101,6 @@ const DYNAMIC_ROUTES = [
   // #504 — that relationship's Gap report: the operations screen, and the audited export beneath it.
   "/admin/instances/[id]/report",
   "/assessment/[slug]",
-  "/assessment/demo/[type]",
   "/assessment/instances/[instanceId]",
   "/assessment/instances/[instanceId]/report",
   // R1-E (#409): the two write screens sit one segment below the instance, beside the
@@ -97,8 +108,32 @@ const DYNAMIC_ROUTES = [
   // `page.tsx` in the same segment as a `route.ts`.
   "/assessment/instances/[instanceId]/answer",
   "/assessment/instances/[instanceId]/accept",
-  "/assessment/templates/[templateId]",
-  "/assessment/templates/[templateId]/create",
+  // #691 — stage 5, Sent: the screen the create lands on. A child of the instance rather than of
+  // the `create` tree, because the invitation's row is what it draws and the template is a fact on
+  // the session by the time it renders.
+  "/assessment/instances/[instanceId]/sent",
+  // #794 — the template library and its six-stage create flow, under the template's own noun. The
+  // segment is `record.slug`; `record.id` stays the storage handle and leaves the URL.
+  "/templates/relationship/[slug]",
+  "/templates/relationship/[slug]/create",
+  // #688 — stage 2 of the create flow. A page, not a query switch: each stage has its own
+  // address, so a person can reload on Mode and the draft still puts them there.
+  "/templates/relationship/[slug]/create/mode",
+  // #689 — stage 3, the sibling the docstring above predicted. Same reason: an address that can be
+  // reloaded, and the draft is what puts the person back on it.
+  "/templates/relationship/[slug]/create/aspects",
+  // #825 — stage 4, Account: the app's own sign-in form and the conversion that writes the
+  // relationship as a draft. It is the last screen before anything exists.
+  "/templates/relationship/[slug]/create/commit",
+  // #825 — stage 5, Invite: send the invitation or keep the draft. It replaces the account gate
+  // that used to sit *after* the create (`…/create/account`, retired with #659's decision).
+  "/templates/relationship/[slug]/create/invite",
+  // #542 phase 2 — the member's own CRUD detail pages, moved here from `STATIC_ROUTES` where
+  // #533 phase 2 had filed them: a `[id]` pattern in the static list matches one literal string
+  // and nothing else, so the list's own links were invisible to the route matcher.
+  "/dashboard/relationships/[id]",
+  "/dashboard/support/articles/[slug]",
+  "/dashboard/templates/[id]",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",
@@ -109,6 +144,13 @@ const DYNAMIC_ROUTES = [
   "/quiz/[id]",
   "/quiz/[id]/discussion",
   "/quiz/[id]/play",
+  // One relationship *type*'s public page — the card title on `/relationship-types` links here,
+  // and every purchasable type is a static param of it.
+  "/relationship-types/[slug]",
+  // #794 · the worked example, one level below the type it belongs to. It used to be
+  // `/assessment/demo/[type]`, under the record *kind* a type is not; the segment is the
+  // taxonomy id, like its parent, because a type is a fixture row and not a record handle.
+  "/relationship-types/[slug]/demo",
   "/reset/[token]",
   "/support/articles/[slug]",
   "/tournaments/[id]",
@@ -135,6 +177,9 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/affiliate", title: "Affiliate Page" },
   { path: "/help", title: "Help" },
   { path: "/pricing", title: "Pricing Plan" },
+  // The public catalogue. Indexable because it is the page a reader looking for a relationship
+  // type is actually looking for; the route is in `(marketing)` and needs no session.
+  { path: "/relationship-types", title: "Relationship Templates" },
 ];
 
 export const routeManifest: RouteManifest = zRouteManifest.parse({

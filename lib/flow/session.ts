@@ -23,6 +23,7 @@
  */
 export const PARTY_COOKIE_PREFIX = "flow_party_";
 export const INVITE_COOKIE_PREFIX = "flow_invite_";
+export const DRAFT_COOKIE_PREFIX = "flow_draft_";
 
 export function partyCookieName(instanceRecordId: string): string {
   return `${PARTY_COOKIE_PREFIX}${instanceRecordId}`;
@@ -30,6 +31,19 @@ export function partyCookieName(instanceRecordId: string): string {
 
 export function inviteCookieName(instanceRecordId: string): string {
   return `${INVITE_COOKIE_PREFIX}${instanceRecordId}`;
+}
+
+/**
+ * The create flow's draft, one per template (#688).
+ *
+ * Keyed by template because a person may have two tabs open on two products; one shared
+ * `flow_draft` name would let the second tab's Stage 1 overwrite the first tab's answers.
+ * The value is the percent-encoded JSON `lib/flow/create-draft.ts` reads and writes, and the
+ * cookie is `httpOnly` like the other flow cookies — no script needs to read it, and the
+ * stage pages read it on the server.
+ */
+export function createDraftCookieName(templateRecordId: string): string {
+  return `${DRAFT_COOKIE_PREFIX}${templateRecordId}`;
 }
 
 /** The cookie options both cookies share. `maxAge` is the invitation's seven days. */
@@ -68,3 +82,12 @@ export function partyTokensFrom(jar: {
 
 /** Seven days, the invite's own lifetime — the party cookie rides along with it. */
 export const FLOW_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+
+/**
+ * One day, the create draft's own lifetime (#688).
+ *
+ * A draft is unfinished typing, not a record: a day is long enough to find the tab again and
+ * short enough that an abandoned draft does not sit in a browser for a week. The create deletes
+ * the cookie when the relationship is committed, so this is only the backstop.
+ */
+export const CREATE_DRAFT_COOKIE_MAX_AGE = 24 * 60 * 60;

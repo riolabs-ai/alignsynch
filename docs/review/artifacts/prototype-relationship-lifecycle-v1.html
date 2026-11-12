@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlignSynch — the relationship lifecycle, six stages</title>
+<style>
+  /* ---- tokens (mirror data/brand.ts: action = #37474f on the AlignSynch build) ---- */
+  :root{
+    --action:#37474f; --action-ink:#fff; --action-soft:#eef1f3;
+    --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --line-strong:#d1d5db;
+    --bg:#f9fafb; --panel:#fff; --ok:#15803d; --ok-soft:#f0fdf4; --warn:#b45309; --warn-soft:#fffbeb;
+    --radius:8px; --gap:16px;
+    --shadow:0 1px 2px rgb(16 24 40 / .06);
+    --stage-max:1180px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    color:var(--ink); background:var(--bg);
+  }
+  a{color:var(--action)}
+  h1,h2,h3,h4{margin:0; line-height:1.25; font-weight:600}
+  h1{font-size:1.5rem}
+  h2{font-size:1.15rem}
+  h3{font-size:.95rem}
+  p{margin:.35rem 0}
+  small,.muted{color:var(--muted); font-size:.86rem}
+
+  /* ---- shell: sidebar + a main column JUSTIFIED LEFT at a max width ---- */
+  .shell{display:grid; grid-template-columns:216px minmax(0,1fr); min-height:100vh}
+  .rail{background:var(--panel); border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto}
+  .brand{display:flex; gap:9px; align-items:center; margin-bottom:20px}
+  .mark{width:26px; height:26px; border-radius:6px; background:var(--action); display:grid; place-items:center; color:#fff; font-size:11px; font-weight:700}
+  .brand b{font-size:.92rem; display:block}
+  .brand span{font-size:.72rem; color:var(--muted)}
+  .nav-group{margin:0 0 14px}
+  .nav-group>label{display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 8px 5px}
+  .nav a{display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 8px; border-radius:6px; font-size:.86rem; color:var(--ink); text-decoration:none}
+  .nav a[aria-current="page"]{background:var(--action-soft); font-weight:600}
+  .nav a:hover{background:#f3f4f6}
+  .nav .count{font-size:.72rem; color:var(--muted)}
+
+  main{padding:22px 26px 64px; min-width:0}
+  .column{width:100%; max-width:var(--stage-max)}   /* left justified, never centred */
+
+  /* ---- step progress: always present on a multi-stage surface ---- */
+  .steps{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:0 0 18px; padding:0; list-style:none}
+  .steps li{display:flex; align-items:center; gap:6px; font-size:.8rem; color:var(--muted)}
+  .steps .num{width:20px; height:20px; border-radius:50%; display:grid; place-items:center; border:1px solid var(--line-strong); background:#fff; font-size:.7rem; font-weight:600; color:var(--muted)}
+  .steps li[data-state="done"] .num{background:var(--action); border-color:var(--action); color:#fff}
+  .steps li[data-state="now"]{color:var(--ink); font-weight:600}
+  .steps li[data-state="now"] .num{background:var(--action); border-color:var(--action); color:#fff}
+  .steps .bar{width:16px; height:1px; background:var(--line-strong)}
+  .steps button{all:unset; cursor:pointer; display:flex; align-items:center; gap:6px}
+  .steps button:focus-visible{outline:2px solid var(--action); outline-offset:2px; border-radius:4px}
+
+  /* ---- surfaces ---- */
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .card>.head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line)}
+  .card>.body{padding:16px}
+  .card>.foot{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; border-top:1px solid var(--line); background:#fcfcfd; border-radius:0 0 var(--radius) var(--radius)}
+  .chip{display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line-strong); background:#fff; border-radius:999px; padding:2px 9px; font-size:.76rem; font-weight:500; color:#374151}
+  .chip.ok{border-color:#bbf7d0; background:var(--ok-soft); color:var(--ok)}
+  .chip.warn{border-color:#fde68a; background:var(--warn-soft); color:var(--warn)}
+  .chip.gap{border-color:#fecaca; background:#fef2f2; color:#b91c1c}
+  .stack{display:grid; gap:var(--gap)}
+  .row{display:flex; gap:12px; flex-wrap:wrap}
+  .grid2{display:grid; gap:12px; grid-template-columns:1fr 1fr}
+  .grid3{display:grid; gap:12px; grid-template-columns:repeat(3,1fr)}
+  label.field{display:block}
+  label.field>span{display:block; font-size:.82rem; font-weight:600; margin-bottom:4px}
+  label.field>em{display:block; font-size:.78rem; color:var(--muted); font-style:normal; margin-top:4px}
+  input[type=text],input[type=email],select{width:100%; padding:8px 10px; border:1px solid var(--line-strong); border-radius:6px; font:inherit; background:#fff; color:var(--ink)}
+  input[type=text]:focus,input[type=email]:focus,select:focus{outline:2px solid var(--action); outline-offset:1px; border-color:var(--action)}
+  .btn{all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:6px; font-size:.88rem; font-weight:600; text-align:center}
+  .btn:focus-visible{outline:2px solid var(--action); outline-offset:2px}
+  .btn.primary{background:var(--action); color:var(--action-ink)}
+  .btn.secondary{background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line-strong)}
+  .btn.ghost{color:var(--action); padding:6px 4px}
+  .btn[disabled]{opacity:.5; cursor:not-allowed}
+  .choice{display:flex; gap:10px; align-items:flex-start; padding:12px; border:1px solid var(--line-strong); border-radius:var(--radius); cursor:pointer; background:#fff}
+  .choice[aria-checked="true"]{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action); background:#fbfcfc}
+  .choice .dot{width:16px; height:16px; border-radius:50%; border:1px solid var(--line-strong); margin-top:2px; flex:0 0 auto; display:grid; place-items:center}
+  .choice[aria-checked="true"] .dot{border-color:var(--action)}
+  .choice[aria-checked="true"] .dot::after{content:""; width:8px; height:8px; border-radius:50%; background:var(--action)}
+  .tpl{display:flex; justify-content:space-between; gap:14px; align-items:flex-start; padding:14px; border:1px solid var(--line); border-radius:var(--radius); background:#fff; cursor:pointer}
+  .tpl[aria-checked="true"]{border-color:var(--action); box-shadow:inset 0 0 0 1px var(--action)}
+  .tpl h3{margin-bottom:2px}
+  .tpl .meta{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+  .meter{height:6px; border-radius:999px; background:#eef0f2; overflow:hidden}
+  .meter>i{display:block; height:100%; background:var(--action)}
+  .aspect{border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; background:#fff}
+  .aspect header{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px}
+  .two-up{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .mini{font-size:.78rem; color:var(--muted)}
+  .note{border-left:3px solid var(--line-strong); padding:2px 0 2px 10px; color:var(--muted); font-size:.84rem}
+  .banner{display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:var(--radius); border:1px solid #fde68a; background:var(--warn-soft); font-size:.86rem}
+  .stage-foot{display:flex; justify-content:space-between; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--line)}
+  .hidden{display:none !important}
+
+  /* ---- copy editor ---- */
+  #editor{position:fixed; right:18px; bottom:18px; z-index:40; display:flex; gap:8px; align-items:center; background:var(--panel); border:1px solid var(--line-strong); border-radius:999px; padding:8px 12px; box-shadow:0 6px 20px rgb(16 24 40 / .12); font-size:.82rem}
+  #editor .dot-live{width:8px; height:8px; border-radius:50%; background:var(--ok)}
+  body[data-editing="on"] [data-copy]{outline:1px dashed #9ca3af; outline-offset:2px; border-radius:3px}
+  body[data-editing="on"] [data-copy]:focus{outline:2px solid var(--action); background:#fffdf5}
+  #toast{position:fixed; left:22px; bottom:18px; z-index:41; background:var(--ink); color:#fff; padding:8px 12px; border-radius:6px; font-size:.8rem; opacity:0; transform:translateY(6px); transition:.18s}
+  #toast.show{opacity:1; transform:none}
+
+  /* ---- responsive: the same left justification, stacked ---- */
+  @media (max-width:1024px){ :root{--stage-max:100%} .grid3{grid-template-columns:1fr 1fr} }
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .rail{position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); padding:12px 14px}
+    .rail .nav,.rail .brand span{display:none}
+    .brand{margin:0}
+    main{padding:16px 14px 84px}
+    .grid2,.grid3,.two-up{grid-template-columns:1fr}
+    .steps{gap:4px; overflow:auto; padding-bottom:4px}
+    .steps .label-text{display:none}
+    .steps li[data-state="now"] .label-text{display:inline}
+    .stage-foot{flex-direction:column-reverse; align-items:stretch}
+    .stage-foot .btn{justify-content:center}
+    #editor{right:10px; left:10px; bottom:10px; justify-content:center; flex-wrap:wrap}
+  }
+</style>
+</head>
+<body data-editing="off">
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="mark">AS</div>
+      <div><b data-copy="brand.name">AlignSynch</b><span data-copy="brand.tagline">Relationship Alignment Platform</span></div>
+    </div>
+    <div class="nav">
+      <div class="nav-group"><label data-copy="nav.workspace">Workspace</label>
+        <a href="#"><span data-copy="nav.dashboard">Dashboard</span></a>
+        <a href="#" aria-current="page"><span data-copy="nav.relationships">My Relationships</span><span class="count" data-copy="nav.relationshipsCount">1</span></a>
+        <a href="#"><span data-copy="nav.templates">Templates</span></a>
+      </div>
+      <div class="nav-group"><label data-copy="nav.account">Account</label>
+        <a href="#"><span data-copy="nav.support">Support</span></a>
+        <a href="#"><span data-copy="nav.settings">Settings</span></a>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="column">
+      <ol class="steps" id="steps" aria-label="Create a relationship"></ol>
+      <div id="stage"></div>
+    </div>
+  </main>
+</div>
+
+<div id="editor">
+  <span class="dot-live"></span>
+  <span id="editorState" data-copy="editor.live">Copy loads from JSON</span>
+  <button class="btn ghost" id="editToggle">Edit copy</button>
+  <button class="btn ghost" id="saveJson">Save .json</button>
+  <button class="btn ghost" id="loadJsonBtn">Load</button>
+  <input type="file" id="loadJson" accept="application/json" class="hidden">
+  <button class="btn ghost" id="resetCopy">Reset</button>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ===========================================================================
+   COPY — every reader-visible string on every stage comes from this object.
+   Nothing in the markup is a second source of truth: the renderer reads keys,
+   Edit mode rewrites values, Save writes the JSON back out. That is the point
+   of the prototype — the copy is data, so the app can load it the same way.
+   =========================================================================== */
+const DEFAULT_COPY = {
+  "brand.name": "AlignSynch",
+  "brand.tagline": "Relationship Alignment Platform",
+  "nav.workspace": "Workspace",
+  "nav.dashboard": "Dashboard",
+  "nav.relationships": "My Relationships",
+  "nav.relationshipsCount": "1",
+  "nav.templates": "Templates",
+  "nav.account": "Account",
+  "nav.support": "Support",
+  "nav.settings": "Settings",
+  "editor.live": "Copy loads from JSON",
+
+  "flow.title": "Create a relationship",
+  "flow.subtitle": "Six stages, from the template you copy to the Alignment you both read.",
+
+  "step.1": "Template",
+  "step.2": "Who and how",
+  "step.3": "Mode and setting",
+  "step.4": "Payment method",
+  "step.5": "Review and invite",
+  "step.6": "Alignment",
+
+  "s1.heading": "Choose a Relationship Template",
+  "s1.body": "A template is a fixed set of Aspects. Copying it is what makes two sheets comparable.",
+  "s1.aspects": "5 Aspects",
+  "s1.seats": "Two seats: an Initiator and a Counterparty.",
+  "s1.choose": "Choose",
+  "s1.chosen": "Chosen",
+  "s1.tplBasics": "Relationship Basics",
+  "s1.tplBasicsDesc": "Time together, housework, money, conflict, affection — the five things most couples disagree about without naming.",
+  "s1.tplStaff": "Staff & Manager",
+  "s1.tplStaffDesc": "Work priorities, feedback, workload, growth, and the weekly rhythm of a reporting line.",
+  "s1.tplParent": "Parent & Child",
+  "s1.tplParentDesc": "Chores, screen time, school, independence, and how decisions get made at home.",
+  "s1.empty": "No template selected yet — pick one to continue.",
+  "s1.next": "Continue to who and how",
+
+  "s2.heading": "Who and how",
+  "s2.body": "One template, two seats, and the two choices that shape every screen after this one.",
+  "s2.initiatorLabel": "Your name — the Initiator",
+  "s2.initiatorHelp": "The seat this relationship is created from.",
+  "s2.counterpartyLabel": "Who you are asking",
+  "s2.counterpartyPlaceholder": "Their name",
+  "s2.counterpartyHelp": "Display only: the seat is filled when they claim the invitation. A name typed here is not a party.",
+  "s2.emailLabel": "Their email address",
+  "s2.emailPlaceholder": "name@example.com",
+  "s2.relationshipName": "What are you in the middle of",
+  "s2.relationshipNameHelp": "This is the card title both of you will see.",
+  "s2.back": "Back",
+  "s2.next": "Continue to mode and setting",
+
+  "s3.heading": "Mode and setting",
+  "s3.body": "Mode is fixed at creation: both parties answer one shape, which is what makes two sheets comparable at all.",
+  "s3.modeHeading": "Mode",
+  "s3.modeFull": "Full",
+  "s3.modeFullHelp": "Every Aspect is asked, and every Gap is named.",
+  "s3.modeSoft": "Soft",
+  "s3.modeSoftHelp": "Small Gaps are tolerated rather than named.",
+  "s3.settingHeading": "Setting",
+  "s3.settingHelp": "Setting is what a party may change later. It moves the bar the report is judged against; it never changes a question.",
+  "s3.back": "Back",
+  "s3.next": "Continue to payment method",
+
+  "s4.heading": "Payment method",
+  "s4.body": "Creating is free and the invite is never blocked. A method is required to publish the report, and the fee is taken when both sheets are sealed.",
+  "s4.payNow": "Add a method now",
+  "s4.payNowHelp": "Your 7-day trial starts today and the charge lands 7 days later.",
+  "s4.payLater": "Decide later",
+  "s4.payLaterHelp": "You can invite and answer first. Publishing waits until a method is on file.",
+  "s4.noMethod": "Nothing has been paid on this relationship.",
+  "s4.back": "Back",
+  "s4.next": "Continue to review",
+
+  "s5.heading": "Review and invite",
+  "s5.body": "Submitting now creates the relationship and sends the invitation. Nothing is charged yet.",
+  "s5.templateRow": "Template",
+  "s5.initiatorRow": "Initiator",
+  "s5.counterpartyRow": "Counterparty",
+  "s5.modeRow": "Mode",
+  "s5.settingRow": "Setting",
+  "s5.paymentRow": "Payment",
+  "s5.paymentLater": "Decide later",
+  "s5.back": "Back",
+  "s5.submit": "Create relationship and send invite",
+
+  "s6.heading": "Alignment",
+  "s6.body": "Both sheets are sealed. The Gap is what the two sets of answers disagree by, Aspect by Aspect.",
+  "s6.sealed": "Sharing — the report is open to both of you.",
+  "s6.gapHeading": "The Gap",
+  "s6.gapSubline": "Aligned under Soft · 1 Gap exceeds Full",
+  "s6.aspect1": "Time together",
+  "s6.aspect2": "Housework",
+  "s6.aspect3": "Money",
+  "s6.aspect4": "Conflict",
+  "s6.aspect5": "Affection",
+  "s6.you": "You",
+  "s6.them": "Rowan",
+  "s6.gapLabel": "Gap",
+  "s6.verdict": "Aligned",
+  "s6.verdictGap": "Gap",
+  "s6.completeHeading": "Relationship Aspect complete Alignment",
+  "s6.completeBody": "Every Aspect has now been answered by both seats and read by both seats. This is the end of the flow — nothing further is required of either party.",
+  "s6.back": "Back",
+  "s6.finish": "Finish"
+};
+
+const STAGES = [
+  { key: "s1", stepKey: "step.1" },
+  { key: "s2", stepKey: "step.2" },
+  { key: "s3", stepKey: "step.3" },
+  { key: "s4", stepKey: "step.4" },
+  { key: "s5", stepKey: "step.5" },
+  { key: "s6", stepKey: "step.6" }
+];
+
+const STORE = "alignsynch.prototype.copy.v1";
+const TEMPLATES = [
+  { id: "basics", nameKey: "s1.tplBasics", descKey: "s1.tplBasicsDesc", aspects: 5 },
+  { id: "staff", nameKey: "s1.tplStaff", descKey: "s1.tplStaffDesc", aspects: 5 },
+  { id: "parent", nameKey: "s1.tplParent", descKey: "s1.tplParentDesc", aspects: 5 }
+];
+const ASPECTS = [
+  { nameKey: "s6.aspect1", you: 4, them: 3 },
+  { nameKey: "s6.aspect2", you: 2, them: 4 },
+  { nameKey: "s6.aspect3", you: 5, them: 4 },
+  { nameKey: "s6.aspect4", you: 3, them: 3 },
+  { nameKey: "s6.aspect5", you: 4, them: 2 }
+];
+
+let copy = load();
+/* `#stage=N` opens that stage directly — so a screenshot of stage 6 is the real render,
+   not a claim about it, and the same URL is what a reviewer clicks. */
+function stageFromHash() {
+  const m = /stage=(\d+)/.exec(location.hash || "");
+  return m ? Math.min(STAGES.length - 1, Math.max(0, +m[1] - 1)) : 0;
+}
+let state = { stage: stageFromHash(), template: "basics", mode: "full", setting: "soft", pay: "later" };
+
+function load() {
+  try {
+    const saved = localStorage.getItem(STORE);
+    if (saved) return Object.assign({}, DEFAULT_COPY, JSON.parse(saved));
+  } catch (e) { /* a broken store must not break the prototype */ }
+  return Object.assign({}, DEFAULT_COPY);
+}
+function c(key) { return copy[key] ?? "⟨" + key + "⟩"; }
+/* Any span carrying data-copy is re-filled from the object on every render. */
+function T(key, tag) {
+  const t = tag || "span";
+  return "<" + t + ' data-copy="' + key + '">' + esc(c(key)) + "</" + t + ">";
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m])); }
+
+function renderSteps() {
+  document.getElementById("steps").innerHTML = STAGES.map((s, i) => {
+    const state_ = i < state.stage ? "done" : i === state.stage ? "now" : "todo";
+    return '<li data-state="' + state_ + '">' +
+      '<button data-goto="' + i + '" aria-current="' + (i === state.stage ? "step" : "false") + '">' +
+        '<span class="num">' + (i < state.stage ? "✓" : i + 1) + "</span>" +
+        '<span class="label-text" data-copy="' + s.stepKey + '">' + esc(c(s.stepKey)) + "</span>" +
+      "</button></li>" +
+      (i < STAGES.length - 1 ? '<span class="bar" aria-hidden="true"></span>' : "");
+  }).join("");
+}
+
+function render() {
+  renderSteps();
+  const host = document.getElementById("stage");
+  host.innerHTML = [stageTemplate, stageWho, stageMode, stagePay, stageReview, stageAlignment][state.stage]();
+  syncEditor();
+}
+
+/* ---------- stage 1: choose a template ---------- */
+function stageTemplate() {
+  return '<div class="stack">' +
+    '<div><h1 data-copy="s1.heading">' + esc(c("s1.heading")) + '</h1>' +
+    '<p class="muted" data-copy="s1.body">' + esc(c("s1.body")) + '</p></div>' +
+    '<div class="stack">' + TEMPLATES.map(t =>
+      '<div class="tpl" role="radio" tabindex="0" aria-checked="' + (state.template === t.id) + '" data-tpl="' + t.id + '">' +
+        '<div><h3 data-copy="' + t.nameKey + '">' + esc(c(t.nameKey)) + '</h3>' +
+        '<p class="muted" data-copy="' + t.descKey + '">' + esc(c(t.descKey)) + '</p>' +
+        '<div class="meta"><span class="chip" data-copy="s1.aspects">' + esc(c("s1.aspects")) + '</span>' +
+        '<span class="chip" data-copy="s1.seats">' + esc(c("s1.seats")) + '</span></div></div>' +
+        '<span class="chip' + (state.template === t.id ? " ok" : "") + '" data-copy="' + (state.template === t.id ? "s1.chosen" : "s1.choose") + '">' +
+          esc(c(state.template === t.id ? "s1.chosen" : "s1.choose")) + '</span>' +
+      '</div>').join("") + '</div>' +
+    '<div class="stage-foot"><span class="muted" data-copy="s1.empty">' + esc(c("s1.empty")) + '</span>' +
+      '<button class="btn primary" data-goto="1" data-copy="s1.next">' + esc(c("s1.next")) + '</button></div>' +
+  '</div>';
+}
+
+/* ---------- stage 2: who and how ---------- */
+function stageWho() {
+  const tpl = TEMPLATES.find(t => t.id === state.template) || TEMPLATES[0];
+  return '<div class="stack">' +
+    '<div><h1 data-copy="s2.heading">' + esc(c("s2.heading")) + '</h1>' +
+    '<p class="muted" data-copy="s2.body">' + esc(c("s2.body")) + '</p></div>' +
+    '<div class="card"><div class="head"><h2 data-copy="' + tpl.nameKey + '">' + esc(c(tpl.nameKey)) + '</h2>' +
+      '<span class="chip" data-copy="s1.aspects">' + esc(c("s1.aspects")) + '</span></div>' +
+      '<div class="body stack">' +
+        '<label class="field"><span data-copy="s2.initiatorLabel">' + esc(c("s2.initiatorLabel")) + '</span>' +
+          '<input type="text" value="Daniel" aria-label="Initiator name">' +
+          '<em data-copy="s2.initiatorHelp">' + esc(c("s2.initiatorHelp")) + '</em></label>' +
+        '<div class="grid2">' +
+          '<label class="field"><span data-copy="s2.counterpartyLabel">' + esc(c("s2.counterpartyLabel")) + '</span>' +
+            '<input type="text" placeholder="' + esc(c("s2.counterpartyPlaceholder")) + '">' +
+            '<em data-copy="s2.counterpartyHelp">' + esc(c("s2.counterpartyHelp")) + '</em></label>' +
+          '<label class="field"><span data-copy="s2.emailLabel">' + esc(c("s2.emailLabel")) + '</span>' +
+            '<input type="email" placeholder="' + esc(c("s2.emailPlaceholder")) + '"></label>' +
+        '</div>' +
+        '<label class="field"><span data-copy="s2.relationshipName">' + esc(c("s2.relationshipName")) + '</span>' +
+          '<input type="text" value="Relationship Basics">' +
+          '<em data-copy="s2.relationshipNameHelp">' + esc(c("s2.relationshipNameHelp")) + '</em></label>' +
+      '</div></div>' +
+    '<div class="stage-foot"><button class="btn secondary" data-goto="0" data-copy="s2.back">' + esc(c("s2.back")) + '</button>' +
+      '<button class="btn primary" data-goto="2" data-copy="s2.next">' + esc(c("s2.next")) + '</button></div>' +
+  '</div>';
+}
+
+/* ---------- stage 3: mode and setting ---------- */
+function stageMode() {
+  const mode = [["full", "s3.modeFull", "s3.modeFullHelp"], ["soft", "s3.modeSoft", "s3.modeSoftHelp"]];
+  const settings = [["soft", "Soft"], ["full", "Full"]];
+  return '<div class="stack">' +
+    '<div><h1 data-copy="s3.heading">' + esc(c("s3.heading")) + '</h1>' +
+    '<p class="muted" data-copy="s3.body">' + esc(c("s3.body")) + '</p></div>' +
+    '<div class="card"><div class="head"><h2 data-copy="s3.modeHeading">' + esc(c("s3.modeHeading")) + '</h2>' +
+      '<span class="chip" data-copy="s3.modeFixed">Mode is fixed at creation</span></div>' +
+      '<div class="body stack">' + mode.map(([id, k, hk]) =>
+        '<div class="choice" role="radio" tabindex="0" aria-checked="' + (state.mode === id) + '" data-mode="' + id + '">' +
+          '<span class="dot"></span><span><b data-copy="' + k + '">' + esc(c(k)) + '</b>' +
+          '<span class="mini" style="display:block" data-copy="' + hk + '">' + esc(c(hk)) + '</span></span></div>').join("") +
+      '</div></div>' +
+    '<div class="card"><div class="head"><h2 data-copy="s3.settingHeading">' + esc(c("s3.settingHeading")) + '</h2></div>' +
+      '<div class="body stack"><p class="muted" data-copy="s3.settingHelp">' + esc(c("s3.settingHelp")) + '</p>' +
+      '<div class="row">' + settings.map(([id, k]) =>
+        '<button class="btn ' + (state.setting === id ? "primary" : "secondary") + '" data-setting="' + id + '" data-copy="s3.setting' + k + '">' +
+        k + '</button>').join("") + '</div>' +
+      '<p class="note" data-copy="s3.settingNote">Setting moves the bar the report is judged against; it never changes a question.</p>' +
+      '</div></div>' +
+    '<div class="stage-foot"><button class="btn secondary" data-goto="1" data-copy="s3.back">' + esc(c("s3.back")) + '</button>' +
+      '<button class="btn primary" data-goto="3" data-copy="s3.next">' + esc(c("s3.next")) + '</button></div>' +
+  '</div>';
+}
+
+/* ---------- stage 4: payment method (the held door, in flow) ---------- */
+function stagePay() {
+  return '<div class="stack">' +
+    '<div><h1 data-copy="s4.heading">' + esc(c("s4.heading")) + '</h1>' +
+    '<p class="muted" data-copy="s4.body">' + esc(c("s4.body")) + '</p></div>' +
+    '<div class="card"><div class="body stack">' +
+      '<div class="choice" role="radio" tabindex="0" aria-checked="' + (state.pay === "now") + '" data-pay="now">' +
+        '<span class="dot"></span><span><b data-copy="s4.payNow">' + esc(c("s4.payNow")) + '</b>' +
+        '<span class="mini" style="display:block" data-copy="s4.payNowHelp">' + esc(c("s4.payNowHelp")) + '</span></span></div>' +
+      '<div class="choice" role="radio" tabindex="0" aria-checked="' + (state.pay === "later") + '" data-pay="later">' +
+        '<span class="dot"></span><span><b data-copy="s4.payLater">' + esc(c("s4.payLater")) + '</b>' +
+        '<span class="mini" style="display:block" data-copy="s4.payLaterHelp">' + esc(c("s4.payLaterHelp")) + '</span></span></div>' +
+      (state.pay === "now" ?
+        '<div class="grid3">' +
+          '<label class="field"><span data-copy="s4.cardNumber">Card number</span><input type="text" placeholder="4242 4242 4242 4242"></label>' +
+          '<label class="field"><span data-copy="s4.expiry">Expiry</span><input type="text" placeholder="MM / YY"></label>' +
+          '<label class="field"><span data-copy="s4.cvc">CVC</span><input type="text" placeholder="123"></label>' +
+        '</div>' : '<p class="note" data-copy="s4.noMethod">' + esc(c("s4.noMethod")) + '</p>') +
+    '</div></div>' +
+    '<div class="stage-foot"><button class="btn secondary" data-goto="2" data-copy="s4.back">' + esc(c("s4.back")) + '</button>' +
+      '<button class="btn primary" data-goto="4" data-copy="s4.next">' + esc(c("s4.next")) + '</button></div>' +
+  '</div>';
+}
+
+/* ---------- stage 5: review and invite ---------- */
+function stageReview() {
+  const tpl = TEMPLATES.find(t => t.id === state.template) || TEMPLATES[0];
+  const rows = [
+    ["s5.templateRow", c(tpl.nameKey)],
+    ["s5.initiatorRow", "Daniel"],
+    ["s5.counterpartyRow", "Rowan"],
+    ["s5.modeRow", c(state.mode === "full" ? "s3.modeFull" : "s3.modeSoft")],
+    ["s5.settingRow", state.setting === "soft" ? "Soft" : "Full"],
+    ["s5.paymentRow", state.pay === "now" ? c("s4.payNow") : c("s5.paymentLater")]
+  ];
+  return '<div class="stack">' +
+    '<div><h1 data-copy="s5.heading">' + esc(c("s5.heading")) + '</h1>' +
+    '<p class="muted" data-copy="s5.body">' + esc(c("s5.body")) + '</p></div>' +
+    '<div class="card"><div class="body">' +
+      rows.map(([k, v]) => '<div class="row" style="justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)">' +
+        '<span class="muted" data-copy="' + k + '">' + esc(c(k)) + '</span><b>' + esc(v) + '</b></div>').join("") +
+    '</div></div>' +
+    '<div class="stage-foot"><button class="btn secondary" data-goto="3" data-copy="s5.back">' + esc(c("s5.back")) + '</button>' +
+      '<button class="btn primary" data-goto="5" data-copy="s5.submit">' + esc(c("s5.submit")) + '</button></div>' +
+  '</div>';
+}
+
+/* ---------- stage 6: the Gap, and Aspect complete Alignment ---------- */
+function stageAlignment() {
+  const total = ASPECTS.reduce((n, a) => n + Math.abs(a.you - a.them), 0);
+  return '<div class="stack">' +
+    '<div><h1 data-copy="s6.heading">' + esc(c("s6.heading")) + '</h1>' +
+    '<p class="muted" data-copy="s6.body">' + esc(c("s6.body")) + '</p></div>' +
+    '<div class="card"><div class="head"><div><h2 data-copy="s6.gapHeading">' + esc(c("s6.gapHeading")) + '</h2>' +
+      '<span class="muted" data-copy="s6.gapSubline">' + esc(c("s6.gapSubline")) + '</span></div>' +
+      '<span class="chip ok" data-copy="s6.sealed">' + esc(c("s6.sealed")) + '</span></div>' +
+      '<div class="body stack">' + ASPECTS.map(a => {
+        const gap = Math.abs(a.you - a.them);
+        return '<div class="aspect"><header><b data-copy="' + a.nameKey + '">' + esc(c(a.nameKey)) + '</b>' +
+          '<span class="chip ' + (gap >= 2 ? "gap" : "") + '"><span data-copy="s6.' + (gap >= 2 ? "verdictGap" : "verdict") + '">' +
+          esc(c(gap >= 2 ? "s6.verdictGap" : "s6.verdict")) + '</span> · ' + gap + '</span></header>' +
+          '<div class="two-up"><div><span class="mini" data-copy="s6.you">' + esc(c("s6.you")) + '</span>' +
+            '<div class="meter"><i style="width:' + (a.you / 5 * 100) + '%"></i></div></div>' +
+          '<div><span class="mini" data-copy="s6.them">' + esc(c("s6.them")) + '</span>' +
+            '<div class="meter"><i style="width:' + (a.them / 5 * 100) + '%;background:#94a3b8"></i></div></div></div></div>';
+      }).join("") + '</div>' +
+      '<div class="foot"><span class="muted">Total Gap <b>' + total + '</b></span>' +
+      '<span class="chip">Aspects ' + ASPECTS.length + '</span></div></div>' +
+    '<div class="card"><div class="head"><h2 data-copy="s6.completeHeading">' + esc(c("s6.completeHeading")) + '</h2></div>' +
+      '<div class="body"><p class="muted" data-copy="s6.completeBody">' + esc(c("s6.completeBody")) + '</p></div>' +
+      '<div class="foot"><button class="btn secondary" data-goto="4" data-copy="s6.back">' + esc(c("s6.back")) + '</button>' +
+      '<button class="btn primary" data-copy="s6.finish">' + esc(c("s6.finish")) + '</button></div></div>' +
+  '</div>';
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-goto],[data-tpl],[data-mode],[data-setting],[data-pay],#editToggle,#saveJson,#loadJsonBtn,#resetCopy");
+  if (!t) return;
+  if (t.dataset.goto !== undefined) { state.stage = +t.dataset.goto; render(); window.scrollTo({ top: 0 }); return; }
+  if (t.dataset.tpl) { state.template = t.dataset.tpl; render(); return; }
+  if (t.dataset.mode) { state.mode = t.dataset.mode; render(); return; }
+  if (t.dataset.setting) { state.setting = t.dataset.setting; render(); return; }
+  if (t.dataset.pay) { state.pay = t.dataset.pay; render(); return; }
+  if (t.id === "editToggle") { toggleEdit(); return; }
+  if (t.id === "saveJson") { saveJson(); return; }
+  if (t.id === "loadJsonBtn") { document.getElementById("loadJson").click(); return; }
+  if (t.id === "resetCopy") { copy = Object.assign({}, DEFAULT_COPY); persist(); render(); toast("Copy reset to the shipped JSON"); return; }
+});
+
+document.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches('[role="radio"]')) {
+    e.preventDefault(); e.target.click();
+  }
+});
+
+/* Edit mode: any [data-copy] becomes an input target; the value is written back by key. */
+function toggleEdit() {
+  const on = document.body.dataset.editing !== "on";
+  document.body.dataset.editing = on ? "on" : "off";
+  document.querySelectorAll("[data-copy]").forEach(el => {
+    el.contentEditable = on ? "true" : "false";
+    if (on) el.setAttribute("spellcheck", "false");
+  });
+  document.getElementById("editToggle").textContent = on ? "Done editing" : "Edit copy";
+  document.querySelector("#editorState").textContent = on
+    ? "Editing — changes save to JSON on blur"
+    : "Copy loads from JSON";
+  if (on) toast("Click any label to edit it; blur writes it back to the JSON");
+}
+
+document.addEventListener("blur", e => {
+  const el = e.target;
+  if (document.body.dataset.editing !== "on" || !el.dataset || !el.dataset.copy) return;
+  const next = el.textContent.trim();
+  if (!next) { el.textContent = c(el.dataset.copy); return; }
+  copy[el.dataset.copy] = next;
+  persist();
+  toast("Saved “" + el.dataset.copy + "”");
+}, true);
+
+function persist() {
+  try { localStorage.setItem(STORE, JSON.stringify(copy)); } catch (e) { /* private mode */ }
+}
+
+function saveJson() {
+  const blob = new Blob([JSON.stringify(copy, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "alignsynch-copy.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Saved alignsynch-copy.json — " + Object.keys(copy).length + " strings");
+}
+
+document.getElementById("loadJson").addEventListener("change", ev => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const parsed = JSON.parse(fr.result);
+      copy = Object.assign({}, DEFAULT_COPY, parsed);
+      persist(); render();
+      toast("Loaded " + Object.keys(parsed).length + " strings from " + file.name);
+    } catch (err) { toast("That file is not valid JSON"); }
+  };
+  fr.readAsText(file);
+});
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+}
+
+function syncEditor() {
+  const on = document.body.dataset.editing === "on";
+  if (!on) return;
+  document.querySelectorAll("[data-copy]").forEach(el => { el.contentEditable = "true"; });
+}
+render();
+</script>
+</body>
+</html>

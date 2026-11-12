@@ -117,6 +117,27 @@ export const ADMIN_ACTIONS = [
    */
   "template.unpublish",
   /**
+   * Retire a template so it is offered nowhere and edited nowhere (#711). `admin`, like the two
+   * above, and reversible: `template.restore` puts it back in the working state.
+   *
+   * **Archiving is not deleting, and the difference is the referential rule.** A template some
+   * relationship was created from can only ever be archived — every one of those relationships
+   * reads its version, and a version cannot outlive the record it belongs to — so the destructive
+   * path below is written to refuse exactly the rows this action is meant for.
+   */
+  "template.archive",
+  /** Un-retire an archived template (#711) — back to `draft`, with its versions and history intact. */
+  "template.restore",
+  /**
+   * Destroy a template that was never published and never handed to anybody (#711).
+   *
+   * The narrowest write in this table, on purpose: it refuses a template that has any version (its
+   * publishing history is what customers were offered) and one any relationship names (somebody's
+   * answers live in a copy of it). What is left — a draft an author started and abandoned — has no
+   * reader, so the row and its Aspects go. `archive` is the action for everything else.
+   */
+  "template.delete",
+  /**
    * Give a relationship a tier for a period, or extend the one it has (#505). The action name is
    * the card's word — an operator "comps" a plan — and the row it writes is `plan_grant`, not
    * `billing_subscription`: no money moved, so it must not read as a purchase.
@@ -186,6 +207,20 @@ export const ADMIN_ACTIONS = [
   /** Re-mint a lapsed invitation on a published relationship — one click, no Aspects re-entered. */
   "relationship.republish",
   /**
+   * #623 — edit a relationship that already exists: its copy's title and summary, its Aspects (with
+   * the invalidation confirmed), its pin, and — while the seat is unclaimed — the invitee's name,
+   * address and window. `member`-floored because it is the initiator's own row, and the
+   * mutation's ownership check is what keeps it to that row; the console's staff path passes
+   * `audience: "staff"` and reads the actor's rung inside the same transaction.
+   */
+  "relationship.edit",
+  /**
+   * #619 — the payer completes: the fee is charged, the relationship moves `→ complete` and the
+   * Gap opens to both parties. One action, because "take the money" and "open the product" are one
+   * decision and a half-applied one is either a free Gap or a charge for nothing.
+   */
+  "relationship.complete",
+  /**
    * #533 phase 3 — the two operator overrides on a relationship's membership, and the third is
    * #505's `plan.comp` (a comp is a grant, not a subscription edit).
    *
@@ -197,6 +232,23 @@ export const ADMIN_ACTIONS = [
    */
   "relationship.void",
   "relationship.extend",
+  /**
+   * #667 — the review store's three names, and the reason `/admin/review` is a `support` surface.
+   *
+   * A review artifact is a prototype, a diagram or a report somebody has to look at: the TODO
+   * list is work on it and the issue list is feedback about it. `review.todo` ticks a checklist
+   * item, `review.issue` raises one and closes or reopens it, `review.comment` answers one. All
+   * three are `support`, for the reason the inbox's three are: none of them touches a customer's
+   * row, a party's words or money, they are the work a seat does on the product itself, and the
+   * audit row is what makes "who marked this done" answerable.
+   *
+   * They are separate names rather than one `review.write` because `/admin/audit` filters on
+   * `action`, and "which ticks happened last week" and "what feedback came in" are different
+   * questions about the same store.
+   */
+  "review.todo",
+  "review.issue",
+  "review.comment",
 ] as const;
 
 export type AdminAction = (typeof ADMIN_ACTIONS)[number];
@@ -238,6 +290,13 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // relationship that already exists, which is why an `admin` may do either.
   "template.publish": "admin",
   "template.unpublish": "admin",
+  // #711 — retiring and destroying a template. `admin` for the same reason the publish pair is:
+  // the catalogue is what the product offers. The delete's *narrowness* is the mutation's
+  // (`lib/admin/templates.ts` refuses a row with a version or a relationship), not a rung's — a
+  // floor says who may take this kind of action, and the referential rule says on which row.
+  "template.archive": "admin",
+  "template.restore": "admin",
+  "template.delete": "admin",
   /**
    * #505 — **`owner` alone, and the second action in this table that is owner-floored.**
    *
@@ -283,9 +342,33 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "relationship.aspects": "member",
   "relationship.publish": "member",
   "relationship.republish": "member",
+  // #623 — the initiator's own row; the console's staff path checks the rung inside the mutation.
+  "relationship.edit": "member",
+  // #619 — the payer's own act on their own relationship, audited like every other member write.
+  "relationship.complete": "member",
   // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.
   "relationship.void": "admin",
   "relationship.extend": "admin",
+  /**
+   * #667 — the review store's three, and #665's screen mounts them (**this card** raised the floor
+   * from `support` to `admin`).
+   *
+   * #667 reasoned the floor to `support`: this is work on the product's own artifacts (a prototype,
+   * a diagram, a report), not a write to anybody's row, so the rung that exists to work a queue is
+   * the rung that ticks a checklist. The write half then had no reader: `/admin/review` is
+   * `requireAdmin()` and the rail row carries `needs: "admin"` (#665), so a `support` seat could
+   * write state it could not see, and no session that could see the shelf could be refused by the
+   * floor. A guard nothing can reach is not a guard — the review shelf's own card states the rule
+   * the other way round (a `support` rung is refused by `act()`), so the floor moved to the rung the
+   * surface already requires. Tightening: nobody gained a write.
+   *
+   * The refusal is still `act()`'s, inside the transaction (`role-too-low`), never a control the
+   * page chose not to draw — and because the rung is read per transaction, a session demoted under
+   * an open screen is refused on its next click.
+   */
+  "review.todo": "admin",
+  "review.issue": "admin",
+  "review.comment": "admin",
 };
 
 // The one floor #503 does not name, and the stricter reading this tree took.
@@ -389,6 +472,17 @@ export const AUDIT_TARGET_TABLES = [
    */
   "contact_message",
   "contact_reply",
+  /**
+   * #667 — the review store's four. The artifact, the checklist item, the issue and the comment
+   * are each the row an audit entry points at: "which artifact", "which item", "which issue",
+   * "which comment". The artifact is the target of nothing (the store never edits one — the
+   * catalogue in `data/review-artifacts.ts` is what a row is seeded from), so it is listed for
+   * the join a reader makes and not for a write.
+   */
+  "review_artifact",
+  "review_todo",
+  "review_issue",
+  "review_issue_comment",
 ] as const;
 
 export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];

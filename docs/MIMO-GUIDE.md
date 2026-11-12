@@ -1,5 +1,11 @@
 # MiMo harness guide — official rules, measured quirks, Hermes config
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › MiMo harness guide · prev [Reference mockups](REFERENCE-MOCKUPS.md) · next [Legal provenance](legal/PROVENANCE.md)
+
+<!-- docs-nav:end -->
+
 **Scope.** How to harness Xiaomi MiMo correctly: what the creators document, what we measured, and how Hermes Agent should be configured. Every claim below carries either a numbered doc citation (Sources at the bottom) or a `probe pNN` reference into `scripts/mimo-probe.py` / `scripts/mimo-probe-results.jsonl` (49 recorded calls, 2026-10-29, token-plan Singapore cluster, `mimo-v2.6-pro`, key format `tp-`). Reproduce with `python3 scripts/mimo-probe.py` (stdlib only; needs `XIAOMI_API_KEY`).
 
 Closes #37.
@@ -162,3 +168,13 @@ Sources:
 [13] https://mimo.mi.com/docs/en-US/tokenplan/integration/hermes-agent — MiMo Token Plan Hermes Agent integration
 [14] https://mimo.mi.com/docs/en-US/updates/deprecate — MiMo Model Deprecation
 [15] file:///home/jadenblack/.hermes/kanban/boards/alignsynch/workspaces/t_c1266576/alignsynch/scripts/mimo-probe-results.jsonl — mimo-probe.py measured results (49 calls, 2026-10-29)
+
+## Related
+
+- [ENV-SPEC.md](ENV-SPEC.md) — the tooling contract this model is wired into.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Reference** › MiMo harness guide · prev [Reference mockups](REFERENCE-MOCKUPS.md) · next [Legal provenance](legal/PROVENANCE.md)
+
+<!-- docs-nav:end -->

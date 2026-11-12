@@ -32,7 +32,7 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
       heading: "This report",
       body: "Every number below is derived from the two parties' answers on every Aspect: a Gap is the difference of two scores, and nothing here is a stored value. The instant and the template version it names are the fixture clock and this build's version, never a wall clock.",
       items: [
-        { id: "instance", label: "Instance" },
+        { id: "instance", label: "Relationship" },
         { id: "template", label: "Template" },
         { id: "mode", label: "Mode" },
         { id: "setting", label: "Setting" },
@@ -48,6 +48,7 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "awaiting-counterparty", label: "Awaiting counterparty" },
         { id: "answering", label: "Answering" },
+        { id: "awaiting-payment", label: "Awaiting payment" },
         { id: "complete", label: "Complete" },
         { id: "voided", label: "Voided" },
       ],
@@ -100,9 +101,8 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "regenerate",
       heading: "Reissue the report",
-      body: "Rebuilds the report from the answers as they stand and records why. Regenerating the same complete session twice produces the same bytes — the answers are frozen at completion — and the audit row carries the digest of both, so the log itself shows the two are identical.",
+      body: "Rebuilds the report from the answers as they stand. Regenerating the same complete session twice produces the same bytes — the answers are frozen at completion — and the audit row carries the digest of both, so the log itself shows the two are identical.",
       items: [
-        { id: "reason", label: "Why this reissue" },
         { id: "button", label: "Regenerate" },
         { id: "submitting", label: "Regenerating…" },
         { id: "done", label: "Regenerated. The audit row carries the digest {sha}." },
@@ -143,13 +143,9 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
         {
           id: "template-missing",
           label:
-            "The template this instance copies no longer resolves, so there is no title to report under.",
+            "The template this relationship copies no longer resolves, so there is no title to report under.",
         },
         { id: "no-such-party", label: "That seat is not on this relationship." },
-        {
-          id: "reason-too-short",
-          label: "The reason is too short. At least {min} characters, please.",
-        },
         { id: "role-too-low", label: "Reissuing a report needs a higher role than yours." },
         { id: "signed-out", label: "The sign-in expired while this form was open." },
         { id: "failed", label: "The operation did not commit. Nothing was changed." },

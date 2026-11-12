@@ -3,7 +3,8 @@
 // template-ancestor: components/identity/settings-view.tsx   (variation: two password fields and one outcome band, over the same session)
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy } from "@/content/pages";
@@ -75,7 +76,7 @@ export function PasswordCard({
   };
 
   return (
-    <Card>
+    <FormSurface>
       <CardHeader>
         <CardTitle>{band.heading}</CardTitle>
         <CardDescription>{itemLabel(band, hasPassword ? "body-set" : "body-none")}</CardDescription>
@@ -134,6 +135,6 @@ export function PasswordCard({
             </p>
           ))}
       </CardContent>
-    </Card>
+    </FormSurface>
   );
 }

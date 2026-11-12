@@ -1,5 +1,11 @@
 # Expired-invitation recovery: re-invite (revoke-and-replace), no void
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
+
+<!-- docs-nav:end -->
+
 **Recommendation: one action — "Send a new invitation" (re-invite) — which mints a new token,
 overwrites the invitation row's `token_hash`/`expires_at`/`email`, and thereby kills the old link.
 Available to the initiator whenever the invite is unclaimed (expired or not), with a 24 h cooldown
@@ -247,3 +253,14 @@ _is_ an invitation, and the `sent|unset|failed` outcome vocabulary and the redir
    and green.
 8. `scripts/flow-e2e.mjs` proves end-to-end: create → expire → old link dead → resend → old link
    unknown → new link claims → resend refused.
+
+## Related
+
+- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the invitation half of the flow this recovers.
+- [flow-emails.md](flow-emails.md) — the mail a re-invite sends.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
+
+<!-- docs-nav:end -->

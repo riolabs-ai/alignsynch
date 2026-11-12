@@ -12,8 +12,9 @@
  *   answering               the same sheet, with the other party's answers absent — not
  *                          hidden, absent (`FlowScreen.report` is `null` and the view model
  *                          has no field to carry them)
- *   complete                the existing `AssessmentReportView`, which every Gap in it
- *                          computes through `gapOf()` from the two scores beside it
+ *   complete                the Alignment, Aspect by Aspect (`AlignmentView`, #692): both
+ *                          sheets, both opinions and the difference, drawn from the same
+ *                          `screen.report` every Gap in it computes through `gapOf()`
  *
  * A refusal (`?problem=frozen` and friends) is rendered here too, for the one case that is
  * a redirect; the submit endpoint itself answers 409/403 with `problem-page.tsx`, so an
@@ -48,23 +49,26 @@
  * names, which are the glossary's own vocabulary authored once in `content/assessment.ts`
  * (`MODE_LABELS`) — the same way the report component carries "Aspect" and "Gap".
  */
-import { AssessmentReportView } from "@/components/assessment/assessment-report";
+import { AlignmentView } from "@/components/assessment-flow/alignment-view";
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
 import { InviteLink } from "@/components/assessment-flow/invite-link";
 import { ReinviteForm } from "@/components/assessment-flow/reinvite-form";
 import { StepsPanel } from "@/components/assessment-flow/steps-panel";
+import { SubmissionConfirmation } from "@/components/assessment-flow/submission-confirmation";
+import { Chip } from "@/components/ui/badge";
 import { MODE_LABELS } from "@/content/assessment";
 import type { Step } from "@/content/steps";
 import { formatDate } from "@/content/core";
 import { STAGE_LABELS } from "@/content/stages";
 import type { PageCopy } from "@/content/pages";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { answersPath, reinvitePath, stepsPath } from "@/lib/flow/paths";
+import { answersPath, acceptPath, reinvitePath, stepsPath } from "@/lib/flow/paths";
 import type { InviteDisplayState } from "@/lib/flow/invite-state";
 import type { ResendRefusal } from "@/lib/flow/resend";
 import { RESEND_LIFETIME_CAP } from "@/lib/flow/tokens";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { relationshipStage, stageCopyId } from "@/lib/flow/stage";
+import Link from "next/link";
 
 /** The one glyph an absent figure is drawn as — never `0`, never an empty cell. */
 const ABSENT = "—";
@@ -135,12 +139,19 @@ export function AssessmentInstanceView({
   problem,
   inviteNotice,
   resendRefusal,
+  submitted = false,
   paid = null,
   steps = [],
 }: {
   screen: FlowScreen;
   copy: PageCopy;
   problem?: ProblemCode;
+  /**
+   * Whether this visit is the one a submit created (`?submitted=1`, #t_0aa81144), so the
+   * confirmation band is drawn above the ordinary screen. A state, not a route: the read is the
+   * same `readFlowScreen()` the page already made.
+   */
+  submitted?: boolean;
   /** `sent` / `unset` / `failed` from the creation redirect; absent on a later visit. */
   inviteNotice?: InviteNotice;
   /**
@@ -205,6 +216,26 @@ export function AssessmentInstanceView({
     screen.invite.state !== "claimed" &&
     screen.viewer.role === "initiator";
 
+  /**
+   * #617 — the acceptance entry point.
+   *
+   * `acceptPath()` existed, its page existed, its form posted, and **no surface linked to it**, so
+   * a person who had answered every Aspect had no way to do the one thing that completes a
+   * session. This is that route, drawn from the facts the endpoint itself requires — the viewer is
+   * one of the two parties, their own sheet is complete, their own `party.accepted_at` is null, and
+   * the session is still `answering` — so the link is offered exactly when the click would be
+   * recorded. Nothing here reads the other party's answers: the sentence only names them.
+   */
+  const acceptSection = sectionOf(copy, "accept");
+  const ownSheetComplete =
+    screen.aspects.length > 0 && screen.viewerAnswered >= screen.aspects.length;
+  const otherName =
+    screen.viewer.role === "initiator" ? (screen.counterpartyName ?? "") : screen.initiatorName;
+  const acceptHref =
+    !isCoach && screen.status === "answering" && ownSheetComplete && !screen.viewerAccepted
+      ? acceptPath(screen.instanceRecordId)
+      : null;
+
   const names = screen.waiting.map((role) =>
     role === "initiator" ? screen.initiatorName : (screen.counterpartyName ?? ""),
   );
@@ -223,7 +254,7 @@ export function AssessmentInstanceView({
       ? "voided"
       : stage === "connected" && names.length === 0
         ? "connected-unknown"
-        : stageCopyId(stage, screen.invite?.state ?? null);
+        : stageCopyId(stage, screen.invite?.state ?? null, screen.status);
   const counterpartyName = screen.invite?.counterpartyName ?? screen.counterpartyName ?? "";
   const stageSentence = fillLabel(itemLabel(stageBand, stageId), {
     counterparty: counterpartyName,
@@ -242,12 +273,9 @@ export function AssessmentInstanceView({
               attribute — the stage is said once in words and once as a badge, and neither is a
               progress bar (#274). A voided session (#503) has no rung to name, so the badge is
               the operator's own word and the ladder is not drawn at all. */}
-          <span
-            data-stage-badge={stage ?? "voided"}
-            className="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
-          >
+          <Chip variant="tint" data-stage-badge={stage ?? "voided"}>
             {stage === null ? itemLabel(stageBand, "voided-badge") : STAGE_LABELS[stage]}
-          </span>
+          </Chip>
         </div>
         <p
           data-mode={screen.mode}
@@ -255,12 +283,9 @@ export function AssessmentInstanceView({
         >
           {MODE_LABELS[screen.mode]}
           {isCoach ? (
-            <span
-              data-coach-badge="true"
-              className="ml-2 inline-block rounded-full border border-gray-300 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
-            >
+            <Chip variant="neutral" className="ml-2" data-coach-badge="true">
               {itemLabel(viewerBand, "coach-badge")}
-            </span>
+            </Chip>
           ) : null}
         </p>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{screen.summary}</p>
@@ -279,6 +304,20 @@ export function AssessmentInstanceView({
       >
         {fillLabel(itemLabel(viewerBand, screen.viewer.role), { name: screen.viewer.name })}
       </p>
+
+      {/* #t_0aa81144 — the confirmation a submit lands on. Drawn only for the visit the submit
+          created, only for a party (a coach answered nothing), and only while the report is still
+          closed: once both parties have accepted, the report is the answer. */}
+      {submitted && !isCoach && screen.report === null ? (
+        <div className="mb-6">
+          <SubmissionConfirmation
+            copy={copy}
+            instanceRecordId={screen.instanceRecordId}
+            otherName={otherName}
+            acceptHref={acceptHref}
+          />
+        </div>
+      ) : null}
 
       {/* #533 phase 3 — the lapse, said on both seats. The sentence names the initiator's
           membership because the invited party bought nothing, and a band that said "your
@@ -482,6 +521,39 @@ export function AssessmentInstanceView({
             </p>
           </section>
 
+          {/* #617 — the acceptance step, offered on every visit where the click would be
+              recorded: own sheet complete, own acceptance missing, session still answering. A
+              later visit is the whole reason this band exists beside the submit confirmation —
+              the party who closed the tab, or came back to the session from a bookmark, is here. */}
+          {isCoach || !ownSheetComplete || submitted || screen.status !== "answering" ? null : (
+            <section
+              data-accept-step={acceptHref === null ? "accepted" : "ready"}
+              className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+            >
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {acceptSection.heading}
+              </h2>
+              {acceptHref === null ? (
+                <p data-accept-waiting="" className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                  {fillLabel(itemLabel(acceptSection, "you-accepted"), { other: otherName })}
+                </p>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+                    {fillLabel(sectionBody(acceptSection), { other: otherName })}
+                  </p>
+                  <Link
+                    href={acceptHref}
+                    data-accept-link="true"
+                    className="mt-3 inline-flex rounded-md bg-action px-4 py-2 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+                  >
+                    {itemLabel(acceptSection, "accept-link")}
+                  </Link>
+                </>
+              )}
+            </section>
+          )}
+
           {isCoach ? null : (
             <AnswerForm
               copy={copy}
@@ -498,7 +570,7 @@ export function AssessmentInstanceView({
             <h2 className="font-semibold">{reportBand.heading}</h2>
             <p className="mt-1">{sectionBody(reportBand)}</p>
           </section>
-          <AssessmentReportView report={screen.report} />
+          <AlignmentView screen={screen} copy={copy} />
           {/* #478 — the plan the completion derived, drawn on the screen that owns it. A party
               ticks and rewords; a coach reads. Only in the report state: a Step names the widest Gap
               on its Aspect, so drawing one before both seats have accepted would hand a party the

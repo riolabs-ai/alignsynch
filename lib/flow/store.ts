@@ -83,10 +83,17 @@ import {
   withStepText,
   type Step,
 } from "@/content/steps";
-import { entitlementForAccount } from "@/lib/billing";
+import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
 import { activeInstanceCount, activeRelationshipCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
+import {
+  openPaymentObligation,
+  paymentFactsOf,
+  readPaymentForSession,
+  type PaymentSql,
+} from "@/lib/db/relationship-payment";
+import { paymentArmedOf } from "@/lib/flow/payment";
 import {
   assessmentInstanceFromRows,
   assessmentTemplateFromPayload,
@@ -118,6 +125,7 @@ import {
   type Sql,
 } from "@/lib/relationship/enforcement";
 import { membershipSentence, type Membership } from "@/lib/relationship/membership";
+import { canTransition, isRelationshipStatus } from "@/lib/relationship/status";
 import { relationshipRoleOf } from "@/lib/flow/membership";
 import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/flow/resend";
 import {
@@ -215,6 +223,41 @@ export interface CreateInstanceInput {
    */
   readonly alignmentSetting?: string;
   /**
+   * The card title both parties read (#688), when stage 1 named one.
+   *
+   * Optional, and blank means "the template's own title": a direct post to this endpoint — a
+   * `curl`, `scripts/flow-e2e.mjs`, the pre-#688 one-form create — carries no title, and its
+   * relationship must be created exactly as it always was. When present it becomes the instance
+   * record's `title`, which is what every card and screen prints; the template named the record,
+   * but the two people in it are naming the thing they are in the middle of.
+   */
+  readonly title?: string;
+  /**
+   * The sentence on why they are doing this (#688) — optional, never scored.
+   *
+   * Blank falls back to the generated caption ("<title>, answered by A and B."). The prototype
+   * calls it "shown to both parties, never scored", and that is exactly `record.summary`.
+   */
+  readonly description?: string;
+  /**
+   * Stage 3's list (#689) — the template's Aspects as the person reworded them.
+   *
+   * Optional: a direct post to this endpoint (a `curl`, `scripts/flow-e2e.mjs`) carries no list
+   * and copies the version's Aspects exactly as it always did. When present it is consulted **by
+   * id**: an entry whose id the version does not offer is ignored, and a version Aspect the list
+   * does not mention is copied from the version. That is deliberate — a relationship's copy is
+   * compared against the version it is bound to, id for id and in order
+   * (`lib/db/rows.ts::copyDriftProblems`, `db:verify` V4), so the copy may be *reworded* by the
+   * person who created it but may not gain or lose an Aspect. Adding and removing is a different
+   * decision (it needs a V4 rule that can tell an edit from drift) and is not this field's job.
+   */
+  readonly aspects?: readonly {
+    readonly id: string;
+    readonly prompt: string;
+    readonly leftValue: string;
+    readonly rightValue: string;
+  }[];
+  /**
    * The signed-in account creating the instance, when the request has one (#213 follow-up).
    *
    * Resolved by the route from the request's **session cookies** (`currentUser()`), never from
@@ -242,6 +285,27 @@ export interface CreateInstanceInput {
    * is a link on screen.
    */
   readonly viewerEmail?: string | null;
+  /**
+   * Create the relationship as a **draft** and send nothing (#825).
+   *
+   * v9's stage 4 writes the row the moment the account exists, and stage 5 decides whether the
+   * invitation goes out. So this flag is the difference between the two decisions the flow used to
+   * make in one transaction:
+   *
+   *   false (default)  status `published`, `published_at` = now — the invitation is going out with
+   *                    this create, which is what every caller before #825 meant and what a direct
+   *                    `curl` at the endpoint still gets.
+   *   true             status `draft`, `published_at` NULL — the relationship exists, the session
+   *                    and its invitation row exist (stage 5 needs a token to send), and **nothing
+   *                    has been sent**. `published_at` stays NULL because it is the instant the
+   *                    invitation went out (0030), and stage 5's send is what fills it.
+   *
+   * The session and the invitation are written in both cases on purpose. This is not the member
+   * editor's draft (`lib/member/relationships.ts::createRelationship`, which is a configuration
+   * with no session because it is edited from the dashboard); it is a *flow* draft, already
+   * configured by stages 1–3, whose only open question is the send.
+   */
+  readonly draft?: boolean;
   /** A clock, injectable so a test can pin `expires_at`. */
   readonly now?: Date;
 }
@@ -466,19 +530,29 @@ export async function createInstanceFromTemplate(
 
     const slug = `${found.slug}-${instanceRecordId.slice(0, 8)}`;
 
+    /**
+     * The card both parties read (#688).
+     *
+     * Stage 1 names the relationship — the template's title is only the starting point — and its
+     * description, when one was typed, is the card's own sentence instead of the generated
+     * caption. A direct post carries neither, so both fall back to exactly what this insert wrote
+     * before the flow was split into stages.
+     */
+    const namedTitle = input.title?.trim() ?? "";
+    const instanceTitle = namedTitle === "" ? offered.title : namedTitle;
+    const namedDescription = input.description?.trim() ?? "";
+    const instanceSummary =
+      namedDescription === ""
+        ? `${instanceTitle}, answered by ${initiatorName} and ${counterpartyName}.`
+        : namedDescription;
+
     // The instance record. `draft` on purpose: a template is the published thing, an
     // instance is one relationship's private copy, and `zPublishStatus` has no value that
     // means "live but not a template" — draft is the honest one, and nothing reads it.
     await client.query(
       `INSERT INTO record (id, slug, record_type, status, date, title, summary)
        VALUES ($1, $2, 'assessment', 'draft', $3, $4, $5)`,
-      [
-        instanceRecordId,
-        slug,
-        now.toISOString(),
-        offered.title,
-        `${offered.title}, answered by ${initiatorName} and ${counterpartyName}.`,
-      ],
+      [instanceRecordId, slug, now.toISOString(), instanceTitle, instanceSummary],
     );
 
     // THE COPY. Rows owned by the instance, taken from the **version** at this instant and never
@@ -490,6 +564,19 @@ export async function createInstanceFromTemplate(
     // to. No `response_option` copy: a version is `zAssessment`, whose every item's scale is the
     // fixed 1..5 band, so there is no option row for it to carry.
     const copyIds = offered.items.map((item) => item.id);
+    // #689 — what the person reworded at stage 3, looked up by id. The ids and the order are the
+    // version's (`copyDriftProblems` compares them); the words are theirs. A list entry the version
+    // does not offer is ignored rather than inserted, and a blank value falls back to the version's
+    // — the same "never invent a row, never delete one" rule the draft's own reduction uses.
+    const edited = new Map((input.aspects ?? []).map((aspect) => [aspect.id, aspect]));
+    const copies = offered.items.map((item) => {
+      const edit = edited.get(item.id);
+      return {
+        prompt: edit?.prompt.trim() || item.prompt,
+        leftValue: edit?.leftValue.trim() || item.leftValue,
+        rightValue: edit?.rightValue.trim() || item.rightValue,
+      };
+    });
     await client.query(
       `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
        SELECT $1, t.item_id, t.position, t.prompt, 'score', t.left_value, t.right_value
@@ -498,10 +585,10 @@ export async function createInstanceFromTemplate(
       [
         instanceRecordId,
         copyIds,
-        offered.items.map((_, position) => position),
-        offered.items.map((item) => item.prompt),
-        offered.items.map((item) => item.leftValue),
-        offered.items.map((item) => item.rightValue),
+        copies.map((_, position) => position),
+        copies.map((copy) => copy.prompt),
+        copies.map((copy) => copy.leftValue),
+        copies.map((copy) => copy.rightValue),
       ],
     );
 
@@ -511,13 +598,43 @@ export async function createInstanceFromTemplate(
     // claim (`claimInvite`) binds them, and `plan` is NULL — the tier is the billing module's
     // fact, not this store's. `purchased_at` is the acquisition instant, which in this create
     // path is the same instant the row is written.
+    //
+    // **`published`, not the column's `draft` default (#739).** This transaction is the Invite
+    // stage: it mints the invitation and opens the session in the same commit, so a row still
+    // saying `draft` described a relationship that does not exist — the invitation had gone out
+    // and the pair could answer it. It also made the fee unreachable: `draft → complete` is not a
+    // transition, so the payer's completion was refused `not-ready-to-complete` on every
+    // relationship created through the flow. `published → active` is the claim's own write
+    // (`claimInvite`), which is where the pair becomes live.
+    //
+    // **And `published_at` with it.** 0030's `relationship_completed_after_published` refuses a
+    // completion on a row whose `published_at` is NULL, so writing the status alone moved the
+    // failure one step later: the payer's completion reached Postgres and died on the check, a 500
+    // on the only screen that can take the fee. Same instant as `created_at` — the publish and the
+    // create are this one transaction, and 0030's comparisons are `>=` for exactly that case.
+    //
+    // **#825 splits that one decision in two.** v9's stage 4 writes the relationship at `draft`
+    // (`input.draft`) and stage 5's send is what moves it to `published` — so the status and
+    // `published_at` are written from the same flag and can never disagree: a draft has no publish
+    // instant because nothing has been published, and the send writes both. The session and the
+    // invitation row are written either way, because stage 5 needs a token to send; what a draft
+    // does not have is an email that went anywhere.
+    const relationshipStatus = input.draft === true ? "draft" : "published";
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
          (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
-          purchased_at, plan, created_at)
-       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5)`,
-      [relationshipId, found.id, version.id, initiatorUserId, now.toISOString()],
+          purchased_at, plan, created_at, status, published_at)
+       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5, $6, $7)`,
+      [
+        relationshipId,
+        found.id,
+        version.id,
+        initiatorUserId,
+        now.toISOString(),
+        relationshipStatus,
+        input.draft === true ? null : now.toISOString(),
+      ],
     );
 
     await client.query(
@@ -548,6 +665,23 @@ export async function createInstanceFromTemplate(
          VALUES ($1, $2, 'initiator', $3)`,
         [relationshipId, initiatorUserId, now.toISOString()],
       );
+
+      // #739 — **the obligation opens with the relationship.** `relationship_payment` is the row
+      // every payment fact is read from: the captured method, the fee's attempts, the unpaid
+      // window. `createRelationship()` has always written it (`openPaymentObligation`, "at
+      // relationship creation" — 0036); this create path minted the invitation and the session and
+      // then left the fee with nothing to record against, so a capture wrote no row
+      // (`recordMethodCaptured` is an UPDATE) and every completion answered
+      // `payment-method-required` for ever — and, worse, the Gap read as free because
+      // `paymentArmedOf(null)` is "not measured" rather than "unpaid".
+      //
+      // Only for a creator with an account: the payer is an account, and a signed-out create has
+      // none — the same NULL the party row above stores.
+      await openPaymentObligation(sqlOf(client), {
+        relationshipId,
+        payerUserId: initiatorUserId,
+        provider: billingProvider(),
+      });
     }
 
     await client.query(
@@ -1004,6 +1138,151 @@ export async function resendInvite(input: ResendInput): Promise<ResendResult> {
 }
 
 /**
+ * Stage 5's one write: **send the invitation** for a relationship stage 4 wrote as a draft (#825).
+ *
+ * The difference between this and `resendInvite()` is the status, and that is the whole reason it
+ * exists. A relationship created by stage 1–4 is `draft` with `published_at` NULL — nothing has gone
+ * out. Sending is what makes it `published`, and 0030's own vocabulary calls that edge the
+ * initiator's (`draft → published`: "publish straight from the editor: the invite goes out and the
+ * trial or charge starts"), so it is checked through `canTransition()` rather than written as a
+ * string. `pending → published` is on the same table, so a relationship a person saved from the
+ * dashboard also sends from here.
+ *
+ * **Two statements, in this order, and the order is deliberate.** The token is reissued first
+ * (`resendInvite`, which owns the one-token-per-instance invariant and the cooldown), and the
+ * status is flipped second behind a `status IN (…)` guard that answers `already-published` when it
+ * matches nothing. The other order would leave a relationship claiming to be published with a token
+ * nobody had sent; this order at worst rotates a token for a draft, which nobody holds.
+ *
+ * A relationship already `published` (or beyond) is refused rather than sent again: a second send
+ * of the same invitation is `resendInvite`'s job, and it has the cooldown and the refusal
+ * vocabulary this path deliberately does not duplicate.
+ */
+export type SendRefusal = "not-initiator" | "no-invitation" | "already-published";
+
+export type SendResult =
+  | {
+      readonly ok: true;
+      readonly instanceRecordId: string;
+      readonly inviteToken: string;
+      readonly email: string;
+      readonly initiatorName: string;
+      readonly counterpartyName: string;
+      readonly templateTitle: string;
+      readonly expiresAt: Date;
+    }
+  | { readonly ok: false; readonly code: SendRefusal; readonly reason: string };
+
+export async function sendDraftInvitation(input: {
+  readonly instanceRecordId: string;
+  /** Every `flow_party_*` token this browser holds — the creator's own proof of the seat. */
+  readonly viewerTokens?: readonly string[];
+  readonly viewerUserId?: string | null;
+  readonly now?: Date;
+}): Promise<SendResult> {
+  const now = input.now ?? new Date();
+  const client = await getPool().connect();
+  let status: string | undefined;
+  let relationshipId: string | undefined;
+  try {
+    const found = await client.query<{ relationship_id: string | null; status: string | null }>(
+      `SELECT ai.relationship_id, r.status
+         FROM session ai
+         LEFT JOIN relationship r ON r.id = ai.relationship_id
+        WHERE ai.record_id = $1`,
+      [input.instanceRecordId],
+    );
+    relationshipId = found.rows[0]?.relationship_id ?? undefined;
+    status = found.rows[0]?.status ?? undefined;
+  } finally {
+    client.release();
+  }
+
+  // Who is asking, by the same two readings everything else uses: this browser's party cookies,
+  // then the signed-in account. A role out of Postgres, never a field in the post.
+  const reader = await getPool().connect();
+  let viewerRole: PartyRole | undefined;
+  try {
+    viewerRole =
+      (await partyRoleForTokens(reader, input.instanceRecordId, input.viewerTokens ?? [])) ??
+      (await partyRoleForUser(
+        reader,
+        input.instanceRecordId,
+        normalizedUserId(input.viewerUserId),
+      ));
+  } finally {
+    reader.release();
+  }
+
+  if (viewerRole !== "initiator") {
+    return {
+      ok: false,
+      code: "not-initiator",
+      reason:
+        viewerRole === undefined
+          ? "this browser is not a party to that instance, so it cannot send its invitation"
+          : `this browser answers as the ${viewerRole}; only the Initiator can send the invitation`,
+    };
+  }
+  if (
+    relationshipId === undefined ||
+    status === undefined ||
+    !isRelationshipStatus(status) ||
+    !canTransition(status, "published", "initiator")
+  ) {
+    return {
+      ok: false,
+      code: "already-published",
+      reason: `relationship "${relationshipId ?? "none"}" is ${status ?? "unreadable"}: its invitation is not a draft waiting to go out`,
+    };
+  }
+
+  // The token first — see the docstring. It is the same reissue the recovery path uses, so a draft
+  // sent from here answers `no-invitation` for exactly the rows that path would.
+  const reissued = await resendInvite({
+    instanceRecordId: input.instanceRecordId,
+    email: null,
+    viewerTokens: input.viewerTokens,
+    viewerUserId: input.viewerUserId,
+    now,
+  });
+  if (!reissued.ok) {
+    return {
+      ok: false,
+      code: reissued.code === "not-initiator" ? "not-initiator" : "no-invitation",
+      reason: `the invitation could not be reissued: ${reissued.reason}`,
+    };
+  }
+
+  // The status, behind the guard: a concurrent send that got here first matches nothing and is
+  // reported as what it is.
+  const flipped = await getPool().query(
+    `UPDATE relationship
+        SET status = 'published', published_at = COALESCE(published_at, $2)
+      WHERE id = $1 AND status IN ('draft', 'pending')`,
+    [relationshipId, now.toISOString()],
+  );
+  if ((flipped.rowCount ?? 0) === 0) {
+    return {
+      ok: false,
+      code: "already-published",
+      reason: `relationship "${relationshipId}" moved out of draft before this send wrote it`,
+    };
+  }
+
+  return {
+    ok: true,
+    instanceRecordId: input.instanceRecordId,
+    inviteToken: reissued.inviteToken,
+    email: reissued.email,
+    initiatorName: reissued.initiatorName,
+    counterpartyName: reissued.counterpartyName,
+    templateTitle: reissued.templateTitle,
+    expiresAt: reissued.expiresAt,
+  };
+}
+
+/**
  * The refusal's own sentence, for the server log and for a caller that is not the screen.
  *
  * The screen does **not** print this: it maps the code to a `data/pages/assessment-instance.ts`
@@ -1190,6 +1469,21 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
       };
     }
 
+    /*
+     * #739 — **answering is not gated on a payment method. The Gap is.**
+     *
+     * This block used to refuse the Initiator's sheet with `payment-method-required` until a card
+     * was captured ("the fee is taken when the assessment is published"). That is the pre-#619
+     * model, and it contradicted the approved posture on two counts: the card is asked for at the
+     * invite as a *soft* prompt, and the hard gate is the fee at completion — the Gap (#619,
+     * `completionRefusalOf()`). Worse, it made the fee unreachable in practice: the completion
+     * needs **both sheets sealed**, and the party who owes the fee could not seal theirs until they
+     * had paid for a fee they could not be charged yet.
+     *
+     * The rule lives at the completion now, where the money is: `completeRelationship()` refuses
+     * `payment-method-required` (with the capture's url) until a method is on file. Nothing here
+     * needed replacing — the gate was in the wrong place, not missing.
+     */
     const aspects = await client.query<{ item_id: string }>(
       "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
       [input.instanceRecordId],
@@ -1916,8 +2210,18 @@ export interface InstanceBundle {
   readonly invite: {
     readonly email: string;
     readonly counterpartyName: string;
+    /**
+     * `created_at` — when the invitation was minted (#691).
+     *
+     * Read for the Sent screen's timeline: "sent on <date>" is the row's own instant, not the
+     * instant the person happens to be looking at the screen. A re-invite replaces the token and
+     * moves `expires_at`, but not this, so the moment the invitation first went out stays true.
+     */
+    readonly sentAt: Date;
     /** `claimed_at IS NOT NULL` — the token was spent. */
     readonly claimed: boolean;
+    /** `claimed_at` — when the seat was filled, or `null` while it is not (#691, the timeline). */
+    readonly claimedAt: Date | null;
     /**
      * `expires_at`, straight off the row (#266).
      *
@@ -1989,13 +2293,14 @@ export async function readInstanceBundle(
   const [invite] = await query<{
     email: string;
     counterparty_name: string;
+    created_at: Date;
     claimed_at: Date | null;
     expires_at: Date;
     resent_at: Date | null;
     resent_count: number;
     revoked_at: Date | null;
   }>(
-    `SELECT email, counterparty_name, claimed_at, expires_at, resent_at, resent_count, revoked_at
+    `SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count, revoked_at
        FROM session_invite WHERE session_record_id = $1`,
     [instanceRecordId],
   );
@@ -2027,7 +2332,9 @@ export async function readInstanceBundle(
         : {
             email: invite.email,
             counterpartyName: invite.counterparty_name,
+            sentAt: invite.created_at,
             claimed: invite.claimed_at !== null,
+            claimedAt: invite.claimed_at,
             expiresAt: invite.expires_at,
             resentAt: invite.resent_at,
             resentCount: invite.resent_count,
@@ -2163,7 +2470,7 @@ export interface TemplateSummary {
  * built-ins and nothing else, because `author_user_id = NULL` matches no row.
  *
  * This is the catalogue's half of the author rule (#console 5/5). Without it a template one
- * person wrote would be listed, and startable, by every other account — the `/assessment/templates`
+ * person wrote would be listed, and startable, by every other account — the `/templates/relationship`
  * screen would filter correctly and the leak would simply be one route over.
  */
 export async function listPublishedTemplates(
@@ -2285,7 +2592,12 @@ export async function readFlowScreen(input: {
     answerCounts: bundle.answerCounts,
     voided: bundle.voided,
   };
-  const status = instanceStatusOf(progressOf(answersOnly));
+  // #619 — the obligation behind this session, read once: `undefined` when the relationship has no
+  // `relationship_payment` row (created before this card), which `instanceStatusOf()` reads as
+  // "not measured" rather than as unpaid.
+  const payment = await readPaymentForSession(input.instanceRecordId);
+  const paymentArmed = payment === undefined ? undefined : paymentArmedOf(paymentFactsOf(payment));
+  const status = instanceStatusOf({ ...progressOf(answersOnly), paymentArmed });
   const roles = visibleRoles(viewerRole, status);
   const opinions = await query<OpinionRow>(
     `SELECT session_record_id, role, item_id, feel, wish, think, guess
@@ -2322,6 +2634,11 @@ export async function readFlowScreen(input: {
       : {
           email: bundle.invite.email,
           counterpartyName: bundle.invite.counterpartyName,
+          // #691 — the two instants the Sent screen's timeline is drawn from, as ISO strings so
+          // the view formats them with `formatDate()` and never re-derives a date.
+          sentAt: bundle.invite.sentAt.toISOString(),
+          claimedAt:
+            bundle.invite.claimedAt === null ? null : bundle.invite.claimedAt.toISOString(),
           expiresAt: bundle.invite.expiresAt.toISOString(),
           state: inviteStateOf(bundle.invite, now),
           // #275 — the re-invite history, drawn as a sentence ("2 of 3 sent") rather than acted
@@ -2335,6 +2652,7 @@ export async function readFlowScreen(input: {
     template,
     viewerRole,
     membership: membership?.membership ?? null,
+    paymentArmed,
     invite:
       invite === null
         ? null
@@ -2403,6 +2721,16 @@ export type InviteState =
 
 export interface InvitePreview {
   readonly state: InviteState;
+  /**
+   * The session this invitation names, or `null` for a token that is not even the right shape
+   * (#t_0aa81144).
+   *
+   * The onboarding wizard needs it for one thing only: a visitor who **already holds this seat**
+   * (the Counterparty who claimed it in this browser) should land on the session rather than being
+   * shown "this invitation was used already". It is an id, not a route — `instancePath()` owns the
+   * address — and it reveals nothing a holder of the token did not already have.
+   */
+  readonly instanceRecordId: string | null;
   readonly initiatorName: string | null;
   readonly counterpartyName: string | null;
   readonly templateTitle: string | null;
@@ -2447,6 +2775,7 @@ export async function previewInvite(
   const now = options.now ?? new Date();
   const empty = {
     state: "unknown" as const,
+    instanceRecordId: null,
     initiatorName: null,
     counterpartyName: null,
     templateTitle: null,
@@ -2503,6 +2832,7 @@ export async function previewInvite(
     (await roleForUser(row.session_record_id, options.viewerUserId));
   return {
     state,
+    instanceRecordId: row.session_record_id,
     initiatorName: row.initiator_name,
     counterpartyName: row.counterparty_name,
     templateTitle: row.title,
@@ -2804,3 +3134,20 @@ const poolSql: Sql = {
     return { rows: result.rows as R[] };
   },
 };
+
+/**
+ * The client a create is already holding, in the shape `lib/db/relationship-payment.ts` writes
+ * through (#739).
+ *
+ * The obligation has to open **inside** the create's transaction: a relationship written without
+ * one is a relationship whose fee can never be captured, and committing the row first would leave
+ * that gap visible for as long as the second statement took.
+ */
+function sqlOf(client: PoolClient): PaymentSql {
+  return {
+    query: async <R = Record<string, unknown>>(text: string, values?: readonly unknown[]) => {
+      const result = await client.query(text, values as unknown[] | undefined);
+      return { rows: result.rows as R[] };
+    },
+  };
+}

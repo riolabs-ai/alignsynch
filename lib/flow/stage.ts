@@ -58,6 +58,12 @@ export type FlowStage = (typeof FLOW_STAGES)[number];
 const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
   awaiting_counterparty: "invited",
   answering: "connected",
+  /**
+   * #619 — both sheets are sealed and the fee is not settled. The ladder position is `sharing`
+   * (both parties have done their part), and the **sentence** is what differs: `sharing` says the
+   * report is open, which is exactly what `awaiting_payment` is not.
+   */
+  awaiting_payment: "sharing",
   complete: "sharing",
   voided: null,
 };
@@ -65,6 +71,30 @@ const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
 /** The stage this instance's screen is at — `null` when the session was voided. */
 export function relationshipStage(status: InstanceStatus): FlowStage | null {
   return STAGE_OF_STATUS[status];
+}
+
+/**
+ * Is the sixth stage — `Align` — live on a relationship in this status? (#735)
+ *
+ * `docs/specs/flow-stages.md` → *Align is the conditional stage*: the cell exists once **one or
+ * more assessments are shared** on the relationship, in progress or completed, and is drawn
+ * unavailable before that. In this model a relationship *is* the assessment, so "shared" is the
+ * moment the Counterparty has a seat:
+ *
+ *   awaiting_counterparty  false — nothing is shared; the invitation has not been claimed, so
+ *                          there is no second sheet to align against
+ *   answering              true  — in progress: both seats exist and the sheets are being filled
+ *   awaiting_payment       true  — both sheets are sealed and the fee is what is outstanding
+ *   complete               true  — completed: `AlignmentView` is what the cell opens
+ *   voided                 false — an operator ended the session; it is off the ladder
+ *
+ * **The cell opening is not the report opening.** It points at the instance screen, which renders
+ * the sheet while the blind rule holds and the Alignment once both seats have accepted
+ * (`visibleRoles()`). Deciding *that* here would be a second copy of the blind rule, and the whole
+ * point of `lib/flow/screen.ts` is that there is one.
+ */
+export function alignAvailableOf(status: InstanceStatus): boolean {
+  return status === "answering" || status === "awaiting_payment" || status === "complete";
 }
 
 /**
@@ -82,9 +112,19 @@ export type StageCopyId =
   | "invited-expired"
   | "connected"
   | "connected-unknown"
-  | "sharing";
+  | "sharing"
+  /**
+   * #619 — addressed from the **status**, not from the stage: `sharing` is both "the Gap is open"
+   * and "the sheets are sealed and the fee is not settled", and only the status tells them apart.
+   */
+  | "awaiting-payment";
 
-export function stageCopyId(stage: FlowStage, invite: InviteDisplayState | null): StageCopyId {
+export function stageCopyId(
+  stage: FlowStage,
+  invite: InviteDisplayState | null,
+  status?: InstanceStatus,
+): StageCopyId {
+  if (status === "awaiting_payment") return "awaiting-payment";
   if (stage === "invited" && invite === "expired") return "invited-expired";
   return stage;
 }

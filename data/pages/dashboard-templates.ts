@@ -23,9 +23,9 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
-  heading: "My templates",
+  heading: "Templates",
   subtitle:
-    "The templates you wrote, and the two ways to start one. A template here is yours alone: it is never listed publicly, and a relationship you start from it copies its Aspects so you can tune them before anyone is invited.",
+    "One destination, two shelves: the Relationship Templates you can start a relationship from, and the templates you own.",
   items: [
     { id: "aspects", label: "{count} Aspects" },
     { id: "relationships", label: "{count} relationships" },
@@ -34,6 +34,63 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     { id: "draft", label: "Draft" },
   ],
   sections: [
+    /**
+     * #620 — the two tabs. `catalogue` is the bare path and `mine` is `?tab=mine`, so a link to
+     * either is a URL a `curl` can ask for; the words are the owner's ("Relationship Templates",
+     * "My Templates"), verbatim.
+     */
+    {
+      id: "tabs",
+      items: [
+        { id: "catalogue", label: "Relationship Templates" },
+        { id: "mine", label: "My Templates" },
+      ],
+    },
+    /**
+     * The card's own words, shared by both tabs — one shelf, two reads. `details` and `create`
+     * are the owner's button labels, and the catalogue never says "instance": a relationship is
+     * what a person starts, and a session is what publishing one opens.
+     */
+    {
+      id: "card",
+      items: [
+        { id: "template", label: "Template" },
+        { id: "details", label: "View Details" },
+        { id: "create", label: "Create Relationship" },
+        { id: "owned", label: "Yours" },
+        { id: "aspects", label: "{count} Aspects" },
+        /**
+         * The card's one price (#796) — the *plan's*, never a per-relationship charge. It is the
+         * same chip `/assessment/templates` prints (`{plan} · {price}/mo`, Basic's monthly figure
+         * from `data/billing-plans.ts`), and the name is in the line because a bare `$8.95/mo`
+         * beside nine cards reads as nine subscriptions. `{price}` is `formatCurrency`.
+         */
+        { id: "price", label: "{plan} · {price}/mo" },
+        { id: "unused", label: "Not used yet" },
+        { id: "relationship-one", label: "used in 1 relationship" },
+        { id: "relationships", label: "used in {count} relationships" },
+      ],
+    },
+    {
+      id: "catalogue",
+      heading: "Relationship Templates",
+      body: "The templates this account can start a relationship from. Each card carries the price of the plan that includes it — one monthly figure, never a per-relationship charge. View Details shows the Aspects, and Create Relationship copies them into a relationship you configure.",
+    },
+    {
+      id: "catalogue-empty",
+      heading: "The catalogue is empty",
+      body: "No template is published yet, so there is nothing to start a relationship from. An operator publishes the catalogue's templates.",
+    },
+    {
+      id: "mine",
+      heading: "My Templates",
+      body: "The templates you own. Opening one edits its words and its Aspects; starting a relationship from it copies those Aspects into that relationship, so editing here never changes one you have already configured. Starting a relationship from the catalogue does not put that template here — the relationship uses the template, it does not make one.",
+    },
+    {
+      id: "mine-empty",
+      heading: "No templates yet",
+      body: "Start one below — blank, or cloned from the catalogue. Templates you started a relationship from are not listed here: a relationship uses a template, it does not make one yours.",
+    },
     {
       id: "list",
       heading: "Your templates",
@@ -42,14 +99,13 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "new",
       heading: "Start blank",
-      body: "A title, a summary and the first Aspect. A template needs at least one Aspect — it is what both people answer — so this is the one field the model will not let you leave empty. The save is written with your reason and lands in the audit log.",
+      body: "A title, a summary and the first Aspect. A template needs at least one Aspect — it is what both people answer — so this is the one field the model will not let you leave empty. The save lands in the audit log in the same transaction, with a sentence written for you.",
       items: [
         { id: "title", label: "Title" },
         { id: "summary", label: "Summary" },
         { id: "prompt", label: "First Aspect" },
         { id: "left", label: "Left Value (1)" },
         { id: "right", label: "Right Value (5)" },
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Create the template" },
         { id: "submitting", label: "Creating…" },
         { id: "created", label: "{title} is ready to open." },
@@ -62,7 +118,6 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
       body: "The public templates are curated by the operators of this site. Cloning one copies its words and its Aspects into a template you own; the copy is private to you and the original does not change.",
       items: [
         { id: "choose", label: "Choose a template" },
-        { id: "reason", label: "Reason" },
         { id: "submit", label: "Clone it" },
         { id: "cloning", label: "Cloning…" },
         { id: "cloned", label: "{title} is now yours." },
@@ -84,7 +139,6 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "not-editable", label: "That template is archived — it cannot be edited." },
         { id: "not-publishable", label: "Your role may not start a relationship." },
         { id: "trial-already-running", label: "A trial is already running on this account." },
-        { id: "reason-too-short", label: "A reason of at least eight characters is required." },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The save did not go through." },
       ],

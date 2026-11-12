@@ -1,7 +1,9 @@
 // template-ancestor: components/ui/card.tsx   (variation: the account support page — a contact-form card beside three bands of the same shape, each a heading, a paragraph and its rows)
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { itemBody, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
@@ -34,7 +36,7 @@ export function AccountSupportPage({ copy }: AccountSupportPageProps) {
   const whereElse = sectionOf(copy, "where-else");
 
   return (
-    <div className="container mx-auto max-w-6xl py-8">
+    <StageColumn>
       <header className="max-w-3xl">
         <h1 className="text-3xl font-bold tracking-tight">{copy.heading}</h1>
         {copy.subtitle !== undefined && (
@@ -63,7 +65,7 @@ export function AccountSupportPage({ copy }: AccountSupportPageProps) {
             */}
             <div className="mt-4 flex flex-col gap-2">
               <Button asChild variant="outline" size="sm">
-                <Link href="/help">{itemLabel(whereElse, "help")}</Link>
+                <LeavingLink href="/help" label={itemLabel(whereElse, "help")} />
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link href="/settings">{itemLabel(whereElse, "settings")}</Link>
@@ -72,7 +74,7 @@ export function AccountSupportPage({ copy }: AccountSupportPageProps) {
           </InfoCard>
         </div>
       </div>
-    </div>
+    </StageColumn>
   );
 }
 

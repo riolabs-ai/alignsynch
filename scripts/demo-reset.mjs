@@ -31,6 +31,16 @@
  *      through the API, so for a demo cut before the base existed that parent is a historical
  *      accident, and the source is what decides where the rows come from.
  *
+ *      **A branch with children needs `preserve_under_name`, and that is a defect this script had.**
+ *      The API refuses a restore of a branch that has children unless the body says where to
+ *      preserve its state (`422 — Branch has children, preserve_under_name is required`), which is
+ *      what the nightly run answered until `demo-restore-plan.mjs` supplied it. The parameter
+ *      creates a preserved branch holding this branch's pre-reset state and moves every child under
+ *      it, so the branch this run restores comes out with no children and the next run sends the
+ *      plain body. The preserved branch is a real branch — one against the project's limit and the
+ *      storage its rows occupy, no compute — and the reset never deletes it: it is the recovery
+ *      point the parameter exists to create.
+ *
  *   3. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
  *      branch's* connection string and *this branch's* auth host. The seed reads
  *      `data/bundles/demo-dataset.alignsynch.json` as the bundle it is (asserting it is still
@@ -101,6 +111,7 @@ import { register } from "node:module";
 import { Client } from "pg";
 import { repoRoot } from "./load-env.mjs";
 import { sourceRefusal } from "./demo-source-guard.mjs";
+import { restoreRequest } from "./demo-restore-plan.mjs";
 
 const API = (process.env.NEON_API_BASE ?? "https://console.neon.tech/api/v2").replace(/\/+$/, "");
 const BUNDLE = "data/bundles/demo-dataset.alignsynch.json";
@@ -284,7 +295,7 @@ async function resolveBranch(projectId, name) {
   }
 
   const defaultBranch = branches.find((candidate) => candidate.default === true) ?? null;
-  const siblings = branches.filter((candidate) => candidate.parent_id === branch.id);
+  const children = branches.filter((candidate) => candidate.parent_id === branch.id);
   const endpoints = await neon("GET", `/projects/${projectId}/branches/${branch.id}/endpoints`);
   const rw =
     (endpoints?.endpoints ?? []).find((endpoint) => endpoint.type === "read_write") ?? null;
@@ -301,7 +312,13 @@ async function resolveBranch(projectId, name) {
     parentName: branches.find((candidate) => candidate.id === branch.parent_id)?.name ?? null,
     isDefault: branch.default === true,
     protected: branch.protected === true,
-    childCount: siblings.length,
+    childCount: children.length,
+    // Named, not counted: when the branch has children the restore has to preserve its state under
+    // a name (see `demo-restore-plan.mjs`), and the run log should say which branches move.
+    children: children.map(({ id, name: childName }) => ({ id, name: childName })),
+    // Every branch name in the project — the preserved branch is a new branch, so the name picked
+    // for it must not already be taken.
+    allNames: branches.map((candidate) => candidate.name),
     endpointId: rw.id,
     endpointHost: rw.host,
     defaultBranchId: defaultBranch?.id ?? null,
@@ -530,15 +547,24 @@ function authBaseUrlFor(endpointHost, database) {
  * in the project, which is what lets a demo whose parent cannot be changed restore from the
  * schema-only base. The API answers with operations; the reset is not done until the last one
  * reports `finished`, which is why this waits instead of returning on a 200.
+ *
+ * The body is not built here: `restoreRequest()` in `demo-restore-plan.mjs` decides whether the
+ * branch's children force a `preserve_under_name` (the API answers `422 — Branch has children,
+ * preserve_under_name is required` without one) and which name to use, and
+ * `tests/demo-restore-plan.test.ts` proves both bodies without a key. The children move under the
+ * preserved branch, so the branch this restores comes out with none — that is checked after the
+ * reset in `main()`, not assumed here.
  */
-async function restoreFromSource(projectId, branch, source) {
-  const started = await neon("POST", `/projects/${projectId}/branches/${branch.id}/restore`, {
-    source_branch_id: source.id,
-  });
+async function restoreFromSource(projectId, branch, plan) {
+  const started = await neon(
+    "POST",
+    `/projects/${projectId}/branches/${branch.id}/restore`,
+    plan.body,
+  );
 
   const operations = started?.operations ?? [];
   if (operations.length === 0) {
-    return { operations: 0, waitedMs: 0 };
+    return { operations: 0, waitedMs: 0, preservedUnder: plan.preservedUnder };
   }
 
   const deadline = Date.now() + OPERATION_TIMEOUT_MS;
@@ -569,7 +595,30 @@ async function restoreFromSource(projectId, branch, source) {
   }
 
   if (lastError !== null) throw new Error(`the reset failed: ${lastError}`);
-  return { operations: operations.length, waitedMs: Date.now() - t0 };
+  return {
+    operations: operations.length,
+    waitedMs: Date.now() - t0,
+    preservedUnder: plan.preservedUnder,
+  };
+}
+
+/**
+ * Says what the restore will do with the branch's children before it is sent, and — when one is
+ * created — what the preserved branch is and what it costs. A restore that quietly re-parents
+ * somebody's preview branch is a surprise; the run log is the only place that can say it first.
+ */
+function printRestorePlan(plan, branchName) {
+  if (plan.preservedUnder === null) {
+    say("  children  none — the body carries no preserve_under_name, so nothing is preserved");
+    return;
+  }
+  say(
+    `  children  ${plan.children.length} (${plan.children.map((child) => child.name).join(", ")}) — moved under the preserved branch`,
+  );
+  say(`  preserved ${plan.preservedUnder}`);
+  say(
+    `            the state ${branchName} holds right now, kept as its own branch: one branch against the project's limit and the storage its rows occupy, no compute, and this script never deletes it`,
+  );
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -980,6 +1029,10 @@ async function main() {
   );
 
   if (options.dryRun) {
+    if (!options.skipReset) {
+      step("the restore this run would send");
+      printRestorePlan(restoreRequest(branch, source, new Date()), branch.name);
+    }
     const before = await counts(connectionStrings.direct);
     printCounts("counts now (--dry-run: nothing will change)", before);
     say("\n✓ demo:reset — dry run, nothing was changed");
@@ -1001,9 +1054,14 @@ async function main() {
     }
 
     step(`reset ${branch.name} from ${source.name} (one restore, not a delete)`);
-    const reset = await restoreFromSource(project.id, branch, source);
+    // The body comes from `restoreRequest()`: with children the API refuses a restore that does
+    // not say where to preserve them (`422 — Branch has children, preserve_under_name is
+    // required`), so the plan is decided and printed before the call, not discovered by it.
+    const plan = restoreRequest(branch, source, new Date());
+    printRestorePlan(plan, branch.name);
+    const reset = await restoreFromSource(project.id, branch, plan);
     say(
-      `  reset ${reset.operations === 0 ? "accepted with no operations" : `finished after ${(reset.waitedMs / 1000).toFixed(1)}s (${reset.operations} operation(s))`}`,
+      `  reset ${reset.operations === 0 ? "accepted with no operations" : `finished after ${(reset.waitedMs / 1000).toFixed(1)}s (${reset.operations} operation(s))`}${reset.preservedUnder === null ? "" : ` — children now under ${reset.preservedUnder}`}`,
     );
 
     // The endpoint can be replaced by the reset; everything after this point re-resolves it.
@@ -1017,6 +1075,16 @@ async function main() {
       warn(
         `the compute host changed across the reset: ${branch.endpointHost} → ${after.endpointHost}`,
       );
+    }
+    // The state the job claims, read back rather than assumed: the children moved under the
+    // preserved branch, so the branch this run reset has none left. A restore that left them in
+    // place would fail the same way tomorrow, which is worth saying tonight.
+    if (after.childCount > 0) {
+      warn(
+        `${after.name} still has ${after.childCount} child branch(es) after the restore (${after.children.map((child) => child.name).join(", ")})${reset.preservedUnder === null ? " — the restore was sent without preserve_under_name" : ` — the API was asked to move them under ${reset.preservedUnder}`}`,
+      );
+    } else {
+      say(`  children  none — ${after.name} has nothing under it after the reset`);
     }
     branch = after;
     assertTargetResettable(branch);

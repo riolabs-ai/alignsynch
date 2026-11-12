@@ -43,6 +43,7 @@
  * the heading and its subtitle now come from the primitive, so the two account homes cannot drift
  * into two type scales.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { StatCardGrid, type StatCard } from "@/components/console/stat-card-grid";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -77,7 +78,7 @@ export function ConsoleOverview({
 
   if (unreadable !== null) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-10">
+      <StageColumn>
         <Alert variant="warning" className="p-6" data-overview-unreadable="true">
           <h1 className="text-2xl font-bold">{failure.heading}</h1>
           <AlertDescription className="mt-2 space-y-2">
@@ -90,7 +91,7 @@ export function ConsoleOverview({
             </p>
           </AlertDescription>
         </Alert>
-      </div>
+      </StageColumn>
     );
   }
 
@@ -140,49 +141,60 @@ export function ConsoleOverview({
   ];
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <GeneratedAvatar name={name} seed={name} size={72} />
-        <PageHeader title={fillLabel(copy.heading, { name })} description={copy.subtitle} />
-      </header>
+    <StageColumn>
+      <div className="space-y-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <GeneratedAvatar name={name} seed={name} size={72} />
+          <PageHeader title={fillLabel(copy.heading, { name })} description={copy.subtitle} />
+        </header>
 
-      <section data-overview-counts="true" data-tour="dashboard" className="space-y-3">
-        <h2 className="text-lg font-semibold">{counts.heading}</h2>
-        <p className="text-sm text-muted-foreground">{sectionBody(counts)}</p>
-        <StatCardGrid cards={cards} />
-        {counts.cta !== undefined && (
-          <p className="text-sm">
-            <Link className="underline" href={counts.cta.href} data-tour="relationships">
-              {counts.cta.label}
-            </Link>
-          </p>
-        )}
-      </section>
+        <section data-overview-counts="true" data-tour="dashboard" className="space-y-3">
+          <h2 className="text-lg font-semibold">{counts.heading}</h2>
+          <p className="text-sm text-muted-foreground">{sectionBody(counts)}</p>
+          <StatCardGrid cards={cards} />
+          {counts.cta !== undefined && (
+            <p className="text-sm">
+              <Link className="underline" href={counts.cta.href} data-tour="relationships">
+                {counts.cta.label}
+              </Link>
+            </p>
+          )}
+        </section>
 
-      {instances.length === 0 && (
-        <section data-overview-empty="true">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{empty.heading}</CardTitle>
-              {/*
+        {instances.length === 0 && (
+          <section data-overview-empty="true">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{empty.heading}</CardTitle>
+                {/*
                 The blind-rule sentence is the tour's fifth step (#455). It is the one line on this
                 page that states the rule the read itself enforces, so the tour points at the
                 sentence rather than at a callout with the same words.
               */}
-              <CardDescription data-tour="blind">{sectionBody(empty)}</CardDescription>
-            </CardHeader>
-            {empty.cta !== undefined && (
-              <CardContent>
-                <Button asChild size="sm">
-                  <Link href={empty.cta.href} data-tour="answer">
-                    {empty.cta.label}
-                  </Link>
-                </Button>
-              </CardContent>
-            )}
-          </Card>
-        </section>
-      )}
-    </div>
+                <CardDescription data-tour="blind">{sectionBody(empty)}</CardDescription>
+              </CardHeader>
+              {empty.cta !== undefined && (
+                <CardContent>
+                  {/**
+                   * The tour's fourth step used to aim here (#455); since #457 it aims at the
+                   * scripted example's real answer sheet instead, which is the thing the step's
+                   * sentence describes. The link keeps its own job — opening the create flow — and
+                   * hands the anchor over, because `lib/tour/steps.ts` joins a step to the first
+                   * element carrying its anchor (`querySelector` takes the first match).
+                   *
+                   * The comment sits outside `<Button asChild>` on purpose: Slot counts its
+                   * children, and a JSX comment beside the link is a second child that renders
+                   * nothing, which is a request-time 500 rather than a build error.
+                   */}
+                  <Button asChild size="sm">
+                    <Link href={empty.cta.href}>{empty.cta.label}</Link>
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+          </section>
+        )}
+      </div>
+    </StageColumn>
   );
 }

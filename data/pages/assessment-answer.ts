@@ -21,8 +21,15 @@
  * `{name}`/`{seat}`/`{left}`/`{right}` are filled by `fillLabel()` from the rows the page read —
  * the fixture authors no person and no Aspect. `back` is a page-level item because every band
  * ends with the same link.
+ *
+ * **`stages` is referenced, not re-typed (#716).** The sheet mounts the shared cell rail
+ * (`components/assessment-flow/stage-rail.tsx`), which asks this surface's copy for the `stages`
+ * section by id — so the six approved names arrive from `data/pages/lifecycle.ts` through one
+ * import rather than a seventh copy that could drift. Answering is the `Align` stage of that
+ * same journey; the rail's position is the view's fact, never a name authored here.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { lifecycleStageSection } from "./lifecycle";
 
 export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
   heading: "Answer your side",
@@ -30,6 +37,7 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
     "Every Aspect of this relationship, asked in the shape its Mode defines. Your answers stay sealed until both parties accept.",
   items: [{ id: "back", label: "Back to the relationship" }],
   sections: [
+    lifecycleStageSection,
     {
       id: "sheet",
       heading: "Your sheet",

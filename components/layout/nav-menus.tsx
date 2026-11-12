@@ -2,19 +2,25 @@
 
 // template-ancestor: components/ui/navigation-menu.tsx   (variation: the nav definition hand-rolled as rows — role-filtered, brand-keyed groups, no navigation-menu primitive)
 
+import { LeavingLink } from "@/components/layout/leaving-link";
 import { GeneratedAvatar } from "@/components/media/generated-avatar";
 import type { PageCopy } from "@/content/pages";
 import type { BrandId } from "@/data/brand";
 import { surfaceFor } from "@/data/surface-registry";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
+import { leavesApp } from "@/lib/marketing-routes";
+import { RELATIONSHIP_TYPES_PATH } from "@/lib/flow/paths";
+import { type NavIconName, menuFor } from "@/lib/nav-menu";
 import { type NavViewer, sees } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import {
+  Activity,
   Award,
   BarChart3,
   BookOpen,
+  ClipboardCheck,
   Compass,
   CreditCard,
   DollarSign,
@@ -22,6 +28,8 @@ import {
   Gauge,
   HeartHandshake,
   Home,
+  Inbox,
+  LayoutDashboard,
   LayoutTemplate,
   Library,
   LifeBuoy,
@@ -39,7 +47,7 @@ import {
   Workflow,
 } from "lucide-react";
 import Link from "next/link";
-import type React from "react";
+import { type ComponentType, Fragment, type ReactNode } from "react";
 
 /**
  * The shell's navigation, as one definition filtered by brand and capability (issue #156).
@@ -56,10 +64,12 @@ import type React from "react";
  *   - **The words come from `data/pages/shell.ts`.** Every label is `itemLabel()` against a
  *     section id (`nav`, `nav-alignsynch`), so renaming a destination is a fixture edit and a
  *     renamed id is a red build (E23) rather than a blank row.
- *   - **The hrefs stay literal JSX attributes, on purpose.** `data:check` E10 extracts
- *     literal `href`s from the tree; a menu held in a `const` array of `{ href }` takes every
- *     route reference out of that gate without failing anything. That is why the two menus are
- *     components and not a fixture table.
+ *   - **Every href in a menu is a route the gate can see.** `data:check` E10 extracts literal
+ *     `href`s from the tree, so a table of `{ href }` records takes every route reference out of
+ *     that gate without failing anything. The quiz menu therefore still spells its rows as JSX
+ *     attributes, and the alignment menu's rows — records in `lib/nav-menu.ts` since #542 phase 2
+ *     — are read by `scripts/ui-refs.ts` as `href:` properties, so both forms are resolved
+ *     against `content/routes.ts`. A new menu shape has to reach the gate, not bypass it.
  *   - **A third brand is a compile error, not an inherited menu.** The `switch` has no
  *     fall-through: its `default` assigns the narrowed union to `never`, so adding a brand to
  *     `data/brand.ts` fails `tsc` here until its menu is chosen deliberately, instead of
@@ -122,7 +132,7 @@ type NavRowTarget =
   | { onSelect: () => void; href?: undefined };
 
 export type NavRowProps = {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   active?: boolean;
   /** Explicit icon-only markup. Defaults to false: the row's width is a class (see `NavRow`). */
@@ -169,6 +179,15 @@ export function NavRow(props: NavRowProps) {
   const surface = props.href === undefined ? undefined : surfaceFor(props.href);
   const pending = surface !== undefined && surface.status !== "live";
   const statusWord = surface?.status === "preview" ? "Preview" : "Pending";
+  /**
+   * A row that points at the public site leaves the app, and every `NavRow` in the tree is inside
+   * the dashboard shell (the marketing header draws its own links from `PublicNav`), so this is
+   * not a prop: `/` and `/pricing` in the rail are public pages, and following one in this tab
+   * would throw away whatever the reader was doing. `leavesApp` is the runtime half of E39
+   * (`lib/marketing-routes.ts`); the accessible name and the marker below are the announcement
+   * the rule asks for.
+   */
+  const leaving = !pending && props.href !== undefined && leavesApp(props.href);
 
   const tone = pending
     ? "cursor-not-allowed text-muted-foreground opacity-70"
@@ -238,16 +257,30 @@ export function NavRow(props: NavRowProps) {
       {content}
     </button>
   ) : props.onSelect === undefined ? (
-    <Link
-      href={props.href}
-      onClick={onNavigate}
-      aria-label={accessibleLabel}
-      title={title}
-      data-tour={props.tourAnchor}
-      className={className}
-    >
-      {content}
-    </Link>
+    leaving ? (
+      <LeavingLink
+        href={props.href}
+        label={accessibleLabel}
+        title={title}
+        onClick={onNavigate}
+        tourAnchor={props.tourAnchor}
+        className={className}
+        iconClassName={collapsed ? "hidden" : labelled ? "ml-auto" : "ml-auto hidden lg:inline"}
+      >
+        {content}
+      </LeavingLink>
+    ) : (
+      <Link
+        href={props.href}
+        onClick={onNavigate}
+        aria-label={accessibleLabel}
+        title={title}
+        data-tour={props.tourAnchor}
+        className={className}
+      >
+        {content}
+      </Link>
+    )
   ) : (
     <button
       type="button"
@@ -426,38 +459,60 @@ function QuizHubMenu({
 }
 
 /**
- * The alignment product's menu: the console's own destinations in the order the owner's review
- * set, then the one front-page band it still links, then Support, then the operator's rows when
- * the viewer carries `admin-console`.
+ * The glyph per icon name in `lib/nav-menu.ts` — the one place a row's picture is chosen.
  *
- * **The rail opens on Dashboard and there is exactly one row for `/dashboard`.** The old menu had
- * "Home" at `/` and a separate "Overview" at `/dashboard`: two words, one console. They are one
- * row now — Dashboard, at `/dashboard` — so the label names the page it opens and no destination
- * appears twice.
+ * The descriptor names an icon (`"dashboard"`, `"audit"`) because it holds no JSX; this table is
+ * the rail's answer. Two of them carry a decision rather than an illustration:
  *
- * **The icon is `Gauge`, deliberately.** A dashboard's job is the state of things at a glance, and
- * `Gauge` is the instrument-panel mark for that. `LayoutDashboard` was the removed Overview row's
- * glyph and is a floorplan of a page; carrying it onto the merged row would have kept the look of
- * the duplicate that was deleted, and the review asked for a new mark. `Home` was a building, and
- * the row no longer goes to the front page, so keeping it would be the word and the picture
- * disagreeing with the href.
+ *   - **Dashboard is `Gauge`.** A dashboard's job is the state of things at a glance, and `Gauge`
+ *     is the instrument-panel mark for that. `LayoutDashboard` was the removed Overview row's
+ *     glyph and is a floorplan of a page, so it went to the console hub instead.
+ *   - **My Relationships is `HeartHandshake`, not `Users`.** Two people in agreement is this
+ *     product's subject; `Users` is the quiz menu's affiliate glyph and `ShieldCheck` is the
+ *     operator registry's, so either would read as a second meaning for one picture.
+ */
+const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
+  dashboard: Gauge,
+  relationships: HeartHandshake,
+  templates: LayoutTemplate,
+  library: Library,
+  help: Workflow,
+  support: LifeBuoy,
+  console: LayoutDashboard,
+  instances: ShieldCheck,
+  gaps: BarChart3,
+  inbox: Inbox,
+  health: Activity,
+  billing: CreditCard,
+  broadcast: Megaphone,
+  review: ClipboardCheck,
+  audit: ScrollText,
+};
+
+/**
+ * The alignment product's menu — **rendered from `lib/nav-menu.ts`, never written here.**
  *
- * **My Relationships carries `HeartHandshake`, not `Users`.** Two people in agreement is this
- * product's subject; `Users` is the quiz menu's affiliate glyph and `ShieldCheck` is the operator
- * registry's, so either would read as a second meaning for one picture.
+ * The rows, their order, their groups and the rung each one needs are data (#542 phase 2). This
+ * function is the surface: it resolves the fixture label each row names, picks the glyph the row's
+ * icon name maps to, and decides which row is *current*. Adding a destination is one record in the
+ * descriptor; a destination the viewer's rung cannot use is never in the array, so it is not
+ * rendered at all — not hidden by a class, not `aria-hidden`, not disabled.
  *
- * **My Relationships and Library are adjacent, and Templates sits one row above Support.** The two
- * console lists read as a pair (what you own, what you build from), and the marketing bands end
- * the menu instead of interrupting it.
+ * **Why the words and the glyphs are still resolved here.** `lib/nav-menu.ts` holds no JSX and no
+ * React, which is what lets a node test drive every rung of it (`tests/nav-menu.test.ts`) and lets
+ * the link gate read its hrefs. Copy stays in `data/pages/shell.ts` (E23 holds this file at zero
+ * literals), and the icon is a *name* in the descriptor that `NAV_ICONS` below resolves to a lucide
+ * component — a picture is not a fact about the menu, it is how this rail draws one.
  *
- * **Why this menu cannot reach the quiz build.** These rows live in `AlignSynchMenu`, which
- * `AppNav`'s `switch` renders only for `BRAND=alignsynch`; the quiz brand renders `QuizHubMenu`
- * and nothing else. So `/assessment/instances` and `/assessment/templates` — routes the brand
- * boundary answers `404` for on the quiz build — are structurally absent there rather than hidden
- * by a check. The only capability consulted below is the operator's,
- * `sees(viewer, "admin-console")`: every console row here answers a signed-out request with
- * `redirect(/login?next=…)`, which is a working destination, unlike `/admin/*`, which answers a
- * signed-in *member* with a 404 and therefore must not be advertised.
+ * **The active row keeps the two match rules the old markup had.** Most rows mark their children
+ * (`/dashboard/relationships/[id]` keeps My Relationships lit); the Overview row is `exact`,
+ * because a prefix rule lit it beside whichever `/dashboard/*` page the reader was on (#542
+ * phase 1's defect). That is `item.exact` in the descriptor, not a special case here.
+ *
+ * **Why this menu cannot reach the quiz build.** `AppNav`'s `switch` renders this only for
+ * `BRAND=alignsynch`; the quiz brand renders `QuizHubMenu` and nothing else. The quiz product's menu
+ * is untouched by this card and still has no rungs — it is one product's own destinations, shown in
+ * full to the brand that ships it.
  */
 function AlignSynchMenu({
   copy,
@@ -466,161 +521,71 @@ function AlignSynchMenu({
   pathname,
   onNavigate,
   viewer,
+  hidden,
 }: NavRenderProps & { viewer: NavViewer }) {
   const nav = sectionOf(copy, "nav-alignsynch");
   return (
     <>
-      <NavRow
-        href="/dashboard"
-        icon={<Gauge className="size-5" />}
-        label={itemLabel(nav, "dashboard")}
-        active={isActive(pathname, "/dashboard")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/how-it-works"
-        icon={<Workflow className="size-5" />}
-        label={itemLabel(nav, "how-it-works")}
-        active={isActive(pathname, "/how-it-works")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/assessment/instances"
-        icon={<HeartHandshake className="size-5" />}
-        label={itemLabel(nav, "my-relationships")}
-        active={isActive(pathname, "/assessment/instances")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/assessment/templates"
-        icon={<Library className="size-5" />}
-        label={itemLabel(nav, "template-library")}
-        active={isActive(pathname, "/assessment/templates")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      {/*
-        Templates is the front page's `#templates` band, the one marketing anchor the console
-        still carries: the four record templates the brand ships are drawn there, and the rail
-        names them with the page that shows them. **How it works is not an anchor any more** — it
-        is `/how-it-works`, an in-app onboarding page
-        (`app/(mainlayout)/how-it-works/page.tsx`) — because the owner's review of the console
-        said a signed-in member must not be sent to the public site to be told how the product
-        works. `tests/nav-brand.test.ts` holds every remaining `/#…` href to an `id` the rendered
-        front page emits; this comment is the record of why there is only one left.
-      */}
-      <NavRow
-        href="/#templates"
-        icon={<LayoutTemplate className="size-5" />}
-        label={itemLabel(nav, "templates")}
-        active={false}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-      />
-      <NavRow
-        href="/support"
-        icon={<LifeBuoy className="size-5" />}
-        label={itemLabel(nav, "support")}
-        active={isActive(pathname, "/support")}
-        collapsed={collapsed}
-        labelled={labelled}
-        onNavigate={onNavigate}
-        tourAnchor="help"
-      />
-      {/*
-        The console's Gap Analysis row, behind the `admin-console` capability rather than always
-        drawn (the same rule the quiz rows follow). `/admin/gaps` answers a member with the 404 a
-        URL that never existed returns (`lib/auth/require-role.ts`), so a row every viewer could
-        see would be a row that 404s for most of them — "an entry that is only visually gone is
-        still in the tab order and still announced" (this file's own note on hidden rows).
-
-        `navViewer()` grants no capability today, so this row renders for nobody yet: the
-        role → capability mapping is one function (`lib/nav.ts::navViewer`), and until it reads
-        `user_profile.role` an operator reaches the screen by URL, exactly as #156 recorded for
-        every gated surface. The row exists so the mapping is a capability, not a second menu.
-      */}
-      {sees(viewer, "admin-console") && (
-        <NavRow
-          href="/admin/gaps"
-          icon={<BarChart3 className="size-5" />}
-          label={itemLabel(nav, "console-gaps")}
-          active={isActive(pathname, "/admin/gaps")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-      )}
-      {/*
-        The console's Relationships registry (card 3/5, `/admin/instances`), behind the same
-        `admin-console` capability and for the same reason: the route refuses a member with the 404
-        a URL that never existed returns, so a row every viewer could see would be a row that 404s
-        for most of them. `navViewer(role)` in `lib/nav.ts` is what grants the capability — to an
-        `admin` session and to nobody else — and `lib/auth/require-role.ts` re-decides it from the
-        same request on the page itself.
-      */}
-      {sees(viewer, "admin-console") && (
-        <NavRow
-          href="/admin/instances"
-          icon={<ShieldCheck className="size-5" />}
-          label={itemLabel(nav, "admin-instances")}
-          active={isActive(pathname, "/admin/instances")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-      )}
-      {/* #503 — the audit log, beside the registry it records. Same capability, same reason: the
-          route refuses a member with the 404 a URL that never existed returns. */}
-      {sees(viewer, "admin-console") && (
-        <NavRow
-          href="/admin/audit"
-          icon={<ScrollText className="size-5" />}
-          label={itemLabel(nav, "admin-audit")}
-          active={isActive(pathname, "/admin/audit")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-      )}
-      {/* #505 — billing control, beside the audit log it writes into. Same capability and the same
-          reason: the route refuses a member with the 404 a URL that never existed returns, and a
-          `support` session gets the same 404 — the screen is `admin`-only, while its one action is
-          `owner`-floored. */}
-      {sees(viewer, "admin-console") && (
-        <NavRow
-          href="/admin/billing"
-          icon={<CreditCard className="size-5" />}
-          label={itemLabel(nav, "admin-billing")}
-          active={isActive(pathname, "/admin/billing")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-      )}
-      {/* #507 — the broadcast, the epic's last console row. `admin`-only for the same reason and by
-          the same mechanism: the page's `requireAdmin()` answers a member (and a `support` session)
-          with the 404 an unknown URL gets, so a row every viewer could see would be a row that 404s
-          for most of them. */}
-      {sees(viewer, "admin-console") && (
-        <NavRow
-          href="/admin/broadcast"
-          icon={<Megaphone className="size-5" />}
-          label={itemLabel(nav, "admin-broadcast")}
-          active={isActive(pathname, "/admin/broadcast")}
-          collapsed={collapsed}
-          labelled={labelled}
-          onNavigate={onNavigate}
-        />
-      )}
+      {menuFor(viewer.role).map((group) => (
+        <Fragment key={group.label}>
+          <NavGroup label={itemLabel(nav, group.label)} labelled={labelled}>
+            {group.items.map((item) => {
+              const Icon = NAV_ICONS[item.icon];
+              return (
+                <Fragment key={item.href}>
+                  <NavRow
+                    href={item.href}
+                    icon={<Icon className="size-5" />}
+                    label={itemLabel(nav, item.id)}
+                    active={
+                      item.exact === true ? pathname === item.href : isActive(pathname, item.href)
+                    }
+                    collapsed={collapsed}
+                    labelled={labelled}
+                    onNavigate={onNavigate}
+                    tourAnchor={item.tourAnchor}
+                    hidden={hidden?.includes(item.href)}
+                  />
+                </Fragment>
+              );
+            })}
+          </NavGroup>
+        </Fragment>
+      ))}
     </>
+  );
+}
+
+/**
+ * One labelled group of rail rows (#539 item 10) — a heading and its rows, nothing else.
+ *
+ * The heading is a label for the group, not a destination: no anchor, no focus stop, and the
+ * `lg`-only visibility is what keeps the icon rail a column of icons. `aria-hidden` would hide
+ * the name from the one reader who needs it (a screen reader in the drawer), so it stays in the
+ * tree at every width and is only visually collapsed between `md` and `lg` — `display: none`
+ * takes it out of the accessibility tree there, which is correct for a rail that is icon-only.
+ */
+function NavGroup({
+  children,
+  label,
+  labelled,
+}: {
+  children: ReactNode;
+  label: string;
+  labelled: boolean;
+}) {
+  return (
+    <div className="grid gap-1" data-nav-group={label}>
+      <p
+        className={cn(
+          "px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+          labelled ? "block" : "hidden lg:block",
+        )}
+      >
+        {label}
+      </p>
+      {children}
+    </div>
   );
 }
 
@@ -710,9 +675,12 @@ const PUBLIC_ROW_CLASS =
  * The alignment brand's public menu: the four front-page destinations the sidebar's own
  * `nav-alignsynch` section names, plus `/pricing` and the public help centre.
  *
- * Templates and How it works are the front page's own bands (`/#templates`, `/#questions`), the
- * same anchors the sidebar and the footer already point at — a public route for either does not
- * exist yet, and a link to a route that does not exist is the defect this menu removes.
+ * **Templates is `/templates`, not `/#templates`.** The front page's `#templates` band is still
+ * where a reader lands from in-page links, but the header row is a product destination now: a
+ * menu row that scrolls the marketing page you are already on to a section is furniture, and the
+ * owner asked for a catalogue. `How it works` is still the front page's `#questions` band,
+ * because no public route for it exists — a link to a route that does not exist is the defect
+ * this menu removes.
  *
  * **The last row is `/help`, not `/support`.** The Help/Support split put the answers in public
  * (`/help`) and the contact form behind the app's session (`/support`), so a menu drawn on
@@ -727,7 +695,7 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/">
         {itemLabel(nav, "home")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/#templates">
+      <Link className={PUBLIC_ROW_CLASS} href={RELATIONSHIP_TYPES_PATH}>
         {itemLabel(nav, "templates")}
       </Link>
       <Link className={PUBLIC_ROW_CLASS} href="/#questions">
@@ -804,12 +772,23 @@ export function PublicAccountSlot({
 
   if (account === null) {
     return (
-      <div className="flex items-center gap-2">
-        <Link className={PUBLIC_ROW_CLASS} href="/login">
+      /**
+       * Sign in / Sign up, with a real gap between them (#539 item 5).
+       *
+       * `gap-2` was 8px between a text link and a filled button — measured in a 1440 browser,
+       * the two read as one control with a label. `gap-4` is 16px, the same step the shell's
+       * account row uses between its chips. `whitespace-nowrap` and `shrink-0` are the second
+       * half of the fix: at 390 the row used to compress both labels until "Sign In" wrapped
+       * to two lines inside a 24px-high link, which is what made the pair look crowded at the
+       * narrow end. Neither word may break, and the pair may not shrink — the header's own
+       * mark is what gives way (`min-w-0` on the left group).
+       */
+      <div className="flex shrink-0 items-center gap-4">
+        <Link className={cn(PUBLIC_ROW_CLASS, "whitespace-nowrap")} href="/login">
           {itemLabel(accountCopy, "signed-out")}
         </Link>
         <Link
-          className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          className="inline-flex items-center whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
           href="/register"
         >
           {itemLabel(accountCopy, "sign-up")}

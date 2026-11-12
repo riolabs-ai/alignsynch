@@ -29,6 +29,7 @@ export function ReinviteForm({
   action,
   email,
   counterpartyName,
+  returnTo,
 }: {
   copy: PageCopy;
   /** The instance's re-invite endpoint (`reinvitePath()`). */
@@ -36,11 +37,22 @@ export function ReinviteForm({
   /** The address on the invitation row, as the field's starting value. */
   email: string;
   counterpartyName: string;
+  /**
+   * Which screen the endpoint's 303 should come back to (#691).
+   *
+   * The re-invite resolves to the relationship screen by default, which is where this form was
+   * first drawn. On **Sent** that would drop the person a stage forward mid-action — they pressed a
+   * button about the invitation and landed on the relationship — so the form names its own screen
+   * and the handler answers with it. A closed literal, never a URL: the endpoint maps it to a path
+   * it owns, so this field cannot become an open redirect.
+   */
+  returnTo?: "sent";
 }) {
   const section = sectionOf(copy, "invite");
 
   return (
     <form action={action} method="post" data-reinvite-form className="mt-4 space-y-2">
+      {returnTo === undefined ? null : <input type="hidden" name="returnTo" value={returnTo} />}
       <h3 className="text-sm font-semibold">
         {fillLabel(itemLabel(section, "resend-heading"), { counterparty: counterpartyName })}
       </h3>

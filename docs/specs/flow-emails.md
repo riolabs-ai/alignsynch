@@ -1,5 +1,22 @@
 # The transactional email lifecycle: two senders are the complete set
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+
+<!-- docs-nav:end -->
+
+> **Superseded in part by #548 (the band and templates 2–5).** This document's volume argument
+> still governs _what the product does not send_, but three of its rows are now wrong by decision:
+> the claim notice (row 4) and the pre-expiry reminder (row 7) **are** built — as templates #4 and
+> #3 in `lib/email/templates/`, the reminder as copy plus a pure due-window predicate, with its
+> scheduler a separate card — and the completion notice (row 8) is now template #5, `Your Gap
+> report is ready`, sent on the completing **acceptance** rather than the second submission
+> (#R2 moved the hinge). "Two senders" became three (`invite`, `joined`, `unlock`), all through
+> `sendMail()`, and every message is composed through the one band
+> (`lib/email/band.ts`) as plain text first. The volume rule below is unchanged and is why
+> templates 6–10 are still not wired.
+
 **Recommendation: ship no new email types. The two senders that exist — `invite` (creation and
 re-invite) and `unlock` (the other party, once, when a submit completes the instance) — are the
 whole lifecycle. Every other event in the product is in-app or nothing. The only new
@@ -37,21 +54,21 @@ ruling and §5 scope cuts (SPEC-DRIFT):
 
 ## 2. Every event, who receives it, which channel, why
 
-| #   | event                                      | recipient    | channel                                       | why                                                                                                                                                                                                                                                                              |
-| --- | ------------------------------------------ | ------------ | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Invitation issued                          | counterparty | **email** (+ in-app link on initiator screen) | recipient is not a user; no in-app surface exists for them; the link must reach a person                                                                                                                                                                                         |
-| 2   | Invitation re-sent (re-invite)             | counterparty | **email** (sender `invite`)                   | same message type, new token — see flow-reinvite.md; initiator-only, capped/cooldowned                                                                                                                                                                                           |
-| 3   | Invite mail outcome (sent/unset/failed)    | initiator    | **in-app**                                    | already built (`?invite=` notice); a send outcome is a fact about this session's action                                                                                                                                                                                          |
-| 4   | Counterparty claimed                       | initiator    | **in-app only**                               | no action for the initiator (nothing unlocks on claim); the panel's `claimed` sentence and the status change (`awaiting_counterparty` → `answering`) already say it on their next visit. Spec's "To Initiator: your counterparty has registered" email is noise per relationship |
-| 5   | Invite nearing expiry (warning)            | initiator    | **in-app only**                               | static sentence on the invite panel ("expires in N days", from the now-selected `expires_at`); a scheduled warning needs a scheduler and must be cancelled on claim — infrastructure for a fact the screen already shows                                                         |
-| 6   | Invite expired                             | initiator    | **in-app only**                               | the panel's `expired` state + re-invite form (flow-reinvite.md); an email saying "your partner didn't respond" is shame-by-mail, and the action it would prompt (re-invite) lives on the same screen                                                                             |
-| 7   | Pre-expiry reminder to recipient           | counterparty | **none**                                      | a day-3 nudge is the product nagging the initiator's intimate on their behalf without their consent — the mute reflex, automated; no scheduler exists; the initiator has the human channel. "Do nothing" beats "notify more" here                                                |
-| 8   | Unlock: other party submitted; Gap is open | other party  | **email + in-app marker**                     | the one event whose value expires: the party who answered first may never return; the email reaches them once (#258), `party.unlock_seen_at` (#252) is the channel of record                                                                                                     |
-| 9   | Congratulations / "now Aligned"            | both         | **none**                                      | the submitter is already looking at the report; the other party just got the unlock notice. A third message per completion is two extra emails per relationship                                                                                                                  |
-| 10  | Analysis / written-report email            | both         | **none**                                      | would put scores and Gap values in a mailbox; the blind rule stops at no browser (`readUnlockFacts` reads no `opinion` row and the invitation carries nothing but the link); SPEC-DRIFT §7 defers it to v3-00-0                                                                  |
-| 11  | Aspect / Opinion change notices            | —            | **none**                                      | §4.1 freeze: there are no changes to notify about                                                                                                                                                                                                                                |
-| 12  | Registration / verification mails          | —            | **none (ours)**                               | Neon Auth owns identity and its own mail; the app builds no second auth flow                                                                                                                                                                                                     |
-| 13  | Weekly retention / marketing               | —            | **none**                                      | §5 out of scope; §2 evidence: the fastest way to be muted                                                                                                                                                                                                                        |
+| #   | event                                      | recipient    | channel                                                     | why                                                                                                                                                                                                                         |
+| --- | ------------------------------------------ | ------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Invitation issued                          | counterparty | **email** (+ in-app link on initiator screen)               | recipient is not a user; no in-app surface exists for them; the link must reach a person                                                                                                                                    |
+| 2   | Invitation re-sent (re-invite)             | counterparty | **email** (sender `invite`)                                 | same message type, new token — see flow-reinvite.md; initiator-only, capped/cooldowned                                                                                                                                      |
+| 3   | Invite mail outcome (sent/unset/failed)    | initiator    | **in-app**                                                  | already built (`?invite=` notice); a send outcome is a fact about this session's action                                                                                                                                     |
+| 4   | Counterparty claimed                       | initiator    | **email** (sender `joined`, #548 template #4)               | the Initiator published and then had nothing to do until the other seat existed; the screen state alone reaches only someone who opens it, and the claim is the one event that unblocks their own work (superseded by #548) |
+| 5   | Invite nearing expiry (warning)            | initiator    | **in-app only**                                             | static sentence on the invite panel ("expires in N days", from the now-selected `expires_at`); a scheduled warning needs a scheduler and must be cancelled on claim — infrastructure for a fact the screen already shows    |
+| 6   | Invite expired                             | initiator    | **in-app only**                                             | the panel's `expired` state + re-invite form (flow-reinvite.md); an email saying "your partner didn't respond" is shame-by-mail, and the action it would prompt (re-invite) lives on the same screen                        |
+| 7   | Pre-expiry reminder to recipient           | counterparty | **email** (#548 template #3; its scheduler is its own card) | the spec's 48-hour reminder is now a template with a pure due-window predicate (`reminderIsDue`); the send itself waits for the scheduler card, so nothing here reads a clock (superseded by #548)                          |
+| 8   | Unlock: other party submitted; Gap is open | other party  | **email + in-app marker**                                   | the one event whose value expires: the party who answered first may never return; the email reaches them once (#258), `party.unlock_seen_at` (#252) is the channel of record                                                |
+| 9   | Congratulations / "now Aligned"            | both         | **none**                                                    | the submitter is already looking at the report; the other party just got the unlock notice. A third message per completion is two extra emails per relationship                                                             |
+| 10  | Analysis / written-report email            | both         | **none**                                                    | would put scores and Gap values in a mailbox; the blind rule stops at no browser (`readUnlockFacts` reads no `opinion` row and the invitation carries nothing but the link); SPEC-DRIFT §7 defers it to v3-00-0             |
+| 11  | Aspect / Opinion change notices            | —            | **none**                                                    | §4.1 freeze: there are no changes to notify about                                                                                                                                                                           |
+| 12  | Registration / verification mails          | —            | **none (ours)**                                             | Neon Auth owns identity and its own mail; the app builds no second auth flow                                                                                                                                                |
+| 13  | Weekly retention / marketing               | —            | **none**                                                    | §5 out of scope; §2 evidence: the fastest way to be muted                                                                                                                                                                   |
 
 **Recommended set: rows 1, 2, 8 (two senders, three call sites) plus rows 3, 4, 5, 6 as in-app
 states. Rows 7, 9–13 are rejected, explicitly.**
@@ -145,17 +162,18 @@ The evidence, and what each piece is used for here:
 
 ## 7. Acceptance criteria
 
-1. `MailSender` remains exactly `"invite" | "unlock"` — a third sender value anywhere in
-   `lib/flow/email.ts` or a caller fails this criterion (grep-verifiable).
+1. ~~`MailSender` remains exactly `"invite" | "unlock"`~~ — **superseded by #548**: it is now
+   `"invite" | "joined" | "unlock"` plus the non-flow senders, and every message renders through
+   the band's templates.
 2. The only code paths that call `sendMail`/`sendInvitation` are: instance creation, re-invite
    (same sender), and `sendUnlockNotice`; the claimed/expired/warning state changes perform no
    fetch and no send (asserted by the flow-resend store tests that their paths touch no
    transport).
-3. Every message the app composes is built from fixture copy with a fixed placeholder set
-   (`invitation-email` band: `{initiator} {counterparty} {template} {link}`; `unlock-email`
-   band: `{recipient} {other} {template} {link}`) — any `{score}` or `{gap}` placeholder renders
-   literally, so no message can leak; and the unlock read (`readUnlockFacts`) selects no
-   `opinion` row.
+3. ~~Every message the app composes is built from fixture copy with a fixed placeholder set~~ —
+   **superseded by #548**: the flow messages are built from the templates in
+   `lib/email/templates/`, which take named facts (`inviter`, `counterparty`, `template`, `link`)
+   and cannot be handed a score or a Gap value; the unlock read (`readUnlockFacts`) still selects
+   no `opinion` row.
 4. On the completing submit, exactly one unlock notice goes to the other seat and never to the
    submitter (`otherRoleOf` is total over the two roles), and a failed send never fails the
    committed submit (existing #258 behavior, existing tests green).
@@ -168,3 +186,15 @@ The evidence, and what each piece is used for here:
    record that disposition (rejection is a document, not a hope).
 8. Gate stays green and dependency-free: `bash scripts/verify.sh` passes with no new package and
    no database access; `pnpm data:check` still validates the new copy items (E23/E10).
+
+## Related
+
+- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the flow every one of these emails belongs to.
+- [RESEND-INBOUND.md](../RESEND-INBOUND.md) — what happens when a send bounces or is complained about.
+- [flow-reinvite.md](flow-reinvite.md) — the expired-invitation case, specified separately.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+
+<!-- docs-nav:end -->

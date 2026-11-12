@@ -160,7 +160,6 @@ export function BillingControl({
   role,
   unreadable,
   action,
-  reasonMin,
 }: {
   copy: PageCopy;
   rows: readonly AdminBillingRow[];
@@ -173,8 +172,6 @@ export function BillingControl({
   unreadable: string | null;
   /** The server action. Passed in rather than imported so this module never reaches `app/`. */
   action: (input: GrantFormInput) => Promise<GrantFormResult>;
-  /** `REASON_MIN_LENGTH`, handed down: importing it here would pull `pg` into the bundle (E34). */
-  reasonMin: number;
 }) {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [relationshipId, setRelationshipId] = useState(rows[0]?.relationshipId ?? "");
@@ -182,7 +179,6 @@ export function BillingControl({
   const [kind, setKind] = useState("comp");
   const [interval, setInterval] = useState("month");
   const [periodStart, setPeriodStart] = useState("");
-  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
   const statsCopy = sectionOf(copy, "stats");
@@ -212,10 +208,9 @@ export function BillingControl({
     event.preventDefault();
     if (busy) return;
     setBusy(true);
-    void action({ relationshipId, planId, kind, interval, periodStart, reason })
+    void action({ relationshipId, planId, kind, interval, periodStart })
       .then((result) => {
         setPhase({ kind: "done", result });
-        if (result.ok) setReason("");
       })
       .finally(() => setBusy(false));
   };
@@ -481,22 +476,6 @@ export function BillingControl({
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="comp-reason">{itemLabel(formCopy, "reason")}</Label>
-                  <Input
-                    id="comp-reason"
-                    name="reason"
-                    required
-                    minLength={reasonMin}
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    autoComplete="off"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {say(formCopy, "reason-short", { min: reasonMin })}
-                  </p>
-                </div>
-
                 <Button type="submit" disabled={busy || rows.length === 0} variant="outline">
                   {busy ? itemLabel(formCopy, "submitting") : itemLabel(formCopy, "submit")}
                 </Button>
@@ -513,9 +492,7 @@ export function BillingControl({
                 <CardTitle>
                   {result.ok
                     ? (sectionOf(copy, "done").heading ?? copy.heading)
-                    : result.code === "reason-too-short"
-                      ? say(refusalsCopy, "reason-too-short", { min: reasonMin })
-                      : itemLabel(refusalsCopy, result.code)}
+                    : itemLabel(refusalsCopy, result.code)}
                 </CardTitle>
                 {result.ok ? <CardDescription>{sectionBody(doneCopy)}</CardDescription> : null}
               </CardHeader>

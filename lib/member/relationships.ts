@@ -1,5 +1,13 @@
 /**
- * The initiator's relationships — `/dashboard/relationships`, read and written (#533 phase 2).
+ * The member's relationships — `/dashboard/relationships`, read and written (#533 phase 2, #706).
+ *
+ * **The list is every relationship the viewer is a party to; the writes are the initiator's.**
+ * #706 fixed a read that filtered `initiator_user_id` and therefore answered a Counterparty with
+ * nothing: the relationship was theirs to answer on `/assessment/instances` and absent from the
+ * console's own list, so the screen said the relationship did not exist. The two questions are now
+ * answered in two places and never merged — `viewerIsPartyOf` decides *membership* (the row is
+ * listed), `relationshipOf` compares `initiator_user_id` with the viewer to decide *permission*
+ * (`MemberRelationshipRow.isInitiator`, and the three write flags on the detail view).
  *
  * **A relationship is configured before it is sent, and this module is the "before".** #533's
  * lifecycle (`0030_relationship_lifecycle.sql`) stores its seven states; `lib/relationship/
@@ -52,11 +60,12 @@
  */
 import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
-import type { Assessment } from "@/content/assessment";
+import type { AlignmentSetting, Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
-import { startCheckout } from "@/lib/billing";
+import { billingProvider } from "@/lib/billing";
 import { readActiveSubscription } from "@/lib/db/billing";
 import { queryRows } from "@/lib/db/client";
+import { readRelationshipPayment, openPaymentObligation } from "@/lib/db/relationship-payment";
 import {
   assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
@@ -67,6 +76,7 @@ import {
 import { emailLooksDeliverable } from "@/lib/flow/resend";
 import { invitationLink } from "@/lib/flow/email";
 import { hashToken, mintToken } from "@/lib/flow/tokens";
+import { readCompletionGate, type CompletionGate } from "@/lib/member/payment";
 import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
@@ -83,18 +93,26 @@ import {
   inviteExpiresAt,
   isClosed,
   MemberRefused,
-  publishBasisOf,
   publishViewOf,
   publishable,
   republishable,
-  trialAlreadyRunningMessage,
-  trialEndsAt,
   trialRunningWithoutLiveInvite,
   type PublishView,
 } from "@/lib/member/publish-basis";
 
 /** Where the relationship screens live. One place, because a redirect and a link agree. */
 export const MEMBER_RELATIONSHIPS_PATH = "/dashboard/relationships";
+
+/**
+ * One relationship's own screen (#620).
+ *
+ * The only surface that configures or publishes a relationship, so both the card's title and its
+ * `Publish Assessment` action point here — a path spelled in two components would be two copies of
+ * one route, which is the drift `lib/flow/paths.ts` exists to prevent.
+ */
+export function memberRelationshipPath(relationshipId: string): string {
+  return `${MEMBER_RELATIONSHIPS_PATH}/${relationshipId}`;
+}
 
 /**
  * The pool in the shape `lib/relationship/enforcement.ts` reads through.
@@ -134,6 +152,22 @@ export const CHECKOUT_INTERVAL: BillingInterval = "month";
 export interface MemberRelationshipRow {
   readonly id: string;
   readonly status: RelationshipStatus;
+  /**
+   * #706 — which seat the **viewer** holds, read from their own `party` row (their session) and
+   * falling back to the `initiator_user_id` comparison for a draft, which has no session yet.
+   *
+   * It is a label, not a permission: the card prints it so one list reads correctly for both
+   * people — "with Walt · Counterparty" rather than a row that looks like its initiator's.
+   */
+  readonly viewerRole: PartyRole;
+  /**
+   * #706 — is the viewer the account that started this relationship?
+   *
+   * The one source of every write flag on the detail view (`aspectsEditable`, `publishable`,
+   * `offersRepublish`) and of the controls this row's screen draws. Compared against
+   * `relationship.initiator_user_id`; a party row that exists does **not** grant it.
+   */
+  readonly isInitiator: boolean;
   /** The relationship's own copy of the template — its title above the Aspects. */
   readonly templateId: string;
   readonly title: string;
@@ -150,6 +184,12 @@ export interface MemberRelationshipRow {
     readonly expiresAt: Date;
   } | null;
   readonly counterpartyName: string | null;
+  /**
+   * The initiator's name, from their `party` row on the latest round — the "with ·" name a
+   * Counterparty's card prints. `null` for a draft (no session, so no seats) and for a
+   * relationship whose initiator has no party row; the card falls back to its own word.
+   */
+  readonly initiatorName: string | null;
   /** What the band says, derived at the instant the read was given. */
   readonly view: PublishView;
   /**
@@ -163,6 +203,9 @@ export interface MemberRelationshipRow {
 interface RelationshipQueryRow {
   readonly id: string;
   readonly status: string;
+  readonly initiator_user_id: string | null;
+  /** The viewer's own seat in `party`, or `null` for a draft (no session exists to hold one). */
+  readonly viewer_role: string | null;
   readonly created_at: Date | string;
   readonly published_at: Date | string | null;
   /** #533 phase 3 — the lapse, when the row records one (`0032`). */
@@ -174,6 +217,7 @@ interface RelationshipQueryRow {
   readonly session_record_id: string | null;
   readonly aspect_count: number;
   readonly counterparty_name: string | null;
+  readonly initiator_name: string | null;
   readonly claimed: boolean | null;
   readonly revoked: boolean | null;
   readonly expires_at: Date | string | null;
@@ -182,13 +226,61 @@ interface RelationshipQueryRow {
 /**
  * The one read both surfaces use.
  *
- * `rel.initiator_user_id = $1` is the whole permission, in the query rather than in a component —
- * the rule `lib/db/my-instances.ts` follows for `party.user_id`. The session is the **latest
- * round** (`ORDER BY round DESC`), because a relationship may hold several and the list is about
- * the relationship, not one cycle. The invitation hangs off that session, so a draft has none.
+ * **Membership and permission are two predicates, deliberately.** `VIEWER_IS_PARTY` decides which
+ * rows a reader sees: the account that started the relationship, **or** any account bound to one of
+ * its seats — `party.user_id`, reached through `session.relationship_id`, which is the rule
+ * `lib/db/my-instances.ts` follows. The initiator half is not a permission leaking into the list; it
+ * is what keeps a **draft** visible, because a draft has no session and therefore no `party` row to
+ * bind anybody (#706).
+ *
+ * `VIEWER_ROLE` is the label beside the row, read from the viewer's own `party` row on the latest
+ * round. Permission is a separate comparison in `relationshipOf` (`initiator_user_id` against the
+ * viewer), so a Counterparty row is listed *and* read-only, and a hand-edited role can never grant a
+ * write.
+ *
+ * The session is the **latest round** (`ORDER BY round DESC`), because a relationship may hold
+ * several and the list is about the relationship, not one cycle. The invitation hangs off that
+ * session, so a draft has none.
  */
+const VIEWER_ROLE = `(
+    SELECT p.role
+      FROM session vs
+      JOIN party p ON p.session_record_id = vs.record_id
+     WHERE vs.relationship_id = rel.id AND p.user_id = $1
+     ORDER BY vs.round DESC
+     LIMIT 1
+  ) AS viewer_role`;
+
+/** Who may see the row. `$1` is the viewer, in both statements below. */
+const VIEWER_IS_PARTY = `(
+    rel.initiator_user_id = $1
+    OR EXISTS (
+      SELECT 1
+        FROM session vs
+        JOIN party p ON p.session_record_id = vs.record_id
+       WHERE vs.relationship_id = rel.id AND p.user_id = $1
+    )
+  )`;
+
+/**
+ * The name of the seat that is *not* the viewer's — what the card's "with ·" line prints.
+ *
+ * `session_invite.counterparty_name` is the invited person, which is the right name for the
+ * initiator's card and the wrong one for the Counterparty's (it would be their own). So the
+ * initiator's `party.name` is read here and the card picks by `viewerRole` (#706).
+ */
+const INITIATOR_NAME = `(
+    SELECT p.name
+      FROM session vs
+      JOIN party p ON p.session_record_id = vs.record_id
+     WHERE vs.relationship_id = rel.id AND p.role = 'initiator'
+     ORDER BY vs.round DESC
+     LIMIT 1
+  ) AS initiator_name`;
+
 const RELATIONSHIP_COLUMNS = `
   rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
+  rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME},
   t.id AS template_id, t.title, t.summary,
   s.record_id AS session_record_id,
   (SELECT count(*)::int FROM item i WHERE i.record_id = t.id) AS aspect_count,
@@ -215,12 +307,30 @@ function instantOf(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
+/** `party.role` is CHECK-constrained; a value that is neither is drift, so the comparison decides. */
+function viewerRoleOf(row: RelationshipQueryRow, isInitiator: boolean): PartyRole {
+  if (row.viewer_role === "initiator" || row.viewer_role === "counterparty") return row.viewer_role;
+  return isInitiator ? "initiator" : "counterparty";
+}
+
 function relationshipOf(
   row: RelationshipQueryRow,
   now: Date,
   subscription: TrialFacts | null,
+  viewerUserId: string,
 ): MemberRelationshipRow {
   const status = row.status as RelationshipStatus;
+  /*
+   * #706 — **the write permission, and the only place it is decided.**
+   *
+   * `relationship.initiator_user_id` compared with the viewer. The list itself is keyed on the
+   * party binding, so being *in* a relationship and being allowed to *change* it are two different
+   * facts; this is the second one, and every flag downstream (`aspectsEditable`, `publishable`,
+   * `offersRepublish`) is gated on it. A Counterparty is listed and reads the screen; they never
+   * get the controls, and the server actions refuse `not-yours` inside their transaction if a form
+   * were posted anyway.
+   */
+  const isInitiator = row.initiator_user_id !== null && row.initiator_user_id === viewerUserId;
   const invite =
     row.expires_at === null
       ? null
@@ -232,6 +342,8 @@ function relationshipOf(
   return {
     id: row.id,
     status,
+    viewerRole: viewerRoleOf(row, isInitiator),
+    isInitiator,
     templateId: row.template_id,
     title: row.title,
     summary: row.summary,
@@ -241,6 +353,7 @@ function relationshipOf(
     aspectCount: Number(row.aspect_count),
     invite,
     counterpartyName: row.counterparty_name,
+    initiatorName: row.initiator_name,
     view: publishViewOf({ status, invite, now }),
     membership: membershipOf({
       status,
@@ -252,7 +365,17 @@ function relationshipOf(
   };
 }
 
-/** Every relationship this member started, newest first. */
+/**
+ * Every relationship this member is a party to, newest first (#706).
+ *
+ * The membership predicate is `VIEWER_IS_PARTY`: the initiator **or** any account bound to a party
+ * seat. A Counterparty therefore sees the relationship they were invited into — the defect #706
+ * fixed, where this list filtered `initiator_user_id` and answered them with nothing while
+ * `/assessment/instances` showed it.
+ *
+ * No permission falls out of it. The row carries `isInitiator` (the comparison) and `viewerRole`
+ * (the label), and the detail view gates its three write flags on the first.
+ */
 export async function listMyRelationships(
   userId: string,
   now: Date = new Date(),
@@ -260,7 +383,7 @@ export async function listMyRelationships(
   const rows = await queryRows<RelationshipQueryRow>(
     `SELECT ${RELATIONSHIP_COLUMNS}
      ${RELATIONSHIP_FROM}
-      WHERE rel.initiator_user_id = $1
+      WHERE ${VIEWER_IS_PARTY}
       ORDER BY rel.created_at DESC, rel.id DESC`,
     [userId],
   );
@@ -268,16 +391,43 @@ export async function listMyRelationships(
   // per row would be the same query N times and could return two different answers if a payment
   // landed between two of them.
   const subscription = rows.length === 0 ? null : await readActiveSubscription(userId);
-  return rows.map((row) => relationshipOf(row, now, subscription));
+  return rows.map((row) => relationshipOf(row, now, subscription, userId));
 }
 
 /** The detail screen's view: the row above, plus the Aspects it configures. */
 export interface MemberRelationshipView extends MemberRelationshipRow {
   readonly template: Assessment;
-  /** May the Aspects be edited right now? `draft` and `pending` only (`aspectsEditable`). */
+  /**
+   * May the Aspects be edited right now? `draft` and `pending` only (`aspectsEditable`), **and**
+   * only for the initiator — a Counterparty's screen is read-only (#706).
+   */
   readonly aspectsEditable: boolean;
-  /** May it be published from its current status? `publishable()` — the detail screen's band. */
+  /**
+   * May it be published from its current status? `publishable()` — the detail screen's band.
+   *
+   * **Status is only half the answer since #690.** Publishing is the hard gate for payment: a
+   * relationship with no method on file gets no publish control at all, and this flag says only
+   * what the status allows. The screen reads both (`publishable && hasPaymentMethod`).
+   */
   readonly publishable: boolean;
+  /**
+   * Is a payment method on file for this relationship? #690's hard gate.
+   *
+   * Read from `relationship_payment.method_captured_at` — the same obligation the completion fee
+   * is charged against — and `false` when the row does not exist. The soft prompt belongs to the
+   * create (stage 4's plans); this is the half that is not optional.
+   */
+  readonly hasPaymentMethod: boolean;
+  /**
+   * #739 — **the completion gate, as facts.** The payer's two acts live on this screen: put a
+   * method on file, and complete and open the Gap. This is what the band draws from — the sheets'
+   * seal, the obligation's phase, whether a card is already on file, what the fee is and by when.
+   *
+   * `null` for a relationship with no session (a draft, or a publish that never opened one): there
+   * is nothing to complete yet, and a band that offered completion would be offering a write the
+   * transaction refuses with `no-such-relationship`.
+   */
+  readonly completion: CompletionGate | null;
   /** Does the invitation's state offer the one-click reissue? `republishable()` — `expired`/`revoked`. */
   readonly offersRepublish: boolean;
   /**
@@ -307,15 +457,18 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
 }
 
 /**
- * One relationship, if it is this member's — and the Aspects it was configured with.
+ * One relationship, if this member is a party to it — and the Aspects it was configured with.
+ *
+ * **A stranger's id is still `undefined`** — the page turns it into `notFound()` — but "stranger"
+ * now means *neither* the initiator *nor* a bound party seat (#706): the same predicate the list
+ * uses, so a Counterparty can open the relationship that lists them and reads it, read-only. The
+ * three write flags below are gated on `isInitiator`, so the read-only half is the derivation, not
+ * the route.
  *
  * The Aspects are read from the relationship's **own copy** (`rel.template_id`), which is what the
  * member is editing while the relationship is a draft. After publish the lock is the model's
  * (`aspectsEditable`) and the copy is frozen for the same reason: the pair was invited on those
  * words, and the session that runs them holds its own snapshot of the same version.
- *
- * `undefined` for a stranger's id, exactly as `readMyTemplate` answers — the page turns it into
- * `notFound()`.
  */
 export async function readMyRelationship(
   userId: string,
@@ -325,7 +478,7 @@ export async function readMyRelationship(
   const rows = await queryRows<RelationshipQueryRow>(
     `SELECT ${RELATIONSHIP_COLUMNS}
      ${RELATIONSHIP_FROM}
-      WHERE rel.id = $2 AND rel.initiator_user_id = $1`,
+      WHERE rel.id = $2 AND ${VIEWER_IS_PARTY}`,
     [userId, relationshipId],
   );
   const row = rows[0];
@@ -349,8 +502,35 @@ export async function readMyRelationship(
   if (primary === undefined) return undefined;
 
   const subscription = await readActiveSubscription(userId);
-  const base = relationshipOf(row, now, subscription);
+  const base = relationshipOf(row, now, subscription, userId);
   const trial = trialStateOf(subscription, now);
+  /*
+   * #690 — **the hard gate at publish, as a fact.**
+   *
+   * The plans on stage 4 are a soft prompt: a relationship is created and invited with no method.
+   * Publishing is the other half, and it needs a card on file — so the screen has to know whether
+   * one is, and the answer lives on the payment obligation this relationship already carries
+   * (`relationship_payment.method_captured_at`, written by `recordMethodCaptured()`). A
+   * relationship with no row at all reads `false` here rather than "not measured": the question
+   * this field answers is asked of the screen, and a screen that cannot show the fact must not
+   * draw the control.
+   */
+  const payment = await readRelationshipPayment(row.id);
+  const hasPaymentMethod =
+    payment?.method_captured_at !== null && payment?.method_captured_at !== undefined;
+  /*
+   * #739 — the completion gate, read beside the method fact.
+   *
+   * Two reads rather than one because they answer two different questions: `hasPaymentMethod`
+   * above is the publish gate's (#690 — a draft has no session, so nothing here could answer it),
+   * and this is the payer's band once a session exists. Both come from
+   * `relationship_payment.method_captured_at`, so they cannot disagree about the card; what this
+   * adds is the seal, the phase and the deadline, none of which the relationship row carries.
+   */
+  const completion =
+    base.sessionRecordId === null
+      ? null
+      : ((await readCompletionGate(base.sessionRecordId, now)) ?? null);
   // #533 phase 3 — derived at the instant the page was handed, never written here (a render may
   // not write). The same function the claim and the answer submit refuse with, so the band and the
   // refusal can never disagree about whether this relationship may be written to.
@@ -358,10 +538,23 @@ export async function readMyRelationship(
   return {
     ...base,
     template: assessmentTemplateFromRows({ record: primary, items, options }),
-    aspectsEditable: aspectsEditable(base.status),
-    publishable: publishable(base.status),
-    offersRepublish: republishable(base.view) && membership.state !== "lapsed",
-    trialWithoutLiveInvite: trialRunningWithoutLiveInvite(trial, base.view),
+    /*
+     * #706 — **every write flag is `isInitiator && …`.**
+     *
+     * The status question (`aspectsEditable`, `publishable`) and the invitation's question
+     * (`republishable`) are unchanged; what is new is that the viewer must also own the write. A
+     * Counterparty reads the same screen with all four false, so no editor, no publish panel and
+     * no reissue control is drawn — and the server actions still re-ask ownership under a row lock,
+     * because a flag here is a screen, not a refusal.
+     */
+    aspectsEditable: base.isInitiator && aspectsEditable(base.status),
+    publishable: base.isInitiator && publishable(base.status),
+    // #690 — a method on file, or nothing to click at publish. `publishable` stays the status
+    // question the transaction re-asks; this is the second half the screen must not guess.
+    hasPaymentMethod,
+    completion,
+    offersRepublish: base.isInitiator && republishable(base.view) && membership.state !== "lapsed",
+    trialWithoutLiveInvite: base.isInitiator && trialRunningWithoutLiveInvite(trial, base.view),
     closed: isClosed(base.status),
     trial,
     membership,
@@ -441,8 +634,11 @@ async function latestVersion(sql: ActSql, templateId: string): Promise<number> {
  * `published_by` is the actor, because a member's snapshot is a real publication of those words to
  * their own relationship — it is not the catalogue's publish (`template.publish`, admin-floored);
  * `record.status` stays `draft` and the catalogue never sees it.
+ *
+ * Exported for `lib/member/relationship-edit.ts` (#623): an edit after the invitation went out
+ * writes the same next version through the same statements, so the pin moves in exactly one way.
  */
-async function snapshotVersion(
+export async function snapshotVersion(
   sql: ActSql,
   input: {
     readonly templateId: string;
@@ -604,6 +800,20 @@ export async function createRelationship(
            VALUES ($1, $2, 'initiator', $3)`,
           [relationshipId, request.actorUserId, now.toISOString()],
         );
+
+        /*
+         * #619 — the payment obligation opens with the relationship, and names its one payer.
+         *
+         * Written here rather than at publish because the payer is fixed **at creation**: a second
+         * round the counterparty opens still bills this account, and a create that was abandoned
+         * leaves an obligation that simply never captures a method (which is `none`, not a charge).
+         * `ON CONFLICT DO NOTHING` inside the insert keeps a retried create a no-op.
+         */
+        await openPaymentObligation(sql, {
+          relationshipId,
+          payerUserId: request.actorUserId,
+          provider: billingProvider(),
+        });
 
         return {
           before: null,
@@ -804,6 +1014,20 @@ export interface PublishRequest {
   readonly initiatorEmail: string | null;
   readonly counterpartyName: string;
   readonly email: string;
+  /**
+   * #623 — the mode and the Setting the session opens under.
+   *
+   * They are chosen **here** and not on the edit screen, and that is a schema fact rather than a
+   * preference: both are columns of `session`, and `db:verify` V18 refuses an `UPDATE session` that
+   * touches them once the row exists (a scored session is immutable). Publish is the last instant
+   * at which they can be a choice — before it there is no row, after it there is a sheet whose
+   * answers were shaped by the mode that was written.
+   *
+   * Absent means `basic`/`soft`, which is what this call hard-coded before #623 and what a caller
+   * that has not been taught to ask still gets.
+   */
+  readonly mode?: AssessmentMode;
+  readonly setting?: AlignmentSetting;
   /** Where a hosted checkout sends the browser back to. */
   readonly returnUrl: string;
   readonly now?: Date;
@@ -910,39 +1134,19 @@ export async function publishRelationship(
     );
   }
 
-  const subscription: Subscription | null = await readActiveSubscription(request.actorUserId);
-  const basis = publishBasisOf(subscription, now);
-  if (basis.kind === "trial-running") {
-    // #533 phase 3 — the refusal names the relationship that holds the trial, not just the
-    // instant. Asked *before* the transaction: it is a read, and a refusal that costs a lock is a
-    // refusal that could have been answered without one.
-    const holder = await trialHolderOf(poolSql, request.actorUserId);
-    throw new MemberRefused(
-      "trial-already-running",
-      trialAlreadyRunningMessage(basis.endsAt, holder),
-    );
-  }
-
-  let publishWith: "trial" | "paid" = "paid";
-  if (basis.kind === "checkout") {
-    // A checkout is required before any invitation may exist. `startCheckout` writes what the
-    // adapter wrote (the mock completes inline and writes an `active` row through the same
-    // `writeSubscription` a provider event uses), and its own `BillingRefusal` propagates: a
-    // deployment with no keys is a 503 the caller shows, never a published relationship.
-    const checkout = await startCheckout({
-      userId: request.actorUserId,
-      planId: TRIAL_PLAN_ID,
-      interval: CHECKOUT_INTERVAL,
-      successUrl: request.returnUrl,
-      cancelUrl: request.returnUrl,
-      email: request.initiatorEmail ?? undefined,
-    });
-    if (!checkout.completed) {
-      throw new MemberCheckoutRequired(checkout.url);
-    }
-  } else if (basis.kind === "trial") {
-    publishWith = "trial";
-  }
+  /*
+   * #619 — **publishing bills nothing.**
+   *
+   * This used to decide a basis (`publishBasisOf`): start a 14-day trial, or open a checkout, or
+   * need neither because the account already paid. That was the charge-at-creation model, and it is
+   * retired here rather than left beside the new one: the money now belongs to **completion**
+   * (`lib/member/payment.ts`), and a publish that also billed would charge twice for one
+   * relationship.
+   *
+   * What is left at publish is what the word means: the status moves `→ published`, the session
+   * opens from the bound version, and the invitation is minted. The invitation is never blocked on
+   * a card (#619: "the invite sends either way").
+   */
 
   const inviteToken = mintToken();
   const expiresAt = inviteExpiresAt(now);
@@ -989,43 +1193,8 @@ export async function publishRelationship(
           );
         }
 
-        let started: string | null = null;
-        if (publishWith === "trial") {
-          started = trialEndsAt(now).toISOString();
-          try {
-            await sql.query(
-              `INSERT INTO billing_subscription
-                 (user_id, plan_id, interval, provider, provider_subscription_id,
-                  status, livemode, current_period_end)
-               VALUES ($1, $2, $3, 'mock', $4, 'trialing', false, $5)`,
-              [
-                request.actorUserId,
-                TRIAL_PLAN_ID,
-                CHECKOUT_INTERVAL,
-                `trial-${request.relationshipId}`,
-                started,
-              ],
-            );
-          } catch (error) {
-            // The one-trial rule is the index, not a comparison — so the answer is the violation.
-            if (isUniqueViolation(error, "billing_subscription_live_user_key")) {
-              const live = await sql.query<{ current_period_end: Date }>(
-                `SELECT current_period_end FROM billing_subscription
-                  WHERE user_id = $1 AND status = ANY($2::text[])
-                  ORDER BY updated_at DESC LIMIT 1`,
-                [request.actorUserId, ["active", "trialing", "past_due"]],
-              );
-              const endsAt = live.rows[0]?.current_period_end;
-              throw new MemberRefused(
-                "trial-already-running",
-                trialAlreadyRunningMessage(
-                  endsAt instanceof Date ? endsAt : new Date(endsAt ?? now),
-                ),
-              );
-            }
-            throw error;
-          }
-        }
+        // #619 — nothing is billed here. The fee belongs to completion, and the obligation row
+        // written at creation is what will carry it.
 
         // The version the relationship is bound to — never the working copy, which may have moved
         // since the last save. This is what V4 compares the copy against.
@@ -1084,8 +1253,15 @@ export async function publishRelationship(
         await sql.query(
           `INSERT INTO session
              (record_id, template_record_id, mode, alignment_setting, relationship_id, round)
-           VALUES ($1, $2, 'basic', 'soft', $3, $4)`,
-          [sessionRecordId.id, rel.template_id, rel.id, nextRound],
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            sessionRecordId.id,
+            rel.template_id,
+            request.mode ?? "basic",
+            request.setting ?? "soft",
+            rel.id,
+            nextRound,
+          ],
         );
 
         await sql.query(
@@ -1127,14 +1303,15 @@ export async function publishRelationship(
             status,
             publishedAt: rel.published_at === null ? null : rel.published_at.toISOString(),
             invite: null,
-            trial: publishWith === "trial" ? null : "already-purchased",
+            /* #619 — publishing no longer starts a trial, so there is no trial fact to record. */
+            trial: "none",
           },
           after: {
             relationshipId: rel.id,
             status: "published" as const,
             inviteExpiresAt: expiresAt.toISOString(),
             sessionRecordId: sessionRecordId.id,
-            trialEndsAt: started,
+            trialEndsAt: null,
           },
         };
       },

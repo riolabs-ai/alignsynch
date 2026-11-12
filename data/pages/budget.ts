@@ -120,8 +120,19 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // the registry belongs to `/admin/instances` above it and the log to `/admin/audit` below.
   "/admin/instances/[id]": {
     page: "app/(mainlayout)/admin/instances/[id]/page.tsx",
-    dirs: ["components/admin"],
+    dirs: ["components/admin", "components/relationship"],
     fixture: "data/pages/admin-relationship",
+    budget: 0,
+  },
+  // #665 — the review shelf. Budget 0 from the first commit, like the console's other screens: the
+  // group heading's two states, the row's one-line summary, the preview's served-from note, the
+  // metadata labels, the to-do states and the whole feedback/issue vocabulary are
+  // `data/pages/admin-review.ts`, so the next literal written in `review-artifacts.tsx` is a red
+  // build. Attribution is reachability, so this row counts one component.
+  "/admin/review": {
+    page: "app/(mainlayout)/admin/review/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-review",
     budget: 0,
   },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
@@ -211,6 +222,15 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/overview",
     budget: 0,
   },
+  // #542 phase 1 — support inside the shell: the knowledge base, the request form and the outcome
+  // band. Budget 0: the list's chrome, the fields, the five states and the band's three facts are
+  // `data/pages/dashboard-support.ts`.
+  "/dashboard/support": {
+    page: "app/(mainlayout)/dashboard/support/page.tsx",
+    dirs: ["components/support"],
+    fixture: "data/pages/dashboard-support",
+    budget: 0,
+  },
   // #533 phase 2 — the initiator's own CRUD, budget 0 from the first commit. The two lists, the
   // private template editor (which renders `components/admin/template-editor.tsx` in its
   // `band: "private"` variation — a component with no literals of its own) and one relationship's
@@ -237,7 +257,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   },
   "/dashboard/relationships/[id]": {
     page: "app/(mainlayout)/dashboard/relationships/[id]/page.tsx",
-    dirs: ["components/dashboard"],
+    dirs: ["components/dashboard", "components/relationship"],
     fixture: "data/pages/dashboard-relationship-detail",
     budget: 0,
   },
@@ -403,6 +423,37 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/legal",
     budget: 0,
   },
+  /**
+   * `/relationship-types` — the public Relationship Types catalogue (#794).
+   *
+   * Budget 0 from the first commit, like every surface this tree adds: the hero, the three bands'
+   * chrome, the five strings a card repeats and the counted catalogue sentence are all
+   * `data/pages/templates.ts`, so the next literal written in `components/templates/**` or in the
+   * page module is a red build. The cards themselves are `lib/template-catalogue.ts` over
+   * `data/relationship-types.ts` — records, not words.
+   */
+  "/relationship-types": {
+    page: "app/(marketing)/relationship-types/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates",
+    budget: 0,
+  },
+  /**
+   * `/relationship-types/[slug]` — one type, the page the directory's card titles link to.
+   *
+   * Budget 0 from the first commit, like every surface this tree adds: the hero's heading frame,
+   * the two descriptor headings, the Aspects band's heading and legend, the price line and the
+   * three link labels are all `data/pages/templates-detail.ts`. The name, the realm, the roles,
+   * the descriptor sentences and every Aspect come from `data/relationship-types.ts` through
+   * `lib/template-detail.ts` — records, not words. Attribution is reachability, so this row
+   * counts `components/templates/template-detail.tsx` and nothing else in the directory.
+   */
+  "/relationship-types/[slug]": {
+    page: "app/(marketing)/relationship-types/[slug]/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates-detail",
+    budget: 0,
+  },
   shell: {
     page: "app/(mainlayout)/layout.tsx",
     mounts: ["components/layout/footer.tsx"],
@@ -517,8 +568,56 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-accept",
     budget: 0,
   },
-  "/assessment/templates/[templateId]/create": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/create/page.tsx",
+  // #691 — stage 5, Sent. Budget 0 from the first commit, like every other flow surface: the state
+  // sentence, the timeline's nine items, the three next steps and the `go` band are
+  // `data/pages/assessment-sent.ts`, and the two bands it shares with the other screens are
+  // referenced from `data/pages/lifecycle.ts` and `data/pages/assessment-instance.ts`. Attribution
+  // is reachability, so this row counts `sent-state.tsx` and what it mounts, and the resend and
+  // copy bands' own copy stays the instance fixture's.
+  "/assessment/instances/[instanceId]/sent": {
+    page: "app/(mainlayout)/assessment/instances/[instanceId]/sent/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-sent",
+    budget: 0,
+  },
+  "/templates/relationship/[slug]/create": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
+  // #688 — stage 2 (Mode) of the same flow. Its own row because attribution is per surface, and
+  // the fixture is shared on purpose: two stages that print different words for one relationship
+  // would be the copy drift this table exists to stop. Budget 0, so the form's next literal is red.
+  "/templates/relationship/[slug]/create/mode": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
+  // #689 — stage 3 (Aspects). The same row shape and the same fixture, for the same reason: the
+  // list is one stage of one flow, and its words belong beside the two forms' words. Budget 0, so a
+  // sentence typed into the list is a red build rather than a second vocabulary.
+  "/templates/relationship/[slug]/create/aspects": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/aspects/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
+  // #690 — stage 4 (Create) and the account gate that follows it. The same row shape, dirs and
+  // fixture as the three stages above: one flow, one vocabulary, and a budget of 0 so the review
+  // card's labels, the two prices and the account stage's copy are a red build if they are typed
+  // into a component. #825 — the gate is retired and this is the account stage itself, which still
+  // reads the same fixture: its words are this flow's words, not a second create vocabulary.
+  "/templates/relationship/[slug]/create/commit": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
+    dirs: ["components/assessment-flow"],
+    fixture: "data/pages/assessment-create",
+    budget: 0,
+  },
+  // #825 — stage 5, Invite. The same row again, for the same reason: one flow, one vocabulary.
+  "/templates/relationship/[slug]/create/invite": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-create",
     budget: 0,
@@ -530,20 +629,20 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // from the first commit: every word is in `data/pages/assessment-templates.ts` and
   // `data/pages/assessment-template-detail.ts`, so the next literal written in either component
   // is a red build.
-  "/assessment/templates": {
-    page: "app/(mainlayout)/assessment/templates/page.tsx",
+  "/templates/relationship": {
+    page: "app/(mainlayout)/templates/relationship/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-templates",
     budget: 0,
   },
-  "/assessment/templates/[templateId]": {
-    page: "app/(mainlayout)/assessment/templates/[templateId]/page.tsx",
+  "/templates/relationship/[slug]": {
+    page: "app/(mainlayout)/templates/relationship/[slug]/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-template-detail",
     budget: 0,
   },
-  "/assessment/templates/new": {
-    page: "app/(mainlayout)/assessment/templates/new/page.tsx",
+  "/templates/relationship/new": {
+    page: "app/(mainlayout)/templates/relationship/new/page.tsx",
     dirs: ["components/assessment-flow"],
     fixture: "data/pages/assessment-template-new",
     budget: 0,

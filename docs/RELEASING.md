@@ -1,9 +1,213 @@
 # Releasing
 
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Releasing · prev [Deploying](DEPLOYING.md) · next [Orchestration rules](ORCHESTRATION.md)
+
+<!-- docs-nav:end -->
+
 A release is four artefacts that must agree: a **version** in `package.json`, a **CHANGELOG entry**,
 an **annotated tag `v<version>`**, and a **GitHub Release** whose body is that entry, byte for byte.
 `scripts/release.sh` writes all four, in that order, and refuses when the tree cannot support them.
 The script is the procedure; this page is why.
+
+A fifth artefact is written by a different command and answers the same question — does the released
+tree tell the truth about itself: `data/health/platform-health.json`, which `/admin/health` prints as
+status. Step 5 records it.
+
+## The run order
+
+Eight steps, in this order. Each names the command it runs; the sections below are the reasons, and
+the order is the part that costs money when it is wrong — a tag before its CHANGELOG entry, a deploy
+before its migration, a badge before its tag.
+
+### 1. Clean checkout
+
+A release is cut from `main`, level with `origin`, with nothing uncommitted:
+
+```bash
+git switch main
+git pull --ff-only
+git status --porcelain          # prints nothing
+git rev-parse HEAD origin/main  # one sha, printed twice
+```
+
+The detached-HEAD trap is what this catches: a checkout sitting on an old commit carries an older
+`package.json`, so the version decision in step 2 is made against the wrong range and the cut lands
+on a tree nobody reviewed. `AGENTS.md` § _Checkout hygiene_ is the drift this checkout actually
+exhibits; a stale release worktree pinning `main` is detached, never deleted.
+
+### 2. Version decision
+
+Read what landed since the last tag and let the prefixes decide. Never pick a number to sound bigger,
+and never skip one:
+
+```bash
+PREV="$(git describe --tags --abbrev=0)"
+git log --format='%s' "$PREV..HEAD" | grep -oE '^[a-z]+(\([^)]*\))?!?:' | sort | uniq -c
+```
+
+| Commits since `$PREV`                                         | Bump      | Example           |
+| ------------------------------------------------------------- | --------- | ----------------- |
+| only `fix:` / `chore:` / `docs:` / `test:` / `ci:`            | **patch** | `1.6.0` → `1.6.1` |
+| any `feat:`                                                   | **minor** | `1.6.0` → `1.7.0` |
+| breaking (`!` after the scope, or a `BREAKING CHANGE` footer) | **major** | `1.6.0` → `2.0.0` |
+
+A subject with no prefix counts as maintenance — it is a commit the generator files under
+**Maintenance**, not a reason to bump harder. `scripts/release-version.mjs` is the one classifier
+the gate, the bump guard and the publish step share, so the number decided here is the number the
+script will accept. A candidate is the same decision with a semver suffix (`1.7.0-rc1`).
+
+### 3. CHANGELOG entry, at that version
+
+`package.json` and `CHANGELOG.md` have to agree before anything else can be checked, so the bump
+comes first: set the version, then write the entry above the previous one — generated from the
+commits, or curated plus a `### Commits` ledger — see _A curated entry carries the `### Commits`
+ledger_ below. `release:check` is what says it is done:
+
+```bash
+pnpm release:check
+```
+
+It fails when `package.json` is not the newest entry's version, an entry carries an empty or `TODO`
+Known limits block, `## [Unreleased]` exists, or — once the tag exists — the entry does not name
+every commit in `<previous tag>..v<version>`. Write the Known limits block for the commit **being
+tagged** and validate it before publication ships it:
+
+```bash
+bash scripts/release.sh --check-limits limits.md
+```
+
+`pnpm changelog` then derives `docs/changelog/v<x-y-z>.md` from the entry, and `pnpm changelog:check`
+— a gate step — fails until the page and the entry say the same thing.
+
+### 4. Full gate
+
+```bash
+bash scripts/verify.sh
+```
+
+CI (`.github/workflows/ci.yml`) and the pre-push hook run this same script, so a green run here is
+the green run there, in the same order, stopping at the same first failure. Quote the lane it
+printed: a `docs/`-only change is a two-second run that dropped most of its steps, and that is not
+the gate a release is cut on. Force the whole thing when the diff is not obviously one lane —
+`GATE_LANE=full bash scripts/verify.sh`. Never cut on a red or unexplained run; the tag is a claim
+that this tree passed.
+
+### 5. Health record, last, at the version being released
+
+```bash
+pnpm health:record --db --gate --carry
+git add data/health/platform-health.json
+git commit -m "chore(health): re-record platform health for 1.7.0"
+```
+
+Run it after the bump and the entry are in the tree, and after the gate, so the record it writes
+describes the release it ships with rather than the previous one, and so its two expensive
+measurements are this tree's: `--db` adds a real `db:verify` block (against `demo`, never
+production), `--gate` a timed run of the gate in a clean environment. `--carry` keeps the blocks this
+run did not measure — the CI yield, unless `--ci <window>` re-derives it — each with its own instant,
+so a carried block reads as old rather than as this run's. **Without `--carry` (or a `--ci` window)
+the command stops instead of carrying a block silently**, which is why it is in the line above.
+Commit the file — `/admin/health` renders the **committed** record, and
+`tests/platform-health.test.ts` fails the gate when it is older than
+`PLATFORM_HEALTH_FRESHNESS_HOURS` (72 h by default), so a stale record is a red build rather than a
+quiet lie.
+
+The recorder then checks the artefact it wrote and exits non-zero when any of these is untrue —
+asserting the postcondition, not the exit code of the run that produced it (#680):
+
+| The record must say                    | Because                                                                                                   |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `recordedAt` is this run               | a carried stamp makes an old measurement read as current                                                  |
+| `tree.packageVersion == package.json`  | a `1.5.0` record beside a `1.6.0` package describes neither version, and this is the step that catches it |
+| `dbVerify.database` is the demo branch | a deliberately broken probe recorded as status made `/admin/health` read `Fail` forever                   |
+
+The third is a refusal **before anything is measured**: the label is derived from the connection
+string's Neon endpoint, and a copy of `demo` — which is what a scratch or probe branch is — has its
+own, so a run pointed anywhere else writes nothing and names the alternative. Evidence about a check
+belongs in `data/health/probes/`, written by the same command's probe mode; `--database-label` exists
+**only** there, because a label somebody types is how a scratch branch once recorded itself as status:
+
+```bash
+pnpm health:record --probe <name> --db --database-label "<how it was broken>" --proves "<what it proves>"
+```
+
+One thing to expect rather than debug: the `production` block of a pre-cut record names the version
+production serves _now_ — the previous release. It is a measurement, not a claim about what you are
+about to ship. Step 7 is the proof of the new version.
+
+### 6. Cut the release
+
+One rule above the two shapes: the tag is created before anything is deployed, or the version badge
+on every build links to a 404 (_The version badge points at the tag_).
+
+```bash
+bash scripts/release.sh --dry-run 1.7.0 --limits limits.md   # the entry it would write; writes nothing
+bash scripts/release.sh 1.7.0 --limits limits.md              # gate → entry → bump → commit → tag → push → Release
+```
+
+`--limits <file>` is not optional: the Known limits block is public release-note content and a human
+writes it. When the bump and entry were reviewed in a pull request instead, the tag belongs on the
+merge commit:
+
+```bash
+bash scripts/release.sh --tag-only 1.7.0
+```
+
+Then the release mail — with the key hydrated at call time, because a spawned shell has no
+`RESEND_API_KEY`:
+
+```bash
+~/.hermes/profiles/alignsynch/bin/withresend.sh pnpm release:note --tag v1.7.0
+```
+
+It is idempotent by tag: a sent tag is a comment on the `release-mail · sent tags` issue, and a
+re-run prints `already sent for v…` and sends nothing. The Known limits block goes out verbatim; the
+`### Commits` ledger never does.
+
+A pushed tag is never moved. A botched cut is abandoned — delete the tag and the Release — and the
+next number is cut (_Failure path_).
+
+### 7. Post-deploy proof
+
+A release is not a deployment. Three answers, from the URL rather than from "it works":
+
+```bash
+VERSION="$(node -p 'require("./package.json").version')"
+curl -s https://alignsynch.com/api/version                             # version == $VERSION
+node scripts/deploy-check.mjs --expect "$(git rev-parse "v$VERSION")"  # OK — not STALE, not UNKNOWN
+curl -s -o /dev/null -w '%{http_code}\n' https://alignsynch.com/       # 200
+```
+
+`/api/version` is baked into the build from `APP_VERSION` and `APP_COMMIT`, so a 200 carrying your
+version at the tag's commit is proof that production is serving the tagged tree — nothing is
+inferred. `STALE` is a deployment that has to be promoted, not a check to re-run until it agrees:
+[`main → production`](#main--production-promoting-a-release) is that procedure, and
+[`DEPLOYING.md`](DEPLOYING.md) is why the build policy is shaped the way it is. Then the party rules,
+read back from the database the deploy is actually using:
+
+```bash
+DATABASE_URL_UNPOOLED="<production unpooled URL>" pnpm db:verify
+```
+
+A release with no migration still runs it, and a run that applies nothing is the expected answer; a
+`✗` line or a V11 is the repair in § _2a_, not something to close the release over.
+
+### 8. Close out
+
+- **The release issue's definition of done**, each box ticked against the evidence from step 7 — the
+  `/api/version` body, the `deploy-check` line, the `db:verify` verdict — never against "released".
+- **The milestone**: list what is still open, then close it, because a milestone with nine open
+  issues and a shipped release reads as unfinished work.
+
+```bash
+gh issue list --milestone "v1.7.0 — onboarding prototype to production" --state open
+gh api repos/riolabs-ai/alignsynch/milestones/12 -X PATCH -f state=closed
+```
+
+An issue that is genuinely unfinished does not get closed with the milestone: it moves to the next
+milestone, by name, in the same pass — the milestone is a scope statement, not an archive.
 
 The live prototype is <https://alignsynch-amber.vercel.app/>. The script does not deploy and does not
 wait for a deploy, and a tag is not a deploy trigger. A **merge** is: while the project's Git
@@ -123,6 +327,81 @@ reader the claim is retracted. What the check cannot derive is a _rendered conse
 row, a CTA that is not there, a screen that does not follow — that half is still yours, because it is
 a claim about the running app and not a name in the tree. Route claims are out of scope in this first
 cut, and the mode's usage text says what that would need.
+
+## The blog is a view of the entry, and the gate keeps it one
+
+[`docs/changelog/`](changelog/README.md) tells the same releases as pages: what was painful before,
+what the release does now, a diagram, the screens it landed on. It **retypes nothing** the entry
+already says — the date, the tag, the entry's own sections and the whole Known limits block are
+copied into each page by `scripts/changelog-view.mjs`, and `pnpm changelog:check` (a step in
+`scripts/verify.sh`, in every lane) fails when the two disagree.
+
+So cutting a release is one edit, twice derived: write the entry, then
+
+```bash
+pnpm changelog          # copies the new entry into docs/changelog/v<x-y-z>.md
+```
+
+and write that page's prose. `pnpm changelog` refuses — by name — when a version has no page, when a
+page has no row in `docs/changelog/releases.json` (its `theme` and `headline`, the two judgements a
+generator cannot make), when a page has lost its diagram or its screenshot, and when a limit bullet
+was edited on the page instead of in the entry. Nothing may be repaired in the page: the entry is
+the source, and a page that says something else is the second opinion this check exists to prevent.
+
+## A curated entry carries the `### Commits` ledger
+
+`release:check` — and therefore the gate, in every lane — requires the newest entry to name every
+commit in `<previous tag>..<tag>`. The entry is normally generated from those commits, so drift
+between the two is drift in a published document. A **curated** entry does not name commits: prose
+written by a human, as `1.4.0`'s was, drops the whole range the moment the tag exists:
+
+```
+✗ entry [1.4.0] drops 55 of 55 commit(s) since v1.3.0
+```
+
+So a curated entry appends a generated ledger, above `### Known limits`:
+
+```markdown
+### Commits
+
+- `feat(nav)` — the rail is a role-constrained menu … ([#552](https://github.com/…/pull/552))
+- `fix(mail)` — … ([#551](https://github.com/…/pull/551))
+```
+
+The ledger is **provenance**: the record that the entry accounts for the range. It is not
+release-note content, and **the mail does not print it** — `releaseNoteBlocks()` skips a `Commits`
+subsection the way it special-cases `Known limits`, for the opposite reason: the limits must never be
+dropped, the ledger must never be printed. `tests/release-note-mail.test.ts` asserts both halves —
+the ledger present in the changelog and absent from the rendered mail, the limits still shipping
+verbatim.
+
+## The release note goes out with the tag
+
+Pushing `v*` runs `.github/workflows/release-notify.yml`, which mails the stakeholder release note
+(#548): the entry for that tag, rendered through `lib/email/band.ts` and sent through Resend. **The
+Known limits block ships with it, verbatim** — the mail is the entry, not a selection from it (the
+one exception is the `Commits` ledger, which is provenance and is never mailed — see above), and a
+section without a limits block is refused rather than trimmed.
+
+```bash
+pnpm release:note --tag v1.4.0 --dry-run   # render and print; send nothing, record nothing
+```
+
+Three properties are worth knowing before you touch it:
+
+- **The plain text is the master.** `renderEmail()` composes the text first and derives the HTML from
+  that string, so the two cannot say different things. The HTML therefore carries no bold: plain text
+  has none.
+- **It is idempotent by tag.** Sent tags are recorded as a comment (`<!-- release-mail: v1.4.0 -->`)
+  on the `release-mail · sent tags` issue, and a re-run for a recorded tag logs `already sent for v…`
+  and sends nothing. A rehearsal must set `RELEASE_MAIL_LEDGER_TITLE` to its own ledger, or it
+  consumes the release it is rehearsing.
+- **No `RESEND_API_KEY` is a green run, not a skipped one.** The fully rendered mail is printed into
+  the job log and the script exits 0, so a fork or a secret-less clone proves the render without
+  mailing anybody. `RESEND_API_KEY` in Actions must be a **sending-only** key; `RESEND_FROM` is the
+  verified sender and `STAKEHOLDERS` the comma-separated recipients. An empty `STAKEHOLDERS` is a
+  rehearsal too — the mail is printed and the run is green, because the work of writing it is done
+  and only the recipient list is missing. Nothing is silenced: the job log says which secret to add.
 
 ## The version badge points at the tag
 
@@ -404,3 +683,9 @@ node scripts/deploy-check.mjs --expect "$(git rev-parse "v$VERSION")"
 
 and [`main → production`](#main--production-promoting-a-release) above is the procedure that closes
 the gap it prints.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](README.md) › **Operations** › Releasing · prev [Deploying](DEPLOYING.md) · next [Orchestration rules](ORCHESTRATION.md)
+
+<!-- docs-nav:end -->

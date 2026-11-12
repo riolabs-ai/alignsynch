@@ -1,22 +1,24 @@
 // template-ancestor: components/my-quizzes/quiz-details.tsx   (variation: one relationship from draft to a live invitation — the status band, the initiator's Aspect editor, the publish panel and the one-click reissue, where the quiz detail draws stats and a play button)
 /**
- * `/dashboard/relationships/[id]` — one relationship, the initiator's screen (#533 phase 2).
+ * `/dashboard/relationships/[id]` — one relationship (#533 phase 2, #706).
  *
- * **A stranger's id is a 404.** `readMyRelationship` filters `initiator_user_id = $1` as well as the
- * id, so another member's relationship answers `undefined` and this page answers `notFound()` — the
- * same 404 a URL that never existed returns. The `[id]` is never used to look a row up without the
- * session.
+ * **A stranger's id is a 404; a Counterparty's is not.** `readMyRelationship` asks the same
+ * membership question the list does — the initiator *or* a bound party seat — so the relationship a
+ * Counterparty is listed in opens for them, read-only, and an id that belongs to neither answers
+ * `undefined` and this page answers `notFound()` — the same 404 a URL that never existed returns.
+ * The `[id]` is never used to look a row up without the session.
  *
- * **The page decides nothing the transaction will re-decide.** `aspectsEditable` and the trial state
- * come from the read (`lib/member/publish-basis.ts`), which is what the editor draws; the server
- * actions re-ask both under a row lock before they write. A screen that hid a control which would
+ * **The page decides nothing the transaction will re-decide.** `aspectsEditable`, `publishable`,
+ * `offersRepublish` and the trial state come from the read (`lib/member/publish-basis.ts`, gated on
+ * `isInitiator` since #706), which is what the screen draws; the server actions re-ask both
+ * ownership and status under a row lock before they write. A screen that hid a control which would
  * then have been allowed is a user-visible bug; a screen that offered one which is refused is the
  * documented behaviour — `not-editable`, `not-yours` and `trial-already-running` are sentences.
  *
  * **The trial band is read here, next to the invitation's state.** #533 requires the screen to say
  * plainly when a trial is running with no live invite; that combination is one value
  * (`trialRunningWithoutLiveInvite`), computed in the component from the two facts the view carries,
- * so the sentence and the badge cannot drift.
+ * so the sentence and the badge cannot drift. It is the initiator's trial and only they are told.
  *
  * `params` is a Promise in Next 16 and is unwrapped after the gate, never before — a refusal must
  * not depend on the URL being well-formed.
@@ -25,11 +27,22 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
+import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
-import { publishRelationshipAction, republishInviteAction, saveAspectsAction } from "../actions";
+import { readRelationshipEditState } from "@/lib/member/relationship-edit";
+import {
+  capturePaymentMethodAction,
+  completeRelationshipAction,
+  editRelationshipAction,
+  previewRelationshipEditAction,
+  publishRelationshipAction,
+  republishInviteAction,
+  resolveCaptureAction,
+  saveAspectsAction,
+} from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -65,25 +78,53 @@ export default async function MemberRelationshipPage({
   }
   if (view === undefined) notFound();
 
+  /*
+   * #623 — the edit surface, read beside the view rather than inside it.
+   *
+   * Two reads because they answer different questions: `readMyRelationship` is what the screen
+   * draws, and this is what an *edit* would need (the pin's versions, the invitation's window, and
+   * the per-seat answer counts that make a cost printable). A failure here is not a 404 — the page
+   * still renders; the edit band is simply absent, because a relationship that cannot be edited is
+   * not a relationship that cannot be read.
+   */
+  let editState: Awaited<ReturnType<typeof readRelationshipEditState>>;
+  try {
+    editState = await readRelationshipEditState({ actorUserId: user.userId, relationshipId: id });
+  } catch (error) {
+    if (!(error instanceof DatabaseUnavailableError)) throw error;
+    console.error("member-relationship: the edit state could not be read", error);
+    editState = undefined;
+  }
+
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {dashboardRelationshipDetailPageCopy.heading}
-        </p>
-        <h1 className="text-2xl font-semibold">{view.title}</h1>
-        {dashboardRelationshipDetailPageCopy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {dashboardRelationshipDetailPageCopy.subtitle}
-          </p>
-        )}
-      </header>
+      {/*
+        #795 — the page draws no heading of its own. The identity band the shell renders owns the
+        screen's one `<h1>` (the record's own title), so the kicker and the `text-2xl` title that
+        used to sit above the card are gone: two headings for one record is the defect the shared
+        shell exists to prevent, and the artifact draws the band in that position.
+      */}
       <RelationshipDetail
         copy={dashboardRelationshipDetailPageCopy}
         relationship={view}
+        backHref={MEMBER_RELATIONSHIPS_PATH}
+        editPanel={
+          editState === undefined || editState.closed ? undefined : (
+            <RelationshipEditPanel
+              copy={dashboardRelationshipDetailPageCopy}
+              state={editState}
+              variant="panel"
+              onPreview={previewRelationshipEditAction}
+              onEdit={editRelationshipAction}
+            />
+          )
+        }
         onSaveAspects={saveAspectsAction}
         onPublish={publishRelationshipAction}
         onRepublish={republishInviteAction}
+        onCapture={capturePaymentMethodAction}
+        onResolve={resolveCaptureAction}
+        onComplete={completeRelationshipAction}
       />
     </div>
   );
