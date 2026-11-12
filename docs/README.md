@@ -185,6 +185,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
+- [`qa-rail-handle/README.md`](qa-rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?
 - [`qa-brand-lockup/README.md`](qa-brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa-contact-land/README.md`](qa-contact-land/README.md) — **Contact landing** — What do the contact pages look like?
 - [`qa-help-two-column/README.md`](qa-help-two-column/README.md) — **Help two-column** — Did `/help` get its two-column layout?

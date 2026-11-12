@@ -96,7 +96,6 @@ function html(view: MemberRelationshipView): string {
     createElement(RelationshipDetail, {
       copy: dashboardRelationshipDetailPageCopy,
       relationship: view,
-      backHref: "/dashboard/relationships",
       onSaveAspects: noop,
       onPublish: noop,
       onRepublish: noop,

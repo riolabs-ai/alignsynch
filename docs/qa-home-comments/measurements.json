@@ -1,0 +1,290 @@
+{
+  "surface": "/ (BRAND=alignsynch, components/home/as2-hero.tsx)",
+  "driver": "headless Chrome 157, CDP Emulation.setDeviceMetricsOverride + Runtime.evaluate(getBoundingClientRect), mobile:false, deviceScaleFactor:1",
+  "defect": "the Arrow <svg> carries a viewBox and no intrinsic size, so a raw anchor sized it to the flex line (100%), square by its 1:1 aspect ratio",
+  "fix": "components/home/as2-parts.tsx — className=\"size-4 shrink-0\" on the Arrow glyph (the size components/ui/button already gives every arrow inside it)",
+  "widths": {
+    "390": {
+      "innerWidth": 390,
+      "scrollWidthAfter": 390,
+      "rowBefore": {
+        "w": 342,
+        "h": 310.453
+      },
+      "rowAfter": {
+        "w": 342,
+        "h": 101,
+        "alignItems": "stretch",
+        "flexDirection": "column",
+        "gap": "13px"
+      },
+      "primaryCta": {
+        "w": 342,
+        "h": 48,
+        "minHeight": "auto",
+        "height": "48px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaBefore": {
+        "w": 342,
+        "h": 249.453,
+        "minHeight": "40px",
+        "height": "249.453px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaAfter": {
+        "w": 342,
+        "h": 40,
+        "minHeight": "40px",
+        "height": "40px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "arrowSvgBefore": {
+        "w": 249.453,
+        "h": 249.453
+      },
+      "arrowSvgAfter": {
+        "w": 16,
+        "h": 16
+      }
+    },
+    "640": {
+      "innerWidth": 640,
+      "scrollWidthAfter": 640,
+      "rowBefore": {
+        "w": 590,
+        "h": 60
+      },
+      "rowAfter": {
+        "w": 590,
+        "h": 48,
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": "15px 22px"
+      },
+      "primaryCta": {
+        "w": 213.203,
+        "h": 48,
+        "minHeight": "auto",
+        "height": "48px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaBefore": {
+        "w": 123.906,
+        "h": 60,
+        "minHeight": "0px",
+        "height": "60px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaAfter": {
+        "w": 139.906,
+        "h": 20,
+        "minHeight": "0px",
+        "height": "20px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "arrowSvgBefore": {
+        "w": 59.891,
+        "h": 59.891
+      },
+      "arrowSvgAfter": {
+        "w": 16,
+        "h": 16
+      }
+    },
+    "768": {
+      "innerWidth": 768,
+      "scrollWidthAfter": 768,
+      "rowBefore": {
+        "w": 310.031,
+        "h": 123
+      },
+      "rowAfter": {
+        "w": 310.031,
+        "h": 83,
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": "15px 22px"
+      },
+      "primaryCta": {
+        "w": 213.203,
+        "h": 48,
+        "minHeight": "auto",
+        "height": "48px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaBefore": {
+        "w": 123.906,
+        "h": 60,
+        "minHeight": "0px",
+        "height": "60px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaAfter": {
+        "w": 139.906,
+        "h": 20,
+        "minHeight": "0px",
+        "height": "20px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "arrowSvgBefore": {
+        "w": 59.891,
+        "h": 59.891
+      },
+      "arrowSvgAfter": {
+        "w": 16,
+        "h": 16
+      }
+    },
+    "1024": {
+      "innerWidth": 1024,
+      "scrollWidthAfter": 1024,
+      "rowBefore": {
+        "w": 427.797,
+        "h": 60
+      },
+      "rowAfter": {
+        "w": 427.797,
+        "h": 48,
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": "15px 22px"
+      },
+      "primaryCta": {
+        "w": 213.203,
+        "h": 48,
+        "minHeight": "auto",
+        "height": "48px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaBefore": {
+        "w": 123.906,
+        "h": 60,
+        "minHeight": "0px",
+        "height": "60px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaAfter": {
+        "w": 139.906,
+        "h": 20,
+        "minHeight": "0px",
+        "height": "20px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "arrowSvgBefore": {
+        "w": 59.891,
+        "h": 59.891
+      },
+      "arrowSvgAfter": {
+        "w": 16,
+        "h": 16
+      }
+    },
+    "1280": {
+      "innerWidth": 1280,
+      "scrollWidthAfter": 1280,
+      "rowBefore": {
+        "w": 486.672,
+        "h": 60
+      },
+      "rowAfter": {
+        "w": 486.672,
+        "h": 48,
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": "15px 22px"
+      },
+      "primaryCta": {
+        "w": 213.203,
+        "h": 48,
+        "minHeight": "auto",
+        "height": "48px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaBefore": {
+        "w": 123.906,
+        "h": 60,
+        "minHeight": "0px",
+        "height": "60px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaAfter": {
+        "w": 139.906,
+        "h": 20,
+        "minHeight": "0px",
+        "height": "20px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "arrowSvgBefore": {
+        "w": 59.891,
+        "h": 59.891
+      },
+      "arrowSvgAfter": {
+        "w": 16,
+        "h": 16
+      }
+    },
+    "1440": {
+      "innerWidth": 1440,
+      "scrollWidthAfter": 1440,
+      "rowBefore": {
+        "w": 486.672,
+        "h": 60
+      },
+      "rowAfter": {
+        "w": 486.672,
+        "h": 48,
+        "alignItems": "center",
+        "flexDirection": "row",
+        "gap": "15px 22px"
+      },
+      "primaryCta": {
+        "w": 213.203,
+        "h": 48,
+        "minHeight": "auto",
+        "height": "48px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaBefore": {
+        "w": 123.906,
+        "h": 60,
+        "minHeight": "0px",
+        "height": "60px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "secondaryCtaAfter": {
+        "w": 139.906,
+        "h": 20,
+        "minHeight": "0px",
+        "height": "20px",
+        "lineHeight": "20px",
+        "alignSelf": "auto"
+      },
+      "arrowSvgBefore": {
+        "w": 59.891,
+        "h": 59.891
+      },
+      "arrowSvgAfter": {
+        "w": 16,
+        "h": 16
+      }
+    }
+  }
+}
