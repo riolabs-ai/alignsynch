@@ -24,6 +24,7 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
+import { InviteWalk } from "@/components/assessment-flow/invite-walk";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { readLibraryTemplate } from "@/lib/db/template-library";
@@ -32,6 +33,7 @@ import { createRefusal } from "@/lib/flow/create-copy";
 import { createCommitPath, createRelationshipPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +71,12 @@ export default async function TemplateCreateInvitePage({
 
   const jar = await cookies();
   const viewer = await currentUserIfConfigured();
-  const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
+  const detail = await readLibraryTemplate(slug, viewer?.userId ?? null);
+  // #870 — the refusal's door: the template's own page (by slug) and its editor (by id).
+  const refusal = createRefusal(firstValue(query.problem), firstValue(query.field), {
+    slug,
+    ...(detail === undefined ? {} : { recordId: detail.template.id }),
+  });
 
   const screen = await readFlowScreen({
     instanceRecordId,
@@ -79,7 +86,6 @@ export default async function TemplateCreateInvitePage({
   // Not this browser's relationship, and not one an account it holds is a party to.
   if (screen === undefined) redirect(whoPath);
 
-  const detail = await readLibraryTemplate(slug, viewer?.userId ?? null);
   if (detail === undefined && refusal === null) notFound();
 
   /**
@@ -117,6 +123,41 @@ export default async function TemplateCreateInvitePage({
     alignmentSetting: screen.setting,
   };
 
+  /**
+   * **The payment walk, built here and handed to the stage (#870).**
+   *
+   * The stage draws it on the left and owns nothing about it — the plan is a database fact, and a
+   * component that reached for one would be a component that cannot be rendered without a pool.
+   * What the account already pays for decides the first panel: an entitled account gets a
+   * **summary** of its tier rather than the radio group, so the stage never asks somebody to buy a
+   * plan they hold. An account whose Mode is not on its plan keeps the radio group and the trial
+   * sentence — the send still grants the 7-day trial and the trial still plays Advanced Mode
+   * (#835, #843), which is why this is a walk and not a gate.
+   *
+   * **Nothing here charges, and nothing here is a card form.** The method panel keeps deferring the
+   * capture to publish — that is the approved flow (`payment-flow.method-note`) and #748's in-app
+   * capture dialog is the surface that takes a card, not a static field on a walk. The honest
+   * summary is the whole of what this card adds on the entitled side; the not-entitled side is
+   * already wired to `/pricing`, which owns the one checkout.
+   */
+  const accountPlan =
+    entitlement === null
+      ? undefined
+      : { name: entitlement.planName, entitled: entitlement.paid && entitlement.advancedMode };
+
+  const payment = (
+    <InviteWalk
+      copy={assessmentCreatePageCopy}
+      draft={draft}
+      account={
+        <p className="text-xs text-gray-600 dark:text-gray-300">
+          {itemLabel(sectionOf(assessmentCreatePageCopy, "account"), "signed-in-body")}
+        </p>
+      }
+      {...(accountPlan === undefined ? {} : { accountPlan })}
+    />
+  );
+
   return (
     <CreateRelationship
       copy={assessmentCreatePageCopy}
@@ -139,6 +180,7 @@ export default async function TemplateCreateInvitePage({
       problemLink={refusal?.link ?? null}
       notice={planNotice?.sentence ?? null}
       noticeLink={planNotice?.link ?? null}
+      payment={payment}
     />
   );
 }

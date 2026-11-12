@@ -43,7 +43,7 @@ export function StageFoot({
   cancelHref: string;
   cancelLabel: string;
   /** The control that moves the person forward: a submit on 1, 2 and 4, a link on 3. */
-  advance: ReactNode;
+  advance?: ReactNode;
 }) {
   return (
     <div
@@ -66,7 +66,14 @@ export function StageFoot({
           {cancelLabel}
         </Link>
       </div>
-      <div className="order-1 flex min-[560px]:order-none min-[560px]:ml-auto">{advance}</div>
+      {/*
+       * The advance is optional (#870): a stage whose template cannot be copied draws the refusal,
+       * the fix and this `[Back][Cancel]` pair, and offering an advance there would be a control
+       * that walks a person into a store refusal already written above it.
+       */}
+      {advance === undefined ? null : (
+        <div className="order-1 flex min-[560px]:order-none min-[560px]:ml-auto">{advance}</div>
+      )}
     </div>
   );
 }

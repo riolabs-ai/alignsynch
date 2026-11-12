@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**114 documents in 9 sections.** Every page carries the same nav block, generated
+**115 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 18 documents
-- [Records & QA](#records-qa) — 19 documents
+- [Records & QA](#records-qa) — 20 documents
 
 ## Start here
 
@@ -193,6 +193,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-lockup-2rem/README.md`](qa-lockup-2rem/README.md) — **Lockup 2rem** — Is the lockup 2rem in every expanded-header viewport?
 - [`qa-noun-crud/README.md`](qa-noun-crud/README.md) — **Templates and relationships after creation** — Can a template be revised and retired, and does a bound relationship keep the version it was answered under?
 - [`qa-recharts-3/README.md`](qa-recharts-3/README.md) — **recharts 3** — Do the pie labels still render after the recharts 3 bump?
+- [`qa-stage5/README.md`](qa-stage5/README.md) — **Stage 5, both states** — Does stage 5 offer the payment walk and send/draft instead of a band with no action?
 - [`qa-swiper-12/README.md`](qa-swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa-template-catalogue/README.md`](qa-template-catalogue/README.md) — **Template catalogue** — What do the catalogue pages look like from the AlignSynch build?
 - [`qa-v1x-ui-cohort/README.md`](qa-v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
