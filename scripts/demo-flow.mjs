@@ -317,7 +317,9 @@ async function attach() {
     new Promise((resolve, reject) => {
       const id = nextId++;
       pending.set(id, { resolve, reject });
-      socket.send(JSON.stringify({ id, method, params, ...(sessionId === undefined ? {} : { sessionId }) }));
+      socket.send(
+        JSON.stringify({ id, method, params, ...(sessionId === undefined ? {} : { sessionId }) }),
+      );
     });
 
   await send("Target.setAutoAttach", {
@@ -1373,9 +1375,7 @@ async function fillCardFrame(send, { email }) {
           return true;
         })()`,
       );
-      landed = await inFrame(
-        `document.querySelector(${JSON.stringify(selector)})?.value ?? null`,
-      );
+      landed = await inFrame(`document.querySelector(${JSON.stringify(selector)})?.value ?? null`);
     }
     const bare = (text) => String(text).replace(/[\s-]/g, "");
     if (typeof landed === "string" && bare(landed) === bare(cardValues[key])) {
@@ -1404,7 +1404,9 @@ async function fillCardFrame(send, { email }) {
     seen: fields
       .filter((field) => field.type !== "hidden")
       .slice(0, 8)
-      .map((field) => `${field.tag}[${field.type}]${field.name === "" ? "" : ` name=${field.name}`}`)
+      .map(
+        (field) => `${field.tag}[${field.type}]${field.name === "" ? "" : ` name=${field.name}`}`,
+      )
       .join(", "),
     frameUrl: normaliseRoute(ready.origin),
   };
@@ -1494,7 +1496,10 @@ async function payWalk(send, { pathLabel, complete, plan }) {
 
   // The provider answers, the app resolves the method server-side, and the panel moves to its
   // third step — which has no button, because the walk ends there.
-  const thanked = await waitFor(send, payStep("thanks"), { timeout: 60000, label: "the thank-you step" })
+  const thanked = await waitFor(send, payStep("thanks"), {
+    timeout: 60000,
+    label: "the thank-you step",
+  })
     .then(() => true)
     .catch(() => false);
   const gateAfter = await evaluate(send, SEND_GATE);
@@ -1901,7 +1906,10 @@ async function walkUnpaid(send) {
   await payWalk(send, { pathLabel: "unpaid", complete: false, plan: "unlimited" });
 
   // The abandoned-payment screen: the send is still locked, and the sentence beside it says why.
-  const sendDrawn = await evaluate(send, `!!document.querySelector(${JSON.stringify(SEND_SELECTOR)})`);
+  const sendDrawn = await evaluate(
+    send,
+    `!!document.querySelector(${JSON.stringify(SEND_SELECTOR)})`,
+  );
   const sendDisabled = await evaluate(
     send,
     `document.querySelector(${JSON.stringify(SEND_SELECTOR)})?.disabled ?? null`,
