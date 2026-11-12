@@ -449,7 +449,9 @@ export function BroadcastComposer({
         </CardHeader>
         <CardContent>
           {sends.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{itemLabel(sendsCopy, "empty")}</p>
+            <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+              {itemLabel(sendsCopy, "empty")}
+            </p>
           ) : (
             <Table>
               <TableHeader>

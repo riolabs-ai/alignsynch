@@ -115,7 +115,7 @@ export function KnowledgeBase({
           ))}
         </div>
       ) : (
-        <div className="text-center py-8">
+        <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-center">
           <FileText className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
           <p className="text-muted-foreground">{itemLabel(copy, "empty")}</p>
         </div>
