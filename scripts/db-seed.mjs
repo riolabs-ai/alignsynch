@@ -19,6 +19,23 @@
  * whole run is serialised on the branch by an advisory lock, because the demo branch is shared and
  * two overlapping seeds used to interleave into a `422`; see `scripts/db-seed-lock.mjs`.)
  *
+ * **A drifted branch is swept, not refused (#865).** Phase 1 also deletes every `relationship` row
+ * the source does not describe — "not in the bundle" is the whole predicate, never an email, an id
+ * prefix or a guess about a test row — children first, because
+ * `relationship_payment_relationship_id_fkey` has no cascade. Before #865 the seed aborted on
+ * those rows (`relationship: expected 4 row(s) … found 38`) with the demo accounts already
+ * rolled back, which is how the branch lost its only admin identity. The sweep lives in
+ * `scripts/db-seed-sweep.mjs` with its own tests; it runs inside phase 1's transaction, after the
+ * lock, and it only ever deletes rows that are *not* the bundle's, so a phase-2 failure cannot
+ * have destroyed anything the seed meant to write.
+ *
+ * **`--check` is the safe question.** `node scripts/db-seed.mjs --check` prints what the sweep
+ * would remove and exits **1** on any drift, writing nothing and taking no lock — the version of
+ * this question that is safe to ask about a branch every card shares. It reads the committed
+ * bundle's JSON directly (E32 keeps that equal to the fixtures), so it needs no TypeScript loader
+ * and no HTTP. It is not implemented as "run the destructive path and roll back": a rollback still
+ * takes locks, still runs inside another seed's window, and a mistake in it is a deleted branch.
+ *
  * **The demo accounts (#183).** With `DEMO_AUTH=1` this script also creates the three demo
  * identities — `initiator@`, `counterparty@` and `admin@demo.alignsynch.test` — and binds the
  * first two to Avery and Rowan on `assessment-instance-avery-rowan`, so signing in as the
@@ -69,6 +86,13 @@ import {
   lockWaitNotice,
   waitBudgetMs,
 } from "./db-seed-lock.mjs";
+import {
+  assertExactCount,
+  checkReport,
+  inspectDrift,
+  removeStrays,
+  sweepLine,
+} from "./db-seed-sweep.mjs";
 import { loadEnv, repoRoot, requireVariable, writeDatabaseUrl } from "./load-env.mjs";
 
 /** The auth proof's throwaway account (issue #145 comment, confirmed by Jaden). */
@@ -942,6 +966,73 @@ async function syncReviewArtifacts(client) {
 }
 
 /* ------------------------------------------------------------------ *\
+ * `--check` — the read-only question about a shared branch (#865)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The relationship ids the bundle describes, read from the committed JSON.
+ *
+ * **JSON, not `data/assessments.ts`.** `--check` has to run as the card's acceptance command
+ * (`node scripts/db-seed.mjs --check`, no `--import ./scripts/ts-modules.mjs`), because it asks a
+ * yes/no question about a branch every other card shares and should not need the TypeScript
+ * loader — or a live auth server — to answer it. The committed bundle is the seed's own source in
+ * demo mode, and E32 (`pnpm data:check`) fails when it drifts from `data/assessments.ts`, so the
+ * two id sets are one set; the seed re-asserts the canonical export itself before it writes a row.
+ */
+function bundleRelationshipIdsFromFile() {
+  const bundle = JSON.parse(readFileSync(DEMO_DATASET_FILE, "utf8"));
+  const instances = bundle?.payload?.instances;
+  if (!Array.isArray(instances)) {
+    throw new Error(
+      `${displayPath(DEMO_DATASET_FILE)} carries no payload.instances — cannot tell which relationships are the bundle's`,
+    );
+  }
+  return instances.map((instance) => `relationship-${instance.id}`);
+}
+
+/**
+ * `node scripts/db-seed.mjs --check` — what the sweep would remove, and **exit 1 on any drift**.
+ *
+ * Three properties, and each is why this mode exists rather than a `--dry-run` flag on the seed:
+ *
+ *   - **It writes nothing.** `inspectDrift` issues `SELECT`s only, so there is no rollback to get
+ *     wrong and no window in which a shared branch is altered.
+ *   - **It takes no lock.** A check that blocked on the seed lock would be a check that hangs
+ *     behind somebody else's seed; the question is worth answering at any moment, and a read
+ *     cannot interleave destructively with a write.
+ *   - **Exit 1 is the answer, not a failure.** `0` = every relationship row is the bundle's;
+ *     `1` = drift, listed so it can be read. The seed converges it; nothing here repairs it.
+ *
+ * A stray that owns sessions is called out separately, because the sweep deletes those sessions
+ * and leaves their `record` rows: a record this seed did not author is the one thing it still
+ * refuses rather than deletes, and the operator should hear that before running the seed.
+ */
+async function checkOnly() {
+  const source = displayPath(DEMO_DATASET_FILE);
+  const client = new Client({
+    connectionString: writeDatabaseUrl(),
+    application_name: "db:seed --check",
+  });
+  await client.connect();
+  try {
+    const drift = await inspectDrift(client, {
+      bundleRelationshipIds: bundleRelationshipIdsFromFile(),
+    });
+    console.log("  · read-only: no advisory lock, no write, no HTTP");
+    const report = checkReport({ ...drift, source });
+    for (const line of report.lines) console.log(line);
+    if (drift.counts.session > 0) {
+      console.log(
+        "  ! a stray relationship that owns a session leaves that session's `record` row behind — the seed names such a record instead of deleting content it did not author",
+      );
+    }
+    process.exitCode = report.exitCode;
+  } finally {
+    await client.end();
+  }
+}
+
+/* ------------------------------------------------------------------ *\
  * Counts
  * ------------------------------------------------------------------ */
 
@@ -1041,8 +1132,35 @@ async function releaseSeedLock(client) {
     .catch(() => {});
 }
 
+/**
+ * The sentence a failed phase 2 appends to its own error (#865).
+ *
+ * `demo accounts created: 3` printed above a rolled-back transaction is a success that vanishes:
+ * the auth users are real (a sign-up is HTTP, and it cannot see an uncommitted row), their
+ * `demo_account` / `user_profile` / `party` rows are not, and the next run's phase 1 deletes the
+ * users by email. Saying all three is the difference between "the seed half-worked" and "the seed
+ * lost my admin".
+ */
+function rolledBackNotice(demoAccountsCreated) {
+  const base =
+    "phase 2 was ROLLED BACK — none of its writes survive this run (phase 1's removals are committed, and are the documented half-seeded state).";
+  if (demoAccountsCreated === 0) return base;
+  return [
+    base,
+    `The ${demoAccountsCreated} demo account(s) this run created are real auth users in Neon Auth, but no demo_account, user_profile or party row for them was kept — they cannot sign in.`,
+    "The next successful seed removes those auth users in phase 1 (by email) and creates them again.",
+  ].join("\n  ");
+}
+
 async function main() {
   loadEnv();
+
+  // #865 — the read-only question first, and it returns without ever reaching the lock, the
+  // dataset import or the auth server: `--check` must be safe to run while another card seeds.
+  if (process.argv.includes("--check")) {
+    await checkOnly();
+    return;
+  }
 
   // The platform admins, read once before any phase so the removal and the seed share one list.
   // A half-configured pair is a printed warning, never a failure: nothing configured is the gate's
@@ -1056,6 +1174,16 @@ async function main() {
   const { assessments, assessmentInstances } = demoDataset
     ? { assessments: demoDataset.templates, assessmentInstances: demoDataset.instances }
     : await import("../data/assessments.ts");
+
+  // One name for "where the rows came from", used by the sweep, the assertion and the closing
+  // line: a message that spells the source differently from the sweep is a message that makes a
+  // converged branch look like a drifted one.
+  const source = demo ? displayPath(DEMO_DATASET_FILE) : "data/assessments.ts";
+  // #865 — the ids this seed is about to write, and therefore the only relationship rows the
+  // branch is allowed to keep: the sweep deletes by *not being in this set*.
+  const bundleRelationshipIds = assessmentInstances.map(
+    (instance) => `relationship-${instance.id}`,
+  );
 
   // #289 — the billing plan rows come from the same fixture a pricing surface renders, so the
   // table and the page cannot hold two prices. `checkedPlanRows()` throws on a fixture that
@@ -1092,6 +1220,10 @@ async function main() {
 
   const client = new Client({ connectionString: writeDatabaseUrl(), application_name: "db:seed" });
   await client.connect();
+  // #865 — "the accounts exist" and "the accounts were kept" are different sentences, and this
+  // is what lets a failure say which one happened.
+  let phaseTwoOpen = false;
+  let demoAccountsCreated = 0;
   try {
     console.log(
       `db:seed — ${assessments.length} template(s), ${assessmentInstances.length} instance(s)` +
@@ -1119,12 +1251,24 @@ async function main() {
      * they were and the demo identities are gone: measured on the demo branch as `33 records /
      * 172 items / 0 demo_account / 0 demo profile / 0 bound party / 0 membership`. That is
      * "half-seeded", and the recovery is the next successful seed, not a manual repair: phase 1
-     * deletes by email *and* by stored id, so it removes whatever the abandoned run left. */
+     * deletes by email *and* by stored id, so it removes whatever the abandoned run left.
+     *
+     * **#865 — the sweep runs here, with the other deletes, for that same reason.** It is the
+     * destructive half, and the rows it removes are defined by *not* being the source's, so a
+     * delete committed without the re-insert has destroyed nothing this seed meant to write; the
+     * reverse order would put a sweep inside the transaction whose rollback is supposed to protect
+     * content the seed authored. It is not a separate pre-flight step: it runs under the branch's
+     * advisory lock (taken just above) and inside this transaction, so two seeds cannot sweep
+     * past each other, and a killed run leaves the branch either swept or not swept — never with
+     * a half-deleted subtree. Phase 2's exact-count assertion is unchanged: convergence is what
+     * makes it affordable, deleting it (or weakening it) is what would make the next drift
+     * invisible. */
     await acquireSeedLock(client);
     await client.query("BEGIN");
     let deleted;
     let removed;
     let staleAdmins;
+    let swept;
     try {
       deleted = await deleteTempUsers(client);
       // Removing before writing is what makes the demo accounts idempotent *and* what makes
@@ -1133,6 +1277,14 @@ async function main() {
       // An admin whose password changed is removed here — committed before the phase-2 sign-up —
       // so the recreate below is a sign-up against an absent user, never a USER_ALREADY_EXISTS.
       staleAdmins = await removeStaleAdmins(client, admin.accounts);
+      // #865 — converge the relationship subtree: everything the source does not describe goes,
+      // children first (`relationship_payment`'s FK has no cascade), and the counts are reported.
+      const drift = await inspectDrift(client, { bundleRelationshipIds });
+      const counts = await removeStrays(client, {
+        relationshipIds: drift.strays,
+        sessionRecordIds: drift.sessionRecordIds,
+      });
+      swept = { strays: drift.strays, counts };
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
@@ -1149,10 +1301,15 @@ async function main() {
           : `${removed.credentials} credential row(s) removed, none created (DEMO_AUTH is not 1)`
       }`,
     );
+    console.log(sweepLine({ ...swept, source }));
 
     /* Phase 2 — the rows. One transaction, so a seed that fails halfway leaves the previous
-     * rows and never half-copies an instance. */
+     * rows and never half-copies an instance. `phaseTwoOpen` and `demoAccountsCreated` are what
+     * make the failure honest (#865): the accounts are real auth users created over HTTP *before*
+     * this transaction commits, so a rollback below must say so instead of leaving the line
+     * `demo accounts created: 3` sitting above a transaction that was thrown away. */
     await client.query("BEGIN");
+    phaseTwoOpen = true;
 
     for (const template of assessments) await seedTemplate(client, template);
     // #502b — the versions the seeded relationships bind to, written before the relationships
@@ -1186,12 +1343,13 @@ async function main() {
 
     if (demo) {
       const accounts = await seedDemoAccounts(client);
+      demoAccountsCreated = accounts.length;
       const bound = await bindDemoParties(client, accounts);
       // #coach — the two bound parties become relationship members, so the relationship they
       // answer is the one they can see. A coach is never added here: a coach is invited.
       await syncRelationshipMembers(client);
       console.log(
-        `  · demo accounts created: ${accounts.length} (${accounts.map((account) => `${account.email}=${account.role}`).join(", ")})`,
+        `  · demo accounts created: ${accounts.length} (${accounts.map((account) => `${account.email}=${account.role}`).join(", ")}) — in phase 2, committed only at the end of it`,
       );
       for (const party of bound) {
         console.log(`  · ${party.email} is ${party.partyName} — ${party.instance}/${party.role}`);
@@ -1220,12 +1378,11 @@ async function main() {
     }
 
     const actual = await counts(client);
+    // #865 — the assertion is unchanged, and it is shared with `tests/db-seed-sweep.test.ts` so a
+    // later change cannot quietly relax it: the sweep is what makes it affordable, not an excuse
+    // to stop asking.
     for (const [table, count] of Object.entries(expected)) {
-      if (actual[table] !== count) {
-        throw new Error(
-          `${table}: expected ${count} row(s) from ${demo ? displayPath(DEMO_DATASET_FILE) : "data/assessments.ts"}, found ${actual[table]}`,
-        );
-      }
+      assertExactCount({ table, expected: count, actual: actual[table], source });
     }
 
     // The demo rows are asserted the same way the content rows are: three credentials, one
@@ -1258,6 +1415,7 @@ async function main() {
     }
 
     await client.query("COMMIT");
+    phaseTwoOpen = false;
 
     console.log("\n  seeded counts (identical on every run):");
     for (const [table, count] of Object.entries(actual)) {
@@ -1287,7 +1445,13 @@ async function main() {
       `\n✓ db:seed — ${assessments.length} templates + ${assessmentInstances.length} instances mirrored from ${demo ? displayPath(DEMO_DATASET_FILE) : "data/assessments.ts"}`,
     );
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
+    // Only phase 2 has anything to roll back here; phase 1's own catch already did it, and a
+    // ROLLBACK issued outside a transaction is a warning the operator does not need.
+    if (phaseTwoOpen) {
+      await client.query("ROLLBACK").catch(() => {});
+      phaseTwoOpen = false;
+      throw new Error(`${error.message}\n${rolledBackNotice(demoAccountsCreated)}`);
+    }
     throw error;
   } finally {
     // Both the normal path and every failure path release here; a process that is *killed* never

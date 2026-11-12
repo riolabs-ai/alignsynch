@@ -51,6 +51,12 @@
 # are copied into each page by `scripts/changelog-view.mjs` — so the entry is docs,
 # the generator is config and the pages are docs: the same three lanes, one check.
 #
+# THE COLUMNS STEP IS IN EVERY LANE TOO (#858). `data/surface-columns.ts` is the registry of
+# which width each `app/(mainlayout)/` page draws in, and `scripts/column-refs.ts` holds it against
+# the tree: a page with no row, a `wide` with no reason, a `bleed` whose `back` does not resolve,
+# or a column page whose view still centres itself all fail here. The registry is data, the check
+# is a script, the pages are app — three lanes, one check, ~0.4 s.
+#
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
@@ -382,6 +388,18 @@ if has_script "ui:registry:check"; then
   run_step "ui-registry (docs/ui-registry.md matches the tree and data/ui-registry.ts)" pnpm ui:registry:check || fail
 else
   skip_step "ui-registry" "no ui:registry:check script in package.json"
+fi
+
+# The left edge (#858). `data/surface-columns.ts` says which width every `app/(mainlayout)/` page
+# draws in; `scripts/column-refs.ts` holds it against the filesystem in both directions and fails
+# a column page that re-centres its body. Same placement as the glossary step and for the fifth
+# time the same reason: the registry is a fixture (data/), the check is a script (scripts/), the
+# pages are code (app/), and those three paths classify into three different lanes — a lane that
+# skipped it would hand a green local gate to a red CI run. ~0.4 s.
+if has_script "columns:check"; then
+  run_step "columns (every shell page declares its width; no column page re-centres)" pnpm columns:check || fail
+else
+  skip_step "columns" "no columns:check script in package.json"
 fi
 
 # The CHANGELOG is generated from the commits and is the source of the release notes (#144), so

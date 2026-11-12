@@ -50,7 +50,12 @@
  *   BASE_URL=http://localhost:3100 DATABASE_URL=postgres://… node --import ./scripts/ts-modules.mjs scripts/flow-e2e.mjs
  *
  * It creates its own instance and deletes it (and the Template edit) before it exits, so it
- * is safe to re-run against a database another process is reading.
+ * is safe to re-run against a database another process is reading. **What it deletes is what it
+ * created, and all of it (#865):** the instance `record`, the `relationship` the create wrote (not
+ * a child of the record — `DELETE FROM record` never took it), its payment/membership rows, and the
+ * account it signed up. Cleanup runs in a `finally`, and on `SIGINT`/`SIGTERM` too, because the
+ * runs that drifted the shared branch were killed rather than failed. A `kill -9` still cannot be
+ * caught — that is what `pnpm db:seed`'s bundle-scoped sweep is for.
  *
  * **A failed run prints what the demo branch looks like (#704).** The create commits a `record`
  * row on the branch every card shares, so a throw before that row is registered for cleanup
@@ -399,6 +404,15 @@ async function createThroughStages(
       new URL(location, BASE_URL).pathname.endsWith(`${stem}/invite`),
     `${committed.status} ${location}`,
   );
+
+  // #865 — the relationship the stage just wrote, registered here because it is **not** deleted by
+  // `DELETE FROM record` and used to survive every run on the shared branch. Read back rather than
+  // assumed: the id is minted by the app (`cryptoRandomId()`), so a guess is exactly the kind of
+  // assumption this harness exists to avoid.
+  if (instanceId !== null) {
+    const state = await relationshipState(instanceId);
+    if (state?.id) relationships.push(state.id);
+  }
   return { location, instanceId };
 }
 
@@ -429,6 +443,17 @@ async function signUpCreator(jar, { name }) {
     response.status === 200,
     `status ${response.status} ${body.slice(0, 90)}`,
   );
+  // #865 — the account is a real auth user on the shared branch, so it is registered for cleanup
+  // the moment the id is readable: a run that never deletes it leaves an identity behind on a
+  // branch every card signs into. `body` is parsed defensively — a refusal has already been
+  // reported by the check above, and cleanup must not be the thing that throws first.
+  let userId = null;
+  try {
+    userId = JSON.parse(body)?.user?.id ?? null;
+  } catch {
+    // Not JSON: no id to register, and the check above already says the sign-up did not answer.
+  }
+  if (typeof userId === "string") createdAccounts.push({ email, userId });
   // A gated page answers 200 only with a live session; 307 is the signed-out redirect.
   const gated = await jar.get("/assessment/instances");
   check(
@@ -461,6 +486,23 @@ async function relationshipState(instanceRecordId) {
 
 const db = new Client({ connectionString: process.env.DATABASE_URL });
 const created = [];
+/**
+ * What this run created that is **not** a child of the `record` (#865).
+ *
+ * `DELETE FROM record` cascades the session, its parties, its opinions and its invitation, so
+ * that one statement used to look like a complete cleanup — and left the `relationship` row the
+ * create wrote standing on the shared demo branch, with a `relationship_payment` row on it. Thirty
+ * of those were what made `pnpm db:seed` refuse with
+ * `relationship: expected 4 row(s) from demo-dataset.alignsynch.json, found 38`.
+ *
+ * So both are registered the moment they exist and removed by `cleanup()`: the account this run
+ * signed up (`createdAccounts`) and the relationship id the create wrote (`relationships`). The
+ * seed's sweep is the net for a `kill -9` that skips all of this, not the plan.
+ */
+const createdAccounts = [];
+const relationships = [];
+/** One cleanup per run: the signal handler and the `finally` must not both sweep the branch. */
+let cleaned = false;
 
 function answers({ feel, wish, think, guess }, overrides = {}) {
   const fields = {};
@@ -1565,15 +1607,93 @@ async function main() {
   );
 }
 
+/**
+ * The auth tables, discovered rather than assumed — the same rule `db-seed.mjs` follows.
+ *
+ * Better Auth's own migration calls them `user`/`session`, Neon's console docs call them
+ * `users`/`sessions`, and which one this branch has is a fact about the branch.
+ */
+async function authUserTable() {
+  const { rows } = await db.query(
+    `SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'neon_auth' ORDER BY table_name`,
+  );
+  const names = rows.map((row) => row.table_name);
+  return names.find((name) => name === "user" || name === "users") ?? null;
+}
+
+/**
+ * Removes one run's rows from the shared branch: the relationships it created, the records they
+ * hang off, and the accounts it signed up.
+ *
+ * **Order matters in two places.** `DELETE FROM record` cascades the session (and its parties,
+ * opinions and invitation) but *not* the relationship — `relationship` is keyed by the template,
+ * not by the instance — so the relationship is deleted after the record whose session names it,
+ * and `relationship_payment` before the relationship because `0036`'s FK has no cascade.
+ *
+ * Every statement is `ANY(ids)` and every list is what this run registered, so a re-entry (the
+ * signal handler, then the `finally`) is a no-op rather than a second sweep of the branch.
+ */
 async function cleanup() {
+  if (cleaned) return;
+  cleaned = true;
   try {
+    // Registered ids first, then anything a session of ours names: the registration can miss only
+    // if the run died between the create's commit and the read-back, and the session row is what
+    // closes that gap.
+    const strays = new Set(relationships);
+    if (created.length > 0) {
+      const { rows } = await db.query(
+        `SELECT DISTINCT relationship_id AS id FROM session
+          WHERE record_id = ANY($1::text[]) AND relationship_id IS NOT NULL`,
+        [created],
+      );
+      for (const row of rows) strays.add(row.id);
+    }
+
+    if (strays.size > 0) {
+      const ids = [...strays];
+      await db.query("DELETE FROM relationship_payment WHERE relationship_id = ANY($1::text[])", [
+        ids,
+      ]);
+      await db.query("DELETE FROM relationship_member WHERE relationship_id = ANY($1::text[])", [
+        ids,
+      ]);
+      await db.query("DELETE FROM coach_invite WHERE relationship_id = ANY($1::text[])", [ids]);
+    }
+
     for (const instanceId of created) {
       await db.query("DELETE FROM record WHERE id = $1", [instanceId]);
     }
-    if (created.length > 0) console.log(`· cleaned up ${created.length} instance(s)`);
+
+    if (strays.size > 0) {
+      await db.query("DELETE FROM relationship WHERE id = ANY($1::text[])", [[...strays]]);
+    }
+
+    if (createdAccounts.length > 0) {
+      const accounts = createdAccounts.map((account) => account.userId);
+      await db.query("UPDATE party SET user_id = NULL WHERE user_id = ANY($1::text[])", [accounts]);
+      await db.query("DELETE FROM relationship_member WHERE user_id = ANY($1::text[])", [accounts]);
+      await db.query("DELETE FROM coach_invite WHERE invited_by_user_id = ANY($1::text[])", [
+        accounts,
+      ]);
+      await db.query("DELETE FROM user_profile WHERE user_id = ANY($1::text[])", [accounts]);
+      const users = await authUserTable();
+      if (users !== null) {
+        await db.query(`DELETE FROM neon_auth."${users}" WHERE id::text = ANY($1::text[])`, [
+          accounts,
+        ]);
+      }
+    }
+
+    if (created.length > 0 || strays.size > 0 || createdAccounts.length > 0) {
+      console.log(
+        `· cleaned up ${created.length} instance(s), ${strays.size} relationship(s), ${createdAccounts.length} account(s)`,
+      );
+    }
   } catch (error) {
     console.error(
-      `! cleanup failed: ${error.message} — delete record ${created.join(", ")} by hand`,
+      `! cleanup failed: ${error.message} — delete record ${created.join(", ")} / relationship ${relationships.join(", ")} / account ${createdAccounts.map((account) => account.email).join(", ")} by hand`,
     );
   }
 }
@@ -1602,11 +1722,34 @@ async function reportBranch() {
     console.log(
       `! registered for cleanup: ${created.length === 0 ? "(none)" : created.join(", ")}`,
     );
-    console.log("! a stray record makes `pnpm db:seed` refuse — delete it before the next seed");
+    console.log(
+      "! a stray record still makes `pnpm db:seed` refuse — name it by hand; a stray relationship (and its children) is swept by the next seed (#865)",
+    );
   } catch (error) {
     console.error(`! could not read the demo branch's counts: ${error.message}`);
   }
 }
+
+/**
+ * A killed run cleans up too (#865).
+ *
+ * `finally` runs on a normal exit and on a thrown assertion, and neither is how this harness
+ * actually left rows behind: the runs that drifted the branch were **killed** — `kill -TERM` from a
+ * shell, a dispatcher timeout, `Ctrl-C`. Both catchable signals therefore clean up before the
+ * process goes, and a `kill -9` is precisely why the seed's sweep exists as the net rather than the
+ * plan: it cannot be caught, so nothing in this file can promise it.
+ */
+let stopping = false;
+async function shutdown(signal) {
+  if (stopping) return;
+  stopping = true;
+  console.log(`\n! ${signal} — cleaning up what this run created before exiting`);
+  await cleanup();
+  await db.end().catch(() => {});
+  process.exit(130);
+}
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
 try {
   await main();
@@ -1614,10 +1757,12 @@ try {
   failures.push(`threw: ${error.message}`);
   console.error(error);
 } finally {
-  await cleanup();
-  // #704 — a red run says what state it left the shared branch in, so nobody has to probe.
-  if (failures.length > 0) await reportBranch();
-  await db.end();
+  if (!stopping) {
+    await cleanup();
+    // #704 — a red run says what state it left the shared branch in, so nobody has to probe.
+    if (failures.length > 0) await reportBranch();
+    await db.end();
+  }
   console.log(`\n${failures.length === 0 ? "PASS" : "FAIL"} — ${failures.length} failure(s)`);
   for (const failure of failures) console.log(`  ✘ ${failure}`);
   process.exit(failures.length === 0 ? 0 : 1);
