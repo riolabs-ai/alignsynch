@@ -25,7 +25,9 @@ accessibility tree, and the click-through.
   `pnpm start` because the change is server-rendered markup with no build-time branch in it; the
   production render is held by `pnpm parity`, whose both-brand hashes moved on `/` and nothing else.
 - Headless Chrome 157 over the DevTools protocol — no Playwright, no Puppeteer, the same loop every
-  other `docs/qa-*` folder uses. The driver is committed beside the images: `capture.mjs`.
+  other `docs/qa-*` folder uses. The driver is committed beside the images: `capture-lockup.mjs`
+  (the folder's `capture.mjs` is the footer Quick Links run from #883, a separate harness on the same
+  page — see [the footer column below](#the-footer-was-left-alone-on-purpose)).
 - Viewports **1440** and **390**, `deviceScaleFactor: 1`, mobile emulation below 700.
 - The viewport is resized to the measured `document.scrollHeight` before each shutter:
   `captureScreenshot` with a `clip` below the fold returns a blank frame, and `captureBeyondViewport`
@@ -33,8 +35,8 @@ accessibility tree, and the click-through.
 
 ## What was asserted before each shutter
 
-Every row ran at **both widths**; the values are in `capture-report-before.json` and
-`capture-report-after.json`.
+Every row ran at **both widths**; the values are in `capture-report-lockup-before.json` and
+`capture-report-lockup-after.json`.
 
 | Assert                                                           | Why it is on the list                                                           |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -99,6 +101,11 @@ An anchor can be present, correct and still not navigate — that is the asserti
 link — before or after this card. That block is the signature _and_ its blurb in one `h-24` row: an
 identity panel, not a nav affordance, and the owner's note named the header. Wrapping it is a
 separate decision and no part of this change.
+
+The footer's **Quick Links** column is a different story and is not what the lengths above measure:
+#883 (merged after these stills were taken) mirrors that column to the header menu, so the merged
+home document is taller by those two rows. The brand block, the `h-24` row this section is about,
+does not move.
 
 ## Related
 
