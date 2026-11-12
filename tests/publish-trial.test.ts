@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { billingPlan } from "@/data/billing-plans";
+import { ADVANCED_MODE, BASIC_MODE, entitlementForPlan } from "@/lib/billing/entitlements";
 import {
   PUBLISH_TRIAL_DAYS,
   PUBLISH_TRIAL_INTERVAL,
@@ -39,6 +40,18 @@ describe("the publish trial", () => {
     expect(plan).toBeDefined();
     expect(plan?.checkout).toBe(true); // a trial of a tier nobody can buy is not a trial
     expect(["month", "year"]).toContain(PUBLISH_TRIAL_INTERVAL);
+  });
+
+  it("is the Advanced entitlement — option A of #835, as a fact about the tier", () => {
+    // The card's premise, pinned: the tier the publish grants plays **both** modes, so the
+    // create-time refusal of Advanced Mode was refusing a capability the very next write hands
+    // over. It is also unlimited in relationships, which is why a published account is not
+    // refused a second one during its week.
+    const entitlement = entitlementForPlan(PUBLISH_TRIAL_PLAN_ID);
+    expect(entitlement.paid).toBe(true);
+    expect(entitlement.advancedMode).toBe(true);
+    expect(entitlement.allowedModes).toEqual([BASIC_MODE, ADVANCED_MODE]);
+    expect(entitlement.maxActiveRelationships).toBeNull();
   });
 
   it("is one trial per account, so a second publish writes the same provider id", () => {

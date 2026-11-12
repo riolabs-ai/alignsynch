@@ -2,14 +2,19 @@
  * `pnpm billing:smoke` — the keyless demo, proved against the real database (#289).
  *
  * This is the acceptance script for the billing model: it buys a tier through the **mock** adapter
- * (no key, no network), reads the row back out of Postgres, and then drives the four gate outcomes
- * through `createInstanceFromTemplate` — the same function the create form's POST endpoint calls,
- * so what it proves is the server-side gate and not a hidden button.
+ * (no key, no network), reads the row back out of Postgres, and then drives the gate through
+ * `createInstanceFromTemplate` — the same function the create form's POST endpoint calls, so what
+ * it proves is the server-side gate and not a hidden button.
  *
- *   free   a second active instance        refused  (instance-limit)
- *   free   Advanced Mode                   refused  (mode-not-entitled)
- *   paid   both                            allowed
- *   paid   an ordinary Basic instance      allowed
+ *   free   a draft in Advanced Mode      allowed, and opens no trial (nothing is published)
+ *   free   a second relationship         refused (relationship-limit)
+ *   free   publishing that draft         allowed, and grants the 7-day trial (#835)
+ *   free   Advanced Mode, published      allowed — the trial *is* the Advanced entitlement
+ *   paid   both                          allowed
+ *
+ * #835 removed the mode refusal and the session-count refusal from the create path, so the four
+ * outcomes this script used to print (`instance-limit`, `mode-not-entitled`) are two: the plan's
+ * relationship count, and the week the publish grants.
  *
  * It is a script and not a test because the property under test is a **row**: a unit test would
  * need a database and the gate is deliberately database-free (`docs/GATE.md`). It cleans up after
@@ -95,10 +100,12 @@ async function main() {
     }
 
     const billing = await import("@/lib/billing");
-    const { createInstanceFromTemplate, FlowError } = await import("@/lib/flow/store");
+    const { createInstanceFromTemplate, sendDraftInvitation, FlowError } = await import(
+      "@/lib/flow/store"
+    );
     const { activeInstanceCount, listSubscriptionsFor } = await import("@/lib/db/billing");
 
-    /* 3 — the free account: one instance, Basic Mode only. ---------------------------------- */
+    /* 3 — the free account: one relationship, and the publish trial is the entitlement. ------ */
     heading(`the free account (${FREE_ACCOUNT}) — no subscription`);
     const freeEntitlement = await billing.entitlementForAccount(FREE_ACCOUNT);
     console.log(
@@ -106,7 +113,13 @@ async function main() {
         `maxActiveInstances=${freeEntitlement.maxActiveInstances} advanced=${freeEntitlement.advancedMode}`,
     );
 
-    const createOnce = async (userId, mode) =>
+    // A previous run that died before its cleanup would otherwise answer 3a's "no trial" question
+    // with its own leftovers. The two ids are this script's alone, so deleting them is safe.
+    await client.query("DELETE FROM billing_subscription WHERE user_id = ANY($1::text[])", [
+      [FREE_ACCOUNT, PAID_ACCOUNT],
+    ]);
+
+    const createOnce = async (userId, mode, draft = false) =>
       createInstanceFromTemplate({
         templateRecordId: templateId,
         initiatorName: "Smoke Initiator",
@@ -114,43 +127,84 @@ async function main() {
         email: "counterparty@example.test",
         mode,
         viewerUserId: userId,
+        ...(draft ? { draft: true } : {}),
       });
 
-    // 3a — Advanced Mode with nothing open: the mode refusal, not the count one.
+    // 3a — a draft is written whatever Mode it asks for (#834), and publishes nothing, so it opens
+    //      no trial.
+    let draftInstance;
     try {
-      const created = await createOnce(FREE_ACCOUNT, "advanced");
-      createdInstances.push(created.instanceRecordId);
-      fail("free account was refused Advanced Mode", "it was ALLOWED — the gate is open");
-    } catch (error) {
-      if (error instanceof FlowError && error.code === "mode-not-entitled") {
-        pass("free account refused Advanced Mode", `"${error.message}"`);
+      draftInstance = await createOnce(FREE_ACCOUNT, "advanced", true);
+      createdInstances.push(draftInstance.instanceRecordId);
+      const subs = await listSubscriptionsFor(FREE_ACCOUNT);
+      if (subs.length === 0) {
+        pass(
+          "free account wrote an Advanced draft, and no trial opened with it",
+          `instance ${draftInstance.instanceRecordId}, 0 subscription(s)`,
+        );
       } else {
-        fail("free account refused Advanced Mode", `unexpected error: ${String(error)}`);
+        fail(
+          "free account wrote an Advanced draft, and no trial opened with it",
+          `${subs.length} subscription row(s) appeared`,
+        );
+      }
+    } catch (error) {
+      fail("free account wrote an Advanced draft", String(error));
+    }
+
+    // 3b — the plan's relationship count still refuses (#505), and the sentence names the plan.
+    try {
+      const created = await createOnce(FREE_ACCOUNT, "basic");
+      createdInstances.push(created.instanceRecordId);
+      fail("free account refused a second relationship", "it was ALLOWED — the count gate is open");
+    } catch (error) {
+      if (error instanceof FlowError && error.code === "relationship-limit") {
+        pass("free account refused a second relationship", `"${error.message}"`);
+      } else {
+        fail("free account refused a second relationship", `unexpected error: ${String(error)}`);
       }
     }
 
-    // 3b — the first Basic instance is allowed.
-    try {
-      const created = await createOnce(FREE_ACCOUNT, "basic");
-      createdInstances.push(created.instanceRecordId);
-      pass(
-        "free account allowed its first Basic instance",
-        `instance ${created.instanceRecordId}, ${await activeInstanceCount(FREE_ACCOUNT)} active`,
-      );
-    } catch (error) {
-      fail("free account allowed its first Basic instance", String(error));
-    }
-
-    // 3c — the second is refused, and the sentence names the plan.
-    try {
-      const created = await createOnce(FREE_ACCOUNT, "basic");
-      createdInstances.push(created.instanceRecordId);
-      fail("free account refused a second active instance", "it was ALLOWED — the gate is open");
-    } catch (error) {
-      if (error instanceof FlowError && error.code === "instance-limit") {
-        pass("free account refused a second active instance", `"${error.message}"`);
+    // 3c — publishing the draft is what sells the relationship, so it opens the trial: the entry
+    //      paid tier, `trialing`, one week from the publish (#840).
+    if (draftInstance !== undefined) {
+      const sent = await sendDraftInvitation({
+        instanceRecordId: draftInstance.instanceRecordId,
+        viewerUserId: FREE_ACCOUNT,
+      });
+      const trialRows = await listSubscriptionsFor(FREE_ACCOUNT);
+      const trial = trialRows.find((row) => row.status === "trialing");
+      if (sent.ok && trial !== undefined && trial.plan_id === "basic") {
+        pass(
+          "publishing the draft granted the 7-day trial",
+          `${trial.provider_subscription_id} → plan ${trial.plan_id}/${trial.interval}, ends ${trial.current_period_end}`,
+        );
       } else {
-        fail("free account refused a second active instance", `unexpected error: ${String(error)}`);
+        fail(
+          "publishing the draft granted the 7-day trial",
+          `sent=${JSON.stringify(sent.ok)} rows=${JSON.stringify(trialRows.map((row) => `${row.plan_id}/${row.status}`))}`,
+        );
+      }
+
+      // 3d — and the trial *is* the Advanced entitlement: the same account is now entitled to the
+      //      Mode the old gate refused, and a published Advanced create is allowed.
+      const during = await billing.entitlementForAccount(FREE_ACCOUNT);
+      try {
+        const advanced = await createOnce(FREE_ACCOUNT, "advanced");
+        createdInstances.push(advanced.instanceRecordId);
+        if (during.advancedMode) {
+          pass(
+            "the trial entitled Advanced Mode — the published create is allowed (#835)",
+            `plan=${during.planName} advanced=${during.advancedMode}, instance ${advanced.instanceRecordId}, ${await activeInstanceCount(FREE_ACCOUNT)} active`,
+          );
+        } else {
+          fail(
+            "the trial entitled Advanced Mode",
+            `the create was allowed but the entitlement says advanced=${during.advancedMode}`,
+          );
+        }
+      } catch (error) {
+        fail("the trial entitled Advanced Mode — the published create is allowed", String(error));
       }
     }
 

@@ -1,20 +1,23 @@
 /**
- * The gate, asserted (#289) — the table, the refusals, and the provider boundary.
+ * The entitlement table, asserted (#289) — what a tier includes, and the provider boundary.
  *
  * The table is the card's own words turned into code:
  *
  *   Free   1 active instance, Basic Mode only
  *   Paid   unlimited, Basic and Advanced
  *
- * Two of these cases are the acceptance itself rather than a nicety:
+ * **What the table is not, since #835, is the create-time gate.** `lib/flow/store.ts` asks one
+ * refusal there — may this account start another *relationship* — because a Free account that
+ * publishes is granted the entry paid tier for seven days, and that tier plays both modes. The
+ * table is still the thing `/pricing` and `gateSummary()` render, so it stays pinned here;
+ * `tests/billing-gate.test.ts` is where the enforced refusal is asserted.
+ *
+ * One of these cases is the acceptance itself rather than a nicety:
  *
  *   *"no provider import in `port.ts`"* — the source scan at the bottom of this file reads the
  *   actual files. A comment claiming it is not evidence; the scan is. It greps the three files the
  *   acceptance names (`port.ts`, `entitlements.ts`, `adapters/mock.ts`) for a provider's name and
  *   for any import out of `adapters/`, so "the port is provider-free" cannot rot into a comment.
- *
- *   *"a message that names the plan, not a generic error"* — every refusal below is asserted to
- *   contain the plan's display name and the number it is about.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -28,7 +31,6 @@ import {
   FREE_ACTIVE_INSTANCE_LIMIT,
   FREE_PLAN_ID,
   gateSummary,
-  instanceGateRefusal,
   subscriptionGrantsPaid,
 } from "@/lib/billing/entitlements";
 import {
@@ -104,57 +106,6 @@ describe("plan → what the server allows", () => {
 
   it("treats a tier this fixture does not carry as Free — a gate never widens on bad data", () => {
     expect(entitlementOf(subscription({ planId: "platinum" as never })).planId).toBe("free");
-  });
-});
-
-describe("the refusals name the plan and the number", () => {
-  const free = entitlementForPlan(FREE_PLAN_ID);
-  const principal = entitlementForPlan("principal");
-
-  it("refuses a second active instance on Free", () => {
-    const refusal = instanceGateRefusal({ entitlement: free, activeInstances: 1, mode: "basic" });
-    expect(refusal?.code).toBe("instance-limit");
-    expect(refusal?.planName).toBe("Free");
-    expect(refusal?.message).toContain("The Free plan includes 1 active assessment");
-    expect(refusal?.message).toContain("already has 1 active assessment");
-    // Not a generic error: it says what would change the answer.
-    expect(refusal?.message).toContain("paid plan");
-  });
-
-  it("allows the free plan's first instance", () => {
-    expect(
-      instanceGateRefusal({ entitlement: free, activeInstances: 0, mode: "basic" }),
-    ).toBeNull();
-  });
-
-  it("refuses Advanced Mode on Free, naming the mode and the plan", () => {
-    const refusal = instanceGateRefusal({
-      entitlement: free,
-      activeInstances: 0,
-      mode: "advanced",
-    });
-    expect(refusal?.code).toBe("mode-not-entitled");
-    expect(refusal?.planName).toBe("Free");
-    expect(refusal?.message).toContain("Advanced Mode (Think and Guess) is part of the paid plans");
-    expect(refusal?.message).toContain("The Free plan plays Basic Mode");
-  });
-
-  it("allows a paid account both, at any count", () => {
-    expect(
-      instanceGateRefusal({ entitlement: principal, activeInstances: 0, mode: "advanced" }),
-    ).toBeNull();
-    expect(
-      instanceGateRefusal({ entitlement: principal, activeInstances: 9, mode: "advanced" }),
-    ).toBeNull();
-    expect(
-      instanceGateRefusal({ entitlement: principal, activeInstances: 9, mode: "basic" }),
-    ).toBeNull();
-  });
-
-  it("counts a plural correctly — the sentence reads as English at two", () => {
-    const refusal = instanceGateRefusal({ entitlement: free, activeInstances: 2, mode: "basic" });
-    expect(refusal?.message).toContain("already has 2 active assessments");
-    expect(refusal?.message).toContain("includes 1 active assessment");
   });
 });
 

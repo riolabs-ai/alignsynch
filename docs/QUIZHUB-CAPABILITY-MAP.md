@@ -418,8 +418,9 @@ their own row, so a quiz history tab is an additional query, not a new surface.
 **What exists.** The most complete capability in the tree, and not a quiz one:
 `billing_plan`, `billing_subscription`, `billing_event` tables; a port and adapters
 (`lib/billing/adapters`), a webhook handler, `startCheckout`, `entitlementForAccount`,
-`subscriptionGrantsPaid`, `instanceGateRefusal`; `/pricing` reads plan rows and marks the viewer's
-own plan; instance creation is gated by entitlement.
+`subscriptionGrantsPaid`, `relationshipGateRefusal`; `/pricing` reads plan rows and marks the
+viewer's own plan; creating a relationship is gated by entitlement — the plan's relationship count,
+with Advanced Mode entitled by the 7-day publish trial (#835).
 
 **What is missing.** Nothing structural for a subscription product. What a quiz product would add is
 not modelled: a paid quiz, a tip jar, a tournament entry fee — each is a product row plus an
