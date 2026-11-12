@@ -213,26 +213,28 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * creator signs up **before** the row is written, so the Initiator is known when it is
        * written instead of being attached to it afterwards.
        *
-       * The sentences say three things a person deciding to hand over an account needs: what this
-       * stage is for, what is created when they continue, and that nothing they already typed is
-       * lost — the draft is a cookie on this device, and the sign-in round trip returns to this
-       * stage with it intact. `created-body` is the re-entered state (stage 5's `Back`), where the
-       * relationship already exists and there is nothing left to create.
+       * Three sentences, each owning a different fact (#777, option A) — the stage used to say the
+       * same one up to four times:
+       *
+       *   `body`          where the answers are: a cookie on this device, until the sign-in
+       *                   completes. It carries the "nothing you already typed is lost" promise
+       *                   that a signed-out creator is the one who needs, so no second sentence
+       *                   repeats it.
+       *   `signed-in-body` whose account sends the invitation — the one fact a signed-in person
+       *                   deciding to continue is missing.
+       *   `created-body`  what state the relationship is in: the re-entered state (stage 5's
+       *                   `Back`), where it already exists and there is nothing left to create.
+       *
+       * A fact is stated once. Adding a fourth sentence back in is how this stage read as a wall.
        */
       id: "account",
       heading: "Create your account",
-      body: "The relationship comes back to you, so this is where it is kept. Your answers so far are saved on this device.",
+      body: "Your answers stay on this device until you sign in.",
       items: [
         { id: "signed-in-heading", label: "You're signed in" },
         {
           id: "signed-in-body",
-          label:
-            "The invitation is sent from this account, and the relationship will be listed under yours.",
-        },
-        {
-          id: "saved-on-device",
-          label:
-            "Your answers are saved on this device. Signing in keeps them: you come back to this step.",
+          label: "The invitation is sent from this account.",
         },
         {
           id: "created-body",

@@ -186,9 +186,6 @@ export default async function TemplateCreateCommitPage({
         <p className="text-sm text-gray-600 dark:text-gray-300">
           {itemLabel(section, "signed-in-body")}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {itemLabel(section, "saved-on-device")}
-        </p>
       </div>
     );
 
