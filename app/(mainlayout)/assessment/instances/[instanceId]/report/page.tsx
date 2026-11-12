@@ -22,6 +22,7 @@
  * `force-dynamic`, and no `generateStaticParams`: both would be a database read at build, and the
  * gate runs with `DATABASE_URL` unset.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { RelationshipReport } from "@/components/assessment-flow/report-view";
 import { relationshipReportPageCopy } from "@/data/pages/assessment-relationship-report";
 import { authConfigured } from "@/lib/auth/config";
@@ -84,5 +85,9 @@ export default async function RelationshipReportPage({
   });
   if (screen === undefined) notFound();
 
-  return <RelationshipReport screen={screen} />;
+  return (
+    <StageColumn>
+      <RelationshipReport screen={screen} />
+    </StageColumn>
+  );
 }

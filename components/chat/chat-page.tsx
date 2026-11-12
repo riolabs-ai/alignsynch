@@ -5,7 +5,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockContacts, mockConversations } from "@/data/chat-data";
-import { Bell, Lock, Plus, Search, Settings, Trash2, User } from "lucide-react";
+import { ArrowLeft, Bell, Lock, Plus, Search, Settings, Trash2, User } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ChatConversation } from "./chat-conversation";
@@ -198,6 +199,22 @@ export function ChatPage() {
       <div
         className={`w-72 duration-300 xl:w-80 border-r flex flex-col max-md:absolute max-md:top-32 max-md:border-t max-md: left-0 max-md:h-full max-md:z-10 max-md:bg-background ${showChat ? "max-md:translate-x-0" : "max-md:-translate-x-full"}`}
       >
+        {/*
+          #858 — chat is a `bleed` surface: it keeps the whole viewport, so the shell's own
+          way back is not where a reader looks for it. The control is the surface's, it points at
+          the account home this build serves (`/dashboard/user`, #164), and
+          `data/surface-columns.ts` registers that path as the row's `back` — `scripts/column-refs.ts`
+          fails the row if the route stops existing.
+        */}
+        <div className="border-b px-2 py-1">
+          <Link
+            href="/dashboard/user"
+            className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to your dashboard
+          </Link>
+        </div>
         <div className="p-4 border-b flex items-center justify-between ">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

@@ -376,7 +376,7 @@ function ReportGate({
   const answered = screen.aspects.filter((aspect) => aspect.own !== null).length;
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10">
+    <div className="py-10">
       <nav aria-label={itemLabel(back, "all")} className="mb-3">
         <a
           className="text-sm font-medium text-action hover:underline"
@@ -442,7 +442,7 @@ export function RelationshipReport({
     .map((seat) => seat.name);
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
+    <div className="py-8">
       <nav aria-label={itemLabel(back, "all")} className="mb-3">
         <a
           className="text-sm font-medium text-action hover:underline"
