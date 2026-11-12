@@ -32,8 +32,12 @@ import { USER_ROLES } from "./role-ladder";
  * A document that names a newer version is refused by the validator rather than half-read: the
  * version is how a rail edit made against a later schema fails loudly on this tree instead of
  * silently losing the rows this build cannot express.
+ *
+ * **2 (#929)** — the owner's standard rail: `group-admin` first, and the review shelf + health
+ * page inside `group-support`. The schema did not change; the arrangement did, and the version is
+ * how a later edit is a bump plus a diff rather than a silent reinterpretation of the same number.
  */
-export const NAV_DOCUMENT_VERSION = 1;
+export const NAV_DOCUMENT_VERSION = 2;
 
 /**
  * Every glyph a rail row may draw. A name, not a component: the descriptor holds no JSX, and the
