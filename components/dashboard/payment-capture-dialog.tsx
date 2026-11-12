@@ -36,11 +36,10 @@
  * inject one per render. The cache is module scope on purpose — it is a promise, not a record, and
  * a second key is a different promise rather than a second copy of the same one.
  */
-import type { Stripe, StripeEmbeddedCheckout } from "@stripe/stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { StripeFrame } from "@/components/billing/stripe-frame";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DialogOverlay } from "@/components/ui/dialog";
@@ -63,17 +62,6 @@ const PLAN_ROWS = [
   { planId: "basic", nameItem: "plan-payg", noteItem: "plan-payg-note" },
   { planId: "principal", nameItem: "plan-unlimited", noteItem: "plan-unlimited-note" },
 ] as const;
-
-/** One `loadStripe()` per key, ever. A second call would inject a second script tag. */
-const stripeLoaders = new Map<string, Promise<Stripe | null>>();
-
-function loaderFor(publishableKey: string): Promise<Stripe | null> {
-  const cached = stripeLoaders.get(publishableKey);
-  if (cached !== undefined) return cached;
-  const created = loadStripe(publishableKey);
-  stripeLoaders.set(publishableKey, created);
-  return created;
-}
 
 /** Where the dialog is: showing the plans, or showing the frame that was started for it. */
 type Stage = "plan" | "frame";
@@ -116,8 +104,6 @@ export function PaymentCaptureDialog({
   const [captureSessionId, setCaptureSessionId] = useState<string | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const frameRef = useRef<HTMLDivElement | null>(null);
 
   /** Back to the plans, and nothing half-started left behind. */
   const reset = useCallback(() => {
@@ -126,7 +112,6 @@ export function PaymentCaptureDialog({
     setPublishableKey(null);
     setCaptureSessionId(null);
     setRefusal(null);
-    setMounted(false);
   }, []);
 
   const close = useCallback(() => {
@@ -194,56 +179,10 @@ export function PaymentCaptureDialog({
     sessionIdRef.current = captureSessionId;
   }, [captureSessionId]);
 
-  // Mount the provider's frame, and destroy it on the way out: an iframe left behind keeps a
-  // listener on a dead component and can outlive the secret it was mounted with.
-  useEffect(() => {
-    const secret = clientSecret;
-    const key = publishableKey;
-    const element = frameRef.current;
-    if (secret === null || key === null || element === null) return;
-
-    let disposed = false;
-    let instance: StripeEmbeddedCheckout | null = null;
-
-    void (async () => {
-      try {
-        const stripe = await loaderFor(key);
-        if (stripe === null) {
-          if (!disposed) setRefusal(refusalFallback);
-          return;
-        }
-        const checkout = await stripe.createEmbeddedCheckoutPage({
-          clientSecret: secret,
-          onComplete: () => {
-            const sessionId = sessionIdRef.current;
-            if (sessionId !== null) void completeCapture(sessionId);
-          },
-        });
-        if (disposed) {
-          checkout.destroy();
-          return;
-        }
-        instance = checkout;
-        checkout.mount(element);
-        setMounted(true);
-      } catch (error) {
-        if (!disposed) {
-          console.error(
-            "payment capture: the provider's frame did not mount",
-            error instanceof Error ? error.message : String(error),
-          );
-          setRefusal(refusalFallback);
-        }
-      }
-    })();
-
-    return () => {
-      disposed = true;
-      instance?.destroy();
-      instance = null;
-      setMounted(false);
-    };
-  }, [clientSecret, completeCapture, publishableKey, refusalFallback]);
+  // The frame itself is `components/billing/stripe-frame.tsx` — the one implementation of a card in
+  // this app (#911). This dialog owns the plan list and the start/resolve calls; the provider's
+  // mount point, its caption and its teardown live in that module so stage 5's walk reuses them
+  // instead of growing a second copy.
 
   return (
     <DialogPrimitive.Root
@@ -342,22 +281,17 @@ export function PaymentCaptureDialog({
               <Badge variant="secondary">{itemLabel(copy, "test-mode")}</Badge>
             </div>
             <p className="px-3 text-xs text-muted-foreground">{itemLabel(copy, "frame-body")}</p>
-            {/*
-              The mount point. The provider's iframe replaces the caption when it lands, and the
-              caption is the artifact's own placeholder — never a spinner, which would say the
-              frame is loading forever when the real failure is a refused key.
-            */}
-            <div className="relative min-h-[292px] px-3">
-              {mounted ? null : (
-                <p
-                  data-capture-frame-placeholder="true"
-                  className="absolute inset-x-3 top-1/2 -translate-y-1/2 text-center text-xs text-muted-foreground"
-                >
-                  {itemLabel(copy, "frame")}
-                </p>
-              )}
-              <div ref={frameRef} data-stripe-embedded-checkout="true" />
-            </div>
+            {/* The mount point, the caption and the teardown are the shared frame's (#911). */}
+            <StripeFrame
+              clientSecret={clientSecret}
+              publishableKey={publishableKey}
+              placeholder={itemLabel(copy, "frame")}
+              onComplete={() => {
+                const sessionId = sessionIdRef.current;
+                if (sessionId !== null) void completeCapture(sessionId);
+              }}
+              onError={() => setRefusal(refusalFallback)}
+            />
             <div className="flex items-center justify-between gap-2 border-t border-gray-200 px-3 py-2">
               <span className="text-xs text-muted-foreground">{itemLabel(copy, "frame-note")}</span>
               <Button

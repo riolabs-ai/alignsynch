@@ -106,21 +106,27 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The two plans (#690) — **a soft prompt, not a checkout**.
+       * The two plans (#690, re-headed by #911).
        *
        * The approved prices are data here for the reason every other figure in this tree is: a
        * price typed into markup is a price that can disagree with the one the pricing page sells.
        * The rows are a single-choice group (`role="radio"`, `aria-checked`) shaped like the Mode
-       * choice, and choosing one commits nothing: the plan is remembered for this screen, the
-       * create is not gated on it, and the door to capture a method is the pricing page's, which
-       * is where a tier is actually bought (`components/pricing/plan-checkout-button.tsx`).
+       * choice, and choosing one commits nothing — the card step is where a card is taken, and it
+       * charges nothing either.
        *
-       * The trial sentence is the prototype's, verbatim, because it is the promise the hard gate at
-       * publish rests on: nothing is charged until then.
+       * **#911 changed what this step is for.** It used to be a soft prompt beside a send that went
+       * through unpaid. Now the walk's first step is where the money is *decided*: the two things
+       * the money buys are named on it (a membership plan joined, and this relationship activated),
+       * and the send on the right does not unlock until the card is saved. The heading is the
+       * owner's phrase, `join membership plan`, never "how you would pay" — the step is an act, not
+       * a survey.
+       *
+       * The trial sentence is the prototype's, verbatim, because it is the promise the card step
+       * rests on: nothing is charged when the card is saved.
        */
       id: "plans",
-      heading: "How you would pay",
-      body: "Add a way to pay now and publishing is one click later — or skip it and pay when you submit the assessment. Nothing is charged today.",
+      heading: "Join a membership plan",
+      body: "Two things the money buys: you join a membership plan, and this relationship is activated. Nothing is charged today — the trial starts when the card is saved.",
       items: [
         { id: "legend", label: "Choose a plan" },
         { id: "one", label: "One relationship" },
@@ -141,14 +147,19 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "trial",
           label:
-            "7 days free — the trial starts only when you add a method, and nothing is charged until you publish.",
+            "7 days free — the trial starts only when the card is saved, and nothing is charged before that.",
         },
         { id: "trial-short", label: "7 days free" },
-        { id: "add-method", label: "Add a payment method" },
+        /**
+         * #911 — **what the money buys, named once.** The card asked for the two things by name, so
+         * they are two rows rather than a sentence: the plan the person joined (filled with its own
+         * name and price from the rows above) and the relationship that is activated by sending it.
+         */
+        { id: "buys-heading", label: "What the money buys" },
+        { id: "buys-join", label: "Join membership plan — {plan}" },
         {
-          id: "add-method-note",
-          label:
-            "Optional here. Publishing needs a method on file, and the plans page is where one is added.",
+          id: "buys-activate",
+          label: "Activate relationship — the invitation goes out and both seats go live.",
         },
         /**
          * #870 — the plan panel for an account that **already pays**. Asking somebody on a paid
@@ -169,53 +180,62 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The walk (#771) — plan → account → method → confirm → done, drawn inside stage 4.
+       * The walk (#771, three steps since #911) — **plan → card → thank you**, inside stage 5.
        *
-       * The owner's rule: choosing a plan must not leave the screen, and a relationship nobody has
-       * paid for yet is **saved as a draft** rather than blocked. So the method panel defers the
-       * capture to publish, where the hard gate already lives
-       * (`components/dashboard/relationship-detail.tsx`, #690), and the last panel is what flips the
-       * stage's own control to `connect-cta`.
+       * The artifact (`prototype-relationship-lifecycle-v9.html`) draws the pay flow in the left
+       * column and the send in the right one; #911 made the send **wait for the walk**, so the two
+       * columns are one decision and one control: the foot's advance is
+       * `send email to counterparty now`, disabled until the card is saved.
        *
-       * `confirm-method-draft` is the honest half of that: the confirmation says the method will be
-       * asked for at publish, because no card is taken on this screen.
+       * Three steps, not five. `account` is stage 4 now (#825), so a sign-in panel here would be a
+       * second sign-in the spec forbids, and the confirmation the old walk drew is the card step's
+       * own record — Stripe's frame submits, and the thank-you states what is true afterwards. The
+       * last step carries **no button**: the walk ends there, and its one sentence says where the
+       * reader goes next (the send control beside it, or the draft).
+       *
+       * `card-stripe-*` are the frame's chrome. The card **fields** are Stripe's, mounted from
+       * `components/billing/stripe-frame.tsx` — the same component the dashboard's capture dialog
+       * mounts (#748), because there is exactly one card-capture surface in this app.
        */
       id: "payment-flow",
+      heading: "Payment",
+      body: "Two steps and a thank-you. Nothing is charged today.",
       items: [
-        { id: "continue", label: "Continue" },
+        { id: "continue", label: "Next" },
         { id: "back", label: "Back" },
-        { id: "account-heading", label: "Create your account" },
-        { id: "method-heading", label: "Add a payment method" },
+        { id: "card-heading", label: "Card" },
         {
-          id: "method-note",
+          id: "card-body",
           label:
-            "The method is captured inside this page when your relationship is published — no card detail touches our code.",
+            "The card fields are Stripe's, drawn inside this page — you never leave it and no card detail touches our code.",
         },
-        { id: "method-defer", label: "Pay when I publish" },
         {
-          id: "method-defer-note",
-          label:
-            "Nothing is charged today. Your relationship is saved as a draft, and the method is asked for once, when you publish your opinions for the other person to answer.",
+          id: "card-charged",
+          label: "Nothing is charged today. The 7-day trial starts when the card is saved.",
         },
-        { id: "confirm-heading", label: "Confirm payment" },
-        { id: "confirm-plan", label: "Plan" },
-        { id: "confirm-method", label: "Method" },
-        { id: "confirm-method-draft", label: "Asked for at publish" },
-        { id: "confirm-to", label: "Sending to" },
-        { id: "confirm-to-value", label: "{name} · {email}" },
-        { id: "confirm-mode", label: "Mode and Setting" },
+        { id: "card-start", label: "Enter the card" },
+        { id: "card-starting", label: "Opening the card fields…" },
+        { id: "card-secure", label: "Secure payment · Stripe" },
+        { id: "card-test-mode", label: "test mode" },
+        { id: "card-frame", label: "The card fields Stripe draws here" },
+        { id: "card-frame-note", label: "Cancel and nothing is saved." },
         {
-          id: "confirm-body",
+          id: "card-refused",
           label:
-            "Nothing is charged today. The 7-day trial starts when the method is saved, and the first charge lands only when you publish the assessment.",
+            "The card was not saved, and nothing has been charged. Try again, or keep the draft instead.",
         },
-        { id: "confirm-cta", label: "Confirm" },
-        { id: "change-plan", label: "Change plan" },
-        { id: "done-heading", label: "You're all set" },
+        { id: "card-hosted", label: "Stripe asked for the card on its own page." },
+        { id: "card-hosted-link", label: "Open the card page" },
+        { id: "thanks-heading", label: "Thank you" },
         {
-          id: "done-body",
+          id: "thanks-body",
           label:
-            "Your relationship is ready to send. Nothing has been charged, and the method is asked for when you publish.",
+            "The plan is active and the card is on file. Nothing has been charged today — the trial starts when the card is saved.",
+        },
+        {
+          id: "thanks-next",
+          label:
+            "Send the invitation with the control beside this walk when you are ready, or keep the draft and send it later.",
         },
       ],
     },
@@ -262,12 +282,19 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * Stage 5 — **Invite** (#825).
+       * Stage 5 — **Invite** (#825, gated by #911).
        *
-       * Two acts, and the difference between them is the whole stage: `Send and Continue` publishes
-       * the draft and mails the one invitation; `Continue as Draft` keeps it, sends nothing and
-       * charges nothing. Both sentences under the card exist to make the second one safe to choose:
-       * the relationship already exists, and no email has gone out.
+       * Two acts, and the difference between them is the whole stage: the send publishes the draft
+       * and mails the one invitation; `Continue as Draft` keeps it, sends nothing and charges
+       * nothing. Both sentences under the card exist to make the second one safe to choose: the
+       * relationship already exists, and no email has gone out.
+       *
+       * **The send waits for the walk (#911).** `submit` is the owner's sentence, in the owner's
+       * words — lowercase on purpose, because it reads as the act rather than as a button label —
+       * and it is disabled until the plan and the card are done. `locked` is the sentence that
+       * explains the disabled control (a control that greys out with no reason is where people close
+       * the tab), and `active` is the same position once it clears. Both sit in the right column,
+       * immediately above the foot that carries the control.
        */
       id: "invite",
       heading: "Send the invitation",
@@ -279,7 +306,16 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "One email with one link. The relationship waits at Invited until they accept — nothing is charged and nothing is visible to them until they claim the seat.",
         },
-        { id: "submit", label: "Send and Continue" },
+        { id: "submit", label: "send email to counterparty now" },
+        {
+          id: "locked",
+          label:
+            "Send unlocks when the plan and the card are done. Keep the draft instead and nothing is charged.",
+        },
+        {
+          id: "active",
+          label: "The plan is active and the card is on file. The invitation can go now.",
+        },
         { id: "draft", label: "Continue as Draft" },
         { id: "note-heading", label: "What you can do later" },
         {

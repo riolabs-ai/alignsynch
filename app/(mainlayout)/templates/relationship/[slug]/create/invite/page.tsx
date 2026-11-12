@@ -24,7 +24,10 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
-import { InviteWalk } from "@/components/assessment-flow/invite-walk";
+import {
+  capturePaymentMethodAction,
+  resolveCaptureAction,
+} from "@/app/(mainlayout)/dashboard/relationships/actions";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { readLibraryTemplate } from "@/lib/db/template-library";
@@ -33,7 +36,6 @@ import { createRefusal } from "@/lib/flow/create-copy";
 import { createCommitPath, createRelationshipPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -124,39 +126,28 @@ export default async function TemplateCreateInvitePage({
   };
 
   /**
-   * **The payment walk, built here and handed to the stage (#870).**
+   * **The walk and the gate, both built here (#870, #911).**
    *
-   * The stage draws it on the left and owns nothing about it — the plan is a database fact, and a
-   * component that reached for one would be a component that cannot be rendered without a pool.
-   * What the account already pays for decides the first panel: an entitled account gets a
-   * **summary** of its tier rather than the radio group, so the stage never asks somebody to buy a
-   * plan they hold. An account whose Mode is not on its plan keeps the radio group and the trial
-   * sentence — the send still grants the 7-day trial and the trial still plays Advanced Mode
-   * (#835, #843), which is why this is a walk and not a gate.
+   * The stage draws the walk on the left and the send on the right, and it owns the state that ties
+   * them together — but it cannot read a session, an entitlement or a row, so the three facts it
+   * needs arrive as props:
    *
-   * **Nothing here charges, and nothing here is a card form.** The method panel keeps deferring the
-   * capture to publish — that is the approved flow (`payment-flow.method-note`) and #748's in-app
-   * capture dialog is the surface that takes a card, not a static field on a walk. The honest
-   * summary is the whole of what this card adds on the entitled side; the not-entitled side is
-   * already wired to `/pricing`, which owns the one checkout.
+   *   `capture`      the two server actions a card needs (started, then resolved by the session the
+   *                  provider minted). Passed in because a `"use client"` module that imported them
+   *                  would reach `lib/db/**` — E34's failure mode.
+   *   `initialPaid`  whether a card is already on file (`paymentArmed`). A person who paid and came
+   *                  back lands on the thank-you with the send enabled instead of being asked twice.
+   *   `planIncluded` what the account's plan already covers, so an entitled account gets a summary
+   *                  rather than a radio group selling a tier it holds.
+   *
+   * **Nothing here charges, and there is no second card form.** The card is Stripe's, mounted inside
+   * the walk from `components/billing/stripe-frame.tsx` — the same component the dashboard's capture
+   * dialog mounts (#748). This page hands over actions; it never draws a field.
    */
   const accountPlan =
     entitlement === null
       ? undefined
       : { name: entitlement.planName, entitled: entitlement.paid && entitlement.advancedMode };
-
-  const payment = (
-    <InviteWalk
-      copy={assessmentCreatePageCopy}
-      draft={draft}
-      account={
-        <p className="text-xs text-gray-600 dark:text-gray-300">
-          {itemLabel(sectionOf(assessmentCreatePageCopy, "account"), "signed-in-body")}
-        </p>
-      }
-      {...(accountPlan === undefined ? {} : { accountPlan })}
-    />
-  );
 
   return (
     <CreateRelationship
@@ -180,7 +171,12 @@ export default async function TemplateCreateInvitePage({
       problemLink={refusal?.link ?? null}
       notice={planNotice?.sentence ?? null}
       noticeLink={planNotice?.link ?? null}
-      payment={payment}
+      capture={{
+        onCapture: capturePaymentMethodAction,
+        onResolve: resolveCaptureAction,
+      }}
+      initialPaid={screen.paymentArmed === true}
+      {...(accountPlan === undefined ? {} : { planIncluded: accountPlan })}
     />
   );
 }

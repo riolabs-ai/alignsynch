@@ -46,6 +46,13 @@ export const RESEND_REFUSALS = [
   "cap-reached",
   "cooldown",
   "invalid-email",
+  /**
+   * #911 — stage 5's send waits for the walk, and its refusal lands in the same band. `resendInvite`
+   * itself never raises it: a re-invite is an act on an already-sent relationship. The code is here
+   * because the send route redirects into this vocabulary and a code the band does not know renders
+   * nothing — which would have left the one refusal this card creates unexplained on screen.
+   */
+  "no-payment-method",
 ] as const;
 
 export type ResendRefusal = (typeof RESEND_REFUSALS)[number];

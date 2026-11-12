@@ -195,6 +195,15 @@ export interface FlowScreen {
    * writes, and the sentence says it was the initiator's membership that ended.
    */
   readonly membership?: Membership | null;
+  /**
+   * #911 — the **card is on file** fact the invite stage gates its send on.
+   *
+   * It is `ProjectInput.paymentArmed`'s answer, carried onto the screen so a page does not have to
+   * ask the database a second time for a fact this projection already computed: `true` means a
+   * method was captured and the relationship's fee is armed, which is exactly "the walk is done".
+   * Optional for the same reason the input is — absent means nobody asked, never "unpaid".
+   */
+  readonly paymentArmed?: boolean;
 }
 
 export interface FlowInstanceRows {
@@ -380,5 +389,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     invite,
     membership: input.membership ?? null,
     report,
+    // #911 — the same answer the status was computed from, carried for the invite stage's gate.
+    ...(input.paymentArmed === undefined ? {} : { paymentArmed: input.paymentArmed }),
   };
 }
