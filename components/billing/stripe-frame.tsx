@@ -89,6 +89,13 @@ export function StripeFrame({
           if (!disposed) errorRef.current();
           return;
         }
+        // **Before creating, not after.** A client secret admits exactly one Embedded Checkout
+        // object, and Stripe refuses the second with "You cannot have multiple Embedded Checkout
+        // objects". React runs an effect twice on mount in development (StrictMode), and the
+        // cleanup for the first run has already fired by the time this `await` resolves — so
+        // creating first and checking `disposed` afterwards is a second create for one secret, and
+        // the frame never mounts. The check belongs here, where the stale run can still decline.
+        if (disposed) return;
         const checkout = await stripe.createEmbeddedCheckoutPage({
           clientSecret,
           onComplete: () => completeRef.current(),
