@@ -1,19 +1,19 @@
 route  /
 brand  alignsynch
 
-headings (36)
-  h1  "Know the feelings. Handle the expectations."
-  h2  "Personal Life"
-  h2  "Business Life"
-  h2  "How AlignSynch works"
-  h3  "Choose the relationship"
+headings (29)
+  h1  "Bring expectations into the open at work."
+  h2  "Business relationships"
+  h2  "Personal relationships"
+  h2  "A simple way to compare two perspectives"
+  h3  "Choose a relationship template"
   h3  "Invite the other person"
-  h3  "Record your opinions"
-  h3  "Compare and discuss"
-  h2  "Start with a relationship"
-  h3  "Business &amp; Work"
-  h3  "Personal, School &amp; Community"
-  h2  "See how feelings, wishes, and assumptions can drift apart."
+  h3  "Answer privately"
+  h3  "Accept, then see the report"
+  h2  "Choose a relationship to explore"
+  h3  "Business &amp; corporate relationships"
+  h3  "Personal relationships, friendships, and adjacent contexts"
+  h2  "See where your perspectives meet—or differ."
   h3  "Four ways a gap can form"
   h3  "Opinions fall along a scale"
   h2  "A clearer view can open a conversation."
@@ -21,20 +21,13 @@ headings (36)
   h3  "Open a softer conversation"
   h3  "Find more than yes or no"
   h3  "Questions to ask"
-  h2  "Why healthy relationships matter"
-  h3  "— Less risk of losing connection"
-  h3  "— Stronger working relationships"
-  h3  "— Emotional well-being"
-  h3  "— Physical well-being"
-  h3  "— Less stress and anxiety"
-  h3  "— Connection over time"
-  h3  "— A sense of belonging"
-  h3  "— More happiness"
-  h3  "— Stronger self-esteem"
-  h3  "— Support through hard times"
-  h3  "— Better communication"
-  h3  "— A shared sense of purpose"
-  h2  "Reduce stress. Reduce surprises."
+  h2  "A structured way to talk through what matters."
+  h3  "— Start with a relevant template"
+  h3  "— Answer the same questions"
+  h3  "— Keep answers private while you respond"
+  h3  "— Open the report together"
+  h3  "— See differences by topic"
+  h2  "Start with a relationship that matters to you."
   h3  "Product news"
   h3  "Website Links"
   h3  "Contact"
@@ -46,11 +39,11 @@ landmarks (7)
 
 links (44 unique, 60 total)
   #benefits                                            1
-  #business-relationships                              2
+  #business-relationships                              4
   #how-it-works                                        2
   #personal-relationships                              2
   #questions                                           1
-  #relationship-templates                              6
+  #relationship-templates                              4
   #stories                                             1
   /                                                    3
   /#questions                                          2
@@ -91,8 +84,8 @@ links (44 unique, 60 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.16.0 1
 
 counts
-  elements  385
+  elements  356
   images    6
   buttons   1
   inputs    4
-  classes   392 (sha 656da1e60a08)
+  classes   485 (sha 4f0db6cbb3b5)

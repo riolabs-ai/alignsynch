@@ -156,6 +156,11 @@ export interface As2HomeModel {
     readonly action: HomeAnchor;
     readonly secondary: HomeAnchor;
     readonly note: string;
+    /**
+     * The band's one bounded callout for counselors, therapists and coaches (#904). Lead and rest
+     * are two fields because the lead is the bolded subject of the sentence, not a styling choice.
+     */
+    readonly counselor: { readonly lead: string; readonly rest: string };
   };
   readonly model: HomeHead & { readonly cards: readonly HomeModelCard[] };
   readonly stories: HomeHead & {
@@ -298,19 +303,15 @@ export function as2Home(brand: Brand, copy: PageCopy): As2HomeModel {
     eyebrow: copy.eyebrow ?? "",
     heading: copy.heading,
     subtitle: copy.subtitle ?? "",
-    action: anchorTo(pageItemOf(copy, "hero-action").label, "relationship-templates"),
+    /* The reference points this action at the **business group**, not at the templates band's top:
+       the button says "Explore business templates", so it lands on the business half. */
+    action: anchorTo(pageItemOf(copy, "hero-action").label, "business-relationships"),
     secondary: anchorTo(pageItemOf(copy, "hero-secondary").label, "how-it-works"),
     note: pageItemOf(copy, "hero-note").label,
+    /* Business first, then personal — the order the reference draws and the order the page leads
+       with (#904). The pair is a fixed two, not a list read from the fixture, so the ids here are
+       the only place the order can be changed. */
     cards: [
-      {
-        id: "personal",
-        kicker: pageItemOf(copy, "life-personal-kicker").label,
-        title: pageItemOf(copy, "life-personal-title").label,
-        action: pageItemOf(copy, "life-personal-action").label,
-        name: pageItemOf(copy, "life-personal-name").label,
-        href: "#personal-relationships",
-        image: photograph("home.personal-life"),
-      },
       {
         id: "business",
         kicker: pageItemOf(copy, "life-business-kicker").label,
@@ -319,6 +320,15 @@ export function as2Home(brand: Brand, copy: PageCopy): As2HomeModel {
         name: pageItemOf(copy, "life-business-name").label,
         href: "#business-relationships",
         image: photograph("home.business-life"),
+      },
+      {
+        id: "personal",
+        kicker: pageItemOf(copy, "life-personal-kicker").label,
+        title: pageItemOf(copy, "life-personal-title").label,
+        action: pageItemOf(copy, "life-personal-action").label,
+        name: pageItemOf(copy, "life-personal-name").label,
+        href: "#personal-relationships",
+        image: photograph("home.personal-life"),
       },
     ],
   };
@@ -454,6 +464,10 @@ export function as2Home(brand: Brand, copy: PageCopy): As2HomeModel {
         "personal-relationships",
       ),
       note: itemLabel(templatesSection, "templates-note"),
+      counselor: {
+        lead: itemLabel(templatesSection, "templates-counselor-lead"),
+        rest: itemLabel(templatesSection, "templates-counselor-rest"),
+      },
     },
     model: { ...headOf(questionsSection), cards },
     stories: {
@@ -477,7 +491,8 @@ export function as2Home(brand: Brand, copy: PageCopy): As2HomeModel {
     finalCta: {
       heading: finalSection.heading ?? "",
       body: finalSection.body ?? "",
-      action: anchorTo(itemLabel(finalSection, "final-cta-action"), "relationship-templates"),
+      /* "Explore business templates", so it lands on the business group — as the reference draws. */
+      action: anchorTo(itemLabel(finalSection, "final-cta-action"), "business-relationships"),
     },
   };
 }
