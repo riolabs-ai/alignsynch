@@ -18,7 +18,7 @@
  *   - **each card carries a price, the two roles and its Aspects**, and the price is the plan's
  *     monthly price formatted by the tree's currency helper — never `RELATIONSHIP_PRICE_CENTS`,
  *     which the pricing rewrite left behind at $9.99 against Basic's $8.95;
- *   - **each card has an action**: "Use this template" to the create route that exists, and an
+ *   - **each card has an action**: "Create Relationship" to the create route that exists, and an
  *     exemplar link only where a finished sheet does (never a "coming soon").
  *
  * The page module is driven directly, the way `tests/template-library.test.ts` drives it: the
@@ -230,14 +230,14 @@ describe("the rendered catalogue", () => {
     expect(html).not.toContain(formatCurrency(999));
   });
 
-  it("offers “Use this template” on every card, pointing at the create route", async () => {
+  it("offers “Create Relationship” on every card, pointing at the create route", async () => {
     const html = await renderCatalogue();
 
     for (const type of purchasableRelationshipTypes) {
       const record = assessments.find((template) => template.slug === type.id);
       if (record === undefined) throw new Error(`no record for "${type.id}"`);
       const card = cardOf(html, type.id);
-      expect(wordsOf(card)).toContain("Use this template");
+      expect(wordsOf(card)).toContain("Create Relationship");
       expect(card).toContain(`href="${createRelationshipPath(record.slug)}"`);
       // #794 — the address carries the record's slug, not its id; `record.slug` is what the card
       // writes and `record.id` never leaves the storage layer.
