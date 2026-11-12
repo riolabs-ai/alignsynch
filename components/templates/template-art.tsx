@@ -38,12 +38,12 @@ export function TemplateArt({
   return (
     <div
       aria-hidden="true"
-      className={`flex h-[72px] shrink-0 items-center justify-between gap-3 overflow-hidden border-b border-border/60 px-4 ${className ?? ""}`}
+      className={`flex h-[72px] shrink-0 items-center justify-between gap-3 overflow-hidden border-b border-border/60 px-4 max-[620px]:h-auto max-[620px]:min-h-full max-[620px]:flex-col max-[620px]:justify-center max-[620px]:gap-2 max-[620px]:border-r max-[620px]:border-b-0 max-[620px]:px-[5px] max-[620px]:py-2.5 ${className ?? ""}`}
       data-realm-art=""
       style={{ backgroundColor: art.tint }}
     >
       <span
-        className="block h-[46px] w-[46px] shrink-0"
+        className="block h-[46px] w-[46px] shrink-0 max-[620px]:h-10 max-[620px]:w-10"
         data-realm-icon=""
         style={{
           backgroundColor: art.ink,
@@ -58,7 +58,10 @@ export function TemplateArt({
         }}
       />
       {mark !== undefined && (
-        <TwoPartyMark className="block h-[26px] w-auto shrink-0 opacity-90" src={mark} />
+        <TwoPartyMark
+          className="block h-[26px] w-auto shrink-0 opacity-90 max-[620px]:h-auto max-[620px]:w-[53px]"
+          src={mark}
+        />
       )}
     </div>
   );

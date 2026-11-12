@@ -52,7 +52,11 @@ export function HowItWorksPreview({
           <p className="mt-2.5 max-w-[590px] text-[13px] leading-[1.55] text-muted-foreground">
             {how.body}
           </p>
-          <ol className="mt-4 mb-4 grid gap-0">
+          {/* One column, except in the 620–800 band where the artifact draws them 3-up because
+              the copy and the example have already stacked: a single stacked list there is three
+              56-pixel rows of whitespace beside nothing. A range query, not two max-width ones, so
+              the order of the two rules cannot decide the layout. */}
+          <ol className="mt-4 mb-4 grid grid-cols-1 gap-0 min-[620px]:max-[800px]:grid-cols-3 min-[620px]:max-[800px]:gap-x-3.5">
             {how.steps.map((step) => (
               <li
                 className="flex items-start gap-3 border-t border-border py-2.5"

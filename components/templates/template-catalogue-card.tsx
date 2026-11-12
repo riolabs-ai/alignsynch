@@ -39,12 +39,12 @@ export function TemplateCatalogueCard({
 }) {
   return (
     <article
-      className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card transition-[border-color,box-shadow] duration-150 hover:border-foreground/25 hover:shadow-sm"
+      className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card transition-[border-color,box-shadow] duration-150 hover:border-foreground/25 hover:shadow-sm max-[620px]:grid max-[620px]:grid-cols-[84px_minmax(0,1fr)] max-[620px]:grid-rows-[auto_auto]"
       data-realm={card.realm}
       data-template-card={card.id}
     >
-      <TemplateArt art={art} mark={mark} />
-      <div className="flex flex-1 flex-col px-4 pt-3 pb-3.5">
+      <TemplateArt art={art} className="max-[620px]:row-span-2 max-[620px]:h-full" mark={mark} />
+      <div className="flex flex-1 flex-col px-4 pt-3 pb-3.5 max-[620px]:col-start-2 max-[620px]:row-start-1 max-[620px]:px-3 max-[620px]:pt-[11px] max-[620px]:pb-[9px]">
         <p className="mb-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
           <span className="font-semibold">{card.realm}</span>
           <span aria-hidden="true" className="h-[3px] w-[3px] rounded-full bg-border" />
@@ -62,7 +62,7 @@ export function TemplateCatalogueCard({
           {card.roles}
         </p>
       </div>
-      <div className="flex min-h-[44px] items-center justify-between gap-2 border-t border-border py-1.5 pr-2.5 pl-4">
+      <div className="flex min-h-[44px] items-center justify-between gap-2 border-t border-border py-1.5 pr-2.5 pl-4 max-[620px]:col-start-2 max-[620px]:row-start-2 max-[620px]:min-h-[39px] max-[620px]:py-[5px] max-[620px]:pr-[9px] max-[620px]:pl-3">
         <span className="flex items-center gap-3">
           <Link
             className="rounded-sm text-[11px] font-semibold text-muted-foreground underline-offset-4 hover:text-action hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"

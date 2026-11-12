@@ -32,7 +32,7 @@ import Link from "next/link";
 export function TemplatesHero({ hero }: { hero: TemplatesPageModel["hero"] }) {
   return (
     <section className="border-b border-border bg-muted/40" data-templates-hero="">
-      <div className="marketing-container grid items-center gap-9 py-12 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-16 lg:py-14">
+      <div className="marketing-container grid items-center gap-[23px] py-12 min-[620px]:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] min-[620px]:gap-x-[clamp(1.75rem,5vw,4.25rem)] min-[620px]:gap-y-0 min-[620px]:py-10">
         <div className="min-w-0 max-w-[570px]">
           {hero.eyebrow !== undefined && (
             <p className="text-[11px] font-bold tracking-[0.075em] text-action uppercase">
@@ -72,10 +72,13 @@ export function TemplatesHero({ hero }: { hero: TemplatesPageModel["hero"] }) {
         </div>
 
         <figure className="min-w-0">
-          <div className="overflow-hidden rounded-lg border border-border bg-muted">
+          {/* The frame is the artifact's 1.42 ratio, 1.3 on a phone, and the photograph fills it —
+              `object-cover` with a 31%-from-the-top crop keeps both faces in the frame at every
+              width, which is the one thing about this image a fixed aspect ratio can get wrong. */}
+          <div className="aspect-[1.3] overflow-hidden rounded-lg border border-border bg-muted min-[620px]:aspect-[1.42]">
             <Image
               alt=""
-              className="block h-auto w-full object-cover object-[56%_31%] lg:object-[50%_31%]"
+              className="block h-full w-full object-cover object-[56%_31%] min-[620px]:object-[50%_31%]"
               data-templates-hero-photo=""
               height={hero.photo.height}
               priority

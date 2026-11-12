@@ -30,17 +30,36 @@ export function MembershipSummary({
 }) {
   return (
     <section aria-label={membership.note.title} className="border-b border-border bg-background">
-      <div className="marketing-container grid items-center gap-x-5 gap-y-2.5 py-4 md:grid-cols-[minmax(11.875rem,0.8fr)_minmax(0,2.6fr)_auto] md:py-0">
+      <div className="marketing-container grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 py-3 min-[1000px]:min-h-[77px] min-[1000px]:grid-cols-[minmax(11.875rem,0.8fr)_minmax(0,2.6fr)_auto] min-[1000px]:gap-x-5 min-[1000px]:gap-y-1 min-[1000px]:py-2.5">
         <p className="text-[12px] font-semibold text-foreground">
           {membership.note.title}
           <span className="mt-px block text-[11px] font-normal text-muted-foreground">
             {membership.note.line}
           </span>
         </p>
-        <div className="flex items-center justify-between gap-4 md:justify-start md:gap-4">
+        {membership.link !== undefined && (
+          <Link
+            className="col-start-2 row-start-1 inline-flex h-11 items-center justify-self-end rounded-sm text-[11px] font-bold whitespace-nowrap text-action underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:outline-none min-[1000px]:col-start-3 min-[1000px]:justify-self-auto min-[1000px]:text-[12px]"
+            href={membership.link.href}
+          >
+            {membership.link.label}
+            <span aria-hidden="true" className="ml-1">
+              →
+            </span>
+          </Link>
+        )}
+        <div className="col-span-2 row-start-2 flex items-start justify-start gap-4 max-[620px]:justify-between max-[620px]:gap-2 min-[1000px]:col-span-1 min-[1000px]:col-start-2 min-[1000px]:row-start-1">
           {membership.facts.map((fact, index) => (
-            <span className="flex items-center gap-4" key={fact.title}>
-              {index > 0 && <span aria-hidden="true" className="h-7 w-px shrink-0 bg-border" />}
+            <span
+              className="flex items-center gap-4 max-[620px]:max-w-[31%] max-[620px]:gap-2"
+              key={fact.title}
+            >
+              {index > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="h-7 w-px shrink-0 bg-border max-[620px]:h-[30px]"
+                />
+              )}
               <span className="text-[10px] leading-[1.35] text-muted-foreground">
                 <strong className="block text-[11px] font-bold text-foreground">
                   {fact.title}
@@ -50,19 +69,8 @@ export function MembershipSummary({
             </span>
           ))}
         </div>
-        {membership.link !== undefined && (
-          <Link
-            className="inline-flex h-11 items-center rounded-sm text-[12px] font-bold whitespace-nowrap text-action underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"
-            href={membership.link.href}
-          >
-            {membership.link.label}
-            <span aria-hidden="true" className="ml-1">
-              →
-            </span>
-          </Link>
-        )}
         {membership.testMode !== undefined && (
-          <p className="text-[10px] leading-[1.4] text-muted-foreground md:col-span-3 md:pb-2.5">
+          <p className="col-span-2 text-[10px] leading-[1.4] text-muted-foreground min-[1000px]:col-span-3 min-[1000px]:pb-2.5">
             {membership.testMode}
           </p>
         )}

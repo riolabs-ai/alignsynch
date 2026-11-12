@@ -69,12 +69,12 @@ export function TemplateCatalogue({
   return (
     <section
       aria-labelledby="catalogue-title"
-      className="bg-background pt-8 pb-10 md:pt-9 md:pb-14"
+      className="bg-background pt-[35px] pb-[54px]"
       data-templates-catalogue=""
       id="catalogue"
     >
       <div className="marketing-container">
-        <div className="mb-7 flex flex-col items-stretch justify-between gap-3.5 md:flex-row md:items-end md:gap-7">
+        <div className="mb-3 flex flex-col items-stretch justify-between gap-3.5 md:flex-row md:items-end md:gap-7">
           <div>
             {catalogue.eyebrow !== undefined && (
               <p className="mb-1 text-[11px] font-bold tracking-[0.075em] text-action uppercase">
@@ -136,7 +136,7 @@ export function TemplateCatalogue({
             : catalogue.search.count}
         </p>
 
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-[31px]">
           {groups.map((group) => (
             <section
               aria-labelledby={`heading-${group.anchor.slice(1)}`}
@@ -153,7 +153,7 @@ export function TemplateCatalogue({
                 </h3>
                 <span className="text-[11px] text-muted-foreground">{group.count}</span>
               </div>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-[10px] min-[621px]:grid-cols-2 min-[621px]:gap-[13px] min-[1000px]:grid-cols-3">
                 {group.cards.map((card) => (
                   <TemplateCatalogueCard art={group.art} card={card} key={card.id} mark={mark} />
                 ))}
