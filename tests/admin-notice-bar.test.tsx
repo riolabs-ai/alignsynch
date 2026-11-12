@@ -14,7 +14,7 @@
  *      signed-out render (a parity hash is HTML, and that class string is part of it).
  */
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { AdminNoticeBar } from "@/components/layout/admin-notice-bar";
 import { railClassName } from "@/components/layout/sidebar";
@@ -71,8 +71,13 @@ describe("AdminNoticeBar — what a reader gets", () => {
   it("draws one row with one internal link for an admin on this build", () => {
     // The gate case above is the predicate's; this one runs the real flags, which on the
     // `BRAND=alignsynch` build the suite runs under are `product.admin` on and the quiz off.
+    // The suite's build may be either brand; the flags decide, so they are pinned here rather than
+    // inherited from whatever `BRAND` the process carries.
+    vi.stubEnv("FLAG_PRODUCT_ADMIN", "1");
+    vi.stubEnv("FLAG_PRODUCT_QUIZ_SURFACES", "0");
     const html = renderToStaticMarkup(<AdminNoticeBar copy={shellPageCopy} viewerRole="admin" />);
-    if (html === "") return; // a `BRAND=quizhub` process: the predicate above is the claim, not this.
+    vi.unstubAllEnvs();
+    expect(html).not.toBe("");
 
     expect(html).toContain("data-admin-notice");
     expect(html).toContain('href="/admin/brand"');

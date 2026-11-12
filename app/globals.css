@@ -290,6 +290,14 @@
    */
   .admin-notice-shell {
     --admin-notice-h: 40px;
+
+    /*
+     * The row is `position: fixed`, so it takes no space in the layout; the wrapper reserves the
+     * same height here instead, which is what moves the header, the rail and the page down by
+     * exactly one bar. Padding inside `border-box` keeps `min-h-screen` at 100vh rather than
+     * 100vh + the bar.
+     */
+    padding-top: var(--admin-notice-h);
   }
 
   /*

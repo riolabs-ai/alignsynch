@@ -87,7 +87,6 @@ export default async function MarketingLayout({
     <div
       className={`flex min-h-screen flex-col bg-white${notice ? ` ${ADMIN_NOTICE_SHELL_CLASS}` : ""}`}
     >
-      {notice ? <AdminNoticeBar copy={shellPageCopy} viewerRole={role} /> : null}
       <MarketingHeader
         account={account}
         brand={brand}
@@ -110,6 +109,14 @@ export default async function MarketingLayout({
         hiddenNav={hiddenNavHrefs()}
         viewer={navViewer()}
       />
+      {/*
+        The admin notice bar (#906), **last**, and `fixed` in CSS. Two reasons, both parity: an
+        element placed before `{children}` shifts the ids `useId` hands the page's client
+        components (a Tabs trigger's `radix-_R_ii_` becomes `radix-_R_153_` — a byte diff nobody
+        sees), and `fixed` means the row needs no flow space here. The wrapper's `padding-top`
+        reserves exactly its height instead, so the header and the page start one bar down.
+      */}
+      {notice ? <AdminNoticeBar copy={shellPageCopy} viewerRole={role} /> : null}
     </div>
   );
 }

@@ -27,10 +27,15 @@
  * the E34 failure `AGENTS.md` records. A client component can still *render* it, because the layout
  * passes it down as an already-created element.
  *
- * **Sticky, at `z-40`, in flow.** The row moves everything below it down instead of covering it:
- * the two headers' `top` and the rail's `top`/height read `--admin-notice-h`, which the layout
- * wrapper publishes while this bar is mounted (`ADMIN_NOTICE_SHELL_CLASS`). Every one of those
- * resolves to `0px` when the bar is absent, so the offsets cannot disagree with the row above them.
+ * **Fixed at `z-40`, out of flow.** The row covers the top 40px of the viewport and does not
+ * participate in layout, so the two things below it are moved down by `padding-top` on the wrapper
+ * that carries `.admin-notice-shell` — and the sticky pieces (both headers, the rail, the two
+ * in-page menus) read `--admin-notice-h` for their own `top`. Every one of those resolves to `0px`
+ * when the bar is absent, so the offsets cannot disagree with the row above them. It is mounted
+ * **last** in the marketing layout for a second reason: an element placed before the page's own
+ * children shifts the ids React's `useId` hands to them (`radix-_R_ii_` becomes `radix-_R_153_`),
+ * which is a byte `pnpm parity` sees and a reader does not. Out of flow and last, it changes no
+ * id and no sibling.
  *
  * **The link is internal, so it is a `Link`.** `/admin/brand` is a page of this app; a
  * `LeavingLink` (new tab, external marker) would be wrong in both senses.
@@ -61,7 +66,7 @@ export function AdminNoticeBar({
   const visible = adminNoticeVisible({
     adminProduct: adminProductShipped(),
     quizProduct: quizProductShipped(),
-    viewerRole,
+    role: viewerRole,
   });
   if (!visible) return null;
 
@@ -71,7 +76,7 @@ export function AdminNoticeBar({
   return (
     <div
       data-admin-notice
-      className="sticky top-0 z-40 border-b border-border bg-foreground text-background"
+      className="fixed inset-x-0 top-0 z-40 border-b border-border bg-foreground text-background"
     >
       {/*
         `min-h` is the published height and `py-2` is the padding under it: at a wide viewport the

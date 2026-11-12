@@ -29,7 +29,6 @@
 import AffiliatePage from "@/app/(mainlayout)/affiliate/page";
 import AdminAuditPage from "@/app/(mainlayout)/admin/audit/page";
 import AdminBillingPage from "@/app/(mainlayout)/admin/billing/page";
-import AdminBrandPage from "@/app/(mainlayout)/admin/brand/page";
 import AdminBroadcastPage from "@/app/(mainlayout)/admin/broadcast/page";
 import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
 import AdminDocsPage from "@/app/(mainlayout)/admin/docs/page";
@@ -206,6 +205,14 @@ export type AdminProductRoute = {
  * `parity.check.ts` — open on a template that claims the console (both this tree ships, today) and
  * Next's not-found on one that does not.
  */
+/**
+ * #906 names this list's one deliberate absence: `/admin/brand`. The list's claim is "open
+ * capability → the page renders on every template that claims it", and that page is gated a second
+ * time by `requireAlignmentProduct()`, so it answers 404 on `quizhub` even though `quizhub` sells
+ * the console — an entry here would be a false claim. It is covered instead by
+ * `tests/admin-brand.test.tsx`, which flips each capability through the real `notFound()` and
+ * asserts the order, and by the admin/visitor/quiz-build screenshots in the #906 PR.
+ */
 export const adminProductRoutes: readonly AdminProductRoute[] = [
   {
     route: "/admin/audit",
@@ -228,17 +235,6 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
     // gate and need no line here.
     route: "/admin/billing",
     page: AdminBillingPage as unknown as ParityPage,
-    params: {},
-    open: "render",
-  },
-  {
-    // #906 — the brand and audience profile. Outside the `/admin/console` subtree, so it carries its
-    // own `requireAdminProduct()` **and** `requireAlignmentProduct()`: this is the console page a
-    // quiz-only build must answer 404 for, which is the second gate the list exists to keep visible.
-    // `render` — the page is a committed fixture with no reads behind it, so an open capability
-    // produces the whole document.
-    route: "/admin/brand",
-    page: AdminBrandPage as unknown as ParityPage,
     params: {},
     open: "render",
   },
