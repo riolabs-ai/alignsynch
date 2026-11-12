@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **90** — 55 static, 35 dynamic, from `app/**/page.tsx`
-- component domains: **42** — 323 files under `components/`, 316 of them `.tsx`
+- component domains: **42** — 324 files under `components/`, 317 of them `.tsx`
 - route handlers: **29** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 15 · **fixture** 68 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 44 · AlignSynch 44 · QuizHub 42 · No template yet 2
