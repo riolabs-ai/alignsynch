@@ -74,6 +74,7 @@ import {
   type AspectsOutcome,
   type CaptureOutcome,
   type CompleteOutcome,
+  type ForkOutcome,
   type PublishOutcome,
   type RepublishOutcome,
 } from "@/lib/member/outcomes";
@@ -116,6 +117,8 @@ export function RelationshipDetail({
   onCapture,
   onResolve,
   onComplete,
+  onFork,
+  templatesHref,
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
@@ -169,6 +172,17 @@ export function RelationshipDetail({
     planId?: string;
     reason?: string;
   }) => Promise<CompleteOutcome>;
+  /**
+   * #785 — the Counterparty's one action: take this relationship's template into their own library.
+   * A server action, passed in for the same reason every other write here is.
+   */
+  onFork: (payload: { relationshipId?: string }) => Promise<ForkOutcome>;
+  /**
+   * Where the forked copy landed, passed in rather than imported: the constant lives beside a module
+   * that reaches Postgres, which a `"use client"` file may not value-import (E34) — the same reason
+   * `backHref` arrives as a prop.
+   */
+  templatesHref: string;
 }) {
   const backCopy = sectionOf(copy, "back");
   const identityCopy = sectionOf(copy, "identity");
@@ -184,6 +198,8 @@ export function RelationshipDetail({
   const completionCopy = sectionOf(copy, "completion");
   /** #748 — the capture dialog's own copy, and the sentence a failure in it draws. */
   const captureCopy = sectionOf(copy, "capture");
+  /** #785 — the Counterparty's one action: the fork of this relationship's template. */
+  const forkCopy = sectionOf(copy, "fork");
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -209,6 +225,8 @@ export function RelationshipDetail({
   /** #748 — the capture dialog; the band's button opens it, and every outcome closes it. */
   const [captureOpen, setCaptureOpen] = useState(false);
   const [completeOutcome, setCompleteOutcome] = useState<CompleteOutcome | null>(null);
+  /** #785 — the fork's answer: the copy's title, and whether it was one they already had. */
+  const [forkOutcome, setForkOutcome] = useState<ForkOutcome | null>(null);
 
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
@@ -364,6 +382,19 @@ export function RelationshipDetail({
     });
   }
 
+  /**
+   * #785 — **take the template.** One click, and the answer says which of the two things happened:
+   * a new copy, or the one this account already had (the store points at it rather than writing a
+   * second row with the same title).
+   */
+  function forkTemplate(): void {
+    setForkOutcome(null);
+    startTransition(async () => {
+      const answer = await onFork({ relationshipId: relationship.id });
+      setForkOutcome(answer);
+    });
+  }
+
   const aspectsRefusal =
     aspectsOutcome !== null && !aspectsOutcome.ok ? sentenceFor(refusals, aspectsOutcome) : null;
   const publishRefusal =
@@ -387,6 +418,8 @@ export function RelationshipDetail({
     captureOutcome !== null && !captureOutcome.ok ? sentenceFor(refusals, captureOutcome) : null;
   const completeRefusal =
     completeOutcome !== null && !completeOutcome.ok ? sentenceFor(refusals, completeOutcome) : null;
+  const forkRefusal =
+    forkOutcome !== null && !forkOutcome.ok ? sentenceFor(refusals, forkOutcome) : null;
 
   /* #795 — the band. A relationship's slug names its catalogue type exactly as a template's does,
      so the identity band is the same component with the same three chips. */
@@ -473,6 +506,53 @@ export function RelationshipDetail({
       actions={
         <>
           {editPanel}
+          {/*
+            #785 — the Counterparty's one action, and the only control on this screen that is
+            theirs. It sits first in the rail because for them every other band is absent, and it
+            is drawn from `canForkTemplate` (a party who does not own the words) rather than from
+            `!isInitiator`: the server re-asks the seat under its own lock, so this is where the
+            action is offered, never whether it is allowed.
+          */}
+          {relationship.canForkTemplate ? (
+            <DetailPanel title={forkCopy.heading} hooks={{ "data-fork-template": "true" }}>
+              <p className={DETAIL_MUTED}>{sectionBody(forkCopy)}</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={forkTemplate}
+                disabled={pending}
+                data-fork-template-submit="true"
+              >
+                {pending ? itemLabel(forkCopy, "working") : itemLabel(forkCopy, "submit")}
+              </Button>
+              {forkOutcome?.ok === true ? (
+                <p
+                  data-fork-template-saved={forkOutcome.reused ? "existing" : "created"}
+                  className="text-sm"
+                >
+                  {fillLabel(itemLabel(forkCopy, forkOutcome.reused ? "reused" : "saved"), {
+                    title: forkOutcome.title,
+                    aspects: String(forkOutcome.aspectCount),
+                  })}{" "}
+                  <a
+                    className="font-medium text-action underline underline-offset-4"
+                    href={templatesHref}
+                    data-fork-template-open="true"
+                  >
+                    {itemLabel(forkCopy, "open")}
+                  </a>
+                </p>
+              ) : null}
+              {forkRefusal === null ? null : (
+                <p
+                  data-fork-template-refusal={forkOutcome?.ok === false ? forkOutcome.code : ""}
+                  className="text-sm"
+                >
+                  {forkRefusal}
+                </p>
+              )}
+            </DetailPanel>
+          ) : null}
           {methodMissing ? (
             /*
              * #690 — the hard gate. Publishing needs a method on file, and the create flow only ever

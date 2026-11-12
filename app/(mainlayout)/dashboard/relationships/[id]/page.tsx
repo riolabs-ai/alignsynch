@@ -33,10 +33,12 @@ import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
+import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
   capturePaymentMethodAction,
   completeRelationshipAction,
   editRelationshipAction,
+  forkRelationshipTemplateAction,
   previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
@@ -125,6 +127,14 @@ export default async function MemberRelationshipPage({
         onCapture={capturePaymentMethodAction}
         onResolve={resolveCaptureAction}
         onComplete={completeRelationshipAction}
+        onFork={forkRelationshipTemplateAction}
+        /*
+          #785 — where a forked copy lands. Passed rather than imported inside the component for the
+          reason `backHref` is: `TEMPLATE_LIBRARY_PATH` is exported by `lib/flow/paths.ts` (no
+          database), and the `?view=mine` tab is the one the copy is under — a fork is the caller's,
+          so the library's "Mine" tab is the honest destination and not the whole catalogue.
+        */
+        templatesHref={`${TEMPLATE_LIBRARY_PATH}?view=mine`}
       />
     </div>
   );

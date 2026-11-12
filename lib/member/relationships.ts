@@ -440,6 +440,16 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
   /** Does the invitation's state offer the one-click reissue? `republishable()` — `expired`/`revoked`. */
   readonly offersRepublish: boolean;
   /**
+   * #785 — may this reader take the relationship's template into their own library?
+   *
+   * `true` for a party who does not own the words: the Counterparty on a relationship whose
+   * template the initiator authored, which is every relationship `createRelationship` makes. The
+   * initiator already has the template, and a stranger never reaches this view at all — the read
+   * filters on `VIEWER_IS_PARTY` before it builds one. `forkRelationshipTemplate` re-asks the seat
+   * inside its transaction, so this flag is what the screen draws, never the permission.
+   */
+  readonly canForkTemplate: boolean;
+  /**
    * Is a trial running with no live invitation? (`trialRunningWithoutLiveInvite()`)
    *
    * Decided here rather than in the client component because the answer is a function of
@@ -493,8 +503,9 @@ export async function readMyRelationship(
   const row = rows[0];
   if (row === undefined) return undefined;
 
-  const record = await queryRows<RecordRow & { id: string }>(
-    `SELECT id, slug, record_type, status, date, title, summary FROM record WHERE id = $1`,
+  const record = await queryRows<RecordRow & { id: string; owner_user_id: string | null }>(
+    `SELECT id, slug, record_type, status, date, title, summary, owner_user_id
+       FROM record WHERE id = $1`,
     [row.template_id],
   );
   const items = await queryRows<ItemRow>(
@@ -564,6 +575,18 @@ export async function readMyRelationship(
     completion,
     offersRepublish: base.isInitiator && republishable(base.view) && membership.state !== "lapsed",
     trialWithoutLiveInvite: base.isInitiator && trialRunningWithoutLiveInvite(trial, base.view),
+    /*
+     * #785 — **the fork, drawn for a party who does not own the words.**
+     *
+     * The action takes the template this relationship was configured with into the reader's own
+     * library, so it is drawn for the reader who does not already own it: `owner_user_id` is the
+     * initiator on every copy `createRelationship` writes (`0029_record_ownership_visibility.sql`),
+     * which makes the second half the Counterparty's case. The `isInitiator` half is the same fact
+     * for a legacy copy whose owner column is NULL — the person who started it is still not its
+     * audience. Neither half is the permission: `forkRelationshipTemplate` re-asks seat membership
+     * inside its transaction.
+     */
+    canForkTemplate: !base.isInitiator && primary.owner_user_id !== userId,
     closed: isClosed(base.status),
     trial,
     membership,
