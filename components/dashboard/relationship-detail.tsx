@@ -83,7 +83,7 @@ import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detai
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { PRICING_PATH } from "@/lib/flow/paths";
+import { PRICING_PATH, RELATIONSHIPS_PATH } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 
@@ -177,6 +177,8 @@ export function RelationshipDetail({
   templatesHref: string;
 }) {
   const identityCopy = sectionOf(copy, "identity");
+  /** #873 — the page's own way-back string, reused as the Counterparty notice's one door. */
+  const backCopy = sectionOf(copy, "back");
   const viewCopy = sectionOf(copy, "view");
   const statusCopy = sectionOf(copy, "status");
   const aspectCopy = sectionOf(copy, "aspects");
@@ -916,14 +918,29 @@ export function RelationshipDetail({
           </p>
         )}
         {/* #706 — the sentence that stands in for the three absent bands, so a Counterparty reads
-            why this screen has no editor, no publish panel and no reissue control. */}
+            why this screen has no editor, no publish panel and no reissue control.
+
+            #873 — **the sentence is not the dead end it used to be.** It named three destinations
+            in prose and linked to none, so a Counterparty who reached this page had nothing to
+            press. The one door that exists in every state is My Relationships
+            (`RELATIONSHIPS_PATH`) — the list that carries the relationship *and* its assessment, so
+            it is both the way back and the way to the answer for a published one. It is drawn with
+            the page's own `back`/`all` string ("All relationships"), never new copy: the fixture is
+            the only place these words live, and the id already exists on this route. */}
         {relationship.isInitiator ? null : (
-          <p
+          <div
             data-relationship-read-only="counterparty"
-            className="rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200"
+            className="space-y-2 rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200"
           >
-            {itemLabel(viewCopy, "counterparty-read-only")}
-          </p>
+            <p>{itemLabel(viewCopy, "counterparty-read-only")}</p>
+            <a
+              className="inline-flex h-11 items-center font-medium text-action underline underline-offset-4"
+              href={RELATIONSHIPS_PATH}
+              data-relationship-read-only-open="relationships"
+            >
+              {itemLabel(backCopy, "all")}
+            </a>
+          </div>
         )}
         {copy.subtitle === undefined ? null : (
           <p className="text-xs text-muted-foreground">{copy.subtitle}</p>
