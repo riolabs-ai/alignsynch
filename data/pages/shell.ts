@@ -259,6 +259,11 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
           /**
+           * #877 — the sessions, beside the relationships they belong to. The owner's word is
+           * plural and it is the page's own `<h1>`: one string, one home.
+           */
+          { id: "my-assessments", label: "My Assessments" },
+          /**
            * #542 phase 2 — the member's own templates, beside their own relationships. Two rows
            * that used to read "Templates" (the public catalogue at `/templates/relationship`) and
            * "Library" now name the three different shelves honestly: `my-templates` is the set a

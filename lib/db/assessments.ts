@@ -495,6 +495,14 @@ export interface RelationshipCard {
   /** The relationship's own name, else the template's title it was copied from. */
   readonly name: string;
   readonly templateTitle: string;
+  /**
+   * The template's own slug — the address of the assessment this session was copied from (#877).
+   *
+   * Optional because it is a *link target*, not a fact the card prints: suites and fixtures written
+   * before the assessments listing omit it, and a required field would turn a one-line read change
+   * into an edit of every object literal in the test tree. The read always selects it.
+   */
+  readonly templateSlug?: string;
   readonly mode: AssessmentMode;
   readonly viewerRole: PartyRole | "coach";
   readonly initiatorName: string | null;
@@ -550,6 +558,7 @@ export interface RelationshipCardRow {
   readonly plan: string | null;
   readonly purchased_at: Date | null;
   readonly template_title: string;
+  readonly template_slug: string;
   readonly session_record_id: string;
   readonly slug: string;
   readonly mode: string;
@@ -615,6 +624,7 @@ const RELATIONSHIP_CARDS_SQL = `
     rel.plan                    AS plan,
     rel.purchased_at            AS purchased_at,
     t.title                     AS template_title,
+    t.slug                      AS template_slug,
     l.record_id                 AS session_record_id,
     l.slug                      AS slug,
     l.mode                      AS mode,
@@ -854,6 +864,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     slug: row.slug,
     name: row.session_name ?? row.template_title,
     templateTitle: row.template_title,
+    templateSlug: row.template_slug,
     mode: zAssessmentMode.parse(row.mode),
     viewerRole,
     initiatorName: row.initiator_name,

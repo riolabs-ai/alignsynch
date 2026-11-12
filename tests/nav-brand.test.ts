@@ -120,7 +120,7 @@ const QUIZ_MENU = [
 const QUIZ_ONLY = ["/leaderboard", "/tournaments", "/battle", "/categories", "/explore"];
 
 /**
- * The alignment rail's four member destinations, in order (#620).
+ * The alignment rail's five member destinations, in order (#620, #877).
  *
  * **#620 took the Workspace group from four rows to two.** `My Relationships` is
  * `/dashboard/relationships` (the relationship *and* its assessment) and `Templates` is
@@ -129,11 +129,16 @@ const QUIZ_ONLY = ["/leaderboard", "/tournaments", "/battle", "/categories", "/e
  * `My Templates` (now the second tab) and `Library` (now a 308 to that tab — the page is deleted,
  * because a redirect may not shadow one).
  *
- * It is one constant rather than four literals per case because three cases assert the same rows;
+ * **#877 added the third Workspace row**, `My Assessments` → `/assessments`: the member's
+ * assessment sessions, immediately after the relationships whose sessions they are. It is the
+ * listing that used to be `/assessment/instances` and had no rail row at all.
+ *
+ * It is one constant rather than five literals per case because three cases assert the same rows;
  * a second copy is how a menu edit lands in one expectation and not the others.
  */
 const ALIGNMENT_MENU = [
   "/dashboard/relationships",
+  "/assessments",
   "/dashboard/templates",
   "/dashboard/help",
   "/dashboard/support",
@@ -219,8 +224,8 @@ describe("the alignment brand's menu is alignment destinations", () => {
 describe("the quiz product is filtered, not deleted", () => {
   it("gives a viewer with the quiz capability both menus", () => {
     const hrefs = navHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 4)).toEqual(ALIGNMENT_MENU);
-    expect(hrefs.slice(4)).toEqual(QUIZ_MENU);
+    expect(hrefs.slice(0, ALIGNMENT_MENU.length)).toEqual(ALIGNMENT_MENU);
+    expect(hrefs.slice(ALIGNMENT_MENU.length)).toEqual(QUIZ_MENU);
   });
 
   it.each(QUIZ_ONLY)("restores %s for that viewer", (path) => {
@@ -251,13 +256,16 @@ describe("the console's own rows are a member's, the operator's rows are not", (
   const memberHrefs = navHrefs("alignsynch");
   const adminHrefs = navHrefs("alignsynch", navViewer("admin"));
 
-  it("draws exactly two workspace rows for a member — the two #620 merged to", () => {
+  it("draws the three workspace rows for a member — the three #620 and #877 left", () => {
     expect(memberHrefs).toContain("/dashboard/relationships");
+    expect(memberHrefs).toContain("/assessments");
     expect(memberHrefs).toContain("/dashboard/templates");
     // The three retired rows: the Overview is not a rail row any more, the library is a redirect,
-    // and "My Templates" is the tab behind `/dashboard/templates`.
+    // and "My Templates" is the tab behind `/dashboard/templates`. `/assessment/instances` is not
+    // a rail row either — it is a 308 to `/assessments` (#877).
     expect(memberHrefs).not.toContain("/dashboard");
     expect(memberHrefs).not.toContain("/dashboard/library");
+    expect(memberHrefs).not.toContain("/assessment/instances");
     expect(memberHrefs.filter((href) => href.startsWith("/dashboard/")).slice(0, 2)).toEqual([
       "/dashboard/relationships",
       "/dashboard/templates",
@@ -324,19 +332,22 @@ describe("the console's own rows are a member's, the operator's rows are not", (
  * brand-conditional by construction (`AppNav` renders one menu or the other), which is why the last
  * case asserts absence rather than a hidden row.
  */
-describe("the workspace group reads My Relationships, Templates", () => {
+describe("the workspace group reads My Relationships, My Assessments, Templates", () => {
   const memberHrefs = navHrefs("alignsynch");
 
-  it("opens on My Relationships — the first row of the two that are a member's work", () => {
+  it("opens on My Relationships — the first row of the three that are a member's work", () => {
     expect(memberHrefs[0]).toBe("/dashboard/relationships");
     expect(memberHrefs.filter((href) => href === "/dashboard/relationships")).toEqual([
       "/dashboard/relationships",
     ]);
   });
 
-  it("puts Templates directly under My Relationships, and the catalogue tab inside it", () => {
+  it("puts My Assessments under My Relationships, and Templates under that", () => {
     const at = (href: string) => memberHrefs.indexOf(href);
-    expect(at("/dashboard/templates")).toBe(at("/dashboard/relationships") + 1);
+    // #877 — the sessions sit immediately after the relationships they belong to; Templates
+    // follows, because it is the shelf you start one from rather than a record you read.
+    expect(at("/assessments")).toBe(at("/dashboard/relationships") + 1);
+    expect(at("/dashboard/templates")).toBe(at("/assessments") + 1);
     // The shelf the row opens is the catalogue tab of that one destination — not a second row.
     // #794 — and not the signed-in template *library* under either address: the rail has one
     // template destination, and it is the dashboard's.

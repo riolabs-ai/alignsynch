@@ -422,18 +422,33 @@ describe("the legacy redirects", () => {
   });
 
   /**
-   * `/assessment/instances/**` is the part of the `assessment` tree that stays — it is a record
-   * page, not a template and not a taxonomy, so the demo move has no business touching it. Its
-   * patterns are read out of the manifest rather than listed, so a page added under it is covered
-   * without editing this case.
+   * #877 — the listing moved out of the record-kind tree, and the session's own screen did not.
+   *
+   * The two rules above ask "does this list shadow a page" and "does every destination resolve".
+   * Neither asks the question a bookmark asks: *did `/assessment/instances` move, to where, and
+   * will a browser stop asking?* A dropped row, a `permanent: false` row (a 307 keeps the old URL
+   * in the tab and the index) and a row pointed at the wrong list all pass those two rules.
    */
-  it("leaves every /assessment/instances address to the tree", () => {
-    const instances = ROUTE_PATTERNS.filter(
-      (pattern) =>
-        pattern === "/assessment/instances" || pattern.startsWith("/assessment/instances/"),
+  it("answers the retired listing with a permanent 308 to /assessments", () => {
+    const oldPath = "/assessment/instances";
+    const entry = redirects.find((row) => matcherFor(row.source)(oldPath) !== false);
+
+    expect(entry).toBeDefined();
+    expect(statusOf(entry as RedirectRow)).toBe(308);
+    expect(redirectedTo(entry as RedirectRow, oldPath)).toBe("/assessments");
+  });
+
+  /**
+   * `/assessment/instances/**` is the part of the `assessment` tree that stays — the session's own
+   * screen, its report, its answer and accept steps and its sent page. Its patterns are read out of
+   * the manifest rather than listed, so a page added under it is covered without editing this case.
+   */
+  it("leaves every /assessment/instances/<id> address to the tree", () => {
+    const instances = ROUTE_PATTERNS.filter((pattern) =>
+      pattern.startsWith("/assessment/instances/"),
     );
-    // The family is two static addresses and a dynamic one; a filter that silently matched nothing
-    // would make the loop below vacuous.
+    // The family is four dynamic addresses; a filter that silently matched nothing would make the
+    // loop below vacuous.
     expect(instances.length).toBeGreaterThan(1);
 
     const caught: string[] = [];

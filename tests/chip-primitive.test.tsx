@@ -20,10 +20,9 @@
  *   4. the band is the `onBand` tone, because a neutral chip on the graphite band would be
  *      light-on-dark text with a light border.
  *
- * What it does not render is `my-instances.tsx`, `relationship-detail.tsx` and `instance-view.tsx`
- * — two are client components behind server actions and one needs a whole session screen. Their
- * chips are proved by claim 2 (the source) and by their own suites, which assert the hooks this
- * file checks by name.
+ * What it does not render is `relationship-detail.tsx` and `instance-view.tsx` — two client
+ * surfaces behind server actions and a whole session screen. Their chips are proved by claim 2
+ * (the source) and by their own suites, which assert the hooks this file checks by name.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -37,13 +36,13 @@ vi.mock("next/link", () => ({
 }));
 
 import { TemplateDetail } from "@/components/assessment-flow/template-detail";
-import { MyInstances } from "@/components/assessment-flow/my-instances";
+import { AssessmentsList } from "@/components/dashboard/assessments-list";
 import { RelationshipCards } from "@/components/dashboard/relationship-cards";
 import { TemplateShelf } from "@/components/dashboard/template-shelf";
 import { badgeVariants, Chip } from "@/components/ui/badge";
 import { assessments } from "@/data/assessments";
 import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
-import { myInstancesPageCopy } from "@/data/pages/assessment-instances";
+import { assessmentsPageCopy } from "@/data/pages/assessments";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
 import type { RelationshipCard } from "@/lib/db/assessments";
@@ -92,7 +91,7 @@ const CHIP_SURFACES = [
   "components/dashboard/template-shelf.tsx",
   "components/dashboard/relationship-cards.tsx",
   "components/dashboard/relationship-detail.tsx",
-  "components/assessment-flow/my-instances.tsx",
+  "components/dashboard/assessments-list.tsx",
   "components/assessment-flow/instance-view.tsx",
   /**
    * #795 — the band's three chips left `template-detail.tsx` for the shared shell, so the surface
@@ -357,19 +356,23 @@ describe("the surfaces render through it", () => {
     expect(html).not.toContain("rounded-md border border-border px-2");
   });
 
-  it("My Relationships draws the template mark and the stage tinted, a state soft", () => {
+  it("My Assessments draws the template mark and the state tinted, the invitation soft", () => {
     const html = renderToStaticMarkup(
-      createElement(MyInstances, {
-        copy: myInstancesPageCopy,
-        relationships: [myInstanceRow],
+      createElement(AssessmentsList, {
+        copy: assessmentsPageCopy,
+        rows: [myInstanceRow],
         unreadable: null,
       }),
     );
-    // The one sentence this refactor exists to establish: the stage and the template mark are
+    // The one sentence this refactor exists to establish: the template mark and the state are
     // the brand tint, so reverting either to `neutral` fails here and not in six months.
-    expect(elementWith(html, "data-stage-badge"), "stage").toContain(toneClasses("tint"));
+    expect(elementWith(html, "data-assessment-state-badge"), "state").toContain(
+      toneClasses("tint"),
+    );
     expect(html, "template mark").toContain(toneClasses("tint"));
-    expect(elementWith(html, "data-invite-state"), "invitation").toContain(toneClasses("soft"));
+    expect(elementWith(html, "data-assessment-invite"), "invitation").toContain(
+      toneClasses("soft"),
+    );
     expect(html, "mode is a fact").toContain(toneClasses("neutral"));
   });
 

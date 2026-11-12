@@ -6,7 +6,7 @@
  * **The component holds no words and no paths.** Every chip, button label and count is a
  * `MemberCard` field the page resolved from `data/pages/dashboard-templates.ts` through
  * `lib/member/shelf.ts`, so this file stays at zero copy literals (E23) and a rename is one
- * fixture edit. It is a server component for the same reason `my-instances.tsx` is: the cards are
+ * fixture edit. It is a server component for the same reason `assessments-list.tsx` is: the cards are
  * links, every state of the screen is a URL, and there is nothing to hydrate.
  *
  * **`MemberCard` is the relationship list's type too.** One projection feeds both shelves (#795
