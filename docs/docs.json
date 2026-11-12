@@ -578,6 +578,11 @@
           "question": "Is the rail role-constrained data, with focused-flow chrome?"
         },
         {
+          "path": "qa-rail-handle/README.md",
+          "title": "Rail collapse handle",
+          "question": "Does the width control toggle from the rail's border, and is the icon rail coherent?"
+        },
+        {
           "path": "qa-brand-lockup/README.md",
           "title": "Brand lockup",
           "question": "Is the lockup back in the chrome, at a seal's size?"

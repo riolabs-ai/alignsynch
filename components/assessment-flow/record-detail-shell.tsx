@@ -246,12 +246,16 @@ export function DetailSection({
 }
 
 /**
- * The shell: back link, band, then the 320 px aside (facts, actions) beside the content column.
+ * The shell: optional crumb, band, then the 320 px aside (facts, actions) beside the content
+ * column.
  *
- * The back link is not decoration and not optional — the artifact's F5 finding was that the
- * relationship page had no way back to its own list while the template page had had one all along.
- * Both pages now hand one in, and the label is the page's own words (`All templates`,
- * `All relationships`).
+ * **The crumb is the page's own choice, not the shell's (#873).** A template detail draws one —
+ * the artifact's F5 finding was that the relationship page had no way back to its own list while
+ * the template page had had one all along — because it is a leaf reached from a library. The
+ * relationship detail draws none: since #873 it renders under the rail, and a rail beside the page
+ * is the way back to `/dashboard/relationships`, so a second control saying the same thing above
+ * the title is the redundancy the owner struck out. A page that hands no `back` gets no `<nav>`,
+ * and a page that hands one still gets the crumb it always had.
  */
 export function RecordDetailShell({
   scope,
@@ -262,7 +266,8 @@ export function RecordDetailShell({
   children,
 }: {
   scope: RecordScope;
-  back: { readonly href: string; readonly label: string };
+  /** The page's own crumb to its list. Absent on a destination that renders under the rail. */
+  back?: { readonly href: string; readonly label: string };
   band: ReactNode;
   facts: ReactNode;
   /** The working panels. Absent on a template, whose actions slot is the one “What you can do” card. */
@@ -271,15 +276,17 @@ export function RecordDetailShell({
 }) {
   return (
     <>
-      <nav aria-label={back.label} className="mb-3">
-        <a
-          className="text-sm font-medium text-action hover:underline"
-          href={back.href}
-          data-record-back={scope}
-        >
-          {back.label}
-        </a>
-      </nav>
+      {back === undefined ? null : (
+        <nav aria-label={back.label} className="mb-3">
+          <a
+            className="text-sm font-medium text-action hover:underline"
+            href={back.href}
+            data-record-back={scope}
+          >
+            {back.label}
+          </a>
+        </nav>
+      )}
 
       {band}
 

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [#542 phase 2](../qa-542-phase2/README.md) · next [Contact landing](../qa-contact-land/README.md)
+[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [Rail collapse handle](../qa-rail-handle/README.md) · next [Contact landing](../qa-contact-land/README.md)
 
 <!-- docs-nav:end -->
 
@@ -88,6 +88,6 @@ assertion — the run is in the PR.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [#542 phase 2](../qa-542-phase2/README.md) · next [Contact landing](../qa-contact-land/README.md)
+[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [Rail collapse handle](../qa-rail-handle/README.md) · next [Contact landing](../qa-contact-land/README.md)
 
 <!-- docs-nav:end -->
