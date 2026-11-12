@@ -211,6 +211,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/docs",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The documentation home: all 117 pages under `docs/` in the nine sections `docs/docs.json` groups them by, each with the question it answers, and a filter over their titles and questions.",
+    notes:
+      "#892 — a renderer of the manifest, never a second copy of it: `docs/` is untouched (no page moved, copied or re-authored), `lib/docs/manifest.ts` parses `docs/docs.json` (which `scripts/docs-check.mjs` already holds to the tree in both directions), `lib/docs/rows.ts` derives the rows, addresses and the filter, and `lib/docs/tree.ts` is the only module that touches `fs`. `status: fixture` is the wiring, not prose: the route reads the manifest and its page copy out of the tree and nothing reaches `lib/db/**`, so it is a stand-in in the registry's sense until a docs store exists — and the registry's own rule (`fixture` requires something under `data/`) is satisfied by `data/pages/admin-docs.ts`. `force-dynamic`, because prerendering 117 documents at build time is exactly what this route must not do; the manifest cannot be parsed → `DocsManifestUnreadable` is drawn as the screen's own panel. Both templates claim `product.admin` (#509), so `requireAdminProduct()` runs before `requireAdmin()`. `data/pages/admin-docs.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
+    surface: "/admin/docs/[...slug]",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One documentation page: the document rendered from `docs/**.md` where it is written, under its manifest title and the question it answers, with its section's siblings and the previous/next step.",
+    notes:
+      "#892 — the body is the file, read per request (`lib/docs/tree.ts::readDocDocument`, contained to `docs/` before the syscall) and rendered by `react-markdown`, which was already a dependency (`components/content/content-blocks.tsx`); no MDX toolchain, no Fumadocs, no new dependency. A href inside a document is rewritten by `lib/docs/links.ts`: a sibling markdown link becomes its `/admin/docs/…` address, an image reference becomes an `/api/docs/asset/…` address, external and `#anchor` links are untouched, and a link to a file the reader cannot serve renders as plain text rather than a 404. The catch-all because the tree nests (`wiki/modules/app-api.md`); an address the manifest does not carry is `notFound()`, never a fallback to the hub. The images are served by `app/api/docs/asset/[...path]/route.ts`, which carries the same two gates and answers 404 for anything that leaves `docs/` or is not an image. `metadata` is a value rather than `generateMetadata` on purpose: Next resolves head and body in parallel, so a title derived from the document would be computed before the gates. `data/pages/admin-docs-document.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
     surface: "/admin/gaps",
     status: "db",
     templates: ["alignsynch"],
@@ -305,7 +325,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The operator's five screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, that relationship's Gap report with its export/reissue/read bands, the audit log's filtered table whose before/after values open on a click, and the support inbox — the contact queue with one message's thread, the provider's verdict and throttle on that address, and the reply, triage and assignment bands.",
+      "The operator's five screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, that relationship's Gap report with its export/reissue/read bands, the audit log's filtered table whose before/after values open on a click, the support inbox — the contact queue with one message's thread, the provider's verdict and throttle on that address, and the reply, triage and assignment bands — and, in `docs/`, the documentation reader: the 117-page hub with its filter and one rendered markdown document.",
     notes:
       "`db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the *type* it renders — `relationship-operations.tsx` annotates its props with `AdminRelationshipDetail`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `\"use client\"` module here value-imports a server module, which is why the pages render rather than 500. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.",
   },
