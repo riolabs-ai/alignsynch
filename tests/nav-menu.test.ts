@@ -33,8 +33,15 @@ vi.mock("next/link", () => ({
 }));
 
 import { AppNav } from "@/components/layout/nav-menus";
+import {
+  NAV_DOCUMENT_VERSION,
+  NAV_ICON_NAMES,
+  zNavDocument,
+  type NavRowRecord,
+} from "@/content/nav";
 import { matchRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
+import navDocument from "@/data/nav-menu.json";
 import { shellPageCopy } from "@/data/pages/shell";
 import { navViewer } from "@/lib/nav";
 import { ALIGN_MENU, allItems, menuFor } from "@/lib/nav-menu";
@@ -260,5 +267,51 @@ describe("the rendered rail", () => {
     // A child page keeps its list row lit.
     expect(activeOf("/dashboard/relationships/abc")).toEqual(["/dashboard/relationships"]);
     expect(activeOf("/admin/console", "admin")).toEqual(["/admin/console"]);
+  });
+});
+
+/**
+ * #861 — the rows are a document (`data/nav-menu.json`), and the assertions that used to be about
+ * an array in `lib/nav-menu.ts` are now about the file an operator edits. The two halves are
+ * checked separately on purpose: this block proves the *document* is complete and honest (schema,
+ * rung, route, label, hidden-with-reason), and the blocks above prove the *rail* draws it.
+ */
+describe("the document the rail is read from", () => {
+  const rows = navDocument.groups.flatMap((group) => group.items) as unknown as NavRowRecord[];
+
+  it("satisfies the schema in content/nav.ts — strict, so an unknown key is a failure", () => {
+    const parsed = zNavDocument.safeParse(navDocument);
+    expect(parsed.error?.issues ?? []).toEqual([]);
+    expect(parsed.success).toBe(true);
+  });
+
+  it("names the version this build reads", () => {
+    expect(navDocument.version).toBe(NAV_DOCUMENT_VERSION);
+  });
+
+  it("draws exactly the document's rows, in the document's order", () => {
+    // No row uses the explicit `order` key today: the order an editor reads is the order the rail
+    // draws, which is the property the move must not lose.
+    expect(rows.filter((row) => row.order !== undefined)).toEqual([]);
+    expect(allItems().map((item) => item.href)).toEqual(
+      rows.filter((row) => row.hidden !== true).map((row) => row.href),
+    );
+  });
+
+  it("keeps every row — hidden ones included — pointed at a route, an icon and a real label", () => {
+    const nav = sectionOf(shellPageCopy, "nav-alignsynch");
+    const ids = new Set(nav.items?.map((item) => item.id) ?? []);
+    for (const row of navDocument.groups.flatMap((group) => group.items) as NavRowRecord[]) {
+      expect(matchRoute(routeManifest, row.href), `${row.href} is not a route`).toBeDefined();
+      expect(NAV_ICON_NAMES, `${row.icon} is not an icon name`).toContain(row.icon);
+      expect(ids.has(row.label ?? row.id), `${row.href} names "${row.label ?? row.id}"`).toBe(true);
+      expect(USER_ROLES).toContain(row.needs);
+    }
+  });
+
+  it("gives a hidden row a reason — `hidden` is not a role gate, so it has to say why", () => {
+    for (const row of rows.filter((candidate) => candidate.hidden === true)) {
+      expect((row.reason ?? "").trim(), `row "${row.id}" is hidden with no reason`).not.toBe("");
+    }
   });
 });
