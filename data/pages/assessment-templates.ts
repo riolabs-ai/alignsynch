@@ -18,13 +18,15 @@
  *   `tabs`      All / Mine / Built-in. Three labels, because the tab row is the screen's thesis.
  *   `status`    Any status / Published / Archived — `record.status`, which archiving flips.
  *   `search`    the field's label, its placeholder, the button and the clear link.
- *   `row`       everything a row says: authorship, status, the three counts, and the four actions.
+ *   `row`       everything a row says: authorship, status, the three counts, and the five actions
+ *               (open, duplicate, archive/unarchive, delete).
  *   `legacy`    the sentence about a template written before authors were recorded. It is not
  *               decoration: a person who wrote one last month will look under "Mine" and not find
  *               it, and the honest answer is on the page rather than in a support article.
  *   `empty`     no template at all — a database with no built-ins and no authored row.
  *   `no-match`  there are templates; this tab, status or search excludes them all.
- *   `notice`    what a save, an archive, an unarchive or a duplicate leaves behind, by title.
+ *   `notice`    what a save, an archive, an unarchive, a duplicate or a delete leaves behind — and
+ *               the two delete refusals, which name the template and point at Archive.
  *   `unavailable` the database did not answer — a panel, not Next's 500.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
@@ -106,6 +108,27 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
         { id: "duplicate", label: "Duplicate" },
         { id: "archive", label: "Archive" },
         { id: "unarchive", label: "Unarchive" },
+        /**
+         * The delete action (#743), and the confirm step that stands in front of it.
+         *
+         * The control is a `<details>` disclosure holding the real POST form, so the first press
+         * only opens it — a delete is not undoable, and the screen ships no JavaScript to get
+         * that. `{title}` is the record's own title, filled by the component.
+         *
+         * It is offered on every row this account wrote, including the ones delete will refuse:
+         * a published template and one a relationship was started from both answer with a named
+         * refusal that says "archive it instead", which is more use than a control that simply is
+         * not there. The submit label is neutral for that reason — the word "draft" would be a
+         * lie on a published row, and it is `template-has-versions` that tells the truth.
+         */
+        { id: "delete", label: "Delete" },
+        {
+          id: "delete-confirm",
+          label:
+            "Delete “{title}”? This cannot be undone. A relationship already started from a template keeps its own copy, so nothing anyone answered is lost — but the template itself is gone.",
+        },
+        { id: "delete-submit", label: "Delete permanently" },
+        { id: "delete-cancel", label: "Keep it" },
       ],
     },
     {
@@ -198,6 +221,31 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
           label: "“{title}” is published again, and can start new relationships.",
         },
         { id: "duplicated", label: "“{title}” was copied into your templates." },
+        /**
+         * A delete landed (#743). No `{title}`: the row the sentence would name is the row that
+         * just stopped existing, so this is the one notice whose words carry no record.
+         */
+        {
+          id: "deleted",
+          label:
+            "The template is deleted. Relationships already started from it keep their own copy of the Aspects, so nothing anyone answered changed.",
+        },
+        /**
+         * The two refusals (#743). Both name Archive, because both are rows that have to be kept:
+         * the published version history is what the catalogue offered, and a relationship names
+         * the template it was started from. The sentence says which one applies, so a member is
+         * not left guessing why the control did not work.
+         */
+        {
+          id: "has-versions",
+          label:
+            "“{title}” has been published, so it cannot be deleted. Archive it instead — the list stops offering it, the published history stays, and every relationship made from it keeps working.",
+        },
+        {
+          id: "has-relationships",
+          label:
+            "“{title}” has a relationship started from it, so it cannot be deleted — that relationship names this template as where it came from. Archive it instead: it leaves the list and every relationship already started from it keeps working.",
+        },
         { id: "refused", label: "That template could not be changed from this account." },
         { id: "missing", label: "There is no such template here." },
       ],
