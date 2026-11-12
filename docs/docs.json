@@ -623,6 +623,11 @@
           "question": "Do the pie labels still render after the recharts 3 bump?"
         },
         {
+          "path": "qa-stage5/README.md",
+          "title": "Stage 5, both states",
+          "question": "Does stage 5 offer the payment walk and send/draft instead of a band with no action?"
+        },
+        {
           "path": "qa-swiper-12/README.md",
           "title": "swiper 12",
           "question": "Do the carousels survive swiper 11.2.7 → 12.2.0?"

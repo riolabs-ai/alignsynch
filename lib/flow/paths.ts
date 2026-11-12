@@ -220,6 +220,26 @@ export function templateStatusPath(slug: string): string {
   return `${relationshipTemplatePath(slug)}/status`;
 }
 
+/**
+ * One template's **own** editor — the surface that can change its Aspects (#870).
+ *
+ * Not the read-only detail page above: `/templates/relationship/<slug>` draws what the catalogue
+ * offers and writes nothing but archive/duplicate, so a refusal that says "this template has no
+ * Aspects" pointing there would send a person to a page that cannot fix it. This address is the
+ * member's editor, which is the console's editor mounted with `band="private"`
+ * (`app/(mainlayout)/dashboard/templates/[id]/page.tsx`).
+ *
+ * **Takes `record.id`, and that is the one place the id belongs in a URL here** — the editor route
+ * is keyed on the record, not on a slug, and it is the only such address this flow links to.
+ *
+ * It carries no "come back here" parameter: the editor does not read one, so a `?return=` would be
+ * a promise the page never keeps. A person who fixes an Aspect there returns to the flow from the
+ * editor's own navigation, which is the honest shape until the editor grows that parameter.
+ */
+export function dashboardTemplateEditorPath(recordId: string): string {
+  return `${OVERVIEW_PATH}/templates/${recordId}`;
+}
+
 /** The duplicate endpoint — a POST, so a GET never writes a copy. */
 export function templateDuplicatePath(slug: string): string {
   return `${relationshipTemplatePath(slug)}/duplicate`;

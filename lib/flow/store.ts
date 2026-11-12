@@ -175,6 +175,14 @@ export class FlowError extends Error {
 export type FlowErrorCode =
   | "invalid-input"
   | "unknown-template"
+  /**
+   * #870 — the **status** half. A template that is `archived` (or the author-only `draft`) cannot
+   * be copied, and this code says only that. It used to be reported as `template-not-published`,
+   * whose sentence named the status *and* the missing version in one breath — two facts, and the
+   * pair read like a contradiction on screen. `template-not-published` is now the version half
+   * alone: a `published` row with no `template_version`.
+   */
+  | "template-archived"
   | "template-not-published"
   | "template-has-no-aspects"
   /**
@@ -539,8 +547,11 @@ export async function createInstanceFromTemplate(
       );
     }
     if (found.status !== "published") {
+      // #870 — the status fact, on its own. `template-not-published` now means the *version* fact
+      // below, so the two states read as two sentences instead of one contradiction, and
+      // `create-copy.ts` gives each its own door.
       throw new FlowError(
-        "template-not-published",
+        "template-archived",
         `template "${found.slug}" is ${found.status}; only a published template can be copied`,
       );
     }
@@ -569,9 +580,12 @@ export async function createInstanceFromTemplate(
     );
     const version = liveVersion.rows[0];
     if (version === undefined) {
+      // #870 — by here `found.status` is `published`, so this sentence names the one fact that is
+      // true: there is no version to copy. It used to read "is published with no published
+      // version", which is a contradiction on its face.
       throw new FlowError(
         "template-not-published",
-        `template "${found.slug}" is ${found.status} with no published version — publish it before a relationship can copy it`,
+        `template "${found.slug}" has no published version — publish it before a relationship can copy it`,
       );
     }
     const offered = assessmentTemplateFromPayload(
