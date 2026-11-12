@@ -109,7 +109,6 @@ function sentenceFor(
 export function RelationshipDetail({
   copy,
   relationship,
-  backHref,
   editPanel,
   onSaveAspects,
   onPublish,
@@ -122,12 +121,6 @@ export function RelationshipDetail({
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
-  /**
-   * The list this record came from. Passed in rather than imported: the route constant lives in
-   * `lib/member/relationships.ts`, which reaches Postgres, and a `"use client"` module may not
-   * value-import it (E34).
-   */
-  backHref: string;
   /**
    * The edit surface, rendered by the page. It is a server read (`readRelationshipEditState()`)
    * that this component cannot do, so it arrives as a node and is drawn first in the actions slot —
@@ -179,12 +172,10 @@ export function RelationshipDetail({
   onFork: (payload: { relationshipId?: string }) => Promise<ForkOutcome>;
   /**
    * Where the forked copy landed, passed in rather than imported: the constant lives beside a module
-   * that reaches Postgres, which a `"use client"` file may not value-import (E34) — the same reason
-   * `backHref` arrives as a prop.
+   * that reaches Postgres, which a `"use client"` file may not value-import (E34).
    */
   templatesHref: string;
 }) {
-  const backCopy = sectionOf(copy, "back");
   const identityCopy = sectionOf(copy, "identity");
   const viewCopy = sectionOf(copy, "view");
   const statusCopy = sectionOf(copy, "status");
@@ -469,7 +460,6 @@ export function RelationshipDetail({
   return (
     <RecordDetailShell
       scope="relationship"
-      back={{ href: backHref, label: itemLabel(backCopy, "all") }}
       band={
         <DetailBand
           scope="relationship"

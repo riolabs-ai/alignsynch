@@ -91,6 +91,10 @@ export function createRefusal(
   if (code === "template-has-no-aspects") {
     return { sentence: itemLabel(problems, "template-has-no-aspects"), link: null };
   }
+  // #699 — stage 3's list emptied by the creator, not the template's fault.
+  if (code === "aspects-none") {
+    return { sentence: itemLabel(problems, "aspects-none"), link: null };
+  }
   if (code === "record-is-an-instance") {
     return { sentence: itemLabel(problems, "record-is-an-instance"), link: null };
   }
