@@ -97,9 +97,9 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "cta",
       heading: "Run your first alignment",
-      body: "The free plan works today, one relationship at a time. A paid plan starts as soon as you choose one above — card checkout, monthly or yearly.",
+      body: "Start one relationship free: seven days from the moment you send the invitation, everything included. After the seven days, a paid plan keeps the Gap open — card checkout, monthly or yearly.",
       items: [
-        { id: "perk-free", label: "Free plan, usable today" },
+        { id: "perk-free", label: "7 days free, from the invitation you send" },
         { id: "perk-billing", label: "Paid plans are billed monthly or yearly" },
         { id: "get-started", label: "Get Started Free" },
         { id: "view-demo", label: "View Demo" },

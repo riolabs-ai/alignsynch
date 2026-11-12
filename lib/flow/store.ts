@@ -851,25 +851,12 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       };
     }
 
-    // #533 phase 3 — the membership that paid for this invitation, asked **before** the seat is
-    // bound. A relationship whose trial or subscription lapsed is read-only for both parties, and
-    // the invitation is the first thing that has to stop working: the link is the only way a
-    // stranger can reach the pair. The refusal is a `ROLLBACK` — a refused claim writes nothing —
-    // so `recordLapseIfDue()` then writes the `expired` status in its own commit; the attempt is
-    // what records the lapse, and the row is corrected even though the claim was refused.
+    // #848 — the seat is bound even when the trial has lapsed. This used to refuse the claim with
+    // `lapsed`, which made the invitation the first thing to stop working: the stranger holding the
+    // only link to the pair could not join, so the two people the trial was for could never finish
+    // answering. The lapse closes the Gap (`screen.report` needs a `complete` session), not the
+    // pairing — so the claim proceeds and the row is still corrected by the paths that record it.
     const { relationshipId } = await sessionRelationshipOf(client, invite.session_record_id);
-    if (relationshipId !== null) {
-      const reading = await lapseIfDue(client, relationshipId, now);
-      if (reading !== undefined && reading.membership.state === "lapsed") {
-        await client.query("ROLLBACK");
-        await recordLapseIfDue(relationshipId, now);
-        return {
-          ok: false,
-          code: "lapsed",
-          reason: membershipSentence(reading.membership),
-        };
-      }
-    }
 
     // The caller's own binding, read before anything is written: a claim is for a party
     // that is not already bound, and the Initiator opening their own link is a refusal
@@ -1449,20 +1436,10 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     // the money stopped. The refusal rolls this transaction back, so the lapse itself is recorded
     // afterwards by `recordLapseIfDue()` in its own commit: the row that explains the refusal is
     // not lost with the refused write.
-    const membership = await membershipForInstance(
-      client,
-      input.instanceRecordId,
-      input.now ?? new Date(),
-    );
-    if (membership !== undefined && membership.membership.state === "lapsed") {
-      await client.query("ROLLBACK");
-      await recordLapseIfDue(membership.relationshipId, input.now ?? new Date());
-      return {
-        ok: false,
-        code: "lapsed",
-        reason: membershipSentence(membership.membership),
-      };
-    }
+    // #848 — a lapsed trial does not refuse the answers. The blind rule still holds (neither party
+    // reads the other's sheet), the fee still gates the Gap, and the two people who started the
+    // session can finish it. Refusing here is what stranded them.
+    //
     // The mode the sheet is judged against is the row's, read under the lock that already
     // protects the freeze — never a field of the form. `zAssessmentMode` cannot reject a
     // value the column's CHECK allows, so a failure here is drift on a hand-edited row.
@@ -1847,20 +1824,8 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
         reason: `an operator voided this session at ${session.voided_at.toISOString()}; there is nothing left to accept`,
       };
     }
-    // #533 phase 3 — acceptance is a write, so a lapsed membership refuses it like a void does.
-    // Asked after the void and before the seat, so a session an operator ended answers `voided`
-    // even when the money also stopped: the operator's act is the more specific fact. The refusal
-    // rolls back; the lapse is then recorded in its own commit.
-    const membership = await membershipForInstance(client, input.instanceRecordId, now);
-    if (membership !== undefined && membership.membership.state === "lapsed") {
-      await client.query("ROLLBACK");
-      await recordLapseIfDue(membership.relationshipId, now);
-      return {
-        ok: false,
-        code: "lapsed",
-        reason: membershipSentence(membership.membership),
-      };
-    }
+    // #848 — acceptance is a write, and a lapsed trial no longer refuses it: the pairing is what the
+    // two parties are finishing, and the Gap behind it is what the fee gates.
 
     // The seat, out of Postgres: the cookie's token hash first (an invited party keeps the
     // identity its link gave it), then the account (#R2's fallback). A coach is neither, and is
