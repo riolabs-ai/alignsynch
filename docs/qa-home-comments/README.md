@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Home review comments — the logo · prev [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md)
+[Docs hub](../README.md) › **Product** › Home review comments — the logo · prev [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md) · next [Brand & audience profile page (handoff)](../specs/spec-design-page-rel-templates/README.md)
 
 <!-- docs-nav:end -->
 
@@ -114,6 +114,6 @@ does not move.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Home review comments — the logo · prev [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md)
+[Docs hub](../README.md) › **Product** › Home review comments — the logo · prev [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md) · next [Brand & audience profile page (handoff)](../specs/spec-design-page-rel-templates/README.md)
 
 <!-- docs-nav:end -->
