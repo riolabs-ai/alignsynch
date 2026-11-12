@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Reusable AlignSynch catalog, relationship, and template detail component patterns." />
+    <title>Catalog UI Patterns · AlignSynch</title>
+    <link rel="stylesheet" href="css/templates-redesign.css?v=2026-11-12-split-hero" />
+    <link rel="stylesheet" href="css/component-patterns.css" />
+  </head>
+  <body>
+    <header class="site-header is-solid">
+      <div class="wrap header-inner">
+        <a class="brand" href="/" aria-label="AlignSynch home"><img src="images/alignsynch-logo.png" width="818" height="127" alt="AlignSynch" /></a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="/">Home</a><a href="/relationship-types">Templates</a><a href="/#questions">How It Works</a><a href="/pricing">Pricing</a><a href="/help">Help</a>
+        </nav>
+        <details class="mobile-menu"><summary>Menu</summary><nav aria-label="Mobile navigation"><a href="/">Home</a><a href="/relationship-types">Templates</a><a href="/pricing">Pricing</a><a href="/help">Help</a></nav></details>
+        <div class="header-actions"><a class="account-link" href="/login">Sign In</a><a class="button" href="/register">Sign Up</a></div>
+      </div>
+    </header>
+
+    <main class="wrap patterns-main">
+      <header class="patterns-intro">
+        <div>
+          <p class="eyebrow">AlignSynch · reusable product patterns</p>
+          <h1>One record system. Different context.</h1>
+          <p>Templates and relationships share the same visual grammar: a quiet brand tile, a clear identity, a short facts row, and actions that match what the person can do.</p>
+        </div>
+        <ul class="patterns-key" aria-label="Visual principles"><li>Graphite actions</li><li>Cyan + green accents</li><li>Realm-specific icon art</li></ul>
+      </header>
+
+      <section class="pattern-section" aria-labelledby="catalog-patterns-title">
+        <div class="pattern-heading"><h2 id="catalog-patterns-title">Catalog cards</h2><p>Same core card; the public and workspace actions differ.</p></div>
+        <div class="pattern-grid">
+          <article class="pattern-panel">
+            <p class="pattern-label">Public template · browse and start</p>
+            <article class="template-card" data-template-card data-template-id="parent-child">
+              <div class="card-art" data-realm="Home" aria-hidden="true"><img src="images/two-party-mark.svg" width="74" height="42" alt="" /></div>
+              <div class="card-content">
+                <div class="card-facts"><span class="card-realm">Home</span><span class="fact-separator" aria-hidden="true"></span><span><strong>5</strong> Aspects</span></div>
+                <h3 class="card-title"><a href="/relationship-types/parent-child">Parent–Child</a></h3>
+                <p class="card-roles">Parent <span aria-hidden="true">↔</span> Child</p>
+              </div>
+              <div class="card-actions"><a class="card-details" href="/relationship-types/parent-child">Details</a><a class="card-start" href="/register?template=parent-child">Use template <span aria-hidden="true">→</span></a></div>
+            </article>
+          </article>
+
+          <article class="pattern-panel">
+            <p class="pattern-label">Workspace template · inspect and create</p>
+            <article class="workspace-card">
+              <div class="card-art" data-realm="Home" aria-hidden="true"><img src="images/two-party-mark.svg" width="74" height="42" alt="" /></div>
+              <div class="workspace-card-body">
+                <div class="workspace-card-head"><span class="workspace-chips"><span class="workspace-chip">Template</span><span class="workspace-chip neutral">Home</span></span><span class="workspace-chip neutral">Built-in</span></div>
+                <h3>Parent &amp; Child</h3>
+                <p class="workspace-party">Parent ↔ Child</p>
+                <div class="workspace-chips"><span class="workspace-chip neutral">5 Aspects</span></div>
+              </div>
+              <div class="workspace-actions"><a class="small-action" href="/dashboard/templates">View details</a><a class="small-action primary" href="/dashboard/relationships">Create relationship</a></div>
+            </article>
+          </article>
+        </div>
+      </section>
+
+      <section class="pattern-section" aria-labelledby="relationship-patterns-title">
+        <div class="pattern-heading"><h2 id="relationship-patterns-title">Relationship card and row</h2><p>The state and next action are the strongest signals; the art stays secondary.</p></div>
+        <div class="pattern-grid">
+          <article class="pattern-panel">
+            <p class="pattern-label">My Relationships · card view</p>
+            <article class="workspace-card">
+              <div class="card-art" data-realm="Office" aria-hidden="true"><img src="images/two-party-mark.svg" width="74" height="42" alt="" /></div>
+              <div class="workspace-card-body">
+                <div class="workspace-card-head"><span class="workspace-chip neutral">Template</span><span class="workspace-chips"><span class="workspace-chip neutral">Draft</span><span class="workspace-chip">Initiator</span></span></div>
+                <h3>Relationship Basics</h3>
+                <p class="workspace-party">with Walt</p>
+                <div class="workspace-facts"><span class="workspace-chip neutral">5 Aspects</span><span class="workspace-chip neutral">Not sent</span></div>
+                <p class="workspace-date">Started Nov 9, 2026</p>
+              </div>
+              <div class="workspace-actions"><a class="small-action" href="/dashboard/relationships">Open Assessment</a><a class="small-action primary" href="/dashboard/relationships">Complete Relationship</a></div>
+            </article>
+          </article>
+
+          <article class="pattern-panel">
+            <p class="pattern-label">My Relationships · compact list</p>
+            <div class="record-row" role="group" aria-label="Relationship Basics, draft relationship">
+              <span class="record-row-art" aria-hidden="true"><img src="images/two-party-mark.svg" width="39" height="22" alt="" /></span>
+              <span class="record-row-title"><strong>Relationship Basics</strong><span>with Walt · Initiator</span></span>
+              <span class="record-row-fact">5 Aspects</span>
+              <span class="record-state"><span class="state-dot" aria-hidden="true"></span>Draft · Not sent</span>
+              <a class="record-row-action" href="/dashboard/relationships">Open relationship</a>
+            </div>
+            <p class="specimen-note">One row, one action. Keep secondary actions in the row menu.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="pattern-section" aria-labelledby="detail-pattern-title">
+        <div class="pattern-heading"><h2 id="detail-pattern-title">Shared detail-page shell</h2><p>Identity → facts and action → authored content.</p></div>
+        <article class="detail-demo">
+          <header class="detail-band-demo">
+            <div class="detail-tags"><span class="detail-tag">Personal</span><span class="detail-tag">Home</span><span class="detail-tag">Parent–Child</span></div>
+            <h3>Parent &amp; Child</h3>
+            <p>Parent ↔ Child</p>
+            <p class="detail-description">A parent and their adult child, checking how the relationship is working now.</p>
+            <img src="images/two-party-mark.svg" width="78" height="44" alt="" />
+          </header>
+          <div class="detail-layout-demo">
+            <aside class="detail-aside-demo">
+              <section class="fact-card-demo" aria-label="Template facts">
+                <dl class="detail-facts-demo"><div><dt>Aspects</dt><dd>5</dd></div><div><dt>Realm</dt><dd>Home</dd></div><div><dt>Status</dt><dd>Published</dd></div><div><dt>Roles</dt><dd>2 people</dd></div></dl>
+              </section>
+              <section class="action-card-demo" aria-label="Template action"><h4>Use this template</h4><a class="small-action primary" href="/dashboard/relationships">Create relationship</a></section>
+            </aside>
+            <section class="detail-content-demo" aria-labelledby="aspects-title">
+              <div class="descriptor-pair-demo">
+                <div><strong>Who it is for</strong>A parent and their adult child, checking how the relationship is working now.</div>
+                <div><strong>Who it is not for</strong>Parents of minor children, or a family in a dispute that needs a counsellor.</div>
+              </div>
+              <h4 id="aspects-title">Aspects both people answer</h4>
+              <div class="aspect-list-demo">
+                <article class="aspect-row-demo"><strong>How often do you check in about their day?</strong><div class="aspect-ends-demo"><span>Left Value — Never</span><span>Right Value — Every day</span></div></article>
+                <article class="aspect-row-demo"><strong>How are the house rules agreed?</strong><div class="aspect-ends-demo"><span>Left Value — Handed down</span><span>Right Value — Agreed together</span></div></article>
+              </div>
+            </section>
+          </div>
+        </article>
+      </section>
+
+      <section class="principles" aria-label="Rules for using these patterns">
+        <div class="principle"><strong>Art identifies the record.</strong><span>Use a role-aware outline icon on a flat, realm-specific tint. Reserve the human photograph for the public hero.</span></div>
+        <div class="principle"><strong>Facts stay in one line.</strong><span>Roles, Aspect count, state, and invitation facts stay readable without metric tiles.</span></div>
+        <div class="principle"><strong>Actions follow permissions.</strong><span>One state-aware primary action; keep secondary actions quiet or in the overflow menu.</span></div>
+      </section>
+    </main>
+  </body>
+</html>

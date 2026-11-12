@@ -298,19 +298,34 @@
           "question": "Where did each photograph come from, who took it, and under which licence?"
         },
         {
-          "path": "specs/spec-design-page-rel-templates-v2/banner/README.md",
-          "title": "Admin notice banner (V2 package)",
-          "question": "Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?"
+          "path": "specs/spec-as2-style-templates-redesign/README.md",
+          "title": "AS2 templates redesign (handoff)",
+          "question": "What is in the approved Templates-catalogue package, and how do I preview it?"
         },
         {
-          "path": "specs/spec-design-page-rel-templates-v2/admin-brand/README.md",
-          "title": "/admin/brand (V2 package)",
-          "question": "Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?"
+          "path": "specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md",
+          "title": "AS2 templates redesign — implementation brief",
+          "question": "Which existing components does the catalogue rewrite reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md",
+          "title": "AS2 catalogue UI system",
+          "question": "What are the reusable realm tints, icon map, card anatomy and detail order?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md",
+          "title": "AS2 templates redesign — source notes",
+          "question": "Which live routes, fixtures and assets did the approved catalogue read from?"
         },
         {
           "path": "qa-as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"
+        },
+        {
+          "path": "qa-templates-redesign/README.md",
+          "title": "AS2 templates catalogue visual QA",
+          "question": "Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?"
         },
         {
           "path": "qa-home-comments/README.md",

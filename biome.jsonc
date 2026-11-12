@@ -29,11 +29,20 @@
     // handoff kept as reference (a static HTML page, its own stylesheet) and never imported by the
     // app. Linting its `<div aria-label>` is a finding about the artifact, and the artifact is not
     // ours to edit — the build matches it, not the other way round.
+    //
+    // `docs/specs/spec-as2-style-templates-redesign` is the **second** approved design artifact kept
+    // out of the build, for exactly the same reason and by the same narrow folder exclusion: the
+    // public Templates catalogue's approved rewrite (#889), with its own page, specimen sheet,
+    // stylesheets and images. It is a reference the React page is matched against, never a module
+    // anything imports, so formatting it or linting its prototype markup would be a diff against a
+    // document nobody should touch. Two entries, one rule — a per-file suppression is not the
+    // answer here, and neither is widening the ignore to `docs/`.
     "includes": [
       "**",
       "!pnpm-lock.yaml",
       "!docs/review/artifacts",
-      "!docs/specs/spec-as2-style-home-redesign"
+      "!docs/specs/spec-as2-style-home-redesign",
+      "!docs/specs/spec-as2-style-templates-redesign"
     ]
   },
   "formatter": {
