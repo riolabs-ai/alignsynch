@@ -181,3 +181,45 @@ describe("the derivation owns no storage", () => {
     expect(document.cookie).toBe("");
   });
 });
+
+/* ------------------------------------------------------------------ *\
+ * The controls fill their cell (local review of Stage 1, 2026-11-12)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The two-column name pair overflowed its cell because a bare `<input>` keeps its intrinsic
+ * `size="20"` width: fine on a full-width row, wider than half a column. The fix is a class on the
+ * shared control shape, so the guard belongs here — rendered, not grepped — and it covers the
+ * textarea and every input the stage draws, because they share one constant.
+ */
+describe("Stage 1 controls fit the cell they are in", () => {
+  it("gives every control full width and lets the grid shrink below its intrinsic width", () => {
+    render();
+
+    const controls = [
+      ...container.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input, textarea"),
+    ];
+    expect(controls.length).toBeGreaterThanOrEqual(7);
+
+    for (const control of controls) {
+      expect(control.className).toContain("w-full");
+      expect(control.className).toContain("min-w-0");
+    }
+  });
+
+  it("keeps each name half in a grid that may shrink, and the pair at one column when narrow", () => {
+    render();
+
+    for (const pair of ["initiator", "counterparty"]) {
+      const wrapper = container.querySelector<HTMLElement>(`[data-pair="${pair}"]`);
+      expect(wrapper).not.toBeNull();
+      expect(wrapper?.className).toContain("min-w-0");
+
+      const halves = wrapper?.querySelector<HTMLElement>("div");
+      // `grid-cols-2` only at >=720px; one column below it, and `min-w-0` so neither track can be
+      // widened by its child's intrinsic width.
+      expect(halves?.className).toContain("min-[720px]:grid-cols-2");
+      expect(halves?.className).toContain("min-w-0");
+    }
+  });
+});
