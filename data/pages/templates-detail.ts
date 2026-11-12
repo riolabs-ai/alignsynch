@@ -36,7 +36,7 @@ export const templatesDetailPageCopy: PageCopy = zPageCopy.parse({
      */
     { id: "template-price", label: "{plan} · {price}/mo" },
     /** The page's one primary action — the account that buys the relationship. */
-    { id: "template-use", label: "Start with this template" },
+    { id: "template-use", label: "Create Relationship" },
     /** Offered only where `demoAnswersFor()` holds a sheet for this type. */
     { id: "template-example", label: "See a worked example" },
     /** Back to the directory the reader arrived from. */
