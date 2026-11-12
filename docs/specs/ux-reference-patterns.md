@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md) · next [AS2 home redesign (handoff)](spec-as2-style-home-redesign/README.md)
 
 <!-- docs-nav:end -->
 
@@ -103,6 +103,6 @@ unproven. Proposed: off-canvas sidebar, single column, rail full width with `Ste
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md) · next [AS2 home redesign (handoff)](spec-as2-style-home-redesign/README.md)
 
 <!-- docs-nav:end -->

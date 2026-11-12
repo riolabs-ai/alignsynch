@@ -271,6 +271,21 @@
           "path": "specs/ux-reference-patterns.md",
           "title": "Reference UX patterns",
           "question": "What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/README.md",
+          "title": "AS2 home redesign (handoff)",
+          "question": "What is in the approved home-redesign package, and how do I preview it?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md",
+          "title": "AS2 home redesign — implementation brief",
+          "question": "Which existing components does the redesign reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/ASSET-SOURCES.md",
+          "title": "AS2 redesign — asset sources and credits",
+          "question": "Where did each photograph come from, who took it, and under which licence?"
         }
       ]
     },
