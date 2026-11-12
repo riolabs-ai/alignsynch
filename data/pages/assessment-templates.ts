@@ -156,7 +156,7 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
          */
         { id: "price-label", label: "Included in" },
         { id: "price", label: "{plan} · {price}/mo" },
-        { id: "use", label: "Use this template" },
+        { id: "use", label: "Create Relationship" },
         { id: "see-example", label: "See a finished example" },
       ],
     },

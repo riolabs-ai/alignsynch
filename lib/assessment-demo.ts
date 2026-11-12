@@ -35,7 +35,7 @@ import {
   type RelationshipType,
 } from "@/data/relationship-types";
 import { assessmentReport, type AssessmentReport } from "@/lib/assessment-report";
-import { START_PATH } from "@/lib/template-catalogue";
+import { startPathFor } from "@/lib/template-catalogue";
 
 /** The two seats the demo names, in the order the report draws them. */
 const DEMO_INITIATOR = "You";
@@ -133,14 +133,17 @@ export interface AssessmentDemo {
   readonly type: RelationshipType;
   readonly report: AssessmentReport;
   /**
-   * Where a reader starts this relationship: `/register`, the **public** action.
+   * Where a reader starts this relationship: `/register?next=<this type's create path>` (#867).
    *
-   * It used to be the type's live template record's create step, with the library as the
-   * fallback — an in-app destination, because the example rendered inside the app shell. The page
-   * is a public marketing route now, and a public page that links `/templates/relationship/<id>/
-   * create` hands a signed-out visitor a sign-in wall: the exact defect `lib/template-catalogue.ts`
-   * warns about for every marketing card. So the action is the one the type's own page carries,
-   * and the account is created first.
+   * The **public** action still — the account is created first, then the visitor lands on stage 1
+   * of the very template the example they just read belongs to. It used to be a bare `/register`,
+   * which dropped that: the account was made and the person arrived on the brand's landing page
+   * with the choice gone.
+   *
+   * It is still not the in-app create address on its own. A public page that links
+   * `/templates/relationship/<id>/create` hands a signed-out visitor a screen he has no account
+   * for yet; the create step is what `/register`'s `next` resolves **to**, after the account
+   * exists, so the destination is the same one and the order is the product's.
    */
   readonly startPath: string;
 }
@@ -161,6 +164,6 @@ export function assessmentDemo(typeId: string): AssessmentDemo | undefined {
   return {
     type,
     report: assessmentReport(instance, template),
-    startPath: START_PATH,
+    startPath: startPathFor(type.id),
   };
 }

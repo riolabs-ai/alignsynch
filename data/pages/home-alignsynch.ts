@@ -150,7 +150,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
      */
     { id: "templates-view-all", label: "View all relationship templates" },
     /** The two card actions, and the frame the two roles are joined by. */
-    { id: "template-use", label: "Start with this template" },
+    { id: "template-use", label: "Create Relationship" },
     { id: "template-example", label: "See a worked example" },
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
     /**
