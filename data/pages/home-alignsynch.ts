@@ -58,21 +58,23 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const ALIGN_SYNCH_FEATURED_SLUG = "avery-rowan";
 
 /**
- * The `/` document title for this build — `"<brand> — Personal and Business Relationships"`.
+ * The `/` document title for this build — `"<brand> — Business Relationships"`.
  *
- * A function of the brand, like `homeTitle`: the page names the product itself, and the AS2
- * redesign's tagline is the two audiences the approved page opens on (#853) rather than the quiz
- * template's "Play, Share, Earn". Neither word is spelled in a `.tsx`.
+ * A function of the brand, like `homeTitle`: the page names the product itself, and the V2 home
+ * page's tagline is the audience the approved page leads with (#904), not the quiz template's
+ * "Play, Share, Earn". Neither word is spelled in a `.tsx`.
  *
- * **It moved with the page.** The retired composition's title named a leader's outcome
- * ("Relationship alignment for leaders and teams"); the approved page's eyebrow says "For personal
- * and business relationships" and its two hero cards are a personal life and a business life, so
- * the tab title says the same thing the page says. A title that still sold a leadership outcome
- * over a page that no longer argues one is the drift this function exists to make a one-line
- * change.
+ * **It moved with the page, twice.** The retired composition's title named a leader's outcome
+ * ("Relationship alignment for leaders and teams"); #853 moved it to the two audiences its hero
+ * opened on ("Personal and Business Relationships"). The V2 reference this page is cloned from
+ * (`docs/specs/spec-design-page-rel-templates-v2/home/homepage-redesign.html`) sets
+ * `<title>AlignSynch — Business Relationships</title>` and leads business-first, with personal
+ * growth and friendships as the secondary path — so the tab title says what the page now says. A
+ * title that still named both audiences equally over a page that leads with one is the drift this
+ * function exists to make a one-line change.
  */
 export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
-  return `${brand.name} — Personal and Business Relationships`;
+  return `${brand.name} — Business Relationships`;
 }
 
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
@@ -340,7 +342,8 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
     { id: "hero-secondary", label: "See how it works" },
     {
       id: "hero-note",
-      label: "One working relationship. Two private views. A shared report when you are both ready.",
+      label:
+        "One working relationship. Two private views. A shared report when you are both ready.",
     },
     /*
      * The two hero cards: a kicker, the card's name, the action inside it, and the accessible name
@@ -545,8 +548,7 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
         },
         {
           id: "story-2-support",
-          label:
-            "A shared prompt can give people a gentler way to begin a difficult conversation.",
+          label: "A shared prompt can give people a gentler way to begin a difficult conversation.",
         },
         { id: "story-3-title", label: "Find more than yes or no" },
         {

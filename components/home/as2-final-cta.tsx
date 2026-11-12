@@ -25,13 +25,13 @@ export function As2FinalCta({ band }: { band: As2HomeModel["finalCta"] }): React
   return (
     <section className="bg-primary py-[60px] text-center text-primary-foreground">
       <div className="home-container">
-        <h2 className="mx-auto mb-[13px] max-w-[700px] text-[clamp(32px,3.5vw,43px)] font-bold leading-[1.08] tracking-[-0.035em]">
+        <h2 className="mx-auto mb-[13px] max-w-[700px] text-[clamp(32px,3.5vw,43px)] font-[740] leading-[1.08] tracking-[-0.035em]">
           {band.heading}
         </h2>
         <p className="mx-auto mb-[22px] text-sm text-primary-foreground/85">{band.body}</p>
         <Button
           asChild
-          className="h-12 w-full gap-[9px] bg-deep px-5 text-[13px] font-bold text-white hover:bg-deep/90 max-[480px]:w-full sm:w-auto"
+          className="h-12 w-full gap-[9px] bg-deep px-5 text-[13px] font-bold leading-[1.55] text-white hover:bg-deep/90 max-[480px]:w-full sm:w-auto"
           variant="action"
         >
           <a href={band.action.href}>

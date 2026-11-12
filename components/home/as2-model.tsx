@@ -48,7 +48,7 @@ function inlineLead(lead: string, body: string): React.ReactNode {
   return (
     <>
       {body.slice(0, at)}
-      <strong className="inline font-bold text-primary">{lead}</strong>
+      <strong className="inline font-[750] text-primary">{lead}</strong>
       {body.slice(at + lead.length)}
     </>
   );
@@ -56,11 +56,7 @@ function inlineLead(lead: string, body: string): React.ReactNode {
 
 export function As2Model({ band }: { band: As2HomeModel["model"] }): React.ReactElement {
   return (
-    <section
-      className="bg-mist py-[72px] min-[741px]:py-[86px]"
-      data-home-anchor
-      id="questions"
-    >
+    <section className="bg-mist py-[72px] min-[741px]:py-[86px]" data-home-anchor id="questions">
       {/* The reference also keeps a zero-height `#about` alias on this band. It is omitted: nothing
           in this app links to `#about` (the shared header and footer both use `/#questions`), and a
           target the in-page menu does not list is a scroll position with no referent. Named here so
@@ -95,7 +91,7 @@ export function As2Model({ band }: { band: As2HomeModel["model"] }): React.React
                     aria-hidden="true"
                     className="home-idea-scrim absolute inset-x-0 bottom-0 top-[35%]"
                   />
-                  <span className="absolute left-[17px] top-4 z-[1] inline-flex items-center gap-2 rounded-[3px] border border-[rgb(251_250_246_/_70%)] bg-paper py-1.5 pl-1.5 pr-2.5 text-[10px] font-bold tracking-[0.02em] text-foreground">
+                  <span className="absolute left-[17px] top-4 z-[1] inline-flex items-center gap-2 rounded-[3px] border border-[rgb(251_250_246_/_70%)] bg-white py-1.5 pl-1.5 pr-2.5 text-[10px] font-bold leading-[1.55] tracking-[0.02em] text-foreground">
                     <b className="grid size-[22px] place-items-center rounded-[2px] bg-deep text-[11px] font-bold text-white">
                       {card.step}
                     </b>
@@ -103,13 +99,33 @@ export function As2Model({ band }: { band: As2HomeModel["model"] }): React.React
                   </span>
                 </div>
                 <div className="p-5 min-[741px]:p-6">
-                  <p className="mb-[7px] text-[11px] font-bold tracking-[0.01em] text-deep">
+                  <p className="mb-[7px] text-[11px] font-bold leading-[1.55] tracking-[0.01em] text-deep">
                     {card.kicker}
                   </p>
-                  <h3 className="mb-[7px] text-[clamp(22px,2.5vw,29px)] font-bold leading-[1.14] tracking-[-0.025em] text-primary">
+                  <h3 className="mb-[7px] text-[clamp(22px,2.5vw,29px)] font-[720] leading-[1.14] tracking-[-0.025em] text-primary">
                     {card.title}
                   </h3>
                   <p className={cn("text-[13px] leading-[1.55]", BODY_INK)}>{card.deck}</p>
+                  {card.scale === undefined ? null : (
+                    <div
+                      aria-label={card.scale.name}
+                      className="mb-[18px] mt-[21px] rounded-[3px] border border-line bg-pale px-4 pb-[13px] pt-[15px]"
+                      role="img"
+                    >
+                      <div className="flex justify-between text-[10px] font-[850] leading-[1.55] tracking-[0.13em] text-[#526a7b]">
+                        <span>{card.scale.yes}</span>
+                        <span>{card.scale.no}</span>
+                      </div>
+                      <div className="home-scale-track relative mx-[9px] my-[13px] h-[3px] rounded-full">
+                        <span className="absolute left-0 top-1/2 size-[13px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-primary shadow-[0_0_0_1px_#8baeb8]" />
+                        <span className="absolute left-full top-1/2 size-[13px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-deep shadow-[0_0_0_1px_#8baeb8]" />
+                        <span className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-mark shadow-[0_0_0_4px_rgb(141_198_63_/_18%)]" />
+                      </div>
+                      <p className="text-center text-xs font-extrabold leading-[1.55] text-[#1d6670]">
+                        {card.scale.middle}
+                      </p>
+                    </div>
+                  )}
                   <ul
                     aria-label={card.listName}
                     className={cn(
@@ -131,7 +147,7 @@ export function As2Model({ band }: { band: As2HomeModel["model"] }): React.React
                           inlineLead(line.lead, line.body)
                         ) : (
                           <>
-                            <strong className="mb-[5px] block text-[10px] font-bold tracking-[0.05em] text-primary">
+                            <strong className="mb-[5px] block text-[10px] font-[750] tracking-[0.05em] text-primary">
                               {line.lead}
                             </strong>
                             {line.body}
@@ -145,26 +161,6 @@ export function As2Model({ band }: { band: As2HomeModel["model"] }): React.React
                       <strong className="font-bold text-primary">{card.note.lead}</strong>{" "}
                       {card.note.rest}
                     </p>
-                  )}
-                  {card.scale === undefined ? null : (
-                    <div
-                      aria-label={card.scale.name}
-                      className="mb-[18px] mt-[21px] rounded-[3px] border border-line bg-pale px-4 pb-[13px] pt-[15px]"
-                      role="img"
-                    >
-                      <div className="flex justify-between text-[10px] font-extrabold tracking-[0.13em] text-[#526a7b]">
-                        <span>{card.scale.yes}</span>
-                        <span>{card.scale.no}</span>
-                      </div>
-                      <div className="home-scale-track relative mx-[9px] my-[13px] h-[3px] rounded-full">
-                        <span className="absolute left-0 top-1/2 size-[13px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-primary shadow-[0_0_0_1px_#8baeb8]" />
-                        <span className="absolute left-full top-1/2 size-[13px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-deep shadow-[0_0_0_1px_#8baeb8]" />
-                        <span className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-mark shadow-[0_0_0_4px_rgb(141_198_63_/_18%)]" />
-                      </div>
-                      <p className="text-center text-xs font-extrabold text-[#1d6670]">
-                        {card.scale.middle}
-                      </p>
-                    </div>
                   )}
                 </div>
               </article>

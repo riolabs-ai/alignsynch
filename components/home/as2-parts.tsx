@@ -89,7 +89,7 @@ export function Eyebrow({
   return (
     <p
       className={cn(
-        "mb-3 text-xs font-bold leading-[1.55] tracking-[0.02em] text-primary",
+        "mb-3 inline-flex items-center gap-[9px] text-xs font-bold leading-[1.55] tracking-[0.02em] text-primary",
         className,
       )}
     >
@@ -119,16 +119,14 @@ export function SectionHead({
   return (
     <header
       className={cn(
-        "mb-[38px] grid grid-cols-1 items-end gap-x-[42px] gap-y-3 max-[480px]:mb-7 md:grid-cols-[minmax(0,1.05fr)_minmax(260px,0.95fr)]",
+        "mb-[38px] grid grid-cols-1 items-end gap-x-[42px] gap-y-3 max-[480px]:mb-7 md:grid-cols-[minmax(0,1.05fr)_minmax(260px,0.95fr)] md:gap-y-0",
         className,
       )}
     >
       {head.eyebrow === undefined ? null : (
-        <div className="md:col-span-2">
-          <Eyebrow>{head.eyebrow}</Eyebrow>
-        </div>
+        <Eyebrow className="mb-0 md:col-span-2 md:mb-3">{head.eyebrow}</Eyebrow>
       )}
-      <h2 className="text-[clamp(32px,3.5vw,43px)] font-bold leading-[1.08] tracking-[-0.04em] text-primary">
+      <h2 className="text-[clamp(32px,3.5vw,43px)] font-[740] leading-[1.08] tracking-[-0.04em] text-foreground">
         {head.heading}
       </h2>
       {head.body === undefined ? null : (

@@ -44,7 +44,7 @@ export function As2Hero({ hero }: { hero: As2HomeModel["hero"] }): React.ReactEl
       <div className="home-container grid grid-cols-1 items-center gap-7 min-[860px]:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] min-[860px]:gap-[46px]">
         <div className="max-w-[590px]">
           <Eyebrow className="mb-[15px]">{hero.eyebrow}</Eyebrow>
-          <h1 className="mb-[18px] max-w-[580px] text-[clamp(37px,9vw,48px)] font-bold leading-[1.02] tracking-[-0.045em] text-foreground max-[480px]:text-[38px] min-[741px]:text-[clamp(42px,5vw,60px)]">
+          <h1 className="mb-[18px] max-w-[580px] text-[clamp(37px,9vw,48px)] font-[760] leading-[1.02] tracking-[-0.045em] text-foreground max-[480px]:text-[38px] min-[741px]:text-[clamp(42px,5vw,60px)]">
             {hero.heading}
           </h1>
           <p className="max-w-[560px] text-[15px] leading-[1.65] text-[#4d5e56] min-[741px]:text-[clamp(15px,1.35vw,18px)]">
@@ -53,7 +53,7 @@ export function As2Hero({ hero }: { hero: As2HomeModel["hero"] }): React.ReactEl
           <div className="mt-5 flex flex-col items-stretch gap-[13px] min-[741px]:mt-[26px] min-[741px]:flex-row min-[741px]:flex-wrap min-[741px]:items-center min-[741px]:gap-x-[22px] min-[741px]:gap-y-[15px]">
             <Button
               asChild
-              className="h-[50px] w-full gap-[9px] px-5 text-[13px] font-bold min-[741px]:w-auto"
+              className="h-[50px] w-full gap-[9px] px-5 text-[13px] font-bold leading-[1.55] min-[741px]:w-auto"
               variant="action"
             >
               <a href={hero.action.href}>
@@ -62,14 +62,14 @@ export function As2Hero({ hero }: { hero: As2HomeModel["hero"] }): React.ReactEl
               </a>
             </Button>
             <a
-              className="inline-flex min-h-10 items-center justify-center gap-2 text-[13px] font-bold text-foreground hover:text-primary min-[741px]:min-h-0"
+              className="inline-flex min-h-10 items-center justify-center gap-2 text-[13px] font-bold leading-[1.55] text-foreground hover:text-primary min-[741px]:min-h-0"
               href={hero.secondary.href}
             >
               {hero.secondary.label}
               <Arrow className="size-[15px]" />
             </a>
           </div>
-          <p className="mt-[13px] text-xs font-bold tracking-[0.01em] text-primary min-[741px]:mt-[19px]">
+          <p className="mt-[13px] text-xs font-bold leading-[1.55] tracking-[0.01em] text-primary min-[741px]:mt-[19px]">
             {hero.note}
           </p>
         </div>
@@ -91,13 +91,13 @@ export function As2Hero({ hero }: { hero: As2HomeModel["hero"] }): React.ReactEl
               />
               <div aria-hidden="true" className="home-life-scrim absolute inset-0" />
               <div className="absolute inset-x-0 bottom-0 z-[1] p-[15px] min-[741px]:px-5 min-[741px]:pb-5 min-[741px]:pt-[21px]">
-                <p className="mb-[7px] text-[11px] font-semibold tracking-[0.01em] text-[#dce8d9]">
+                <p className="mb-[7px] text-[11px] font-[650] leading-[1.55] tracking-[0.01em] text-[#dce8d9]">
                   {card.kicker}
                 </p>
-                <h2 className="mb-2 text-[23px] font-bold leading-[1.08] tracking-[-0.025em] min-[741px]:mb-[11px] min-[741px]:text-[clamp(23px,2.5vw,31px)]">
+                <h2 className="mb-2 text-[23px] font-[720] leading-[1.08] tracking-[-0.025em] min-[741px]:mb-[11px] min-[741px]:text-[clamp(23px,2.5vw,31px)]">
                   {card.title}
                 </h2>
-                <span className="inline-flex items-center gap-[7px] text-[10px] font-extrabold min-[741px]:text-[11px]">
+                <span className="inline-flex items-center gap-[7px] text-[10px] font-[750] leading-[1.55] min-[741px]:text-[11px]">
                   {card.action}
                   <Arrow className="size-[14px]" />
                 </span>

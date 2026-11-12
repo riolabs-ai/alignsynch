@@ -34,13 +34,15 @@ export function As2HowItWorks({ band }: { band: As2HomeModel["howItWorks"] }): R
         <ol className="grid grid-cols-1 gap-[13px] min-[741px]:grid-cols-2 min-[981px]:grid-cols-4">
           {band.steps.map((step) => (
             <li
-              className="min-w-0 border-t border-line px-3 pb-3 pt-[18px] max-[740px]:p-5"
+              className="min-w-0 border-t border-line pl-0 pr-3 pb-3 pt-[18px] max-[740px]:p-5"
               key={step.id}
             >
               <div className="mb-4 flex items-center gap-2.5">
-                <span className="text-xs font-extrabold text-deep">{step.number}</span>
+                <span className="grid h-7 place-items-center text-xs font-[750] leading-[1.55] text-deep">
+                  {step.number}
+                </span>
               </div>
-              <h3 className="mb-[9px] text-[17px] font-semibold leading-[1.25] text-primary">
+              <h3 className="mb-[9px] text-[17px] font-bold leading-[1.25] text-primary">
                 {step.title}
               </h3>
               <p className={cn("text-xs leading-[1.65]", BODY_INK)}>{step.body}</p>
@@ -56,7 +58,7 @@ export function As2HowItWorks({ band }: { band: As2HomeModel["howItWorks"] }): R
           </div>
           <Button
             asChild
-            className="h-12 shrink-0 gap-[9px] px-5 text-[13px] font-bold"
+            className="h-12 shrink-0 gap-[9px] px-5 text-[13px] font-bold leading-[1.55]"
             variant="action"
           >
             <a href={band.action.href}>

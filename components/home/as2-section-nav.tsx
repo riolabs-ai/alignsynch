@@ -31,7 +31,7 @@ export function As2SectionNav({ nav }: { nav: As2HomeModel["nav"] }): React.Reac
       <div className="home-container scrollbar-hide flex h-[3.25rem] items-center gap-[clamp(18px,3vw,32px)] overflow-x-auto max-[767px]:h-12 max-[740px]:gap-5">
         {nav.items.map((item) => (
           <a
-            className="inline-flex h-full shrink-0 items-center border-b-2 border-transparent text-[13px] font-semibold text-[#64748b] hover:border-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 max-[767px]:text-xs"
+            className="inline-flex h-full shrink-0 items-center border-b-2 border-transparent text-[13px] font-[600] leading-[1.55] text-[#64748b] hover:border-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 max-[767px]:text-xs"
             href={item.href}
             key={item.href}
           >

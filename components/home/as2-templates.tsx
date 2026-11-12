@@ -31,24 +31,32 @@ import type React from "react";
  */
 export function As2Templates({ band }: { band: As2HomeModel["templates"] }): React.ReactElement {
   return (
-    <section className="bg-sand py-[68px] min-[741px]:py-[86px]" data-home-anchor id="relationship-templates">
+    <section
+      className="bg-sand py-[68px] min-[741px]:py-[86px]"
+      data-home-anchor
+      id="relationship-templates"
+    >
       <div className="home-container grid grid-cols-1 items-center gap-[25px] min-[741px]:gap-[35px] min-[981px]:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] min-[981px]:gap-[58px]">
         <div>
-          <h2 className="mb-3.5 text-[clamp(32px,3.5vw,43px)] font-bold leading-[1.08] tracking-[-0.04em] text-primary">
+          <h2 className="mb-3.5 text-[clamp(32px,3.5vw,43px)] font-[740] leading-[1.08] tracking-[-0.04em] text-foreground">
             {band.heading}
           </h2>
           {band.body === undefined ? null : (
             <p className={cn("text-[15px] leading-[1.55]", BODY_INK)}>{band.body}</p>
           )}
           <div className="mt-5 flex flex-wrap items-center gap-3.5 max-[640px]:flex-col max-[640px]:items-stretch">
-            <Button asChild className="h-12 gap-[9px] px-5 text-[13px] font-bold" variant="action">
+            <Button
+              asChild
+              className="h-12 gap-[9px] px-5 text-[13px] font-bold leading-[1.55]"
+              variant="action"
+            >
               <a href={band.action.href}>
                 {band.action.label}
                 <Arrow />
               </a>
             </Button>
             <a
-              className="text-xs font-extrabold text-primary underline-offset-[3px] hover:text-primary/90 hover:underline"
+              className="text-xs font-[750] leading-[1.55] text-primary underline-offset-[3px] hover:text-primary/90 hover:underline"
               href={band.secondary.href}
             >
               {band.secondary.label}
@@ -63,7 +71,7 @@ export function As2Templates({ band }: { band: As2HomeModel["templates"] }): Rea
               id={group.id}
               key={group.id}
             >
-              <h3 className="mb-[13px] flex items-center gap-[9px] text-[13px] font-semibold text-primary">
+              <h3 className="mb-[13px] flex items-center gap-[9px] text-[13px] font-bold leading-[1.55] text-foreground">
                 <span aria-hidden="true" className="size-[7px] shrink-0 rounded-[1px] bg-mark" />
                 {group.heading}
               </h3>

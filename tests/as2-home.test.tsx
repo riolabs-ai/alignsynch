@@ -326,4 +326,29 @@ describe("the structural promises, read off the source", () => {
       expect(read(`components/home/${file}`).includes("scroll-mt-[")).toBe(false);
     }
   });
+
+  test("the type scale is the reference's, not the component's own", () => {
+    // A clone's failure mode is a "small improvement": 740 becomes 700 in one band, and the page is
+    // subtly wrong everywhere that band repeats. These numbers are read out of the approved
+    // stylesheet, so an edit to the reference fails here at the same moment it fails the design.
+    const css = read("docs/specs/spec-design-page-rel-templates-v2/home/css/homepage-redesign.css");
+    const hero = read("components/home/as2-hero.tsx");
+    const parts = read("components/home/as2-parts.tsx");
+    const stories = read("components/home/as2-stories.tsx");
+
+    expect(css).toContain("font-size: clamp(42px, 5vw, 60px);");
+    expect(css).toMatch(/\.hero h1 \{[^}]*font-weight: 760;/);
+    expect(hero).toContain("text-[clamp(42px,5vw,60px)]");
+    expect(hero).toContain("font-[760]");
+
+    expect(css).toMatch(/h2\.section-title \{[^}]*font-weight: 740;/);
+    expect(parts).toContain("font-[740]");
+
+    expect(css).toMatch(/\.story-card h3 \{[^}]*font-weight: 720;/);
+    expect(stories).toContain("font-[720]");
+
+    // The reference's body ink is a hex with no role in the brand record; one constant, not fifteen.
+    expect(css).toContain("--body: #59636e;");
+    expect(parts).toContain('export const BODY_INK = "text-[#59636e]";');
+  });
 });

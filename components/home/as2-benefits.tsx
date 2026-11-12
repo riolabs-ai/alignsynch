@@ -32,14 +32,20 @@ export function As2Benefits({ band }: { band: As2HomeModel["benefits"] }): React
     <section className="bg-sand py-[86px]" data-home-anchor id="benefits">
       <div className="home-container grid grid-cols-1 items-start gap-[22px] min-[741px]:gap-[34px] min-[981px]:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] min-[981px]:gap-[52px]">
         <div className="min-[741px]:sticky min-[741px]:top-[calc(var(--site-header-height)+3.75rem)]">
-          {band.eyebrow === undefined ? null : <Eyebrow>{band.eyebrow}</Eyebrow>}
-          <h2 className="mb-[15px] text-[clamp(32px,3.5vw,43px)] font-bold leading-[1.06] tracking-[-0.04em] text-primary">
+          {band.eyebrow === undefined ? null : (
+            <Eyebrow className="text-[14px]">{band.eyebrow}</Eyebrow>
+          )}
+          <h2 className="mb-[15px] text-[clamp(32px,3.5vw,43px)] font-[740] leading-[1.06] tracking-[-0.04em] text-foreground">
             {band.heading}
           </h2>
           {band.body === undefined ? null : (
-            <p className={cn("mb-[23px] text-sm", BODY_INK)}>{band.body}</p>
+            <p className={cn("mb-[23px] text-sm leading-[1.55]", BODY_INK)}>{band.body}</p>
           )}
-          <Button asChild className="h-12 gap-[9px] px-5 text-[13px] font-bold" variant="action">
+          <Button
+            asChild
+            className="h-12 gap-[9px] px-5 text-[13px] font-bold leading-[1.55]"
+            variant="action"
+          >
             <a href={band.action.href}>
               {band.action.label}
               <Arrow />
@@ -49,15 +55,13 @@ export function As2Benefits({ band }: { band: As2HomeModel["benefits"] }): React
         <div className="grid grid-cols-1 gap-x-[26px] border-t border-line max-[480px]:grid-cols-1 min-[481px]:grid-cols-2">
           {band.items.map((benefit) => (
             <article className="border-b border-line pb-[15px] pt-4" key={benefit.id}>
-              <h3 className="relative mb-[5px] pl-[23px] text-[13px] font-semibold text-primary">
+              <h3 className="relative mb-[5px] pl-[23px] text-[13px] font-bold leading-[1.55] text-foreground">
                 <span aria-hidden="true" className="absolute left-0 top-px text-[13px] text-deep">
                   —
                 </span>
                 {benefit.title}
               </h3>
-              <p className={cn("pl-[23px] text-[11px] leading-[1.55]", BODY_INK)}>
-                {benefit.body}
-              </p>
+              <p className={cn("pl-[23px] text-[11px] leading-[1.55]", BODY_INK)}>{benefit.body}</p>
             </article>
           ))}
           <div className="col-span-full mt-[19px] border-l-[3px] border-mark bg-pale px-[18px] py-[15px] text-[13px] leading-[1.6] text-foreground">

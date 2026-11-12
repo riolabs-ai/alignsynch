@@ -29,10 +29,10 @@ export function As2Stories({ band }: { band: As2HomeModel["stories"] }): React.R
         <div className="grid grid-cols-1 gap-3.5 min-[741px]:grid-cols-3 min-[741px]:gap-[18px]">
           {band.cards.map((story) => (
             <article
-              className="flex min-w-0 flex-col border-t-2 border-foreground p-[18px] min-[481px]:p-5 min-[741px]:px-4 min-[741px]:pb-2.5 min-[741px]:pt-[18px]"
+              className="flex min-w-0 flex-col border-t-2 border-foreground p-[18px] min-[481px]:p-5 min-[741px]:pb-2.5 min-[741px]:pl-0 min-[741px]:pr-4 min-[741px]:pt-[18px]"
               key={story.id}
             >
-              <h3 className="mb-3.5 text-[21px] font-bold leading-[1.2] tracking-[-0.02em] text-primary">
+              <h3 className="mb-3.5 text-[21px] font-[720] leading-[1.2] tracking-[-0.02em] text-primary">
                 {story.title}
               </h3>
               {story.quotes.map((quote, index) => (
@@ -47,7 +47,12 @@ export function As2Stories({ band }: { band: As2HomeModel["stories"] }): React.R
                   {quote}
                 </blockquote>
               ))}
-              <p className={cn("mt-auto border-t border-line pt-[15px] text-xs leading-[1.6]", BODY_INK)}>
+              <p
+                className={cn(
+                  "mt-auto border-t border-line pt-[15px] text-xs leading-[1.6]",
+                  BODY_INK,
+                )}
+              >
                 {story.support}
               </p>
             </article>
@@ -55,8 +60,10 @@ export function As2Stories({ band }: { band: As2HomeModel["stories"] }): React.R
         </div>
         <div className="mt-[25px] border-l-[3px] border-accent bg-pale px-[18px] py-[17px] max-[480px]:p-[15px]">
           <div className="mb-3 flex items-baseline justify-between gap-3 max-[740px]:flex-col max-[740px]:items-start max-[740px]:gap-1">
-            <h3 className="text-[13px] font-semibold text-primary">{band.prompts.title}</h3>
-            <p className="text-[11px] text-[#58707c]">{band.prompts.note}</p>
+            <h3 className="text-[13px] font-bold leading-[1.55] text-primary">
+              {band.prompts.title}
+            </h3>
+            <p className="text-[11px] leading-[1.55] text-[#58707c]">{band.prompts.note}</p>
           </div>
           <ul aria-label={band.prompts.name} className="flex flex-wrap gap-2">
             {band.prompts.items.map((prompt) => (
@@ -70,10 +77,10 @@ export function As2Stories({ band }: { band: As2HomeModel["stories"] }): React.R
           </ul>
         </div>
         <div className="mt-[22px] flex items-center justify-center gap-4 max-[480px]:flex-col max-[480px]:items-stretch max-[480px]:gap-[11px]">
-          <p className={cn("text-[13px]", BODY_INK)}>{band.actionBody}</p>
+          <p className={cn("text-[13px] leading-[1.55]", BODY_INK)}>{band.actionBody}</p>
           <Button
             asChild
-            className="h-12 shrink-0 gap-[9px] px-5 text-[13px] font-bold max-[480px]:w-full"
+            className="h-12 shrink-0 gap-[9px] px-5 text-[13px] font-bold leading-[1.55] max-[480px]:w-full"
             variant="action"
           >
             <a href={band.action.href}>
