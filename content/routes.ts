@@ -27,6 +27,9 @@ const STATIC_ROUTES = [
   "/admin/broadcast",
   // #505 — billing control: subscription state per relationship, and the owner's comp.
   "/admin/billing",
+  // #892 — the documentation home: the 117 pages under docs/, rendered from the manifest the gate
+  // already walks. Its document route is a catch-all and lives in `DYNAMIC_ROUTES` below.
+  "/admin/docs",
   "/admin/gaps",
   "/admin/health",
   "/admin/instances",
@@ -95,6 +98,9 @@ const STATIC_ROUTES = [
 
 /** Routes with `[param]` segments, as Next spells them. */
 const DYNAMIC_ROUTES = [
+  // #892 — one document, a catch-all because the tree nests (`docs/wiki/modules/app.md` is three
+  // segments). Filed beside the other `[id]` entries and matched by `walkRoutes` exactly as spelled.
+  "/admin/docs/[...slug]",
   "/admin/console/relationships/[id]",
   "/admin/console/templates/[id]",
   // #503 — one relationship's repair screen, a child of the registry route above it.
