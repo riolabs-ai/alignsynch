@@ -2,7 +2,6 @@
 
 // template-ancestor: components/console/stat-card-grid.tsx   (variation: a balance hero, four figure cards and a monthly table over the earnings fixture)
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -30,10 +29,8 @@ import {
   ArrowUpRight,
   CheckCircle,
   Clock,
-  CreditCard,
   DollarSign,
   Download,
-  Wallet,
 } from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 
@@ -207,45 +204,21 @@ export function WalletDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Methods</CardTitle>
-            <CardDescription>Manage your withdrawal options</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">PayPal</p>
-                    <p className="text-sm text-muted-foreground">user@example.com</p>
-                  </div>
-                </div>
-                <Badge>Default</Badge>
-              </div>
+      <div className="grid gap-6">
+        {/*
+          #912 — **the "Payment Methods" panel is gone, and this is why.**
+          It listed payout *destinations* (PayPal, a bank account) and ended in an
+          **Add Payment Method** button. Nothing here is a card capture — a withdrawal account is
+          not a way to pay — but the label is the one string in the tree that reads like one, and a
+          grep (and the audit behind #913) cannot tell the difference.
 
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Wallet className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Bank Account</p>
-                    <p className="text-sm text-muted-foreground">**** 1234</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  Set Default
-                </Button>
-              </div>
-
-              <Button variant="outline" className="w-full">
-                Add Payment Method
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
+          The component itself is kept: the wallet is a QuizHub commerce surface, and this card's
+          rule is about payment captures, not about deleting another product's screens. It is also
+          unreachable today — `components/dashboard/dashboard-page.tsx` mounts it and **no route
+          mounts that page** (`tests/qa-links.test.ts` asserts it as "a module no page reaches") —
+          so nothing loses a working control, and the "Do not leave a dead component carrying
+          payment copy" rule is satisfied by removing the copy rather than the surface.
+        */}
         <Card>
           <CardHeader>
             <CardTitle>Earnings Breakdown</CardTitle>

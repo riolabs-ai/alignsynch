@@ -1016,7 +1016,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The provider's frame, and only the frame: `stripe-frame.tsx` mounts Stripe's embedded checkout for a client secret a server minted, draws the caption that sits under the mount point until the iframe lands, and reports completion or failure upward.",
     notes:
-      "Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces now take a card — the dashboard's capture dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. It is `mock` because it reads nothing: the key, the secret and every string arrive as props from the surface that owns the decision, and no copy is written here (E23). The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits.",
+      "Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces then took a card — that dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. **#912 retired the dialog**, so this is now the only surface in the app that mounts a card, and `tests/one-payment-surface.test.ts` holds that as an exact set. It is `mock` because it reads nothing: the key, the secret and every string arrive as props from the surface that owns the decision, and no copy is written here (E23). The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits.",
   },
   {
     kind: "domain",

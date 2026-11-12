@@ -40,6 +40,8 @@
     "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-migrate.mjs",
     "db:seed": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs",
     "db:seed:check": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --check",
+    "db:seed:review": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --review",
+    "db:seed:demo": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --demo-accounts",
     "db:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-verify.mjs",
     "admin:ensure": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-admin-ensure.mjs",
     "health:record": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/health-record.mjs",

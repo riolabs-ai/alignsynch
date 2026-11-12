@@ -1,16 +1,17 @@
 "use client";
 
-// template-ancestor: components/dashboard/payment-capture-dialog.tsx   (variation: the provider's frame lifted out of the dialog, because two surfaces mount a card and the app may own exactly one implementation of that)
+// template-ancestor: components/assessment-flow/stage-shell.tsx   (variation: the dialog body reduced to one panel — the provider's mount point and the caption that stands in until the iframe lands, with no heading, no plan list and no submit of its own. The dialog that used to sit between the two is deleted by #912, so this is the lineage that survives: stage-shell → capture dialog → this)
 
 /**
- * `StripeFrame` — the one place this app mounts a card (#748's frame, lifted by #911).
+ * `StripeFrame` — **the one place this app mounts a card** (#748's frame, lifted by #911).
  *
- * **Why this is its own module.** Two surfaces now take a card: the dashboard's capture dialog
- * (`components/dashboard/payment-capture-dialog.tsx`) and stage 5's walk
- * (`components/assessment-flow/invite-walk.tsx`). #911's `MUST NOT` is explicit — *do not create a
- * second card-capture UI* — and the honest reading of that is one implementation of the frame, not
- * two copies of `loadStripe()` that drift. The dialog keeps its own plan list and its own
- * start/resolve calls; this module owns the part that touches the provider.
+ * **Why this is its own module, and why it is now the only one.** #911 lifted the frame out of the
+ * dashboard's capture dialog because two surfaces took a card — the dialog and stage 5's walk — and
+ * *do not create a second card-capture UI* means one implementation of the frame, not two copies of
+ * `loadStripe()` that drift. #912 then retired the dialog: the modal is the only way to pay, so
+ * stage 5's walk (`components/assessment-flow/invite-walk.tsx`) is the only caller, and
+ * `tests/one-payment-surface.test.ts` asserts that as an exact set. A third caller is a red build,
+ * not a design choice.
  *
  * **The submit is the frame's.** Embedded Checkout renders Stripe's own pay control inside the
  * iframe. This component draws the mount point, the caption the artifact draws while it lands, and

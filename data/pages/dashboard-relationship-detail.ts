@@ -211,6 +211,12 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
             "The Setting decides how the two sheets are read, never what they say. It is written at publish, like the mode.",
         },
         { id: "submit", label: "Publish and invite" },
+        /**
+         * #912 — the other half of a draft's pair, on the surface that shows a draft. The publish
+         * panel *is* "Publish to Counterparty" (its submit above); this is the pay modal's own door,
+         * drawn above the fields so the money decision is made before the counterparty's address.
+         */
+        { id: "invite-members", label: "Invite Members" },
         { id: "publishing", label: "Publishing…" },
         { id: "expiry", label: "The invitation expires {instant}." },
         { id: "checkout", label: "A checkout has to complete first." },
@@ -243,6 +249,13 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       items: [
         { id: "publish-help", label: "Publishing waits until a method is on file." },
         { id: "plans", label: "See plans and prices" },
+        /**
+         * #912 — **the door the band actually needs.** `/pricing` sells a subscription; it does not
+         * put a card on file, so a band that named the plans could not resolve the refusal it drew.
+         * This is the pay modal's own label — the owner's words — and the band draws it as the
+         * primary door whenever the relationship has a session for stage 5 to read.
+         */
+        { id: "invite-members", label: "Invite Members" },
       ],
     },
     {
@@ -391,69 +404,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * #748 — how the payer would pay, and the frame that takes the method.
-       *
-       * The words are the approved artifact's (`prototype-relationship-lifecycle-v7.html`, the
-       * `s8.*` keys), verbatim, because that file is what was approved and this screen must draw
-       * what was approved rather than a tidier paraphrase. What is **not** the artifact's:
-       *
-       *   the prices      `$9.95` / `$19.85` in the prototype are not this product's prices —
-       *                   `data/billing-plans.ts` sells Basic at 895 and Principal at 1_695, and a
-       *                   figure typed into a component (or here) is exactly the drift that fixture
-       *                   exists to prevent. The rows print the fixture's own amounts, so the number
-       *                   a payer reads is the number a checkout would charge.
-       *   the card line   the artifact draws `Visa ending 4242`. No card brand or figure crosses the
-       *                   billing port (see `lib/billing/types.ts`), so this build cannot print one
-       *                   and says "a payment method is on file" instead.
-       *
-       * `frame` and `frame-note` describe what the frame *is* — the artifact's own note — and stay
-       * because they are the honest caption for a form drawn by somebody else inside our page.
-       */
-      id: "capture",
-      heading: "How you would pay",
-      body: "Add a way to pay now and publishing is one click later — or skip it and pay when you submit the assessment. Nothing is charged today.",
-      items: [
-        {
-          id: "trial",
-          label:
-            "7 days free — the trial starts only when you add a method, and nothing is charged until you publish.",
-        },
-        { id: "trial-short", label: "7 days free" },
-        { id: "best-value", label: "best value" },
-        { id: "plan-payg", label: "One relationship" },
-        {
-          id: "plan-payg-note",
-          label:
-            "One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
-        },
-        { id: "plan-unlimited", label: "Unlimited relationships" },
-        {
-          id: "plan-unlimited-note",
-          label: "Every relationship you open, for as long as you keep the plan.",
-        },
-        { id: "price-per", label: "/mo" },
-        { id: "add-method", label: "Add a payment method" },
-        { id: "starting", label: "Opening…" },
-        { id: "secure", label: "Secure payment · Stripe" },
-        { id: "test-mode", label: "test mode" },
-        {
-          id: "frame-body",
-          label:
-            "The card fields are Stripe's, drawn in a frame inside this page — you never leave it and no card detail touches our code. Nothing is charged today; the 7-day trial starts when the method is saved.",
-        },
-        { id: "frame", label: "Stripe Embedded Checkout renders here" },
-        { id: "frame-note", label: "ui_mode: embedded · return_url: this screen" },
-        { id: "save", label: "Save the payment method" },
-        { id: "cancel", label: "Cancel" },
-        { id: "skip", label: "Skip for now — I'll pay when I submit the assessment" },
-        {
-          id: "saved",
-          label: "The method is on file. Nothing was charged.",
-        },
-      ],
-    },
-    {
-      /**
        * #739 — the payer's two acts.
        *
        * The band this sells nothing in: the fee is the relationship's, taken once, and the page
@@ -479,10 +429,16 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "The fee is only taken once both of you have answered every Aspect and accepted the other's answers.",
         },
-        { id: "capture", label: "Add a payment method" },
-        { id: "capturing", label: "Opening…" },
-        { id: "captured", label: "The method is on file. Nothing was charged." },
-        { id: "capture-continue", label: "Continue to the payment page" },
+        /**
+         * #912 — **the label now names where it goes.** This was "Add a payment method", which read
+         * as a capture happening on this screen; the screen no longer captures anything. The button
+         * is a link into the pay modal, so it says so. `capture-unavailable` is the arm that cannot
+         * be reached from this band (`gate` is null without a session, and no session means no
+         * `payHref`), drawn so an impossible state still has words rather than a control that does
+         * nothing.
+         */
+        { id: "capture", label: "Open the payment step" },
+        { id: "capture-unavailable", label: "Put a payment method on file from the invitation." },
         { id: "complete", label: "Complete and open the Gap" },
         { id: "completing", label: "Completing…" },
         {

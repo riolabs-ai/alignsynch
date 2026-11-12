@@ -194,8 +194,9 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        * reader goes next (the send control beside it, or the draft).
        *
        * `card-stripe-*` are the frame's chrome. The card **fields** are Stripe's, mounted from
-       * `components/billing/stripe-frame.tsx` — the same component the dashboard's capture dialog
-       * mounts (#748), because there is exactly one card-capture surface in this app.
+       * `components/billing/stripe-frame.tsx` — and since #912 this walk is its **only** caller: the
+       * dashboard's capture dialog is deleted, so there is exactly one card-capture surface in this
+       * app (`tests/one-payment-surface.test.ts`).
        */
       id: "payment-flow",
       heading: "Payment",

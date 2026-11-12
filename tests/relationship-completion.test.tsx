@@ -8,13 +8,14 @@
  * is the half a screenshot cannot cover — that the screen **presses** the actions, and that every
  * outcome they can answer is drawn:
  *
- *   the two acts      a sealed relationship with no method draws both, and the completion is not
- *                     offered before the sheets are sealed
+ *   the two acts      a sealed relationship with no method draws the completion, and a door into the
+ *                     pay modal — the only surface that takes a card (#912)
  *   payment-required  the refusal carries a url, and the url is a link the person can click —
  *                     the difference between a dead end and a detour
  *   a decline         the provider's own sentence, never a generic failure
  *   not-the-payer     the fee belongs to the initiator, so a Counterparty's screen draws no band
- *   captured          an inline capture says what happened and does not claim a charge
+ *   no capture        the screen draws no dialog, no frame and no add-method control: one surface
+ *                     captures a card and it is not this one (#912)
  *   completed         the fee's amount and the status the write answered with
  *
  * A DOM rather than static markup because the outcome only exists after a click: the component's
@@ -78,6 +79,7 @@ function viewOf(input: {
     viewerRole: isInitiator ? "initiator" : "counterparty",
     isInitiator,
     templateId: template.id,
+    templateSlug: template.slug,
     title: template.title,
     summary: template.summary,
     createdAt: "2026-11-01T00:00:00.000Z",
@@ -123,12 +125,8 @@ afterEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = false;
 });
 
-/** Mount the real component with the two callbacks a case needs. */
+/** Mount the real component with the one callback a case needs. */
 interface Press {
-  readonly capture?: (payload: {
-    relationshipId?: string;
-    reason?: string;
-  }) => Promise<CaptureOutcome>;
   readonly complete?: (payload: {
     relationshipId?: string;
     planId?: string;
@@ -145,14 +143,21 @@ function mount(view: MemberRelationshipView, press: Press = {}): void {
         onSaveAspects: async () => ({ ok: false as const, code: "failed" }),
         onPublish: async () => ({ ok: false as const, code: "failed" }),
         onRepublish: async () => ({ ok: false as const, code: "failed" }),
-        onCapture: press.capture ?? (async () => ({ ok: false as const, code: "failed" })),
-        onResolve: async () => ({ ok: false as const, code: "failed" }),
         onComplete: press.complete ?? (async () => ({ ok: false as const, code: "failed" })),
         onFork: async () => ({ ok: false as const, code: "failed" }),
         templatesHref: "/templates/relationship?view=mine",
       }),
     );
   });
+}
+
+/**
+ * #912 — **the payment door is a link, not a capture.** The band used to draw a button that opened
+ * `PaymentCaptureDialog`; that component is deleted, so the control this file is about is the anchor
+ * the band draws instead. `null` means the band drew no door at all.
+ */
+function payDoor(): HTMLAnchorElement | null {
+  return container.querySelector<HTMLAnchorElement>("[data-capture-method]");
 }
 
 /** The button whose label is `label` — the person clicks a word, not an attribute. */
@@ -176,7 +181,7 @@ describe("the payer's band", () => {
     const band = container.querySelector("[data-completion-gate]");
     expect(band?.getAttribute("data-completion-gate")).toBe("none");
     expect(band?.getAttribute("data-completion-sealed")).toBe("true");
-    expect(button(CAPTURE_LABEL)).toBeDefined();
+    expect(payDoor()).not.toBeNull();
     expect(button(COMPLETE_LABEL)).toBeDefined();
     expect(container.querySelector('[data-completion-method="missing"]')).not.toBeNull();
     expect(
@@ -188,7 +193,7 @@ describe("the payer's band", () => {
     mount(viewOf({ gate: gateOf({ sealed: false, awaitingPayment: false, deadlineAt: null }) }));
     expect(container.querySelector("[data-completion-seal]")).not.toBeNull();
     expect(container.querySelector("[data-complete-relationship]")).toBeNull();
-    expect(button(CAPTURE_LABEL)).toBeDefined();
+    expect(payDoor()).not.toBeNull();
   });
 
   it("draws only the completion once a method is on file", () => {
@@ -238,49 +243,42 @@ describe("the payer's band", () => {
   });
 });
 
-describe("pressing add a payment method", () => {
-  /** The dialog's own control — the one that asks the server for a capture. */
-  function addMethod(): HTMLButtonElement {
-    const found = container.querySelector<HTMLButtonElement>("[data-add-method]");
-    if (found === null) throw new Error("the capture dialog drew no add-method control");
-    return found;
-  }
-
-  it("opens the plan dialog first, and asks for an embedded capture from inside it", async () => {
-    const capture = vi.fn(async () => ({ ok: true as const, url: null }));
-    mount(viewOf({ gate: gateOf() }), { capture });
-
-    await press(button(CAPTURE_LABEL));
-    // Nothing has been asked of the server yet: the band's control opens the dialog, and the
-    // dialog's own control is what starts a capture (#748).
-    expect(capture).not.toHaveBeenCalled();
-    expect(container.querySelector("[data-capture-dialog]")).not.toBeNull();
-
-    await press(addMethod());
-    expect(capture).toHaveBeenCalledWith({
-      relationshipId: "relationship-completion",
-      presentation: "embedded",
-    });
+describe("the payment door on the payer's band", () => {
+  it("is a link into the pay modal, carrying both handles the stage resolves (#912)", () => {
+    mount(viewOf({ gate: gateOf() }));
+    const door = payDoor();
+    expect(door).not.toBeNull();
+    expect(door?.textContent?.trim()).toBe(CAPTURE_LABEL);
+    /*
+     * The modal's own address, built by `createInviteForPath()`: the relationship's **copy** in the
+     * path (`#794` — a slug, not the storage id) and its session in `?instance=`. Asserting the
+     * whole string is the point: a link that dropped the query would land on stage 1 with the
+     * relationship forgotten, and a link that put `templateId` in the path would ship a storage
+     * handle in a URL.
+     */
+    expect(door?.getAttribute("href")).toBe(
+      `/templates/relationship/${template.slug}/create/invite?instance=session-completion`,
+    );
   });
 
-  it("says the method is on file — and that nothing was charged — for the inline adapter", async () => {
-    mount(viewOf({ gate: gateOf() }), { capture: async () => ({ ok: true, url: null }) });
-    await press(button(CAPTURE_LABEL));
-    await press(addMethod());
-    expect(container.querySelector("[data-capture-method-recorded]")).not.toBeNull();
-    // The band is re-read only after the inline write; a hosted capture has not written yet.
-    expect(refreshSpy).toHaveBeenCalledTimes(1);
+  it("draws no capture on the screen at all — no dialog, no frame, no add-method control", () => {
+    mount(viewOf({ gate: gateOf() }));
+    expect(container.querySelector("[data-capture-dialog]")).toBeNull();
+    expect(container.querySelector("[data-add-method]")).toBeNull();
+    expect(container.querySelector("[data-capture-frame]")).toBeNull();
+    expect(container.querySelector("[data-capture-plan]")).toBeNull();
   });
 
-  it("hands back the hosted page as a link, never a redirect the reader cannot see", async () => {
-    mount(viewOf({ gate: gateOf() }), {
-      capture: async () => ({ ok: true, url: "https://checkout.example.test/cs_test_1" }),
-    });
-    await press(button(CAPTURE_LABEL));
-    await press(addMethod());
-    const link = container.querySelector("[data-capture-link]");
-    expect(link?.getAttribute("href")).toBe("https://checkout.example.test/cs_test_1");
-    expect(refreshSpy).not.toHaveBeenCalled();
+  it("draws no door when the relationship has no session for the modal to read", () => {
+    /*
+     * A draft written by the list's own create band has no session, so stage 5 answers it by
+     * redirecting to stage 1 — a door that bounces is worse than a sentence. The band cannot render
+     * for such a row (`completion` is null without a session), which is why this asserts the absence
+     * of the control rather than of the link.
+     */
+    mount(viewOf({ gate: null }));
+    expect(container.querySelector("[data-completion-gate]")).toBeNull();
+    expect(payDoor()).toBeNull();
   });
 });
 
