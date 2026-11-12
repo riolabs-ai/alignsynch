@@ -34,6 +34,19 @@ export const OVERVIEW_PATH = "/dashboard";
 export const RELATIONSHIPS_PATH = `${OVERVIEW_PATH}/relationships`;
 
 /**
+ * One relationship's own screen (#620).
+ *
+ * `RELATIONSHIPS_PATH` is the **base**, not the destination — a child of it is spelled by building
+ * on it, or the two halves drift into `/dashboard/relationships/relationships/<id>`. It lives in
+ * this module rather than beside the read because the card that draws it is a client component
+ * (#841 part 2): a value import from `lib/member/relationships.ts` would drag `pg` into the
+ * browser graph, and `data:check` E34 fails exactly that crossing.
+ */
+export function relationshipPath(relationshipId: string): string {
+  return `${RELATIONSHIPS_PATH}/${relationshipId}`;
+}
+
+/**
  * `/assessment/instances` — the instances **this signed-in account** is a party to (#213).
  *
  * A static path beside the dynamic `/assessment/instances/[instanceId]`, not a child of it: the

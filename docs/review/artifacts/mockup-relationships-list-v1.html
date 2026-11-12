@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Relationships — My Quizzes pattern · v1</title>
+    <!--
+      MOCKUP — docs/review/artifacts/mockup-relationships-list-v1.html  (#841 part 2)
+
+      Every value here is copied from the tree, not chosen:
+        shell ......  components/my-quizzes/my-quizzes.tsx
+        card .......  components/dashboard/relationship-cards.tsx   (unchanged, kept whole)
+        words ......  data/pages/dashboard-relationships.ts          (section: status, view, card)
+        palette ....  data/brands/alignsynch.ts  action #37474F / hover #2A373E / white
+
+      Nothing is added that the read cannot back: the tabs are stored statuses the read returns,
+      and every control on the card today is still here (the secondary ones moved into the menu).
+    -->
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #363d49;
+        --muted: #6b7280;
+        --muted-bg: #f3f4f6;
+        --border: #e5e7eb;
+        --border-strong: #d1d5db;
+        --gray-50: #f9fafb;
+        --action: #37474f;
+        --action-hover: #2a373e;
+        --accent: #08add5;
+        --green: #15803d;
+        --amber: #b45309;
+        --slate: #475569;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: #f7f8fa; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--fg);
+        font-size: 14px;
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ————— harness (not part of the product screen) ————— */
+      .harness {
+        position: sticky; top: 0; z-index: 50;
+        display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+        padding: 10px 16px;
+        background: #1f2937; color: #f9fafb;
+        font-size: 12px;
+      }
+      .harness strong { font-weight: 600; letter-spacing: .01em; }
+      .harness .spacer { flex: 1; }
+      .harness button {
+        font: inherit; cursor: pointer;
+        background: rgba(255,255,255,.1); color: #f9fafb;
+        border: 1px solid rgba(255,255,255,.22); border-radius: 6px;
+        padding: 5px 10px;
+      }
+      .harness button[aria-pressed="true"] { background: #f9fafb; color: #111827; border-color: #f9fafb; font-weight: 600; }
+      .harness .hint { color: #cbd5e1; }
+
+      .notes { display: none; padding: 16px 20px; background: #fff; border-bottom: 1px solid var(--border); }
+      .notes[data-open="true"] { display: block; }
+      .notes h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+      .notes table { border-collapse: collapse; width: 100%; max-width: 900px; font-size: 13px; }
+      .notes th, .notes td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+      .notes th { color: var(--muted); font-weight: 600; }
+      .notes code { background: var(--muted-bg); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+      .notes ul { margin: 10px 0 0; padding-left: 20px; max-width: 900px; }
+
+      /* ————— the product screen, as the shell draws it ————— */
+      .app { padding: 28px 24px 64px; }
+      .page { max-width: 1180px; margin: 0 auto; }
+      .page > * + * { margin-top: 24px; }              /* my-quizzes: space-y-6 */
+
+      /* header: h1 + header action (was: create in its own Card above the list) */
+      .head { display: flex; flex-direction: column; gap: 16px; }
+      @media (min-width: 640px) { .head { flex-direction: row; align-items: center; justify-content: space-between; } }
+      .head h1 { margin: 0; font-size: 30px; line-height: 1.2; font-weight: 700; letter-spacing: -0.02em; }
+      .head p { margin: 4px 0 0; color: var(--muted); }
+
+      /* toolbar: search + two selects + view toggle */
+      .toolbar { display: flex; flex-direction: column; gap: 16px; }
+      @media (min-width: 768px) { .toolbar { flex-direction: row; align-items: center; } }
+      .search { position: relative; flex: 1; }
+      .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+      .search input {
+        width: 100%; height: 36px; padding: 0 12px 0 40px;
+        border: 1px solid var(--border-strong); border-radius: 6px; background: #fff;
+        font: inherit; color: var(--fg);
+      }
+      .search input::placeholder { color: #9ca3af; }
+      .controls { display: flex; align-items: center; gap: 8px; }
+      .select {
+        height: 36px; padding: 0 10px; min-width: 140px;
+        border: 1px solid var(--border-strong); border-radius: 6px; background: #fff;
+        font: inherit; color: var(--fg); display: inline-flex; align-items: center; justify-content: space-between; gap: 8px;
+      }
+      .toggle { display: flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 6px; background: rgba(243,244,246,.4); overflow: hidden; }
+      .toggle button { width: 32px; height: 32px; display: grid; place-items: center; border: 0; background: transparent; cursor: pointer; color: var(--fg); }
+      .toggle button[aria-pressed="true"] { background: #e5e7eb; }
+
+      /* tabs */
+      .tabs { display: inline-flex; align-items: center; gap: 2px; background: var(--muted-bg); border-radius: 8px; padding: 4px; }
+      .tabs button {
+        font: inherit; cursor: pointer; border: 0; background: transparent; color: var(--muted);
+        padding: 6px 12px; border-radius: 6px; white-space: nowrap;
+      }
+      .tabs button[aria-selected="true"] { background: #fff; color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgba(16,24,40,.08); }
+      .tabs .count { color: var(--muted); font-weight: 400; margin-left: 6px; font-variant-numeric: tabular-nums; }
+
+      /* the grid, as my-quizzes draws it: gap-6, 1/2/3 columns */
+      .grid { display: grid; gap: 24px; grid-template-columns: 1fr; }
+      @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      .list { display: flex; flex-direction: column; gap: 16px; }
+
+      /* ————— the relationship card, verbatim from relationship-cards.tsx ————— */
+      .card {
+        display: flex; flex-direction: column; overflow: hidden;
+        border: 1px solid var(--border); border-radius: 8px; background: #fff;
+      }
+      .card[data-status="draft"] { border-style: dashed; }
+      .card-head { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: var(--gray-50); border-bottom: 1px solid var(--border); }
+      .card-head .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+      .card-title { font-size: 18px; font-weight: 600; color: var(--fg); text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .card-title:hover { color: var(--action); text-decoration: underline; text-underline-offset: 4px; }
+      .card-with { margin: 0; font-size: 12px; color: #6b7280; }
+      .card-body { display: flex; flex: 1; flex-direction: column; gap: 12px; padding: 16px; }
+      .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+      .chip { font-size: 12px; padding: 2px 8px; border-radius: 6px; border: 1px solid transparent; white-space: nowrap; }
+      .chip.tint { background: rgba(8,173,213,.1); color: #0b6e86; }
+      .chip.soft { background: var(--gray-50); color: #374151; border-color: var(--border); }
+      .chip.neutral { background: #fff; color: var(--slate); border-color: var(--border-strong); }
+      .chip.success { background: #ecfdf5; color: var(--green); border-color: #a7f3d0; }
+      .chip.warn { background: #fffbeb; color: var(--amber); border-color: #fde68a; }
+      .card-meta { margin: auto 0 0; font-size: 12px; color: #6b7280; }
+      .card-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding: 12px 16px; }
+      .card-actions .row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .btn {
+        display: inline-flex; height: 36px; align-items: center; justify-content: center; gap: 6px;
+        border-radius: 6px; padding: 0 12px; font: inherit; font-weight: 500; cursor: pointer;
+        border: 1px solid var(--border-strong); background: #fff; color: var(--fg); text-decoration: none;
+      }
+      .btn:hover { background: var(--gray-50); }
+      .btn.primary { background: var(--action); border-color: var(--action); color: #fff; font-weight: 600; }
+      .btn.primary:hover { background: var(--action-hover); border-color: var(--action-hover); }
+      .btn.disabled { border-color: var(--border); background: var(--gray-50); color: #9ca3af; cursor: not-allowed; }
+      .btn.icon { width: 32px; height: 32px; padding: 0; border: 0; background: transparent; color: var(--fg); }
+      .btn.icon:hover { background: var(--muted-bg); }
+      .btn.sm { height: 32px; font-size: 13px; }
+      .cta { display: inline-flex; height: 44px; align-items: center; gap: 8px; padding: 0 16px; border-radius: 6px; background: var(--action); color: #fff; border: 1px solid var(--action); font-weight: 600; text-decoration: none; cursor: pointer; font: inherit; }
+      .cta:hover { background: var(--action-hover); }
+      .card-foot { display: flex; justify-content: space-between; align-items: center; padding: 0 16px 16px; }
+
+      /* per-row menu (the control My Quizzes has and this page does not) */
+      .menu-wrap { position: relative; }
+      .menu {
+        position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 20; min-width: 208px;
+        background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 4px;
+        box-shadow: 0 10px 24px rgba(16,24,40,.14);
+      }
+      .menu button {
+        display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; text-align: left;
+        padding: 7px 10px; border: 0; background: transparent; border-radius: 6px; cursor: pointer; color: var(--fg);
+      }
+      .menu button:hover { background: var(--muted-bg); }
+      .menu button[disabled] { color: #9ca3af; cursor: not-allowed; }
+      .menu button[disabled]:hover { background: transparent; }
+      .menu .sep { height: 1px; background: var(--border); margin: 4px 2px; }
+      .menu .why { display: block; font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+      /* empty state, as my-quizzes draws it */
+      .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 0; text-align: center; }
+      .empty .ring { display: grid; place-items: center; width: 88px; height: 88px; border-radius: 9999px; background: var(--muted-bg); margin-bottom: 16px; color: var(--muted); }
+      .empty h3 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
+      .empty p { margin: 0 0 24px; color: var(--muted); max-width: 28rem; }
+
+      .screen { display: none; }
+      .screen[data-active="true"] { display: block; }
+      .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    </style>
+  </head>
+  <body>
+    <div class="harness">
+      <strong>My Relationships · My Quizzes pattern</strong>
+      <span class="hint">v1 · #841 part 2 · mockup only</span>
+      <span class="spacer"></span>
+      <button data-screen-btn="grid" aria-pressed="true">1 · Grid (default)</button>
+      <button data-screen-btn="drafts" aria-pressed="false">2 · Drafts tab</button>
+      <button data-screen-btn="list" aria-pressed="false">3 · List view</button>
+      <button data-screen-btn="empty" aria-pressed="false">4 · Empty (search miss)</button>
+      <button data-screen-btn="menu" aria-pressed="false">5 · Row menu</button>
+      <button id="notes-btn" aria-pressed="false">Notes + delta</button>
+    </div>
+
+    <section class="notes" id="notes">
+      <h2>What changed, and what did not</h2>
+      <table>
+        <thead><tr><th>Control</th><th>Today at <code>/dashboard/relationships</code></th><th>In this mockup</th></tr></thead>
+        <tbody>
+          <tr><td>Page title + create action</td><td><code>text-2xl</code> heading, no action; create sits in its own card <em>above</em> the list</td><td><code>text-3xl</code> heading with the action in the header — my-quizzes' own shape</td></tr>
+          <tr><td>Search</td><td>none</td><td>over the relationship's stage-1 title <em>and</em> the other party's name</td></tr>
+          <tr><td>Status tabs</td><td>none</td><td>stored statuses only: All · Drafts · Published · Running · Complete · Expired</td></tr>
+          <tr><td>Grid / list toggle</td><td>none</td><td>same three-column grid, plus a row layout</td></tr>
+          <tr><td>Per-row menu</td><td>two inline buttons on every card</td><td>one primary action stays on the card; the secondary acts move into the menu — none are deleted</td></tr>
+          <tr><td>Empty state</td><td>one generic empty card</td><td>per-filter copy, with the create action, as my-quizzes has it</td></tr>
+          <tr><td>The card itself</td><td colspan="2">unchanged — gray-50 header block, tint/soft/neutral chips, the seat chip, the Aspects and invitation chips, the primary action. The only edit is the footer row that now carries <em>View</em> + the menu.</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><strong>Every control that exists today still exists.</strong> <em>Open Assessment</em> (disabled with its reason when the relationship has no session), <em>Publish Assessment / Complete Relationship / Open Relationship</em> — the primary keeps its verb-per-state rule — and <em>View Relationship</em>.</li>
+        <li><strong>Two tabs carry a word for what they filter.</strong> <code>running</code> is stored <code>active</code>; the label comes from <code>data/pages/dashboard-relationships.ts</code>, so the tab and the card cannot disagree.</li>
+        <li><strong>What I did not draw:</strong> Archive / Delete (no delete path exists — it is #743), a paid/Pay-now control (the card deliberately draws none, <code>#739</code>), and a sort menu (the read has no sort).</li>
+        <li><strong>Two relationships from one template</strong> are the first two cards — the title is the relationship's own, which is what #850 landed.</li>
+      </ul>
+    </section>
+
+    <div class="app">
+      <div class="page">
+        <div class="screen" data-screen="grid" data-active="true">
+          <div class="head">
+            <div>
+              <h1>My Relationships</h1>
+              <p>Every relationship you are part of, on both sides of the invitation</p>
+            </div>
+            <a class="cta" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Start a relationship</span></a>
+          </div>
+
+          <div class="toolbar">
+            <div class="search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input placeholder="Search your relationships…" value="" />
+            </div>
+            <div class="controls">
+              <span class="select">All statuses <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <span class="select">Newest <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <div class="toggle">
+                <button aria-pressed="true" aria-label="Grid view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+                <button aria-pressed="false" aria-label="List view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="true">All<span class="count">5</span></button>
+            <button role="tab" aria-selected="false">Drafts<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Published<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Running<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Complete<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Expired<span class="count">1</span></button>
+          </div>
+
+          <div class="grid">
+            <!-- card 1 — DRAFT, same template as card 2 -->
+            <article class="card" data-status="draft">
+              <div class="card-head">
+                <div class="row">
+                  <span class="chip tint">Template</span>
+                  <span class="chips">
+                    <span class="chip soft">Draft</span>
+                    <span class="chip neutral">Initiator</span>
+                  </span>
+                </div>
+                <a class="card-title" href="#">Weekly check-in</a>
+                <p class="card-with">With · Not claimed yet</p>
+              </div>
+              <div class="card-body">
+                <div class="chips">
+                  <span class="chip neutral">6 Aspects</span>
+                  <span class="chip soft">Not sent</span>
+                </div>
+                <p class="card-meta">Started Nov 12</p>
+              </div>
+              <div class="card-actions">
+                <div class="row">
+                  <button class="btn primary">Publish Assessment</button>
+                </div>
+              </div>
+              <div class="card-foot">
+                <a class="btn sm" href="#"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>View</span></a>
+                <button class="btn icon" aria-label="Actions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+              </div>
+            </article>
+
+            <!-- card 2 — PUBLISHED, same template, different title (the #850 fix) -->
+            <article class="card" data-status="published">
+              <div class="card-head">
+                <div class="row">
+                  <span class="chip tint">Template</span>
+                  <span class="chips">
+                    <span class="chip soft">Published</span>
+                    <span class="chip neutral">Initiator</span>
+                  </span>
+                </div>
+                <a class="card-title" href="#">Quarterly reset</a>
+                <p class="card-with">With · Rowan Ellis</p>
+              </div>
+              <div class="card-body">
+                <div class="chips">
+                  <span class="chip neutral">8 Aspects</span>
+                  <span class="chip soft">Joined</span>
+                </div>
+                <p class="card-meta">Started Nov 12</p>
+              </div>
+              <div class="card-actions">
+                <div class="row">
+                  <a class="btn" href="#">Open Assessment</a>
+                  <a class="btn primary" href="#">Complete Relationship</a>
+                </div>
+              </div>
+              <div class="card-foot">
+                <a class="btn sm" href="#"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>View</span></a>
+                <button class="btn icon" aria-label="Actions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+              </div>
+            </article>
+
+            <!-- card 3 — RUNNING, counterparty seat (the read-only variant) -->
+            <article class="card" data-status="active">
+              <div class="card-head">
+                <div class="row">
+                  <span class="chip tint">Template</span>
+                  <span class="chips">
+                    <span class="chip soft">Running</span>
+                    <span class="chip neutral">Counterparty</span>
+                  </span>
+                </div>
+                <a class="card-title" href="#">Team offsite</a>
+                <p class="card-with">With · Daniel Park</p>
+              </div>
+              <div class="card-body">
+                <div class="chips">
+                  <span class="chip neutral">12 Aspects</span>
+                  <span class="chip soft">Joined</span>
+                </div>
+                <p class="card-meta">Started Nov 8</p>
+              </div>
+              <div class="card-actions">
+                <div class="row">
+                  <a class="btn" href="#">Open Assessment</a>
+                  <a class="btn primary" href="#">Open Relationship</a>
+                </div>
+              </div>
+              <div class="card-foot">
+                <a class="btn sm" href="#"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>View</span></a>
+                <button class="btn icon" aria-label="Actions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <!-- screen 2: the Drafts tab — the tab that makes the draft findable -->
+        <div class="screen" data-screen="drafts">
+          <div class="head">
+            <div><h1>My Relationships</h1><p>Every relationship you are part of, on both sides of the invitation</p></div>
+            <a class="cta" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Start a relationship</span></a>
+          </div>
+          <div class="toolbar">
+            <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search your relationships…" /></div>
+            <div class="controls">
+              <span class="select">All statuses <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <span class="select">Newest <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <div class="toggle"><button aria-pressed="true" aria-label="Grid view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button><button aria-pressed="false" aria-label="List view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button></div>
+            </div>
+          </div>
+          <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="false">All<span class="count">5</span></button>
+            <button role="tab" aria-selected="true">Drafts<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Published<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Running<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Complete<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Expired<span class="count">1</span></button>
+          </div>
+          <div class="grid">
+            <article class="card" data-status="draft">
+              <div class="card-head">
+                <div class="row"><span class="chip tint">Template</span><span class="chips"><span class="chip soft">Draft</span><span class="chip neutral">Initiator</span></span></div>
+                <a class="card-title" href="#">Weekly check-in</a>
+                <p class="card-with">With · Not claimed yet</p>
+              </div>
+              <div class="card-body">
+                <div class="chips"><span class="chip neutral">6 Aspects</span><span class="chip soft">Not sent</span></div>
+                <p class="card-meta">Started Nov 12</p>
+              </div>
+              <div class="card-actions"><div class="row"><button class="btn primary">Publish Assessment</button></div></div>
+              <div class="card-foot">
+                <a class="btn sm" href="#"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>View</span></a>
+                <button class="btn icon" aria-label="Actions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <!-- screen 3: list view -->
+        <div class="screen" data-screen="list">
+          <div class="head">
+            <div><h1>My Relationships</h1><p>Every relationship you are part of, on both sides of the invitation</p></div>
+            <a class="cta" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Start a relationship</span></a>
+          </div>
+          <div class="toolbar">
+            <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search your relationships…" /></div>
+            <div class="controls">
+              <span class="select">All statuses <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <span class="select">Newest <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <div class="toggle"><button aria-pressed="false" aria-label="Grid view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button><button aria-pressed="true" aria-label="List view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button></div>
+            </div>
+          </div>
+          <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="true">All<span class="count">5</span></button>
+            <button role="tab" aria-selected="false">Drafts<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Published<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Running<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Complete<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Expired<span class="count">1</span></button>
+          </div>
+          <div class="list">
+            <article class="card" data-status="published">
+              <div class="card-head">
+                <div class="row"><span class="chip tint">Template</span><span class="chips"><span class="chip soft">Published</span><span class="chip neutral">Initiator</span></span></div>
+                <a class="card-title" href="#">Quarterly reset</a>
+                <p class="card-with">With · Rowan Ellis</p>
+              </div>
+              <div class="card-body">
+                <div class="chips"><span class="chip neutral">8 Aspects</span><span class="chip soft">Joined</span></div>
+                <p class="card-meta">Started Nov 12</p>
+              </div>
+              <div class="card-actions"><div class="row"><a class="btn" href="#">Open Assessment</a><a class="btn primary" href="#">Complete Relationship</a></div></div>
+            </article>
+            <article class="card" data-status="expired">
+              <div class="card-head">
+                <div class="row"><span class="chip tint">Template</span><span class="chips"><span class="chip soft">Expired</span><span class="chip soft">Read-only</span><span class="chip neutral">Initiator</span></span></div>
+                <a class="card-title" href="#">Onboarding plan</a>
+                <p class="card-with">With · Ada Okafor</p>
+              </div>
+              <div class="card-body">
+                <div class="chips"><span class="chip neutral">6 Aspects</span><span class="chip soft">Link expired</span></div>
+                <p class="card-meta">Started Nov 5</p>
+              </div>
+              <div class="card-actions"><div class="row"><button class="btn disabled" disabled>Open Assessment</button><a class="btn primary" href="#">Complete Relationship</a></div></div>
+            </article>
+          </div>
+        </div>
+
+        <!-- screen 4: empty state, per filter -->
+        <div class="screen" data-screen="empty">
+          <div class="head">
+            <div><h1>My Relationships</h1><p>Every relationship you are part of, on both sides of the invitation</p></div>
+            <a class="cta" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Start a relationship</span></a>
+          </div>
+          <div class="toolbar">
+            <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search your relationships…" value="onboarding" /></div>
+            <div class="controls">
+              <span class="select">All statuses <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <span class="select">Newest <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <div class="toggle"><button aria-pressed="true" aria-label="Grid view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button><button aria-pressed="false" aria-label="List view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button></div>
+            </div>
+          </div>
+          <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="true">All<span class="count">5</span></button>
+            <button role="tab" aria-selected="false">Drafts<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Published<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Running<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Complete<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Expired<span class="count">1</span></button>
+          </div>
+          <div class="empty">
+            <div class="ring"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+            <h3>No relationships found</h3>
+            <p>Nothing matches “onboarding”. Try a different search, or clear the filter to see all five.</p>
+            <a class="cta" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Start a relationship</span></a>
+          </div>
+        </div>
+
+        <!-- screen 5: the per-row menu, with the disabled reason kept -->
+        <div class="screen" data-screen="menu">
+          <div class="head">
+            <div><h1>My Relationships</h1><p>Every relationship you are part of, on both sides of the invitation</p></div>
+            <a class="cta" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Start a relationship</span></a>
+          </div>
+          <div class="toolbar">
+            <div class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search your relationships…" /></div>
+            <div class="controls">
+              <span class="select">All statuses <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <span class="select">Newest <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span>
+              <div class="toggle"><button aria-pressed="true" aria-label="Grid view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button><button aria-pressed="false" aria-label="List view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button></div>
+            </div>
+          </div>
+          <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="false">All<span class="count">5</span></button>
+            <button role="tab" aria-selected="true">Drafts<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Published<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Running<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Complete<span class="count">1</span></button>
+            <button role="tab" aria-selected="false">Expired<span class="count">1</span></button>
+          </div>
+          <div class="grid">
+            <article class="card" data-status="draft">
+              <div class="card-head">
+                <div class="row"><span class="chip tint">Template</span><span class="chips"><span class="chip soft">Draft</span><span class="chip neutral">Initiator</span></span></div>
+                <a class="card-title" href="#">Weekly check-in</a>
+                <p class="card-with">With · Not claimed yet</p>
+              </div>
+              <div class="card-body">
+                <div class="chips"><span class="chip neutral">6 Aspects</span><span class="chip soft">Not sent</span></div>
+                <p class="card-meta">Started Nov 12</p>
+              </div>
+              <div class="card-actions"><div class="row"><button class="btn primary">Publish Assessment</button></div></div>
+              <div class="card-foot" style="position:relative">
+                <a class="btn sm" href="#"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span>View</span></a>
+                <div class="menu-wrap">
+                  <button class="btn icon" aria-label="Actions" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  <div class="menu" role="menu">
+                    <button disabled>Open Assessment<span class="why">No session yet — publish first</span></button>
+                    <button>View Relationship</button>
+                    <button disabled>Copy invitation link<span class="why">Nothing sent yet</span></button>
+                    <div class="sep"></div>
+                    <button disabled>Archive<span class="why">Not built yet (#743)</span></button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const btns = document.querySelectorAll("[data-screen-btn]");
+      const screens = document.querySelectorAll("[data-screen]");
+      btns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          btns.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+          screens.forEach((s) => s.setAttribute("data-active", String(s.dataset.screen === btn.dataset.screenBtn)));
+          if (btn.dataset.screenBtn !== "notes") document.getElementById("notes").dataset.open = "false";
+        });
+      });
+      const notesBtn = document.getElementById("notes-btn");
+      notesBtn.addEventListener("click", () => {
+        const open = document.getElementById("notes").dataset.open === "true";
+        document.getElementById("notes").dataset.open = String(!open);
+        notesBtn.setAttribute("aria-pressed", String(!open));
+      });
+    </script>
+  </body>
+</html>
