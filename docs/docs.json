@@ -22,6 +22,16 @@
           "question": "Why does the gate cost what my change costs, and which lane am I in?"
         },
         {
+          "path": "WORKFLOW.md",
+          "title": "Request → release",
+          "question": "How does an annotation become a versioned release, and how deep is this request?"
+        },
+        {
+          "path": "templates/RELEASE-TRAIN.md",
+          "title": "Release-train card template",
+          "question": "What does a release-train card carry — children, sequence, cutoff, proof?"
+        },
+        {
           "path": "GATE.md",
           "title": "The gate",
           "question": "What does `scripts/verify.sh` run, in what order, and what are its current numbers?"

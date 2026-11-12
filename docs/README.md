@@ -22,13 +22,13 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**122 documents in 9 sections.** Every page carries the same nav block, generated
+**124 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
 ## Contents
 
-- [Start here](#start-here) — 4 documents
+- [Start here](#start-here) — 6 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Product](#product) — 29 documents
@@ -45,6 +45,8 @@ Read these before your first command.
 - [`ENV-SPEC.md`](ENV-SPEC.md) — **Environment & ops spec** — What is installed, what does the team own, and what did the P1–P4 gates demand?
 - [`ITERATION.md`](ITERATION.md) — **Iteration rhythm** — Which loop do I run for this edit — `check:fast` or the full gate?
 - [`REPO-LAYERS.md`](REPO-LAYERS.md) — **Repo layers** — Why does the gate cost what my change costs, and which lane am I in?
+- [`WORKFLOW.md`](WORKFLOW.md) — **Request → release** — How does an annotation become a versioned release, and how deep is this request?
+- [`templates/RELEASE-TRAIN.md`](templates/RELEASE-TRAIN.md) — **Release-train card template** — What does a release-train card carry — children, sequence, cutoff, proof?
 - [`GATE.md`](GATE.md) — **The gate** — What does `scripts/verify.sh` run, in what order, and what are its current numbers?
 
 ## Architecture
