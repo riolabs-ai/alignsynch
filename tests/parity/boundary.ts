@@ -31,6 +31,7 @@ import AdminAuditPage from "@/app/(mainlayout)/admin/audit/page";
 import AdminBillingPage from "@/app/(mainlayout)/admin/billing/page";
 import AdminBroadcastPage from "@/app/(mainlayout)/admin/broadcast/page";
 import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
+import AdminDocsPage from "@/app/(mainlayout)/admin/docs/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
 import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
 import AdminInstancesPage from "@/app/(mainlayout)/admin/instances/page";
@@ -234,6 +235,19 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
     page: AdminConsolePage as unknown as ParityPage,
     params: {},
     open: "gate-only",
+  },
+  {
+    // #892 — the documentation home. `render` rather than `gate-only`: the page's tree is
+    // self-contained (a client list over rows the server derived from a file in the tree), so an open
+    // gate produces a document. The document route beside it is deliberately **not** listed — it is a
+    // catch-all, and this harness types `params` as single-valued strings, so a `[...slug]` case would
+    // mean changing the harness rather than describing the route. Both pages carry the same two gates
+    // in the same order: `tests/admin-docs.test.ts` drives the document page's refusal through this
+    // same policy, and the PR's `curl` table is where its 200 is proven.
+    route: "/admin/docs",
+    page: AdminDocsPage as unknown as ParityPage,
+    params: {},
+    open: "render",
   },
   {
     route: "/admin/gaps",

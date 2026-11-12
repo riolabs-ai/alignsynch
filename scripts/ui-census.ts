@@ -240,6 +240,12 @@ export const MIN_LIST_SURFACES = 30;
  */
 export const NON_EMPTY_LISTS: readonly NonEmptyList[] = [
   {
+    file: "components/admin/docs/docs-hub.tsx",
+    receiver: "sections",
+    reason:
+      "#892 — the sections are `docs/docs.json`'s own, and `zDocsManifest.sections` is `.min(1)`, so a hub with no band is a manifest that does not parse and draws the unreadable panel instead; the empty *result* already draws a bordered block with the clearing action above this map",
+  },
+  {
     file: "components/admin/audit-log.tsx",
     receiver: "fields",
     reason:

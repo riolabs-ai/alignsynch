@@ -97,6 +97,10 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/admin/console/templates", mode: "column" },
   { path: "/admin/console/templates/[id]", mode: "column" },
   { path: "/admin/console/users", mode: "column" },
+  // #892 — the documentation home and one document. Both are `StageColumn` pages like the rest of
+  // the console family; the catch-all renders a long markdown body in the column, not wider.
+  { path: "/admin/docs", mode: "column" },
+  { path: "/admin/docs/[...slug]", mode: "column" },
   { path: "/admin/gaps", mode: "column" },
   { path: "/admin/health", mode: "column" },
   { path: "/admin/inbox", mode: "column" },
