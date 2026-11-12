@@ -125,6 +125,7 @@ import {
   type Sql,
 } from "@/lib/relationship/enforcement";
 import { membershipSentence, type Membership } from "@/lib/relationship/membership";
+import { canTransition, isRelationshipStatus } from "@/lib/relationship/status";
 import { relationshipRoleOf } from "@/lib/flow/membership";
 import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/flow/resend";
 import {
@@ -284,6 +285,27 @@ export interface CreateInstanceInput {
    * is a link on screen.
    */
   readonly viewerEmail?: string | null;
+  /**
+   * Create the relationship as a **draft** and send nothing (#825).
+   *
+   * v9's stage 4 writes the row the moment the account exists, and stage 5 decides whether the
+   * invitation goes out. So this flag is the difference between the two decisions the flow used to
+   * make in one transaction:
+   *
+   *   false (default)  status `published`, `published_at` = now — the invitation is going out with
+   *                    this create, which is what every caller before #825 meant and what a direct
+   *                    `curl` at the endpoint still gets.
+   *   true             status `draft`, `published_at` NULL — the relationship exists, the session
+   *                    and its invitation row exist (stage 5 needs a token to send), and **nothing
+   *                    has been sent**. `published_at` stays NULL because it is the instant the
+   *                    invitation went out (0030), and stage 5's send is what fills it.
+   *
+   * The session and the invitation are written in both cases on purpose. This is not the member
+   * editor's draft (`lib/member/relationships.ts::createRelationship`, which is a configuration
+   * with no session because it is edited from the dashboard); it is a *flow* draft, already
+   * configured by stages 1–3, whose only open question is the send.
+   */
+  readonly draft?: boolean;
   /** A clock, injectable so a test can pin `expires_at`. */
   readonly now?: Date;
 }
@@ -590,13 +612,29 @@ export async function createInstanceFromTemplate(
     // failure one step later: the payer's completion reached Postgres and died on the check, a 500
     // on the only screen that can take the fee. Same instant as `created_at` — the publish and the
     // create are this one transaction, and 0030's comparisons are `>=` for exactly that case.
+    //
+    // **#825 splits that one decision in two.** v9's stage 4 writes the relationship at `draft`
+    // (`input.draft`) and stage 5's send is what moves it to `published` — so the status and
+    // `published_at` are written from the same flag and can never disagree: a draft has no publish
+    // instant because nothing has been published, and the send writes both. The session and the
+    // invitation row are written either way, because stage 5 needs a token to send; what a draft
+    // does not have is an email that went anywhere.
+    const relationshipStatus = input.draft === true ? "draft" : "published";
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
          (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
           purchased_at, plan, created_at, status, published_at)
-       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5, 'published', $5)`,
-      [relationshipId, found.id, version.id, initiatorUserId, now.toISOString()],
+       VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5, $6, $7)`,
+      [
+        relationshipId,
+        found.id,
+        version.id,
+        initiatorUserId,
+        now.toISOString(),
+        relationshipStatus,
+        input.draft === true ? null : now.toISOString(),
+      ],
     );
 
     await client.query(
@@ -1097,6 +1135,151 @@ export async function resendInvite(input: ResendInput): Promise<ResendResult> {
   } finally {
     client.release();
   }
+}
+
+/**
+ * Stage 5's one write: **send the invitation** for a relationship stage 4 wrote as a draft (#825).
+ *
+ * The difference between this and `resendInvite()` is the status, and that is the whole reason it
+ * exists. A relationship created by stage 1–4 is `draft` with `published_at` NULL — nothing has gone
+ * out. Sending is what makes it `published`, and 0030's own vocabulary calls that edge the
+ * initiator's (`draft → published`: "publish straight from the editor: the invite goes out and the
+ * trial or charge starts"), so it is checked through `canTransition()` rather than written as a
+ * string. `pending → published` is on the same table, so a relationship a person saved from the
+ * dashboard also sends from here.
+ *
+ * **Two statements, in this order, and the order is deliberate.** The token is reissued first
+ * (`resendInvite`, which owns the one-token-per-instance invariant and the cooldown), and the
+ * status is flipped second behind a `status IN (…)` guard that answers `already-published` when it
+ * matches nothing. The other order would leave a relationship claiming to be published with a token
+ * nobody had sent; this order at worst rotates a token for a draft, which nobody holds.
+ *
+ * A relationship already `published` (or beyond) is refused rather than sent again: a second send
+ * of the same invitation is `resendInvite`'s job, and it has the cooldown and the refusal
+ * vocabulary this path deliberately does not duplicate.
+ */
+export type SendRefusal = "not-initiator" | "no-invitation" | "already-published";
+
+export type SendResult =
+  | {
+      readonly ok: true;
+      readonly instanceRecordId: string;
+      readonly inviteToken: string;
+      readonly email: string;
+      readonly initiatorName: string;
+      readonly counterpartyName: string;
+      readonly templateTitle: string;
+      readonly expiresAt: Date;
+    }
+  | { readonly ok: false; readonly code: SendRefusal; readonly reason: string };
+
+export async function sendDraftInvitation(input: {
+  readonly instanceRecordId: string;
+  /** Every `flow_party_*` token this browser holds — the creator's own proof of the seat. */
+  readonly viewerTokens?: readonly string[];
+  readonly viewerUserId?: string | null;
+  readonly now?: Date;
+}): Promise<SendResult> {
+  const now = input.now ?? new Date();
+  const client = await getPool().connect();
+  let status: string | undefined;
+  let relationshipId: string | undefined;
+  try {
+    const found = await client.query<{ relationship_id: string | null; status: string | null }>(
+      `SELECT ai.relationship_id, r.status
+         FROM session ai
+         LEFT JOIN relationship r ON r.id = ai.relationship_id
+        WHERE ai.record_id = $1`,
+      [input.instanceRecordId],
+    );
+    relationshipId = found.rows[0]?.relationship_id ?? undefined;
+    status = found.rows[0]?.status ?? undefined;
+  } finally {
+    client.release();
+  }
+
+  // Who is asking, by the same two readings everything else uses: this browser's party cookies,
+  // then the signed-in account. A role out of Postgres, never a field in the post.
+  const reader = await getPool().connect();
+  let viewerRole: PartyRole | undefined;
+  try {
+    viewerRole =
+      (await partyRoleForTokens(reader, input.instanceRecordId, input.viewerTokens ?? [])) ??
+      (await partyRoleForUser(
+        reader,
+        input.instanceRecordId,
+        normalizedUserId(input.viewerUserId),
+      ));
+  } finally {
+    reader.release();
+  }
+
+  if (viewerRole !== "initiator") {
+    return {
+      ok: false,
+      code: "not-initiator",
+      reason:
+        viewerRole === undefined
+          ? "this browser is not a party to that instance, so it cannot send its invitation"
+          : `this browser answers as the ${viewerRole}; only the Initiator can send the invitation`,
+    };
+  }
+  if (
+    relationshipId === undefined ||
+    status === undefined ||
+    !isRelationshipStatus(status) ||
+    !canTransition(status, "published", "initiator")
+  ) {
+    return {
+      ok: false,
+      code: "already-published",
+      reason: `relationship "${relationshipId ?? "none"}" is ${status ?? "unreadable"}: its invitation is not a draft waiting to go out`,
+    };
+  }
+
+  // The token first — see the docstring. It is the same reissue the recovery path uses, so a draft
+  // sent from here answers `no-invitation` for exactly the rows that path would.
+  const reissued = await resendInvite({
+    instanceRecordId: input.instanceRecordId,
+    email: null,
+    viewerTokens: input.viewerTokens,
+    viewerUserId: input.viewerUserId,
+    now,
+  });
+  if (!reissued.ok) {
+    return {
+      ok: false,
+      code: reissued.code === "not-initiator" ? "not-initiator" : "no-invitation",
+      reason: `the invitation could not be reissued: ${reissued.reason}`,
+    };
+  }
+
+  // The status, behind the guard: a concurrent send that got here first matches nothing and is
+  // reported as what it is.
+  const flipped = await getPool().query(
+    `UPDATE relationship
+        SET status = 'published', published_at = COALESCE(published_at, $2)
+      WHERE id = $1 AND status IN ('draft', 'pending')`,
+    [relationshipId, now.toISOString()],
+  );
+  if ((flipped.rowCount ?? 0) === 0) {
+    return {
+      ok: false,
+      code: "already-published",
+      reason: `relationship "${relationshipId}" moved out of draft before this send wrote it`,
+    };
+  }
+
+  return {
+    ok: true,
+    instanceRecordId: input.instanceRecordId,
+    inviteToken: reissued.inviteToken,
+    email: reissued.email,
+    initiatorName: reissued.initiatorName,
+    counterpartyName: reissued.counterpartyName,
+    templateTitle: reissued.templateTitle,
+    expiresAt: reissued.expiresAt,
+  };
 }
 
 /**

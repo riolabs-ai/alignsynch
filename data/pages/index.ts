@@ -167,10 +167,11 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/templates/relationship/[slug]/create/mode": assessmentCreatePageCopy,
   // #689 — stage 3, the third register of the same fixture.
   "/templates/relationship/[slug]/create/aspects": assessmentCreatePageCopy,
-  // #690 — stage 4 (Create) and the account gate behind it: the same fixture again, because the
-  // gate's words are this flow's words and a second copy of them is how a flow grows two dialects.
+  // #690 — stage 4 and stage 5 of one flow: the same fixture again, because a second copy of these
+  // words is how a flow grows two dialects. #825 — the account gate that used to sit behind the
+  // create is retired; stage 4 is the account and stage 5 is the invite.
   "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
-  "/templates/relationship/[slug]/create/account": assessmentCreatePageCopy,
+  "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
   "/templates/relationship/new": assessmentTemplatePageCopy,
   // The public Relationship Types catalogue (#794) — the taxonomy the shop sells, addressed by
   // `relationship-types.ts`'s own ids.

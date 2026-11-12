@@ -24,6 +24,7 @@ import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
+import { LeavingLink } from "@/components/layout/leaving-link";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
@@ -141,6 +142,8 @@ export function LoginView({
   demo,
   providerHint,
   startGoogle: startGoogleFlow,
+  layout = "page",
+  leaving = false,
 }: {
   copy: PageCopy;
   /**
@@ -157,6 +160,23 @@ export function LoginView({
    * the id exactly as it hands the copy down.
    */
   markSrc: string;
+  /**
+   * `page` is the sign-in page — a two-column hero beside a card, `min-h-screen`. `embedded` is
+   * the same form inside a stage column (#824): the hero is not drawn and the card takes the
+   * column's width, so one implementation serves both and the two cannot drift apart.
+   *
+   * The hero is gated here rather than by `hidden lg:flex` alone, because `lg:` reads the
+   * viewport and not the container: inside a 400px stage column on a wide screen the hero would
+   * still try to render and squeeze the form.
+   */
+  layout?: "page" | "embedded";
+  /**
+   * Whether the legal row leaves the app (#540, E39). `false` on `/login`, which is already
+   * outside the dashboard shell. `true` when the form is mounted inside `(mainlayout)` — stage 4
+   * of the create flow (#824) — because a dashboard mount that points at the public site must
+   * open a new tab: the person is mid-flow and must not lose the stage they were on.
+   */
+  leaving?: boolean;
   next: string;
   /**
    * The one sentence for a visitor who was accepting an invitation (#t_0aa81144), or `null` for
@@ -327,9 +347,15 @@ export function LoginView({
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image */}
-      <div className="hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden">
+    <div className={layout === "embedded" ? "w-full" : "min-h-screen flex"}>
+      {/* Left Side - Image. Page layout only (#824): embedded is a stage column, not a page. */}
+      <div
+        className={
+          layout === "embedded"
+            ? "hidden"
+            : "hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden"
+        }
+      >
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="mb-8 max-w-md mx-auto">
@@ -370,13 +396,23 @@ export function LoginView({
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-6 p-8 ">
+      <div
+        className={
+          layout === "embedded"
+            ? "w-full flex flex-col items-stretch gap-4"
+            : "w-full lg:w-1/2 flex flex-col items-center justify-center gap-6 p-8 "
+        }
+      >
         {/* The way out, above the card: a sign-in screen that offers no door to the site is a
-            dead end for anyone who followed a link and did not mean to sign in. */}
-        <div className="w-full max-w-md">
-          <AuthHomeLink label={itemLabel(home, "back")} />
-        </div>
-        <FormSurface className="w-full max-w-md">
+            dead end for anyone who followed a link and did not mean to sign in. Embedded, the
+            way out is the flow's own foot — `Back` and `Cancel` — so drawing a link home here
+            would be a second exit out of a stage. */}
+        {layout === "embedded" ? null : (
+          <div className="w-full max-w-md">
+            <AuthHomeLink label={itemLabel(home, "back")} />
+          </div>
+        )}
+        <FormSurface className={layout === "embedded" ? "w-full" : "w-full max-w-md"}>
           <CardHeader className="text-center pb-8">
             <div
               className={`lg:hidden mx-auto mb-4 ${markTileClass(marks.hero, "w-12 h-12")} ${markGroundClass(marks.hero)} rounded-lg flex items-center justify-center`}
@@ -527,13 +563,29 @@ export function LoginView({
          * carries, so a reader who lands here first is not the only one without them.
          */}
         <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
-          <Link href="/terms" className="hover:text-action hover:underline">
-            {itemLabel(legal, "terms")}
-          </Link>
+          {leaving ? (
+            <LeavingLink
+              href="/terms"
+              label={itemLabel(legal, "terms")}
+              className="hover:text-action hover:underline"
+            />
+          ) : (
+            <Link href="/terms" className="hover:text-action hover:underline">
+              {itemLabel(legal, "terms")}
+            </Link>
+          )}
           <span aria-hidden="true">·</span>
-          <Link href="/privacy" className="hover:text-action hover:underline">
-            {itemLabel(legal, "privacy")}
-          </Link>
+          {leaving ? (
+            <LeavingLink
+              href="/privacy"
+              label={itemLabel(legal, "privacy")}
+              className="hover:text-action hover:underline"
+            />
+          ) : (
+            <Link href="/privacy" className="hover:text-action hover:underline">
+              {itemLabel(legal, "privacy")}
+            </Link>
+          )}
         </div>
       </div>
     </div>

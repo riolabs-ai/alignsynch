@@ -256,7 +256,9 @@ const nextConfig = {
        * judgment that removed `/testimonials/jessica.png` above. The create tree is therefore five
        * exact rows (`create`, `create/mode`, `create/aspects`, `create/commit`, `create/account`)
        * rather than one over a `:stage` segment, because `:stage` is any one segment and the set
-       * that exists is four literals plus the bare stage 1.
+       * that exists is four literals plus the bare stage 1. `create/account` is the one row whose
+       * destination is not itself a page under v9 (#825): the post-commit gate is retired, so that
+       * bookmark lands on `create/commit`, which is the stage that asks for the account.
        *
        * **The segment is `:slug`, and the destination carries whatever it was given.** A
        * bookmarked id-shaped URL 308s with the id still in it: a redirect row cannot look a row up,
@@ -317,8 +319,10 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // #825 — the gate that used to follow the create is retired; the account is stage 4, so a
+        // bookmarked gate address lands on the stage that now asks for the account.
         source: "/assessment/templates/:slug/create/account",
-        destination: "/templates/relationship/:slug/create/account",
+        destination: "/templates/relationship/:slug/create/commit",
         permanent: true,
       },
       // #794 — the public catalogue stops owning the template noun. One row per page: the

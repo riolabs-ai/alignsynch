@@ -229,6 +229,7 @@ describe("the close control at 390", () => {
  */
 describe("the 44px control floor at 390 (#745)", () => {
   const TEMPLATE = {
+    slug: "relationship-basics",
     recordId: "template-relationship-basics",
     title: "Relationship Basics",
     summary: "Five Aspects of a relationship, each answered from how it feels to how it should.",

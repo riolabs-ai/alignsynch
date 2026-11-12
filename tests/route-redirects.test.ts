@@ -230,7 +230,7 @@ describe("the legacy redirects", () => {
     ],
     [
       "/assessment/templates/spouses/create/account",
-      "/templates/relationship/spouses/create/account",
+      "/templates/relationship/spouses/create/commit",
     ],
     ["/templates", "/relationship-types"],
     ["/templates/spouses", "/relationship-types/spouses"],
@@ -301,7 +301,7 @@ describe("the legacy redirects", () => {
     "/templates/relationship/[slug]/create/mode",
     "/templates/relationship/[slug]/create/aspects",
     "/templates/relationship/[slug]/create/commit",
-    "/templates/relationship/[slug]/create/account",
+    "/templates/relationship/[slug]/create/invite",
     "/relationship-types",
     "/relationship-types/[slug]",
   ] as const;

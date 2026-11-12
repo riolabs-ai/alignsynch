@@ -93,6 +93,7 @@ export default async function TemplateCreateModePage({
         detail === undefined
           ? null
           : {
+              slug: detail.template.slug,
               recordId: detail.template.id,
               title: detail.template.title,
               summary: detail.template.summary,

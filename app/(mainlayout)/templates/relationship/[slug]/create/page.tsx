@@ -109,6 +109,7 @@ export default async function TemplateCreatePage({
         detail === undefined
           ? null
           : {
+              slug,
               recordId,
               title: detail.template.title,
               summary: detail.template.summary,

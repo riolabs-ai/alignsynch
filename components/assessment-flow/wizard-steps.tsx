@@ -91,8 +91,10 @@ export function WizardSteps({
              * The stage a person is on is live by definition, so `current` wins over `unavailable`:
              * the answer sheet mounts this rail at `Align`, which is the stage it is *in*, and a
              * rail that muted its own stage would be describing the relationship's status instead
-             * of the journey's position. `unavailable` is therefore only ever the sixth cell on a
-             * screen that is not there yet (`StageRail`'s `alignHref`).
+             * of the journey's position. `unavailable` has no caller since #825 — the sixth cell
+             * it existed for (`Align`) is not in the flow — but the state stays supported here
+             * because a caller that has one unavailable step of its own is the wizard this
+             * component is named for.
              */
             const isUnavailable = entry.unavailable === true && !isCurrent;
             const state = isCurrent

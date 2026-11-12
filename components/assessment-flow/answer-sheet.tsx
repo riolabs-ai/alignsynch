@@ -32,13 +32,11 @@
  *    drawn, disabled, with the reason above it) and `coach` (no sheet at all: a coach membership
  *    reads the relationship and has no answers to give). A coach page has no `<form>` element, not
  *    a disabled one, which is a fact a test reads rather than a promise.
- * 5. **One progress pattern, and it is the shared cell rail (#716).** The sheet is a multi-step
- *    surface, so rule 4 of `docs/specs/ux-reference-patterns.md` applies: the 39px cell rail sits
- *    at the top of the block, on the six approved stage names, at stage 6 (`Align`) — answering
- *    is the counterparty's half of the journey the create and sent screens already draw. It is
- *    mounted in every state, including `coach`, because the rail says where the *relationship* is
- *    and a reader who is not a party is still reading that relationship. Nothing else on this
- *    screen is a progress indicator: no bar, no numbered list, no second stepper — a rule a test
+ * 5. **No progress band (#825).** The sheet used to draw the shared cell rail at `Align`, the
+ *    sixth stage. Align is the dashboard's surface now, not a stage of the create modal, so a band
+ *    here would number a screen nobody invites anybody from. The relationship's position is the
+ *    instance screen's own sentence (`stageCopyId()` in `lib/flow/stage.ts`), drawn by the shell
+ *    that frames this block; nothing in the block is a progress indicator, which is a rule a test
  *    asserts against the rendered markup rather than a promise.
  *
  * The kinds asked are `opinionKindsFor(mode)` — imported, never typed here — so a Basic sheet
@@ -59,24 +57,19 @@ import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import { ownScoreOf, type AnswerGate } from "@/lib/flow/answer-gate";
 import type { FlowAspect } from "@/lib/flow/screen";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { StageRail } from "./stage-rail";
 
 /**
- * Which of the six approved stages answering is (#716).
+ * There is no stage constant here, and no rail, any more (#825).
  *
- * The journey is `Details · Settings · Aspects · Invite · Connect · Align`
- * (`data/pages/lifecycle.ts`), and
- * answering is the last of them: the invitation has been sent, both parties are inside the
- * relationship, and this sheet is the counterparty's half of the work that stage is for. The rail
- * therefore says `Align` rather than a seventh word invented for this screen — a surface that
- * renames its place in the journey is the thing the shared rail exists to prevent.
- *
- * It is a constant here and not a read of the instance's status: the status moves
- * (`awaiting_counterparty` → `answering` → `complete`) while the person stays on the same stage of
- * the same journey, and a rail that jumped backwards on acceptance would be describing the
- * session's state machine instead of the journey's.
+ * Answering used to draw the flow's six-cell rail at `Align` — the sixth stage — on the argument
+ * that this sheet is where the alignment work happens. `docs/specs/flow-stages.md` then moved
+ * Align out of the flow: it is the **dashboard's** surface, read on the relationship detail page,
+ * and the rail is the *create* modal's progress pattern. A band on this screen would say
+ * `Stage 5 of 5 · Invite` over a screen nobody is inviting anybody from, which is the defect the
+ * shared rail exists to prevent rather than a place to draw it. The approved artifact draws no
+ * band on its relationship screen for exactly this reason. The relationship's own progress is said
+ * in words by `lib/flow/stage.ts` (`stageCopyId`), which is where this screen's position belongs.
  */
-const ANSWER_STAGE = 6;
 
 /**
  * A segment's target box: 44×44 CSS px, the same constant the ancestor uses (SC 2.5.8's floor is
@@ -163,10 +156,9 @@ export function AnswerSheet({
   if (gate.state === "coach") {
     return (
       <div className="space-y-6">
-        {/* The same rail the six stage screens draw: a coach is reading this relationship, so the
-            journey's position is as true for them as for a party — it says where the relationship
-            is, not what the reader is being asked to do. */}
-        <StageRail copy={copy} current={ANSWER_STAGE} />
+        {/* No stage rail: this is the relationship's own surface, not a stage of the create
+            modal (#825). A coach is reading this relationship, and where it stands is the
+            instance screen's own sentence (`stageCopyId()`), not a band from the create flow. */}
         {heading}
         <section
           aria-labelledby="answer-sheet-coach-heading"
@@ -271,10 +263,8 @@ export function AnswerSheet({
 
   return (
     <div className="space-y-6">
-      {/* Where the person is in the six stages (#716): the invitation is out and this sheet is the
-          alignment work itself, so the rail above the block is the one progress pattern on this
-          surface — no bar, and no second stepper. */}
-      <StageRail copy={copy} current={ANSWER_STAGE} />
+      {/* No stage rail here either (#825): the sheet is the relationship's work, and the flow's
+          five-stage band belongs to the create modal. */}
       {heading}
 
       <section

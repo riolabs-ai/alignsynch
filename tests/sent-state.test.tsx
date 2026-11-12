@@ -14,7 +14,7 @@
  *      `returnTo` that keeps the 303 on this screen.
  *   4. **Signed out is behind the person, not in front.** Nothing here links to `/login`; the `go`
  *      band says where the relationship lives until an account claims it.
- *   5. **The rail is stage 5 of 6**, one current entry, because this is a stage and the instance
+ *   5. **The rail is stage 5 of 5**, one current entry, because this is a stage and the instance
  *      screen it leads to is not (`docs/specs/ux-stages.md`).
  *
  * No database and no server: `projectScreen` is the same pure projection the read path hands the
@@ -221,9 +221,9 @@ describe("resend, on the shipped mechanism (#691)", () => {
 });
 
 describe("the rail and the way onward (#691)", () => {
-  it("draws stage 5 of 6 with one current entry", () => {
+  it("draws stage 5 of 5 with one current entry", () => {
     const html = htmlWith("unclaimed");
-    expect(html).toContain("Stage 5 of 6");
+    expect(html).toContain("Stage 5 of 5");
     expect(html).toContain('aria-current="step"');
     // The rail marks its current step with `data-step-state`; the timeline's own marks use
     // `data-state`, so exactly one of those is `current` too — the invitation's live moment.

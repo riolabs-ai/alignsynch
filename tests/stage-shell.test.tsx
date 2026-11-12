@@ -1,13 +1,13 @@
 /**
  * The onboarding flow's shared shell (#687) — one column, one rail.
  *
- * The card's acceptance is a rule about *every* stage, not a fact about one screen: the six
+ * The card's acceptance is a rule about *every* stage, not a fact about one screen: the five
  * stages render inside one left-justified container at a max width, and the rail above them names
- * the same six stages with `aria-current="step"` on exactly one. So this file checks the rule
+ * the same five stages with `aria-current="step"` on exactly one. So this file checks the rule
  * twice over:
  *
- *   1. **Rendered.** The create step — the one stage that exists today — draws the six names, the
- *      "Stage 1 of 6" line and one current entry, and its markup carries no `mx-auto`.
+ *   1. **Rendered.** The create step — the one stage that exists today — draws the five names, the
+ *      "Stage 1 of 5" line and one current entry, and its markup carries no `mx-auto`.
  *   2. **Structural.** The three flow screens the issue names as the defect
  *      (`create-relationship.tsx:146`, `accept-session.tsx:151`, `counterparty-wizard.tsx:79`) each
  *      render `StageColumn` and none of them centres a column of its own. Two of the three have no
@@ -37,8 +37,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
 }));
 
-/** The six names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #735). */
-const STAGE_NAMES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"];
+/** The five names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #735, #825). */
+const STAGE_NAMES = ["Details", "Settings", "Aspects", "Account", "Invite"];
 
 /** The three flow screens #687 names as centred, with the line each one centred on. */
 const FLOW_SCREENS = [
@@ -67,6 +67,7 @@ function createStepHtml(): string {
       copy: assessmentCreatePageCopy,
       stage: 1,
       template: {
+        slug: "relationship-basics",
         recordId: "template-relationship-basics",
         title: "Relationship Basics",
         summary: "Ten Aspects about how a working relationship feels and where it should go.",
@@ -81,16 +82,16 @@ function createStepHtml(): string {
 }
 
 describe("the stage rail", () => {
-  it("names the six stages, authored once and referenced by the fixture", () => {
+  it("names the five stages, authored once and referenced by the fixture", () => {
     expect(lifecycleStageSection.id).toBe("stages");
     expect(
       lifecycleStageSection.items
-        ?.filter((item) => /^[1-6]$/.test(item.id))
+        ?.filter((item) => /^[1-5]$/.test(item.id))
         .map((item) => item.label),
     ).toEqual(STAGE_NAMES);
   });
 
-  it("draws all six names on the stage that mounts it", () => {
+  it("draws all five names on the stage that mounts it", () => {
     const html = createStepHtml();
     // Scoped to the rail itself: "Details" also appears in the form's own headings, so a check
     // against the whole document would pass on a rail that drew nothing.
@@ -99,7 +100,7 @@ describe("the stage rail", () => {
     expect(rail).toContain('aria-label="Relationship lifecycle"');
     // One cell per stage (#716): the rail is the measured cell band, so the count is cells and
     // not list items — and there is no numbered list to count with.
-    expect(rail.split("data-step-cell=").length - 1).toBe(6);
+    expect(rail.split("data-step-cell=").length - 1).toBe(5);
     expect(rail).not.toContain("<ol");
     for (const name of STAGE_NAMES) expect(rail).toContain(name);
   });
@@ -109,14 +110,14 @@ describe("the stage rail", () => {
     expect(html.split('aria-current="step"')).toHaveLength(2);
     expect(html.split('data-step-state="current"')).toHaveLength(2);
     expect(html).toContain('data-wizard-rail="1"');
-    expect(html).toContain("Stage 1 of 6");
+    expect(html).toContain("Stage 1 of 5");
     expect(html).toContain('data-step-state="upcoming"');
   });
 
   it("draws the current stage from the caller's fact, not from a guess", () => {
     // The count line is the fixture's, filled by the rail — so a screen that says it is on stage
-    // 1 prints "Stage 1 of 6", and nothing in the component hardcodes a number.
-    expect(itemLabel(lifecycleStageSection, "count")).toBe("Stage {step} of 6");
+    // 1 prints "Stage 1 of 5", and nothing in the component hardcodes a number.
+    expect(itemLabel(lifecycleStageSection, "count")).toBe("Stage {step} of 5");
     expect(createStepHtml()).not.toContain("{step}");
   });
 });

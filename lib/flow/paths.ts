@@ -299,43 +299,64 @@ export function createAspectsPath(templateSlug: string): string {
 }
 
 /**
- * `/templates/relationship/[slug]/create/commit` — stage 4 of the create flow (#690).
+ * `/templates/relationship/[slug]/create/commit` — stage 4 of the create flow, **Account** (#825).
  *
- * The fourth sibling, exactly as the docstring above predicted. **Create** is the stage that
- * reviews the six facts, offers the two plans and holds the conversion, so it is the last screen
- * that can be reached without anything existing: pressing its control commits the relationship and
- * sends the invitation. It is a page for the same reason the three before it are — it can be
- * reloaded, linked and gone back to, and the draft is what it renders.
+ * The address kept its name and changed its job, because the job was always this one: it is the
+ * screen where the relationship is **committed** — written to the database as a `draft` — and it is
+ * the last screen before anything exists. What moved is what it asks for on the way: since v9 the
+ * Initiator must be a signed-in account, so this stage mounts the app's own sign-in form instead of
+ * a note saying an account would be asked for later. That is the whole of #825's account-placement
+ * decision: `draft` is written at the end of stage 4, not after stage 5's Invite.
+ *
+ * **The retired `…/create/account` address does not come back.** That path was the *gate* that
+ * followed this stage (#690, #794): a second screen demanding an account for a relationship that
+ * already existed. `createAccountPath()` and `createAccountForPath()` are deleted rather than
+ * aliased, so no caller can spell an address no page answers — E10 fails on a dead `href`, which is
+ * exactly the guard that keeps a retired address retired.
  */
 export function createCommitPath(templateSlug: string): string {
   return `${createRelationshipPath(templateSlug)}/commit`;
 }
 
 /**
- * `/templates/relationship/[slug]/create/account` — the account gate **after** stage 4 (#690).
+ * `/templates/relationship/[slug]/create/invite` — stage 5 of the create flow, **Invite** (#825).
  *
- * The one surface in the flow that is not a stage: it follows the commit, it is never in front of
- * the create, and the spec says so explicitly ("Account is not a stage", #659). `instance` is the
- * relationship stage 4 just committed; the page proves the browser holds that relationship's own
- * initiator token before it draws a form, which is what makes the address unreachable before
- * stage 4 — a relationship id alone is not enough, because it is not a secret.
+ * Stage 4 wrote the relationship as a draft; this is where it either goes out or does not. The
+ * address names the stage, not the act: `commit` above is where the commit happens, `invite` is
+ * where the invitation is decided, and a reader walking the five cells can guess both.
+ *
+ * The relationship it is about travels as `?instance=`, because the draft cookie is consumed by
+ * the create that wrote the row — the id is what the page reads through `readFlowScreen()`, with
+ * this browser's party cookie as the proof that it is the creator's own.
  */
-export function createAccountPath(templateSlug: string): string {
-  return `${createRelationshipPath(templateSlug)}/account`;
+export function createInvitePath(templateSlug: string): string {
+  return `${createRelationshipPath(templateSlug)}/invite`;
 }
 
 /**
- * The gate for one committed relationship: the template's gate, naming the relationship.
- *
- * Two handles on purpose (#794): the path segment is the template's **slug**, the `?instance=`
- * value is the relationship's **id**. Never pass one where the other belongs.
+ * The gate for one created relationship, as stage 5's own address: the template's slug in the
+ * path, the relationship's id in `?instance=` (#794's two handles, unchanged).
  */
-export function createAccountForPath(templateSlug: string, instanceRecordId: string): string {
-  return `${createAccountPath(templateSlug)}?instance=${encodeURIComponent(instanceRecordId)}`;
+export function createInviteForPath(templateSlug: string, instanceRecordId: string): string {
+  return `${createInvitePath(templateSlug)}?instance=${encodeURIComponent(instanceRecordId)}`;
 }
 
 /**
- * `/assessment/instances/[instanceId]/sent` — the create flow's stage 5, **Sent** (#691).
+ * `POST /assessment/instances/[instanceId]/send` — stage 5's only write (#825).
+ *
+ * A route handler and not a server action, for the same reason every other write in this flow is
+ * one: the stage has to be drivable with a plain HTML form, and a send must be a POST so a mail
+ * client's link preview cannot fire an invitation. It is deliberately **not**
+ * `…/invite`: that address is the re-invite endpoint (#275), which reissues a token for an
+ * invitation that already went out, and a first send that reused it would leave the relationship's
+ * status behind at `draft`.
+ */
+export function sendInvitationPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/send`;
+}
+
+/**
+ * `/assessment/instances/[instanceId]/sent` — the invitation's confirmation screen (#691).
  *
  * A child of the instance, beside `answer`, `accept` and `report`, because the screen is about one
  * committed relationship: the invitation's row is what it draws, and the id in its address is the
@@ -343,10 +364,11 @@ export function createAccountForPath(templateSlug: string, instanceRecordId: str
  * the template's, and by the time this screen renders the template is a fact on the session rather
  * than the subject of the page.
  *
- * A page, not a query flag on the instance screen, because the two are different stages: Sent is
- * stage 5 and draws the six-stage rail; the instance screen is stage 6 and keeps its status
- * sentence (`docs/specs/ux-stages.md`). One route per stage is what lets a reload, a link and the
- * back button all land where the person was.
+ * **It is not a stage (#825).** Since v9 the flow's last numbered stage is Invite, and this screen
+ * is that stage's outcome: it is reached by pressing Send, it carries no `Stage {n}` of its own in
+ * the spec's count, and it is where the invitation's state, its resend control and its copy link
+ * live. It still draws the shared band (inside the sheet, at Invite) because that is what the
+ * artifact does around it, but nothing in the flow *advances* here as a sixth step.
  */
 export function sentPath(instanceRecordId: string): string {
   return `${instancePath(instanceRecordId)}/sent`;
@@ -360,37 +382,6 @@ export function sentPath(instanceRecordId: string): string {
  * choose; it lives here so the form and the handler cannot disagree about the spelling.
  */
 export const SENT_RETURN_VALUE = "sent";
-
-/**
- * **Where the create sends the browser (#690, #691, #709).** The one decision `POST /assessment/new`
- * makes about the screen, kept here so it is a test rather than a claim about a route handler.
- *
- * - A **signed-out** creator lands on the gate. Their relationship exists — the endpoint has always
- *   accepted a post with no initiator (#146/#213) — and the gate is the screen that offers the
- *   account *after* the fact, which is the whole of #659: the account is not a stage, so nothing
- *   makes a person sign up before they have something to sign up for.
- * - A **signed-in** creator lands on **the dashboard** (#709). Until this card it was Sent, stage 5
- *   — a page the flow navigated to, which made the commit a fifth page load and left the finished
- *   relationship one screen away from the list it belongs in. The approved v6 artifact closes the
- *   modal onto `/dashboard`, where the new relationship is under My relationships from that
- *   redirect on. **Sent is no longer a destination**: it still answers on its own address (stage 5
- *   renders when asked for by URL), and nothing in the flow sends anybody there.
- * - A post naming **no template** never came through the flow (`scripts/flow-e2e.mjs`, a `curl`),
- *   so there is no gate and no flow stage to send it to: it goes to the relationship like any other
- *   committed create.
- */
-export function afterCreateTarget(input: {
-  viewerSignedIn: boolean;
-  templateSlug: string;
-  instanceRecordId: string;
-}): string {
-  if (input.templateSlug !== "") {
-    return input.viewerSignedIn
-      ? OVERVIEW_PATH
-      : createAccountForPath(input.templateSlug, input.instanceRecordId);
-  }
-  return instancePath(input.instanceRecordId);
-}
 
 /**
  * `/pricing` — where a plan is chosen (#618).

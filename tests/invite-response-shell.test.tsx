@@ -6,8 +6,8 @@
  * the whole reason this file renders instead of screenshotting:
  *
  *   1. **The response renders inside `StageShell`.** The invitation's wizard is not a second flow:
- *      the dialog, its close control and the six-stage rail come from the components the create
- *      flow already draws, and the screen is stage 5 — **Connect** — with `Align` unavailable
+ *      the dialog, its close control and the five-stage rail come from the components the create
+ *      flow already draws, and the screen is stage 4 — **Account** (#825)
  *      because nothing is shared yet.
  *   2. **The stage is in the server's HTML, so a deep link and a refresh land on it.** The shell
  *      renders in place rather than through `DialogPortal`, and the three onboarding screens are
@@ -42,11 +42,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
 }));
 
-/** The six names the binding spec fixes, in order (`docs/specs/flow-stages.md`). */
-const STAGE_NAMES = ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"] as const;
+/** The five names the binding spec fixes, in order (`docs/specs/flow-stages.md`, #825). */
+const STAGE_NAMES = ["Details", "Settings", "Aspects", "Account", "Invite"] as const;
 
-/** The index of `Connect` in that list — the stage the response is. */
-const CONNECT_POSITION = 5;
+/** The index of `Account` in that list — the stage the response is (#825). */
+const ACCOUNT_POSITION = 4;
 
 const TOKEN = "k".repeat(43);
 
@@ -80,9 +80,9 @@ function panelOf(html: string): string {
   return /data-stage-shell="true"[^>]*/.exec(html)?.[0] ?? "";
 }
 
-/** The Align cell, as the rail draws it. */
-function alignCell(html: string): string {
-  return /data-step-cell="6"[^>]*>[\s\S]*?(?=data-step-cell|<\/nav>)/.exec(html)?.[0] ?? "";
+/** The rail's cells, in order — one per stage, and nothing else. */
+function railCells(html: string): string[] {
+  return html.match(/data-step-cell="\d+"[^>]*>[^<]*/g) ?? [];
 }
 
 describe("the response path renders in the flow's one modal", () => {
@@ -105,15 +105,16 @@ describe("the response path renders in the flow's one modal", () => {
     expect(panel).toContain("lg:border");
   });
 
-  it("sits at Connect — stage 5 of 6 — and draws Align as the unavailable sixth cell", () => {
+  it("sits at Account — stage 4 of 5 — and draws no Align cell", () => {
     const html = responseHtml(1);
-    expect(html).toContain(`Stage ${CONNECT_POSITION} of 6`);
-    // Six cells, the same rail every other stage draws.
-    expect(html.split("data-step-cell=").length - 1).toBe(6);
+    expect(html).toContain(`Stage ${ACCOUNT_POSITION} of 5`);
+    // Five cells, the same rail every other stage draws.
+    expect(railCells(html)).toHaveLength(5);
     for (const name of STAGE_NAMES) expect(html).toContain(name);
-    // Connect is the current cell; Align is drawn but not live — nothing is shared yet.
+    // Account is the current cell, and there is no sixth to draw (#825).
     expect(html).toContain('data-step-state="current"');
-    expect(alignCell(html)).toContain('data-step-state="unavailable"');
+    expect(html).not.toContain('data-step-cell="6"');
+    expect(html).not.toContain(">Align<");
   });
 
   it("renders on the shared stage column, not a centred column of its own", () => {
@@ -128,7 +129,7 @@ describe("the response path renders in the flow's one modal", () => {
     expect(panelOf(html)).toContain("lg:mx-auto");
   });
 
-  it("has exactly one progress band — the six-stage rail, not a second step rail", () => {
+  it("has exactly one progress band — the five-stage rail, not a second step rail", () => {
     const html = responseHtml(2);
     // The retired `Step {n} of 3` line and its band are gone: one progress pattern (#716).
     expect(html).not.toMatch(/Step \d of 3/);
@@ -159,7 +160,7 @@ describe("an invitation deep link resolves to the response stage", () => {
     for (const step of [1, 2, 3] as const) {
       const html = responseHtml(step);
       expect(html, `step ${step}`).toContain('data-stage-shell="true"');
-      expect(html, `step ${step}`).toContain(`Stage ${CONNECT_POSITION} of 6`);
+      expect(html, `step ${step}`).toContain(`Stage ${ACCOUNT_POSITION} of 5`);
     }
   });
 

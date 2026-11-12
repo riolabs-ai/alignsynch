@@ -85,6 +85,7 @@ const TEMPLATE_ASPECTS: AspectDraft[] = [
 ];
 
 const TEMPLATE = {
+  slug: "relationship-basics",
   recordId: TEMPLATE_ID,
   title: "Relationship Basics",
   summary: "Three Aspects about how a working relationship feels and where it should go.",
@@ -250,7 +251,7 @@ describe("the screen", () => {
   it("renders as stage 3 of the rail, with the mode screen behind it", () => {
     const html = stageThreeHtml();
     expect(html).toContain('data-wizard-rail="3"');
-    expect(html).toContain("Stage 3 of 6");
+    expect(html).toContain("Stage 3 of 5");
     expect(html).toContain(`href="${createModePath(TEMPLATE_ID)}"`);
     expect(html).toContain(itemLabel(sectionOf(assessmentCreatePageCopy, "aspects"), "back"));
   });
@@ -279,8 +280,8 @@ describe("the screen", () => {
 
   it("hands the create to stage 4 instead of holding it (#690)", () => {
     const html = stageThreeHtml();
-    expect(html).toContain(`href="${createCommitPath(TEMPLATE_ID)}"`);
-    expect(html).toContain('data-create-next="commit"');
+    expect(html).toContain(`href="${createCommitPath(TEMPLATE.slug)}"`);
+    expect(html).toContain('data-create-next="account"');
     expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
     // The two save endpoints are reachable from this screen and nowhere else in the flow.
     expect(SAVE_MODE_PATH).toBe(`${CREATE_INSTANCE_PATH}/mode`);

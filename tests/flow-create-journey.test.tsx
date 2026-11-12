@@ -76,6 +76,7 @@ const detail: LibraryTemplateDetail = {
 
 const CREATE_PATH = createRelationshipPath(TEMPLATE_ID);
 const CREATE_TEMPLATE = {
+  slug: detail.template.slug,
   recordId: TEMPLATE_ID,
   title: detail.template.title,
   summary: detail.template.summary,
@@ -160,10 +161,10 @@ describe("stage 1 — the create step", () => {
     expect(html).toContain(`name="templateRecordId" value="${TEMPLATE_ID}"`);
   });
 
-  it("draws the six-stage rail with this page as the first stage, Who (#687)", () => {
+  it("draws the five-stage rail with this page as the first stage, Details (#687, #825)", () => {
     const html = createHtml({});
     expect(html).toContain('data-wizard-rail="1"');
-    expect(html).toContain("Stage 1 of 6");
+    expect(html).toContain("Stage 1 of 5");
     // The browse journey's three-step rail is gone: the flow starts here, and the template
     // screens before it are pre-stage views rather than numbered stages.
     expect(html).not.toContain("Step 3 of 3");
