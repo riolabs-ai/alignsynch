@@ -119,6 +119,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       style={Object.keys(brandVars).length > 0 ? (brandVars as React.CSSProperties) : undefined}
     >
       <body className={inter.className}>
