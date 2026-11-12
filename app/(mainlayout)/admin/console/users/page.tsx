@@ -1,4 +1,5 @@
 // template-ancestor: components/admin/instance-registry.tsx
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AdminUsersList } from "@/components/v1/admin-users-list";
 
 /**
@@ -9,5 +10,9 @@ import { AdminUsersList } from "@/components/v1/admin-users-list";
  * pretends to write to a database this console never opens — its rows are the in-browser store.
  */
 export default function AdminUsersPage() {
-  return <AdminUsersList />;
+  return (
+    <StageColumn>
+      <AdminUsersList />
+    </StageColumn>
+  );
 }

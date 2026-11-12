@@ -32,6 +32,7 @@
  * lists are database reads on every visit, and `pnpm build` must keep passing with no `DATABASE_URL`
  * and no `NEON_AUTH_*`.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 
 import { BroadcastComposer } from "@/components/admin/broadcast-composer";
@@ -93,25 +94,27 @@ export default async function AdminBroadcastPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={adminBroadcastPageCopy.heading}
-        description={adminBroadcastPageCopy.subtitle}
-      />
-      <BroadcastComposer
-        copy={adminBroadcastPageCopy}
-        counts={(read ?? EMPTY).counts}
-        sends={(read ?? EMPTY).sends}
-        keyMode={keyMode}
-        endpoint={endpoint}
-        sender={sender}
-        role={role}
-        floor={requirementFor("broadcast.send")}
-        unreadable={unreadable}
-        auditPath={ADMIN_AUDIT_PATH}
-        preview={previewBroadcastAction}
-        send={sendBroadcastAction}
-      />
-    </div>
+    <StageColumn>
+      <div className="space-y-6">
+        <PageHeader
+          title={adminBroadcastPageCopy.heading}
+          description={adminBroadcastPageCopy.subtitle}
+        />
+        <BroadcastComposer
+          copy={adminBroadcastPageCopy}
+          counts={(read ?? EMPTY).counts}
+          sends={(read ?? EMPTY).sends}
+          keyMode={keyMode}
+          endpoint={endpoint}
+          sender={sender}
+          role={role}
+          floor={requirementFor("broadcast.send")}
+          unreadable={unreadable}
+          auditPath={ADMIN_AUDIT_PATH}
+          preview={previewBroadcastAction}
+          send={sendBroadcastAction}
+        />
+      </div>
+    </StageColumn>
   );
 }

@@ -27,6 +27,7 @@
  * (`content/core.ts::DEMO_NOW_ISO`), used by the document the export writes — this page renders no
  * "now" at all.
  */
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -61,13 +62,15 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("admin-report: the report could not be read", error);
     return (
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {adminReportPageCopy.sections?.find((section) => section.id === "unreadable")?.heading ??
-            adminReportPageCopy.heading}
-        </h1>
-        <p className="max-w-3xl text-muted-foreground">{error.reason}</p>
-      </div>
+      <StageColumn>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {adminReportPageCopy.sections?.find((section) => section.id === "unreadable")
+              ?.heading ?? adminReportPageCopy.heading}
+          </h1>
+          <p className="max-w-3xl text-muted-foreground">{error.reason}</p>
+        </div>
+      </StageColumn>
     );
   }
 
@@ -85,17 +88,19 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
         );
 
   return (
-    <ReportOperations
-      copy={adminReportPageCopy}
-      source={source}
-      action={performReportOperation}
-      canRegenerate={atLeast(grant.role, "admin")}
-      exportPaths={{
-        json: adminReportExportPath(id, "json"),
-        pdf: adminReportExportPath(id, "pdf"),
-      }}
-      relationshipPath={adminRelationshipPath(id)}
-      document={document}
-    />
+    <StageColumn>
+      <ReportOperations
+        copy={adminReportPageCopy}
+        source={source}
+        action={performReportOperation}
+        canRegenerate={atLeast(grant.role, "admin")}
+        exportPaths={{
+          json: adminReportExportPath(id, "json"),
+          pdf: adminReportExportPath(id, "pdf"),
+        }}
+        relationshipPath={adminRelationshipPath(id)}
+        document={document}
+      />
+    </StageColumn>
   );
 }

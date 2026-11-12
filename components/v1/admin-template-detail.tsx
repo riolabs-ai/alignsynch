@@ -87,7 +87,7 @@ export function AdminTemplateDetail({ templateId }: { templateId: string }) {
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-4xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <LoadingState rows={4} />
       </div>
     );
@@ -96,12 +96,10 @@ export function AdminTemplateDetail({ templateId }: { templateId: string }) {
   const template = templates.find((candidate) => candidate.id === templateId);
   if (template === undefined) {
     return (
-      <div className="mx-auto max-w-3xl p-4 sm:p-8">
-        <NotFoundState
-          message={`No template "${templateId}" exists in the store.`}
-          back={ADMIN_TEMPLATES_PATH}
-        />
-      </div>
+      <NotFoundState
+        message={`No template "${templateId}" exists in the store.`}
+        back={ADMIN_TEMPLATES_PATH}
+      />
     );
   }
 
@@ -119,7 +117,7 @@ export function AdminTemplateDetail({ templateId }: { templateId: string }) {
   const disabled = templateRow?.disabled ?? false;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
+    <div className="space-y-6">
       <div>
         <Link
           href={ADMIN_TEMPLATES_PATH}

@@ -1,4 +1,5 @@
 // template-ancestor: components/console/overview.tsx
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AdminConsoleOverview } from "@/components/v1/admin-console-overview";
 import { requireAdminProduct } from "@/lib/brand-boundary";
 
@@ -23,5 +24,9 @@ import { requireAdminProduct } from "@/lib/brand-boundary";
  */
 export default function AdminConsolePage() {
   requireAdminProduct();
-  return <AdminConsoleOverview />;
+  return (
+    <StageColumn>
+      <AdminConsoleOverview />
+    </StageColumn>
+  );
 }

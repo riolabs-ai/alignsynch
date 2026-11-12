@@ -59,7 +59,7 @@ export function AdminTemplateRegistry() {
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <LoadingState rows={4} />
       </div>
     );
@@ -74,7 +74,7 @@ export function AdminTemplateRegistry() {
   const disabled = templateRows.filter((template) => template.disabled).length;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-8">
+    <div className="space-y-5">
       <SectionIntro
         title="Templates"
         subtitle={`${templateRows.length} template${templateRows.length === 1 ? "" : "s"} in the store · ${disabled} disabled. Relationships started from a template are counted from the registry, never stored.`}
