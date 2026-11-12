@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**112 documents in 9 sections.** Every page carries the same nav block, generated
+**113 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -32,7 +32,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Product](#product) — 23 documents
-- [Operations](#operations) — 8 documents
+- [Operations](#operations) — 9 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 18 documents
@@ -118,6 +118,7 @@ Deploying, releasing, demoing and running the fleet.
 - [`DEPLOYING.md`](DEPLOYING.md) — **Deploying** — How does this repository reach `alignsynch.com`?
 - [`RELEASING.md`](RELEASING.md) — **Releasing** — Which four artefacts must agree for a release, and how is the tag cut?
 - [`ORCHESTRATION.md`](ORCHESTRATION.md) — **Orchestration rules** — How does the orchestrator behave — decisions, blocking, re-carding?
+- [`QA-LINKS.md`](QA-LINKS.md) — **QA links** — Which local routes do I click to QA this change range, and what will each one cost me?
 - [`BRANCH-TRIAGE.md`](BRANCH-TRIAGE.md) — **Branch triage** — Which of the non-main heads is safe, and on what evidence?
 - [`DEMO.md`](DEMO.md) — **The demo** — How is the demo branch built, reset and bundled?
 - [`DEMO-AUTH.md`](DEMO-AUTH.md) — **Demo auth** — How do the demo roles and the PIN gate work?
