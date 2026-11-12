@@ -153,9 +153,14 @@ run, not a second port in this one.
 `demo` is the one branch that does not live on the machine that wrote it, because it is not there
 for review: it exists so a public demo of the product can be served from a Vercel deployment, at
 `demo.alignsynch.com`. The exemption is one branch name and nothing else — it does not make previews
-a general lever, and pushing any other branch still produces no build to share. The deployment it
-enables is not serving anything yet (see the last paragraph of this section): the branch does not
-exist on `origin`, the domain is not attached, and creation is still disabled upstream.
+a general lever, and pushing any other branch still produces no build to share.
+
+**The exemption is the policy, not the mechanism.** Creation is still disabled at the project level,
+so a push to `demo` produces no deployment record and this `ignoreCommand` is never consulted for it.
+The demo deployment is created explicitly, from the git ref, by
+[`pnpm deploy:demo`](#the-demo-alias-one-command-and-what-an-empty-one-means) — see that section for
+the measurement of what "no deployment for the ref" looks like from outside (`404
+DEPLOYMENT_NOT_FOUND` on a domain that is attached, verified and correctly configured).
 
 The trade-off is real and it is nearly all this rule costs: **a push produces no shareable preview
 URL**, with that one exception — so a branch is normally reviewed by reading it and running it. When
@@ -229,6 +234,53 @@ does — measured on the same 2026-11-07 preview:
 Feedback on a public or marketing screen therefore works on any branch's preview; a signed-in screen
 needs a preview that carries the demo environment, which is the `demo` branch and the second rule in
 §1 above.
+
+### The demo alias: one command, and what an empty one means
+
+`demo.alignsynch.com` is a **branch domain**, not an alias: the project domain carries
+`gitBranch: demo`, so it resolves to the newest deployment whose `meta.githubCommitRef` is `demo`
+(there is no row for it in `GET /v4/aliases`, which is the trap the retention script had to learn —
+see [§4](#4-function-storage-deployments-accumulate-so-prune-them)). With no deployment for that ref there is nothing
+to point at, and the domain answers `404 DEPLOYMENT_NOT_FOUND`; it does **not** fall back to
+production. Since creation is disabled at the project level, no push creates that deployment. One
+command does:
+
+```bash
+pnpm deploy:demo                 # build ref demo from GitHub, wait for READY, print the URL
+pnpm deploy:demo -- --verify     # …and read the alias's own /api/version as the proof
+```
+
+[`scripts/deploy-demo.mjs`](../scripts/deploy-demo.mjs) asks the API to build the **git ref**
+(`POST /v13/deployments` with `gitSource`), which is the request the GitHub integration would have
+made — never this tree. Three things follow, and each is why the shape is that one: the deployment
+carries `meta.githubCommitRef: demo`, so the branch domain follows it with no `vercel alias` call; the
+build resolves the **Preview** environment scoped to `demo`, so it talks to the demo Neon branch; and
+an uncommitted tree cannot be published by it.
+
+The whole reading, measured on 2026-11-12 before and after the run that fixed it:
+
+| Probe                                             | Before                                                    | After                                                     |
+| ------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| `curl -s https://demo.alignsynch.com/api/version` | `404`, `DEPLOYMENT_NOT_FOUND`                             | `{"version":"1.15.0","commit":"9ac71c38…"}`               |
+| `GET /v6/deployments?meta-githubCommitRef=demo`   | 0                                                         | 1                                                         |
+| `origin/demo`                                     | `43c0a645`, 164 commits behind `main`, nothing of its own | `9ac71c38` — `main` merged in, tree identical to `main`'s |
+| sign-in posted from the demo origin               | `403 INVALID_ORIGIN`                                      | reaches the credential check (`401` on a wrong password)  |
+| `/`, `/login`, `/pricing` on the alias            | `404`                                                     | `200`                                                     |
+
+**The auth whitelist is per branch, and it was empty.** `demo.alignsynch.com` is on the
+**production** branch's `redirect_uri` whitelist and was on the demo branch's list **not at all**, so
+every sign-in from the demo URL answered `403 INVALID_ORIGIN` while the deployment itself was fine —
+a demo nobody can enter. The branch list is one call, and it is worth re-reading after any
+`pnpm demo:reset`, which replaces the branch wholesale:
+
+```bash
+# GET, then POST when the domain is absent (project and branch ids are the demo branch's)
+curl -s -H "Authorization: Bearer $NEON_API_KEY" \
+  "https://console.neon.tech/api/v2/projects/$PROJECT/branches/$BRANCH/auth/domains"
+curl -s -X POST -H "Authorization: Bearer $NEON_API_KEY" -H "content-type: application/json" \
+  -d '{"domain":"https://demo.alignsynch.com","auth_provider":"better_auth"}' \
+  "https://console.neon.tech/api/v2/projects/$PROJECT/branches/$BRANCH/auth/domains"
+```
 
 The Vercel schema caps `ignoreCommand` at 256 characters; this rule is 105, measured from the file
 (109 as written in the JSON, where each `"` inside the command is escaped). The branch test is the
@@ -431,8 +483,13 @@ pnpm deploy:prune -- --apply --keep-days 7   # a week of rollbacks kept instead 
 
 `scripts/vercel-prune.mjs` protects three things, and takes no argument that overrides them:
 
-- **every deployment a domain is aliased to** — `alignsynch.com`, `demo.alignsynch.com` and the
-  per-branch preview aliases. The alias table is read first, so a live URL cannot be deleted.
+- **every deployment a domain points at** — `alignsynch.com` and the per-branch preview aliases, read
+  from the alias table, **and** each branch domain's newest deployment. `demo.alignsynch.com` is the
+  second kind and appears in no alias table at all: it carries `gitBranch: demo`, so it points at the
+  newest deployment of that ref. Read from the alias table alone, nothing but the newest-N buffer and
+  the age window stood between the demo's deployment and deletion — and on 2026-11-12 there was no
+  deployment for that ref, so the verified domain answered `404`. The live set is now read before any
+  candidate is chosen, and the plan prints each branch domain it protected.
 - **the newest three deployments** (`--keep-latest`) — the rollback buffer.
 - **anything younger than a day** (`--keep-days`) — yesterday's cut is still there to roll back to.
 
