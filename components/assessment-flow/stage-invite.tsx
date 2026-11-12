@@ -53,6 +53,7 @@ export function StageInvite({
   copy,
   draft,
   instanceRecordId,
+  relationshipId,
   initialPaid,
   planIncluded,
   capture,
@@ -66,6 +67,14 @@ export function StageInvite({
   draft: CreateDraft;
   /** The relationship stage 4 wrote — the send posts to its own address. */
   instanceRecordId: string;
+  /**
+   * The same relationship's own row id — what the payment walk is allowed to name.
+   *
+   * The send addresses the **record** (`?instance=`), the capture addresses the **relationship**,
+   * and handing the capture the record id is a refusal the person reads as a broken card form: the
+   * membership acts answer "no relationship holds the id". Two ids, two jobs.
+   */
+  relationshipId: string;
   /**
    * The card is already on file (`paymentArmed` on the screen read). A person who paid and came back
    * lands on the thank-you with the send enabled, instead of being asked to pay twice.
@@ -95,7 +104,7 @@ export function StageInvite({
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <InviteWalk
           copy={copy}
-          relationshipId={instanceRecordId}
+          relationshipId={relationshipId}
           paid={paid}
           onPaid={() => setPaid(true)}
           {...(capture === undefined ? {} : { capture })}
