@@ -195,7 +195,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
                   <TableHead>Stage</TableHead>
                   <TableHead>Parties</TableHead>
                   <TableHead>Subscription</TableHead>
-                  <TableHead>Sessions</TableHead>
+                  <TableHead className="text-right">Sessions</TableHead>
                   <TableHead>Last activity</TableHead>
                   <TableHead className="text-right">Open</TableHead>
                 </TableRow>
@@ -240,7 +240,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
                         {SUBSCRIPTION_LABEL[row.subscription]}
                       </span>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                    <TableCell className="whitespace-nowrap text-right text-sm text-muted-foreground tabular-nums">
                       {row.sessionsScored} scored · {row.sessionsOpen} open
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">

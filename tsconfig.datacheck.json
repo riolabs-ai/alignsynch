@@ -19,6 +19,7 @@
     "lib/quiz-detail.ts",
     "scripts/bundles.ts",
     "scripts/brand-word.ts",
+    "scripts/ui-census.ts",
     "scripts/data-check*",
     "scripts/rule-codes.ts",
     "scripts/client-graph.ts",

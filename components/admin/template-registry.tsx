@@ -46,6 +46,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+/**
+ * The two columns rule 6 owns: a count of Aspects and a count of relationships started from the
+ * template. The header of a numeric column takes the same edge as its cells, or the column reads
+ * as a label with a number loose under it.
+ */
+const NUMBER_COLUMNS: ReadonlySet<string> = new Set(["aspects", "relationships"]);
+
 /** The badge tone a state gets: a draft is in hand, a published template is the live product. */
 const STATE_VARIANT: Record<string, "secondary" | "success" | "outline"> = {
   draft: "secondary",
@@ -232,9 +239,12 @@ export function TemplateRegistry({
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
-            <div data-templates-empty className="py-6 text-sm text-muted-foreground">
-              <p className="font-medium">{empty.heading}</p>
-              <p>{sectionBody(empty)}</p>
+            <div
+              data-templates-empty
+              className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground"
+            >
+              <p className="font-medium text-foreground">{empty.heading}</p>
+              <p className="mt-1">{sectionBody(empty)}</p>
             </div>
           ) : (
             <Table>
@@ -242,7 +252,12 @@ export function TemplateRegistry({
                 <TableRow>
                   {["title", "slug", "status", "aspects", "relationships", "updated", "open"].map(
                     (id) => (
-                      <TableHead key={id}>{itemLabel(columns, id)}</TableHead>
+                      <TableHead
+                        key={id}
+                        className={NUMBER_COLUMNS.has(id) ? "text-right" : undefined}
+                      >
+                        {itemLabel(columns, id)}
+                      </TableHead>
                     ),
                   )}
                 </TableRow>
@@ -257,8 +272,8 @@ export function TemplateRegistry({
                         {itemLabel(status, row.status)}
                       </Badge>
                     </TableCell>
-                    <TableCell>{row.aspectCount}</TableCell>
-                    <TableCell>{row.instanceCount}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.aspectCount}</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.instanceCount}</TableCell>
                     <TableCell>{formatDate(row.date)}</TableCell>
                     <TableCell>
                       <Link
