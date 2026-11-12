@@ -26,12 +26,12 @@ export function As2SectionNav({ nav }: { nav: As2HomeModel["nav"] }): React.Reac
   return (
     <nav
       aria-label={nav.name}
-      className="sticky top-[var(--site-header-height)] z-[5] border-b border-line bg-white/95 backdrop-blur"
+      className="sticky top-[var(--site-header-height)] z-[5] border-b border-line bg-white/[0.98]"
     >
-      <div className="marketing-container scrollbar-hide flex h-12 items-center gap-5 overflow-x-auto md:h-[3.25rem] md:gap-8">
+      <div className="home-container scrollbar-hide flex h-[3.25rem] items-center gap-[clamp(18px,3vw,32px)] overflow-x-auto max-[767px]:h-12 max-[740px]:gap-5">
         {nav.items.map((item) => (
           <a
-            className="inline-flex h-full shrink-0 items-center border-b-2 border-transparent text-xs font-semibold text-slate-500 hover:border-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:text-[13px]"
+            className="inline-flex h-full shrink-0 items-center border-b-2 border-transparent text-[13px] font-semibold text-[#64748b] hover:border-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 max-[767px]:text-xs"
             href={item.href}
             key={item.href}
           >

@@ -280,16 +280,21 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
 });
 
 /**
- * The `/` page that ships on this build since #853 — the AS2 redesign's copy.
+ * The `/` page that ships on this build — the V2 home redesign's copy (#904).
  *
  * **Two compositions of one route live in this file, and this is the live one.** The export above
  * is the retired alignment composition (issue #143): `components/home/alignment-home.tsx` still
  * draws it, `lib/alignment-home.ts` still projects it, and `tests/alignment-home.test.ts` still
  * holds it to its records — it is kept as the reference the AS2 sections vary from, and it is not
- * reachable from `/` any more. `app/(marketing)/page.tsx` renders *this* fixture. Deleting the
- * retired pair is its own card: it takes `components/home/template-shelf.tsx`, three test files and
- * the `template-ancestor:` headers that point at that view with it, which is a review of its own
- * and none of #853's business.
+ * reachable from `/` any more. `app/(marketing)/page.tsx` renders *this* fixture.
+ *
+ * **The words are the approved page's, verbatim (#904).** They were copied out of
+ * `docs/specs/spec-design-page-rel-templates-v2/home/homepage-redesign.html` with no rewriting,
+ * reordering or sharpening — lead with business and corporate relationships, personal growth and
+ * friendships as the secondary path, and one bounded callout for counselors, therapists and
+ * coaches. The register is direct-to-consumer and business-user: one person starts, invites the
+ * other, both answer privately, and the report opens after both accept. Nothing here claims an
+ * outcome the product cannot show, and nothing prices a session.
  *
  * Both are parsed by the same `zPageCopy`, so both are held to the same rules — no unknown keys, no
  * section id twice, every `cta.href` a route in `content/routes.ts`.
@@ -318,10 +323,10 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
  * run.
  */
 export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
-  eyebrow: "For personal and business relationships",
-  heading: "Know the feelings. Handle the expectations.",
+  eyebrow: "For business and corporate relationships",
+  heading: "Bring expectations into the open at work.",
   subtitle:
-    "Choose a relationship, record how you see it, and invite the other person to do the same. Compare your opinions and talk through what differs.",
+    "AlignSynch gives two people at work a structured way to compare expectations with a colleague, manager, business partner, or customer. Both answer privately; a shared report opens after both accept.",
   items: [
     /* The in-page menu's accessible name. It lives on the page bag rather than in the menu's own
        section because the menu's items *are* the five targets — a sixth row would render as a
@@ -329,23 +334,27 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
     { id: "nav-name", label: "On this page" },
     /*
      * The hero's two actions. Both are in-page anchors, so neither is a `cta`: a copy `cta.href`
-     * must be a route, and `#relationship-templates` is a scroll position on this page.
+     * must be a route, and `#business-relationships` is a scroll position on this page.
      */
-    { id: "hero-action", label: "Choose a relationship" },
+    { id: "hero-action", label: "Explore business templates" },
     { id: "hero-secondary", label: "See how it works" },
-    { id: "hero-note", label: "A clearer view of where you agree—and where you don't." },
+    {
+      id: "hero-note",
+      label: "One working relationship. Two private views. A shared report when you are both ready.",
+    },
     /*
      * The two hero cards: a kicker, the card's name, the action inside it, and the accessible name
-     * the whole card carries (the card is one link, so it needs one useful name).
+     * the whole card carries (the card is one link, so it needs one useful name). **Business
+     * first** — the page leads with work and treats personal use as the secondary path (#904).
      */
-    { id: "life-personal-kicker", label: "Personal relationships" },
-    { id: "life-personal-title", label: "Personal Life" },
-    { id: "life-personal-action", label: "View templates" },
-    { id: "life-personal-name", label: "Explore personal relationship templates" },
-    { id: "life-business-kicker", label: "Work relationships" },
-    { id: "life-business-title", label: "Business Life" },
+    { id: "life-business-kicker", label: "For work and corporate use" },
+    { id: "life-business-title", label: "Business relationships" },
     { id: "life-business-action", label: "View templates" },
     { id: "life-business-name", label: "Explore business relationship templates" },
+    { id: "life-personal-kicker", label: "Personal growth and relationship skills" },
+    { id: "life-personal-title", label: "Personal relationships" },
+    { id: "life-personal-action", label: "View templates" },
+    { id: "life-personal-name", label: "Explore personal relationship templates" },
   ],
   sections: [
     {
@@ -363,55 +372,72 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
     },
     {
       id: "how-it-works",
-      heading: "How AlignSynch works",
-      body: "Choose a relationship and its aspects. Each person records an opinion on those same aspects. Then compare your answers and discuss the differences.",
+      heading: "A simple way to compare two perspectives",
+      body: "Choose a relationship template, invite the other person, and answer the same Aspects privately. After you have both reviewed and accepted your answers, the shared report opens.",
       items: [
         /* A band's eyebrow is an *item*, not a section field: `zPageCopySection` carries heading,
            body and cta, and no band-level kicker — the reader joins it by id like any other row. */
         { id: "eyebrow-how-it-works", label: "How it works" },
         {
           id: "step-1",
-          label: "Choose the relationship",
-          body: "Select a personal, school, community, or business relationship. Edit the suggested aspects to fit.",
+          label: "Choose a relationship template",
+          body: "Start with a template for a working relationship, personal relationship, or friendship.",
         },
         {
           id: "step-2",
           label: "Invite the other person",
-          body: "Register and invite your counterpart to respond to the same aspects.",
+          body: "Start an assessment and invite the person in the relationship with you.",
         },
         {
           id: "step-3",
-          label: "Record your opinions",
-          body: "Each person shares how they see the aspects of this relationship.",
+          label: "Answer privately",
+          body: "You each respond to the same Aspects and review your own answers.",
         },
         {
           id: "step-4",
-          label: "Compare and discuss",
-          body: "Review where your answers differ and talk through those gaps.",
+          label: "Accept, then see the report",
+          body: "Your shared report opens after you both explicitly accept your answers.",
         },
-        { id: "how-start-eyebrow", label: "Start here" },
+        { id: "how-start-eyebrow", label: "Start with work, or explore personal" },
         {
           id: "how-start-body",
-          label: "Browse the relationship templates and choose one to make your own.",
+          label:
+            "Choose a business relationship template first, or browse options for personal growth, relationships, and friendship.",
         },
         { id: "how-action", label: "View templates" },
       ],
     },
     {
       id: "relationship-templates",
-      heading: "Start with a relationship",
-      body: "Choose a personal, school, community, or business relationship. Start with suggested aspects, then edit them to fit your situation.",
+      heading: "Choose a relationship to explore",
+      body: "Begin with a business relationship at work, or choose a personal relationship or friendship. Each template gives both people the same topics to consider.",
       items: [
         /** The two group headings, keyed to `TypeGroup` by the projection — the taxonomy decides
          *  which types sit under which, this owns only the words above them. */
-        { id: "templates-group-business", label: "Business & Work" },
-        { id: "templates-group-personal", label: "Personal, School & Community" },
-        { id: "templates-action", label: "Browse Business & Work" },
-        { id: "templates-secondary", label: "Browse Personal, School & Community" },
+        { id: "templates-group-business", label: "Business & corporate relationships" },
+        {
+          id: "templates-group-personal",
+          label: "Personal relationships, friendships, and adjacent contexts",
+        },
+        { id: "templates-action", label: "Business & corporate" },
+        /* The reference draws this one with a literal arrow in the sentence rather than the arrow
+           glyph the buttons carry, so the arrow is part of the copy. */
+        { id: "templates-secondary", label: "Personal & friendship →" },
         {
           id: "templates-note",
           label:
-            "Each template includes suggested aspects you can edit for the people and circumstances involved.",
+            "Templates give both people the same starting point for the relationship they want to explore.",
+        },
+        /*
+         * The one bounded callout for counselors, therapists and coaches: the brief allows exactly
+         * one, and it must not describe AlignSynch as a clinical tool. Lead and rest are two rows
+         * because the lead is the bolded subject of the sentence.
+         */
+        { id: "templates-counselor-lead", label: "For counselors, therapists, and coaches:" },
+        {
+          id: "templates-counselor-rest",
+          label:
+            "AlignSynch can be an optional structure for reflection alongside your existing support. It is not a clinical assessment, diagnosis, therapy, or a substitute for professional judgment.",
         },
       ],
     },
@@ -419,8 +445,8 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
       /** `id="questions"` is load-bearing: the shared header and footer both link to
        *  `/#questions`, and that anchor predates this page. */
       id: "questions",
-      heading: "See how feelings, wishes, and assumptions can drift apart.",
-      body: "First, notice where your views may differ. Then compare opinions on a scale, with room for answers between yes and no.",
+      heading: "See where your perspectives meet—or differ.",
+      body: "You both answer the same relationship Aspects. Depending on the assessment, you can record how you feel, what you wish for, and what you think or guess about the other person’s perspective.",
       items: [
         { id: "eyebrow-questions", label: "The AlignSynch model" },
         { id: "bread-step", label: "The Bread" },
@@ -472,22 +498,22 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
         {
           id: "butter-line-feel",
           label: "FEEL",
-          body: "Actually, you feel it is only slightly different.",
+          body: "Actually, you FEEL it is only slightly different.",
         },
         {
           id: "butter-line-wish",
           label: "WISH",
-          body: "You wish it to slowly change only a little bit.",
+          body: "You WISH it to slowly change only a little bit.",
         },
         {
           id: "butter-line-they-feel",
           label: "FEEL",
-          body: "They feel it is just a tad different.",
+          body: "They FEEL it is just a tad different.",
         },
         {
           id: "butter-line-they-wish",
           label: "WISH",
-          body: "They wish it to be just a touch different.",
+          body: "They WISH it to be just a touch different.",
         },
         { id: "butter-list-name", label: "Examples of opinions between yes and no" },
       ],
@@ -495,7 +521,7 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
     {
       id: "stories",
       heading: "A clearer view can open a conversation.",
-      body: "These reflections describe seeing where things stand, finding a gentler way to talk, and recognizing that answers aren't always just yes or no.",
+      body: "These reflections describe seeing where things stand, finding a gentler way to talk, and recognizing that answers aren’t always just yes or no.",
       items: [
         { id: "eyebrow-stories", label: "What participants said" },
         { id: "story-1-title", label: "See where things stand" },
@@ -505,8 +531,7 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
         },
         {
           id: "story-1-support",
-          label:
-            "Reach a state of agreement, harmony, and understanding. Progress—even slight progress—can give hope.",
+          label: "A shared prompt can give both people a concrete place to begin.",
         },
         { id: "story-2-title", label: "Open a softer conversation" },
         {
@@ -520,7 +545,8 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
         },
         {
           id: "story-2-support",
-          label: "Sometimes it is hard to know how to ask in a soft, non-confrontational way.",
+          label:
+            "A shared prompt can give people a gentler way to begin a difficult conversation.",
         },
         { id: "story-3-title", label: "Find more than yes or no" },
         {
@@ -535,98 +561,67 @@ export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
         },
         {
           id: "story-3-support",
-          label: "Answers can land partway in between. You may be closer than you think.",
+          label: "Some prompts use a scale so each person can show degrees of difference.",
         },
         { id: "prompts-title", label: "Questions to ask" },
-        { id: "prompts-note", label: "You don't know until you ask." },
+        { id: "prompts-note", label: "You don’t know until you ask." },
         { id: "prompts-name", label: "Relationship conversation starters" },
         { id: "prompt-1", label: "Are you on the same page as ______?" },
         { id: "prompt-2", label: "Are you In-Synch with ______?" },
         { id: "prompt-3", label: "Are you in Alignment with ______?" },
         { id: "prompt-4", label: "Where are your differences with ______?" },
         { id: "stories-action-body", label: "Choose a relationship to explore." },
-        { id: "stories-action", label: "Pick a relationship" },
+        { id: "stories-action", label: "Choose a relationship" },
       ],
     },
     {
       id: "benefits",
-      heading: "Why healthy relationships matter",
-      body: "At home or at work, relationships shape how we live and work together.",
+      heading: "A structured way to talk through what matters.",
+      body: "Compare expectations in business and corporate relationships, or take a more intentional approach to personal relationships and friendships.",
       items: [
-        { id: "eyebrow-benefits", label: "Why it matters" },
-        { id: "benefits-action", label: "Choose a relationship" },
+        /* The band's eyebrow is "What you can do" while the in-page menu's row for this target stays
+           "Why it matters": the reference draws those two strings differently, and both are copy. */
+        { id: "eyebrow-benefits", label: "What you can do" },
+        { id: "benefits-action", label: "Explore templates" },
+        /* Five rows, exactly as the reference draws them — the sheet's `.benefit` list is five items
+           in a two-column grid with the callout spanning both. */
         {
           id: "benefit-1",
-          label: "Less risk of losing connection",
-          body: "Misunderstandings can strain a partnership, customer relationship, or personal connection. Seeing a gap gives you something to address.",
+          label: "Start with a relevant template",
+          body: "Choose a business relationship first, or browse personal relationship and friendship templates.",
         },
         {
           id: "benefit-2",
-          label: "Stronger working relationships",
-          body: "Clearer expectations can make it easier to collaborate, care for one another, and solve problems together.",
+          label: "Answer the same questions",
+          body: "You and the other person respond to the same Aspects, so you can compare views topic by topic.",
         },
         {
           id: "benefit-3",
-          label: "Emotional well-being",
-          body: "Supportive relationships can bring comfort, encouragement, and a sense of community.",
+          label: "Keep answers private while you respond",
+          body: "You each complete and review your own answers before the shared report is available.",
         },
         {
           id: "benefit-4",
-          label: "Physical well-being",
-          body: "Healthy social connections contribute to overall well-being.",
+          label: "Open the report together",
+          body: "Your shared report becomes available after both of you explicitly accept your answers.",
         },
         {
           id: "benefit-5",
-          label: "Less stress and anxiety",
-          body: "Support from colleagues or loved ones can help when life gets difficult.",
-        },
-        {
-          id: "benefit-6",
-          label: "Connection over time",
-          body: "Strong social support gives people a place to learn, grow, and stay connected.",
-        },
-        {
-          id: "benefit-7",
-          label: "A sense of belonging",
-          body: "Healthy relationships can ease isolation and help people feel part of a community.",
-        },
-        {
-          id: "benefit-8",
-          label: "More happiness",
-          body: "Positive relationships are an important part of life satisfaction.",
-        },
-        {
-          id: "benefit-9",
-          label: "Stronger self-esteem",
-          body: "Support from others can reinforce self-worth and confidence.",
-        },
-        {
-          id: "benefit-10",
-          label: "Support through hard times",
-          body: "Having someone to lean on can make challenges easier to face.",
-        },
-        {
-          id: "benefit-11",
-          label: "Better communication",
-          body: "Talking through expectations gives people practice expressing what matters to them.",
-        },
-        {
-          id: "benefit-12",
-          label: "A shared sense of purpose",
-          body: "Working toward understanding can give a relationship clearer direction.",
+          label: "See differences by topic",
+          body: "The report organizes your perspectives across the Aspects without reducing your relationship to one score.",
         },
         {
           id: "benefits-callout",
           label:
-            "Healthy relationships take effort, communication, and mutual respect—whether at work, in business, or in personal life.",
+            "AlignSynch organizes your answers. You decide what they mean and what to discuss next.",
         },
       ],
     },
     {
       id: "final-cta",
-      heading: "Reduce stress. Reduce surprises.",
-      body: "Start by choosing one relationship to explore.",
-      items: [{ id: "final-cta-action", label: "Choose a relationship" }],
+      heading: "Start with a relationship that matters to you.",
+      body: "Explore business and corporate templates first, or browse personal relationships and friendships.",
+      items: [{ id: "final-cta-action", label: "Explore business templates" }],
     },
   ],
 });
