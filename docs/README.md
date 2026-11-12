@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**131 documents in 9 sections.** Every page carries the same nav block, generated
+**132 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 19 documents
-- [Records & QA](#records-qa) — 20 documents
+- [Records & QA](#records-qa) — 21 documents
 
 ## Start here
 
@@ -203,6 +203,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa-rail-handle/README.md`](qa-rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?
 - [`qa-brand-lockup/README.md`](qa-brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
+- [`qa-comments-mockup/README.md`](qa-comments-mockup/README.md) — **Comments mockup, both placements** — Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?
 - [`qa-contact-land/README.md`](qa-contact-land/README.md) — **Contact landing** — What do the contact pages look like?
 - [`qa-help-two-column/README.md`](qa-help-two-column/README.md) — **Help two-column** — Did `/help` get its two-column layout?
 - [`qa-home-polish/README.md`](qa-home-polish/README.md) — **Home hero polish** — Were the six hero defects fixed, before and after?
