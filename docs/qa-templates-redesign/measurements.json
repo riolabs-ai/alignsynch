@@ -59,8 +59,18 @@
     }
   ],
   "interaction": {
-    "searchHandover": { "count": "1 of 27 templates", "cards": 1, "realmGroups": 1, "clearVisible": true },
-    "searchNoMatch": { "count": "0 of 27 templates", "cards": 0, "realmGroups": 0, "emptyState": true },
+    "searchHandover": {
+      "count": "1 of 27 templates",
+      "cards": 1,
+      "realmGroups": 1,
+      "clearVisible": true
+    },
+    "searchNoMatch": {
+      "count": "0 of 27 templates",
+      "cards": 0,
+      "realmGroups": 0,
+      "emptyState": true
+    },
     "afterClear": { "count": "27 templates", "cards": 27, "realmGroups": 7 },
     "anchor": {
       "target": "realm-social",

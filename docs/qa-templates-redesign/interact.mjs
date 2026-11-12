@@ -49,7 +49,11 @@ const send = (method, params = {}) => {
   return new Promise((resolve, reject) => pending.set(nextId, { resolve, reject }));
 };
 const evaluate = async (expression) => {
-  const result = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+  const result = await send("Runtime.evaluate", {
+    expression,
+    returnByValue: true,
+    awaitPromise: true,
+  });
   return result.result.value;
 };
 

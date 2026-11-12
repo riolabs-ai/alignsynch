@@ -14,17 +14,17 @@ rebuild.
 
 ## What is here
 
-| File | What it is |
-| --- | --- |
-| `relationship-types-1440.png` | the whole page at 1440px, as the browser paints it |
-| `relationship-types-1024.png` | 1024px |
-| `relationship-types-768.png` | 768px — the width the hero's split has to survive |
-| `relationship-types-390.png` | 390px — the common phone |
-| `relationship-types-360.png` | 360px — the narrowest width the acceptance names |
-| `measurements.json` | what each of those renders measured: page width vs viewport width, card and realm counts, whether the realm menu scrolls inside itself, and the four interaction checks |
-| `capture.mjs` | the harness that produced the images — raw Chrome DevTools Protocol over a `WebSocket`, no dependency, one PNG per viewport |
-| `interact.mjs` | the harness for the interaction checks: search, the empty state, the clear control, and where a realm anchor lands |
-| `count-probe.mjs` | the counts, read from `data/relationship-types.ts` through the repo's own `@/` resolve hook — 27 purchasable of 30 records, 7 realms, and the per-realm split, so the page's numbers have a source that is not the spec's prose |
+| File                          | What it is                                                                                                                                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `relationship-types-1440.png` | the whole page at 1440px, as the browser paints it                                                                                                                                                                              |
+| `relationship-types-1024.png` | 1024px                                                                                                                                                                                                                          |
+| `relationship-types-768.png`  | 768px — the width the hero's split has to survive                                                                                                                                                                               |
+| `relationship-types-390.png`  | 390px — the common phone                                                                                                                                                                                                        |
+| `relationship-types-360.png`  | 360px — the narrowest width the acceptance names                                                                                                                                                                                |
+| `measurements.json`           | what each of those renders measured: page width vs viewport width, card and realm counts, whether the realm menu scrolls inside itself, and the four interaction checks                                                         |
+| `capture.mjs`                 | the harness that produced the images — raw Chrome DevTools Protocol over a `WebSocket`, no dependency, one PNG per viewport                                                                                                     |
+| `interact.mjs`                | the harness for the interaction checks: search, the empty state, the clear control, and where a realm anchor lands                                                                                                              |
+| `count-probe.mjs`             | the counts, read from `data/relationship-types.ts` through the repo's own `@/` resolve hook — 27 purchasable of 30 records, 7 realms, and the per-realm split, so the page's numbers have a source that is not the spec's prose |
 
 ## How to reproduce
 
