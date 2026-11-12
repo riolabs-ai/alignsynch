@@ -418,7 +418,14 @@ export async function createInstanceFromTemplate(
   // is the pre-#213 behaviour the product still supports. That is also why the gate cannot be
   // escaped by logging out into a paying account's limit — the count is per `party.user_id`, and
   // an unbound instance belongs to nobody.
-  if (initiatorUserId !== null) {
+  //
+  // **A draft is not gated (#834).** Stage 4 writes the relationship as a `draft` and sends
+  // nothing; the plan is sold on the send, not on the description. Until #834 the mode leg ran
+  // here, so a Free account that chose Advanced was refused at stage 4 — *before* the stage that
+  // carries the plans and the checkout, which is a dead end rather than an upsell. The gate now
+  // applies to a create that goes out as `published`, and the plan question is asked where the
+  // money is: a non-blocking prompt on stage 5, and the hard gate at the Gap.
+  if (initiatorUserId !== null && input.draft !== true) {
     const entitlement = await entitlementForAccount(initiatorUserId);
     const relationshipRefusal = relationshipGateRefusal({
       entitlement,
