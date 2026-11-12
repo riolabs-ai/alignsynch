@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Brand lockup](../qa-brand-lockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
+[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../qa-comments-mockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
 
 <!-- docs-nav:end -->
 
@@ -38,6 +38,6 @@ the header disc is neutral.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Brand lockup](../qa-brand-lockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
+[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../qa-comments-mockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
 
 <!-- docs-nav:end -->

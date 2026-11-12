@@ -225,6 +225,47 @@ describe("the approved reference is registered (#914)", () => {
   });
 });
 
+/**
+ * #921 — the mockup has to be openable, or the owner cannot answer the question it exists to ask.
+ *
+ * The mockup is the spec of record once it is approved, so the file, the catalogue row and the
+ * manifest row are one deliverable: a drawing nobody can reach at `?artifact=` is a screenshot in
+ * a chat. The assertions are the three registries the route and the shelf read, and no more — the
+ * feature itself is deliberately absent from this tree.
+ */
+describe("the comments mockup is registered (#921)", () => {
+  const id = "review-comments-v1";
+
+  it("publishes the artifact under the slug the issue names", () => {
+    const row = reviewArtifacts.find((artifact) => artifact.id === id);
+    expect(row?.slug).toBe("prototype-comments-v1");
+    expect(row?.path).toBe("docs/review/artifacts/prototype-comments-v1.html");
+    /* The drawing says which variant it is; it does not claim to be approved. */
+    expect(row?.title.toLowerCase()).not.toContain("approved");
+  });
+
+  it("serves the document from the artifact route", async () => {
+    const { GET } = await import("../app/review-artifacts/[id]/route");
+    const response = await GET(new Request("http://localhost/review-artifacts/x"), {
+      params: Promise.resolve({ id: "prototype-comments-v1" }),
+    });
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain("Comments on an opinion, a session and a relationship");
+  });
+
+  it("resolves by slug on the shelf, with a release the changelog records", () => {
+    const manifest = readReviewManifest(join(root, "docs/review/artifacts.json"), reviewArtifacts);
+    const versions = readReleaseVersions(join(root, "docs/changelog/releases.json"));
+    const row = reviewArtifacts.find((artifact) => artifact.id === id);
+    expect(row).toBeDefined();
+    const shelf = shelfOf([summaryOf(id, row?.version ?? "")], manifest, versions);
+
+    expect(shelf.bySlug.get("prototype-comments-v1")?.summary.artifact.id).toBe(id);
+    expect(shelf.byId.get(id)?.lookFor.length ?? 0).toBeGreaterThan(80);
+  });
+});
+
 describe("grouping by release", () => {
   const manifest = readReviewManifest(join(root, "docs/review/artifacts.json"), reviewArtifacts);
 
