@@ -34,6 +34,7 @@
     "release:note": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/release-notify.mjs",
     "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-migrate.mjs",
     "db:seed": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs",
+    "db:seed:check": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --check",
     "db:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-verify.mjs",
     "admin:ensure": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-admin-ensure.mjs",
     "health:record": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/health-record.mjs",
