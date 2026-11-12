@@ -1,5 +1,5 @@
 import { CategoriesHowItWorks } from "@/components/categories/categories-how-it-works";
-import { AlignmentHomeView } from "@/components/home/alignment-home";
+import { As2HomeView } from "@/components/home/as2-home";
 import { CategoriesSlider } from "@/components/home/categories-slider";
 import { FeaturedQuizzes } from "@/components/home/featured-quizzes";
 import { HeroSection } from "@/components/home/hero-section";
@@ -11,15 +11,10 @@ import { QuizzesByDifficulty } from "@/components/home/quizzes-by-difficulty";
 import { ResourcesAndReferral } from "@/components/home/resources-and-referral";
 import { TopPlayersCarousel } from "@/components/home/top-players-carousel";
 import type { Brand } from "@/content/brand";
-import { assessmentInstances, starterTemplates } from "@/data/assessments";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { homePageCopy, homeTitle } from "@/data/pages/home";
-import {
-  ALIGN_SYNCH_FEATURED_SLUG,
-  alignSynchHomeCopy,
-  alignSynchHomeTitle,
-} from "@/data/pages/home-alignsynch";
-import { alignmentHome } from "@/lib/alignment-home";
+import { alignSynchHomeAs2Copy, alignSynchHomeTitle } from "@/data/pages/home-alignsynch";
+import { as2Home } from "@/lib/home-alignsynch";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { sectionOf, withoutHiddenCta } from "@/lib/page-copy";
 import { winFeed } from "@/lib/win-feed";
@@ -92,31 +87,26 @@ function QuizHubHome({ hiddenNav }: { hiddenNav: readonly string[] }) {
 }
 
 /**
- * The AlignSynch front page: the two questions, the four templates, the two families.
+ * The AlignSynch front page since #853: the approved AS2 redesign, eight bands and an in-page menu.
  *
- * The records are `data/assessments.ts` and the words are `data/pages/home-alignsynch.ts`;
- * `lib/alignment-home.ts` is the join and `components/home/alignment-home.tsx` draws it. No
- * template, relationship or family is named here — which is why the page cannot claim a fifth
- * template or a response the fixtures do not hold.
+ * The words are `data/pages/home-alignsynch.ts::alignSynchHomeAs2Copy`, the join is
+ * `lib/home-alignsynch.ts::as2Home`, and `components/home/as2-home.tsx` draws it. Nothing is named
+ * here — no template, no section, no count — which is why the page cannot claim a relationship type
+ * the taxonomy does not hold or a number nobody re-measures.
+ *
+ * The fixture is read through the *projection*, not here, for two reasons `data:check` states: this
+ * module is a page-copy entry module, so a literal written below counts against `/`'s budget of 0,
+ * and a section lookup written in this file would be resolved against `/`'s declared fixture
+ * (`data/pages/home`, the quiz branch) rather than this one — E23 reads the source, comments
+ * included, so the lookup has to live where the right fixture does.
+ *
+ * The retired alignment composition (`components/home/alignment-home.tsx`, `lib/alignment-home.ts`)
+ * is still in the tree and still tested; it renders no route since this card. Removing it is its own
+ * change, tracked on the board, because it takes `components/home/template-shelf.tsx` and three test
+ * files with it.
  */
 function AlignSynchHome() {
-  return (
-    <AlignmentHomeView
-      model={alignmentHome(
-        brand,
-        alignSynchHomeCopy,
-        /*
-         * `starterTemplates`, not `assessments`: since #catalogue the fixture carries 29 records
-         * (the four hand-authored ones plus one per purchasable type), and this band maps every
-         * template it is handed. The front page introduces the platform's starter set; the
-         * catalogue at `/templates/relationship` is what a practitioner shops from.
-         */
-        starterTemplates,
-        assessmentInstances,
-        ALIGN_SYNCH_FEATURED_SLUG,
-      )}
-    />
-  );
+  return <As2HomeView model={as2Home(brand, alignSynchHomeAs2Copy)} />;
 }
 
 /**

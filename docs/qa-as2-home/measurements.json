@@ -1,0 +1,200 @@
+{
+  "base": "http://127.0.0.1:3199",
+  "measuredAt": "2026-11-12T10:59:41.241Z",
+  "widths": [
+    {
+      "width": 1440,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentHeight": 5661,
+      "header": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 81,
+          "top": 0,
+          "right": 1440,
+          "bottom": 81,
+          "left": 0
+        },
+        "position": "sticky"
+      },
+      "menu": {
+        "rect": {
+          "x": 0,
+          "y": 644.625,
+          "width": 1440,
+          "height": 53,
+          "top": 644.625,
+          "right": 1440,
+          "bottom": 697.625,
+          "left": 0
+        },
+        "position": "sticky",
+        "top": "80px"
+      },
+      "menuRow": {
+        "rect": {
+          "x": 144,
+          "y": 644.625,
+          "width": 1152,
+          "height": 52,
+          "top": 644.625,
+          "right": 1296,
+          "bottom": 696.625,
+          "left": 144
+        },
+        "scrollWidth": 1152,
+        "clientWidth": 1152
+      },
+      "containerWidth": 1152,
+      "heroCards": [
+        {
+          "x": 701,
+          "y": 203,
+          "width": 279,
+          "height": 320
+        },
+        {
+          "x": 993,
+          "y": 203,
+          "width": 279,
+          "height": 320
+        }
+      ],
+      "h1": {
+        "text": "Know the feelings. Handle the expectations.",
+        "fontSize": "60px"
+      },
+      "jumps": {
+        "questions": {
+          "id": "questions",
+          "scrollY": 1698,
+          "targetTop": 140,
+          "menuTop": 80,
+          "menuBottom": 133,
+          "headerBottom": 81,
+          "gapBelowMenu": 7
+        },
+        "nested": {
+          "id": "personal-relationships",
+          "scrollY": 1377,
+          "targetTop": 140,
+          "menuTop": 80,
+          "menuBottom": 133,
+          "headerBottom": 81,
+          "gapBelowMenu": 7
+        },
+        "howItWorks": {
+          "id": "how-it-works",
+          "scrollY": 558,
+          "targetTop": 140,
+          "menuTop": 87,
+          "menuBottom": 140,
+          "headerBottom": 81,
+          "gapBelowMenu": 0
+        }
+      }
+    },
+    {
+      "width": 390,
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "documentHeight": 10178,
+      "header": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 81,
+          "top": 0,
+          "right": 390,
+          "bottom": 81,
+          "left": 0
+        },
+        "position": "sticky"
+      },
+      "menu": {
+        "rect": {
+          "x": 0,
+          "y": 1269.9375,
+          "width": 390,
+          "height": 49,
+          "top": 1269.9375,
+          "right": 390,
+          "bottom": 1318.9375,
+          "left": 0
+        },
+        "position": "sticky",
+        "top": "80px"
+      },
+      "menuRow": {
+        "rect": {
+          "x": 0,
+          "y": 1269.9375,
+          "width": 390,
+          "height": 48,
+          "top": 1269.9375,
+          "right": 390,
+          "bottom": 1317.9375,
+          "left": 0
+        },
+        "scrollWidth": 473,
+        "clientWidth": 390
+      },
+      "containerWidth": 390,
+      "heroCards": [
+        {
+          "x": 24,
+          "y": 773,
+          "width": 342,
+          "height": 221
+        },
+        {
+          "x": 24,
+          "y": 1005,
+          "width": 342,
+          "height": 221
+        }
+      ],
+      "h1": {
+        "text": "Know the feelings. Handle the expectations.",
+        "fontSize": "37px"
+      },
+      "jumps": {
+        "questions": {
+          "id": "questions",
+          "scrollY": 3235,
+          "targetTop": 136,
+          "menuTop": 80,
+          "menuBottom": 129,
+          "headerBottom": 81,
+          "gapBelowMenu": 7
+        },
+        "nested": {
+          "id": "personal-relationships",
+          "scrollY": 2821,
+          "targetTop": 136,
+          "menuTop": 80,
+          "menuBottom": 129,
+          "headerBottom": 81,
+          "gapBelowMenu": 7
+        },
+        "howItWorks": {
+          "id": "how-it-works",
+          "scrollY": 1183,
+          "targetTop": 136,
+          "menuTop": 87,
+          "menuBottom": 136,
+          "headerBottom": 81,
+          "gapBelowMenu": 0
+        }
+      }
+    }
+  ]
+}
