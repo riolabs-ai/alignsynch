@@ -65,8 +65,10 @@ const TEMPLATE = {
 
 /** A draft with every fact stage 4 prints — what a person who walked stages 1–3 carries. */
 const DRAFT: CreateDraft = {
-  initiatorName: "Daniel",
-  counterpartyName: "Rowan",
+  initiatorFirst: "Daniel",
+  initiatorLast: "Vance",
+  counterpartyFirst: "Rowan",
+  counterpartyLast: "Mercer",
   email: "rowan@example.com",
   title: "Quarterly check-in",
   description: "A short reset before the planning cycle.",
@@ -111,8 +113,8 @@ describe("stage 4 — the review", () => {
     for (const id of ["template", "initiator", "counterparty", "title", "mode", "setting"]) {
       expect(html, `expected the ${id} row`).toContain(itemLabel(review, id));
     }
-    expect(html).toContain(DRAFT.initiatorName);
-    expect(html).toContain(DRAFT.counterpartyName);
+    expect(html).toContain("Daniel Vance");
+    expect(html).toContain("Rowan Mercer");
     expect(html).toContain(DRAFT.title);
     expect(html).toContain(MODE_LABELS[DRAFT.mode as keyof typeof MODE_LABELS]);
     expect(html).toContain(SETTING_LABELS[DRAFT.alignmentSetting as keyof typeof SETTING_LABELS]);

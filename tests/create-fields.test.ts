@@ -1,26 +1,22 @@
 /**
- * Stage 1 — **Details** — has exactly five fields, and this file pins them (#735, copy replaced
- * by the owner's saved pass in #760).
+ * Stage 1 — **Details** — has exactly seven fields, split into two people, and this file pins
+ * them (#825, v9 artifact `s4Who`).
  *
  * `docs/specs/flow-stages.md` → *Stage 1, Details* writes the inventory out because it is the
- * part that has drifted: four fields on a 6/6 grid, the description across all twelve, one help
- * line per field where the artifact draws one, and the stage foot's `Back` beside
- * "Continue to Stage 2". The card's acceptance is therefore a count and an order, not a
+ * part that has drifted: each seat is first + last, the invitation address and the description
+ * close the form, five fields are required and two are not, and the grid is two columns of
+ * pairs. The card's acceptance is therefore a count, an order and five marks — never a
  * screenshot a reviewer has to compare by eye:
  *
- *   fixture   the section's ids and labels, in order, exactly — a silent sixth field, a dropped
- *             fifth, or a re-worded help line is red here rather than in a review;
- *   rendered  the same five controls, in the same order, with the same spans, because a fixture
- *             row nothing draws would pass a fixture-only check;
- *   deleted   `email-help` and `submit-note` are gone (the artifact draws neither), and `back` is
- *             the label the secondary action carries.
+ *   fixture   the section's ids and labels, in order, exactly — a silent eighth field, a dropped
+ *             seventh, or a re-worded help line is red here rather than in a review;
+ *   rendered  the same seven controls, in the same order, in the same columns, because a
+ *             fixture row nothing draws would pass a fixture-only check;
+ *   required  the five required fields carry the asterisk **and** the spoken word, and the two
+ *             optional ones carry neither.
  *
- * **Every string below is the v7 artifact's `s4.*` value**, character for character: #760 replaced
- * five of these labels and the advance action with the owner's saved copy, and a test that kept
- * the old wording would have been a second, stale source for the same screen. The artifact is the
- * reference the spec is written from
- * (`docs/review/artifacts/prototype-relationship-lifecycle-v7.html`, `s4.*`), and the spec — not
- * this file, and not the build — is what a rename has to change first.
+ * **Every string below is the v9 artifact's `s4.*` value**, character for character. The spec is
+ * written from the artifact and this file is written from the spec; a rename starts there.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -28,7 +24,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
-import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
+import { EMPTY_CREATE_DRAFT, type CreateDraft } from "@/lib/flow/create-draft";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** `StageFoot` links through `next/link`, whose router lives in a request the test has not got. */
@@ -41,40 +37,63 @@ vi.mock("next/navigation", () => ({
  * label. Every string is the artifact's `s4.*` value, and the spec is string-for-string from it.
  */
 const INVENTORY = [
-  ["initiator-label", "Your Name as the Relationship Initiator"],
-  ["initiator-help", "The seat this relationship is created from."],
-  ["counterparty-label", "Counterparty's Name as Seen on the Invite"],
-  ["counterparty-placeholder", "Their name"],
-  ["counterparty-help", "They will complete their name preference when they claim the invitation."],
-  ["email-label", "Email Address used to send the Counterparty Invite"],
-  ["email-placeholder", "name@example.com"],
   ["title-label", "Your Personalized Relationship Title"],
-  ["title-placeholder", "Relationship Basics"],
   ["title-help", "The personalized name of the created Relationship."],
+  ["initiator-first-label", "Initiator First Name"],
+  ["initiator-last-label", "Initiator Last Name"],
+  ["initiator-last-placeholder", "Required"],
+  ["initiator-help", "The seat this relationship is created from."],
+  ["counterparty-first-label", "Counterparty First Name"],
+  ["counterparty-first-placeholder", "Their name"],
+  ["counterparty-last-label", "Counterparty Last Name"],
+  ["counterparty-last-placeholder", "Optional"],
+  ["counterparty-help", "They will complete their name preference when they claim the invitation."],
+  ["email-label", "Counterparty Email for Invite"],
+  ["email-placeholder", "name@example.com"],
   ["description-label", "Personalized Relationship Description"],
   [
     "description-placeholder",
     "A sentence on why you are doing this — both of you read it on the card.",
   ],
   ["description-help", "Optional. Shown to both parties, never scored."],
+  ["required-note", "required"],
   ["submit", "Continue to Stage 2"],
   ["back", "Back"],
 ] as const;
 
-const WHO = assessmentCreatePageCopy.sections?.find((section) => section.id === "who");
+/** The five fields that carry the mark, in the form's order. */
+const REQUIRED = ["title", "initiator-first", "initiator-last", "counterparty-first", "email"];
 
-function stageOne(): string {
+/** The two that must not. */
+const OPTIONAL = ["counterparty-last", "description"];
+
+/** The seven controls, in the completion order the spec fixes. */
+const FIELD_IDS = [
+  "create-title",
+  "create-initiator-first",
+  "create-initiator-last",
+  "create-counterparty-first",
+  "create-counterparty-last",
+  "create-email",
+  "create-description",
+] as const;
+
+const WHO = sectionOf(assessmentCreatePageCopy, "who");
+
+const TEMPLATE = {
+  recordId: "template-relationship-basics",
+  title: "Relationship Basics",
+  summary: "Ten Aspects about how a working relationship feels and where it should go.",
+  aspectCount: 2,
+};
+
+function stageOne(draft: CreateDraft = EMPTY_CREATE_DRAFT): string {
   return renderToStaticMarkup(
     createElement(CreateRelationship, {
       copy: assessmentCreatePageCopy,
       stage: 1,
-      template: {
-        recordId: "template-relationship-basics",
-        title: "Relationship Basics",
-        summary: "Ten Aspects about how a working relationship feels and where it should go.",
-        aspectCount: 2,
-      },
-      draft: EMPTY_CREATE_DRAFT,
+      template: TEMPLATE,
+      draft,
       backHref: "/templates/relationship/template-relationship-basics",
       problem: null,
       problemLink: null,
@@ -82,31 +101,30 @@ function stageOne(): string {
   );
 }
 
-/** The five controls the stage asks, in the order the spec lists them. */
-const FIELD_IDS = [
-  "create-initiator-name",
-  "create-counterparty-name",
-  "create-email",
-  "create-title",
-  "create-description",
-] as const;
+/** The markup one field owns: its label through to the next field's. */
+function fieldChunk(html: string, field: string): string {
+  const start = html.indexOf(`data-field="${field}"`);
+  if (start === -1) throw new Error(`no field ${field} on the form`);
+  const rest = html.slice(start + 1);
+  const next = rest.indexOf('data-field="');
+  return next === -1 ? rest : rest.slice(0, next);
+}
 
 describe("stage 1 — Details", () => {
-  it("carries the spec's fields, labels and help in order, and nothing else", () => {
-    expect(WHO).toBeDefined();
+  it("carries the spec's inventory in order, and nothing else", () => {
     expect(WHO?.items?.map((item) => [item.id, item.label])).toEqual(
       INVENTORY.map(([id, label]) => [id, label]),
     );
-    // The heading and body are the artifact's too (`s4.heading`, `s4.body`).
-    expect(WHO?.heading).toBe("Relationship Details");
-    expect(WHO?.body).toBe(
-      "One template, two seats, and the facts that shape every screen after this one.",
+    // The screen's own words are the page's: one heading, one sentence under it.
+    expect(assessmentCreatePageCopy.heading).toBe("Relationship Details");
+    expect(assessmentCreatePageCopy.subtitle).toBe(
+      "Name both people and the relationship. Everything here can change later.",
     );
   });
 
   it("draws no line the artifact does not draw", () => {
     const ids = WHO?.items?.map((item) => item.id) ?? [];
-    // Both were removed by #735: the address has no help line and the step has no submit note.
+    // Neither was ever drawn by the artifact, and neither comes back.
     expect(ids).not.toContain("email-help");
     expect(ids).not.toContain("submit-note");
     const html = stageOne();
@@ -114,7 +132,7 @@ describe("stage 1 — Details", () => {
     expect(html).not.toContain("Nothing is created yet. The next step fixes the Mode.");
   });
 
-  it("renders the five fields in the spec's order", () => {
+  it("renders the seven fields in the completion order the spec fixes", () => {
     const html = stageOne();
     const positions = FIELD_IDS.map((id) => html.indexOf(`id="${id}"`));
     for (const [index, position] of positions.entries()) {
@@ -125,21 +143,77 @@ describe("stage 1 — Details", () => {
         );
       }
     }
-    // Exactly five: a sixth control in the form is the defect the inventory exists to catch.
-    expect(html.split('name="initiatorName"').length - 1).toBe(1);
-    expect(html.match(/<(input|textarea)\b/g)?.length).toBe(6); // five fields + the hidden template id
+    // Seven controls and the hidden template id — an eighth control is the defect this catches.
+    expect(html.match(/<(input|textarea)\b/g)?.length).toBe(8);
+    expect(html.split('name="templateRecordId"').length - 1).toBe(1);
   });
 
-  it("lays them out on the 12-column grid the spec fixes — four 6s and one 12", () => {
+  it("marks exactly the five required fields, visibly and audibly", () => {
+    const html = stageOne();
+    for (const field of REQUIRED) {
+      const chunk = fieldChunk(html, field);
+      // The glyph is `aria-hidden` — a star is not a word — and the spoken label sits beside it.
+      expect(chunk, `${field} carries the asterisk`).toContain('aria-hidden="true"');
+      expect(chunk, `${field} says the requirement`).toContain(
+        `>${itemLabel(WHO, "required-note")}<`,
+      );
+    }
+    for (const field of OPTIONAL) {
+      const chunk = fieldChunk(html, field);
+      expect(chunk, `${field} is optional, so no mark`).not.toContain('aria-hidden="true"');
+      expect(chunk, `${field} is optional, so no spoken requirement`).not.toContain(
+        `>${itemLabel(WHO, "required-note")}<`,
+      );
+    }
+    // Five marks on the form, no more: the count is the acceptance, not the per-field check.
+    expect(html.split(`>${itemLabel(WHO, "required-note")}<`).length - 1).toBe(5);
+  });
+
+  it("lays the form out in the two columns the spec fixes", () => {
     const html = stageOne();
     expect(html).toContain("sm:grid-cols-12");
-    for (const id of ["create-initiator-name", "create-counterparty-name", "create-email"]) {
-      expect(html, `${id}'s label is a 6`).toContain(`sm:col-span-6" for="${id}"`);
-    }
-    // `create-title` is the fourth 6 and `create-description` is the one 12.
+    // Title | Initiator pair, Counterparty pair | email — two 6s to a row.
     expect(html).toContain('sm:col-span-6" for="create-title"');
+    expect(html).toContain('class="grid min-w-0 gap-3 sm:col-span-6" data-pair="initiator"');
+    expect(html).toContain('class="grid min-w-0 gap-3 sm:col-span-6" data-pair="counterparty"');
+    expect(html).toContain('sm:col-span-6" for="create-email"');
+    // The description closes the form full width.
     expect(html).toContain('sm:col-span-12" for="create-description"');
-    expect(html.match(/sm:col-span-/g)?.length).toBe(5);
+    // A pair is two controls in one column, and collapses to one each below 720px.
+    expect(html.split("min-[720px]:grid-cols-2").length - 1).toBe(2);
+    expect(html.split("sm:col-span-").length - 1).toBe(5);
+  });
+
+  it("derives the title from the names until somebody types in it", () => {
+    // Empty names, empty title: the derivation has nothing to say.
+    expect(stageOne()).toContain('name="title" value=""');
+    // Names in the draft and no title: the title is the derivation, server-rendered, so a form
+    // no browser ever hydrated still posts the default.
+    const derived = stageOne({
+      ...EMPTY_CREATE_DRAFT,
+      initiatorFirst: "Daniel",
+      initiatorLast: "Vance",
+      counterpartyFirst: "Rowan",
+      counterpartyLast: "Mercer",
+    });
+    expect(derived).toContain('value="Daniel V \u2013 Rowan M"');
+    // A title the draft already carries is the answer, and wins over the derivation.
+    const typed = stageOne({
+      ...EMPTY_CREATE_DRAFT,
+      initiatorFirst: "Daniel",
+      initiatorLast: "Vance",
+      counterpartyFirst: "Rowan",
+      counterpartyLast: "Mercer",
+      title: "Our house, not the dishes",
+    });
+    expect(typed).toContain('value="Our house, not the dishes"');
+  });
+
+  it("defaults the description to the template's own sentence", () => {
+    expect(stageOne()).toContain(TEMPLATE.summary);
+    // A description the person wrote is theirs, not the template's.
+    const typed = stageOne({ ...EMPTY_CREATE_DRAFT, description: "Because we keep arguing." });
+    expect(typed).toContain("Because we keep arguing.");
   });
 
   it("puts `Back` in the foot's left group, beside `Cancel` and nowhere else", () => {

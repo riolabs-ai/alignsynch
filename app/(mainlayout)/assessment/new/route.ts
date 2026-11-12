@@ -2,7 +2,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { templateSlugOf } from "@/lib/db/template-library";
-import { modeDraft, parseCreateDraft } from "@/lib/flow/create-draft";
+import {
+  counterpartyNameOf,
+  initiatorNameOf,
+  modeDraft,
+  parseCreateDraft,
+} from "@/lib/flow/create-draft";
 import {
   createInstanceFromTemplate,
   FlowError,
@@ -153,11 +158,18 @@ export async function POST(request: Request): Promise<Response> {
    * otherwise. Read once and used twice — the store writes the seats and the invitation email
    * addresses them — so the two can never disagree about who was named.
    */
-  const who = {
-    initiatorName: draft?.initiatorName ?? value("initiatorName"),
-    counterpartyName: draft?.counterpartyName ?? value("counterpartyName"),
-    email: draft?.email ?? value("email"),
-  };
+  const who =
+    draft === null
+      ? {
+          initiatorName: value("initiatorName"),
+          counterpartyName: value("counterpartyName"),
+          email: value("email"),
+        }
+      : {
+          initiatorName: initiatorNameOf(draft),
+          counterpartyName: counterpartyNameOf(draft),
+          email: draft.email,
+        };
 
   let created: CreatedInstance;
   try {

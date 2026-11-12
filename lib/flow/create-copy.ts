@@ -21,8 +21,10 @@ import { PRICING_PATH } from "./paths";
 
 /** Where each field's label lives. The section is per stage; the item id is the label. */
 const FIELD_COPY: Readonly<Record<CreateDraftField, { section: string; item: string }>> = {
-  initiator: { section: "who", item: "initiator-label" },
-  counterparty: { section: "who", item: "counterparty-label" },
+  "initiator-first": { section: "who", item: "initiator-first-label" },
+  "initiator-last": { section: "who", item: "initiator-last-label" },
+  "counterparty-first": { section: "who", item: "counterparty-first-label" },
+  "counterparty-last": { section: "who", item: "counterparty-last-label" },
   email: { section: "who", item: "email-label" },
   title: { section: "who", item: "title-label" },
   mode: { section: "mode", item: "mode-label" },

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Maintenance fields · prev [The six flow stages (binding spec)](flow-stages.md) · next [Answer input](ux-input.md)
+[Docs hub](../README.md) › **Product** › Maintenance fields · prev [The five flow stages (binding spec)](flow-stages.md) · next [Answer input](ux-input.md)
 
 <!-- docs-nav:end -->
 
@@ -209,6 +209,6 @@ name per party — a prior "one more field" cut, and the right one; nothing here
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Maintenance fields · prev [The six flow stages (binding spec)](flow-stages.md) · next [Answer input](ux-input.md)
+[Docs hub](../README.md) › **Product** › Maintenance fields · prev [The five flow stages (binding spec)](flow-stages.md) · next [Answer input](ux-input.md)
 
 <!-- docs-nav:end -->

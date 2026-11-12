@@ -244,7 +244,7 @@
         },
         {
           "path": "specs/flow-stages.md",
-          "title": "The six flow stages (binding spec)",
+          "title": "The five flow stages (binding spec)",
           "question": "What are the stages, which fields does stage 1 carry, and where does the flow end?"
         },
         {

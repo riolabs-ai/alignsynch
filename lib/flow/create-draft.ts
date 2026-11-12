@@ -28,6 +28,7 @@
 import { z } from "zod";
 import { ALIGNMENT_SETTINGS, ASSESSMENT_MODES } from "@/content/assessment";
 import { zAspectDraft } from "./aspects";
+import { personName } from "./names";
 import { emailLooksDeliverable } from "./resend";
 
 /**
@@ -45,8 +46,16 @@ import { emailLooksDeliverable } from "./resend";
  */
 const zCreateDraft = z
   .object({
-    initiatorName: z.string(),
-    counterpartyName: z.string(),
+    /**
+     * Each seat as the four fields Stage 1 asks (#825). The *stored* party name is composed from
+     * them (`personName()`), so the draft keeps the split the form collected: the title is
+     * derived from first + last-initial, and a reload has to re-derive it from the same parts
+     * rather than from a string somebody already flattened.
+     */
+    initiatorFirst: z.string(),
+    initiatorLast: z.string(),
+    counterpartyFirst: z.string(),
+    counterpartyLast: z.string(),
     email: z.string(),
     title: z.string(),
     description: z.string(),
@@ -60,8 +69,10 @@ export type CreateDraft = z.infer<typeof zCreateDraft>;
 
 /** A draft with nothing in it — what Stage 1 renders before anybody has typed. */
 export const EMPTY_CREATE_DRAFT: CreateDraft = {
-  initiatorName: "",
-  counterpartyName: "",
+  initiatorFirst: "",
+  initiatorLast: "",
+  counterpartyFirst: "",
+  counterpartyLast: "",
   email: "",
   title: "",
   description: "",
@@ -69,10 +80,27 @@ export const EMPTY_CREATE_DRAFT: CreateDraft = {
   alignmentSetting: "",
 };
 
+/**
+ * The two seats' names, composed from the four fields the form collects (#825).
+ *
+ * The draft stores the parts; everything downstream — the party row, the invitation's "who is
+ * inviting you", the dashboard — wants one string. `personName()` is that one composition, so a
+ * seat's name cannot be spelled two ways depending on which module flattened it.
+ */
+export function initiatorNameOf(draft: CreateDraft): string {
+  return personName(draft.initiatorFirst, draft.initiatorLast);
+}
+
+export function counterpartyNameOf(draft: CreateDraft): string {
+  return personName(draft.counterpartyFirst, draft.counterpartyLast);
+}
+
 /** The fields a refusal may name. The id, never a column name. */
 export const CREATE_DRAFT_FIELDS = [
-  "initiator",
-  "counterparty",
+  "initiator-first",
+  "initiator-last",
+  "counterparty-first",
+  "counterparty-last",
   "email",
   "title",
   "mode",
@@ -145,26 +173,41 @@ export function serializeCreateDraft(draft: CreateDraft): string {
 }
 
 /**
- * Stage 1 — **Details**.
+ * Stage 1 — **Details** (#825, v9 artifact `s4Who`).
  *
- * The two seats, the counterpary's address and the card title. The store has always refused a
- * blank name or address (`required()` in `lib/flow/store.ts`), but that refusal is a code for
- * an operator; this one names the field's label and happens one page earlier, so the person is
- * looking at the input they have to fix instead of at Stage 2.
+ * Each seat is two fields — first and last — and the invitation address is a third. The store
+ * has always refused a blank name or address (`required()` in `lib/flow/store.ts`), but that
+ * refusal is a code for an operator; this one names the field's label and happens one page
+ * earlier, so the person is looking at the input they have to fix instead of at Stage 2.
  *
- * `title` is the one field the store did not previously take: the card both parties read is
- * named by the person creating the relationship, not by the template's caption. Description is
- * optional — the prototype says "shown to both parties, never scored" — so blank is a value.
+ * **Which halves are required is the artifact's decision, not a convenience.** The Initiator's
+ * first *and* last name are required (the person is signing in; their name is known), the
+ * Counterparty's first name is required and their last name is **optional** — the invitation is
+ * addressed to somebody who has not told us their surname yet, and `personName()` renders the
+ * seat without it. The address is required because the invitation has no destination without
+ * it, and so is the title, which the form derives until somebody types over it.
+ *
+ * `title` arrives already derived-or-edited (`derivedTitle()` in the form, `whoDraft` here just
+ * trims it) — the flow stores the answer, never the derivation.
  */
 export function whoDraft(read: (name: string) => string): CreateDraftStep {
-  const initiatorName = read("initiatorName").trim();
-  if (initiatorName === "")
-    return { ok: false, problem: { field: "initiator", reason: "required" } };
-
-  const counterpartyName = read("counterpartyName").trim();
-  if (counterpartyName === "") {
-    return { ok: false, problem: { field: "counterparty", reason: "required" } };
+  const initiatorFirst = read("initiatorFirst").trim();
+  if (initiatorFirst === "") {
+    return { ok: false, problem: { field: "initiator-first", reason: "required" } };
   }
+
+  const initiatorLast = read("initiatorLast").trim();
+  if (initiatorLast === "") {
+    return { ok: false, problem: { field: "initiator-last", reason: "required" } };
+  }
+
+  const counterpartyFirst = read("counterpartyFirst").trim();
+  if (counterpartyFirst === "") {
+    return { ok: false, problem: { field: "counterparty-first", reason: "required" } };
+  }
+
+  // The one optional half: a surname nobody has given us yet is not a refusal.
+  const counterpartyLast = read("counterpartyLast").trim();
 
   const email = read("email").trim();
   if (email === "") return { ok: false, problem: { field: "email", reason: "required" } };
@@ -178,8 +221,10 @@ export function whoDraft(read: (name: string) => string): CreateDraftStep {
   return {
     ok: true,
     draft: {
-      initiatorName,
-      counterpartyName,
+      initiatorFirst,
+      initiatorLast,
+      counterpartyFirst,
+      counterpartyLast,
       email,
       title,
       description: read("description").trim(),
