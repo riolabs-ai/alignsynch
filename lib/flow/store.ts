@@ -84,8 +84,8 @@ import {
   type Step,
 } from "@/content/steps";
 import { entitlementForAccount, billingProvider } from "@/lib/billing";
-import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
-import { activeInstanceCount, activeRelationshipCount, grantPublishTrial } from "@/lib/db/billing";
+import { relationshipGateRefusal } from "@/lib/billing/entitlements";
+import { activeRelationshipCount, grantPublishTrial } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import {
   openPaymentObligation,
@@ -181,13 +181,13 @@ export type FlowErrorCode =
   // so this is the second half of the same rule for a caller that posts a record id directly:
   // an authored template belongs to its author, and a signed-out create belongs to nobody.
   | "template-not-yours"
-  // The billing gate's three refusals (#289, #505). They are flow refusals because this store is
-  // where an instance comes into being, and the route that calls it already answers `{error,
-  // message}` for every `FlowError` — a second error type would be a second branch that could be
-  // forgotten. `relationship-limit` is the plan's own limit (#505): a plan sells *relationships*,
-  // and the refusal names that, not an "assessment instance" nobody was sold.
-  | "instance-limit"
-  | "mode-not-entitled"
+  // The billing gate's one refusal (#289, #505). It is a flow refusal because this store is where
+  // an instance comes into being, and the route that calls it already answers `{error, message}`
+  // for every `FlowError` — a second error type would be a second branch that could be forgotten.
+  // `relationship-limit` is the plan's own limit: a plan sells *relationships*, and the refusal
+  // names that, not an "assessment instance" nobody was sold. The mode and session-count refusals
+  // that used to sit beside it are gone (#835) — the publish trial entitles Advanced Mode, and a
+  // seat on somebody else's relationship is not a relationship you started.
   | "relationship-limit";
 
 /* ------------------------------------------------------------------ *\
@@ -404,15 +404,34 @@ export async function createInstanceFromTemplate(
 
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
+  // Whether this create publishes (#825): stage 4 writes a `draft` and stage 5's send publishes
+  // it, while the pre-#825 one-form create publishes here. One flag, read by the relationship
+  // row's status and `published_at`, and — after the commit — by the publish trial.
+  const publishes = input.draft !== true;
 
-  // THE BILLING GATE (#289, #505). Before the transaction, because a refusal must cost nothing: no
-  // record, no items, no party row, no invitation. Three questions, and the **relationship** limit
-  // is asked first (#505): it is the limit the plan actually sells — "One active relationship at a
-  // time" on Free, "Unlimited active relationships" on every paid tier — so an account that has
-  // used its one relationship is refused with a sentence about a relationship, not about an
-  // "assessment instance" it never saw named. `instanceGateRefusal` still asks the count of open
-  // sessions and the mode; the two counts differ (being a Counterparty is an instance but not a
-  // relationship you started), so neither subsumes the other.
+  // THE BILLING GATE (#289, #505, #835). Before the transaction, because a refusal must cost
+  // nothing: no record, no items, no party row, no invitation. One question now, and it is the
+  // limit the plan actually sells — "One active relationship at a time" on Free, "Unlimited
+  // active relationships" on every paid tier — so an account that has used its one relationship
+  // is refused with a sentence about a relationship, not about an "assessment instance" it never
+  // saw named.
+  //
+  // **The Mode is not asked here (#835).** Until this card a second refusal ran beside this one:
+  // `instanceGateRefusal` answered for the count of open sessions *and* refused Advanced Mode on
+  // Free. Both legs are gone, for one reason each:
+  //
+  //   - **the mode leg, because the publish trial is the Advanced entitlement.** A Free account
+  //     that publishes a relationship is granted the entry paid tier for seven days
+  //     (`grantPublishTrial`, below and in `sendDraftInvitation`), and that tier plays Basic *and*
+  //     Advanced. Refusing the Mode at create was refusing a capability the very next write
+  //     grants — and refusing it on the direct-publish path while the draft path handed it over,
+  //     which is the same account getting two answers depending on which control it used.
+  //   - **the session-count leg, because it was never the thing a plan sells.** An account may
+  //     hold a seat as the Counterparty on several relationships without having started one; what
+  //     a tier limits is the relationships you *start*, which is `relationshipGateRefusal`.
+  //
+  // The hard gate the owner's posture names is still the fee at the Gap (`awaiting_payment`,
+  // `lib/flow/screen.ts`) — this gate sells the relationship, and nothing here touches the fee.
   //
   // A signed-out create is not gated: there is no account to hold a plan, and the anonymous flow
   // is the pre-#213 behaviour the product still supports. That is also why the gate cannot be
@@ -420,11 +439,11 @@ export async function createInstanceFromTemplate(
   // an unbound instance belongs to nobody.
   //
   // **A draft is not gated (#834).** Stage 4 writes the relationship as a `draft` and sends
-  // nothing; the plan is sold on the send, not on the description. Until #834 the mode leg ran
-  // here, so a Free account that chose Advanced was refused at stage 4 — *before* the stage that
-  // carries the plans and the checkout, which is a dead end rather than an upsell. The gate now
-  // applies to a create that goes out as `published`, and the plan question is asked where the
-  // money is: a non-blocking prompt on stage 5, and the hard gate at the Gap.
+  // nothing; the plan is sold on the send, not on the description. Until #834 the gate ran here
+  // for a draft too, so a Free account that chose Advanced was refused at stage 4 — *before* the
+  // stage that carries the plans and the checkout, which is a dead end rather than an upsell. The
+  // gate now applies to a create that goes out as `published`, and the plan question is asked
+  // where the money is: a non-blocking prompt on stage 5, and the hard gate at the Gap.
   if (initiatorUserId !== null && input.draft !== true) {
     const entitlement = await entitlementForAccount(initiatorUserId);
     const relationshipRefusal = relationshipGateRefusal({
@@ -434,12 +453,6 @@ export async function createInstanceFromTemplate(
     if (relationshipRefusal !== null) {
       throw new FlowError(relationshipRefusal.code, relationshipRefusal.message);
     }
-    const refusal = instanceGateRefusal({
-      entitlement,
-      activeInstances: await activeInstanceCount(initiatorUserId),
-      mode: mode.data,
-    });
-    if (refusal !== null) throw new FlowError(refusal.code, refusal.message);
   }
   // #258 — the address the unlock notice will reach the Initiator at, or NULL when nobody signed
   // in to create this instance. Written on the invitation row, in the same transaction that
@@ -449,6 +462,7 @@ export async function createInstanceFromTemplate(
   const initiatorToken = mintToken();
   const inviteToken = mintToken();
   const instanceRecordId = cryptoRandomId();
+  let created: CreatedInstance | undefined;
   const client = await getPool().connect();
 
   try {
@@ -626,7 +640,7 @@ export async function createInstanceFromTemplate(
     // instant because nothing has been published, and the send writes both. The session and the
     // invitation row are written either way, because stage 5 needs a token to send; what a draft
     // does not have is an email that went anywhere.
-    const relationshipStatus = input.draft === true ? "draft" : "published";
+    const relationshipStatus = publishes ? "published" : "draft";
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
@@ -640,7 +654,7 @@ export async function createInstanceFromTemplate(
         initiatorUserId,
         now.toISOString(),
         relationshipStatus,
-        input.draft === true ? null : now.toISOString(),
+        publishes ? now.toISOString() : null,
       ],
     );
 
@@ -709,7 +723,7 @@ export async function createInstanceFromTemplate(
     );
 
     await client.query("COMMIT");
-    return {
+    created = {
       instanceRecordId,
       slug,
       templateTitle: found.title,
@@ -722,6 +736,37 @@ export async function createInstanceFromTemplate(
   } finally {
     client.release();
   }
+
+  if (created === undefined) {
+    // Unreachable: every path out of the `try` above either sets `created` or throws. A throw here
+    // is load-bearing — the alternative is returning a create that wrote nothing.
+    throw new Error("createInstanceFromTemplate committed without an instance");
+  }
+
+  // Publishing is the instant the trial opens (#840), on **either** publish path (#835). The draft
+  // path grants it in `sendDraftInvitation()`; a create that goes out `published` reaches the same
+  // instant a step earlier, and without the grant the row it has just committed reads `lapsed` on
+  // the very next membership read — every account that has never checked out would be locked out
+  // of the relationship it just published, and the counterparty's claim refused with `lapsed`.
+  // That is the defect #840 fixed on the send path, and this is the same fix on the other one.
+  //
+  // After `client.release()` on purpose: the grant is its own statement on the pool, and the
+  // transaction's connection is no longer held while it runs.
+  if (publishes && initiatorUserId !== null) {
+    try {
+      await grantPublishTrial({ userId: initiatorUserId, publishedAt: now });
+    } catch (error) {
+      // The create stands — it is already committed — but a published row with no trial lapses on
+      // the next read, so this is loud rather than swallowed.
+      console.error(
+        `[billing] publish trial not granted for relationship "${instanceRecordId}" (user ${initiatorUserId}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  return created;
 }
 
 /** `crypto.randomUUID()`, imported lazily so this module stays a thin wrapper over SQL. */

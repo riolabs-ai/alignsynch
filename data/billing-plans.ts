@@ -121,14 +121,19 @@ export const billingPlans: readonly BillingPlan[] = [
     yearlyCents: 0,
     features: [
       "One active relationship, start to finish — for 7 days from the send",
-      "Basic Mode: how it feels to each side, and how each wishes it to be",
+      // #835 — the trial is the Advanced entitlement. The publish grants the entry paid tier for
+      // the seven days, and that tier plays both modes, so the Free card sells both. The line used
+      // to say "Basic Mode" alone, which described a gate this build no longer runs.
+      "Basic Mode and Advanced Mode — both for those seven days",
       "Blind answers — neither party sees the other's until both have answered",
       "The report, one line per Gap",
       "Invite the other party by link",
     ],
     limitations: [
       "Seven days from the invitation, then a paid plan to open the Gap",
-      "Advanced Mode needs a paid plan",
+      // #835 — was "Advanced Mode needs a paid plan". True of day eight, false of the trial, and
+      // the card is the trial: the publish hands over the tier that plays Advanced Mode.
+      "Advanced Mode is part of the same seven days; after them, a paid plan to keep it",
     ],
     cta: { label: "Start your 7 days", href: "/register" },
     popular: false,

@@ -1,7 +1,7 @@
 /**
- * Plan → what the server allows (#289). No provider, no query, no UI — pure functions.
+ * Plan → what the server allows (#289, #835). No provider, no query, no UI — pure functions.
  *
- * The gate this card was given is deliberately computable from columns the schema already has,
+ * The table below is what a **tier includes**, computable from columns the schema already has,
  * because a gate that needs a new subsystem is a gate that ships as a mock screen:
  *
  * | plan   | active assessment instances | modes                                     |
@@ -9,14 +9,23 @@
  * | Free   | 1                           | Basic Mode only (Feel and Wish)           |
  * | Paid   | unlimited                   | Basic and Advanced (adds Think and Guess) |
  *
+ * **Which row of that table the create form is refused on changed in #835.** The create-time gate
+ * asks one question — may this account start another *relationship* (`relationshipGateRefusal`) —
+ * and nothing else. The mode is not asked, because a Free account that publishes is granted the
+ * entry paid tier for seven days (`lib/billing/publish-trial.ts`), so the very next write hands it
+ * the Advanced Mode a create-time refusal would have denied; and the session count is not asked,
+ * because a plan limits the relationships you start, not the seats you hold on somebody else's.
+ * The hard gate the owner's posture names is the fee at the Gap (`awaiting_payment`), not a plan
+ * check at create.
+ *
  * "Active" is the count `lib/db/billing.ts` reads: the account holds a party row on an instance
  * and that instance is not complete yet (`instanceStatusOf`'s definition, written as SQL). A
  * finished assessment does not hold a slot, so a free account can keep using the product for
  * ever — one relationship at a time.
  *
  * **Why the refusal names the plan.** A 400 that says "limit reached" is a bug report; a 400 that
- * says *"The Free plan includes 1 active assessment"* is a person learning what they bought.
- * Every message below is built from the entitlement's own `planName` and numbers, so a renamed
+ * says *"The Free plan includes 1 active relationship"* is a person learning what they bought.
+ * The message below is built from the entitlement's own `planName` and numbers, so a renamed
  * tier cannot leave a sentence pointing at a plan that no longer exists.
  */
 import type { AssessmentMode } from "@/content/assessment";
@@ -121,9 +130,15 @@ export function highestPlanId(planIds: readonly string[]): BillingPlanId {
   return best;
 }
 
-/** A refusal the caller must surface. Same shape the flow store's errors carry. */
+/**
+ * A refusal the caller must surface. Same shape the flow store's errors carry.
+ *
+ * One code, because one refusal lives here now: `relationship-limit` (#505). The mode refusal and
+ * the session-count refusal that used to sit beside it were removed in #835 — the publish trial
+ * entitles Advanced Mode, and the count a plan sells is relationships started, not seats held.
+ */
 export interface GateRefusal {
-  readonly code: "instance-limit" | "mode-not-entitled" | "relationship-limit";
+  readonly code: "relationship-limit";
   /** One sentence, naming the plan and what would change its answer. */
   readonly message: string;
   readonly planId: BillingPlanId;
@@ -133,19 +148,23 @@ export interface GateRefusal {
 /**
  * May this account start another relationship? `null` means yes (#505).
  *
- * **The plan sells relationships, so this is the question the create form asks.** It is asked
- * before `instanceGateRefusal` because it is the plan's own limit: an account that has used the one
- * relationship its tier includes is refused with a sentence about the relationship it holds, not
- * about an "assessment instance" it never saw named on the pricing page. The two gates are not the
- * same question — `activeRelationships` counts the relationships this account **started**, and an
- * account may be the Counterparty on several without initiating one, which the instance count
- * includes and this one must not.
+ * **The plan sells relationships, so this is the question the create form asks.** An account that
+ * has used the one relationship its tier includes is refused with a sentence about the
+ * relationship it holds, not about an "assessment instance" it never saw named on the pricing
+ * page. `activeRelationships` counts the relationships this account **started**; an account may
+ * be the Counterparty on several without initiating one, and those do not spend its slot.
  *
  * `activeRelationships` is `activeRelationshipCount()` — relationships with a session neither
- * complete nor voided — and `null` limits mean unlimited, exactly as the instance gate reads them.
- * The sentence is built from the entitlement's own `planName` and numbers for the reason
- * `instanceGateRefusal` records: a renamed tier cannot leave a sentence pointing at a plan that no
- * longer exists.
+ * complete nor voided — and `null` limits mean unlimited. The sentence is built from the
+ * entitlement's own `planName` and numbers, so a renamed tier cannot leave a sentence pointing at
+ * a plan that no longer exists.
+ *
+ * **This is the whole create-time gate (#835).** It used to sit beside `instanceGateRefusal`,
+ * which asked the count of open sessions and refused Advanced Mode on Free. The mode leg went
+ * because the publish trial *is* the Advanced entitlement — a Free account that publishes is
+ * granted the entry paid tier for seven days, and that tier plays both modes — and the
+ * session-count leg went with it, because a seat on somebody else's relationship is not a
+ * relationship you started, and the fee at the Gap is the hard gate the product actually enforces.
  */
 export function relationshipGateRefusal(input: {
   readonly entitlement: Entitlement;
@@ -170,53 +189,6 @@ export function relationshipGateRefusal(input: {
       `This account already has ${held}. ` +
       "Finish it before starting another, or move to a paid plan for unlimited active relationships.",
   };
-}
-
-/**
- * May this account create this instance? `null` means yes.
- *
- * Both questions are asked here — the count and the mode — so a caller cannot enforce one and
- * forget the other, and the order is fixed: the count first (it is the cheaper fact to explain),
- * then the mode.
- */
-export function instanceGateRefusal(input: {
-  readonly entitlement: Entitlement;
-  /** Active instances the account already holds — `activeInstanceCount()`. */
-  readonly activeInstances: number;
-  /** The mode the create asked for, already parsed by the store. */
-  readonly mode: AssessmentMode;
-}): GateRefusal | null {
-  const { entitlement, activeInstances, mode } = input;
-  const limit = entitlement.maxActiveInstances;
-
-  if (limit !== null && activeInstances >= limit) {
-    const noun = limit === 1 ? "assessment" : "assessments";
-    const held =
-      activeInstances === 1 ? "1 active assessment" : `${activeInstances} active assessments`;
-    return {
-      code: "instance-limit",
-      planId: entitlement.planId,
-      planName: entitlement.planName,
-      message:
-        `The ${entitlement.planName} plan includes ${limit} active ${noun}. ` +
-        `This account already has ${held}. Finish or close that one before starting another, ` +
-        "or move to a paid plan for unlimited active assessments.",
-    };
-  }
-
-  if (mode === ADVANCED_MODE && !entitlement.advancedMode) {
-    return {
-      code: "mode-not-entitled",
-      planId: entitlement.planId,
-      planName: entitlement.planName,
-      message:
-        "Advanced Mode (Think and Guess) is part of the paid plans. " +
-        `The ${entitlement.planName} plan plays Basic Mode — Feel and Wish — and this assessment ` +
-        "was asked for in Advanced Mode.",
-    };
-  }
-
-  return null;
 }
 
 /**

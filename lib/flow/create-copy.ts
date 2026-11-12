@@ -97,15 +97,13 @@ export function createRefusal(
   if (code === "template-not-yours") {
     return { sentence: itemLabel(problems, "template-not-yours"), link: null };
   }
-  if (code === "instance-limit") {
-    return { sentence: itemLabel(problems, "instance-limit"), link: null };
-  }
-  // #505 — the plan's relationship limit. Beside `instance-limit` rather than folded into it:
-  // the two codes name different counts, and an operator reading `?problem=` should be able to
-  // tell which gate answered.
+  // #505 — the plan's relationship limit, and the only refusal the create path raises (#835
+  // removed the mode and session-count legs, so their fixture items went with them).
   if (code === "relationship-limit") {
     return { sentence: itemLabel(problems, "relationship-limit"), link: plans };
   }
+  // #835 — not a refusal any more: stage 5 draws this as the trial notice, so it keeps its
+  // `/pricing` door and its sentence is about the day after the trial.
   if (code === "mode-not-entitled") {
     return { sentence: itemLabel(problems, "mode-not-entitled"), link: plans };
   }
