@@ -18,6 +18,8 @@
     "lib/quiz-cards.ts",
     "lib/quiz-detail.ts",
     "scripts/bundles.ts",
+    "scripts/bundle-platform.ts",
+    "scripts/zip-bridge.ts",
     "scripts/brand-word.ts",
     "scripts/ui-census.ts",
     "scripts/data-check*",
