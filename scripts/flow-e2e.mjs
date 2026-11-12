@@ -60,6 +60,7 @@
  * counts, so "did this run leave a row" is answered by the output.
  */
 import { Client } from "pg";
+import { sendInvitationPath } from "@/lib/flow/paths";
 
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const TEMPLATE_ID = "assessment-relationship-basics";
@@ -355,26 +356,84 @@ async function createThroughStages(
     `status ${saved.status} ${JSON.stringify(saved.body)}`,
   );
 
-  /* stage 4 — Create ------------------------------------------------- */
+  /* stage 4 — Account (#825, #828) ------------------------------------ */
+  // The stage that asks for the account and then **writes the relationship as a `draft`**. It used
+  // to be a second gate reached after the commit (#690/#794); v9 made it the stage, and the draft
+  // is what stage 5 either sends or keeps.
   const commitScreen = await jar.get(`${stem}/commit`);
   check(
-    "stage 4 Create reviews what the three stages decided and offers the one control that writes",
-    commitScreen.status === 200 &&
-      commitScreen.html.includes('data-create-review="true"') &&
-      commitScreen.html.includes('data-create-commit="true"'),
+    "stage 4 Account renders for the signed-in creator, drawing the account column",
+    commitScreen.status === 200 && commitScreen.html.includes('data-create-account="true"'),
     `status ${commitScreen.status}`,
   );
 
-  const committed = await jar.post("/assessment/new", { templateRecordId });
+  // `draft=1` is the whole difference (#828): the endpoint writes `relationship.status = 'draft'`
+  // with `published_at` NULL and sends nothing, then hands the person to stage 5.
+  const committed = await jar.post("/assessment/new", { templateRecordId, draft: "1" });
   const location = committed.location ?? "";
   const instanceId = instanceIdIn(location);
   if (instanceId !== null) created.push(instanceId);
   check(
-    "the commit on stage 4 answers 303 to the new relationship, in either of its two shapes",
-    committed.status === 303 && instanceId !== null,
+    "stage 4 writes the draft and answers 303 to stage 5 Invite",
+    committed.status === 303 &&
+      instanceId !== null &&
+      new URL(location, BASE_URL).pathname.endsWith(`${stem}/invite`),
     `${committed.status} ${location}`,
   );
   return { location, instanceId };
+}
+
+/**
+ * Sign a creator in, through the app's own auth (#844).
+ *
+ * Before v9 this script ran signed out and the create committed a relationship with no owner; that
+ * is no longer a path the product has — stage 4 writes a draft *for the signed-in Initiator*, and a
+ * signed-out browser cannot get past it. So the walk starts by making a real account, through the
+ * same endpoint the sign-up form posts to.
+ *
+ * **The origin matters.** Neon Auth answers `403 INVALID_ORIGIN` for a host that is not on the
+ * branch's trusted-domain list, so this runs against whatever `BASE_URL` names and fails loudly when
+ * the host is not trusted, rather than silently continuing as a guest.
+ */
+async function signUpCreator(jar, { name }) {
+  const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
+  const password = "E2e-Passw0rd!2026";
+  const response = await fetch(`${BASE_URL}/api/auth/sign-up/email`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: BASE_URL },
+    body: JSON.stringify({ email, password, name }),
+  });
+  jar.absorb(response);
+  const body = await response.text();
+  check(
+    "a creator account is created through the app's own sign-up endpoint",
+    response.status === 200,
+    `status ${response.status} ${body.slice(0, 90)}`,
+  );
+  // A gated page answers 200 only with a live session; 307 is the signed-out redirect.
+  const gated = await jar.get("/assessment/instances");
+  check(
+    "and the session it returns is accepted by a gated page",
+    gated.status === 200,
+    `status ${gated.status}`,
+  );
+  return { email, password };
+}
+
+/**
+ * The relationship a session id belongs to — the two columns #828 made the draft/published
+ * difference live in. The invitation row is written either way (stage 5 needs a token to send), so
+ * status and `published_at` are what say whether anything went out.
+ */
+async function relationshipState(instanceRecordId) {
+  const { rows } = await db.query(
+    `SELECT r.status, r.published_at
+       FROM relationship r
+       JOIN session s ON s.relationship_id = r.id
+      WHERE s.record_id = $1`,
+    [instanceRecordId],
+  );
+  return rows[0] ?? null;
 }
 
 /* ------------------------------------------------------------------ *
@@ -426,12 +485,13 @@ async function main() {
   const counterparty = new Jar("counterparty");
   const stranger = new Jar("stranger");
 
-  /* 1. create — the four stages: Who, Mode, Aspects, Create (#688 → #690) --- */
-  // #704 — the create is four screens, and its redirect has three shapes (#709): a signed-in
-  // creator is closed onto the dashboard, a signed-out one to the account gate, which names the
-  // relationship stage 4 just committed, and a post that named no template to the relationship
-  // itself. This run is signed out, so the gate is the shape it should meet; the id is in the
-  // address either way, and that is where the flow continues.
+  /* 0. an account — stage 4 writes the draft for one (#844) ----------- */
+  // v9 has no account-less path: stage 4 is the Account stage, and the draft it writes is owned by
+  // the browser's account. This script used to run signed out, which is how it kept passing while
+  // the signed-in journey was never walked at all.
+  await signUpCreator(initiator, { name: "Avery E2E" });
+
+  /* 1. create — five stages: Details, Settings, Aspects, Account, Invite (#825) --- */
   const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorFirst: "Avery",
@@ -447,34 +507,56 @@ async function main() {
   const instanceId = firstCreate.instanceId;
 
   const instancePath = `/assessment/instances/${instanceId}`;
-  const destination = new URL(firstCreate.location, BASE_URL);
-  const onTheGate = destination.pathname.endsWith("/create/account");
-  // #709 — the signed-in shape is the dashboard now: the flow closes onto it and the new
-  // relationship is listed there. This run is signed out, so it meets the gate; the other two
-  // shapes are still accepted so the check describes the endpoint rather than this one journey.
+
+  /* 1a. the draft — written, owned, unpublished (#828) ------------------ */
+  const drafted = await relationshipState(instanceId);
   check(
-    "the create sends the creator to one of the three screens it has: the gate, the dashboard, or Sent",
-    (onTheGate && destination.searchParams.get("instance") === instanceId) ||
-      destination.pathname === "/dashboard" ||
-      destination.pathname === `${instancePath}/sent`,
-    `${destination.pathname}${destination.search}`,
+    "stage 4 wrote the relationship as a draft, owned and unpublished",
+    drafted !== null && drafted.status === "draft" && drafted.published_at === null,
+    JSON.stringify(drafted),
   );
 
-  if (onTheGate) {
-    const gateScreen = await initiator.get(firstCreate.location);
-    check(
-      "the gate draws its own three-step strip and the account form, for the browser that committed",
-      gateScreen.status === 200 &&
-        gateScreen.html.includes('data-account-gate-progress="true"') &&
-        gateScreen.html.includes('data-account-gate-form="true"'),
-      `status ${gateScreen.status}`,
-    );
-    check(
-      "and it offers the way back into the relationship it just committed",
-      gateScreen.html.includes(`href="${instancePath}"`),
-      instancePath,
-    );
-  }
+  /* 1b. stage 5 Invite draws both acts -------------------------------- */
+  const inviteStage = await initiator.get(firstCreate.location);
+  check(
+    "stage 5 Invite draws the send form and the keep-as-draft way out",
+    inviteStage.status === 200 &&
+      inviteStage.html.includes('data-create-send="true"') &&
+      inviteStage.html.includes('data-create-keep-draft="true"'),
+    `status ${inviteStage.status}`,
+  );
+
+  /* 1c. no payment, no send: keeping the draft ------------------------ */
+  // `Continue as Draft` is a link to the dashboard, not a server act — so the proof is that the
+  // relationship is *still* an unpublished draft and that the dashboard lists it. That is the
+  // "save it and come back" path the payment posture promises.
+  const dashboard = await initiator.get("/dashboard");
+  check(
+    "keeping the draft lands the creator on the dashboard",
+    dashboard.status === 200,
+    `status ${dashboard.status}`,
+  );
+  check(
+    "and the draft is listed there by the title stages 1–3 chose",
+    dashboard.html.includes("Avery and Rowan E2E"),
+    "title not found in the dashboard render",
+  );
+  const stillDraft = await relationshipState(instanceId);
+  check(
+    "nothing was sent and nothing was published: still a draft, no publish instant",
+    stillDraft !== null && stillDraft.status === "draft" && stillDraft.published_at === null,
+    JSON.stringify(stillDraft),
+  );
+
+  /* 1d. Send and Continue publishes it -------------------------------- */
+  const sent = await initiator.post(sendInvitationPath(instanceId), {});
+  check("Send and Continue answers 303", sent.status === 303, `${sent.status} ${sent.location}`);
+  const published = await relationshipState(instanceId);
+  check(
+    "and it moves the draft to published, with the publish instant written",
+    published !== null && published.status === "published" && published.published_at !== null,
+    JSON.stringify(published),
+  );
 
   check(
     "the initiator's party cookie is set",
@@ -570,9 +652,15 @@ async function main() {
     stored.token_hash.slice(0, 12),
   );
   check(
-    "the invitation expires seven days after it was created",
-    new Date(stored.expires_at).getTime() - new Date(stored.created_at).getTime() ===
-      7 * 24 * 60 * 60 * 1000,
+    // Seven days from the instant the token was **issued**, which since #825 is the send, not the
+    // draft: `sendDraftInvitation` reissues the token, so `expires_at` moves with it. A couple of
+    // seconds of slack, because the two instants are written by different statements.
+    "the invitation expires seven days after its token was issued",
+    Math.abs(
+      new Date(stored.expires_at).getTime() -
+        new Date(stored.created_at).getTime() -
+        7 * 24 * 60 * 60 * 1000,
+    ) < 60_000,
     `${stored.created_at} → ${stored.expires_at}`,
   );
 
@@ -657,9 +745,11 @@ async function main() {
       invitePage.html.includes('data-stage-close="/dashboard"'),
   );
   check(
-    "and under the six-stage rail, at Connect — stage 5 of 6",
-    invitePage.html.includes("Stage 5 of 6") &&
-      ["Details", "Settings", "Aspects", "Invite", "Connect", "Align"].every((name) =>
+    // v9 (#825): five stages, `Stage {n} of 5`, and Connect is retired — the counterparty's
+    // response path enters at Account and lands on the dashboard.
+    "and under the five-stage rail — stage 5 of 5",
+    invitePage.html.includes("Stage 5 of 5") &&
+      ["Details", "Settings", "Aspects", "Account", "Invite"].every((name) =>
         invitePage.html.includes(name),
       ),
   );
@@ -669,7 +759,7 @@ async function main() {
     stepTwo.status === 200 &&
       stepTwo.html.includes("You can change any opinion until you accept the session.") &&
       stepTwo.html.includes('data-stage-shell="true"') &&
-      stepTwo.html.includes("Stage 5 of 6"),
+      stepTwo.html.includes("Stage 5 of 5"),
     `status ${stepTwo.status}`,
   );
   const stepThree = await counterparty.get(`/invite/${token}?step=3`);
