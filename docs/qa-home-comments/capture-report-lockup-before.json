@@ -1,0 +1,175 @@
+{
+  "mode": "before",
+  "base": "http://127.0.0.1:4317",
+  "capturedAt": "2026-11-12T13:05:35.798Z",
+  "widths": [
+    {
+      "width": 1440,
+      "file": "docs/qa-home-comments/logo-before-1440.png",
+      "axLinks": [],
+      "tabs": [
+        {
+          "tag": "A",
+          "href": "/",
+          "name": "Home",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "/relationship-types",
+          "name": "Templates",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "/#questions",
+          "name": "How It Works",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "/pricing",
+          "name": "Pricing",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "/help",
+          "name": "Help",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "/login",
+          "name": "Sign In",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "/register",
+          "name": "Sign Up",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "#relationship-templates",
+          "name": "Choose a relationship",
+          "isLockup": false
+        }
+      ],
+      "path": "/",
+      "innerWidth": 1440,
+      "scrollWidth": 1440,
+      "documentHeight": 5661,
+      "headerHeight": 81,
+      "lockup": {
+        "tag": "IMG",
+        "alt": "AlignSynch",
+        "className": "h-6 w-auto shrink-0 sm:h-7",
+        "src": "/brand/as2-logo_v2_cl.png",
+        "naturalWidth": 818,
+        "rect": {
+          "x": 168,
+          "y": 24,
+          "width": 206.11,
+          "height": 32
+        }
+      },
+      "slot": {
+        "x": 168,
+        "y": 24,
+        "width": 206.11,
+        "height": 32
+      },
+      "anchor": null,
+      "navRows": ["Home", "Templates", "How It Works", "Pricing", "Help"],
+      "secrets": [],
+      "brokenImages": [],
+      "pendingImages": 0
+    },
+    {
+      "width": 390,
+      "file": "docs/qa-home-comments/logo-before-390.png",
+      "axLinks": [],
+      "tabs": [
+        {
+          "tag": "A",
+          "href": "/login",
+          "name": "Sign In",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "/register",
+          "name": "Sign Up",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "#relationship-templates",
+          "name": "Choose a relationship",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "#how-it-works",
+          "name": "See how it works",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "#personal-relationships",
+          "name": "Explore personal relationship templates",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "#business-relationships",
+          "name": "Explore business relationship templates",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "#how-it-works",
+          "name": "How it works",
+          "isLockup": false
+        },
+        {
+          "tag": "A",
+          "href": "#relationship-templates",
+          "name": "Templates",
+          "isLockup": false
+        }
+      ],
+      "path": "/",
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "documentHeight": 10178,
+      "headerHeight": 81,
+      "lockup": {
+        "tag": "IMG",
+        "alt": "AlignSynch",
+        "className": "h-6 w-auto shrink-0 sm:h-7",
+        "src": "/brand/as2-logo_v2_cl.png",
+        "naturalWidth": 818,
+        "rect": {
+          "x": 24,
+          "y": 28,
+          "width": 154.58,
+          "height": 24
+        }
+      },
+      "slot": {
+        "x": 24,
+        "y": 28,
+        "width": 154.58,
+        "height": 24
+      },
+      "anchor": null,
+      "navRows": ["Home", "Templates", "How It Works", "Pricing", "Help"],
+      "secrets": [],
+      "brokenImages": [],
+      "pendingImages": 0
+    }
+  ]
+}

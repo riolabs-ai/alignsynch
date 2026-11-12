@@ -642,7 +642,16 @@ export function shellCopy(brand: Brand): PageCopy {
        */
       {
         id: "footer-links-alignsynch",
-        heading: "Quick Links",
+        /**
+         * The column's title, named by the owner (comment 823): these are the marketing website's
+         * menu rows, so the heading says what the list *is* rather than calling it "quick".
+         *
+         * It is this column's string alone. QuizHub's own `footer-links` heading above stays
+         * `Quick Links` — different list, different product, untouched by this rename — and
+         * `tests/footer-links-mirror.test.tsx` pins both so a future edit cannot move them
+         * together. The item `id` is a handle and does not change with the label.
+         */
+        heading: "Website Links",
         items: [
           { id: "home", label: "Home" },
           { id: "templates", label: "Templates" },

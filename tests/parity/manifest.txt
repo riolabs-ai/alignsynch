@@ -7,8 +7,8 @@
 # half of the same render; the full HTML is only ever written to tests/parity/artifacts/.
 #
 # route | brand | sha256
-/ | quizhub | a542f62102f8ac8540ff8359136ec0d600d930bbfb963f7671a6e404e88b356a
-/ | alignsynch | 35bfc5702623af8c4f5494cd698be22a3306598fc51c78aa484232c4a29b3b6e
+/ | quizhub | b9dd3a7517e53ab32fd871ba0c8c35dcb64c7b6f856c19596d2de934e07933ef
+/ | alignsynch | 5f83e7de4c3faaf50b8fab8dd0532f517afcdfd98487af99edf5730afc0dde89
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
 /news | quizhub | 2b60728b8ba547597a3811b3093b02b096854fcdd0a20743c6eb301e15e76dc6

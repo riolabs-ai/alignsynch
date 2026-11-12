@@ -35,6 +35,7 @@ import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { shellPageCopy } from "@/data/pages/shell";
 import type { ShellAccount } from "@/lib/auth/shell-account";
+import { brandMark } from "@/lib/brand-mark";
 import { publicChromeCopy } from "@/lib/shell-copy";
 
 /** One anchor in a rendered tree: where it goes, and the words (and monogram) inside it. */
@@ -201,5 +202,69 @@ describe("signed in with no handle yet", () => {
   it("draws the person and invents no destination", () => {
     expect(html).toContain("New Person");
     expect(anchorsOf(html).filter((anchor) => anchor.href.startsWith("/profile"))).toEqual([]);
+  });
+});
+
+describe("the lockup is the way home", () => {
+  /**
+   * The owner's note on `/`: *"click logo goes to home page"* — and it did not. The slot was a bare
+   * `<Image>` inside a `<span>` that closed right after it, so the one control a visitor presses
+   * without reading was the only thing on the chrome that could not be pressed; the route back to
+   * `/` from `/pricing` was the menu's own "Home" row or the address bar.
+   *
+   * These cases hold the anchor, its accessible name, and the sizes that must not move with it.
+   * `h-6` / `sm:h-7` are measured at 390 and 768 beneath the one `img[data-brand-lockup]` rule in
+   * `app/globals.css`, so they stay on the image and never migrate to the wrapper.
+   */
+  const LOCKUP = brandMark(alignSynchBrand.logo);
+
+  function headerWithLockup(): string {
+    return renderToStaticMarkup(
+      createElement(MarketingHeader, {
+        account: null,
+        brand: alignSynchBrand,
+        brandId: "alignsynch",
+        copy: shellPageCopy,
+        mark: LOCKUP,
+      }),
+    );
+  }
+
+  /** Every anchor in a tree as its own attributes and its contents — the pair an a11y name needs. */
+  function anchorParts(html: string): { attrs: string; inner: string }[] {
+    return [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map(([, attrs, inner]) => ({
+      attrs,
+      inner,
+    }));
+  }
+
+  /** The anchor the lockup lives in, found by the hook the image carries and not by position. */
+  function lockupAnchor(): { attrs: string; inner: string } | undefined {
+    return anchorParts(headerWithLockup()).find((anchor) =>
+      anchor.inner.includes("data-brand-lockup"),
+    );
+  }
+
+  it("wraps the drawn lockup in a link to the front page", () => {
+    expect(LOCKUP).toBeDefined();
+    expect(lockupAnchor()?.attrs).toContain('href="/"');
+  });
+
+  it("takes its accessible name from the image's alt and adds no competing label", () => {
+    const anchor = lockupAnchor();
+    // The `alt` is the name a screen reader reads for the anchor. A second `aria-label` would be
+    // read *instead* of it, so the brand would be announced from two places or neither.
+    expect(anchor?.inner).toContain('alt="AlignSynch"');
+    expect(anchor?.attrs).not.toContain("aria-label");
+  });
+
+  it("moves no size class: the measured lockup classes stay on the image", () => {
+    expect(lockupAnchor()?.inner).toContain("h-6 w-auto shrink-0 sm:h-7");
+  });
+
+  it("links the placeholder brand's typed name too, so both builds have the way home", () => {
+    // With no drawable mark the slot sets the name in type instead — the same lockup, the same
+    // anchor. A build whose logo is a fallback must not be the one that cannot get home.
+    expect(anchorsOf(headerHtml(null))).toContainEqual({ href: "/", text: "AlignSynch" });
   });
 });
