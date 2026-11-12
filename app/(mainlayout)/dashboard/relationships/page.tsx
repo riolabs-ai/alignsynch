@@ -7,19 +7,20 @@
  * and is the same read `/dashboard/templates` does, so the two screens cannot disagree about which
  * templates exist. Neither takes an id from the URL.
  *
- * **The create band is above the cards, and it is the only write on this page.** Starting a
+ * **The create band is the one write, and it opens from the header (#841 part 2).** Starting a
  * relationship copies a template into the relationship's own record; the copy is what makes the
  * detail screen's editor safe to use, and the band's copy says so. Nothing on this page edits
  * Aspects — that is one click away, on the detail screen, deliberately: a list that wrote would be
- * a table with a form in every row, which is not what a list is for.
+ * a table with a form in every row, which is not what a list is for. The band lives behind the
+ * header's `Start a relationship` action rather than above the list, which is the shape
+ * `components/my-quizzes/my-quizzes.tsx` ships and the approved artifact draws.
  *
  * `force-dynamic` for the reasons every console route in this tree carries it: per-request session,
  * database reads, and a `pnpm build` that must pass with no `DATABASE_URL` and no `NEON_AUTH_*`.
  */
 import type { Metadata } from "next";
 
-import { RelationshipCreate } from "@/components/dashboard/relationship-create";
-import { RelationshipCards } from "@/components/dashboard/relationship-cards";
+import { RelationshipsList } from "@/components/dashboard/relationships-list";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -54,27 +55,12 @@ export default async function MemberRelationshipsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">{dashboardRelationshipsPageCopy.heading}</h1>
-        {dashboardRelationshipsPageCopy.subtitle === undefined ? null : (
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            {dashboardRelationshipsPageCopy.subtitle}
-          </p>
-        )}
-      </header>
-      {unreadable === null ? (
-        <RelationshipCreate
-          copy={dashboardRelationshipsPageCopy}
-          templates={templates}
-          onCreate={createRelationshipAction}
-        />
-      ) : null}
-      <RelationshipCards
-        copy={dashboardRelationshipsPageCopy}
-        rows={rows}
-        unreadable={unreadable}
-      />
-    </div>
+    <RelationshipsList
+      copy={dashboardRelationshipsPageCopy}
+      rows={rows}
+      templates={templates}
+      onCreate={createRelationshipAction}
+      unreadable={unreadable}
+    />
   );
 }
