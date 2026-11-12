@@ -397,7 +397,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
        */
       id: "aspects",
       heading: "Relationship Aspects",
-      body: "Copied from the template. You can rename or reword an Aspect here, and add one — it is yours from the moment the relationship is created.",
+      body: "Copied from the template. You can rename or reword an Aspect here, add or remove one, and drag them into the order you want — the list is yours from the moment the relationship is created.",
       items: [
         { id: "count", label: "{count} Aspects" },
         { id: "tap-to-edit", label: "Tap an Aspect to edit it in place." },
@@ -422,12 +422,18 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         { id: "reordered", label: "Order saved." },
         { id: "refused", label: "That Aspect was not saved." },
         /**
-         * The shared editor's two list controls (#774). Stage 3 does not draw them — V4 keeps the
-         * template's list fixed until #699 — but `components/assessment-flow/aspect-list.tsx` names
-         * both ids, so they are declared here, where that component's copy is bound.
+         * The shared editor's two list controls (#774), and the floor under them (#699).
+         * `components/assessment-flow/aspect-list.tsx` names all three ids: `add` / `remove` are
+         * drawn at stage 3 now, and `last` is the sentence that refuses removing the final Aspect —
+         * a relationship asks at least one, so the control is disabled instead of the create
+         * refusing an empty list a stage later.
          */
         { id: "add", label: "Add an Aspect" },
         { id: "remove", label: "Remove {name}" },
+        {
+          id: "last",
+          label: "A relationship asks at least one Aspect. Add another before removing this one.",
+        },
         { id: "submit", label: "Continue to Stage 4" },
         { id: "back", label: "Back" },
       ],
@@ -489,6 +495,12 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "template-has-no-aspects",
           label:
             "That template has no Aspects, so a relationship made from it would have nothing to ask.",
+        },
+        // #699 — the creator's own list, emptied. Its own sentence rather than the template's:
+        // the template was fine, and what the person needs to do is add a row back.
+        {
+          id: "aspects-none",
+          label: "A relationship needs at least one Aspect. Add one to the list before continuing.",
         },
         {
           id: "record-is-an-instance",

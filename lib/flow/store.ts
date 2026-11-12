@@ -114,6 +114,7 @@ import {
   updateStepText,
 } from "@/lib/db/steps";
 import { invitationLink } from "@/lib/flow/email";
+import { aspectListProblem, aspectWriteProblem, aspectsToWrite } from "@/lib/flow/aspects";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
 import {
@@ -184,6 +185,14 @@ export type FlowErrorCode =
   | "template-archived"
   | "template-not-published"
   | "template-has-no-aspects"
+  /**
+   * The creator emptied the list (#699). A relationship asks nothing of either seat with no
+   * Aspects, and the model refuses an instance with none (`zAssessmentInstance.items` is `.min(1)`),
+   * so this is a refusal at the create and not an empty instance a page would fail to render. It is
+   * its own code rather than `template-has-no-aspects`, because the sentence a person needs says
+   * the list they emptied needs a row — not that the template they copied was empty.
+   */
+  | "aspects-none"
   | "record-is-an-instance"
   // A template another account wrote (#console 5/5). The catalogue already excludes those rows,
   // so this is the second half of the same rule for a caller that posts a record id directly:
@@ -248,16 +257,20 @@ export interface CreateInstanceInput {
    */
   readonly description?: string;
   /**
-   * Stage 3's list (#689) — the template's Aspects as the person reworded them.
+   * Stage 3's list (#689) — the template's Aspects as the person left them.
    *
    * Optional: a direct post to this endpoint (a `curl`, `scripts/flow-e2e.mjs`) carries no list
-   * and copies the version's Aspects exactly as it always did. When present it is consulted **by
-   * id**: an entry whose id the version does not offer is ignored, and a version Aspect the list
-   * does not mention is copied from the version. That is deliberate — a relationship's copy is
-   * compared against the version it is bound to, id for id and in order
-   * (`lib/db/rows.ts::copyDriftProblems`, `db:verify` V4), so the copy may be *reworded* by the
-   * person who created it but may not gain or lose an Aspect. Adding and removing is a different
-   * decision (it needs a V4 rule that can tell an edit from drift) and is not this field's job.
+   * and copies the version's Aspects exactly as it always did.
+   *
+   * **A list that is still a copy is consulted by id** (#689): a version Aspect the list does not
+   * mention is copied from the version, and a blank field falls back to the version's, so the copy
+   * may be *reworded* without becoming drift.
+   *
+   * **A list that added, removed or reordered an Aspect is the creator's own** (#699). It is
+   * written as given — their order, their rows, an id minted for each row they added — and the
+   * create stamps `session.aspects_authored_at`, which is what tells V4 to validate that copy's
+   * own structure instead of comparing it to a version it deliberately left. A list with no
+   * Aspect is refused (`aspects-none`): a relationship that asks nothing is not a relationship.
    */
   readonly aspects?: readonly {
     readonly id: string;
@@ -409,6 +422,23 @@ export async function createInstanceFromTemplate(
   // #427 — the Setting the create form chose. Parsed here, beside the mode, so both refusals
   // happen before the transaction opens and neither can leave a row behind.
   const alignmentSetting = alignmentSettingOf(input.alignmentSetting);
+
+  // #699 — stage 3's list, checked here for the same reason the Mode is: an empty list or a
+  // repeated id can be refused before the transaction opens, so the refusal costs nothing. The
+  // **blank** question waits until the rows are built (below), because a kept row with an empty
+  // field falls back to the version's words and only a row the person added has nothing to fall
+  // back to. A post that carries **no** list is the copy path and is not checked here.
+  if (input.aspects !== undefined) {
+    const problem = aspectListProblem(input.aspects);
+    if (problem !== null) {
+      throw new FlowError(
+        problem === "none" ? "aspects-none" : "invalid-input",
+        problem === "none"
+          ? "a relationship needs at least one Aspect"
+          : "the Aspect list names one id twice",
+      );
+    }
+  }
 
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
@@ -598,20 +628,41 @@ export async function createInstanceFromTemplate(
     // copy taken from it would fail `db:verify` V4 against the version the relationship is bound
     // to. No `response_option` copy: a version is `zAssessment`, whose every item's scale is the
     // fixed 1..5 band, so there is no option row for it to carry.
-    const copyIds = offered.items.map((item) => item.id);
-    // #689 — what the person reworded at stage 3, looked up by id. The ids and the order are the
-    // version's (`copyDriftProblems` compares them); the words are theirs. A list entry the version
-    // does not offer is ignored rather than inserted, and a blank value falls back to the version's
-    // — the same "never invent a row, never delete one" rule the draft's own reduction uses.
-    const edited = new Map((input.aspects ?? []).map((aspect) => [aspect.id, aspect]));
-    const copies = offered.items.map((item) => {
-      const edit = edited.get(item.id);
-      return {
-        prompt: edit?.prompt.trim() || item.prompt,
-        leftValue: edit?.leftValue.trim() || item.leftValue,
-        rightValue: edit?.rightValue.trim() || item.rightValue,
-      };
-    });
+    //
+    // #699 — **a copy, or the creator's own list.** `aspectsToWrite()` answers which one: a list
+    // that only rewords the version's Aspects keeps the version's ids *and order*, so V4 keeps
+    // comparing it to the pin (#689); a list that added, removed or reordered an Aspect is written
+    // as the person left it, and the session records the fact in `aspects_authored_at`, which is
+    // what tells V4 to validate that copy's own structure instead. The old behaviour — silently
+    // dropping an added row and restoring a removed one — is the defect this replaces.
+    //
+    // `cryptoRandomId()` mints the id of a row the person added: the draft's `new-1` is the
+    // browser's placeholder, never a record id, and an id in `item` is the handle every answer row
+    // will point at for the life of the relationship.
+    //
+    // A post that carries **no** list is the copy path with no special case: the version's own
+    // Aspects are the list, so the draft and the template are the same array and `aspectsToWrite`
+    // answers "copy".
+    const write = aspectsToWrite(
+      input.aspects ?? offered.items,
+      offered.items,
+      () => `aspect-${cryptoRandomId()}`,
+    );
+    // The rows are built now, so the one check that needed the version can run: a kept row's blank
+    // field has been filled from the version above, and a blank that survives is a row the person
+    // added with no question — refused rather than written (the transaction rolls back).
+    const writeProblem = aspectWriteProblem(write.aspects);
+    if (writeProblem !== null) {
+      throw new FlowError(
+        writeProblem === "none" ? "aspects-none" : "invalid-input",
+        writeProblem === "none"
+          ? "a relationship needs at least one Aspect"
+          : writeProblem === "duplicate"
+            ? "the Aspect list names one id twice"
+            : "an Aspect the creator added has a blank question or opinion label",
+      );
+    }
+    const copyIds = write.aspects.map((aspect) => aspect.id);
     await client.query(
       `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
        SELECT $1, t.item_id, t.position, t.prompt, 'score', t.left_value, t.right_value
@@ -620,10 +671,10 @@ export async function createInstanceFromTemplate(
       [
         instanceRecordId,
         copyIds,
-        copies.map((_, position) => position),
-        copies.map((copy) => copy.prompt),
-        copies.map((copy) => copy.leftValue),
-        copies.map((copy) => copy.rightValue),
+        write.aspects.map((_, position) => position),
+        write.aspects.map((aspect) => aspect.prompt),
+        write.aspects.map((aspect) => aspect.leftValue),
+        write.aspects.map((aspect) => aspect.rightValue),
       ],
     );
 
@@ -672,10 +723,24 @@ export async function createInstanceFromTemplate(
       ],
     );
 
+    // #699 — the copy's provenance, written with the copy itself. `NULL` is "copied from the
+    // version this relationship is bound to", which is the only thing every row written before
+    // this column existed actually was; an instant is "the creator wrote this list", which is what
+    // V4 validates as structure instead of as equality. One INSERT, no UPDATE path: the column is
+    // not in V18's carve-out list and must not become one.
     await client.query(
-      `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [instanceRecordId, found.id, mode.data, alignmentSetting, relationshipId],
+      `INSERT INTO session
+         (record_id, template_record_id, mode, alignment_setting, relationship_id,
+          aspects_authored_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        instanceRecordId,
+        found.id,
+        mode.data,
+        alignmentSetting,
+        relationshipId,
+        write.authored ? now.toISOString() : null,
+      ],
     );
 
     // The Initiator's seat. `user_id` is the session's account when there is one, and NULL when

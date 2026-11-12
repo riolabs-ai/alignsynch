@@ -731,6 +731,7 @@ export function CreateRelationship({
                 copy={copy}
                 templateRecordId={template.recordId}
                 aspects={aspects ?? []}
+                addRemove
               />
 
               {/*
