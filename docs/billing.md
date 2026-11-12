@@ -47,28 +47,38 @@ Two rules keep this a port rather than a mock screen:
 
 ## The gate — what a plan allows
 
-| plan       | active assessment instances | modes                                     |
-| ---------- | --------------------------- | ----------------------------------------- |
-| Free       | 1                           | Basic Mode only (Feel and Wish)           |
-| Basic      | unlimited                   | Basic and Advanced (adds Think and Guess) |
-| Pro        | unlimited                   | Basic and Advanced                        |
-| Enterprise | unlimited                   | Basic and Advanced                        |
+| plan       | active relationships | modes                                       |
+| ---------- | -------------------- | ------------------------------------------- |
+| Free       | 1                    | Basic Mode, and Advanced in the 7-day trial |
+| Basic      | unlimited            | Basic and Advanced (adds Think and Guess)   |
+| Pro        | unlimited            | Basic and Advanced                          |
+| Enterprise | unlimited            | Basic and Advanced                          |
 
-Both facts are computed, never stored: the count is `activeInstanceCount(userId)` — a party row on
-an instance that is not complete yet, the same definition `instanceStatusOf` uses — and the mode is
-`assessment_instance.mode`, which the schema already fixes at creation.
+The count is computed, never stored: `activeRelationshipCount(userId)` reads the relationships the
+account **started** whose session is neither complete nor voided. A seat as the Counterparty on
+somebody else's relationship does not spend it — a plan sells relationships you begin, not sessions
+you sit in.
 
-**Enforcement is in the store, before the transaction.** `createInstanceFromTemplate`
-(`lib/flow/store.ts`) asks `instanceGateRefusal()` and throws a `FlowError` carrying
-`instance-limit` or `mode-not-entitled`; the create route already answers `{error, message}` for
+**Enforcement is in the store, before the transaction, and it asks one question (#835).**
+`createInstanceFromTemplate` (`lib/flow/store.ts`) asks `relationshipGateRefusal()` and throws a
+`FlowError` carrying `relationship-limit`; the create route already answers `{error, message}` for
 every `FlowError`, so a refused create costs nothing — no record, no items, no party row, no
 invitation. A signed-out create is not gated: there is no account to hold a plan.
 
-Every refusal names the plan in its sentence, e.g.
+**The Mode is not asked at create, because the publish trial _is_ the Advanced entitlement.** A
+Free account that publishes a relationship — by sending a draft, or by the one-form create that
+publishes directly — is granted the entry paid tier for seven days (`grantPublishTrial`,
+`lib/billing/publish-trial.ts`), and that tier plays Basic **and** Advanced. Refusing Advanced at
+create refused a capability the very next write hands over, and it did so on one publish path while
+the other allowed it. The `mode` and `activeInstances` columns above are still what a tier
+_includes_, which is what `/pricing` and the stage-5 notice render; they are not a refusal. The hard
+gate the product enforces is the fee at the Gap (`awaiting_payment`, `lib/flow/screen.ts`), and
+nothing in this section touches it.
 
-> The Free plan includes 1 active assessment. This account already has 1 active assessment. Finish
-> or close that one before starting another, or move to a paid plan for unlimited active
-> assessments.
+The one refusal left names the plan in its sentence, e.g.
+
+> The Free plan includes 1 active relationship. This account already has 1 active relationship.
+> Finish it before starting another, or move to a paid plan for unlimited active relationships.
 
 ## Proving it
 

@@ -171,7 +171,7 @@ describe("stage 1 — the create step", () => {
   });
 });
 
-describe("the plan refusals are no longer dead ends", () => {
+describe("the plan lines are no longer dead ends", () => {
   const problems = sectionOf(assessmentCreatePageCopy, "problems");
   const plansLink = { href: PRICING_PATH, label: itemLabel(problems, "plans") };
 
@@ -185,9 +185,11 @@ describe("the plan refusals are no longer dead ends", () => {
     });
   }
 
-  it("a refusal that names no plan draws no pricing link", () => {
+  it("a sentence that names no plan draws no pricing link", () => {
+    // `instance-limit` used to be the example here; #835 removed that refusal (the plan limits
+    // relationships started, not seats held), so the case uses a template refusal instead.
     const html = createHtml({
-      problem: itemLabel(problems, "instance-limit"),
+      problem: itemLabel(problems, "template-not-published"),
       problemLink: null,
     });
     expect(html).not.toContain(`href="${PRICING_PATH}"`);

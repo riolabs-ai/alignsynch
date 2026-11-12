@@ -91,9 +91,13 @@ export default async function TemplateCreateInvitePage({
   /**
    * #834 — the plan question is asked **here**, where the send is, not at stage 4 where the draft
    * is written. A draft is unfunded and unsent; refusing it a stage before the screen that carries
-   * the plans and the checkout is a dead end, not an upsell. The words are the refusal's own
+   * the plans and the checkout is a dead end, not an upsell. The words are the notice's own
    * fixture sentence — one sentence, one home — and this band does not block: Send stays enabled,
    * and keeping the draft costs nothing.
+   *
+   * #835 — the sentence no longer says the Mode was refused: the send grants the 7-day trial, and
+   * the trial plays Advanced Mode. So a Free account choosing Advanced reads how long it is
+   * included, not that it cannot have it.
    */
   const entitlement = viewer === null ? null : await entitlementForAccount(viewer.userId);
   const modeNotOnPlan =

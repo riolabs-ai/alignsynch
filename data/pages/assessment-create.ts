@@ -472,14 +472,9 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "That template was written by another account. You can copy the platform's templates and the ones you wrote.",
         },
-        {
-          id: "instance-limit",
-          label:
-            "You already hold as many open relationships as your plan allows. Close one before creating another.",
-        },
-        // #505 — the plan's own limit, which is the one the pricing page sells. It is a different
-        // sentence from `instance-limit` because it is a different count: relationships this
-        // account started, not sessions it holds a seat on.
+        // #505 — the plan's own limit, and the one the create gate still asks: relationships this
+        // account started, not sessions it holds a seat on. It is the only refusal `lib/flow/store`
+        // raises at create (#835 removed the mode and session-count legs).
         {
           id: "relationship-limit",
           label:
@@ -487,11 +482,16 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         },
         {
           id: "mode-not-entitled",
-          label: "The Mode you chose is not on your plan. Choose Basic, or change your plan.",
+          // #835 — this sentence is drawn as a stage-5 **notice**, not a refusal: Advanced Mode is
+          // not on the Free tier, but publishing grants the entry paid tier for seven days and
+          // that tier plays it. So the line is about day eight, and it never says the Mode was
+          // refused — nothing refuses it any more.
+          label:
+            "Advanced Mode is included in your seven-day trial. After the trial ends, it needs a plan that includes it.",
         },
-        // #618 — the door both refusals above name and neither drew. One label for both codes,
-        // because it points at the same page: the plan grid, which is where a tier is chosen and
-        // where the checkout button for that tier lives. Neither sentence changed.
+        // #618 — the door the two plan lines above name and neither drew. One label for both
+        // codes, because it points at the same page: the plan grid, which is where a tier is
+        // chosen and where the checkout button for that tier lives. Neither sentence changed.
         { id: "plans", label: "See plans and prices" },
       ],
     },

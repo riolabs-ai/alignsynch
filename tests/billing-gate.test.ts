@@ -1,5 +1,5 @@
 /**
- * The gate refuses inside the store (#289) — not in a component, not in a route.
+ * The gate refuses inside the store (#289, #505, #835) — not in a component, not in a route.
  *
  * This suite drives `createInstanceFromTemplate`, the one function through which an assessment
  * instance comes into being, and asserts that a refusal happens **before the transaction opens**:
@@ -8,9 +8,19 @@
  * warning, and it is what "server-side enforcement" means here — no surface can bypass it by
  * posting the form itself, because the form's endpoint calls this function.
  *
+ * **#835 narrowed the gate to one question.** It used to ask three — the plan's relationship
+ * count, the count of open sessions, and whether the Mode was on the plan — and the last two are
+ * gone: the publish trial *is* the Advanced entitlement (a Free account that publishes is granted
+ * the entry paid tier for seven days, and that tier plays both modes), and a seat on somebody
+ * else's relationship is not a relationship you started. So these cases pin three things:
+ *
+ *   - a Free account may create **Basic and Advanced** on a create that goes out published;
+ *   - the plan's **relationship count** still refuses, which is the limit the pricing page sells;
+ *   - a draft is still exempt (#834), because the plan is sold on the send.
+ *
  * The billing reads are mocked (a unit test must not need Postgres); the gate itself is the real
- * `instanceGateRefusal` over a real `Entitlement`, so a change to the table changes these cases.
- * The live proof — actual rows, an actual refusal, an actual subscription — is
+ * `relationshipGateRefusal` over a real `Entitlement`, so a change to the table changes these
+ * cases. The live proof — actual rows, an actual refusal, an actual subscription — is
  * `scripts/billing-smoke.mjs`, and `db:verify` is what proves the rows.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,7 +34,6 @@ import { createInstanceFromTemplate, type CreateInstanceInput } from "@/lib/flow
  */
 const gate = vi.hoisted(() => ({
   planId: "free" as "free" | "principal",
-  activeInstances: 0,
   /** #505 — the plan's own count: relationships this account started and has not finished. */
   activeRelationships: 0,
   poolConnects: 0,
@@ -38,8 +47,11 @@ vi.mock("@/lib/billing", async () => {
 });
 
 vi.mock("@/lib/db/billing", () => ({
-  activeInstanceCount: async () => gate.activeInstances,
   activeRelationshipCount: async () => gate.activeRelationships,
+  // Unreachable in this suite — the sentinel below throws when the store reaches the transaction,
+  // and the trial is granted after it commits. Present so the module shape matches the store's
+  // imports rather than resolving to `undefined`.
+  grantPublishTrial: async () => "granted",
 }));
 
 vi.mock("@/lib/db/client", () => ({
@@ -63,7 +75,6 @@ function createInput(over: Partial<CreateInstanceInput> = {}): CreateInstanceInp
 
 beforeEach(() => {
   gate.planId = "free";
-  gate.activeInstances = 0;
   gate.activeRelationships = 0;
   gate.poolConnects = 0;
 });
@@ -76,23 +87,19 @@ describe("a free account", () => {
     expect(gate.poolConnects).toBe(1);
   });
 
-  it("is refused a second active instance, and the refusal names the plan", async () => {
-    // `activeInstances` is the *session* count (a seat on somebody else's relationship counts);
-    // #505's relationship count is separate and starts at 0 here, so this case still proves the
-    // instance gate answers on its own.
-    gate.activeInstances = 1;
-
-    await expect(createInstanceFromTemplate(createInput())).rejects.toMatchObject({
-      code: "instance-limit",
-      message: expect.stringContaining("The Free plan includes 1 active assessment"),
-    });
-    // Nothing was opened: no transaction, no rows, no invitation.
-    expect(gate.poolConnects).toBe(0);
+  it("creates an Advanced instance too — the trial is the Advanced entitlement (#835)", async () => {
+    // The path the issue was filed about: create → publish, no draft. It was refused
+    // `mode-not-entitled` while create → draft → send handed over the same paid tier for seven
+    // days. One answer now, and it is the trial's.
+    await expect(createInstanceFromTemplate(createInput({ mode: "advanced" }))).rejects.toThrow(
+      "REACHED_THE_TRANSACTION",
+    );
+    expect(gate.poolConnects).toBe(1);
   });
 
-  it("is refused a second relationship, and the refusal names the plan's relationship limit", async () => {
-    // #505 — the plan's own limit, asked first. The sentence names the tier and the number the
-    // pricing page sells ("One active relationship at a time"), not an "assessment instance".
+  it("is refused a second Basic relationship, and the refusal names the plan's limit", async () => {
+    // #505 — the plan's own limit. The sentence names the tier and the number the pricing page
+    // sells ("One active relationship at a time"), not an "assessment instance".
     gate.activeRelationships = 1;
 
     await expect(createInstanceFromTemplate(createInput())).rejects.toMatchObject({
@@ -102,12 +109,16 @@ describe("a free account", () => {
     expect(gate.poolConnects).toBe(0);
   });
 
-  it("is refused Advanced Mode even with no instance open, and the message names it", async () => {
+  it("is refused a second Advanced relationship by the same count, not by the Mode", async () => {
+    // Removing the mode leg did not touch the count leg: with one relationship open, the answer is
+    // still `relationship-limit`, and the sentence is about the relationship held.
+    gate.activeRelationships = 1;
+
     await expect(
       createInstanceFromTemplate(createInput({ mode: "advanced" })),
     ).rejects.toMatchObject({
-      code: "mode-not-entitled",
-      message: expect.stringContaining("Advanced Mode (Think and Guess) is part of the paid plans"),
+      code: "relationship-limit",
+      message: expect.stringContaining("already has 1 active relationship"),
     });
     expect(gate.poolConnects).toBe(0);
   });
@@ -117,13 +128,13 @@ describe("a free account", () => {
  * #834 — a draft is not gated, because the plan is sold on the send.
  *
  * Stage 4 writes the relationship as a `draft`: unsent, unfunded, invisible to the counterparty,
- * and nothing is charged. The mode leg used to run here anyway, so a Free account that chose
- * Advanced was refused *before* stage 5 — the stage that carries the plans and the checkout — which
- * is a dead end where the product promises an upsell. These cases pin the exemption and pin it
- * narrowly: the same inputs go back to being refused the moment the create is not a draft.
+ * and nothing is charged. Refusing it here would put the wall *before* stage 5 — the stage that
+ * carries the plans and the checkout — which is a dead end where the product promises an upsell.
+ * These cases pin the exemption and pin it narrowly: the same inputs go back to being gated the
+ * moment the create is not a draft.
  */
 describe("a draft (#834)", () => {
-  it("is written even when the Mode is not on the plan, and reaches the transaction", async () => {
+  it("is written whatever Mode it asks for, and reaches the transaction", async () => {
     await expect(
       createInstanceFromTemplate(createInput({ mode: "advanced", draft: true })),
     ).rejects.toThrow("REACHED_THE_TRANSACTION");
@@ -140,11 +151,14 @@ describe("a draft (#834)", () => {
     expect(gate.poolConnects).toBe(1);
   });
 
-  it("still refuses the same Mode on a create that goes out published", async () => {
-    // The exemption is the draft flag, not a hole: `draft: false` is the pre-#834 path.
+  it("still refuses the second relationship on a create that goes out published", async () => {
+    // The exemption is the draft flag, not a hole: `draft: false` is the pre-#825 path, and the
+    // count still answers there.
+    gate.activeRelationships = 1;
+
     await expect(
       createInstanceFromTemplate(createInput({ mode: "advanced", draft: false })),
-    ).rejects.toMatchObject({ code: "mode-not-entitled" });
+    ).rejects.toMatchObject({ code: "relationship-limit" });
     expect(gate.poolConnects).toBe(0);
   });
 });
@@ -154,8 +168,7 @@ describe("a paid account", () => {
     gate.planId = "principal";
   });
 
-  it("is allowed a second, third, tenth instance", async () => {
-    gate.activeInstances = 9;
+  it("is allowed a second, third, tenth relationship", async () => {
     gate.activeRelationships = 9;
     await expect(createInstanceFromTemplate(createInput())).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
@@ -173,7 +186,6 @@ describe("a paid account", () => {
 
 describe("a signed-out create", () => {
   it("is not gated — there is no account to hold a plan", async () => {
-    gate.activeInstances = 5;
     await expect(createInstanceFromTemplate(createInput({ viewerUserId: null }))).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );
