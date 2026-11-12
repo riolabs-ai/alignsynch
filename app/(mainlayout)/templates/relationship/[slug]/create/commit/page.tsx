@@ -8,6 +8,13 @@
  * else, because everything else the endpoint needs is already in the cookie, and it carries
  * `draft=1` so `POST /assessment/new` publishes nothing and sends nothing: stage 5 decides that.
  *
+ * **The account panel opens on creating the account** (#829). `AccountPanel` mounts both of the
+ * app's own auth views embedded and owns which one is showing: a first-time creator, who this
+ * stage is for, is signing up, so "Create your account" is the initial state and "Sign in" is one
+ * in-place toggle away. Both directions swap without navigating — a link to `/register` used to
+ * drop the stage column and the review beside it. The names Stage 1 already collected arrive as
+ * the register form's prefill.
+ *
  * **The account form is the app's own sign-in** (#824, #825). `LoginView` is the one implementation
  * of sign-in this build has, so the stage mounts it with `layout="embedded"` — no hero panel, no
  * page-level frame, sized for the stage column — instead of drawing a second form with a password
@@ -35,7 +42,9 @@
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { LoginView } from "@/components/auth/login-view";
+import { AccountPanel } from "@/components/assessment-flow/account-panel";
+import { registerPageCopy } from "@/data/pages/register";
+import { registerCopyFor } from "@/lib/auth-copy";
 import { isGoogleOnlySignIn } from "@/app/(auth)/login/provider-hint-actions";
 import { startGoogleSignIn } from "@/app/(auth)/login/google-actions";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
@@ -65,11 +74,8 @@ export const metadata: Metadata = {
   title: "Create your account",
 };
 
-/**
- * The shell `LoginView` draws in (#824). A mode, not a sentence — E23 counts string-literal JSX
- * attributes as copy leaves, and this surface's budget is 0, so the token is a named constant.
- */
-const EMBEDDED_LAYOUT: "embedded" = "embedded";
+/* The embedded mode token moved with the mount: `AccountPanel` applies it to whichever view is
+ * showing (#829), and it keeps it as a named constant for the same E23 reason. */
 
 type CommitParams = {
   readonly problem?: string | string[];
@@ -142,7 +148,8 @@ export default async function TemplateCreateCommitPage({
    * The account column. Three states, one node:
    *
    *   - a created relationship: the confirmation, because the account was taken one stage ago;
-   *   - signed out (or previewing): the app's sign-in form, embedded, returning to this address;
+   *   - signed out (or previewing): the account panel, which opens on **Create your account** and
+   *     toggles to Sign in in place (#829), both returning to this address;
    *   - signed in: the confirmation, with the sentence naming what happens next.
    */
   const account =
@@ -151,17 +158,25 @@ export default async function TemplateCreateCommitPage({
         {itemLabel(section, "created-body")}
       </p>
     ) : viewer === null || previewAccount ? (
-      <LoginView
-        copy={loginCopyFor(loginPageCopy, brandId)}
-        marks={AUTH_MARKS_BY_BRAND[brandId]}
-        markSrc={AUTH_MARK_SRC_BY_BRAND[brandId]}
-        next={createCommitPath(slug)}
-        googleFailure={false}
-        demo={{ kind: "off" }}
-        providerHint={isGoogleOnlySignIn}
-        startGoogle={startGoogleSignIn}
-        layout={EMBEDDED_LAYOUT}
-        leaving
+      <AccountPanel
+        login={{
+          copy: loginCopyFor(loginPageCopy, brandId),
+          marks: AUTH_MARKS_BY_BRAND[brandId],
+          markSrc: AUTH_MARK_SRC_BY_BRAND[brandId],
+          next: createCommitPath(slug),
+          googleFailure: false,
+          demo: { kind: "off" },
+          providerHint: isGoogleOnlySignIn,
+          startGoogle: startGoogleSignIn,
+        }}
+        register={{
+          copy: registerCopyFor(registerPageCopy, brandId),
+          destination: createCommitPath(slug),
+          marks: AUTH_MARKS_BY_BRAND[brandId],
+          markSrc: AUTH_MARK_SRC_BY_BRAND[brandId],
+          initialFirst: draft?.initiatorFirst ?? "",
+          initialLast: draft?.initiatorLast ?? "",
+        }}
       />
     ) : (
       <div className="space-y-2">

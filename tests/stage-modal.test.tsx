@@ -165,8 +165,16 @@ describe("the surfaces the shell wraps outside the four stages", () => {
     const commit = source("app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx");
     expect(commit).toContain("<CreateRelationship");
     expect(commit).toContain("stage={4}");
-    expect(commit).toContain("LoginView");
-    expect(commit).toContain("layout={EMBEDDED_LAYOUT}");
+    // #829 — the account column is the panel, which owns the mode (Create your account first) and
+    // the embedded shell for both views. The page hands it two prop bags and passes no JSX down.
+    expect(commit).toContain("<AccountPanel");
+    expect(commit).toContain("initialFirst");
+    // Stage 1's names reach the sign-up form, and both paths come back to this same address.
+    expect(commit).toContain("createCommitPath(slug)");
+    const panel = source("components/assessment-flow/account-panel.tsx");
+    expect(panel).toContain("<RegisterView");
+    expect(panel).toContain("<LoginView");
+    expect(panel).toContain("layout={EMBEDDED_LAYOUT}");
     // Nothing is sent from this stage: it writes the draft and hands over.
     expect(commit).toContain("createInviteForPath");
 
