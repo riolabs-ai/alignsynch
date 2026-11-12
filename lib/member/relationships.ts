@@ -171,6 +171,12 @@ export interface MemberRelationshipRow {
   /** The relationship's own copy of the template — its title above the Aspects. */
   readonly templateId: string;
   readonly title: string;
+  /**
+   * The creator's own title from stage 1 (#841) — `undefined`/`null` before a session exists, and
+   * absent from fixtures written before the field did, which is why it is optional: the card falls
+   * back to the template's title, which is what those fixtures are about.
+   */
+  readonly relationshipTitle?: string | null;
   readonly summary: string;
   readonly createdAt: string;
   readonly publishedAt: string | null;
@@ -213,6 +219,8 @@ interface RelationshipQueryRow {
   readonly lapse_reason: string | null;
   readonly template_id: string;
   readonly title: string;
+  /** The session copy's title — stage 1's answer; `null` before a session exists. */
+  readonly relationship_title: string | null;
   readonly summary: string;
   readonly session_record_id: string | null;
   readonly aspect_count: number;
@@ -282,6 +290,10 @@ const RELATIONSHIP_COLUMNS = `
   rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
   rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME},
   t.id AS template_id, t.title, t.summary,
+  -- #841 — the relationship's own title, written at create from stage 1, beside the template's.
+  -- The list used to head every card with the template's title, so two relationships made from one
+  -- template read identically and the draft a creator had just named could not be found by name.
+  sr.title AS relationship_title,
   s.record_id AS session_record_id,
   (SELECT count(*)::int FROM item i WHERE i.record_id = t.id) AS aspect_count,
   inv.counterparty_name,
@@ -300,6 +312,7 @@ const RELATIONSHIP_FROM = `
      ORDER BY si.round DESC
      LIMIT 1
   ) s ON true
+  LEFT JOIN record sr ON sr.id = s.record_id
   LEFT JOIN session_invite inv ON inv.session_record_id = s.record_id
 `;
 
@@ -346,6 +359,7 @@ function relationshipOf(
     isInitiator,
     templateId: row.template_id,
     title: row.title,
+    relationshipTitle: row.relationship_title ?? null,
     summary: row.summary,
     createdAt: instantOf(row.created_at),
     publishedAt: row.published_at === null ? null : instantOf(row.published_at),

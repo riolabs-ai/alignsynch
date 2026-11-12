@@ -161,7 +161,7 @@ export function RelationshipCards({
                     href={publishHref}
                     className="line-clamp-2 text-lg font-semibold text-gray-900 hover:text-action hover:underline dark:text-gray-100"
                   >
-                    {row.title}
+                    {row.relationshipTitle ?? row.title}
                   </Link>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {itemLabel(card, "with")} · {other}

@@ -12,7 +12,7 @@
  *   3. **Stage 4 cannot write twice.** Re-entered with the relationship already in hand, the
  *      advance is a link to stage 5 and the form is absent.
  *   4. **Stage 5 decides.** `Send and Continue` posts to the relationship's own `…/send`; `Continue
- *      as Draft` is a link to the dashboard, which is where the draft is kept.
+ *      as Draft` is a link to the relationships list, which is where the draft is kept.
  *   5. **The rail is five cells and says `Stage n of 5`** — there is no `Align` cell to draw, and
  *      the retired `…/create/account` address is not a stage of anything.
  *
@@ -29,7 +29,7 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_INSTANCE_PATH,
-  OVERVIEW_PATH,
+  RELATIONSHIPS_PATH,
   createAspectsPath,
   createCommitPath,
   createInviteForPath,
@@ -196,7 +196,8 @@ describe("stage 5 — send or keep", () => {
 
   it("offers the draft as a second act, and names where it goes", () => {
     const html = stage5Html();
-    expect(html).toContain(`href="${OVERVIEW_PATH}"`);
+    // #841 — the draft is kept in the relationships list, which is where the control points.
+    expect(html).toContain(`href="${RELATIONSHIPS_PATH}"`);
     expect(html).toContain('data-create-keep-draft="true"');
     expect(html).toContain(itemLabel(INVITE, "draft"));
     expect(html).toContain(itemLabel(INVITE, "draft-help"));

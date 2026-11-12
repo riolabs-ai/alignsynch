@@ -26,7 +26,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { PageCopy } from "@/content/pages";
 import type { CreateDraft } from "@/lib/flow/create-draft";
-import { OVERVIEW_PATH, sendInvitationPath } from "@/lib/flow/paths";
+import { RELATIONSHIPS_PATH, sendInvitationPath } from "@/lib/flow/paths";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { StageFoot } from "./stage-foot";
 
@@ -83,7 +83,7 @@ export function StageInvite({
               {itemLabel(invite, "cta-heading")}
             </h2>
             <p className={SMALL}>{itemLabel(invite, "cta-body")}</p>
-            <Link href={OVERVIEW_PATH} className={SECONDARY} data-create-keep-draft="true">
+            <Link href={RELATIONSHIPS_PATH} className={SECONDARY} data-create-keep-draft="true">
               {itemLabel(invite, "draft")}
             </Link>
           </form>
