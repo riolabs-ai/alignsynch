@@ -70,9 +70,12 @@ Three operations, in this order, and nothing else:
    state to be preserved as `<branch>-preserved-<UTC stamp>`. The API moves every child under that
    preserved branch, so the demo comes out of the restore with none and the next run needs nothing
    different — the repair is once per child, not once per night. A preserved branch is a real
-   branch: one against the project's branch limit, the storage its rows occupy, no compute, and the
-   reset never deletes it (it is the recovery point the parameter exists to create — retiring one
-   is `neon branches delete`).
+   branch: one against the project's branch limit, the storage its rows occupy, no compute. It is a
+   recovery point, so the newest one per branch is kept — but it is not kept forever: the reset's
+   pre-flight (`scripts/demo-branch-prune.mjs`, proved by `tests/demo-branch-prune.test.ts`) retires
+   a preserved branch that is not the newest for its parent, and any older than
+   `DEMO_PRESERVED_MAX_AGE_DAYS` (7). See [the branch ceiling](#the-branch-ceiling) for why that
+   bound exists and what it never touches.
 
 3. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
    `DEMO_AUTH=1`, pointed at _that branch's_ connection string and _that branch's_ auth host. The
@@ -182,6 +185,9 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
 
 ### What it refuses
 
+- **A project with no free branch slot.** A restore spends one, so at the ceiling the run stops
+  before it writes anything, in words that name the branches holding the slots — never with the
+  API's raw `422 — branches limit exceeded`. See [the branch ceiling](#the-branch-ceiling).
 - **The project's default branch** (`production`), by id and by name. The demo reset never touches
   it, and the check is the API's own `default` flag rather than a string, so a renamed default is
   still refused.
@@ -209,6 +215,43 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
   writing. The same holds for the migrate step, which sets `DATABASE_URL_UNPOOLED` to the source's
   URI for the child process — `scripts/load-env.mjs` does not override a variable that is already
   set.
+
+### The branch ceiling
+
+Neon's plan gives this project ten branches, and a **restore spends one** — even a restore that
+preserves nothing. On 2026-11-12 the nightly reset failed twice on `422 — branches limit exceeded`
+while the project held ten of ten and the restore body carried no `preserve_under_name` at all (run
+43263203497's log: `children none — the body carries no preserve_under_name`). The slots had been
+taken by the reset's own recovery points, and nothing was watching the ceiling.
+
+So the reset checks capacity **before** it writes anything (`scripts/demo-branch-prune.mjs`):
+
+1. It reads the project's branches and applies the preserved-branch policy. A branch is a candidate
+   only when its name parses as `<branch>-preserved-<YYYYMMDD-HHMMSS>`; the newest per parent and
+   anything younger than `DEMO_PRESERVED_MAX_AGE_DAYS` (7) are kept, and the rest are deleted
+   (`DELETE /projects/{id}/branches/{id}`). The clock is the **stamp in the name**, not
+   `created_at` — a preserved branch reports its parent's creation date, which for
+   `demo-preserved-20261106-111855` is the day `demo-base` was cut.
+2. It re-reads the list and, if the project is still at or over its limit, **refuses by name**: the
+   count, the ceiling, every branch that holds a slot and why it was kept. The raw 422 is never
+   surfaced; if the API answers one anyway (a slot filled between the two reads) the error is
+   translated into the same sentence.
+
+What it never deletes, whatever the name looks like: `production`, `demo`, `demo-base`, the
+project's default branch by its own flag, anything in `DEMO_KEEP_BRANCHES`, and the experiment
+branches `coach-card`, `rel-schema-533-p1`, `initiator-crud-533-p2`, `lapse-533-p3`. Those four are
+the owner's work in progress: they are named in the code so that a later reader who notices they
+occupy four of the ten slots does not "fix" the problem by deleting them. Anything whose name is not
+a preserved branch is kept too — the policy prunes what the reset created, never what a person made.
+
+`--dry-run` prints the same plan and the count it would delete (`would prune N`), deletes nothing,
+and decides capacity as if the deletions had happened — so it answers "is tomorrow's run wedged?"
+without touching the project.
+
+Tuning is by environment: `DEMO_BRANCH_LIMIT` (default 10), `DEMO_PRESERVED_MAX_AGE_DAYS` (default
+7) and `DEMO_KEEP_BRANCHES` (comma- or space-separated names). The gate and `pnpm test` never make a
+live Neon call: the policy is a pure function of the branch list and a clock, and
+`tests/demo-branch-prune.test.ts` drives it over a fake API.
 
 ### When it fails
 

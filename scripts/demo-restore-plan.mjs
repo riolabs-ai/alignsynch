@@ -27,12 +27,14 @@
  *    checked against the project's existing branch names before it is sent (a second run inside
  *    the same second, or a hand-made branch that already looks like a timestamp, gets `-2`, `-3`…).
  *
- * What a preserved branch costs, since the parameter buys it and the reset never deletes it: one
- * branch against the project's branch limit, the storage its content occupies (copy-on-write from
- * the parent, so the delta for pages written since the last restore), and no compute unless an
- * endpoint is added — nothing reads the preserved branch, so it stays a cold recovery point. It is
- * deliberately not cleaned up by the reset: deleting it destroys the state `preserve_under_name`
- * exists to keep, so retiring one is a human decision (`neon branches delete`).
+ * What a preserved branch costs, since the parameter buys it: one branch against the project's
+ * branch limit, the storage its content occupies (copy-on-write from the parent, so the delta for
+ * pages written since the last restore), and no compute unless an endpoint is added — nothing reads
+ * the preserved branch, so it stays a cold recovery point. The reset retires the ones it does not
+ * need to keep — a preserved state that is not the newest for its branch, and any older than
+ * `DEMO_PRESERVED_MAX_AGE_DAYS` — through `demo-branch-prune.mjs` (#909), because these recovery
+ * points are what filled the project's ten branches and refused the restore with a raw 422. What it
+ * never touches is in that module's header.
  *
  * This lives in its own module because it is the part of the reset that can be wrong without a
  * Neon key: `tests/demo-restore-plan.test.ts` proves both bodies — with children and without — and
