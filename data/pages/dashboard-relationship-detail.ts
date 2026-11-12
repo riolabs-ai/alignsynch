@@ -41,6 +41,15 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
  */
 export const ASPECT_EDITOR_SECTION = "aspect-editor";
 
+/**
+ * The id of the edit band's section on this page.
+ *
+ * #923 — the band is no longer drawn inline; the trigger that opens it and the dialog's
+ * accessible name are read from this section, so the same ratchet applies: the page names the
+ * section through this constant and the words through its items, never a literal (E23).
+ */
+export const RELATIONSHIP_EDIT_SECTION = "edit";
+
 export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationship",
   subtitle:
@@ -279,6 +288,12 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       heading: "Edit this relationship",
       body: "Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered.",
       items: [
+        /**
+         * #923 — the control that opens this band. The form is no longer a permanent column
+         * beside the detail, so the band needs a door; "Edit" is the word the issue uses for it,
+         * and it lives here because the page may not type copy (E23).
+         */
+        { id: "open", label: "Edit" },
         { id: "title", label: "Title" },
         { id: "summary", label: "Summary" },
         { id: "mode", label: "Mode" },

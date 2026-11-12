@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [Stage 5, both states](../qa-stage5/README.md)
+[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [Relationship detail — the edit form is asked for](../qa-rel-detail-edit/README.md)
 
 <!-- docs-nav:end -->
 
@@ -48,6 +48,6 @@ that reason.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [Stage 5, both states](../qa-stage5/README.md)
+[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [Relationship detail — the edit form is asked for](../qa-rel-detail-edit/README.md)
 
 <!-- docs-nav:end -->
