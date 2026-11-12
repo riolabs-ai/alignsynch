@@ -42,6 +42,7 @@ const row: MemberRelationshipRow = {
   viewerRole: "initiator",
   isInitiator: true,
   templateId: "member-config-abc123",
+  templateSlug: "member-config-abc123",
   title: "Son Basics",
   summary: "What we want to ask each other every month.",
   createdAt: "2026-11-01T12:00:00.000Z",
@@ -72,9 +73,17 @@ function disabledControls(html: string): number {
 
 /** The card's own words, from the fixture — escaped, because this reads rendered markup. */
 const COMPLETE_LABEL = "Complete Relationship";
-const PUBLISH_LABEL = "Publish Assessment";
+/**
+ * #912 — **a draft's primary is the owner's words.** It read "Publish Assessment" for every row
+ * with no session; the card that draws a draft's pair names the act's audience instead, because on
+ * a draft the counterparty is still a decision and not a fact.
+ */
+const TO_COUNTERPARTY_LABEL = "Publish to Counterparty";
+const INVITE_MEMBERS_LABEL = "Invite Members";
 /** The menu item's reason, on the trigger, for the state where there is no session to open. */
 const NO_SESSION_WHY = "No session yet — publish first";
+/** #912 — the reason the draft's `Invite Members` is inert when the row has no session. */
+const NO_INVITE_WHY = "No invitation yet — this draft has no session";
 
 describe("the relationship card", () => {
   it("carries the three actions the product can actually perform", () => {
@@ -96,10 +105,10 @@ describe("the relationship card", () => {
 
   it("offers publishing while the relationship has no session, and completing once it has one", () => {
     expect(render({ sessionRecordId: null, status: "draft", view: "not-published" })).toContain(
-      PUBLISH_LABEL,
+      TO_COUNTERPARTY_LABEL,
     );
     const live = render();
-    expect(live).not.toContain(PUBLISH_LABEL);
+    expect(live).not.toContain(TO_COUNTERPARTY_LABEL);
     expect(live).toContain(COMPLETE_LABEL);
   });
 
@@ -162,7 +171,8 @@ describe("the relationship card a Counterparty reads", () => {
 
   it("draws no publish control and no payment control — they are the initiator's", () => {
     const html = render(counterparty);
-    expect(html).not.toContain(PUBLISH_LABEL);
+    expect(html).not.toContain(TO_COUNTERPARTY_LABEL);
+    expect(html).not.toContain(INVITE_MEMBERS_LABEL);
     expect(html).not.toContain(COMPLETE_LABEL);
     expect(html).not.toContain("Activate Relationship");
     expect(html).not.toContain("Gap Analysis");
@@ -177,5 +187,66 @@ describe("the relationship card a Counterparty reads", () => {
     // destination as the row menu's item, which this static render cannot see.
     expect(html).toContain("Open Relationship");
     expect(html).toContain("View");
+  });
+});
+
+/**
+ * **A draft's two CTAs (#912).**
+ *
+ * The card's rule: a draft is where the money and the counterparty are both still open decisions, so
+ * both acts are drawn as controls on the row rather than behind the More menu — and *one* of them is
+ * the pay modal, never a capture of this card's own.
+ *
+ * Two shapes, and they are different row states rather than a preference: a draft written by the
+ * create flow has a session (stage 4 writes it) and the modal can open; a draft written by this
+ * list's own create band has none, so the modal cannot read it and the control says so.
+ */
+describe("a draft's two CTAs", () => {
+  /** A draft as the create flow leaves it: a session, a staged invitation, no method yet. */
+  const flowDraft = {
+    status: "draft",
+    view: "not-published",
+    sessionRecordId: "member-session-abc123",
+    publishedAt: null,
+  } as const;
+
+  it("draws Invite Members and Publish to Counterparty, front and centre", () => {
+    const html = render(flowDraft);
+    expect(html).toContain(INVITE_MEMBERS_LABEL);
+    expect(html).toContain(TO_COUNTERPARTY_LABEL);
+    // The owner's words, not the retired pair — a draft never reads "Publish Assessment" now.
+    expect(html).not.toContain("Publish Assessment");
+  });
+
+  it("sends Invite Members into the pay modal, with both handles the stage resolves", () => {
+    const html = render(flowDraft);
+    /*
+     * The modal's address, from `createInviteForPath()`: the relationship's **copy** slug in the
+     * path (`#794`) and the session in `?instance=`. The row is a *client* component, so this is the
+     * proof the address is built from `templateSlug` and not from the storage id.
+     */
+    expect(html).toContain(
+      'href="/templates/relationship/member-config-abc123/create/invite?instance=member-session-abc123"',
+    );
+    expect(html).toContain('data-pay-modal="true"');
+    expect(html).not.toContain("data-invite-blocked");
+  });
+
+  it("takes no card on the card itself — the capture lives on the modal and nowhere else", () => {
+    const html = render(flowDraft);
+    expect(html).not.toContain("data-capture");
+    expect(html).not.toContain("data-add-method");
+    expect(html).not.toContain("<input");
+  });
+
+  it("draws Invite Members inert, with its reason, when the draft has no session", () => {
+    const html = render({ status: "draft", view: "not-published", sessionRecordId: null });
+    // The control is still on the row — the pair is the rule — but it is not a link, because stage 5
+    // would refuse a relationship with no session by sending the reader back to stage 1.
+    expect(html).toContain(INVITE_MEMBERS_LABEL);
+    expect(html).toContain(`data-invite-blocked="${NO_INVITE_WHY}"`);
+    expect(html).not.toContain("data-pay-modal");
+    // …and the other half survives: publishing is still offered.
+    expect(html).toContain(TO_COUNTERPARTY_LABEL);
   });
 });

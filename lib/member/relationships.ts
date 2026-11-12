@@ -165,6 +165,16 @@ export interface MemberRelationshipRow {
   readonly isInitiator: boolean;
   /** The relationship's own copy of the template — its title above the Aspects. */
   readonly templateId: string;
+  /**
+   * The **address** of that copy (#912) — `record.slug`, which the invite stage resolves
+   * (`readLibraryTemplate` takes a slug or an id, and #794 says the URL carries the slug).
+   *
+   * Carried on the row because the draft CTAs are on a **client** component and the pay modal's
+   * address is `createInviteForPath(slug, instanceRecordId)` from `lib/flow/paths.ts` — a pure
+   * module. Building the address from `templateId` instead would put a storage handle in the URL,
+   * which is the one thing #794 retired.
+   */
+  readonly templateSlug: string;
   readonly title: string;
   /**
    * The creator's own title from stage 1 (#841) — `undefined`/`null` before a session exists, and
@@ -213,6 +223,8 @@ interface RelationshipQueryRow {
   readonly expired_at: Date | string | null;
   readonly lapse_reason: string | null;
   readonly template_id: string;
+  /** The copy's slug — the address the pay modal is reached by (#912). */
+  readonly template_slug: string;
   readonly title: string;
   /** The session copy's title — stage 1's answer; `null` before a session exists. */
   readonly relationship_title: string | null;
@@ -284,7 +296,7 @@ const INITIATOR_NAME = `(
 const RELATIONSHIP_COLUMNS = `
   rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
   rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME},
-  t.id AS template_id, t.title, t.summary,
+  t.id AS template_id, t.slug AS template_slug, t.title, t.summary,
   -- #841 — the relationship's own title, written at create from stage 1, beside the template's.
   -- The list used to head every card with the template's title, so two relationships made from one
   -- template read identically and the draft a creator had just named could not be found by name.
@@ -353,6 +365,7 @@ function relationshipOf(
     viewerRole: viewerRoleOf(row, isInitiator),
     isInitiator,
     templateId: row.template_id,
+    templateSlug: row.template_slug,
     title: row.title,
     relationshipTitle: row.relationship_title ?? null,
     summary: row.summary,
