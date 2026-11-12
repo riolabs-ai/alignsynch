@@ -21,7 +21,8 @@
  *     template does not carry a price of its own and the shop does not sell a relationship at a
  *     per-relationship rate (#798, and the owner's letter on #796), so there is no `type.price`
  *     read on this page at all;
- *   - one primary action, `START_PATH` (`/register`), and the worked example **only** where
+ *   - one primary action, `startPathFor()` (`/register?next=…/create`, #867), and the worked
+ *     example **only** where
  *     `demoAnswersFor()` holds a sheet — a link to a page that answers 404 is worse than none;
  *   - a way back to the directory.
  *
@@ -38,9 +39,9 @@ import {
 import { relationshipTypeDemoPath } from "@/lib/flow/paths";
 import {
   CATALOGUE_PATH,
-  START_PATH,
   catalogueDetailPath,
   cataloguePriceNote,
+  startPathFor,
 } from "@/lib/template-catalogue";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -164,7 +165,7 @@ export function templateDetail(
       })),
     },
     priceNote: cataloguePriceNote(pageItemOf(copy, DETAIL_IDS.price).label),
-    start: { label: pageItemOf(copy, DETAIL_IDS.use).label, href: START_PATH },
+    start: { label: pageItemOf(copy, DETAIL_IDS.use).label, href: startPathFor(type.id) },
     ...(demoAnswersFor(type.id) === undefined
       ? {}
       : {
