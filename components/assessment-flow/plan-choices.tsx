@@ -41,7 +41,24 @@ function idsFor(plan: PlanId) {
   return { name: plan, note: `${plan}-note`, price: `${plan}-price` } as const;
 }
 
-export function PlanChoices({ copy, initial }: { copy: PageCopy; initial?: PlanId }) {
+export function PlanChoices({
+  copy,
+  initial,
+  onSelect,
+}: {
+  copy: PageCopy;
+  initial?: PlanId;
+  /**
+   * The chosen tier, reported as it is chosen.
+   *
+   * **Without this the walk's own Next is disabled forever.** The radios are uncontrolled by design
+   * (above), but the panel that draws them gates its continue control on a `plan` it holds in state
+   * — and the only place it set that state was the continue control's own click handler, which is
+   * `disabled` until the state exists. A choice the parent cannot hear is a dead Next, so the choice
+   * is reported here as well as remaining readable from the DOM at continue time.
+   */
+  onSelect?: (plan: PlanId) => void;
+}) {
   const plans = sectionOf(copy, "plans");
 
   return (
@@ -61,6 +78,7 @@ export function PlanChoices({ copy, initial }: { copy: PageCopy; initial?: PlanI
               name="plan"
               value={plan}
               defaultChecked={initial === plan}
+              onChange={() => onSelect?.(plan)}
               className="mt-1"
             />
             <span className="min-w-0 flex-1">
