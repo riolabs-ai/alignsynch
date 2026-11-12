@@ -44,7 +44,7 @@ landmarks (7)
   contentinfo    1
   navigation     2
 
-links (44 unique, 57 total)
+links (44 unique, 58 total)
   #benefits                                            1
   #business-relationships                              2
   #how-it-works                                        2
@@ -52,7 +52,7 @@ links (44 unique, 57 total)
   #questions                                           1
   #relationship-templates                              6
   #stories                                             1
-  /                                                    1
+  /                                                    2
   /#questions                                          2
   /help                                                3
   /login                                               1
@@ -91,7 +91,7 @@ links (44 unique, 57 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 1
 
 counts
-  elements  378
+  elements  379
   images    6
   buttons   1
   inputs    4
