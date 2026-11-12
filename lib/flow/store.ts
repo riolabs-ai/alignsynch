@@ -85,7 +85,7 @@ import {
 } from "@/content/steps";
 import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
-import { activeInstanceCount, activeRelationshipCount } from "@/lib/db/billing";
+import { activeInstanceCount, activeRelationshipCount, grantPublishTrial } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import {
   openPaymentObligation,
@@ -1263,10 +1263,11 @@ export async function sendDraftInvitation(input: {
 
   // The status, behind the guard: a concurrent send that got here first matches nothing and is
   // reported as what it is.
-  const flipped = await getPool().query(
+  const flipped = await getPool().query<{ initiator_user_id: string | null }>(
     `UPDATE relationship
         SET status = 'published', published_at = COALESCE(published_at, $2)
-      WHERE id = $1 AND status IN ('draft', 'pending')`,
+      WHERE id = $1 AND status IN ('draft', 'pending')
+      RETURNING initiator_user_id`,
     [relationshipId, now.toISOString()],
   );
   if ((flipped.rowCount ?? 0) === 0) {
@@ -1275,6 +1276,25 @@ export async function sendDraftInvitation(input: {
       code: "already-published",
       reason: `relationship "${relationshipId}" moved out of draft before this send wrote it`,
     };
+  }
+
+  // Publishing is the instant the trial opens (#840). Without it the row reads as `lapsed` on the
+  // very next membership read — a just-published relationship whose account has never checked out
+  // holds no entitling subscription — and the counterparty's claim is refused with `lapsed`. The
+  // grant is idempotent and one statement, so a re-send cannot restart a clock.
+  const initiatorUserId = flipped.rows[0]?.initiator_user_id ?? null;
+  if (initiatorUserId !== null) {
+    try {
+      await grantPublishTrial({ userId: initiatorUserId, publishedAt: now });
+    } catch (error) {
+      // The publish stands — it is already committed — but a published row with no trial lapses on
+      // the next read, so this is loud rather than swallowed.
+      console.error(
+        `[billing] publish trial not granted for relationship "${relationshipId}" (user ${initiatorUserId}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   return {

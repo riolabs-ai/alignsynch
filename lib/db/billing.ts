@@ -27,6 +27,12 @@
 import type { PoolClient } from "pg";
 import { type BillingInterval, type BillingPlanId, BILLING_INTERVALS } from "@/data/billing-plans";
 import { getPool, queryRows } from "@/lib/db/client";
+import {
+  PUBLISH_TRIAL_INTERVAL,
+  PUBLISH_TRIAL_PLAN_ID,
+  publishTrialEndsAt,
+  publishTrialSubscriptionId,
+} from "@/lib/billing/publish-trial";
 import { syncRelationshipsWithSubscription } from "@/lib/relationship/enforcement";
 import {
   type BillingProvider,
@@ -102,6 +108,55 @@ export async function readActiveSubscription(userId: string): Promise<Subscripti
   );
   const row = rows[0];
   return row === undefined ? null : subscriptionFromRow(row);
+}
+
+/**
+ * Open the trial a relationship starts when it is published (#840).
+ *
+ * Called from the publish path in `lib/flow/store.ts`, in the moment the row moves to `published`.
+ * Before this existed, `membershipOf()` read a just-published relationship with no subscription as
+ * **lapsed**, the lapse was written, and the counterparty's claim was refused with `lapsed` — every
+ * account that had never checked out was locked out of the product on the first send.
+ *
+ * Three properties, each a decision:
+ *
+ *   - **One statement, so there is no window.** The `NOT EXISTS` covers both refusals (an entitling
+ *     subscription already exists, or this account has already trialled) and `ON CONFLICT DO NOTHING`
+ *     covers the partial unique index on `user_id` — a concurrent publish writes one row and the
+ *     loser writes none, which is also the honest report.
+ *   - **Idempotent by provider id, not by row count.** `publishTrialSubscriptionId()` is a function
+ *     of the user, so re-sending never restarts the clock.
+ *   - **`mock` + `livemode = false`.** This build constructs the mock adapter; a live provider
+ *     event later supersedes the row through `writeSubscription()`, which cancels the rows it
+ *     replaces. Nothing here claims money moved.
+ */
+export async function grantPublishTrial(input: {
+  readonly userId: string;
+  readonly publishedAt: Date;
+}): Promise<"granted" | "nothing-written"> {
+  const rows = await queryRows<{ provider_subscription_id: string }>(
+    `INSERT INTO billing_subscription
+       (user_id, plan_id, interval, provider, provider_subscription_id, status, livemode,
+        current_period_end)
+     SELECT $1, $2, $3, 'mock', $4, 'trialing', false, $5
+      WHERE NOT EXISTS (
+              SELECT 1
+                FROM billing_subscription
+               WHERE user_id = $1
+                 AND (status = ANY($6::text[]) OR provider_subscription_id = $4)
+            )
+     ON CONFLICT DO NOTHING
+     RETURNING provider_subscription_id`,
+    [
+      input.userId,
+      PUBLISH_TRIAL_PLAN_ID,
+      PUBLISH_TRIAL_INTERVAL,
+      publishTrialSubscriptionId(input.userId),
+      publishTrialEndsAt(input.publishedAt).toISOString(),
+      ENTITLING_STATUSES,
+    ],
+  );
+  return rows.length > 0 ? "granted" : "nothing-written";
 }
 
 /** The sellable tiers, one row per (tier, interval) — what a surface renders. */
