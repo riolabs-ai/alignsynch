@@ -377,8 +377,13 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
     // so its column carries the public help centre — the account page is the rail's row, and a
     // marketing footer pointing at it is the mistake the Help/Support split exists to remove.
     expect(hrefs).toEqual([
+      // The public header menu, row for row (owner: *"footer links mirror the marketing website
+      // header menu items for now"*). Home is row one because it is row one up there, and Pricing
+      // stands directly above Help — the column used to be these five minus Home and Pricing.
+      "/",
       "/relationship-types",
       "/#questions",
+      "/pricing",
       "/help",
       // The contact band's one link, to the form (owner, 2026-11-02): the band no longer prints
       // a mailbox, so the destination is the same public page the column's Help row opens.
@@ -391,7 +396,13 @@ describe("the footer columns follow the same rule as the sidebar rows", () => {
 
   it("restores them for a viewer with the quiz capability", () => {
     const hrefs = footerHrefs("alignsynch", viewerWith("quiz-surfaces"));
-    expect(hrefs.slice(0, 3)).toEqual(["/relationship-types", "/#questions", "/help"]);
+    expect(hrefs.slice(0, 5)).toEqual([
+      "/",
+      "/relationship-types",
+      "/#questions",
+      "/pricing",
+      "/help",
+    ]);
     expect(hrefs).toContain("/leaderboard");
     expect(hrefs.some((href) => href.startsWith("/categories/"))).toBe(true);
   });
