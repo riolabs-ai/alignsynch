@@ -57,6 +57,7 @@ import {
   aspectProblem,
   type AspectDraft,
   type AspectField,
+  canRemoveAspect,
   moveAspect,
   normalizeAspect,
 } from "@/lib/flow/aspects";
@@ -92,9 +93,10 @@ export interface AspectListProps {
   /** The list the page read: the draft's own when it has one, the template's on a first visit. */
   readonly aspects: readonly AspectDraft[];
   /**
-   * Whether a row may be added or removed here. Off by default: stage 3 forbids it (V4, #699), and
-   * the dashboard's initiator editor has always allowed it. This is the one axis the two screens
-   * disagree on, so it is a prop rather than a second component.
+   * Whether a row may be added or removed here. Off by default; both screens that mount this
+   * editor pass it — stage 3 since #699 (adding and removing an Aspect is what makes a copy
+   * *authored*, and the create records that) and the dashboard's initiator editor, which has always
+   * allowed it. Off is the safe default for a third screen that has not decided yet.
    */
   readonly addRemove?: boolean;
   /**
@@ -238,8 +240,18 @@ export function AspectList({
   /**
    * Remove one row. A row the server holds is written out first and disappears only if the write
    * took, so the list on screen never disagrees with the list on record.
+   *
+   * **The last row stays (#699).** A relationship with no Aspects asks nothing of either seat, and
+   * the create refuses an empty list (`aspects-none`) — so the gesture is refused here, with the
+   * fixture's sentence, instead of being written and bounced a stage later. The control is drawn
+   * disabled at one row; the guard is repeated here because this is the writer, and a `disabled`
+   * attribute is not a rule.
    */
   async function removeRow(id: string): Promise<void> {
+    if (!canRemoveAspect(rowsRef.current.length)) {
+      toast(itemLabel(words, "last"));
+      return;
+    }
     const next = rowsRef.current.filter((row) => row.id !== id);
     if (next.length === rowsRef.current.length) return;
     if (!isNew(id) && !(await persist(next))) return;
@@ -490,10 +502,19 @@ export function AspectList({
                     <button
                       type="button"
                       data-aspect-remove={row.id}
-                      aria-label={fillLabel(itemLabel(words, "remove"), { name: row.prompt })}
-                      title={fillLabel(itemLabel(words, "remove"), { name: row.prompt })}
+                      disabled={!canRemoveAspect(rows.length)}
+                      aria-label={
+                        canRemoveAspect(rows.length)
+                          ? fillLabel(itemLabel(words, "remove"), { name: row.prompt })
+                          : itemLabel(words, "last")
+                      }
+                      title={
+                        canRemoveAspect(rows.length)
+                          ? fillLabel(itemLabel(words, "remove"), { name: row.prompt })
+                          : itemLabel(words, "last")
+                      }
                       onClick={() => void removeRow(row.id)}
-                      className="grid h-9 place-items-center rounded-md px-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                      className="grid h-9 place-items-center rounded-md px-1.5 text-sm text-gray-400 hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:hover:bg-gray-800 dark:hover:text-gray-100"
                     >
                       <span aria-hidden="true">✕</span>
                     </button>
@@ -514,6 +535,14 @@ export function AspectList({
         >
           {itemLabel(words, "add")}
         </button>
+      ) : null}
+
+      {/* The floor (#699): at one row the remove control is disabled, and the reason is a sentence
+          rather than a tooltip nobody can hover on a phone. */}
+      {addRemove && !canRemoveAspect(rows.length) ? (
+        <p data-aspect-floor="true" className="text-xs text-gray-500 dark:text-gray-400">
+          {itemLabel(words, "last")}
+        </p>
       ) : null}
     </div>
   );

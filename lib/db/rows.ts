@@ -15,7 +15,7 @@
  * The Gap is not here either. It is `gapOf()` over two scores, computed later by
  * `lib/assessment-report.ts`; no row carries it and no column exists for it.
  */
-import { zAssessment, zAssessmentInstance } from "@/content/assessment";
+import { zAssessment, zAssessmentInstance, zAspect } from "@/content/assessment";
 import { SCORE_MAX, SCORE_MIN, zRecordType, type ResponseScale } from "@/content/record";
 import type { z } from "zod";
 
@@ -449,6 +449,84 @@ export function copyDriftProblems(input: {
 /** The template's item ids in order — the left side of `copyDriftProblems`. */
 export function itemIdsOf(items: readonly ItemRow[]): string[] {
   return orderedItems(items).map((item) => item.item_id);
+}
+
+/**
+ * The structure rule an **authored** copy answers to (#699) — V4's other half.
+ *
+ * A create that added, removed or reordered an Aspect wrote the list the creator wanted, so
+ * comparing it to the version's ids would report a deliberate decision as drift. That is not
+ * licence to check nothing: the copy still has to be a list of Aspects a screen can ask and a
+ * report can score. So this validates the copy against the model and against the two properties
+ * an Aspect list carries structurally —
+ *
+ *   1. **it is a list**: at least one row (`zAssessmentInstance.items` is `.min(1)`), ids that do
+ *      not repeat, and positions `0..n-1` with no gap — the order both seats answer in;
+ *   2. **every row is an Aspect**: the schema's own rule (`zAspect`: a non-blank question, both
+ *      opinion labels, the 1..5 score scale), which is also what the console's editor would let
+ *      somebody type.
+ *
+ * Returns one sentence per violation, the same shape as `copyDriftProblems`, so `db:verify` names
+ * the instance and the Aspect instead of printing a zod object.
+ */
+export function authoredAspectProblems(input: {
+  readonly instanceId: string;
+  readonly items: readonly ItemRow[];
+}): string[] {
+  const ordered = orderedItems(input.items);
+  if (ordered.length === 0) {
+    return [
+      `instance "${input.instanceId}" authored its own Aspects but holds none — a relationship asks at least one`,
+    ];
+  }
+
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const item of ordered) {
+    if (seen.has(item.item_id)) {
+      problems.push(
+        `instance "${input.instanceId}" authored its own Aspects but names "${item.item_id}" twice`,
+      );
+    }
+    seen.add(item.item_id);
+  }
+
+  // The list's numbering is the answer order, so it has to be dense and in step with the array the
+  // read sorts. `[0, 2]` is a list with a hole: a screen would render two rows and skip a position.
+  const positions = ordered.map((item) => item.position);
+  const dense = positions.every((position, at) => position === at);
+  if (!dense) {
+    problems.push(
+      `instance "${input.instanceId}" authored its own Aspects but their positions are [${positions.join(", ")}] — a list numbered 0..n-1 in order`,
+    );
+  }
+
+  for (const [at, item] of ordered.entries()) {
+    const candidate = itemCandidates([item], [])[0];
+    const parsed = zAspect.safeParse(candidate);
+    if (!parsed.success) {
+      const [issue] = parsed.error.issues;
+      const field = issue === undefined ? "" : issue.path.join(".");
+      problems.push(
+        `instance "${input.instanceId}" authored Aspect "${item.item_id}" at position ${at}, which is not an Aspect: ${field === "" ? "" : `${field} — `}${issue?.message ?? "invalid"}`,
+      );
+      continue;
+    }
+    // `zAspect` says `.min(1)`, not "not blank": a question of one space satisfies the schema and
+    // fails the person who has to answer it. The stage refuses this (`aspectWriteProblem`), so a
+    // row here means a hand-written write.
+    if (
+      item.prompt.trim() === "" ||
+      item.left_value?.trim() === "" ||
+      item.right_value?.trim() === ""
+    ) {
+      problems.push(
+        `instance "${input.instanceId}" authored Aspect "${item.item_id}" at position ${at} with a blank question or opinion label`,
+      );
+    }
+  }
+
+  return problems;
 }
 
 /** Re-exported so a caller typechecks a `record_type` filter against the model's enum. */

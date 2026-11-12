@@ -18,13 +18,13 @@ superseded v5; each was approved in its turn and the decisions it carried are re
 
 ## The five stages
 
-| #   | Stage        | The screen asks                                                                                   | Ends by                                    |
-| --- | ------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why           | `Continue to Stage 2` (Settings)           |
-| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                               | `Continue to Stage 3` (Aspects)            |
-| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place                     | `Continue to Stage 4` (Account)            |
-| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft** | `Continue to Stage 5` (Invite)             |
-| 5   | **Invite**   | Sending the invitation, or keeping the draft for later                                            | Send → the confirmation; or keep the draft |
+| #   | Stage        | The screen asks                                                                                                      | Ends by                                    |
+| --- | ------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why                              | `Continue to Stage 2` (Settings)           |
+| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                  | `Continue to Stage 3` (Aspects)            |
+| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one | `Continue to Stage 4` (Account)            |
+| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                    | `Continue to Stage 5` (Invite)             |
+| 5   | **Invite**   | Sending the invitation, or keeping the draft for later                                                               | Send → the confirmation; or keep the draft |
 
 **The foot is one shape on stages 1–5** (#760): `[Back][Cancel]` as a single left group and the act
 that advances the flow flush right. `Cancel` leaves the flow — it goes where the shell's close goes,
@@ -157,6 +157,25 @@ handle; the Aspect's name; the two ends of its scale; and the edit control as an
 fixture's own word as its accessible name. No per-row origin chip — the template is named once, in
 the stage body (#760). An open row closes through **Save or Cancel only**, and Cancel with
 unsaved words asks first; the prompt is fixture copy.
+
+**The list is editable, not just rewritable** (#699). Below the rows sit `Add an Aspect` and, on
+each row, a remove control; the list can be added to, removed from and reordered, and the create
+writes what the creator left. The **last** Aspect cannot be removed — at one row the control is
+disabled and the stage body's floor sentence says why, because a relationship asks at least one and
+`zAssessmentInstance.items` is `.min(1)`; the store refuses an emptied list (`aspects-none`) rather
+than writing an instance no page can parse.
+
+What the create writes is one of two things, and the database records which:
+
+| The list at create                   | What is written                                                | V4 asks                                                                                                  |
+| ------------------------------------ | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Reworded only (same ids, same order) | The version's ids and order, the person's words                | The copy **equals** its pinned version                                                                   |
+| Added, removed or reordered          | The creator's list, in their order, an id minted per added row | The copy **is a list of Aspects**: at least one, unique ids, dense positions, each row through `zAspect` |
+
+The second row stamps `session.aspects_authored_at`; the first leaves it `NULL`, which is also the
+answer for every copy written before the column existed. V4 is not weakened by this — it is asked
+of exactly the copies that are still copies, and the authored ones are held to the model instead of
+to an equality that was never true.
 
 The stage body ends with the drag instruction — `… and drag to reorder them.` — rather than a
 separate "Drag to Reorder Aspects" line above the list. The gesture belongs to the sentence that

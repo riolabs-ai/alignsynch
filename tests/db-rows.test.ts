@@ -18,12 +18,14 @@ import { describe, expect, test } from "vitest";
 import {
   assessmentInstanceFromRows,
   assessmentTemplateFromRows,
+  authoredAspectProblems,
   copyDriftProblems,
   isoInstantOf,
   itemIdsOf,
   orderedItems,
   type AssessmentInstanceRows,
   type AssessmentTemplateRows,
+  type ItemRow,
 } from "@/lib/db/rows";
 import { assessmentInstances, assessments } from "@/data/assessments";
 import {
@@ -386,4 +388,115 @@ test("orderedItems is a sort, not a mutation", () => {
   const rows = [{ position: 2 }, { position: 0 }, { position: 1 }];
   expect(orderedItems(rows).map((row) => row.position)).toEqual([0, 1, 2]);
   expect(rows.map((row) => row.position)).toEqual([2, 0, 1]);
+});
+
+/**
+ * **V4's other question** (#699).
+ *
+ * A copy that added, removed or reordered an Aspect is not drift: it is the list the creator wrote
+ * at stage 3, and the create stamps `session.aspects_authored_at` so the verifier can tell the two
+ * apart. These cases are the split, side by side — the same rows asked both questions:
+ *
+ *   - the **equality** rule (`copyDriftProblems`) still fails them, which is the copied case and
+ *     must keep failing;
+ *   - the **structure** rule (`authoredAspectProblems`) passes the ones that are real lists and
+ *     names the ones that are not.
+ */
+describe("an authored copy — the structure V4 asks instead of equality (#699)", () => {
+  const instance = assessmentInstances[0];
+
+  /** The rows the create wrote: the instance's own list, positions dense from 0. */
+  function copyItems(): ItemRow[] {
+    return instance.items.map((item, position) => ({
+      record_id: instance.id,
+      item_id: item.id,
+      position,
+      prompt: item.prompt,
+      scale_kind: item.scale.kind,
+      left_value: item.leftValue,
+      right_value: item.rightValue,
+    }));
+  }
+
+  function withAdded(items: readonly ItemRow[], over: Partial<ItemRow> = {}): ItemRow[] {
+    return [
+      ...items,
+      {
+        record_id: instance.id,
+        item_id: "aspect-added-at-create",
+        position: items.length,
+        prompt: "How often do you say thank you?",
+        scale_kind: "score",
+        left_value: "Never",
+        right_value: "Daily",
+        ...over,
+      },
+    ];
+  }
+
+  test("an added Aspect is a list, and still not a copy", () => {
+    const items = withAdded(copyItems());
+
+    // The equality rule says what it always said — this copy is not its version's.
+    expect(
+      copyDriftProblems({
+        instanceId: instance.id,
+        templateId: instance.templateId,
+        copyIds: itemIdsOf(items),
+        templateIds: itemIdsOf(copyItems()),
+      }),
+    ).toHaveLength(1);
+
+    // The structure rule is the question an authored copy answers, and it passes.
+    expect(authoredAspectProblems({ instanceId: instance.id, items })).toEqual([]);
+  });
+
+  test("a reordered list is a list", () => {
+    const items = copyItems();
+    const reversed = items.map((item, index) => ({ ...item, position: items.length - 1 - index }));
+    expect(authoredAspectProblems({ instanceId: instance.id, items: reversed })).toEqual([]);
+  });
+
+  test("an emptied list is named — a relationship asks at least one", () => {
+    const problems = authoredAspectProblems({ instanceId: instance.id, items: [] });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain(instance.id);
+    expect(problems[0]).toContain("none");
+  });
+
+  test("a repeated id is named", () => {
+    const items = copyItems();
+    const repeated = replacing(items, 1, { item_id: items[0]?.item_id ?? "" });
+    const problems = authoredAspectProblems({ instanceId: instance.id, items: repeated });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("twice");
+  });
+
+  test("a hole in the positions is named — the order both seats answer in", () => {
+    const items = copyItems();
+    const holed = replacing(items, 1, { position: 9 });
+    const problems = authoredAspectProblems({ instanceId: instance.id, items: holed });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("positions");
+  });
+
+  test("a blank question is not an Aspect, and a blank one with a space passes the schema", () => {
+    const items = copyItems();
+    const blank = replacing(items, 0, { prompt: "" });
+    const [problem] = authoredAspectProblems({ instanceId: instance.id, items: blank });
+    expect(problem).toContain(items[0]?.item_id ?? "");
+    expect(problem).toContain("not an Aspect");
+
+    // `zAspect` says `.min(1)`, so a single space is a schema pass and still not a question.
+    const spaced = replacing(items, 0, { prompt: "   " });
+    const [spacedProblem] = authoredAspectProblems({ instanceId: instance.id, items: spaced });
+    expect(spacedProblem).toContain("blank question");
+  });
+
+  test("an option-scale row is not an Aspect of a relationship", () => {
+    const items = withAdded(copyItems(), { scale_kind: "options" });
+    const problems = authoredAspectProblems({ instanceId: instance.id, items });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("not an Aspect");
+  });
 });
