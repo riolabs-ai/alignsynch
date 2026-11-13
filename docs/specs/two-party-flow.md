@@ -196,7 +196,7 @@ claiming a send that never happened. Nothing sets it on a real deployment.
 
 `pnpm flow:e2e` (not a gate step — the gate stays database-free) drives the running app over HTTP
 with three cookie jars. It opens with **the four-stage create** the app now has (#688 Who → Mode,
-#689 Aspects, #690 Create), then follows whichever redirect the endpoint answers with — the account
+\#689 Aspects, #690 Create), then follows whichever redirect the endpoint answers with — the account
 gate for a signed-out creator (`…/create/account?instance=<id>`, #690), Sent for a signed-in one
 (`…/instances/<id>/sent`, #691) — and continues from the id in that address. The rest is the flow as
 before: invite, a stranger's 404, the claim, a second claim refused, the Initiator answering alone

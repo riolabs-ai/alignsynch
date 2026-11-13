@@ -459,6 +459,21 @@ else
   skip_step "docs:check" "no docs:check script in package.json"
 fi
 
+# Markdown style (#937). `docs/` is 142 pages and nothing enforced their shape: Biome formats them
+# (wrapping, table padding) but a fence with no language tag, an issue number at the start of a line
+# GitHub renders as an `<h1>`, or a `#620`-style heading that swallowed a sentence all stayed green.
+# `pnpm md:check` is `markdownlint-cli2` (the rules in `.markdownlint-cli2.jsonc`, none of them a
+# line-length rule — paragraphs are never re-wrapped) plus `scripts/md-style.mjs --check`, the two
+# rewrites no linter can autofix. It runs in **every lane beside `docs:check`**, not only in the
+# content lane: a formatting defect lands in a `docs/**` diff, which classifies as the docs lane,
+# and a step that only ran for `content/**` would be green over exactly the change it exists to
+# catch. ~1.4 s (106 files linted, 108 scanned).
+if has_script "md:check"; then
+  run_step "md:check (markdownlint-cli2 + md-style: fences, escapes, alerts)" pnpm md:check || fail
+else
+  skip_step "md:check" "no md:check script in package.json"
+fi
+
 # The rail's document (`data/nav-menu.json`, #861) is the Admin sidebar: the groups, their rows,
 # their order, their rung and their visibility. The schema is `content/nav.ts`; this step is the
 # other half — every href resolves in `content/routes.ts`, every icon is a `NavIconName`, every

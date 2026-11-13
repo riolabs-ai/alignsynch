@@ -16,7 +16,7 @@ tree `bash scripts/verify.sh` passed on (`lane=code`, 16/16 steps green, 296.7 s
 `data/pages/lifecycle.ts` holds them once; every stage fixture references that section, and the
 rail renders it:
 
-```
+```text
 1 Details · 2 Settings · 3 Aspects · 4 Invite · 5 Connect · 6 Align
 Stage {n} of 6
 ```

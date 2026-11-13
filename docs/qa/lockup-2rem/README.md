@@ -57,7 +57,7 @@ breakpoint to 768 is a one-line change in the same rule if the owner wants that 
 
 ## The asset
 
-```
+```text
 sha256sum public/brand/as2-logo_v2_cl.png
 6ddd15a2031cab928cd7a87c6316aee81fe93e6a4f57ac55b9b0be01b3d3e4af
 git show origin/main:public/brand/as2-logo_v2_cl.png | sha256sum

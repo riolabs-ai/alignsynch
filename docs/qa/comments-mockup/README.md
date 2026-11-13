@@ -62,7 +62,7 @@ pnpm exec next dev --turbo -p 3007                     # on the demo branch
 node docs/qa/comments-mockup/live-check.mjs http://127.0.0.1:3007
 ```
 
-```
+```text
 known   /admin/review?artifact=prototype-comments-v1             → 200
 unknown /admin/review?artifact=prototype-comments-does-not-exist → 404
 ```
@@ -75,7 +75,6 @@ id it does not carry is the 404 a mistyped link gets. `live-check.json` is the r
 Two things that bite here, both recorded elsewhere first: a sign-in that sends an `origin` header is
 refused `403 INVALID_ORIGIN` by the branch's trusted-domain list (`docs/qa-stage5`), and no `origin`
 header is what `scripts/flow-e2e.mjs` already does.
-
 
 ## Reading the drawing
 

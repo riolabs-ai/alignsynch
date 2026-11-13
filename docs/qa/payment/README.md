@@ -132,7 +132,7 @@ A member pays: a method is captured, the $8.95 fee lands against it, the relatio
 
 ## The capture moved into the page — the dialog, measured (#748)
 
-#739 shipped the two acts; the capture was still the hosted adapter's **link**. The approved
+\#739 shipped the two acts; the capture was still the hosted adapter's **link**. The approved
 artifact draws the other thing: a plan card, then the provider's own card fields in a frame _inside
 the page_. This is that build, walked in a browser at 1440 and 390, with the DOM read back at every
 step. Stills and both reports are in [`capture-dialog/`](capture-dialog).
@@ -172,7 +172,7 @@ The dialog's copy is asserted against `data/pages/dashboard-relationship-detail.
 ### Three things the live provider taught this build
 
 1. **`ui_mode: embedded` is gone.** The first real request came back
-   *“The ui_mode value `embedded` is no longer supported. Use `embedded_page` instead.”* — drawn on
+   _“The ui_mode value `embedded` is no longer supported. Use `embedded_page` instead.”_ — drawn on
    the dialog as a sentence, which is the card's “a refusal is a sentence, not a 500” requirement
    proven on the path that actually failed. The adapter now sends `embedded_page`.
 2. **An embedded page needs `currency`, even in `setup` mode** (_“Missing required param:

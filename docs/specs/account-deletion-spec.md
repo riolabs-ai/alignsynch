@@ -116,7 +116,7 @@ library read filters on `owner_user_id`.
 
 ### 1.4 What #278 named, and what it missed
 
-#278 named: `user_profile`, the auth user, `party.user_id`, `opinion`, `instance_invite.email`,
+\#278 named: `user_profile`, the auth user, `party.user_id`, `opinion`, `instance_invite.email`,
 `neon_auth.user`/`neon_auth.account`. Read against the schema, the ones it **missed** are:
 
 - every identity column on the seat itself — `party.name`, `party.access_token_hash`,

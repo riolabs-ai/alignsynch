@@ -32,7 +32,7 @@ node. That is why `content/` must never import React or Next.
 The output **the migration landed with** (kept as the record of that tree; the v1 data
 repair described under "The warning census" below took `W1`/`W2`/`W4` to 0):
 
-```
+```text
 PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
       6 notifications, 2 promotions, 17 quiz results, 14 comments, 5 reviews, 99 media entries,
       21 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
@@ -198,6 +198,7 @@ fixtures never had to make: **a date is not a time.** Precisely:
 
 So the claim "no fixture value was invented" holds for **fields and dates**, not for times
 of day: dates were preserved, times of day were chosen, and the anchor ages.
+
 ### The 21 records that were missing from `data/`
 
 The first pass ported the 21 pre-migration quizzes and stopped there. `quiz-migration.md`
@@ -511,7 +512,7 @@ neither the four catalog windows nor the two `startsAt` values had ever been mov
 capture dates. Issue #110 re-anchored them — `startsAt` = the clock, the Science window =
 clock + 48 h = `2026-10-31T12:00:00.000Z` — so `selectQuizCard()` at the fixture clock prints:
 
-```
+```text
 2026-10-29T12:00:00.000Z  2105/2500  $7.50  4.8  popular
 2026-10-30T12:00:00.000Z  2105/2500  $7.50  4.8  popular
 2026-10-31T12:00:00.000Z  2453/3000  $10.00 4.9  hot

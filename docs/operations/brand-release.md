@@ -40,7 +40,7 @@ A brand-visible change — a re-pointed token, a renamed product, a new mark —
 1. **`pnpm brand:icons`** — `scripts/gen-brand-icons.mjs` re-draws the whole icon set from the
    record and `lib/brand-icon.ts`:
 
-   ```
+   ```text
    public/brand/<id>-icon.svg                  favicon (the recorded `brand.icon`)
    public/brand/<id>-apple-touch-icon.png       180×180
    public/brand/<id>-icon-192.png               192×192

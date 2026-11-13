@@ -15,7 +15,7 @@ adapter with its webhook, the gate, and the pricing page's buttons — and what 
 
 ## The shape
 
-```
+```text
 lib/billing/types.ts            Plan, Subscription, Entitlement, CheckoutRequest (+ wire shapes)
 lib/billing/port.ts             the interface — startCheckout, readSubscription, handleWebhook,
                                 entitlementFor. No provider import, no database import.

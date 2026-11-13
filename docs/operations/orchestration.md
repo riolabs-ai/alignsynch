@@ -22,7 +22,7 @@ not a bulleted list in the message body.
 In the message that accompanies a form, put the call-out on its own line so it survives a
 transcript, a phone screen, or a notification:
 
-```
+```text
 ⚑ YOUR INPUT NEEDED — <one-line question>
 ```
 
@@ -33,7 +33,7 @@ never actually asked.
 
 When a worker blocks and needs a human, re-issue its question on the card as:
 
-```
+```text
 ❓ DECISION REQUIRED #<n> — <the question, one line>
 WHY:      <what forces the decision>
 OPTIONS:  A) … B) … C) …

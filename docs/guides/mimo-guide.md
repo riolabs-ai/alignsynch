@@ -122,7 +122,7 @@ Hermes-side facts (this repo's harness), with file:line. Xiaomi's own Hermes Age
 - **No cap at all by default**: `_apply_max_tokens` (`agent/transports/chat_completions.py:376-384`) sends nothing when neither the user nor the profile sets a value → server default 131072 [1]. Fine — but any path that sets a small `max_tokens`/`ephemeral_max_output_tokens` on a thinking call can trip Q2.
 - **No temperature**: the profile path omits it unless configured (`agent/transports/chat_completions.py:388-403`), which matches Q4 (thinking forces 1.0/0.95 anyway [5]).
 - **No thinking/reasoning control**: `agent.reasoning_effort: "high"` (config) is dropped — `providers/base.py:351-369` `build_api_kwargs_extras` defaults to `({}, {})` and the xiaomi plugin overrides nothing, so no `thinking`/`reasoning` field reaches MiMo and thinking stays at its documented default `enabled` [1][3]. MiMo's chat endpoint has no effort dial anyway [2]; only on/off is expressible (`thinking.type`) [1][3].
-- **`reasoning_content` replay is already correct**: `agent/message_sanitization.py:656` has a mimo row in `_REASONING_ECHO_RULES` (providers `{xiaomi}`, model marker `mimo`, hosts `xiaomimimo.com`) that echoes `reasoning_content` on tool turns and pads ` " "` on reasoning-less ones — exactly the docs' pass-back requirement [3][7].
+- **`reasoning_content` replay is already correct**: `agent/message_sanitization.py:656` has a mimo row in `_REASONING_ECHO_RULES` (providers `{xiaomi}`, model marker `mimo`, hosts `xiaomimimo.com`) that echoes `reasoning_content` on tool turns and pads `" "` on reasoning-less ones — exactly the docs' pass-back requirement [3][7].
 
 **Recommendations** (approved on the desktop side by the operator as written):
 
@@ -153,20 +153,20 @@ Hermes-side facts (this repo's harness), with file:line. Xiaomi's own Hermes Age
 - Web-search plugin params (`max_keyword` [1,50], `limit` [1,50]) [1] — documented, not probed.
 
 Sources:
-[1] https://mimo.mi.com/docs/en-US/api/chat/openai-api — MiMo OpenAI Chat Completions API compatibility
-[2] https://mimo.mi.com/docs/en-US/api/chat/responses — MiMo OpenAI Responses API compatibility
-[3] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/text-generation/deep-thinking — MiMo Deep Thinking
-[4] https://mimo.mi.com/docs/en-US/quick-start/usage-guide/multimodal-understanding/image-understanding — MiMo Image Understanding
-[5] https://mimo.mi.com/docs/en-US/api/guidance/model-hyperparameters — MiMo Model Hyperparameters
-[6] https://mimo.mi.com/docs/en-US/api/guidance/rate-limit — MiMo Rate Limit
-[7] https://mimo.mi.com/docs/en-US/api/guidance/error-codes — MiMo Error Codes
-[8] https://mimo.mi.com/docs/en-US/api/model/list-models — MiMo List Models
-[9] https://mimo.mi.com/docs/en-US/quick-start/summary/model — MiMo Models overview
-[10] https://mimo.mi.com/docs/en-US/quick-start/summary/first-api-call — MiMo First API call (billing modes)
-[11] https://mimo.mi.com/docs/en-US/tokenplan/Token%20Plan/quick-access — MiMo Token Plan Quick Access
-[12] https://mimo.mi.com/docs/en-US/quick-start/faq/token-plan/Usage&Quota — MiMo Token Plan Usage & Quota
-[13] https://mimo.mi.com/docs/en-US/tokenplan/integration/hermes-agent — MiMo Token Plan Hermes Agent integration
-[14] https://mimo.mi.com/docs/en-US/updates/deprecate — MiMo Model Deprecation
+[1] <https://mimo.mi.com/docs/en-US/api/chat/openai-api> — MiMo OpenAI Chat Completions API compatibility
+[2] <https://mimo.mi.com/docs/en-US/api/chat/responses> — MiMo OpenAI Responses API compatibility
+[3] <https://mimo.mi.com/docs/en-US/quick-start/usage-guide/text-generation/deep-thinking> — MiMo Deep Thinking
+[4] <https://mimo.mi.com/docs/en-US/quick-start/usage-guide/multimodal-understanding/image-understanding> — MiMo Image Understanding
+[5] <https://mimo.mi.com/docs/en-US/api/guidance/model-hyperparameters> — MiMo Model Hyperparameters
+[6] <https://mimo.mi.com/docs/en-US/api/guidance/rate-limit> — MiMo Rate Limit
+[7] <https://mimo.mi.com/docs/en-US/api/guidance/error-codes> — MiMo Error Codes
+[8] <https://mimo.mi.com/docs/en-US/api/model/list-models> — MiMo List Models
+[9] <https://mimo.mi.com/docs/en-US/quick-start/summary/model> — MiMo Models overview
+[10] <https://mimo.mi.com/docs/en-US/quick-start/summary/first-api-call> — MiMo First API call (billing modes)
+[11] <https://mimo.mi.com/docs/en-US/tokenplan/Token%20Plan/quick-access> — MiMo Token Plan Quick Access
+[12] <https://mimo.mi.com/docs/en-US/quick-start/faq/token-plan/Usage&Quota> — MiMo Token Plan Usage & Quota
+[13] <https://mimo.mi.com/docs/en-US/tokenplan/integration/hermes-agent> — MiMo Token Plan Hermes Agent integration
+[14] <https://mimo.mi.com/docs/en-US/updates/deprecate> — MiMo Model Deprecation
 [15] file:///home/jadenblack/.hermes/kanban/boards/alignsynch/workspaces/t_c1266576/alignsynch/scripts/mimo-probe-results.jsonl — mimo-probe.py measured results (49 calls, 2026-10-29)
 
 ## Related

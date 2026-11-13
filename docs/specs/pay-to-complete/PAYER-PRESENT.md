@@ -35,7 +35,7 @@ Three measurements, so this is not an opinion:
 | `grep -rIl "3DS\|3-D Secure" .` (whole checkout)    | **zero files**                                                      |
 | `grep -rn "Approve payment"`                        | zero                                                                |
 | `grep -rn "Your bank needs you"`                    | zero                                                                |
-| `grep -rn "needs-action" ` — code                   | zero; prose only (`ADR.md:67`, `RESEARCH.md:97`, `PRD.md:201`)      |
+| `grep -rn "needs-action"` — code                    | zero; prose only (`ADR.md:67`, `RESEARCH.md:97`, `PRD.md:201`)      |
 | `PAYMENT_JOB_KINDS` (`lib/flow/payment-jobs.ts:41`) | `charge`, `remind`, `retry-charge`, `expire` — no payer-present job |
 | `PAYMENT_REFUSALS` (`lib/flow/payment.ts:345`)      | six codes, none for "the payer must confirm"                        |
 | `ChargeOutcome` (`lib/billing/types.ts`)            | `{ok:true,…}` or `declined \| no-method \| not-configured`          |

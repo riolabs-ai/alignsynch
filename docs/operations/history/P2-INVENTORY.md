@@ -436,7 +436,7 @@ this before starting one.
 
 **The shape**
 
-```
+```text
 PageCopy        { eyebrow?, heading, subtitle?, cta?, secondaryCta?, sections? }
 PageCopySection { id, heading, body?, cta?, secondaryCta?, items? }
 PageCopyItem    { id, label, value? }          // ordered; `value` for a value-over-caption stat

@@ -44,7 +44,7 @@ conflict factory that buys nothing here.
 `scripts/gate-lanes.sh` (sourced by `scripts/verify.sh`) classifies every path
 in the diff and keeps the **highest** lane present:
 
-```
+```text
 code (3)  >  config (2)  >  content (1)  >  docs (0)
 ```
 
@@ -67,7 +67,7 @@ the commit) classifies what it is about to push. `GATE_REF` defaults to
 
 `verify.sh` prints the lane before it runs anything, and the reason:
 
-```
+```text
  lane=content content/**, data/**, public/** (2 changed file(s) vs origin/main)
 ```
 
@@ -143,7 +143,7 @@ dependency bump that only touches `package.json`, a `tsconfig` change whose
 blast radius is the whole tree, or any diff you do not trust. The gate shouts
 at you when that is probably the case:
 
-```
+```text
 ! dependency/config manifest changed — a bump wants the full gate: GATE_LANE=full bash scripts/verify.sh
 ```
 
@@ -186,7 +186,7 @@ and that failure mode is worth keeping in view: `actions/checkout` fetches a
 single commit by default, so `origin/main` did not exist in the clone, `GATE_REF`
 never resolved, and every run logged
 
-```
+```text
  lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no origin/main to diff against — full gate (conservative))
 ```
 
@@ -210,7 +210,7 @@ trade than the 60 s of build it saves.
 slots under `~/.cache/quizhub/`, and prints which one it holds and whether it
 waited:
 
-```
+```text
   build lock: slot 2/2 free, building now (/home/you/.cache/quizhub/build.lock.2)
   build lock: all 2 slot(s) busy — waiting (this is the queue, not a failure)
   build lock: waited, now holds slot 1/2 (waited lock)

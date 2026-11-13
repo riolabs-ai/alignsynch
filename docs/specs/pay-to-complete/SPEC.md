@@ -60,7 +60,7 @@ from now on writes its row at creation, so `false` is real there.
 
 Constants (`lib/flow/payment.ts`):
 
-```
+```text
 METHOD_TRIAL_DAYS        = 7
 PAYMENT_WINDOW_DAYS      = 14
 PAYMENT_REMINDER_DAYS    = [3, 10]
@@ -157,7 +157,7 @@ unpaid, unexpired set), runs each one's jobs, and returns a count. An empty run 
 on its first real run it failed on three structural fixture defects and then on the missing row-0 branch. The
 PR must state the command and the result:
 
-```
+```text
 withenv.sh . bash -c 'npx vitest run tests/payment-jobs-live.test.ts'   # must be 5/5
 ```
 

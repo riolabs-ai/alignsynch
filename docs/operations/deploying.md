@@ -36,7 +36,7 @@ Until #682 the last row said **26.x** while the other three said 24, so a green 
 were evidence about a runtime production did not use: a dependency could pass CI and fail in
 production, and nothing in the record said which runtime ran. The build log named the mechanism:
 
-```
+```text
 Warning: Detected "engines": { "node": ">=20.9.0" } in your `package.json` that will
 automatically upgrade when a new major Node.js Version is released.
 ```
@@ -60,7 +60,7 @@ runtime it was built with; a new `nodeVersion` applies to the next build. So the
 deployment that follows the change — and Vercel prints it, because the first build after it cannot
 reuse a cache made by another runtime:
 
-```
+```text
 Skipping build cache since Node.js version changed from "26.x" to "24.x"
 ```
 
@@ -361,7 +361,7 @@ node scripts/deploy-check.mjs --project-dir ../alignsynch   # where `vercel link
 
 Two lines, two answers:
 
-```
+```text
 production: OK (expected b8fdf53a424, serving b8fdf53a424)
 deploys:    66 / 100 in the last 24h — 34 remaining
 ```
