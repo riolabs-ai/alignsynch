@@ -164,64 +164,65 @@ async function seedTemplate(client, template) {
 }
 
 /**
- * #502b — the version a seeded relationship is bound to.
+ * #962 — a template the fixtures mark `published` is published, here, with a version.
  *
- * `relationship.template_version_id` is NOT NULL: a relationship reads its template through the
- * version it was created from, so a seeded relationship needs a version row to point at. The
- * statement is the one `db/migrations/0026_template_version.sql` backfills with — a migration
- * cannot import a module and this script writes rows for a *fresh* database, where the migration
- * ran before any template existed, so the payload is assembled in SQL in both places. `db:verify`
- * V23 is what proves the two agree: every relationship bound, every payload parses.
+ * The two statements that had parted company were `record.status = 'published'` (copied from the
+ * fixture) and the absence of a `template_version` row. `lib/flow/store.ts` refuses to create a
+ * relationship from a template with no version — correctly, because a relationship reads its
+ * Aspects through the version it was bound to — while `/admin/templates` painted the same
+ * template green. The operator was told to publish something the badge already called published.
  *
- * Only the templates the seeded instances name get a v1, which is the migration's rule too: a
- * template nobody has used has never been published, and publishing it here would invent a
- * publication the fixture does not carry. `published_at` is the record's own `date` and
- * `published_by` is NULL ("before publishing was recorded"), exactly as the backfill writes them.
+ * So: **every** record the fixture marks `published` gets version 1, and a template the fixture
+ * marks `draft` stays draft with no version (the deliberate part has to stay deliberate, or the
+ * seed is just a lie in the other direction). A template a seeded relationship names is published
+ * regardless of status, because `relationship.template_version_id` is NOT NULL — the seed cannot
+ * write the relationship without a version, so the contradiction is printed rather than crashed.
+ *
+ * **Written through the product's path, not through SQL (#962).** The old statement here was a
+ * hand-built `jsonb_build_object` that happened to parse: a second implementation of "what a
+ * version holds", and one that could drift from `zAssessment` without any check noticing. So the
+ * read is `readTemplateRowsWithin()` — the same statement the console's publish uses, through the
+ * connection this transaction is already holding — the parse is `assessmentTemplateFromRows()`,
+ * and the write is `snapshotTemplateVersion()`. The payload is therefore a real `zAssessment`
+ * because the mapper that builds it is the mapper every other reader builds one with.
+ *
+ * **`published_at` is the record's own `date`**, as `0026_template_version.sql`'s backfill writes
+ * it: a seeded version has no publish to attribute and `now()` would claim one nobody made. That
+ * is the one argument the product path takes for the seed's sake.
+ *
+ * **Idempotent by absence, not by version number.** A template that already has any version is
+ * skipped, so a second run writes nothing — `snapshotTemplateVersion()` numbers `max + 1`, and
+ * calling it on a published template would mint a v2 on every seed.
  */
-async function seedTemplateVersion(client, templateId) {
-  const { rows } = await client.query(
-    `INSERT INTO template_version
-       (id, template_record_id, version, payload, published_at, published_by, superseded_at)
-     SELECT 'template-version-' || r.id || '-v1',
-            r.id,
-            1,
-            jsonb_build_object(
-              'id', r.id,
-              'slug', r.slug,
-              'type', r.record_type,
-              'status', r.status,
-              'date', r.date,
-              'title', r.title,
-              'summary', r.summary
-            ) || CASE
-                   WHEN r.author_user_id IS NULL THEN '{}'::jsonb
-                   ELSE jsonb_build_object('authorUserId', r.author_user_id)
-                 END
-              || jsonb_build_object(
-                   'items', COALESCE(
-                     (SELECT jsonb_agg(
-                               jsonb_build_object(
-                                 'id', i.item_id,
-                                 'prompt', i.prompt,
-                                 'scale', jsonb_build_object('kind', 'score', 'min', 1, 'max', 5),
-                                 'leftValue', i.left_value,
-                                 'rightValue', i.right_value
-                               ) ORDER BY i.position)
-                        FROM item i WHERE i.record_id = r.id),
-                     '[]'::jsonb)
-                 ),
-            r.date,
-            NULL,
-            NULL
-       FROM record r
-      WHERE r.id = $1
-        AND r.record_type = 'assessment'
-        AND NOT EXISTS (SELECT 1 FROM session s WHERE s.record_id = r.id)
-     ON CONFLICT (template_record_id, version) DO NOTHING
-     RETURNING id`,
-    [templateId],
+async function publishTemplateVersion(client, template, reason) {
+  const { rows: existing } = await client.query(
+    "SELECT 1 FROM template_version WHERE template_record_id = $1 LIMIT 1",
+    [template.id],
   );
-  return rows.length;
+  if (existing.length > 0) return 0;
+
+  const { readTemplateRowsWithin } = await import("../lib/db/assessments.ts");
+  const { assessmentTemplateFromRows } = await import("../lib/db/rows.ts");
+  const { snapshotTemplateVersion } = await import("../lib/db/template-versions.ts");
+
+  const rows = await readTemplateRowsWithin(client, template.id);
+  if (rows === undefined) {
+    throw new Error(
+      `template "${template.slug}" has no rows to publish — the record write above did not land, and a version cannot be snapshotted from nothing`,
+    );
+  }
+  const published = await snapshotTemplateVersion(client, {
+    template: assessmentTemplateFromRows(rows),
+    publishedBy: null,
+    publishedAt: String(template.date),
+  });
+  if (published === undefined) {
+    throw new Error(
+      `template "${template.slug}" lost the version-number race while seeding — the seed holds the branch lock, so this is not a concurrent publish`,
+    );
+  }
+  if (reason !== undefined) console.log(`  · ${reason}`);
+  return 1;
 }
 
 async function seedInstance(client, instance) {
@@ -1370,12 +1371,25 @@ async function main() {
     phaseTwoOpen = true;
 
     for (const template of assessments) await seedTemplate(client, template);
-    // #502b — the versions the seeded relationships bind to, written before the relationships
-    // themselves: `relationship.template_version_id` is NOT NULL and names this row.
-    const seededTemplates = new Set(assessmentInstances.map((instance) => instance.templateId));
+    /* #962 — the versions, so a green `published` badge is a template a relationship can be
+     * created from. Every record the fixture marks published gets version 1, and a template a
+     * seeded relationship is bound to gets one whatever its status, because
+     * `relationship.template_version_id` is NOT NULL. Written here, before the relationships
+     * themselves, because the relationship names the row. */
+    const relationshipTemplates = new Set(
+      assessmentInstances.map((instance) => instance.templateId),
+    );
     let seededVersions = 0;
-    for (const templateId of seededTemplates) {
-      seededVersions += await seedTemplateVersion(client, templateId);
+    for (const template of assessments) {
+      const needsVersion = relationshipTemplates.has(template.id);
+      if (template.status !== "published" && !needsVersion) continue;
+      seededVersions += await publishTemplateVersion(
+        client,
+        template,
+        needsVersion && template.status !== "published"
+          ? `template "${template.slug}" is ${template.status} in the fixture and still published a v1 — a seeded relationship is bound to it, and the column is NOT NULL`
+          : undefined,
+      );
     }
     for (const instance of assessmentInstances) await seedInstance(client, instance);
     // #289 — the plan rows, from the same fixture a pricing surface renders. Seeded here and not

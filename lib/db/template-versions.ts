@@ -198,10 +198,18 @@ export async function nextVersionNumber(
 /**
  * Write one immutable version row.
  *
- * `published_at` and `superseded_at` come from `now()`, which in Postgres is the **transaction's**
- * start instant: every statement a publish runs therefore agrees about the instant it happened,
- * and two rows written by one transaction cannot carry instants in the wrong order (the table's
- * CHECK would refuse them).
+ * `published_at` defaults to `now()`, which in Postgres is the **transaction's** start instant:
+ * every statement a publish runs therefore agrees about the instant it happened, and two rows
+ * written by one transaction cannot carry instants in the wrong order (the table's CHECK would
+ * refuse them).
+ *
+ * **`publishedAt` is the seed's, and only the seed's (#962).** `scripts/db-seed.mjs` writes the
+ * catalogue as the bundle describes it, and `0026_template_version.sql` records why a seeded
+ * version carries the template record's own `date` rather than the instant the seed ran: there is
+ * no publish to attribute, and `now()` would claim one nobody made. It is an argument with a
+ * default instead of a second INSERT for the same reason `insertTemplateVersion` exists at all —
+ * one statement decides what a version row is, and the payload it is handed is already a
+ * `zAssessment`.
  *
  * `ON CONFLICT (template_record_id, version) DO NOTHING RETURNING id` makes the write a claim
  * rather than a race: two publishes that computed the same next number cannot both land, and the
@@ -214,16 +222,25 @@ export async function insertTemplateVersion(
     readonly version: number;
     readonly template: Assessment;
     readonly publishedBy: string | null;
+    /** ISO instant; omit for `now()`. The seed passes the record's own `date`. */
+    readonly publishedAt?: string;
   },
 ): Promise<string | undefined> {
   const id = templateVersionIdOf(input.templateRecordId, input.version);
   const result = await sql.query<{ id: string }>(
     `INSERT INTO template_version
        (id, template_record_id, version, payload, published_at, published_by)
-     VALUES ($1, $2, $3, $4::jsonb, now(), $5)
+     VALUES ($1, $2, $3, $4::jsonb, COALESCE($5::timestamptz, now()), $6)
      ON CONFLICT (template_record_id, version) DO NOTHING
      RETURNING id`,
-    [id, input.templateRecordId, input.version, JSON.stringify(input.template), input.publishedBy],
+    [
+      id,
+      input.templateRecordId,
+      input.version,
+      JSON.stringify(input.template),
+      input.publishedAt ?? null,
+      input.publishedBy,
+    ],
   );
   return result.rows[0]?.id;
 }
@@ -270,6 +287,8 @@ export async function snapshotTemplateVersion(
   input: {
     readonly template: Assessment;
     readonly publishedBy: string | null;
+    /** ISO instant; omit for `now()`. Only `scripts/db-seed.mjs` passes one (#962). */
+    readonly publishedAt?: string;
   },
 ): Promise<
   { readonly id: string; readonly version: number; readonly template: Assessment } | undefined
@@ -280,6 +299,7 @@ export async function snapshotTemplateVersion(
     version,
     template: input.template,
     publishedBy: input.publishedBy,
+    ...(input.publishedAt === undefined ? {} : { publishedAt: input.publishedAt }),
   });
   if (id === undefined) return undefined;
   await supersedeVersionsBelow(sql, input.template.id, version);
