@@ -231,6 +231,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/docs/features",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "What has been built, grouped by area: every `feat(<area>)` scope in `CHANGELOG.md` as one card, each with the releases it shipped in and the pages under `docs/` that explain it — a figure grid over the areas, then the grouped cards behind it.",
+    notes:
+      "#893 — derived, never maintained. The areas come from the conventional commits (`lib/docs/changelog.ts::scopedCommits`, the same parser `scripts/changelog-view.mjs` imports), the releases beside them from `docs/changelog/releases.json` (`lib/docs/releases.ts::releaseRows`), a join that throws on a release with no judgement row rather than drawing it blank, and ignores a row with no release — a row alone cannot invent one — and the pages from the docs manifest by a stated rule: a search result must name *every token* of the area, and the `changelog/` rows are excluded because they are the release notes rather than the writing about an area. So a release adds a card without an edit here — the card's own success test — and an undocumented area prints \"no page names this area\" instead of borrowing a neighbour. `status: fixture` is the copy fixture the E23 budget measures (`data/pages/admin-docs.ts`) plus the three files the tree owns; nothing reaches `lib/db/**`. `force-dynamic` because `CHANGELOG.md` is read on the visit; a source that cannot be parsed draws the screen's panel with the reason rather than an empty page. Both templates claim `product.admin` (#509), so `requireAdminProduct()` runs before `requireAdmin()`, and no clock is read in the render.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/docs/releases",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The release record, one release at a time: every release `CHANGELOG.md` holds, newest first, with the two one-line judgements `docs/changelog/releases.json` keeps beside it, the page the generator wrote from the entry, and which build is answering the request.",
+    notes:
+      "#893 — the `/admin/review` arrangement (`components/admin/review-artifacts.tsx`'s list-and-panes), with selection carried by the URL (`?release=1.17.1`) so a link somebody shares is the release it named; a version the record does not carry is `notFound()`, never the newest row wearing its name. The facts are the entry's (`date`, the tag, the PR count, its sections, whether it carries its Known limits block), `theme`/`headline` are the record's, and the build pair is `next.config.mjs`'s — read in process from `lib/build-info.ts`, the same function `GET /api/version` answers with, because a render may not open a socket. `inManifest` marks a release page `docs/docs.json` does not list, so the row prints the path and the gate's name instead of an anchor that 404s. `force-dynamic`; no clock in the render; `data/pages/admin-docs.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
     surface: "/admin/gaps",
     status: "db",
     templates: ["alignsynch"],
