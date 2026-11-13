@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**134 documents in 9 sections.** Every page carries the same nav block, generated
+**135 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -35,7 +35,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Operations](#operations) — 10 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 19 documents
+- [Release notes](#release-notes) — 20 documents
 - [Records & QA](#records-qa) — 22 documents
 
 ## Start here
@@ -171,6 +171,7 @@ The five Mermaid charts, one home each.
 One page per release, a view of `CHANGELOG.md`.
 
 - [`changelog/README.md`](changelog/README.md) — **Release blog** — What shipped in which release, and where does this page come from?
+- [`changelog/v1-17-0.md`](changelog/v1-17-0.md) — **v1.17.0** — Which release made stage 5 a three-step payment walk, and what does it defer?
 - [`changelog/v1-16-0.md`](changelog/v1-16-0.md) — **v1.16.0** — Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?
 - [`changelog/v1-0-0.md`](changelog/v1-0-0.md) — **v1.0.0** — The release where the webapp stopped being a mock.
 - [`changelog/v1-1-0-rc1.md`](changelog/v1-1-0-rc1.md) — **v1.1.0-rc1** — The release candidate that made the template a product.
