@@ -22,8 +22,8 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **95** — 59 static, 36 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 350 files under `components/`, 343 of them `.tsx`
-- route handlers: **31** — `app/**/route.ts`, listed below and not a UI surface
+- component domains: **43** — 351 files under `components/`, 344 of them `.tsx`
+- route handlers: **32** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 73 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 48 · AlignSynch 46 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -66,7 +66,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/admin/docs/[...slug]` — **fixture**
   - capability: One documentation page: the document rendered from `docs/**.md` where it is written, under its manifest title and the question it answers, with its section's siblings and the previous/next step.
   - components: `components/admin`, `components/assessment-flow`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/admin/docs/doc-article.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/docs/rows.ts`, `lib/docs/tree.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/admin/docs/doc-article.tsx`, `components/admin/docs/doc-feedback.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/docs/rows.ts`, `lib/docs/tree.ts`
   - notes: #892 — the body is the file, read per request (`lib/docs/tree.ts::readDocDocument`, contained to `docs/` before the syscall) and rendered by `react-markdown`, which was already a dependency (`components/content/content-blocks.tsx`); no MDX toolchain, no Fumadocs, no new dependency. A href inside a document is rewritten by `lib/docs/links.ts`: a sibling markdown link becomes its `/admin/docs/…` address, an image reference becomes an `/api/docs/asset/…` address, external and `#anchor` links are untouched, and a link to a file the reader cannot serve renders as plain text rather than a 404. The catch-all because the tree nests (`wiki/modules/app-api.md`); an address the manifest does not carry is `notFound()`, never a fallback to the hub. The images are served by `app/api/docs/asset/[...path]/route.ts`, which carries the same two gates and answers 404 for anything that leaves `docs/` or is not an image. `metadata` is a value rather than `generateMetadata` on purpose: Next resolves head and body in parallel, so a title derived from the document would be computed before the gates. `data/pages/admin-docs-document.ts` holds every word (E23 budget 0).
 
 - `/admin/growth` — **fixture**
@@ -528,7 +528,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/admin` — **db**
   - capability: The operator's five screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, that relationship's Gap report with its export/reissue/read bands, the audit log's filtered table whose before/after values open on a click, the support inbox — the contact queue with one message's thread, the provider's verdict and throttle on that address, and the reply, triage and assignment bands — and, in `docs/`, the documentation reader: the 117-page hub with its filter and one rendered markdown document.
-  - files (19): `audit-log.tsx`, `billing-control.tsx`, `brand-profile.tsx`, `broadcast-composer.tsx`, `docs/doc-article.tsx`, `docs/docs-hub.tsx`, `growth-console.tsx`, `instance-registry.tsx`, `platform-health.tsx`, `relationship-operations.tsx`, `report-operations.tsx`, `review-artifacts.tsx`, `review-refusal.ts`, `review-thread.tsx`, `review-todos.tsx`, `support-inbox.tsx`, `support-thread.tsx`, `template-editor.tsx`, `template-registry.tsx`
+  - files (20): `audit-log.tsx`, `billing-control.tsx`, `brand-profile.tsx`, `broadcast-composer.tsx`, `docs/doc-article.tsx`, `docs/doc-feedback.tsx`, `docs/docs-hub.tsx`, `growth-console.tsx`, `instance-registry.tsx`, `platform-health.tsx`, `relationship-operations.tsx`, `report-operations.tsx`, `review-artifacts.tsx`, `review-refusal.ts`, `review-thread.tsx`, `review-todos.tsx`, `support-inbox.tsx`, `support-thread.tsx`, `template-editor.tsx`, `template-registry.tsx`
   - routes (16): `/admin/audit`, `/admin/billing`, `/admin/brand`, `/admin/broadcast`, `/admin/docs`, `/admin/docs/[...slug]`, `/admin/growth`, `/admin/health`, `/admin/inbox`, `/admin/instances`, `/admin/instances/[id]`, `/admin/instances/[id]/report`, `/admin/review`, `/admin/templates`, `/admin/templates/[id]`, `/dashboard/templates/[id]`
   - notes: `db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the _type_ it renders — `relationship-operations.tsx` annotates its props with `AdminRelationshipDetail`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `"use client"` module here value-imports a server module, which is why the pages render rather than 500. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.
 
@@ -842,6 +842,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/api/billing/webhook` — `app/api/billing/webhook/route.ts`
 - `/api/contact` — `app/api/contact/route.ts`
 - `/api/docs/asset/[...path]` — `app/api/docs/asset/[...path]/route.ts`
+- `/api/docs/feedback` — `app/api/docs/feedback/route.ts`
 - `/api/news/subscribe` — `app/api/news/subscribe/route.ts`
 - `/api/profile` — `app/api/profile/route.ts`
 - `/api/resend/webhook` — `app/api/resend/webhook/route.ts`
