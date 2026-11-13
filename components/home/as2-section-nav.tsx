@@ -26,7 +26,7 @@ export function As2SectionNav({ nav }: { nav: As2HomeModel["nav"] }): React.Reac
   return (
     <nav
       aria-label={nav.name}
-      className="sticky top-[var(--site-header-height)] z-[5] border-b border-line bg-white/[0.98]"
+      className="sticky top-[calc(var(--admin-notice-h)_+_var(--site-header-height))] z-[5] border-b border-line bg-white/[0.98]"
     >
       <div className="home-container scrollbar-hide flex h-[3.25rem] items-center gap-[clamp(18px,3vw,32px)] overflow-x-auto max-[767px]:h-12 max-[740px]:gap-5">
         {nav.items.map((item) => (

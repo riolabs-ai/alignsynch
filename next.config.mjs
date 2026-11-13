@@ -342,7 +342,9 @@ const nextConfig = {
       },
       // #794 — the public catalogue stops owning the template noun. One row per page: the
       // directory and one type.
-      { source: "/templates", destination: "/relationship-types", permanent: true },
+      // Since #905 the bare noun lands on the catalogue's new endpoint; a *type* id still lands on
+      // the type's own page one row below, because the record pages did not move with the listing.
+      { source: "/templates", destination: "/relationship-templates", permanent: true },
       //
       // **The type row excludes `relationship`, and that exclusion is load-bearing.** `/templates`
       // is no longer a page but a namespace, and the library now lives one segment inside it

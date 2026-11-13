@@ -16,6 +16,8 @@
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { adminAuditPageCopy } from "./admin-audit";
 import { adminBillingPageCopy } from "./admin-billing";
+// #906 — the brand and audience profile, behind the console's gate.
+import { adminBrandPageCopy } from "./admin-brand";
 import { adminBroadcastPageCopy } from "./admin-broadcast";
 // #892 — the documentation home and one document of the tree under `docs/`.
 import { adminDocPageCopy } from "./admin-docs-document";
@@ -93,6 +95,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/broadcast": adminBroadcastPageCopy,
   // #505 — the billing control screen: one row per relationship, and the owner's comp.
   "/admin/billing": adminBillingPageCopy,
+  // #906 — the brand and audience profile: the canon, rendered for the operator who writes from it.
+  "/admin/brand": adminBrandPageCopy,
   // #892 — the documentation home, and one document in it. Two fixtures because they say different
   // things: the hub is a list with a filter, the document is its own chrome around a body the tree
   // owns.
@@ -188,8 +192,16 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
   "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
   "/templates/relationship/new": assessmentTemplatePageCopy,
-  // The public Relationship Types catalogue (#794) — the taxonomy the shop sells, addressed by
-  // `relationship-types.ts`'s own ids.
+  /**
+   * The public catalogue, at two addresses and one fixture (#905).
+   *
+   * `/relationship-templates` is the catalogue the header, the footer and every "start with a
+   * template" action point at — the V2 composition (`lib/templates-catalogue.ts`).
+   * `/relationship-types` is the retained #889 variation (`lib/templates-page.ts`) and the
+   * namespace a type's own page lives in. Both read this fixture, which is why its rows are keyed
+   * by surface rather than edited in place: one copy table, two pages, neither renaming the other.
+   */
+  "/relationship-templates": templatesPageCopy,
   "/relationship-types": templatesPageCopy,
   "/relationship-types/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,

@@ -241,6 +241,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/brand",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The brand and audience profile, rendered as a reference page for an operator: positioning, who the product is for, how the flow works with its privacy gate, the three reusable descriptions (short, company, app) and the closing action — the same eleven headings, in the same order, with the same words as the approved profile document.",
+    notes:
+      "#906 — the second surface that reads the *alignment* product flag (`requireAdminProduct()`, then `requireAlignmentProduct()`, then `requireAdmin()`), so a quiz-only build answers the 404 an unknown URL gets instead of serving another product's brand story. Read-only structurally: no form, no server action, no write import; the words are `data/pages/admin-brand.ts` at a copy budget of 0 and the place to change them is the canon, never the page. Its only entrance is the admin notice bar (`components/layout/admin-notice-bar.tsx`), which is drawn for a signed-in admin on the alignment build only and sits above both the marketing header and the app shell — a sidebar row would put a reference page above five working ones. Six declared divergences from the mockup (gradient hero, two-tone eyebrow, sub-12px type, graphite hue, box-shadow, preview chrome) are named in `docs/specs/spec-design-page-rel-templates-v2/admin-brand/README.md` §6 and land as tokens here, never as hex.",
+  },
+  {
+    kind: "route",
     surface: "/admin/growth",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
@@ -913,13 +923,23 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/relationship-templates",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The public catalogue of Relationship Templates, V2 (#905): the hero that opens with work and personal side by side, the in-page menu, the catalogue itself — every purchasable type as a chip under Business or Personal, each one a link to its own page — the four-step how-it-works row, what the membership includes and the closing band. No session, no clock and no database, so the page prerenders.",
+    notes:
+      "The endpoint the owner asked for, and the one door the header's `Templates` row, the footer's catalogue link and every ‘start with a template’ action now point at (`lib/flow/paths.ts::TEMPLATE_CATALOGUE_PATH`). The package the owner approved (`docs/specs/spec-design-page-rel-templates-v2/`) draws a home page and a brand profile and **no catalogue page**, so this is not a clone: every band is an instance of a pattern that package draws, rendered by the same components `/` uses (`components/home/as2-*.tsx`), which is what makes the heading scale, the card anatomy, the chip metrics and the tokens identical rather than merely similar (measured against `home/homepage-redesign.html` at 1440, 1024 and 390). The #889 composition (`/relationship-types`, PR #891) is retained as a landing variation rather than deleted, and it keeps its own words: this page's rows in `data/pages/templates.ts` are its own ids, not edits to that page's sentences. The quiz build renders the #889 composition at this address too — the V2 bands paint surface roles QuizHub's palette does not name, and ‘change no QuizHub rendering’ is the card's own line. Types and links are `purchasableTypesByGroup()` over `data/relationship-types.ts`; the plan figure is `cataloguePriceNote()` over `data/billing-plans.ts` (#798).",
+  },
+  {
+    kind: "route",
     surface: "/relationship-types",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
       "The public Relationship Templates catalogue (#889): a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. Every action is public: `/register`, `/pricing`, a type's own page and its `/demo` sheet. No session, no clock and no database, so the page prerenders.",
     notes:
-      "The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` **is** what every card links since #867: the visitor's choice survives the sign-up round trip. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.",
+      "**Retained as a landing variation since #905**: the catalogue's canonical endpoint is `/relationship-templates` (the V2 composition), and this page stays live and unchanged as the #889 expression — the owner’s ‘saving the old as a landing variation’. Nothing links it as the catalogue any more; a type's own page and its worked example still live under this namespace. The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` **is** what every card links since #867: the visitor's choice survives the sign-up round trip. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.",
   },
   {
     kind: "route",

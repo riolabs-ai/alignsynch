@@ -1,11 +1,14 @@
+import { AdminNoticeBar } from "@/components/layout/admin-notice-bar";
 import { MainLayout } from "@/components/layout/main-layout";
 import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
 import { searchIndexFor } from "@/data/searchdata";
+import { adminProductShipped, quizProductShipped } from "@/lib/brand-boundary";
 import { brandMark } from "@/lib/brand-mark";
 import { shellSession } from "@/lib/auth/shell-account";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
+import { ADMIN_NOTICE_SHELL_CLASS, adminNoticeVisible } from "@/lib/shell/admin-notice";
 import { RAIL_COOKIE, railIsCollapsed } from "@/lib/shell/rail-preference";
 import { cookies } from "next/headers";
 import type React from "react";
@@ -35,6 +38,15 @@ import type React from "react";
  * same reason: a client component cannot call `currentUser()`, and an identity the browser
  * supplied is not one. `null` is a real state (signed out), and the header draws a neutral disc
  * for it; what it never does is fall back to a fixture person.
+ *
+ * **The admin notice bar (#906) is mounted here, above the shell, and only when it renders.** Its
+ * predicate is `role` — already read for the menu — plus the two capability flags, judged once by
+ * `adminNoticeVisible`, and the answer decides two things at the same time: whether the bar is in
+ * the document, and whether the wrapper carries `.admin-notice-shell`, the class that publishes
+ * `--admin-notice-h` to the three offsets the bar moves (both headers' `top`, the rail's `top` and
+ * height). When the answer is no this module returns `<MainLayout>` exactly as it did before the
+ * bar existed — no wrapper element, no class, no markup difference — which is what keeps a
+ * member's, a visitor's and QuizHub's render out of `pnpm parity`'s diff.
  */
 export default async function Layout({
   children,
@@ -53,7 +65,13 @@ export default async function Layout({
    * toggle produced. One cookie read, one prop, no second source.
    */
   const railCookie = (await cookies()).get(RAIL_COOKIE)?.value;
-  return (
+  /** The bar's three-read predicate (`banner/README.md` §7), answered once for the whole chrome. */
+  const notice = adminNoticeVisible({
+    adminProduct: adminProductShipped(),
+    quizProduct: quizProductShipped(),
+    role,
+  });
+  const shell = (
     <MainLayout
       copy={shellPageCopy}
       mark={brandMark(brand.logo)}
@@ -63,8 +81,18 @@ export default async function Layout({
       railCollapsed={railIsCollapsed(railCookie)}
       searchIndex={searchIndexFor(brandId, viewer)}
       hiddenNav={hiddenNavHrefs()}
+      notice={notice}
     >
       {children}
     </MainLayout>
+  );
+
+  if (!notice) return shell;
+
+  return (
+    <div className={ADMIN_NOTICE_SHELL_CLASS}>
+      <AdminNoticeBar copy={shellPageCopy} viewerRole={role} />
+      {shell}
+    </div>
   );
 }

@@ -74,6 +74,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-broadcast",
     budget: 0,
   },
+  // #906 — the brand and audience profile. Budget 0 from the first commit, like the console's other
+  // screens: the eleven headings, the story's three paragraphs, the three value cards, both audience
+  // cards with their example rows, the counselor and participant notes, the four steps, the three
+  // reusable descriptions, the hero figure's eight labels and the two hero actions are all
+  // `data/pages/admin-brand.ts`, so the next string written in `brand-profile.tsx` is a red build.
+  // Attribution is reachability, so this row counts one component.
+  "/admin/brand": {
+    page: "app/(mainlayout)/admin/brand/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-brand",
+    budget: 0,
+  },
   // #505 — billing control. Budget 0 from the first commit, like the console's other screens: the
   // test-mode banner's three states, the six stat captions, the nine column labels, the five
   // subscription states, the four plan sources, the plan-limit sentences, the comp band's eleven
@@ -453,7 +465,24 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/relationship-types` — the public Relationship Types catalogue (#794).
+   * `/relationship-templates` — the public catalogue, V2 composition (#905).
+   *
+   * Budget 0, the same rule the #889 row below keeps: the hero's kicker and promise line, the two
+   * life cards, the menu rows, the catalogue band's frame and counselor note, the four steps, the
+   * membership facts and the closing band are all `data/pages/templates.ts`, so the next literal
+   * written in `components/templates/**` or in the page module is a red build. The templates
+   * themselves are `purchasableTypesByGroup()` over `data/relationship-types.ts` — records, not
+   * words — and the bands' geometry is `components/home/as2-*`'s, which the `/` row already owns.
+   */
+  "/relationship-templates": {
+    page: "app/(marketing)/relationship-templates/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates",
+    budget: 0,
+  },
+  /**
+   * `/relationship-types` — the retained #889 catalogue variation, and the namespace a type's own
+   * page lives in (#794, retained by #905).
    *
    * Budget 0 from the first commit, like every surface this tree adds: the hero, the three bands'
    * chrome, the five strings a card repeats and the counted catalogue sentence are all

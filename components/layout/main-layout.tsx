@@ -72,6 +72,7 @@ export function MainLayout({
   railCollapsed = false,
   searchIndex,
   hiddenNav,
+  notice = false,
 }: {
   children: React.ReactNode;
   copy: PageCopy;
@@ -96,6 +97,13 @@ export function MainLayout({
    * stop a request, which a value the browser decided cannot.
    */
   hiddenNav?: readonly string[];
+  /**
+   * Is the admin notice bar mounted above this shell (#906)? Resolved by
+   * `app/(mainlayout)/layout.tsx` — the bar's three reads are server-only — and forwarded to the
+   * two things the row moves: the header's sticky `top` and the rail's `top`/height. `false` here
+   * means the shell renders exactly the markup it rendered before the bar existed.
+   */
+  notice?: boolean;
 }) {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const openNavigation = useCallback(() => setNavigationOpen(true), []);
@@ -127,6 +135,7 @@ export function MainLayout({
           navigationOpen={false}
           onOpenNavigation={openNavigation}
           focusFlow={focus}
+          notice={notice}
         />
         <main className="min-w-0 flex-1 p-3 md:p-4 xxl:p-6">{children}</main>
       </div>
@@ -144,6 +153,7 @@ export function MainLayout({
         collapsed={railCollapsed}
         open={navigationOpen}
         onClose={closeNavigation}
+        notice={notice}
       />
       <div className="min-w-0 flex-1">
         <Header
@@ -156,6 +166,7 @@ export function MainLayout({
           hiddenNav={hiddenNav}
           navigationOpen={navigationOpen}
           onOpenNavigation={openNavigation}
+          notice={notice}
         />
         <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
       </div>

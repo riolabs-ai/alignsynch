@@ -1,11 +1,14 @@
+import { AdminNoticeBar } from "@/components/layout/admin-notice-bar";
 import { Footer } from "@/components/layout/footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
-import { shellAccount } from "@/lib/auth/shell-account";
+import { shellSession } from "@/lib/auth/shell-account";
+import { adminProductShipped, quizProductShipped } from "@/lib/brand-boundary";
 import { brandMark } from "@/lib/brand-mark";
 import { hiddenNavHrefs } from "@/lib/flags";
 import { navViewer } from "@/lib/nav";
+import { ADMIN_NOTICE_SHELL_CLASS, adminNoticeVisible } from "@/lib/shell/admin-notice";
 import { publicChromeCopy } from "@/lib/shell-copy";
 import type React from "react";
 
@@ -67,8 +70,29 @@ export default async function MarketingLayout({
   children: React.ReactNode;
 }>) {
   const brandId = brandIdOf(brand);
-  const account = await shellAccount();
-  return (
+  const { account, role } = await shellSession();
+  /**
+   * The admin notice bar on a public page (#906). Same predicate, same fixture, same component as
+   * `app/(mainlayout)/layout.tsx` — an admin who is signed in gets the row on `/` and `/dashboard`
+   * alike, because the bar belongs to the *shell*, not to one group. The role is the one
+   * `shellSession()` already read for the account slot, so this costs no second profile read, and
+   * the class is added only when the answer is yes: a visitor's markup is unchanged.
+   */
+  const notice = adminNoticeVisible({
+    adminProduct: adminProductShipped(),
+    quizProduct: quizProductShipped(),
+    role,
+  });
+  /**
+   * The document a reader gets when the bar does not render — written as **the tree this layout
+   * shipped before #906**, character for character, and returned unmodified. It is not a
+   * convenience: a `{notice ? <Bar /> : null}` slot in the children of this `<div>` costs one extra
+   * child, and React derives the `useId` ids of the page's client components from that tree — so
+   * the slot alone moved every `radix-*` id on QuizHub's `/` (`radix-_R_ii_` → `radix-_R_152_`)
+   * without changing a single element. Measured: removing the slot restores both brands' hashes
+   * exactly. The two branches are therefore spelled out, and the comment block below says why.
+   */
+  const shell = (
     <div className="flex min-h-screen flex-col bg-white">
       <MarketingHeader
         account={account}
@@ -85,6 +109,34 @@ export default async function MarketingLayout({
         `alignsynch`. `tests/leaderboard-links.test.ts` scans the tree for a mount that forgets the
         list; this is the sixth one it finds.
       */}
+      <Footer
+        brandId={brandId}
+        copy={shellPageCopy}
+        hiddenNav={hiddenNavHrefs()}
+        viewer={navViewer()}
+      />
+    </div>
+  );
+
+  if (!notice) return shell;
+
+  /**
+   * The same chrome, one row taller, for the one reader the bar exists for. The bar is `fixed` and
+   * first in the document, so an admin's Radix ids shift by one — an admin render is not in
+   * `pnpm parity`'s manifest, and it is the price of the row existing at all.
+   */
+  return (
+    <div className={`flex min-h-screen flex-col bg-white ${ADMIN_NOTICE_SHELL_CLASS}`}>
+      <AdminNoticeBar copy={shellPageCopy} viewerRole={role} />
+      <MarketingHeader
+        account={account}
+        brand={brand}
+        brandId={brandId}
+        copy={publicChromeCopy(shellPageCopy, brandId)}
+        mark={brandMark(brand.logo)}
+        notice
+      />
+      <div className="flex-1">{children}</div>
       <Footer
         brandId={brandId}
         copy={shellPageCopy}

@@ -29,7 +29,7 @@ export function TemplateRealmNav({ catalogue }: { catalogue: TemplatesPageModel[
   return (
     <nav
       aria-label={catalogue.eyebrow ?? catalogue.search.allLabel}
-      className="sticky top-[var(--site-header-height)] z-[9] border-b border-border bg-background/98 backdrop-blur-sm"
+      className="sticky top-[calc(var(--admin-notice-h)_+_var(--site-header-height))] z-[9] border-b border-border bg-background/98 backdrop-blur-sm"
       data-templates-realm-nav=""
     >
       <div className="marketing-container">

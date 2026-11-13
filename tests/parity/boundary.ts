@@ -205,6 +205,14 @@ export type AdminProductRoute = {
  * `parity.check.ts` — open on a template that claims the console (both this tree ships, today) and
  * Next's not-found on one that does not.
  */
+/**
+ * #906 names this list's one deliberate absence: `/admin/brand`. The list's claim is "open
+ * capability → the page renders on every template that claims it", and that page is gated a second
+ * time by `requireAlignmentProduct()`, so it answers 404 on `quizhub` even though `quizhub` sells
+ * the console — an entry here would be a false claim. It is covered instead by
+ * `tests/admin-brand.test.tsx`, which flips each capability through the real `notFound()` and
+ * asserts the order, and by the admin/visitor/quiz-build screenshots in the #906 PR.
+ */
 export const adminProductRoutes: readonly AdminProductRoute[] = [
   {
     route: "/admin/audit",
