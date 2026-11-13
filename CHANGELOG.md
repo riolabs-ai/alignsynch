@@ -6,6 +6,108 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.17.0] - 2026-11-13
+
+### Added
+
+- `feat(admin)` — the sticky notice bar and /admin/brand (#906) ([#947](https://github.com/riolabs-ai/alignsynch/pull/947))
+- `feat(catalogue)` — /relationship-templates, the V2 catalogue (#905) ([#933](https://github.com/riolabs-ai/alignsynch/pull/933))
+- `feat(qa)` — one demo driver walks create/draft/unpaid in a browser — and the breaks it found (#898) ([#930](https://github.com/riolabs-ai/alignsynch/pull/930))
+- `feat(review)` — the comments mockup on the review shelf — 3 subjects × 2 placements (#921) ([#928](https://github.com/riolabs-ai/alignsynch/pull/928))
+- `feat(review)` — register lifecycle v8 + v9 on the review shelf, and sync it without a full seed (#914) ([#919](https://github.com/riolabs-ai/alignsynch/pull/919))
+- `feat(home)` — clone the V2 home reference onto / (#904) ([#924](https://github.com/riolabs-ai/alignsynch/pull/924))
+- `feat(flow)` — stage 5 is the three-step payment walk and the send it gates (#911) ([#918](https://github.com/riolabs-ai/alignsynch/pull/918))
+- `feat(nav)` — /admin/docs gets a rail row (#901) ([#907](https://github.com/riolabs-ai/alignsynch/pull/907))
+- `feat(data)` — the platform package — kind platform, deterministic zip, subsets (#899) ([#902](https://github.com/riolabs-ai/alignsynch/pull/902))
+- `feat(ui)` — rebuild /relationship-types from the approved templates redesign (#889) ([#891](https://github.com/riolabs-ai/alignsynch/pull/891))
+- `feat(admin)` — /admin/docs renders the docs tree (#892) ([#900](https://github.com/riolabs-ai/alignsynch/pull/900))
+
+### Fixed
+
+- `fix(flow)` — stage 5's Send reads the captured method from the payment row (#948) ([#949](https://github.com/riolabs-ai/alignsynch/pull/949))
+- `fix(member)` — the relationship screen reads its own Aspects, not the template's (#936) ([#944](https://github.com/riolabs-ai/alignsynch/pull/944))
+- `fix(ui)` — the relationship edit panel stops printing the Aspects a second time (#935) ([#942](https://github.com/riolabs-ai/alignsynch/pull/942))
+- `fix(admin)` — /admin/audit reads a row with no reason instead of throwing (#938) ([#941](https://github.com/riolabs-ai/alignsynch/pull/941))
+- `fix(nav)` — the owner's standard rail order, for every role (#929) ([#939](https://github.com/riolabs-ai/alignsynch/pull/939))
+- `fix(ui)` — the relationship detail's edit form is a dialog/sheet, not a permanent column (#923) ([#932](https://github.com/riolabs-ai/alignsynch/pull/932))
+- `fix(demo)` — prune preserved branches by policy before the reset (#909) ([#917](https://github.com/riolabs-ai/alignsynch/pull/917))
+- `fix(pay)` — the modal is the only way to pay (#912) ([#925](https://github.com/riolabs-ai/alignsynch/pull/925))
+- `fix(copy)` — a relationship's kind chip says Relationship, not Template (#874) ([#916](https://github.com/riolabs-ai/alignsynch/pull/916))
+- `fix(flow)` — a visitor's chosen template survives the account gate (#867) ([#915](https://github.com/riolabs-ai/alignsynch/pull/915))
+
+### Maintenance
+
+- `test(ui)` — the Escape close waits for Radix's focus restore ([#950](https://github.com/riolabs-ai/alignsynch/pull/950))
+- feat(demo) · #920 — a deterministic growth model to $3M ARR, and an operational demonstration set ([#934](https://github.com/riolabs-ai/alignsynch/pull/934))
+- `docs(oss)` — LICENSE (MIT), SECURITY.md, CODE_OF_CONDUCT.md, SUPPORT.md (#922) ([#927](https://github.com/riolabs-ai/alignsynch/pull/927))
+- `docs(oss)` — CONTRIBUTING.md for humans + audit issue/PR templates and CODEOWNERS (#922) ([#926](https://github.com/riolabs-ai/alignsynch/pull/926))
+- `spec(design)` — banner + /admin/brand added to the V2 package (#903) ([#910](https://github.com/riolabs-ai/alignsynch/pull/910))
+- `docs(workflow)` — codify request → release, and add the release-train card template ([#890](https://github.com/riolabs-ai/alignsynch/pull/890))
+
+### Known limits
+
+- **`demo.alignsynch.com` is still down.** The hostname answers `DEPLOYMENT_NOT_FOUND` (#833); the demo dataset is reachable through `pnpm demo:verify` and the review rig, not through that address. Deferred by owner decision, not by oversight.
+- **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
+- **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
+- **The modal rule has not been audited screen by screen.** #913 asks for every screen, page, menu and button to be validated against it. This version applies the rule where it touched a surface — the relationship edit form is a dialog and the pay step is a modal — and does not claim the audit.
+- **The edit panel still posts a snapshot of the Aspects.** Reorder in the detail's list, then save the panel in the same page session without a refresh, and the pre-reorder order is written back (#943). It was scheduled to land before this release and is not in it; the fix ships in the next patch.
+
+## [1.16.0] - 2026-11-12
+
+### Added
+
+- `feat(ui)` — /assessments is the member's session listing (#877) ([#888](https://github.com/riolabs-ai/alignsynch/pull/888))
+- `feat(flow)` — add and remove an Aspect at stage 3, and record the copy as authored (#699) ([#876](https://github.com/riolabs-ai/alignsynch/pull/876))
+- `feat(infra)` — pnpm qa:links derives the clickable QA list for a change range (#863) ([#869](https://github.com/riolabs-ai/alignsynch/pull/869))
+- `feat(flow)` — the counterparty forks the relationship's template into their own (#785) ([#872](https://github.com/riolabs-ai/alignsynch/pull/872))
+- `feat(ux)` — one left-justified column for every dashboard page, and a registered exception list (#858) ([#871](https://github.com/riolabs-ai/alignsynch/pull/871))
+- `feat(templates)` — delete an authored template, behind a confirm (#743) ([#866](https://github.com/riolabs-ai/alignsynch/pull/866))
+- `feat(infra)` — the admin rail is a versioned document with a validator (#861) ([#864](https://github.com/riolabs-ai/alignsynch/pull/864))
+- `feat(ui)` — measure rules 6 and 7 as E40, then fix all 18 (#719 C5) ([#860](https://github.com/riolabs-ai/alignsynch/pull/860))
+- `feat(billing)` — the publish trial is the Advanced entitlement (#835) ([#859](https://github.com/riolabs-ai/alignsynch/pull/859))
+- `feat(home)` — the AS2 front page at / with the surface-token layer it needs (#853) ([#857](https://github.com/riolabs-ai/alignsynch/pull/857))
+- `feat(copy)` — stage 4 says each fact once, and the OAuth control has its mark (#777) ([#855](https://github.com/riolabs-ai/alignsynch/pull/855))
+- `feat(ui)` — the relationships list is the My Quizzes record list (#841 part 2) ([#852](https://github.com/riolabs-ai/alignsynch/pull/852))
+- `feat(admin)` — the eighteen admin pages render in one shared column (#717) ([#851](https://github.com/riolabs-ai/alignsynch/pull/851))
+- `feat(billing)` — the Free card is the trial card, and a lapse closes the Gap not the pairing (#848) ([#849](https://github.com/riolabs-ai/alignsynch/pull/849))
+
+### Fixed
+
+- `fix(flow)` — the counterparty's read-only screen gets a door (#873) ([#887](https://github.com/riolabs-ai/alignsynch/pull/887))
+- `fix(copy)` — the AlignSynch footer's link column is "Website Links" ([#886](https://github.com/riolabs-ai/alignsynch/pull/886))
+- `fix(home)` — the marketing header's lockup is a link to the front page ([#884](https://github.com/riolabs-ai/alignsynch/pull/884))
+- `fix(theme)` — render next-themes during SSR so its pre-paint script lands (#880) ([#885](https://github.com/riolabs-ai/alignsynch/pull/885))
+- `fix(flow)` — stage 5 is not a dead end — payment walk, send/draft, and the template guard at stage 1 (#870) ([#878](https://github.com/riolabs-ai/alignsynch/pull/878))
+- `fix(home)` — the footer Quick Links mirror the marketing header menu ([#883](https://github.com/riolabs-ai/alignsynch/pull/883))
+- `fix(home)` — the hero's "See how it works" was 60px tall because its arrow sized itself ([#882](https://github.com/riolabs-ai/alignsynch/pull/882))
+- `fix(ui)` — the rail's collapse control is a button on its border, not a form (#875) ([#881](https://github.com/riolabs-ai/alignsynch/pull/881))
+- `fix(ui)` — the relationship detail is a destination, not a flow (#873) ([#879](https://github.com/riolabs-ai/alignsynch/pull/879))
+- `fix(db)` — the demo seed converges a drifted branch instead of refusing it (#865) ([#868](https://github.com/riolabs-ai/alignsynch/pull/868))
+- `fix(flow)` — the draft lands on the relationships list, and the list titles by the relationship (#841) ([#850](https://github.com/riolabs-ai/alignsynch/pull/850))
+- `fix(billing)` — the hosted capture sends the currency the provider requires (#844) ([#845](https://github.com/riolabs-ai/alignsynch/pull/845))
+- `fix(billing)` — publishing a relationship opens its trial, so the counterparty can claim (#840) ([#843](https://github.com/riolabs-ai/alignsynch/pull/843))
+- `fix(deploy)` — demo.alignsynch.com serves again — one command creates it, one rule keeps it (#838) ([#839](https://github.com/riolabs-ai/alignsynch/pull/839))
+- `fix(flow)` — a draft is not gated, and stage 5 says the plan without refusing it (#834) ([#837](https://github.com/riolabs-ai/alignsynch/pull/837))
+- `fix(flow)` — stage 4 opens on Create account and toggles in place (#829) ([#831](https://github.com/riolabs-ai/alignsynch/pull/831))
+
+### Maintenance
+
+- `docs(legal)` — photography credits at /terms, and the AS2 handoff package committed (#853) ([#856](https://github.com/riolabs-ai/alignsynch/pull/856))
+- `test(flow)` — the e2e walks the five stages, signed in, and proves draft vs send (#844) ([#842](https://github.com/riolabs-ai/alignsynch/pull/842))
+- `chore(health)` — re-record the platform record at 1.15.0 ([#836](https://github.com/riolabs-ai/alignsynch/pull/836))
+- `docs(changelog)` — v1.15.0 says what the tag's stage 4 actually does ([#832](https://github.com/riolabs-ai/alignsynch/pull/832))
+
+### Known limits
+
+- The public Templates catalogue at `/relationship-types` is **unchanged** in this release. The approved `spec-as2-style-templates-redesign` build is still in review, so the page visitors see today is the previous one.
+- Selecting a template does not carry through sign-up. A card's use action opens registration without the chosen template, because the intent parameter is not implemented yet.
+- The relationship card's kind chip still prints "Template" where the record is a relationship; templates are products and a relationship is a pairing.
+- `/assessments` lists assessment sessions over data the app already holds. Comments, notes and gap analytics are not part of it.
+- Payments run in test mode: no charge is processed, and the pricing page's disclosure stands unchanged.
+- The demo environment serves the previous version until its next refresh; the verification recorded here applies to the tagged tree on production.
+- Two records still share one wording: the relationship detail's read-only notice and the counterparty's way-forward door both point at the relationships list, which is the only destination that exists today.
+
+
 ## [1.15.0] - 2026-11-12
 
 ### Added
@@ -1412,3 +1514,4 @@ The admin console, and relationship templates become products.
 [1.7.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.6.0...v1.7.0
 [1.8.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.7.0...v1.8.0
 [1.14.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.13.0...v1.14.0
+[1.16.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.15.0...v1.16.0

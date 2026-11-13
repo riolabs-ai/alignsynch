@@ -211,6 +211,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/docs",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The documentation home: all 117 pages under `docs/` in the nine sections `docs/docs.json` groups them by, each with the question it answers, and a filter over their titles and questions.",
+    notes:
+      "#892 — a renderer of the manifest, never a second copy of it: `docs/` is untouched (no page moved, copied or re-authored), `lib/docs/manifest.ts` parses `docs/docs.json` (which `scripts/docs-check.mjs` already holds to the tree in both directions), `lib/docs/rows.ts` derives the rows, addresses and the filter, and `lib/docs/tree.ts` is the only module that touches `fs`. `status: fixture` is the wiring, not prose: the route reads the manifest and its page copy out of the tree and nothing reaches `lib/db/**`, so it is a stand-in in the registry's sense until a docs store exists — and the registry's own rule (`fixture` requires something under `data/`) is satisfied by `data/pages/admin-docs.ts`. `force-dynamic`, because prerendering 117 documents at build time is exactly what this route must not do; the manifest cannot be parsed → `DocsManifestUnreadable` is drawn as the screen's own panel. Both templates claim `product.admin` (#509), so `requireAdminProduct()` runs before `requireAdmin()`. `data/pages/admin-docs.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
+    surface: "/admin/docs/[...slug]",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One documentation page: the document rendered from `docs/**.md` where it is written, under its manifest title and the question it answers, with its section's siblings and the previous/next step.",
+    notes:
+      "#892 — the body is the file, read per request (`lib/docs/tree.ts::readDocDocument`, contained to `docs/` before the syscall) and rendered by `react-markdown`, which was already a dependency (`components/content/content-blocks.tsx`); no MDX toolchain, no Fumadocs, no new dependency. A href inside a document is rewritten by `lib/docs/links.ts`: a sibling markdown link becomes its `/admin/docs/…` address, an image reference becomes an `/api/docs/asset/…` address, external and `#anchor` links are untouched, and a link to a file the reader cannot serve renders as plain text rather than a 404. The catch-all because the tree nests (`wiki/modules/app-api.md`); an address the manifest does not carry is `notFound()`, never a fallback to the hub. The images are served by `app/api/docs/asset/[...path]/route.ts`, which carries the same two gates and answers 404 for anything that leaves `docs/` or is not an image. `metadata` is a value rather than `generateMetadata` on purpose: Next resolves head and body in parallel, so a title derived from the document would be computed before the gates. `data/pages/admin-docs-document.ts` holds every word (E23 budget 0).",
+  },
+  {
+    kind: "route",
     surface: "/admin/gaps",
     status: "db",
     templates: ["alignsynch"],
@@ -218,6 +238,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The Gap across a population: the eight kinds the model defines, counted over relationships both parties have finished, read under each relationship's own Setting. Nameless aggregates — no party, no score, no ranking — and a Setting with fewer complete relationships than the floor states that instead of charting.",
     notes:
       "The console's one relationship-specific screen and the only caller of `lib/admin/gap-aggregates.ts`. Its generic form is response analytics (stat cards, one distribution per measure, a comparison axis); what varies is the measure (`gapOf` over eight kinds), the population (complete instances) and the comparison (Setting). Admin only: `requireAdmin()` first, so a member gets the 404 `/demo/admin` documents. No migration and no stored aggregate — every number is a function of the `opinion` rows.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/brand",
+    status: "fixture",
+    templates: ["alignsynch"],
+    capability:
+      "The brand and audience profile, rendered as a reference page for an operator: positioning, who the product is for, how the flow works with its privacy gate, the three reusable descriptions (short, company, app) and the closing action — the same eleven headings, in the same order, with the same words as the approved profile document.",
+    notes:
+      "#906 — the second surface that reads the *alignment* product flag (`requireAdminProduct()`, then `requireAlignmentProduct()`, then `requireAdmin()`), so a quiz-only build answers the 404 an unknown URL gets instead of serving another product's brand story. Read-only structurally: no form, no server action, no write import; the words are `data/pages/admin-brand.ts` at a copy budget of 0 and the place to change them is the canon, never the page. Its only entrance is the admin notice bar (`components/layout/admin-notice-bar.tsx`), which is drawn for a signed-in admin on the alignment build only and sits above both the marketing header and the app shell — a sidebar row would put a reference page above five working ones. Six declared divergences from the mockup (gradient hero, two-tone eyebrow, sub-12px type, graphite hue, box-shadow, preview chrome) are named in `docs/specs/spec-design-page-rel-templates-v2/admin-brand/README.md` §6 and land as tokens here, never as hex.",
+  },
+  {
+    kind: "route",
+    surface: "/admin/growth",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "Thirty-six monthly cohorts of a customer base on the way to a $3M run-rate, for an operator: the MRR → ARR ramp with the solved target drawn on it, cohort retention curves, the plan mix as the base matures, the two churn rates, and the final month's invoice outcomes per plan — every number read from one committed artifact.",
+    notes:
+      "#920 — the console's first *business* surface, and the first chart band whose data is a fixture rather than a read. `data/demo/growth-model.json` is generated by `pnpm growth` (a solved acquisition index, 36 cohorts, integer cents and basis points) and `pnpm growth:check` is a gate step, so the committed bytes and `content/growth-model.ts` cannot drift; the page only reads and validates the file through `lib/admin/growth.ts`, and a missing or unparseable artifact draws a panel with the reason instead of zeroes. The scale is modelled and a ~5k-relationship *sample* is materialised into `data/generated/growth/` (gitignored) — the demo branch stays bounded (#909), and the sample is drawn from the same distribution rather than scaled down from it. Admin only: `requireAdminProduct()` then `requireAdmin()`, so a `support` session gets the 404 `/demo/admin` documents. Charts are recharts through `components/ui/chart.tsx` — no new dependency — and the words are `data/pages/admin-growth.ts` (E23 budget 0). No Gap column is involved: the model is an aggregate over relationships, and the Gap stays a function.",
   },
   {
     kind: "route",
@@ -305,7 +345,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The operator's five screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, that relationship's Gap report with its export/reissue/read bands, the audit log's filtered table whose before/after values open on a click, and the support inbox — the contact queue with one message's thread, the provider's verdict and throttle on that address, and the reply, triage and assignment bands.",
+      "The operator's five screens' chrome: the registry table with its stage tabs and filters, one relationship's five audited repair bands, that relationship's Gap report with its export/reissue/read bands, the audit log's filtered table whose before/after values open on a click, the support inbox — the contact queue with one message's thread, the provider's verdict and throttle on that address, and the reply, triage and assignment bands — and, in `docs/`, the documentation reader: the 117-page hub with its filter and one rendered markdown document.",
     notes:
       "`db`, and by a different route than it first claimed: every component here renders props the page read (a client component must not reach `pg`), and what pulls the domain into the database graph is the *type* it renders — `relationship-operations.tsx` annotates its props with `AdminRelationshipDetail`, and `import type` from `lib/db/**` still walks to `lib/db/client.ts` in this generator's graph. E34 is the runtime claim and it stays green: no `\"use client\"` module here value-imports a server module, which is why the pages render rather than 500. The audit log's filters, row projections and 48-character truncation live in `lib/admin/audit-log.ts`, which is pure for exactly this reason — the ui-registry check caught that module reaching `pg` through `lib/admin/act.ts`'s vocabulary, and the list moved to `lib/admin/roles.ts` rather than the domain widening its claim.",
   },
@@ -335,13 +375,13 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/assessment/instances",
+    surface: "/assessments",
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "Every relationship the signed-in account is a member of, as the My Quizzes card grid — the template, the stage, both parties, the session counts and the alignment once a session is complete.",
+      "The member's assessment sessions, one row each: the assessment it was copied from, the state it is in, the other party, the session counts and the alignment once a session is complete — with a link to the session, the assessment, the relationship, and (once both parties have accepted) its Gap.",
     notes:
-      "Scoped by relationship_member.user_id (or party.user_id for rows seeded before #340) against the session — never a name, a query parameter or a role, so an admin sees their own list and no one else's. The stage, the counts and the search are derived per render; `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.",
+      "The listing moved from `/assessment/instances` (#877), which is a 308 here — it is plural because it is the member's record list, a sibling of `/dashboard/relationships` and `/dashboard/templates`, not a page under the `/assessment` record kind. It is the shell `components/dashboard/relationships-list.tsx` ships (heading, toolbar, state tabs, two empty states, 1/2/3 grid) over the same read `/assessment/instances` used — `listRelationshipCards()`, scoped by `relationship_member.user_id` (or `party.user_id` for rows seeded before #340) against the session, never a name, a query parameter or a role, so an admin sees their own list and no one else's. Every row is one session and every destination already existed; the Gap link is drawn only on a `complete` row because the report answers the locked page before acceptance. The card's figures are `relationshipCard()`'s: `alignment` is the mean Gap of the latest session and is drawn `—`, never 0, until that session is complete, and the money block is the plan and its purchase instant on the Initiator's card alone — never a total.",
   },
   {
     kind: "route",
@@ -439,9 +479,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "Stage 3 of the create flow (Aspects): the template's Aspects with both opinion labels, each collapsed to one row, opened in place, reworded, and reordered by drag before the relationship is created.",
+      "Stage 3 of the create flow (Aspects): the template's Aspects with both opinion labels, each collapsed to one row, opened in place, reworded, added to, removed from and reordered by drag before the relationship is created.",
     notes:
-      "The one interactive stage (#689). It reads the draft stages 1–2 wrote and the template through `readLibraryTemplate()`, and renders the working list: the draft's own when stage 3 has saved, the template's on a first visit (`lib/flow/aspects.ts::workingAspects` — absent means \"untouched\", an emptied array means \"the person emptied it\"). `components/assessment-flow/aspect-list.tsx` is the flow's only client component: a row opens in place, saves itself with `POST /assessment/new/aspects` (JSON, one small request per committed gesture) and collapses on success; the order is a pointer drag on the handle (pointer events, not HTML5 dnd, so a finger works) with Arrow Up/Down on the same handle as the keyboard path. Both write the list into the same draft cookie, which is what makes the order and the words survive a reload. The create stays behind this stage's own control and posts to `POST /assessment/new`, which now takes who, mode, setting and the list from the draft; the copy keeps the template's ids and order (`aspectEditsFor`) because `db:verify` V4 compares a relationship's copy with the version it is bound to. Adding and removing an Aspect is deliberately not on this screen — it would need that V4 rule to tell an edit from drift, and it is filed as its own decision.",
+      "The one interactive stage (#689). It reads the draft stages 1–2 wrote and the template through `readLibraryTemplate()`, and renders the working list: the draft's own when stage 3 has saved, the template's on a first visit (`lib/flow/aspects.ts::workingAspects` — absent means \"untouched\", an emptied array means \"the person emptied it\"). `components/assessment-flow/aspect-list.tsx` is the flow's only client component: a row opens in place, saves itself with `POST /assessment/new/aspects` (JSON, one small request per committed gesture) and collapses on success; the order is a pointer drag on the handle (pointer events, not HTML5 dnd, so a finger works) with Arrow Up/Down on the same handle as the keyboard path. Both write the list into the same draft cookie, which is what makes the order and the words survive a reload. **Add and remove are drawn here since #699**: the create asks `aspectsToWrite()` whether the list is still the version's copy (reworded only — ids and order stay the version's, and `db:verify` V4 compares it to the pin) or the creator's own (an added, removed or reordered Aspect — `aspects_authored_at` is stamped on the session and V4 validates the copy's structure instead). The last Aspect cannot be removed: a relationship asks at least one, and the create refuses an empty list (`aspects-none`) rather than writing an instance the model cannot parse.",
   },
   {
     kind: "route",
@@ -883,13 +923,23 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/relationship-templates",
+    status: "fixture",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The public catalogue of Relationship Templates, V2 (#905): the hero that opens with work and personal side by side, the in-page menu, the catalogue itself — every purchasable type as a chip under Business or Personal, each one a link to its own page — the four-step how-it-works row, what the membership includes and the closing band. No session, no clock and no database, so the page prerenders.",
+    notes:
+      "The endpoint the owner asked for, and the one door the header's `Templates` row, the footer's catalogue link and every ‘start with a template’ action now point at (`lib/flow/paths.ts::TEMPLATE_CATALOGUE_PATH`). The package the owner approved (`docs/specs/spec-design-page-rel-templates-v2/`) draws a home page and a brand profile and **no catalogue page**, so this is not a clone: every band is an instance of a pattern that package draws, rendered by the same components `/` uses (`components/home/as2-*.tsx`), which is what makes the heading scale, the card anatomy, the chip metrics and the tokens identical rather than merely similar (measured against `home/homepage-redesign.html` at 1440, 1024 and 390). The #889 composition (`/relationship-types`, PR #891) is retained as a landing variation rather than deleted, and it keeps its own words: this page's rows in `data/pages/templates.ts` are its own ids, not edits to that page's sentences. The quiz build renders the #889 composition at this address too — the V2 bands paint surface roles QuizHub's palette does not name, and ‘change no QuizHub rendering’ is the card's own line. Types and links are `purchasableTypesByGroup()` over `data/relationship-types.ts`; the plan figure is `cataloguePriceNote()` over `data/billing-plans.ts` (#798).",
+  },
+  {
+    kind: "route",
     surface: "/relationship-types",
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The public Relationship Templates catalogue: what a template is, what buying one gets you (both sides answering blind, the Gap by Aspect, the session agenda), and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count, its price and — where a demo sheet exists — a worked example. Both card actions are public: `/register`, and `/relationship-types/<type>/demo`. No session, no clock and no database, so the page prerenders.",
+      "The public Relationship Templates catalogue (#889): a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. Every action is public: `/register`, `/pricing`, a type's own page and its `/demo` sheet. No session, no clock and no database, so the page prerenders.",
     notes:
-      "The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. The catalogue is derived (`lib/template-catalogue.ts` over `data/relationship-types.ts`), so the count sentence above the shelf and the cards under it cannot disagree, and a type the shop will not sell throws instead of rendering a card nobody can buy. The front page shows six of these cards, curated in `data/template-shelf.ts`, with no per-card actions — one CTA there, the full shelf here.",
+      "**Retained as a landing variation since #905**: the catalogue's canonical endpoint is `/relationship-templates` (the V2 composition), and this page stays live and unchanged as the #889 expression — the owner’s ‘saving the old as a landing variation’. Nothing links it as the catalogue any more; a type's own page and its worked example still live under this namespace. The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` **is** what every card links since #867: the visitor's choice survives the sign-up round trip. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.",
   },
   {
     kind: "route",
@@ -974,9 +1024,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share.",
+      "The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share. It also owns the raised-surface container every dashboard page renders inside — `stage-column.tsx` (`StageColumn`), 1126px up to one left edge at 274 and no `mx-auto` — which is the shape #717 gave the eighteen admin pages and #858 gave the member console.",
     notes:
-      "Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it.",
+      "Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it. `StageColumn` is the one container: a page that centres itself, or spells a second `max-w`, is the regression `data/surface-columns.ts` and `scripts/column-refs.ts` measure in the gate (a `wide`/`bleed` page is a registered exception with a reason and, for `bleed`, a way back). The stage dialog in `stage-shell.tsx` is the one documented centred box — a sheet, not a page column.",
   },
   {
     kind: "domain",
@@ -987,6 +1037,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The sign-in and sign-up forms, including pending, invalid-credentials and network states, plus the two demo surfaces `/login` draws only in demo mode: the anchor to the PIN gate and, under a valid unlock cookie, the three role buttons.",
     notes:
       "The demo surfaces are decided on the server (`lib/auth/demo-surface.ts`) and render nothing outside demo mode; the PIN gate itself is `/demo` (`components/auth/demo-gate.tsx`), not this route.",
+  },
+  {
+    kind: "domain",
+    surface: "components/billing",
+    status: "mock",
+    templates: ["alignsynch"],
+    capability:
+      "The provider's frame, and only the frame: `stripe-frame.tsx` mounts Stripe's embedded checkout for a client secret a server minted, draws the caption that sits under the mount point until the iframe lands, and reports completion or failure upward.",
+    notes:
+      "Lifted out of `components/dashboard/payment-capture-dialog.tsx` by #911, because two surfaces then took a card — that dialog and stage 5's pay walk — and the card's rule is one implementation of the capture, never two copies of `loadStripe()` that drift. **#912 retired the dialog**, so this is now the only surface in the app that mounts a card, and `tests/one-payment-surface.test.ts` holds that as an exact set. It is `mock` because it reads nothing: the key, the secret and every string arrive as props from the surface that owns the decision, and no copy is written here (E23). The submit is Stripe's own control inside the iframe; this module draws the mount point and nothing that submits.",
   },
   {
     kind: "domain",
@@ -1265,9 +1325,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "fixture",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The public catalogue's two files: one template card (name, realm, the two roles, the Aspect count and the price, with the two actions optional) and the page that draws four bands over it — hero, what a template is, what buying one gets you, the catalogue grouped by realm, and the closing action.",
+      "The public catalogue's eleven files: a hero, the explainer with one real Aspect, the membership line, the sticky realm menu, the searchable catalogue and its journey band — plus the record card (realm outline icon on a flat tint, name, two roles, one facts line, `Details` / `Example` / `Create Relationship`) and the older signpost card the front page's shelf still draws.",
     notes:
-      "Imported by `/` (the front page's capped shelf, six cards with no per-card actions and one View-all) and by `/templates` (every purchasable type, each card linked to `/register` and to its worked example where one exists). A variation of `components/explore/explore-quiz-list.tsx` for the page and `components/home/featured-quizzes.tsx` for the shelf, both stated in the files' own `template-ancestor:` headers. Holds no words: E23 attributes the domain to `data/pages/templates.ts` at budget 0, and the cards are records from `lib/template-catalogue.ts`.",
+      "`/relationship-types` is the surface (#889); `template-card.tsx` remains because `/` renders it in its capped six-card shelf and that rollout is a separate, route-sized review the issue defers. `template-art.tsx` is the shared `RecordArtwork` the design system names: one realm icon from `data/media.ts`, masked and painted in the realm's ink, so no card ever draws a monogram or a per-slug hue again. Holds no words: E23 attributes the domain to `data/pages/templates.ts` at budget 0, and everything the cards print is a record from `lib/template-catalogue.ts`.",
   },
   {
     kind: "domain",
@@ -1293,7 +1353,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "mock",
     templates: ["quizhub", "alignsynch"],
     capability:
-      "The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions.",
+      "The shadcn primitives every screen composes, plus this repo's own chart, drawer, motion and circular-progress additions, and the OAuth provider mark (`provider-mark.tsx`, #777).",
     notes:
       "Renders only the props it is given; the tokens it paints with come from app/globals.css.",
   },

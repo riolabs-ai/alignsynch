@@ -84,8 +84,8 @@ import {
   type Step,
 } from "@/content/steps";
 import { entitlementForAccount, billingProvider } from "@/lib/billing";
-import { instanceGateRefusal, relationshipGateRefusal } from "@/lib/billing/entitlements";
-import { activeInstanceCount, activeRelationshipCount } from "@/lib/db/billing";
+import { relationshipGateRefusal } from "@/lib/billing/entitlements";
+import { activeRelationshipCount, grantPublishTrial } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import {
   openPaymentObligation,
@@ -114,6 +114,7 @@ import {
   updateStepText,
 } from "@/lib/db/steps";
 import { invitationLink } from "@/lib/flow/email";
+import { aspectListProblem, aspectWriteProblem, aspectsToWrite } from "@/lib/flow/aspects";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
 import {
@@ -174,20 +175,36 @@ export class FlowError extends Error {
 export type FlowErrorCode =
   | "invalid-input"
   | "unknown-template"
+  /**
+   * #870 — the **status** half. A template that is `archived` (or the author-only `draft`) cannot
+   * be copied, and this code says only that. It used to be reported as `template-not-published`,
+   * whose sentence named the status *and* the missing version in one breath — two facts, and the
+   * pair read like a contradiction on screen. `template-not-published` is now the version half
+   * alone: a `published` row with no `template_version`.
+   */
+  | "template-archived"
   | "template-not-published"
   | "template-has-no-aspects"
+  /**
+   * The creator emptied the list (#699). A relationship asks nothing of either seat with no
+   * Aspects, and the model refuses an instance with none (`zAssessmentInstance.items` is `.min(1)`),
+   * so this is a refusal at the create and not an empty instance a page would fail to render. It is
+   * its own code rather than `template-has-no-aspects`, because the sentence a person needs says
+   * the list they emptied needs a row — not that the template they copied was empty.
+   */
+  | "aspects-none"
   | "record-is-an-instance"
   // A template another account wrote (#console 5/5). The catalogue already excludes those rows,
   // so this is the second half of the same rule for a caller that posts a record id directly:
   // an authored template belongs to its author, and a signed-out create belongs to nobody.
   | "template-not-yours"
-  // The billing gate's three refusals (#289, #505). They are flow refusals because this store is
-  // where an instance comes into being, and the route that calls it already answers `{error,
-  // message}` for every `FlowError` — a second error type would be a second branch that could be
-  // forgotten. `relationship-limit` is the plan's own limit (#505): a plan sells *relationships*,
-  // and the refusal names that, not an "assessment instance" nobody was sold.
-  | "instance-limit"
-  | "mode-not-entitled"
+  // The billing gate's one refusal (#289, #505). It is a flow refusal because this store is where
+  // an instance comes into being, and the route that calls it already answers `{error, message}`
+  // for every `FlowError` — a second error type would be a second branch that could be forgotten.
+  // `relationship-limit` is the plan's own limit: a plan sells *relationships*, and the refusal
+  // names that, not an "assessment instance" nobody was sold. The mode and session-count refusals
+  // that used to sit beside it are gone (#835) — the publish trial entitles Advanced Mode, and a
+  // seat on somebody else's relationship is not a relationship you started.
   | "relationship-limit";
 
 /* ------------------------------------------------------------------ *\
@@ -240,16 +257,20 @@ export interface CreateInstanceInput {
    */
   readonly description?: string;
   /**
-   * Stage 3's list (#689) — the template's Aspects as the person reworded them.
+   * Stage 3's list (#689) — the template's Aspects as the person left them.
    *
    * Optional: a direct post to this endpoint (a `curl`, `scripts/flow-e2e.mjs`) carries no list
-   * and copies the version's Aspects exactly as it always did. When present it is consulted **by
-   * id**: an entry whose id the version does not offer is ignored, and a version Aspect the list
-   * does not mention is copied from the version. That is deliberate — a relationship's copy is
-   * compared against the version it is bound to, id for id and in order
-   * (`lib/db/rows.ts::copyDriftProblems`, `db:verify` V4), so the copy may be *reworded* by the
-   * person who created it but may not gain or lose an Aspect. Adding and removing is a different
-   * decision (it needs a V4 rule that can tell an edit from drift) and is not this field's job.
+   * and copies the version's Aspects exactly as it always did.
+   *
+   * **A list that is still a copy is consulted by id** (#689): a version Aspect the list does not
+   * mention is copied from the version, and a blank field falls back to the version's, so the copy
+   * may be *reworded* without becoming drift.
+   *
+   * **A list that added, removed or reordered an Aspect is the creator's own** (#699). It is
+   * written as given — their order, their rows, an id minted for each row they added — and the
+   * create stamps `session.aspects_authored_at`, which is what tells V4 to validate that copy's
+   * own structure instead of comparing it to a version it deliberately left. A list with no
+   * Aspect is refused (`aspects-none`): a relationship that asks nothing is not a relationship.
    */
   readonly aspects?: readonly {
     readonly id: string;
@@ -402,23 +423,66 @@ export async function createInstanceFromTemplate(
   // happen before the transaction opens and neither can leave a row behind.
   const alignmentSetting = alignmentSettingOf(input.alignmentSetting);
 
+  // #699 — stage 3's list, checked here for the same reason the Mode is: an empty list or a
+  // repeated id can be refused before the transaction opens, so the refusal costs nothing. The
+  // **blank** question waits until the rows are built (below), because a kept row with an empty
+  // field falls back to the version's words and only a row the person added has nothing to fall
+  // back to. A post that carries **no** list is the copy path and is not checked here.
+  if (input.aspects !== undefined) {
+    const problem = aspectListProblem(input.aspects);
+    if (problem !== null) {
+      throw new FlowError(
+        problem === "none" ? "aspects-none" : "invalid-input",
+        problem === "none"
+          ? "a relationship needs at least one Aspect"
+          : "the Aspect list names one id twice",
+      );
+    }
+  }
+
   const now = input.now ?? new Date();
   const initiatorUserId = normalizedUserId(input.viewerUserId);
+  // Whether this create publishes (#825): stage 4 writes a `draft` and stage 5's send publishes
+  // it, while the pre-#825 one-form create publishes here. One flag, read by the relationship
+  // row's status and `published_at`, and — after the commit — by the publish trial.
+  const publishes = input.draft !== true;
 
-  // THE BILLING GATE (#289, #505). Before the transaction, because a refusal must cost nothing: no
-  // record, no items, no party row, no invitation. Three questions, and the **relationship** limit
-  // is asked first (#505): it is the limit the plan actually sells — "One active relationship at a
-  // time" on Free, "Unlimited active relationships" on every paid tier — so an account that has
-  // used its one relationship is refused with a sentence about a relationship, not about an
-  // "assessment instance" it never saw named. `instanceGateRefusal` still asks the count of open
-  // sessions and the mode; the two counts differ (being a Counterparty is an instance but not a
-  // relationship you started), so neither subsumes the other.
+  // THE BILLING GATE (#289, #505, #835). Before the transaction, because a refusal must cost
+  // nothing: no record, no items, no party row, no invitation. One question now, and it is the
+  // limit the plan actually sells — "One active relationship at a time" on Free, "Unlimited
+  // active relationships" on every paid tier — so an account that has used its one relationship
+  // is refused with a sentence about a relationship, not about an "assessment instance" it never
+  // saw named.
+  //
+  // **The Mode is not asked here (#835).** Until this card a second refusal ran beside this one:
+  // `instanceGateRefusal` answered for the count of open sessions *and* refused Advanced Mode on
+  // Free. Both legs are gone, for one reason each:
+  //
+  //   - **the mode leg, because the publish trial is the Advanced entitlement.** A Free account
+  //     that publishes a relationship is granted the entry paid tier for seven days
+  //     (`grantPublishTrial`, below and in `sendDraftInvitation`), and that tier plays Basic *and*
+  //     Advanced. Refusing the Mode at create was refusing a capability the very next write
+  //     grants — and refusing it on the direct-publish path while the draft path handed it over,
+  //     which is the same account getting two answers depending on which control it used.
+  //   - **the session-count leg, because it was never the thing a plan sells.** An account may
+  //     hold a seat as the Counterparty on several relationships without having started one; what
+  //     a tier limits is the relationships you *start*, which is `relationshipGateRefusal`.
+  //
+  // The hard gate the owner's posture names is still the fee at the Gap (`awaiting_payment`,
+  // `lib/flow/screen.ts`) — this gate sells the relationship, and nothing here touches the fee.
   //
   // A signed-out create is not gated: there is no account to hold a plan, and the anonymous flow
   // is the pre-#213 behaviour the product still supports. That is also why the gate cannot be
   // escaped by logging out into a paying account's limit — the count is per `party.user_id`, and
   // an unbound instance belongs to nobody.
-  if (initiatorUserId !== null) {
+  //
+  // **A draft is not gated (#834).** Stage 4 writes the relationship as a `draft` and sends
+  // nothing; the plan is sold on the send, not on the description. Until #834 the gate ran here
+  // for a draft too, so a Free account that chose Advanced was refused at stage 4 — *before* the
+  // stage that carries the plans and the checkout, which is a dead end rather than an upsell. The
+  // gate now applies to a create that goes out as `published`, and the plan question is asked
+  // where the money is: a non-blocking prompt on stage 5, and the hard gate at the Gap.
+  if (initiatorUserId !== null && input.draft !== true) {
     const entitlement = await entitlementForAccount(initiatorUserId);
     const relationshipRefusal = relationshipGateRefusal({
       entitlement,
@@ -427,12 +491,6 @@ export async function createInstanceFromTemplate(
     if (relationshipRefusal !== null) {
       throw new FlowError(relationshipRefusal.code, relationshipRefusal.message);
     }
-    const refusal = instanceGateRefusal({
-      entitlement,
-      activeInstances: await activeInstanceCount(initiatorUserId),
-      mode: mode.data,
-    });
-    if (refusal !== null) throw new FlowError(refusal.code, refusal.message);
   }
   // #258 — the address the unlock notice will reach the Initiator at, or NULL when nobody signed
   // in to create this instance. Written on the invitation row, in the same transaction that
@@ -442,6 +500,7 @@ export async function createInstanceFromTemplate(
   const initiatorToken = mintToken();
   const inviteToken = mintToken();
   const instanceRecordId = cryptoRandomId();
+  let created: CreatedInstance | undefined;
   const client = await getPool().connect();
 
   try {
@@ -488,8 +547,11 @@ export async function createInstanceFromTemplate(
       );
     }
     if (found.status !== "published") {
+      // #870 — the status fact, on its own. `template-not-published` now means the *version* fact
+      // below, so the two states read as two sentences instead of one contradiction, and
+      // `create-copy.ts` gives each its own door.
       throw new FlowError(
-        "template-not-published",
+        "template-archived",
         `template "${found.slug}" is ${found.status}; only a published template can be copied`,
       );
     }
@@ -518,9 +580,12 @@ export async function createInstanceFromTemplate(
     );
     const version = liveVersion.rows[0];
     if (version === undefined) {
+      // #870 — by here `found.status` is `published`, so this sentence names the one fact that is
+      // true: there is no version to copy. It used to read "is published with no published
+      // version", which is a contradiction on its face.
       throw new FlowError(
         "template-not-published",
-        `template "${found.slug}" is ${found.status} with no published version — publish it before a relationship can copy it`,
+        `template "${found.slug}" has no published version — publish it before a relationship can copy it`,
       );
     }
     const offered = assessmentTemplateFromPayload(
@@ -563,20 +628,41 @@ export async function createInstanceFromTemplate(
     // copy taken from it would fail `db:verify` V4 against the version the relationship is bound
     // to. No `response_option` copy: a version is `zAssessment`, whose every item's scale is the
     // fixed 1..5 band, so there is no option row for it to carry.
-    const copyIds = offered.items.map((item) => item.id);
-    // #689 — what the person reworded at stage 3, looked up by id. The ids and the order are the
-    // version's (`copyDriftProblems` compares them); the words are theirs. A list entry the version
-    // does not offer is ignored rather than inserted, and a blank value falls back to the version's
-    // — the same "never invent a row, never delete one" rule the draft's own reduction uses.
-    const edited = new Map((input.aspects ?? []).map((aspect) => [aspect.id, aspect]));
-    const copies = offered.items.map((item) => {
-      const edit = edited.get(item.id);
-      return {
-        prompt: edit?.prompt.trim() || item.prompt,
-        leftValue: edit?.leftValue.trim() || item.leftValue,
-        rightValue: edit?.rightValue.trim() || item.rightValue,
-      };
-    });
+    //
+    // #699 — **a copy, or the creator's own list.** `aspectsToWrite()` answers which one: a list
+    // that only rewords the version's Aspects keeps the version's ids *and order*, so V4 keeps
+    // comparing it to the pin (#689); a list that added, removed or reordered an Aspect is written
+    // as the person left it, and the session records the fact in `aspects_authored_at`, which is
+    // what tells V4 to validate that copy's own structure instead. The old behaviour — silently
+    // dropping an added row and restoring a removed one — is the defect this replaces.
+    //
+    // `cryptoRandomId()` mints the id of a row the person added: the draft's `new-1` is the
+    // browser's placeholder, never a record id, and an id in `item` is the handle every answer row
+    // will point at for the life of the relationship.
+    //
+    // A post that carries **no** list is the copy path with no special case: the version's own
+    // Aspects are the list, so the draft and the template are the same array and `aspectsToWrite`
+    // answers "copy".
+    const write = aspectsToWrite(
+      input.aspects ?? offered.items,
+      offered.items,
+      () => `aspect-${cryptoRandomId()}`,
+    );
+    // The rows are built now, so the one check that needed the version can run: a kept row's blank
+    // field has been filled from the version above, and a blank that survives is a row the person
+    // added with no question — refused rather than written (the transaction rolls back).
+    const writeProblem = aspectWriteProblem(write.aspects);
+    if (writeProblem !== null) {
+      throw new FlowError(
+        writeProblem === "none" ? "aspects-none" : "invalid-input",
+        writeProblem === "none"
+          ? "a relationship needs at least one Aspect"
+          : writeProblem === "duplicate"
+            ? "the Aspect list names one id twice"
+            : "an Aspect the creator added has a blank question or opinion label",
+      );
+    }
+    const copyIds = write.aspects.map((aspect) => aspect.id);
     await client.query(
       `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
        SELECT $1, t.item_id, t.position, t.prompt, 'score', t.left_value, t.right_value
@@ -585,10 +671,10 @@ export async function createInstanceFromTemplate(
       [
         instanceRecordId,
         copyIds,
-        copies.map((_, position) => position),
-        copies.map((copy) => copy.prompt),
-        copies.map((copy) => copy.leftValue),
-        copies.map((copy) => copy.rightValue),
+        write.aspects.map((_, position) => position),
+        write.aspects.map((aspect) => aspect.prompt),
+        write.aspects.map((aspect) => aspect.leftValue),
+        write.aspects.map((aspect) => aspect.rightValue),
       ],
     );
 
@@ -619,7 +705,7 @@ export async function createInstanceFromTemplate(
     // instant because nothing has been published, and the send writes both. The session and the
     // invitation row are written either way, because stage 5 needs a token to send; what a draft
     // does not have is an email that went anywhere.
-    const relationshipStatus = input.draft === true ? "draft" : "published";
+    const relationshipStatus = publishes ? "published" : "draft";
     const relationshipId = cryptoRandomId();
     await client.query(
       `INSERT INTO relationship
@@ -633,14 +719,28 @@ export async function createInstanceFromTemplate(
         initiatorUserId,
         now.toISOString(),
         relationshipStatus,
-        input.draft === true ? null : now.toISOString(),
+        publishes ? now.toISOString() : null,
       ],
     );
 
+    // #699 — the copy's provenance, written with the copy itself. `NULL` is "copied from the
+    // version this relationship is bound to", which is the only thing every row written before
+    // this column existed actually was; an instant is "the creator wrote this list", which is what
+    // V4 validates as structure instead of as equality. One INSERT, no UPDATE path: the column is
+    // not in V18's carve-out list and must not become one.
     await client.query(
-      `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [instanceRecordId, found.id, mode.data, alignmentSetting, relationshipId],
+      `INSERT INTO session
+         (record_id, template_record_id, mode, alignment_setting, relationship_id,
+          aspects_authored_at)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        instanceRecordId,
+        found.id,
+        mode.data,
+        alignmentSetting,
+        relationshipId,
+        write.authored ? now.toISOString() : null,
+      ],
     );
 
     // The Initiator's seat. `user_id` is the session's account when there is one, and NULL when
@@ -702,7 +802,7 @@ export async function createInstanceFromTemplate(
     );
 
     await client.query("COMMIT");
-    return {
+    created = {
       instanceRecordId,
       slug,
       templateTitle: found.title,
@@ -715,6 +815,37 @@ export async function createInstanceFromTemplate(
   } finally {
     client.release();
   }
+
+  if (created === undefined) {
+    // Unreachable: every path out of the `try` above either sets `created` or throws. A throw here
+    // is load-bearing — the alternative is returning a create that wrote nothing.
+    throw new Error("createInstanceFromTemplate committed without an instance");
+  }
+
+  // Publishing is the instant the trial opens (#840), on **either** publish path (#835). The draft
+  // path grants it in `sendDraftInvitation()`; a create that goes out `published` reaches the same
+  // instant a step earlier, and without the grant the row it has just committed reads `lapsed` on
+  // the very next membership read — every account that has never checked out would be locked out
+  // of the relationship it just published, and the counterparty's claim refused with `lapsed`.
+  // That is the defect #840 fixed on the send path, and this is the same fix on the other one.
+  //
+  // After `client.release()` on purpose: the grant is its own statement on the pool, and the
+  // transaction's connection is no longer held while it runs.
+  if (publishes && initiatorUserId !== null) {
+    try {
+      await grantPublishTrial({ userId: initiatorUserId, publishedAt: now });
+    } catch (error) {
+      // The create stands — it is already committed — but a published row with no trial lapses on
+      // the next read, so this is loud rather than swallowed.
+      console.error(
+        `[billing] publish trial not granted for relationship "${instanceRecordId}" (user ${initiatorUserId}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  return created;
 }
 
 /** `crypto.randomUUID()`, imported lazily so this module stays a thin wrapper over SQL. */
@@ -844,25 +975,12 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       };
     }
 
-    // #533 phase 3 — the membership that paid for this invitation, asked **before** the seat is
-    // bound. A relationship whose trial or subscription lapsed is read-only for both parties, and
-    // the invitation is the first thing that has to stop working: the link is the only way a
-    // stranger can reach the pair. The refusal is a `ROLLBACK` — a refused claim writes nothing —
-    // so `recordLapseIfDue()` then writes the `expired` status in its own commit; the attempt is
-    // what records the lapse, and the row is corrected even though the claim was refused.
+    // #848 — the seat is bound even when the trial has lapsed. This used to refuse the claim with
+    // `lapsed`, which made the invitation the first thing to stop working: the stranger holding the
+    // only link to the pair could not join, so the two people the trial was for could never finish
+    // answering. The lapse closes the Gap (`screen.report` needs a `complete` session), not the
+    // pairing — so the claim proceeds and the row is still corrected by the paths that record it.
     const { relationshipId } = await sessionRelationshipOf(client, invite.session_record_id);
-    if (relationshipId !== null) {
-      const reading = await lapseIfDue(client, relationshipId, now);
-      if (reading !== undefined && reading.membership.state === "lapsed") {
-        await client.query("ROLLBACK");
-        await recordLapseIfDue(relationshipId, now);
-        return {
-          ok: false,
-          code: "lapsed",
-          reason: membershipSentence(reading.membership),
-        };
-      }
-    }
 
     // The caller's own binding, read before anything is written: a claim is for a party
     // that is not already bound, and the Initiator opening their own link is a refusal
@@ -1158,7 +1276,17 @@ export async function resendInvite(input: ResendInput): Promise<ResendResult> {
  * of the same invitation is `resendInvite`'s job, and it has the cooldown and the refusal
  * vocabulary this path deliberately does not duplicate.
  */
-export type SendRefusal = "not-initiator" | "no-invitation" | "already-published";
+export type SendRefusal =
+  | "not-initiator"
+  | "no-invitation"
+  | "already-published"
+  /**
+   * #911 — the stage's send waits for the walk: a plan joined and a card on file. `resendInvite`
+   * cannot raise this (a re-invite is a different act on an already-sent relationship) and the send
+   * route redirects it into the same `?resend=` band the other two use, so it is a `ResendRefusal`
+   * too — one vocabulary per surface, read by one lookup.
+   */
+  | "no-payment-method";
 
 export type SendResult =
   | {
@@ -1184,16 +1312,32 @@ export async function sendDraftInvitation(input: {
   const client = await getPool().connect();
   let status: string | undefined;
   let relationshipId: string | undefined;
+  /**
+   * The captured method, read from **`relationship_payment`** — the row that owns the fact.
+   *
+   * `null` means "no card on file", which the send waits for; `relationship_payment` is keyed by
+   * `relationship_id`, so the join cannot fan out. A relationship with no payment row yet is the
+   * normal state before a method is captured, and the `LEFT JOIN` is what makes that absence read
+   * as `null` rather than as a missing row (#948 — the column was selected from `relationship`,
+   * which does not have it, so every send answered `42703`).
+   */
+  let methodCaptured: Date | null = null;
   try {
-    const found = await client.query<{ relationship_id: string | null; status: string | null }>(
-      `SELECT ai.relationship_id, r.status
+    const found = await client.query<{
+      relationship_id: string | null;
+      status: string | null;
+      method_captured_at: Date | null;
+    }>(
+      `SELECT ai.relationship_id, r.status, p.method_captured_at
          FROM session ai
          LEFT JOIN relationship r ON r.id = ai.relationship_id
+         LEFT JOIN relationship_payment p ON p.relationship_id = r.id
         WHERE ai.record_id = $1`,
       [input.instanceRecordId],
     );
     relationshipId = found.rows[0]?.relationship_id ?? undefined;
     status = found.rows[0]?.status ?? undefined;
+    methodCaptured = found.rows[0]?.method_captured_at ?? null;
   } finally {
     client.release();
   }
@@ -1237,6 +1381,22 @@ export async function sendDraftInvitation(input: {
     };
   }
 
+  /**
+   * #911 — **the send waits for the walk.** The invitation publishes the relationship and mails the
+   * other seat; the money side of the stage is a plan joined and a card on file, and the UI disables
+   * the control until both are done. That is the courtesy. This is the rule: a POST that skips the
+   * walk is refused here, where the write would happen, so "the send fired without payment" is not a
+   * state a crafted request can reach. Keeping the draft is untouched — it sends nothing, so it is
+   * never asked for a card.
+   */
+  if (methodCaptured === null) {
+    return {
+      ok: false,
+      code: "no-payment-method",
+      reason: `relationship "${relationshipId ?? "none"}" has no card on file: stage 5's send waits for the plan and the card`,
+    };
+  }
+
   // The token first — see the docstring. It is the same reissue the recovery path uses, so a draft
   // sent from here answers `no-invitation` for exactly the rows that path would.
   const reissued = await resendInvite({
@@ -1256,10 +1416,11 @@ export async function sendDraftInvitation(input: {
 
   // The status, behind the guard: a concurrent send that got here first matches nothing and is
   // reported as what it is.
-  const flipped = await getPool().query(
+  const flipped = await getPool().query<{ initiator_user_id: string | null }>(
     `UPDATE relationship
         SET status = 'published', published_at = COALESCE(published_at, $2)
-      WHERE id = $1 AND status IN ('draft', 'pending')`,
+      WHERE id = $1 AND status IN ('draft', 'pending')
+      RETURNING initiator_user_id`,
     [relationshipId, now.toISOString()],
   );
   if ((flipped.rowCount ?? 0) === 0) {
@@ -1268,6 +1429,25 @@ export async function sendDraftInvitation(input: {
       code: "already-published",
       reason: `relationship "${relationshipId}" moved out of draft before this send wrote it`,
     };
+  }
+
+  // Publishing is the instant the trial opens (#840). Without it the row reads as `lapsed` on the
+  // very next membership read — a just-published relationship whose account has never checked out
+  // holds no entitling subscription — and the counterparty's claim is refused with `lapsed`. The
+  // grant is idempotent and one statement, so a re-send cannot restart a clock.
+  const initiatorUserId = flipped.rows[0]?.initiator_user_id ?? null;
+  if (initiatorUserId !== null) {
+    try {
+      await grantPublishTrial({ userId: initiatorUserId, publishedAt: now });
+    } catch (error) {
+      // The publish stands — it is already committed — but a published row with no trial lapses on
+      // the next read, so this is loud rather than swallowed.
+      console.error(
+        `[billing] publish trial not granted for relationship "${relationshipId}" (user ${initiatorUserId}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   return {
@@ -1320,6 +1500,11 @@ function resendReason(
       return `the last re-invite was at ${invite?.resent_at?.toISOString() ?? "an unknown instant"}, less than 24 hours before ${now.toISOString()}`;
     case "invalid-email":
       return `"${email ?? ""}" is not an address a message can be sent to`;
+    // #911 — unreachable from `resendInvite` (a re-invite is an act on a sent relationship); the
+    // code joins this vocabulary so the send route's redirect renders a sentence, and this arm keeps
+    // the switch total.
+    case "no-payment-method":
+      return "the relationship has no card on file, so stage 5's send has not run";
   }
 }
 
@@ -1422,20 +1607,10 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     // the money stopped. The refusal rolls this transaction back, so the lapse itself is recorded
     // afterwards by `recordLapseIfDue()` in its own commit: the row that explains the refusal is
     // not lost with the refused write.
-    const membership = await membershipForInstance(
-      client,
-      input.instanceRecordId,
-      input.now ?? new Date(),
-    );
-    if (membership !== undefined && membership.membership.state === "lapsed") {
-      await client.query("ROLLBACK");
-      await recordLapseIfDue(membership.relationshipId, input.now ?? new Date());
-      return {
-        ok: false,
-        code: "lapsed",
-        reason: membershipSentence(membership.membership),
-      };
-    }
+    // #848 — a lapsed trial does not refuse the answers. The blind rule still holds (neither party
+    // reads the other's sheet), the fee still gates the Gap, and the two people who started the
+    // session can finish it. Refusing here is what stranded them.
+    //
     // The mode the sheet is judged against is the row's, read under the lock that already
     // protects the freeze — never a field of the form. `zAssessmentMode` cannot reject a
     // value the column's CHECK allows, so a failure here is drift on a hand-edited row.
@@ -1820,20 +1995,8 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
         reason: `an operator voided this session at ${session.voided_at.toISOString()}; there is nothing left to accept`,
       };
     }
-    // #533 phase 3 — acceptance is a write, so a lapsed membership refuses it like a void does.
-    // Asked after the void and before the seat, so a session an operator ended answers `voided`
-    // even when the money also stopped: the operator's act is the more specific fact. The refusal
-    // rolls back; the lapse is then recorded in its own commit.
-    const membership = await membershipForInstance(client, input.instanceRecordId, now);
-    if (membership !== undefined && membership.membership.state === "lapsed") {
-      await client.query("ROLLBACK");
-      await recordLapseIfDue(membership.relationshipId, now);
-      return {
-        ok: false,
-        code: "lapsed",
-        reason: membershipSentence(membership.membership),
-      };
-    }
+    // #848 — acceptance is a write, and a lapsed trial no longer refuses it: the pairing is what the
+    // two parties are finishing, and the Gap behind it is what the fee gates.
 
     // The seat, out of Postgres: the cookie's token hash first (an invited party keeps the
     // identity its link gave it), then the account (#R2's fallback). A coach is neither, and is

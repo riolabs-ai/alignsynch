@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Branch triage · prev [Orchestration rules](ORCHESTRATION.md) · next [The demo](DEMO.md)
+[Docs hub](README.md) › **Operations** › Branch triage · prev [QA links](QA-LINKS.md) · next [The demo](DEMO.md)
 
 <!-- docs-nav:end -->
 
@@ -86,11 +86,11 @@ why the diffstats below read larger than the surviving change.
 `git merge-base --is-ancestor origin/feat/admin-relationship-ops origin/main` → true, PR #516 MERGED.
 A branch with nothing ahead of `main` is residue by definition, so it was deleted with the rest.
 
-## Queue D — `demo`, untouched
+## Queue D — `demo`
 
-`demo` @ `43c0a645`, four commits ahead and seventeen behind after the last sync. It deploys
-`demo.alignsynch.com`, so its only allowed operations are the release-time forced deploy and a
-`main` merge. Nothing here touched it, and it still resolves:
+`demo` @ `43c0a645` was four commits ahead and seventeen behind at the time of this sweep. It
+deploys `demo.alignsynch.com`, so its only allowed operations are the release-time forced deploy and
+a `main` merge. Nothing here touched it, and it resolved then:
 
 ```console
 $ curl -s -o /dev/null -w '%{http_code}\n' https://demo.alignsynch.com/
@@ -98,6 +98,17 @@ $ curl -s -o /dev/null -w '%{http_code}\n' https://demo.alignsynch.com/
 ```
 
 Checked before the first deletion and again after the last one, both 200.
+
+**That reading stopped being true, and the reason is worth keeping.** Measured 2026-11-12: the same
+command answered `404` with `DEPLOYMENT_NOT_FOUND`, `GET
+/v6/deployments?meta-githubCommitRef=demo` answered **0**, and the domain was still attached,
+verified and `gitBranch: demo`. A `200` on a branch domain is a statement about a _deployment_, not
+about a branch — and creation is disabled at the project level, so no push replaces the one that
+goes away. It is now `pnpm deploy:demo` that creates it, `pnpm deploy:prune` that protects it (the
+domain is a branch domain, not an alias, and the prune used to read only the alias table), and
+`curl -s https://demo.alignsynch.com/api/version` that says which build is behind it. `demo` is now
+merged up to `main` at `9ac71c38` and serving `1.15.0`; the rest is
+[`docs/DEPLOYING.md`](DEPLOYING.md#the-demo-alias-one-command-and-what-an-empty-one-means).
 
 ## What the sprawl measured
 
@@ -432,6 +443,6 @@ copies are the pruner's business. Deleting a remote ref cannot remove a local br
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Branch triage · prev [Orchestration rules](ORCHESTRATION.md) · next [The demo](DEMO.md)
+[Docs hub](README.md) › **Operations** › Branch triage · prev [QA links](QA-LINKS.md) · next [The demo](DEMO.md)
 
 <!-- docs-nav:end -->

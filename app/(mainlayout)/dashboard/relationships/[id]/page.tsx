@@ -26,21 +26,27 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
+import { RelationshipEditDialog } from "@/components/dashboard/relationship-edit-dialog";
 import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
-import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
+import {
+  dashboardRelationshipDetailPageCopy,
+  RELATIONSHIP_EDIT_SECTION,
+} from "@/data/pages/dashboard-relationship-detail";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
-  capturePaymentMethodAction,
   completeRelationshipAction,
   editRelationshipAction,
+  forkRelationshipTemplateAction,
   previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
-  resolveCaptureAction,
   saveAspectsAction,
 } from "../actions";
 
@@ -66,14 +72,16 @@ export default async function MemberRelationshipPage({
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("member-relationship: the relationship could not be read", error);
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">{dashboardRelationshipDetailPageCopy.heading}</h1>
-        <p data-relationship-unreadable className="text-sm text-muted-foreground">
-          {dashboardRelationshipDetailPageCopy.sections?.find(
-            (section) => section.id === "unreadable",
-          )?.body ?? ""}
-        </p>
-      </div>
+      <StageColumn>
+        <div className="space-y-6">
+          <h1 className="text-2xl font-semibold">{dashboardRelationshipDetailPageCopy.heading}</h1>
+          <p data-relationship-unreadable className="text-sm text-muted-foreground">
+            {dashboardRelationshipDetailPageCopy.sections?.find(
+              (section) => section.id === "unreadable",
+            )?.body ?? ""}
+          </p>
+        </div>
+      </StageColumn>
     );
   }
   if (view === undefined) notFound();
@@ -96,36 +104,58 @@ export default async function MemberRelationshipPage({
     editState = undefined;
   }
 
+  const editSection = sectionOf(dashboardRelationshipDetailPageCopy, RELATIONSHIP_EDIT_SECTION);
+
   return (
-    <div className="space-y-6">
-      {/*
+    <StageColumn>
+      <div className="space-y-6">
+        {/*
         #795 — the page draws no heading of its own. The identity band the shell renders owns the
         screen's one `<h1>` (the record's own title), so the kicker and the `text-2xl` title that
         used to sit above the card are gone: two headings for one record is the defect the shared
         shell exists to prevent, and the artifact draws the band in that position.
       */}
-      <RelationshipDetail
-        copy={dashboardRelationshipDetailPageCopy}
-        relationship={view}
-        backHref={MEMBER_RELATIONSHIPS_PATH}
-        editPanel={
-          editState === undefined || editState.closed ? undefined : (
-            <RelationshipEditPanel
-              copy={dashboardRelationshipDetailPageCopy}
-              state={editState}
-              variant="panel"
-              onPreview={previewRelationshipEditAction}
-              onEdit={editRelationshipAction}
-            />
-          )
-        }
-        onSaveAspects={saveAspectsAction}
-        onPublish={publishRelationshipAction}
-        onRepublish={republishInviteAction}
-        onCapture={capturePaymentMethodAction}
-        onResolve={resolveCaptureAction}
-        onComplete={completeRelationshipAction}
-      />
-    </div>
+        <RelationshipDetail
+          copy={dashboardRelationshipDetailPageCopy}
+          relationship={view}
+          /*
+            #923 — **a trigger, not a column.** The panel used to arrive here as `editPanel` and
+            render inline in the 320 px actions rail, so the detail and its editor described the
+            same relationship side by side. Now the rail carries one control and the panel is
+            mounted only while that control's dialog/sheet is open. The panel itself is unchanged:
+            same component, same fields, same `variant="panel"`.
+          */
+          editTrigger={
+            editState === undefined || editState.closed ? undefined : (
+              <RelationshipEditDialog
+                label={itemLabel(editSection, "open")}
+                title={editSection.heading ?? ""}
+                panel={
+                  <RelationshipEditPanel
+                    copy={dashboardRelationshipDetailPageCopy}
+                    state={editState}
+                    variant="panel"
+                    onPreview={previewRelationshipEditAction}
+                    onEdit={editRelationshipAction}
+                  />
+                }
+              />
+            )
+          }
+          onSaveAspects={saveAspectsAction}
+          onPublish={publishRelationshipAction}
+          onRepublish={republishInviteAction}
+          onComplete={completeRelationshipAction}
+          onFork={forkRelationshipTemplateAction}
+          /*
+            #785 — where a forked copy lands. Passed rather than imported inside the component:
+            `TEMPLATE_LIBRARY_PATH` is exported by `lib/flow/paths.ts` (no database), and the
+            `?view=mine` tab is the one the copy is under — a fork is the caller's, so the library's
+            "Mine" tab is the honest destination and not the catalogue.
+          */
+          templatesHref={`${TEMPLATE_LIBRARY_PATH}?view=mine`}
+        />
+      </div>
+    </StageColumn>
   );
 }

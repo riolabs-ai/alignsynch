@@ -19,6 +19,7 @@ import { FormSurface } from "@/components/ui/form-surface";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GoogleMark } from "@/components/ui/provider-mark";
 import type { PageCopy } from "@/content/pages";
 import { formatCompactCount } from "@/content/metrics";
 import { metric } from "@/data/metrics";
@@ -462,7 +463,17 @@ export function LoginView({
                 onClick={startGoogle}
                 disabled={googlePending || pending}
               >
-                {googlePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {/*
+                 * The mark is decoration beside the label, never instead of it (#777): the
+                 * button's accessible name stays the fixture's `label`, and `GoogleMark` is
+                 * `aria-hidden`. While a round trip is in flight the spinner takes the mark's
+                 * place, so the control never shows two icons at once.
+                 */}
+                {googlePending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <GoogleMark className="mr-2 h-4 w-4" />
+                )}
                 {googlePending ? itemLabel(google, "pending") : itemLabel(google, "label")}
               </Button>
               <div className="relative">

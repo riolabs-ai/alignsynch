@@ -59,7 +59,7 @@ export function AdminTemplateRegistry() {
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <LoadingState rows={4} />
       </div>
     );
@@ -74,7 +74,7 @@ export function AdminTemplateRegistry() {
   const disabled = templateRows.filter((template) => template.disabled).length;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-8">
+    <div className="space-y-5">
       <SectionIntro
         title="Templates"
         subtitle={`${templateRows.length} template${templateRows.length === 1 ? "" : "s"} in the store · ${disabled} disabled. Relationships started from a template are counted from the registry, never stored.`}
@@ -85,9 +85,9 @@ export function AdminTemplateRegistry() {
           <TableHeader>
             <TableRow>
               <TableHead>Template</TableHead>
-              <TableHead>Aspects</TableHead>
-              <TableHead>Started from it</TableHead>
-              <TableHead>Archived</TableHead>
+              <TableHead className="text-right">Aspects</TableHead>
+              <TableHead className="text-right">Started from it</TableHead>
+              <TableHead className="text-right">Archived</TableHead>
               <TableHead>State</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -108,13 +108,13 @@ export function AdminTemplateRegistry() {
                   </Link>
                   <p className="text-xs text-muted-foreground">{template.id}</p>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
                   {template.aspectCount}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
                   {template.startedCount} live
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
                   {template.archivedCount}
                 </TableCell>
                 <TableCell>

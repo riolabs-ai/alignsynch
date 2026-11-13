@@ -21,8 +21,9 @@
  * (`MemberRelationshipView.view`), so the screen cannot say “link live” while the server would
  * refuse the link. In the actions slot, in this order:
  *
- *   edit       the page's edit surface, passed in as `editPanel` — a server read this component
- *              cannot do (E34), mounted first because configuring comes before publishing
+ *   edit       the page's edit surface, passed in as `editTrigger` — a server read this component
+ *              cannot do (E34), and since #923 a **control, not a column**: the panel it opens is
+ *              mounted only while that dialog/sheet is open, so no fact is on screen twice
  *   publish    the counterparty's name and address, and one button that starts the trial
  *              (or a checkout), publishes the relationship and mints the invitation
  *   republish  one click, for a link that lapsed or was revoked — and only those two, because a
@@ -61,19 +62,18 @@ import {
   type DetailFact,
 } from "@/components/assessment-flow/record-detail-shell";
 import { relationshipTypeOf } from "@/components/assessment-flow/template-card";
-import { PaymentCaptureDialog } from "@/components/dashboard/payment-capture-dialog";
 import { Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy, PageCopySection } from "@/content/pages";
-import { buildTemplateRecord } from "@/lib/admin/template-draft";
+import { aspectStatesOf, buildTemplateRecord } from "@/lib/admin/template-draft";
 import { formatCurrency, formatDate } from "@/content/core";
 import {
   refusalSentence,
   type AspectsOutcome,
-  type CaptureOutcome,
   type CompleteOutcome,
+  type ForkOutcome,
   type PublishOutcome,
   type RepublishOutcome,
 } from "@/lib/member/outcomes";
@@ -82,7 +82,7 @@ import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detai
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { PRICING_PATH } from "@/lib/flow/paths";
+import { PRICING_PATH, RELATIONSHIPS_PATH, createInviteForPath } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 
@@ -108,29 +108,26 @@ function sentenceFor(
 export function RelationshipDetail({
   copy,
   relationship,
-  backHref,
-  editPanel,
+  editTrigger,
   onSaveAspects,
   onPublish,
   onRepublish,
-  onCapture,
-  onResolve,
   onComplete,
+  onFork,
+  templatesHref,
 }: {
   copy: PageCopy;
   relationship: MemberRelationshipView;
   /**
-   * The list this record came from. Passed in rather than imported: the route constant lives in
-   * `lib/member/relationships.ts`, which reaches Postgres, and a `"use client"` module may not
-   * value-import it (E34).
+   * The edit surface's **door**, rendered by the page. It is a server read
+   * (`readRelationshipEditState()`) that this component cannot do, so it arrives as a node and is
+   * drawn first in the actions slot — configuring a relationship comes before publishing it.
+   *
+   * #923 — the node is a trigger (`RelationshipEditDialog`), not the form. The detail renders no
+   * edit surface of its own until the person asks for one; a relationship the page cannot edit
+   * (`editState` absent or `closed`) passes no node at all, which is how it stays honest.
    */
-  backHref: string;
-  /**
-   * The edit surface, rendered by the page. It is a server read (`readRelationshipEditState()`)
-   * that this component cannot do, so it arrives as a node and is drawn first in the actions slot —
-   * configuring a relationship comes before publishing it.
-   */
-  editPanel?: ReactNode;
+  editTrigger?: ReactNode;
   onSaveAspects: (payload: {
     relationshipId?: string;
     record?: unknown;
@@ -147,31 +144,33 @@ export function RelationshipDetail({
   }) => Promise<PublishOutcome>;
   onRepublish: (payload: { relationshipId?: string; reason?: string }) => Promise<RepublishOutcome>;
   /**
-   * #739 — the payer's two acts, as callbacks. The screen cannot import the server actions
-   * (a `"use client"` module that reaches `lib/db/**` is E34's failure mode), so they arrive as
-   * props from the page, and the page is the only place that decides which action is which.
+   * #739 — the payer's last act. The screen cannot import the server action (a `"use client"`
+   * module that reaches `lib/db/**` is E34's failure mode), so it arrives as a prop from the page.
+   *
+   * **#912 retires the two capture props that used to sit beside it.** Putting a method on file is
+   * no longer done on this screen at all: `onCapture`/`onResolve` and the dialog that spent them are
+   * gone, and the band links into the pay modal instead (`PaymentCaptureDialog` is deleted). One
+   * card, one capture, one address.
    */
-  onCapture: (payload: {
-    relationshipId?: string;
-    presentation?: string;
-  }) => Promise<CaptureOutcome>;
-  /**
-   * #748 — the frame's completion. The embedded capture has no return URL to carry the provider's
-   * session id, so the dialog hands it back here and the server resolves the method from the
-   * session itself (never from anything the caller claims).
-   */
-  onResolve: (payload: {
-    relationshipId?: string;
-    captureSessionId?: string;
-  }) => Promise<CaptureOutcome>;
   onComplete: (payload: {
     relationshipId?: string;
     planId?: string;
     reason?: string;
   }) => Promise<CompleteOutcome>;
+  /**
+   * #785 — the Counterparty's one action: take this relationship's template into their own library.
+   * A server action, passed in for the same reason every other write here is.
+   */
+  onFork: (payload: { relationshipId?: string }) => Promise<ForkOutcome>;
+  /**
+   * Where the forked copy landed, passed in rather than imported: the constant lives beside a module
+   * that reaches Postgres, which a `"use client"` file may not value-import (E34).
+   */
+  templatesHref: string;
 }) {
-  const backCopy = sectionOf(copy, "back");
   const identityCopy = sectionOf(copy, "identity");
+  /** #873 — the page's own way-back string, reused as the Counterparty notice's one door. */
+  const backCopy = sectionOf(copy, "back");
   const viewCopy = sectionOf(copy, "view");
   const statusCopy = sectionOf(copy, "status");
   const aspectCopy = sectionOf(copy, "aspects");
@@ -182,8 +181,8 @@ export function RelationshipDetail({
   const closedCopy = sectionOf(copy, "closed");
   const refusals = sectionOf(copy, "refusals");
   const completionCopy = sectionOf(copy, "completion");
-  /** #748 — the capture dialog's own copy, and the sentence a failure in it draws. */
-  const captureCopy = sectionOf(copy, "capture");
+  /** #785 — the Counterparty's one action: the fork of this relationship's template. */
+  const forkCopy = sectionOf(copy, "fork");
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -205,10 +204,20 @@ export function RelationshipDetail({
   const [publishOutcome, setPublishOutcome] = useState<PublishOutcome | null>(null);
 
   const [republishOutcome, setRepublishOutcome] = useState<RepublishOutcome | null>(null);
-  const [captureOutcome, setCaptureOutcome] = useState<CaptureOutcome | null>(null);
-  /** #748 — the capture dialog; the band's button opens it, and every outcome closes it. */
-  const [captureOpen, setCaptureOpen] = useState(false);
+  /**
+   * #912 — **where the pay modal is, and nothing else.** The band no longer opens a capture of its
+   * own: this is the pay walk's address (`createInviteForPath`, #794's two handles), and `null`
+   * when the relationship has no session — with no session there is no invitation for stage 5 to
+   * shape, so the band draws the copy that says so instead of a link that would bounce the reader
+   * back to stage 1.
+   */
+  const payHref =
+    relationship.sessionRecordId === null
+      ? null
+      : createInviteForPath(relationship.templateSlug, relationship.sessionRecordId);
   const [completeOutcome, setCompleteOutcome] = useState<CompleteOutcome | null>(null);
+  /** #785 — the fork's answer: the copy's title, and whether it was one they already had. */
+  const [forkOutcome, setForkOutcome] = useState<ForkOutcome | null>(null);
 
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
@@ -266,9 +275,11 @@ export function RelationshipDetail({
    * to publish, and "Save and mark ready" is still the control that makes that decision.
    */
   async function persistAspects(next: readonly AspectDraft[]): Promise<AspectSaveResult> {
+    // `aspectStatesOf`, not the raw list: a row that is still `new-N` is one the record does not
+    // hold, and its placeholder must not become the item id (#936).
     const answer = await onSaveAspects({
       relationshipId: relationship.id,
-      record: buildRecord(next),
+      record: buildRecord(aspectStatesOf(next)),
       saveAs: "draft",
     });
     setAspectsOutcome(answer);
@@ -277,14 +288,9 @@ export function RelationshipDetail({
 
   /** The rows the person is looking at, kept so a status change writes them rather than the mount. */
   function mirrorAspects(next: readonly AspectDraft[]): void {
-    setAspects(
-      next.map((row) => ({
-        id: row.id.startsWith("new-") ? undefined : row.id,
-        prompt: row.prompt,
-        leftValue: row.leftValue,
-        rightValue: row.rightValue,
-      })),
-    );
+    // One function for both writers: the status buttons and the row's own Save must agree about
+    // what a `new-` id means, or a saved row comes back named as unsaved (#936).
+    setAspects(aspectStatesOf(next));
   }
 
   /** The relationship's template record with this list on it — one builder for both writers. */
@@ -326,26 +332,12 @@ export function RelationshipDetail({
    * #739 — **put a method on file.** Nothing is charged and nothing is unlocked; the completion is
    * still the payer's own click.
    *
-   * #748 — **the capture is a dialog, not a page.** The button opens `PaymentCaptureDialog`, which
-   * draws the plan card the artifact approves and asks the server for an **embedded** session. The
-   * dialog answers every outcome itself: an inline capture (the keyless mock) lands here as a fact
-   * with no frame at all, the embedded one mounts the provider's form in place, and a hosted url —
-   * the path that shipped before this card, still working — is drawn below as the link it always
-   * was. Nothing navigates from under a reader on the embedded path, which is the whole point.
+   * #912 — **this screen no longer does that.** #748 made it a dialog here; #912 retires it, because
+   * a card capture in place is a second way to pay and the pay modal is the only one. The band draws
+   * a link to the modal (`payHref`) and nothing else: the plan card, Stripe's fields and the record
+   * of the method all live on the one surface that owns them — stage 5's walk, which mounts
+   * `components/billing/stripe-frame.tsx`.
    */
-  function openCapture(): void {
-    setCaptureOutcome(null);
-    setCaptureOpen(true);
-  }
-
-  /** What the dialog did: the band re-reads the row, and a failure draws its own sentence. */
-  function captureAnswered(answer: CaptureOutcome): void {
-    setCaptureOutcome(answer);
-    if (answer.ok && answer.url === null) {
-      setCaptureOpen(false);
-      router.refresh();
-    }
-  }
 
   /**
    * #739 — **complete and open the Gap.** One click: the fee is taken against the method on file
@@ -361,6 +353,19 @@ export function RelationshipDetail({
       const answer = await onComplete({ relationshipId: relationship.id });
       setCompleteOutcome(answer);
       if (answer.ok) router.refresh();
+    });
+  }
+
+  /**
+   * #785 — **take the template.** One click, and the answer says which of the two things happened:
+   * a new copy, or the one this account already had (the store points at it rather than writing a
+   * second row with the same title).
+   */
+  function forkTemplate(): void {
+    setForkOutcome(null);
+    startTransition(async () => {
+      const answer = await onFork({ relationshipId: relationship.id });
+      setForkOutcome(answer);
     });
   }
 
@@ -381,12 +386,12 @@ export function RelationshipDetail({
         ? { url: republishOutcome.inviteLink, expiresAt: republishOutcome.inviteExpiresAt }
         : null;
 
-  /* #739 — the payer's band, and the four sentences it can print. */
+  /* #739 — the payer's band, and the sentences it can print. */
   const gate = relationship.completion;
-  const captureRefusal =
-    captureOutcome !== null && !captureOutcome.ok ? sentenceFor(refusals, captureOutcome) : null;
   const completeRefusal =
     completeOutcome !== null && !completeOutcome.ok ? sentenceFor(refusals, completeOutcome) : null;
+  const forkRefusal =
+    forkOutcome !== null && !forkOutcome.ok ? sentenceFor(refusals, forkOutcome) : null;
 
   /* #795 — the band. A relationship's slug names its catalogue type exactly as a template's does,
      so the identity band is the same component with the same three chips. */
@@ -436,7 +441,6 @@ export function RelationshipDetail({
   return (
     <RecordDetailShell
       scope="relationship"
-      back={{ href: backHref, label: itemLabel(backCopy, "all") }}
       band={
         <DetailBand
           scope="relationship"
@@ -472,32 +476,115 @@ export function RelationshipDetail({
       }
       actions={
         <>
-          {editPanel}
+          {editTrigger}
+          {/*
+            #785 — the Counterparty's one action, and the only control on this screen that is
+            theirs. It sits first in the rail because for them every other band is absent, and it
+            is drawn from `canForkTemplate` (a party who does not own the words) rather than from
+            `!isInitiator`: the server re-asks the seat under its own lock, so this is where the
+            action is offered, never whether it is allowed.
+          */}
+          {relationship.canForkTemplate ? (
+            <DetailPanel title={forkCopy.heading} hooks={{ "data-fork-template": "true" }}>
+              <p className={DETAIL_MUTED}>{sectionBody(forkCopy)}</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={forkTemplate}
+                disabled={pending}
+                data-fork-template-submit="true"
+              >
+                {pending ? itemLabel(forkCopy, "working") : itemLabel(forkCopy, "submit")}
+              </Button>
+              {forkOutcome?.ok === true ? (
+                <p
+                  data-fork-template-saved={forkOutcome.reused ? "existing" : "created"}
+                  className="text-sm"
+                >
+                  {fillLabel(itemLabel(forkCopy, forkOutcome.reused ? "reused" : "saved"), {
+                    title: forkOutcome.title,
+                    aspects: String(forkOutcome.aspectCount),
+                  })}{" "}
+                  <a
+                    className="font-medium text-action underline underline-offset-4"
+                    href={templatesHref}
+                    data-fork-template-open="true"
+                  >
+                    {itemLabel(forkCopy, "open")}
+                  </a>
+                </p>
+              ) : null}
+              {forkRefusal === null ? null : (
+                <p
+                  data-fork-template-refusal={forkOutcome?.ok === false ? forkOutcome.code : ""}
+                  className="text-sm"
+                >
+                  {forkRefusal}
+                </p>
+              )}
+            </DetailPanel>
+          ) : null}
           {methodMissing ? (
             /*
              * #690 — the hard gate. Publishing needs a method on file, and the create flow only ever
              * *asked* for one: a person who skipped the plans on stage 4 lands here, with no publish
-             * button and one door to the page that sells a tier. The copy is the fixture's, so the
-             * sentence and the link are reviewable beside the prices they promise.
+             * button and one door to the page that sells a tier.
+             *
+             * #912 — **that door is now the pay modal, not `/pricing`.** `/pricing` sells a
+             * subscription; it does not put a card on file, so the band sent the payer to a page that
+             * could not resolve the thing it refused. The modal is the surface that takes the card,
+             * and a draft that came through the flow has the session and the staged invitation it
+             * needs. A draft with no session cannot open it at all (`payHref === null`), so the
+             * pricing link stays as that case's door rather than being deleted from under it.
              */
             <DetailPanel
               title={publishGateCopy.heading}
               hooks={{ "data-publish-gate": "method-required" }}
             >
               <p className={DETAIL_MUTED}>{sectionBody(publishGateCopy)}</p>
-              <a
-                className="text-sm font-medium text-action underline underline-offset-4"
-                href={PRICING_PATH}
-                data-publish-gate-link="pricing"
-              >
-                {itemLabel(publishGateCopy, "plans")}
-              </a>
+              {payHref === null ? (
+                <a
+                  className="text-sm font-medium text-action underline underline-offset-4"
+                  href={PRICING_PATH}
+                  data-publish-gate-link="pricing"
+                >
+                  {itemLabel(publishGateCopy, "plans")}
+                </a>
+              ) : (
+                <a
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+                  href={payHref}
+                  data-publish-gate-link="pay-modal"
+                  data-invite-members="true"
+                >
+                  {itemLabel(publishGateCopy, "invite-members")}
+                </a>
+              )}
             </DetailPanel>
           ) : null}
 
           {publishableNow && relationship.hasPaymentMethod ? (
             <DetailPanel title={publishCopy.heading}>
               <p className={DETAIL_MUTED}>{sectionBody(publishCopy)}</p>
+              {/*
+                #912 — **Invite Members, beside the act it belongs to.** On the detail screen the
+                publish panel *is* "Publish to Counterparty"; this is the other half of the pair the
+                card asks for, and it is the pay modal rather than a capture. It sits above the
+                fields because the money decision comes before the counterparty's address, and it is
+                a plain link: the modal owns the card, this screen owns nothing payment-shaped.
+
+                A relationship with no session has no invitation to shape, so the control is not
+                drawn here — `payHref` is the same fact the list's card reads.
+              */}
+              {payHref === null ? null : (
+                <a
+                  href={payHref}
+                  data-invite-members="true"
+                  className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                >
+                  {itemLabel(publishCopy, "invite-members")}
+                </a>
+              )}
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="publish-name">{itemLabel(publishCopy, "name")}</Label>
@@ -683,15 +770,31 @@ export function RelationshipDetail({
                       </p>
                     )}
                     <div className="flex flex-wrap items-center gap-3">
-                      {gate.hasMethod ? null : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={openCapture}
+                      {/*
+                        #912 — **the payer's route into the one capture.** #748 made this a button
+                        that opened a dialog on this band; the dialog is deleted, because a card
+                        taken in place is a second way to pay. What is left is a link to the pay
+                        modal, which is the same plan card and the same Stripe frame the dialog drew,
+                        on the surface that owns them.
+
+                        `payHref` is `null` only for a relationship with no session, and this band
+                        cannot render for one (`gate` is `null` without a session), so the null arm
+                        is unreachable here — it is drawn as the honest sentence rather than as a
+                        link to nowhere.
+                      */}
+                      {gate.hasMethod ? null : payHref === null ? (
+                        <p data-capture-unavailable="true" className="text-sm">
+                          {itemLabel(completionCopy, "capture-unavailable")}
+                        </p>
+                      ) : (
+                        <a
+                          href={payHref}
                           data-capture-method="true"
+                          data-invite-members="true"
+                          className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                         >
                           {itemLabel(completionCopy, "capture")}
-                        </Button>
+                        </a>
                       )}
                       {gate.sealed ? (
                         <Button
@@ -706,32 +809,6 @@ export function RelationshipDetail({
                         </Button>
                       ) : null}
                     </div>
-                    {captureOutcome?.ok === true ? (
-                      <p data-capture-method-recorded="true" className="text-sm">
-                        {itemLabel(completionCopy, "captured")}
-                      </p>
-                    ) : null}
-                    {captureOutcome?.ok === true && captureOutcome.url !== null ? (
-                      <p className="text-sm">
-                        <a
-                          className="text-action underline underline-offset-4"
-                          href={captureOutcome.url}
-                          data-capture-link="hosted"
-                        >
-                          {itemLabel(completionCopy, "capture-continue")}
-                        </a>
-                      </p>
-                    ) : null}
-                    {captureRefusal === null ? null : (
-                      <p
-                        data-capture-refusal={
-                          captureOutcome?.ok === false ? captureOutcome.code : ""
-                        }
-                        className="text-sm"
-                      >
-                        {captureRefusal}
-                      </p>
-                    )}
                     {completeOutcome?.ok === true ? (
                       <p
                         data-completion-done={completeOutcome.status}
@@ -764,25 +841,6 @@ export function RelationshipDetail({
                         </a>
                       </p>
                     ) : null}
-                    {/*
-                      #748 — the capture itself. Rendered inside this band because the band is the only
-                      place the control exists, and the dialog is inert until it is opened.
-
-                      It is a dialog rather than a route: the artifact draws the provider's card fields
-                      in a frame on this page, and the payer's method is recorded without the screen
-                      changing under them. The hosted path (a `url` in the outcome) is still drawn above
-                      as the link it was — a deployment whose adapter answers a page keeps working.
-                    */}
-                    <PaymentCaptureDialog
-                      copy={captureCopy}
-                      refusalFallback={itemLabel(refusals, "not-configured")}
-                      relationshipId={relationship.id}
-                      open={captureOpen}
-                      onOpenChange={setCaptureOpen}
-                      onCapture={onCapture}
-                      onResolve={onResolve}
-                      onCaptured={captureAnswered}
-                    />
                   </>
                 )}
               </div>
@@ -846,14 +904,29 @@ export function RelationshipDetail({
           </p>
         )}
         {/* #706 — the sentence that stands in for the three absent bands, so a Counterparty reads
-            why this screen has no editor, no publish panel and no reissue control. */}
+            why this screen has no editor, no publish panel and no reissue control.
+
+            #873 — **the sentence is not the dead end it used to be.** It named three destinations
+            in prose and linked to none, so a Counterparty who reached this page had nothing to
+            press. The one door that exists in every state is My Relationships
+            (`RELATIONSHIPS_PATH`) — the list that carries the relationship *and* its assessment, so
+            it is both the way back and the way to the answer for a published one. It is drawn with
+            the page's own `back`/`all` string ("All relationships"), never new copy: the fixture is
+            the only place these words live, and the id already exists on this route. */}
         {relationship.isInitiator ? null : (
-          <p
+          <div
             data-relationship-read-only="counterparty"
-            className="rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200"
+            className="space-y-2 rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200"
           >
-            {itemLabel(viewCopy, "counterparty-read-only")}
-          </p>
+            <p>{itemLabel(viewCopy, "counterparty-read-only")}</p>
+            <a
+              className="inline-flex h-11 items-center font-medium text-action underline underline-offset-4"
+              href={RELATIONSHIPS_PATH}
+              data-relationship-read-only-open="relationships"
+            >
+              {itemLabel(backCopy, "all")}
+            </a>
+          </div>
         )}
         {copy.subtitle === undefined ? null : (
           <p className="text-xs text-muted-foreground">{copy.subtitle}</p>

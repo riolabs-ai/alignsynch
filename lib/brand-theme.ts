@@ -86,6 +86,40 @@ const NAMED_STATES: readonly (readonly [keyof BrandColors, string])[] = [
   ["accentPress", "accent-press"],
 ];
 
+/** The surface roles that paint, and the custom property each one resolves to. */
+const SURFACE_ROLES: readonly (readonly [keyof BrandColors, string])[] = [
+  ["paper", "paper"],
+  ["mist", "mist"],
+  ["sand", "sand"],
+  ["line", "line"],
+  ["pale", "pale"],
+  ["mark", "mark"],
+  ["deep", "deep"],
+];
+
+/**
+ * The **surface** roles a page paints with (#853): grounds, a hairline, a marker and one ink.
+ *
+ * Deliberately *not* in `brandThemeVars`. That function's output is painted on `<html>`, so a role
+ * added there is a custom property on **every** route of the build — and the parity harness puts
+ * those vars on its wrapper for all seven snapshot routes, which means six renders nobody changed
+ * would move their hashes. The page that needs these roles is one route; painting them where that
+ * route renders keeps the change inside the change, and keeps the contract the card states ("the
+ * QuizHub home may not move by a single byte") true without a mask.
+ *
+ * The resolver is the same one: a triple, because `tailwind.config.ts` wraps each entry as
+ * `hsl(var(--paper))`. Nothing here is emitted for a brand that names no such role — QuizHub names
+ * none, so its render carries no extra attribute at all.
+ */
+export function brandSurfaceVars(brand: Brand): Record<string, string> {
+  const vars: Record<string, string> = {};
+  for (const [key, token] of SURFACE_ROLES) {
+    const value = brand.colors[key];
+    if (value !== undefined) vars[`--${token}`] = hslTriple(value);
+  }
+  return vars;
+}
+
 /** `#156898` -> `"202 75.7% 33.9%"`, which is what `hsl(var(--primary))` expects. */
 export function hslTriple(color: string): string {
   const text = color.trim().toLowerCase();

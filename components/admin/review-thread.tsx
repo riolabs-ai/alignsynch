@@ -217,7 +217,9 @@ export function ReviewIssueThread({
             {itemLabel(issueCopy, "thread-heading")}
           </h3>
           {thread.comments.length === 0 && pendingBody === null ? (
-            <p className="text-sm text-muted-foreground">{itemLabel(issueCopy, "no-replies")}</p>
+            <p className="mt-2 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+              {itemLabel(issueCopy, "no-replies")}
+            </p>
           ) : null}
           <ul className="space-y-3">
             {thread.comments.map((comment) => (

@@ -1,5 +1,6 @@
 import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
 import { InviteView } from "@/components/assessment-flow/invite-view";
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { invitePageCopy } from "@/data/pages/invite";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimRefusalOf } from "@/lib/flow/claim";
@@ -100,10 +101,12 @@ export default async function InvitePage({
   }
 
   return (
-    <InviteView
-      copy={invitePageCopy}
-      preview={preview}
-      {...(refusal === undefined ? {} : { refusal })}
-    />
+    <StageColumn>
+      <InviteView
+        copy={invitePageCopy}
+        preview={preview}
+        {...(refusal === undefined ? {} : { refusal })}
+      />
+    </StageColumn>
   );
 }

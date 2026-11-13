@@ -129,4 +129,67 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     path: "docs/review/artifacts/prototype-relationship-lifecycle-v6.html",
     capturedAt: "2026-11-08T18:00:00.000Z",
   },
+  /**
+   * v8 — the drawing the reference was cut from (#914). v7 named the six stages; v8 is the same
+   * series one revision on, and it is kept because a review artifact is a record of what was drawn,
+   * never a file that is rewritten when the model moves. It is **history**, not the approved
+   * reference: the title says which one a reviewer is looking at, because the row has no field for
+   * "superseded" and inventing one would be a second copy of a fact the series already carries.
+   */
+  {
+    id: "review-relationship-lifecycle-v8",
+    slug: "prototype-relationship-lifecycle-v8",
+    title: "Relationship lifecycle prototype — earlier drawing",
+    kind: "prototype",
+    version: "v8",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v8.html",
+    capturedAt: "2026-11-11T00:00:00.000Z",
+  },
+  /**
+   * v9 — **the approved visual reference** (owner, 2026-11-12, #914).
+   *
+   * The file has been committed since #826 while this catalogue, `docs/review/artifacts.json` and
+   * the `review_artifact` table all stopped at v7 — so the link the owner reviews against answered
+   * 404, and the cards that build to the reference had nothing to point at. The row is the fix, and
+   * it is the *only* fix: the HTML is not edited, because an approved artifact is the thing the
+   * build is measured against and the build is what moves.
+   *
+   * The title carries the approval rather than a `status` field. `content/review.ts` deliberately
+   * has no lifecycle column for an artifact (a version *is* the series' state, and the shelf groups
+   * by release), so "approved" has to be readable in the one string the list draws beside the
+   * version — otherwise the newest row is indistinguishable from the drawing it replaced.
+   */
+  {
+    id: "review-relationship-lifecycle-v9",
+    slug: "prototype-relationship-lifecycle-v9",
+    title: "Relationship lifecycle prototype — approved visual reference",
+    kind: "prototype",
+    version: "v9",
+    path: "docs/review/artifacts/prototype-relationship-lifecycle-v9.html",
+    capturedAt: "2026-11-12T00:00:00.000Z",
+  },
+  /**
+   * comments v1 — the mockup for #921, not a feature. Comments on an aspect opinion, an
+   * assessment and a relationship: one `Comment` component with the subject as the only
+   * variation axis, drawn in two placements (A inline, B side panel) across every state the
+   * issue lists, plus the composer's five.
+   *
+   * The row exists so the artifact is reachable at `?artifact=prototype-comments-v1`, which is
+   * the one thing the issue requires of this phase: an approved artifact is the spec of record,
+   * and a file nobody can open is not. Nothing in the feature is built here — no schema, no
+   * action, no `db/` change — so the catalogue row is the whole of the deliverable beside the
+   * drawing itself.
+   *
+   * The title says which variant the drawing is, because the row has no field for "decision
+   * pending" and inventing one would be a second copy of a fact the series already carries.
+   */
+  {
+    id: "review-comments-v1",
+    slug: "prototype-comments-v1",
+    title: "Comments on opinions, sessions and relationships — mockup, variants A and B",
+    kind: "prototype",
+    version: "v1",
+    path: "docs/review/artifacts/prototype-comments-v1.html",
+    capturedAt: "2026-11-12T00:00:00.000Z",
+  },
 ];

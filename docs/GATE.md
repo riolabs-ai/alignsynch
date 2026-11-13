@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › The gate · prev [Repo layers](REPO-LAYERS.md)
+[Docs hub](README.md) › **Start here** › The gate · prev [Release-train card template](templates/RELEASE-TRAIN.md)
 
 <!-- docs-nav:end -->
 
@@ -410,6 +410,6 @@ Rules that keep this file honest:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › The gate · prev [Repo layers](REPO-LAYERS.md)
+[Docs hub](README.md) › **Start here** › The gate · prev [Release-train card template](templates/RELEASE-TRAIN.md)
 
 <!-- docs-nav:end -->

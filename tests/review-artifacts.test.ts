@@ -155,6 +155,117 @@ describe("every artifact renders a real file", () => {
   });
 });
 
+/**
+ * #914 — the reference the build is measured against has to be *on the shelf*, in every registry.
+ *
+ * The failure this pins is not a 404 on a page that does not exist: `prototype-relationship-lifecycle-v9.html`
+ * has been committed since #826 while the catalogue, the manifest and the `review_artifact` table all stopped
+ * at v7, so the owner's link to the approved drawing answered 404 and the card that builds against it had
+ * nothing to point at. Three assertions, one per registry half: the catalogue carries both revisions, the
+ * manifest resolves them into a group, and the route serves the file.
+ */
+describe("the approved reference is registered (#914)", () => {
+  const referenceId = "review-relationship-lifecycle-v9";
+  const historyId = "review-relationship-lifecycle-v8";
+
+  it("publishes v9 as the approved reference and v8 beside it as history", () => {
+    const reference = reviewArtifacts.find((row) => row.id === referenceId);
+    const history = reviewArtifacts.find((row) => row.id === historyId);
+
+    expect(reference?.slug).toBe("prototype-relationship-lifecycle-v9");
+    expect(reference?.path).toBe("docs/review/artifacts/prototype-relationship-lifecycle-v9.html");
+    expect(history?.slug).toBe("prototype-relationship-lifecycle-v8");
+    expect(history?.path).toBe("docs/review/artifacts/prototype-relationship-lifecycle-v8.html");
+
+    /* The row is the reference, not a draft: the shelf's title says so, so a reviewer reading the
+       list cannot mistake the older drawing for the approved one. */
+    expect(reference?.title.toLowerCase()).toContain("approved");
+    expect(reference?.title.toLowerCase()).not.toContain("draft");
+
+    /* The shelf keeps its history: registering the reference must not replace the v1–v7 record. */
+    for (const version of ["v7", "v6", "v5", "v4", "v3", "v2", "v1"]) {
+      expect(
+        reviewArtifacts.some((row) => row.version === version),
+        version,
+      ).toBe(true);
+    }
+  });
+
+  it("serves both documents from the artifact route", async () => {
+    const { GET } = await import("../app/review-artifacts/[id]/route");
+    for (const slug of [
+      "prototype-relationship-lifecycle-v9",
+      "prototype-relationship-lifecycle-v8",
+    ]) {
+      const response = await GET(new Request("http://localhost/review-artifacts/x"), {
+        params: Promise.resolve({ id: slug }),
+      });
+      expect(response.status, slug).toBe(200);
+    }
+  });
+
+  it("groups both rows under a release the changelog records, and finds v9 by its slug", () => {
+    const manifest = readReviewManifest(join(root, "docs/review/artifacts.json"), reviewArtifacts);
+    const versions = readReleaseVersions(join(root, "docs/changelog/releases.json"));
+    const summaries = reviewArtifacts.map((row) => summaryOf(row.id, row.version));
+    const shelf = shelfOf(summaries, manifest, versions);
+
+    for (const id of [referenceId, historyId]) {
+      expect(shelf.byId.get(id)?.lookFor.length ?? 0, id).toBeGreaterThan(0);
+    }
+    /* `?artifact=` resolves by slug, which is the address the owner's link uses. */
+    expect(shelf.bySlug.get("prototype-relationship-lifecycle-v9")?.summary.artifact.id).toBe(
+      referenceId,
+    );
+
+    const listed = shelf.groups.flatMap((group) =>
+      group.entries.map((entry) => entry.summary.artifact.id),
+    );
+    expect(listed.filter((id) => id === referenceId || id === historyId)).toHaveLength(2);
+  });
+});
+
+/**
+ * #921 — the mockup has to be openable, or the owner cannot answer the question it exists to ask.
+ *
+ * The mockup is the spec of record once it is approved, so the file, the catalogue row and the
+ * manifest row are one deliverable: a drawing nobody can reach at `?artifact=` is a screenshot in
+ * a chat. The assertions are the three registries the route and the shelf read, and no more — the
+ * feature itself is deliberately absent from this tree.
+ */
+describe("the comments mockup is registered (#921)", () => {
+  const id = "review-comments-v1";
+
+  it("publishes the artifact under the slug the issue names", () => {
+    const row = reviewArtifacts.find((artifact) => artifact.id === id);
+    expect(row?.slug).toBe("prototype-comments-v1");
+    expect(row?.path).toBe("docs/review/artifacts/prototype-comments-v1.html");
+    /* The drawing says which variant it is; it does not claim to be approved. */
+    expect(row?.title.toLowerCase()).not.toContain("approved");
+  });
+
+  it("serves the document from the artifact route", async () => {
+    const { GET } = await import("../app/review-artifacts/[id]/route");
+    const response = await GET(new Request("http://localhost/review-artifacts/x"), {
+      params: Promise.resolve({ id: "prototype-comments-v1" }),
+    });
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain("Comments on an opinion, a session and a relationship");
+  });
+
+  it("resolves by slug on the shelf, with a release the changelog records", () => {
+    const manifest = readReviewManifest(join(root, "docs/review/artifacts.json"), reviewArtifacts);
+    const versions = readReleaseVersions(join(root, "docs/changelog/releases.json"));
+    const row = reviewArtifacts.find((artifact) => artifact.id === id);
+    expect(row).toBeDefined();
+    const shelf = shelfOf([summaryOf(id, row?.version ?? "")], manifest, versions);
+
+    expect(shelf.bySlug.get("prototype-comments-v1")?.summary.artifact.id).toBe(id);
+    expect(shelf.byId.get(id)?.lookFor.length ?? 0).toBeGreaterThan(80);
+  });
+});
+
 describe("grouping by release", () => {
   const manifest = readReviewManifest(join(root, "docs/review/artifacts.json"), reviewArtifacts);
 
@@ -328,7 +439,7 @@ describe("the artifact route", () => {
     const { GET } = await import("../app/review-artifacts/[id]/route");
     for (const id of [
       "not-an-artifact",
-      "prototype-relationship-lifecycle-v9",
+      "prototype-relationship-lifecycle-v10",
       "..%2F..%2Fpackage.json",
       "docs/review/artifacts/prototype-relationship-lifecycle-v4.html",
       "/etc/passwd",

@@ -45,9 +45,9 @@ import {
   relationshipScope,
   relationshipTypeOf,
 } from "@/lib/alignment-home";
-import { relationshipTypeDemoPath } from "@/lib/flow/paths";
+import { createRelationshipPath, relationshipTypeDemoPath } from "@/lib/flow/paths";
 import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
-import { CATALOGUE_PATH } from "@/lib/template-catalogue";
+import { CATALOGUE_PATH, START_PATH, startPathFor } from "@/lib/template-catalogue";
 import { leafLiterals } from "@/scripts/copy-refs";
 
 const model = alignmentHome(
@@ -176,9 +176,15 @@ describe("the templates band: a capped shelf, one call to action", () => {
 
   it("points every card at a public destination, and offers an example only where one exists", () => {
     for (const card of model.templates.featured) {
-      // `/register` makes the account that buys the relationship. Never a create form behind a
-      // session — that is the sign-in wall this page exists to remove.
-      expect(card.start).toBe("/register");
+      // `/register` makes the account that buys the relationship, and since #867 it carries which
+      // template the visitor picked as the sign-up destination — so the gate hands them back to
+      // stage 1 of that template instead of the brand's landing page. Never a create form on its
+      // own behind a session: that is the sign-in wall this page exists to remove.
+      expect(card.start).toBe(startPathFor(card.id));
+      expect(card.start.startsWith(`${START_PATH}?next=`)).toBe(true);
+      expect(new URL(card.start, "http://x").searchParams.get("next")).toBe(
+        createRelationshipPath(card.id),
+      );
       if (card.example === undefined) continue;
       expect(card.example).toBe(relationshipTypeDemoPath(card.id));
       expect(demoAnswersByType[card.id]).toBeDefined();
@@ -198,8 +204,9 @@ describe("the templates band: a capped shelf, one call to action", () => {
     // The action is in the served markup, and it is the only link the shelf draws: the cards are
     // not linked, so the band offers one destination instead of seven.
     expect(html).toContain('data-templates-view-all=""');
-    // #794 — the band's one destination is the public catalogue's new noun.
-    expect(html).toContain('href="/relationship-types"');
+    // #905 — the band's one destination is the public catalogue, whose endpoint is now
+    // `/relationship-templates`; `CATALOGUE_PATH` is the module that authors it.
+    expect(html).toContain(`href="${CATALOGUE_PATH}"`);
     expect(html).not.toContain(model.templates.featured[0]?.useLabel ?? "\u0000");
   });
 
@@ -442,7 +449,7 @@ describe("the render", () => {
       expect(html).toContain(`data-template-card="${card.id}"`);
     }
     // The one action, and the proof link the hero still carries.
-    expect(html).toContain('href="/relationship-types"');
+    expect(html).toContain(`href="${CATALOGUE_PATH}"`);
     expect(html).toContain("/assessment/avery-rowan");
   });
 

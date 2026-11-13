@@ -26,7 +26,7 @@ import Link from "next/link";
 import type { PageCopy } from "@/content/pages";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
-import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { RelationshipReview } from "./relationship-review";
 import { StageFoot } from "./stage-foot";
 
@@ -75,18 +75,14 @@ export function StageAccount({
   return (
     <>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-        <section
-          aria-labelledby="create-account-heading"
-          data-create-account="true"
-          className={CARD}
-        >
-          <h2
-            id="create-account-heading"
-            className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-          >
-            {section.heading}
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(section)}</p>
+        {/*
+         * The card is the account form, not a second copy of the stage's title (#777). The stage
+         * header above already draws this section's `heading` and `body` — once, as the approved
+         * reference draws them — so repeating them here put "Create your account" and its sentence
+         * on screen twice, one above the other. The region is labelled by the stage heading
+         * instead, which is what a screen reader was being told anyway.
+         */}
+        <section aria-labelledby="create-stage-heading" data-create-account="true" className={CARD}>
           {account}
         </section>
 

@@ -41,9 +41,13 @@ import {
 import { alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { templatesDetailPageCopy } from "@/data/pages/templates-detail";
 import { templatesPageCopy } from "@/data/pages/templates";
-import { relationshipTypeDemoPath } from "@/lib/flow/paths";
+import {
+  RELATIONSHIP_TYPES_PATH,
+  createRelationshipPath,
+  relationshipTypeDemoPath,
+} from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
-import { CATALOGUE_PATH, START_PATH, templateCards } from "@/lib/template-catalogue";
+import { CATALOGUE_PATH, START_PATH, startPathFor, templateCards } from "@/lib/template-catalogue";
 import { templateDetail, templateSlugs } from "@/lib/template-detail";
 import { templatesPage } from "@/lib/templates-page";
 import { pageItemOf } from "@/lib/page-copy";
@@ -118,9 +122,18 @@ test("prints the plan's price and the one start action, both from the fixture", 
   // chip the member shelf and `/assessment/templates` print, from the one plan fixture (#798).
   assert.equal(model.priceNote, PLAN_CHIP);
   assert.ok(html.includes(model.priceNote), "the price line is not in the markup");
-  assert.equal(model.start.href, START_PATH);
+  assert.equal(model.start.href, startPathFor(type.id));
   assert.equal(START_PATH, "/register");
-  assert.ok(html.includes(`href="${START_PATH}"`), "the start action does not link to /register");
+  // #867 — the one action names the create step this visitor chose as the sign-up destination, so
+  // the account round trip cannot drop the template. A bare `/register` is the defect.
+  assert.equal(
+    new URL(model.start.href, "http://x").searchParams.get("next"),
+    createRelationshipPath(type.id),
+  );
+  assert.ok(
+    html.includes(`href="${model.start.href}"`),
+    "the start action does not link to the register gate for this template",
+  );
   assert.ok(html.includes(`href="${CATALOGUE_PATH}"`), "there is no way back to the directory");
   assert.equal(model.back.href, CATALOGUE_PATH);
 
@@ -212,9 +225,9 @@ test("every catalogue card carries its own detail href, and the directory render
   assert.equal(cards.length, purchasableRelationshipTypes.length);
   for (const card of cards) {
     assert.equal(card.slug, card.id);
-    assert.equal(card.detail, `${CATALOGUE_PATH}/${card.id}`);
+    assert.equal(card.detail, `${RELATIONSHIP_TYPES_PATH}/${card.id}`);
     // #794 — the public catalogue moved out of the template noun: `/templates` is the template
-    // namespace now (and a 308 to `/relationship-types`), so a card's address is a *type*'s.
+    // namespace now (a 308 to the catalogue), so a card's address is a *type*'s.
     assert.equal(card.detail, `/relationship-types/${card.id}`);
     assert.ok(html.includes(`href="${card.detail}"`), `the directory does not link ${card.detail}`);
   }

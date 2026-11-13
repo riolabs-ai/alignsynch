@@ -1,89 +1,99 @@
 {
   "releases": [
     {
+      "version": "1.17.0",
+      "theme": "the pay-flow ship",
+      "headline": "`feat(flow)` — stage 5 is the three-step payment walk and the send it gates (#911) (#918)"
+    },
+    {
+      "version": "1.16.0",
+      "theme": "the relationship is a destination and the shell gets out of the way — its detail page stops being a flow step and carries its own door, the rail folds to a handle on any width, /assessments lists the member's sessions beside their relationships, and the front page, header and footer each say one thing.",
+      "headline": "`fix(flow)` — stage 5 is not a dead end — payment walk, send/draft, and the template guard at stage 1 (#870) (#878)"
+    },
+    {
       "version": "1.15.0",
       "theme": "the create flow is five stages — the account becomes stage 4 and is the app's own sign-in form, the invitation becomes stage 5 and is the only place anything is sent, and the rail, the spec and the tests all count to five.",
       "headline": "`feat(flow)` — Account is stage 4 and Invite is stage 5 — the five-cell rail (#825) (#828)"
     },
     {
       "version": "1.14.0",
-      "theme": "the public catalogue owns the relationship noun \u2014 /relationship-types replaces /templates and the worked example moves under it, every card prices the plan instead of the relationship, and one chip and one member card replace three constants and four tiles.",
-      "headline": "`feat(ia)` \u2014 the worked example lives at /relationship-types/<slug>/demo (#794 follow-up) (#809)"
+      "theme": "the public catalogue owns the relationship noun — /relationship-types replaces /templates and the worked example moves under it, every card prices the plan instead of the relationship, and one chip and one member card replace three constants and four tiles.",
+      "headline": "`feat(ia)` — the worked example lives at /relationship-types/<slug>/demo (#794 follow-up) (#809)"
     },
     {
       "version": "1.13.0",
-      "theme": "the templates directory becomes a directory \u2014 every one of the twenty-seven relationship templates gets a public page, My Templates lists only the templates a member owns, and the copy stops calling a session an instance.",
-      "headline": "`feat(templates)` \u2014 every template has a page, not just a card (#782) (#782)"
+      "theme": "the templates directory becomes a directory — every one of the twenty-seven relationship templates gets a public page, My Templates lists only the templates a member owns, and the copy stops calling a session an instance.",
+      "headline": "`feat(templates)` — every template has a page, not just a card (#782) (#782)"
     },
     {
       "version": "1.12.0",
       "theme": "the payment decision moves into the stage that asks for it, and the create saves a draft that pays when its opinions publish.",
-      "headline": "`feat(flow)` \u2014 stage 4 walks the payment in place, and the create is a draft that pays at publish (#771)"
+      "headline": "`feat(flow)` — stage 4 walks the payment in place, and the create is a draft that pays at publish (#771)"
     },
     {
       "version": "1.11.0",
-      "theme": "the build draws what the review approved \u2014 the create flow's panel stops at 880px, one stage foot carries [Back][Cancel] and the advance, Settings asks its two questions side by side, and an Aspect row reads 01 \u00b7 grip \u00b7 name \u00b7 opinions \u00b7 edit.",
-      "headline": "`feat(flow)` \u2014 the build matches the v7 artifact \u2014 shell width, footers, Settings peers, Aspect rows (#760) (#761)"
+      "theme": "the build draws what the review approved — the create flow's panel stops at 880px, one stage foot carries [Back][Cancel] and the advance, Settings asks its two questions side by side, and an Aspect row reads 01 · grip · name · opinions · edit.",
+      "headline": "`feat(flow)` — the build matches the v7 artifact — shell width, footers, Settings peers, Aspect rows (#760) (#761)"
     },
     {
       "version": "1.10.0",
-      "theme": "the capture moves into a frame \u2014 Stripe's form mounts inside the dialog, so paying never leaves the relationship, while the membership checkout stays hosted.",
-      "headline": "`feat(payment)` \u2014 the capture is an embedded form in the dialog, not a hosted link (#748) (#751)"
+      "theme": "the capture moves into a frame — Stripe's form mounts inside the dialog, so paying never leaves the relationship, while the membership checkout stays hosted.",
+      "headline": "`feat(payment)` — the capture is an embedded form in the dialog, not a hosted link (#748) (#751)"
     },
     {
       "version": "1.9.0",
-      "theme": "the payer can pay \u2014 a method is captured and a relationship completes, an invited counterparty answers inside the same modal, templates publish revisions instead of being destroyed, and paying still opens Stripe's own page rather than a frame.",
-      "headline": "`feat(crud)` \u2014 templates publish revisions and are retired, never destroyed in use (#711) (#742)"
+      "theme": "the payer can pay — a method is captured and a relationship completes, an invited counterparty answers inside the same modal, templates publish revisions instead of being destroyed, and paying still opens Stripe's own page rather than a frame.",
+      "headline": "`feat(crud)` — templates publish revisions and are retired, never destroyed in use (#711) (#742)"
     },
     {
       "version": "1.8.0",
-      "theme": "the flow conforms to its six-stage spec \u2014 Details \u00b7 Settings \u00b7 Aspects \u00b7 Invite \u00b7 Connect \u00b7 Align \u2014 opens as one modal, and no action form asks for a Reason.",
-      "headline": "`feat(flow)` \u2014 conform to the six-stage spec \u2014 Details \u00b7 Settings \u00b7 Aspects \u00b7 Invite \u00b7 Connect \u00b7 Align (#735) (#737)"
+      "theme": "the flow conforms to its six-stage spec — Details · Settings · Aspects · Invite · Connect · Align — opens as one modal, and no action form asks for a Reason.",
+      "headline": "`feat(flow)` — conform to the six-stage spec — Details · Settings · Aspects · Invite · Connect · Align (#735) (#737)"
     },
     {
       "version": "1.7.0",
-      "theme": "the review shelf goes live \u2014 every prototype grouped by the release it ships with, with the approved six-stage flow as its first artifact.",
-      "headline": "`feat(admin)` \u2014 the /admin/review shelf: the review store, the release-grouped list and the writes, with the six-stage prototype as its v5 artifact (#670) (#673) (#677)"
+      "theme": "the review shelf goes live — every prototype grouped by the release it ships with, with the approved six-stage flow as its first artifact.",
+      "headline": "`feat(admin)` — the /admin/review shelf: the review store, the release-grouped list and the writes, with the six-stage prototype as its v5 artifact (#670) (#673) (#677)"
     },
     {
       "version": "1.6.0",
       "theme": "pay-to-complete: the fee moves from creation to completion, and the member rail stops asking three shelves apart.",
-      "headline": "`feat(billing)` \u2014 pay-to-complete: the counterparty submits, the initiator picks a plan and pays, and the Gap opens (#619)"
+      "headline": "`feat(billing)` — pay-to-complete: the counterparty submits, the initiator picks a plan and pays, and the Gap opens (#619)"
     },
     {
       "version": "1.5.1",
       "theme": "the gate notices when its own evidence has aged, and the screens a real flow needed get a door.",
-      "headline": "`fix(health)` \u2014 a stale platform-health record fails the gate instead of rendering as current (#599)"
+      "headline": "`fix(health)` — a stale platform-health record fails the gate instead of rendering as current (#599)"
     },
     {
       "version": "1.5.0",
       "theme": "account deletion a person can perform themselves, with the intent recorded before anything is destroyed.",
-      "headline": "`feat(privacy)` \u2014 account deletion: 0033 indexes, the auth-user delete, one transactional scrub, an in-app control (#597)"
+      "headline": "`feat(privacy)` — account deletion: 0033 indexes, the auth-user delete, one transactional scrub, an in-app control (#597)"
     },
     {
       "version": "1.4.0",
-      "theme": "the operator's console \u2014 one audited write path \u2014 and relationship templates become products a member can own.",
+      "theme": "the operator's console — one audited write path — and relationship templates become products a member can own.",
       "headline": "an audited operations console: every write passes `act()`, every action carries a reason, and `product.admin` is a capability (#500)"
     },
     {
       "version": "1.3.0",
-      "theme": "the two-party flow closes \u2014 create, answer blind, accept, and the Gap opens on the second acceptance.",
-      "headline": "`feat(flow)` \u2014 acceptance is the completion hinge, and Steps are derived on the transition (#427)"
+      "theme": "the two-party flow closes — create, answer blind, accept, and the Gap opens on the second acceptance.",
+      "headline": "`feat(flow)` — acceptance is the completion hinge, and Steps are derived on the transition (#427)"
     },
     {
       "version": "1.2.0",
       "theme": "five read surfaces go live from Postgres, and every write surface says on screen that it cannot write.",
-      "headline": "five read surfaces server-rendered from the database \u2014 relationships, their sessions, the template catalogue and the report (#412)"
+      "headline": "five read surfaces server-rendered from the database — relationships, their sessions, the template catalogue and the report (#412)"
     },
     {
       "version": "1.1.0-rc1",
       "theme": "the template becomes a product: a brand record, a parity gate, and the two-party assessment flow on six tables.",
-      "headline": "`feat(db)` \u2014 six content tables, the database-backed assessment screen, and the db scripts (#145)"
+      "headline": "`feat(db)` — six content tables, the database-backed assessment screen, and the db scripts (#145)"
     },
     {
       "version": "1.0.0",
-      "theme": "one record type, two brands and no database \u2014 the webapp stops being a mock of a business nobody ran.",
-      "headline": "`feat(content)` \u2014 one record type, two templates: a quiz and an assessment (#128)"
+      "theme": "one record type, two brands and no database — the webapp stops being a mock of a business nobody ran.",
+      "headline": "`feat(content)` — one record type, two templates: a quiz and an assessment (#128)"
     }
   ]
 }

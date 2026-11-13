@@ -72,7 +72,13 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "most-popular", label: "Recommended" },
         { id: "current-plan", label: "Your current plan" },
-        { id: "not-available", label: "Not available to buy right now." },
+        /**
+         * #912 — the word was "buy" ("Not available to buy right now."), and `/pricing` is a
+         * payment surface: the card retires "purchase", "buy" and "save payment method" from every
+         * one of them. The state this row names is a tier a signed-out or unentitled reader cannot
+         * start, which "Not available on this plan right now." says without the shop verb.
+         */
+        { id: "not-available", label: "Not available on this plan right now." },
         { id: "checkout-busy", label: "Opening checkout…" },
         { id: "checkout-error", label: "Checkout did not start — try again" },
         { id: "whats-included", label: "WHAT'S INCLUDED:" },
@@ -97,9 +103,9 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "cta",
       heading: "Run your first alignment",
-      body: "The free plan works today, one relationship at a time. A paid plan starts as soon as you choose one above — card checkout, monthly or yearly.",
+      body: "Start one relationship free: seven days from the moment you send the invitation, everything included. After the seven days, a paid plan keeps the Gap open — card checkout, monthly or yearly.",
       items: [
-        { id: "perk-free", label: "Free plan, usable today" },
+        { id: "perk-free", label: "7 days free, from the invitation you send" },
         { id: "perk-billing", label: "Paid plans are billed monthly or yearly" },
         { id: "get-started", label: "Get Started Free" },
         { id: "view-demo", label: "View Demo" },

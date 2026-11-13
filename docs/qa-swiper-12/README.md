@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [recharts 3](../qa-recharts-3/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
+[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../qa-stage5/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
 
 <!-- docs-nav:end -->
 
@@ -61,6 +61,6 @@ across the two versions at both widths.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [recharts 3](../qa-recharts-3/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
+[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../qa-stage5/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
 
 <!-- docs-nav:end -->

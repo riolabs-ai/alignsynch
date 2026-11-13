@@ -13,8 +13,16 @@
  *
  * The claims:
  *
- *   the seed        the form opens on the relationship's own title, summary and Aspects — an edit
- *                   surface that starts blank would be a second creation form.
+ *   the seed        the form opens on the relationship's own title and summary — an edit surface
+ *                   that starts blank would be a second creation form.
+ *   no Aspects      **the panel draws no Aspect row, no aspect form and no add/remove control**
+ *                   (#935), **and it posts no Aspect list either** (#943). The detail screen's
+ *                   `AspectList` is the one writer: it has the drag, the in-place editor and its
+ *                   own save, so a second stack of forms here printed the same questions twice.
+ *                   `state.aspects` is not drawn and not sent back — an omitted list is the
+ *                   server's "leave the stored rows alone", and a posted snapshot of the rows the
+ *                   page read was what undid a drag made in the same session. That half is proven
+ *                   at the writer in `tests/relationship-edit-reorder-race.test.ts`.
  *   the gate        **Save is disabled until a preview has run.** This is the owner's decision on
  *                   #623 stated as markup: no cost has been shown, so no write is on offer.
  *   the lock        `mode`/`setting` are printed, never offered, and say why — a control the server
@@ -106,10 +114,24 @@ describe("the relationship edit panel renders the state it is handed", () => {
 
     expect(markup).toContain('value="The edited title"');
     expect(markup).toContain("The edited summary");
-    // One control per Aspect, seeded with that Aspect's own words.
-    expect(markup).toContain('value="Which is truer"');
-    expect(markup).toContain('value="Which is clearer"');
-    expect(markup.match(/id="edit-prompt-\d+"/g)).toHaveLength(2);
+  });
+
+  it("draws no Aspect surface at all — the detail's drag list is the only one (#935)", () => {
+    const markup = render(state());
+
+    // The block #935 removed: the label, the `<ul data-edit-aspects>`, every per-row form and the
+    // add/remove pair. Their absence is the claim — a second copy of the same five questions is
+    // what the owner read off the running screen.
+    expect(markup).not.toContain("data-edit-aspects");
+    expect(markup.match(/id="edit-(prompt|left|right)-\d+"/g)).toBeNull();
+    // "Aspects" legitimately appears in the pin and window help sentences; the *control* is the
+    // claim, so the add button's own words are what must be gone.
+    expect(markup).not.toContain(`>${itemLabel(editCopy, "add")}<`);
+
+    // Neither do the Aspects' own words appear: the panel is handed `state.aspects` to post back
+    // unchanged, never to draw.
+    expect(markup).not.toContain("Which is truer");
+    expect(markup).not.toContain("Which is clearer");
   });
 
   it("does not offer a save before a preview has priced the change", () => {

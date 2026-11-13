@@ -300,10 +300,10 @@ const BUNDLE_CASES: readonly RefusalCase[] = [
   {
     name: "B6 — a bundleVersion this build does not read",
     code: "B6",
-    line: /^\[B6\] bundleVersion: bundleVersion 2: this build reads 1/,
+    line: /^\[B6\] bundleVersion: bundleVersion 3: this build reads 1 and 2/,
     text: () =>
       datasetText((bundle) => {
-        (bundle as unknown as Record<string, unknown>).bundleVersion = 2;
+        (bundle as unknown as Record<string, unknown>).bundleVersion = 3;
       }),
     needsStore: false,
   },

@@ -101,7 +101,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <LoadingState rows={5} />
       </div>
     );
@@ -137,7 +137,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-8">
+    <div className="space-y-5">
       <SectionIntro
         title="Relationships"
         subtitle={`${visible.length} of ${live} live relationships shown · ${rows.length - live} archived. Read-only for answers.`}
@@ -195,7 +195,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
                   <TableHead>Stage</TableHead>
                   <TableHead>Parties</TableHead>
                   <TableHead>Subscription</TableHead>
-                  <TableHead>Sessions</TableHead>
+                  <TableHead className="text-right">Sessions</TableHead>
                   <TableHead>Last activity</TableHead>
                   <TableHead className="text-right">Open</TableHead>
                 </TableRow>
@@ -240,7 +240,7 @@ export function AdminRelationshipRegistry({ query }: { query: AdminRegistryQuery
                         {SUBSCRIPTION_LABEL[row.subscription]}
                       </span>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                    <TableCell className="whitespace-nowrap text-right text-sm text-muted-foreground tabular-nums">
                       {row.sessionsScored} scored · {row.sessionsOpen} open
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-sm text-muted-foreground">

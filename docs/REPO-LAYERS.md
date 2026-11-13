@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [The gate](GATE.md)
+[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [Request → release](WORKFLOW.md)
 
 <!-- docs-nav:end -->
 
@@ -267,6 +267,6 @@ Measured lane costs and how to re-measure them are in `docs/GATE.md`.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [The gate](GATE.md)
+[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [Request → release](WORKFLOW.md)
 
 <!-- docs-nav:end -->

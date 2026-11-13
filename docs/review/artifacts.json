@@ -2,6 +2,21 @@
   "schemaVersion": 1,
   "artifacts": [
     {
+      "id": "review-comments-v1",
+      "release": "1.16.0",
+      "lookFor": "The comment feature drawn before it is specified: one thread component on three subjects — an Aspect opinion (the party's statement, its Aspect on the left, the answer body), a session summary (the verdict band, the Gap, the Aspect table) and a relationship (the two parties, the state chip, the shared sessions). Variant A hangs the thread under the subject and Variant B opens it in a panel beside it so the subject stays in view; switch subject, variant and viewport in the toolbar. Every state is drawn for every subject in both variants — empty, one comment, a thread with a reply collapsed and expanded, the reader's own comment with the affordances drawn three ways (none · edit · delete) because the choice is the owner's, a locked subject whose composer is withheld with a sentence, a long body and a long author name at 390, and the composer's five states (empty, filled, submitting, refused as a sentence beside the field, long text). Dotted-underlined strings are placeholders; the Provenance panel says which of the rest are the app's own words."
+    },
+    {
+      "id": "review-relationship-lifecycle-v9",
+      "release": "1.16.0",
+      "lookFor": "The approved visual reference. The five stages — Details · Settings · Aspects · Account · Invite — run inside one sheet whose cell rail prints Stage N of 5, with Gallery and Detail as how a template gets picked and Invitation sent as the confirmation rather than a stage. The account is the stage before the invite; the invite sends the relationship or keeps it as a draft and charges nothing; Publish Assessment stays locked until a payment method is on file. Align is the dashboard, never a cell in the band — there is no Ongoing stage. This is the artifact the build is measured against; read a screen against this file, never the other way round."
+    },
+    {
+      "id": "review-relationship-lifecycle-v8",
+      "release": "1.16.0",
+      "lookFor": "The drawing the reference was cut from, kept as history so the series shows how the flow got to v9. Read it against v9 for what moved between them; v9 is the approved reference and this is the revision before it."
+    },
+    {
       "id": "review-relationship-lifecycle-v7",
       "release": "1.7.0",
       "lookFor": "The six stages in the owner's words — Details · Settings · Aspects · Invite · Connect · Align — with the rail printing Stage N of 6 and each stage name on the second line of its cell. Details carries five fields with their titles bolded and a description that mirrors into the stage subtitle; Continue reads Continue to Stage 2..6 and sits flush right with a [Back][Cancel] pair flush left. Settings draws two peer dimensions — Opinions Mode (Basic 2 / Advanced 4 questions per Aspect) and Alignment Setting (Soft / Full) — as the same single-select component side by side. Aspects lists five rows numbered 01–05 at the far left with a drag handle, no Copied-from-template chip, an edit icon at the far right, and an in-place editor that stays open until Save or Cancel. The sheet stops at 880px on every desktop width. Align is the sixth cell and is only live once one or more assessments are shared. There is no Ongoing stage."

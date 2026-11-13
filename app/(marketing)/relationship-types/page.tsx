@@ -4,7 +4,7 @@ import { templatesPage } from "@/lib/templates-page";
 import type { Metadata } from "next";
 
 /**
- * `/relationship-types` — the public Relationship Types page (#794).
+ * `/relationship-types` — the public Relationship Templates catalogue (#794, rebuilt in #889).
  *
  * The destination the header's `Templates` row points at, and the target of the front page's
  * `#templates` band's one call to action. It lives in `app/(marketing)/` because it is a public
@@ -16,10 +16,22 @@ import type { Metadata } from "next";
  * over at `/templates/relationship/<slug>`. `/templates` itself is now the template namespace and
  * 308s here, so a bookmark lands on this page rather than a 404.
  *
+ * **The page is the approved artifact's composition.** `docs/specs/spec-as2-style-templates-redesign/`
+ * is the binding reference (#889): a split hero over one framed photograph, a short explainer
+ * carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, the catalogue
+ * itself, and a compact journey band. `components/templates/templates-page.tsx` draws those six
+ * bands and says what each one is for; `lib/templates-page.ts` is the join and the only place a
+ * number is counted.
+ *
+ * **The chrome above it is the layout's, not this page's.** `MarketingHeader`, `PublicNav`,
+ * `PublicAccountSlot`, `Footer` and `NewsSignup` come from `app/(marketing)/layout.tsx`; the
+ * artifact's static header and footer are not reproduced here, which is the one thing about the
+ * bundle that cannot survive contact with the real app.
+ *
  * **Nothing here reads a clock, a store or the database.** The page is a projection of
  * `data/relationship-types.ts` through `data/pages/templates.ts`, so it prerenders — which is
- * what a page a search engine and a stranger both land on first should do. The chrome above it
- * (`app/(marketing)/layout.tsx`) is the only request-time thing in the render.
+ * what a page a search engine and a stranger both land on first should do. The catalogue's search
+ * is a client enhancement over markup that already contains every card.
  *
  * The title is relative: the root layout's template composes `Relationship Templates · <brand>`,
  * so the brand is named once, by the layout, and not a second time here.

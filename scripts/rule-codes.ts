@@ -205,20 +205,35 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
-    owner: "bundle import/export (scripts/bundles.ts, content/bundle.ts — issue #147)",
-    // Two files, because the refusal is authored in the model and raised by the CLI: the
-    // codes are *minted* where the rule lives (`content/bundle.ts` detects B1–B4/B6) and B5
-    // is the one the CLI mints, because a bundle cannot collide with a store it does not
-    // know. Declaring both keeps "one code, one owner" true without pretending the model
-    // module is a script.
-    files: ["bundles.ts", "../content/bundle.ts"],
+    owner:
+      "rules 6 and 7 of the reference pattern set — numbers and empty states (scripts/ui-census.ts)",
+    // The rule *lives* in `ui-census.ts`: the numeric vocabulary, the record-list shape, the guard
+    // forms and the empty-block measurement are all pure derivations there. Two files for the same
+    // reason the leaving-links group has two — the finding carries `rule: "E40"`, and `data-check.ts`
+    // runs the walk and prints the census line beside the other floors.
+    files: ["ui-census.ts", "data-check.ts"],
+    codes: {
+      E40: "over the console's and the member dashboard's import closure: every numeric cell in a table or label/value list is right-aligned (`tabular-nums` or `text-right`), and every record list over data has a zero-or-positive length guard whose empty region draws a bordered/grey block with at most one action (`docs/specs/ux-reference-patterns.md` rules 6 and 7)",
+    },
+  },
+  {
+    owner:
+      "bundle import/export (scripts/bundles.ts, scripts/bundle-platform.ts, content/bundle.ts — issues #147, #899)",
+    // Three files, because each code is minted where its rule lives: `content/bundle.ts`
+    // detects B1–B4/B6 (a document), `scripts/bundles.ts` mints B5 (a collision with the active
+    // store), and `scripts/bundle-platform.ts` mints B7 and B8 (a package against this tree, a
+    // subset against its own references). Declaring all three keeps "one code, one owner" true
+    // without pretending the model module is a script.
+    files: ["bundles.ts", "bundle-platform.ts", "../content/bundle.ts"],
     codes: {
       B1: "envelope shape — not one JSON object, a bad `format`/`kind`/`appVersion`, an unknown top-level key",
       B2: "payload record — a `zAssessment` / `zAssessmentInstance` issue, or an unknown key on one, path included",
       B3: "dataset collection — an id or a slug twice, a `templateId` outside the bundle, or a copy that drifted",
-      B4: "forbidden key — a key that names a credential (`token`, `secret`, `password`, `apiKey`, `key`), wherever it sits",
+      B4: "forbidden key — a key that names a credential (`token`, `secret`, `password`, `apiKey`, `key`, `pin`), wherever it sits",
       B5: "a template import colliding with the active store's id or `type/slug` — the import refuses rather than rewriting",
-      B6: "`bundleVersion` — this build reads exactly 1",
+      B6: "`bundleVersion` — this build reads 1 and 2",
+      B7: "build identity — the package's `schemaVersion` / `lockfileSha256` is not this tree's, so it refuses before writing",
+      B8: "a package that drops a record something it keeps still references — a persona a relationship names, media a record renders",
     },
   },
 ];

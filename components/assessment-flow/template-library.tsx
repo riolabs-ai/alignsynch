@@ -19,9 +19,11 @@
  *
  * **What a row may offer is decided before it gets here.** `LibraryTemplate.authorship` is
  * `built-in` or `mine` (never `other`: the read excludes those), and only `mine` carries an
- * archive control — a built-in belongs to nobody, and the store refuses the write anyway
- * (`setTemplateStatus`'s own `WHERE`). Duplicate is offered on both, because copying the
- * platform's starting point into your own templates is the whole reason the action exists.
+ * archive and a delete control — a built-in belongs to nobody, and the store refuses both writes
+ * anyway (`setTemplateStatus`'s and `deleteTemplate`'s own `WHERE`). Duplicate is offered on both,
+ * because copying the platform's starting point into your own templates is the whole reason the
+ * action exists. Delete is behind a `<details>` confirm (#743) because it is the one action here
+ * with no way back; archiving stays a single press, because undoing it is one too.
  *
  * **Archived rows are drawn, not hidden.** The status filter defaults to "any", so a person who
  * archived something last week finds it here and can unarchive it; `/assessment` (the catalogue)
@@ -36,7 +38,12 @@ import type {
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
 import { formatCurrency, formatDate } from "@/content/core";
-import { TEMPLATE_LIBRARY_PATH, templateDuplicatePath, templateStatusPath } from "@/lib/flow/paths";
+import {
+  TEMPLATE_LIBRARY_PATH,
+  templateDeletePath,
+  templateDuplicatePath,
+  templateStatusPath,
+} from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import {
   TemplateCatalogueGrid,
@@ -91,9 +98,22 @@ function groupLabelOf(copy: PageCopy): (id: TemplateGroupId) => string {
 
 /** The notice a write leaves behind, resolved by the page against the list it just read. */
 export interface LibraryNotice {
-  /** Which band of the fixture's `notice` section is the sentence. */
-  readonly id: "archived" | "unarchived" | "duplicated" | "refused" | "missing";
-  /** The template the notice is about, or `null` for `refused` / `missing`. */
+  /**
+   * Which band of the fixture's `notice` section is the sentence.
+   *
+   * `deleted` is the only one with no record behind it: the row it would name was the row that
+   * just stopped existing (#743), so its title is `null` and its sentence carries no `{title}`.
+   */
+  readonly id:
+    | "archived"
+    | "unarchived"
+    | "duplicated"
+    | "deleted"
+    | "has-versions"
+    | "has-relationships"
+    | "refused"
+    | "missing";
+  /** The template the notice is about, or `null` for `refused` / `missing` / `deleted`. */
   readonly title: string | null;
 }
 
@@ -421,6 +441,46 @@ export function TemplateLibrary({
                     {itemLabel(row, template.status === "archived" ? "unarchive" : "archive")}
                   </button>
                 </form>
+              )}
+
+              {/*
+               * Delete (#743) — the one action with no way back, so it is behind a confirm.
+               *
+               * The confirm is a `<details>` disclosure holding the real POST form: the first
+               * press only opens it, and the screen still ships no JavaScript (the shape
+               * `steps-panel.tsx` uses for its reword form, and the reason this file can stay a
+               * server component). `basis-full` keeps the open disclosure on its own line
+               * instead of letting a paragraph wrap inside a 27-card action row.
+               *
+               * Offered on `mine` only, like archive — and never on a built-in, because a
+               * template nobody wrote is nobody's to destroy. Whether this account's row *may*
+               * be deleted is the writer's decision (`deleteTemplate`), and the two refusals it
+               * can answer with are the two notices that name Archive instead.
+               */}
+              {template.authorship !== "mine" ? null : (
+                <details className="basis-full" data-template-delete-confirm={template.id}>
+                  <summary className={`cursor-pointer text-sm ${MUTED} underline`}>
+                    {itemLabel(row, "delete")}
+                  </summary>
+                  <form action={templateDeletePath(template.slug)} method="post" className="mt-2">
+                    <FilterFields filter={filter} />
+                    <p className="text-xs text-foreground">
+                      {fillLabel(itemLabel(row, "delete-confirm"), { title: template.title })}
+                    </p>
+                    <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <button
+                        type="submit"
+                        className="text-sm font-medium text-red-600 underline dark:text-red-400"
+                      >
+                        {itemLabel(row, "delete-submit")}
+                      </button>
+                      {/* A link, not a button: the escape is "do not delete", which is a GET. */}
+                      <a className={`text-xs ${MUTED} underline`} href={filterHref(filter, {})}>
+                        {itemLabel(row, "delete-cancel")}
+                      </a>
+                    </span>
+                  </form>
+                </details>
               )}
 
               {template.status === "archived" ? (

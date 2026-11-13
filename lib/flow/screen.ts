@@ -143,6 +143,15 @@ export interface FlowSeat {
 
 export interface FlowScreen {
   readonly instanceRecordId: string;
+  /**
+   * The **relationship** row this instance was written for (#911).
+   *
+   * Distinct from `instanceRecordId`, and the distinction is not cosmetic: the create flow's URL
+   * carries the *record* id (`?instance=`), while every membership act — capturing a card, the
+   * payment gate behind stage 5's send — names the *relationship*. A screen that only knows the
+   * record id cannot start a capture, because the capture answers "no relationship holds the id".
+   */
+  readonly relationshipId: string;
   readonly slug: string;
   /** The template's words: an instance is a copy, and its title is the template's. */
   readonly title: string;
@@ -195,6 +204,15 @@ export interface FlowScreen {
    * writes, and the sentence says it was the initiator's membership that ended.
    */
   readonly membership?: Membership | null;
+  /**
+   * #911 — the **card is on file** fact the invite stage gates its send on.
+   *
+   * It is `ProjectInput.paymentArmed`'s answer, carried onto the screen so a page does not have to
+   * ask the database a second time for a fact this projection already computed: `true` means a
+   * method was captured and the relationship's fee is armed, which is exactly "the walk is done".
+   * Optional for the same reason the input is — absent means nobody asked, never "unpaid".
+   */
+  readonly paymentArmed?: boolean;
 }
 
 export interface FlowInstanceRows {
@@ -335,6 +353,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
 
   return {
     instanceRecordId: rows.record.id,
+    relationshipId: rows.instance.relationship_id,
     slug: rows.record.slug,
     title: template.title,
     summary: template.summary,
@@ -380,5 +399,7 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     invite,
     membership: input.membership ?? null,
     report,
+    // #911 — the same answer the status was computed from, carried for the invite stage's gate.
+    ...(input.paymentArmed === undefined ? {} : { paymentArmed: input.paymentArmed }),
   };
 }

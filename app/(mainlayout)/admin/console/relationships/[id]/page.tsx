@@ -1,4 +1,5 @@
 // template-ancestor: components/assessment-flow/instance-view.tsx
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AdminRelationshipDetail } from "@/components/v1/admin-relationship-detail";
 
 /**
@@ -16,5 +17,9 @@ export default async function AdminRelationshipPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <AdminRelationshipDetail relationshipId={id} />;
+  return (
+    <StageColumn>
+      <AdminRelationshipDetail relationshipId={id} />
+    </StageColumn>
+  );
 }

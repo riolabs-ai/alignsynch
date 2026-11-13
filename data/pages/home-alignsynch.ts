@@ -58,19 +58,23 @@ import { zPageCopy, type PageCopy } from "../../content/pages";
 export const ALIGN_SYNCH_FEATURED_SLUG = "avery-rowan";
 
 /**
- * The `/` document title for this build — `"<brand> — Relationship alignment for leaders and teams"`.
+ * The `/` document title for this build — `"<brand> — Business Relationships"`.
  *
- * A function of the brand, like `homeTitle`: the page names the product itself, and the
- * alignment page's tagline is the register the page speaks in — leadership, not a practitioner's
- * practice — rather than the quiz template's "Play, Share, Earn". Neither word is spelled in a
- * `.tsx`.
+ * A function of the brand, like `homeTitle`: the page names the product itself, and the V2 home
+ * page's tagline is the audience the approved page leads with (#904), not the quiz template's
+ * "Play, Share, Earn". Neither word is spelled in a `.tsx`.
  *
- * The title and the hero share that register: who the page is for, and what the product is.
- * Neither makes a claim the page does not make. Moving it is a one-line change here plus a
- * parity summary, because the title is what a search result and a browser tab say.
+ * **It moved with the page, twice.** The retired composition's title named a leader's outcome
+ * ("Relationship alignment for leaders and teams"); #853 moved it to the two audiences its hero
+ * opened on ("Personal and Business Relationships"). The V2 reference this page is cloned from
+ * (`docs/specs/spec-design-page-rel-templates-v2/home/homepage-redesign.html`) sets
+ * `<title>AlignSynch — Business Relationships</title>` and leads business-first, with personal
+ * growth and friendships as the secondary path — so the tab title says what the page now says. A
+ * title that still named both audiences equally over a page that leads with one is the drift this
+ * function exists to make a one-line change.
  */
 export function alignSynchHomeTitle(brand: Pick<Brand, "name">): string {
-  return `${brand.name} — Relationship alignment for leaders and teams`;
+  return `${brand.name} — Business Relationships`;
 }
 
 export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
@@ -148,7 +152,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
      */
     { id: "templates-view-all", label: "View all relationship templates" },
     /** The two card actions, and the frame the two roles are joined by. */
-    { id: "template-use", label: "Start with this template" },
+    { id: "template-use", label: "Create Relationship" },
     { id: "template-example", label: "See a worked example" },
     { id: "template-roles", label: "{initiator} ↔ {counterparty}" },
     /**
@@ -273,6 +277,353 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
       id: "boundary",
       heading: "What this page does not claim.",
       body: "No pay figures, no client counts, no logos. The product model is real, and the pricing page states what it costs.",
+    },
+  ],
+});
+
+/**
+ * The `/` page that ships on this build — the V2 home redesign's copy (#904).
+ *
+ * **Two compositions of one route live in this file, and this is the live one.** The export above
+ * is the retired alignment composition (issue #143): `components/home/alignment-home.tsx` still
+ * draws it, `lib/alignment-home.ts` still projects it, and `tests/alignment-home.test.ts` still
+ * holds it to its records — it is kept as the reference the AS2 sections vary from, and it is not
+ * reachable from `/` any more. `app/(marketing)/page.tsx` renders *this* fixture.
+ *
+ * **The words are the approved page's, verbatim (#904).** They were copied out of
+ * `docs/specs/spec-design-page-rel-templates-v2/home/homepage-redesign.html` with no rewriting,
+ * reordering or sharpening — lead with business and corporate relationships, personal growth and
+ * friendships as the secondary path, and one bounded callout for counselors, therapists and
+ * coaches. The register is direct-to-consumer and business-user: one person starts, invites the
+ * other, both answer privately, and the report opens after both accept. Nothing here claims an
+ * outcome the product cannot show, and nothing prices a session.
+ *
+ * Both are parsed by the same `zPageCopy`, so both are held to the same rules — no unknown keys, no
+ * section id twice, every `cta.href` a route in `content/routes.ts`.
+ *
+ * ## What is copy here and what is not
+ *
+ * The words are here. The templates are not: the two template groups are
+ * `data/relationship-types.ts`'s own taxonomy (`purchasableTypesByGroup()`, the same grouping the
+ * catalogue and the dashboard library draw), each chip links through `catalogueDetailPath()`, and
+ * the three "questions to ask" prompts are written here because they are copy — the blank is a
+ * blank, not a record. So the page cannot claim a relationship type the product cannot run, and it
+ * cannot print a count or a price nobody re-measures: it prints none.
+ *
+ * ## The ids are the join, and the prefixes are the convention
+ *
+ * `lib/home-alignsynch.ts` reads this fixture and hands each section component a resolved
+ * view-model; a component never names an id. Three prefixes drive ordered lists, so a copy edit
+ * (add a benefit, reorder the steps) needs no `.tsx` change:
+ *
+ *   `step-N`     a numbered step in the how-it-works band, rendered in declared order
+ *   `benefit-N`  one benefit row, rendered in declared order
+ *   `story-N-*`  one participant card's title / quote / alternate quote / support sentence
+ *
+ * A missing id throws when the page renders — `/` is prerendered by the gate, so a typo is a red
+ * build rather than a blank heading — and `tests/as2-home.test.tsx` pins the same ids in a node
+ * run.
+ */
+export const alignSynchHomeAs2Copy: PageCopy = zPageCopy.parse({
+  eyebrow: "For business and corporate relationships",
+  heading: "Bring expectations into the open at work.",
+  subtitle:
+    "AlignSynch gives two people at work a structured way to compare expectations with a colleague, manager, business partner, or customer. Both answer privately; a shared report opens after both accept.",
+  items: [
+    /* The in-page menu's accessible name. It lives on the page bag rather than in the menu's own
+       section because the menu's items *are* the five targets — a sixth row would render as a
+       sixth link. */
+    { id: "nav-name", label: "On this page" },
+    /*
+     * The hero's two actions. Both are in-page anchors, so neither is a `cta`: a copy `cta.href`
+     * must be a route, and `#business-relationships` is a scroll position on this page.
+     */
+    { id: "hero-action", label: "Explore business templates" },
+    { id: "hero-secondary", label: "See how it works" },
+    {
+      id: "hero-note",
+      label:
+        "One working relationship. Two private views. A shared report when you are both ready.",
+    },
+    /*
+     * The two hero cards: a kicker, the card's name, the action inside it, and the accessible name
+     * the whole card carries (the card is one link, so it needs one useful name). **Business
+     * first** — the page leads with work and treats personal use as the secondary path (#904).
+     */
+    { id: "life-business-kicker", label: "For work and corporate use" },
+    { id: "life-business-title", label: "Business relationships" },
+    { id: "life-business-action", label: "View templates" },
+    { id: "life-business-name", label: "Explore business relationship templates" },
+    { id: "life-personal-kicker", label: "Personal growth and relationship skills" },
+    { id: "life-personal-title", label: "Personal relationships" },
+    { id: "life-personal-action", label: "View templates" },
+    { id: "life-personal-name", label: "Explore personal relationship templates" },
+  ],
+  sections: [
+    {
+      /** The in-page menu. Each item's id **is** its anchor target, so the menu cannot advertise a
+       *  band the page does not emit: `lib/home-alignsynch.ts` builds the href from the id, and the
+       *  band that carries that id is the one this file's section list declares. */
+      id: "section-nav",
+      items: [
+        { id: "how-it-works", label: "How it works" },
+        { id: "relationship-templates", label: "Templates" },
+        { id: "questions", label: "The model" },
+        { id: "stories", label: "Responses" },
+        { id: "benefits", label: "Why it matters" },
+      ],
+    },
+    {
+      id: "how-it-works",
+      heading: "A simple way to compare two perspectives",
+      body: "Choose a relationship template, invite the other person, and answer the same Aspects privately. After you have both reviewed and accepted your answers, the shared report opens.",
+      items: [
+        /* A band's eyebrow is an *item*, not a section field: `zPageCopySection` carries heading,
+           body and cta, and no band-level kicker — the reader joins it by id like any other row. */
+        { id: "eyebrow-how-it-works", label: "How it works" },
+        {
+          id: "step-1",
+          label: "Choose a relationship template",
+          body: "Start with a template for a working relationship, personal relationship, or friendship.",
+        },
+        {
+          id: "step-2",
+          label: "Invite the other person",
+          body: "Start an assessment and invite the person in the relationship with you.",
+        },
+        {
+          id: "step-3",
+          label: "Answer privately",
+          body: "You each respond to the same Aspects and review your own answers.",
+        },
+        {
+          id: "step-4",
+          label: "Accept, then see the report",
+          body: "Your shared report opens after you both explicitly accept your answers.",
+        },
+        { id: "how-start-eyebrow", label: "Start with work, or explore personal" },
+        {
+          id: "how-start-body",
+          label:
+            "Choose a business relationship template first, or browse options for personal growth, relationships, and friendship.",
+        },
+        { id: "how-action", label: "View templates" },
+      ],
+    },
+    {
+      id: "relationship-templates",
+      heading: "Choose a relationship to explore",
+      body: "Begin with a business relationship at work, or choose a personal relationship or friendship. Each template gives both people the same topics to consider.",
+      items: [
+        /** The two group headings, keyed to `TypeGroup` by the projection — the taxonomy decides
+         *  which types sit under which, this owns only the words above them. */
+        { id: "templates-group-business", label: "Business & corporate relationships" },
+        {
+          id: "templates-group-personal",
+          label: "Personal relationships, friendships, and adjacent contexts",
+        },
+        { id: "templates-action", label: "Business & corporate" },
+        /* The reference draws this one with a literal arrow in the sentence rather than the arrow
+           glyph the buttons carry, so the arrow is part of the copy. */
+        { id: "templates-secondary", label: "Personal & friendship →" },
+        {
+          id: "templates-note",
+          label:
+            "Templates give both people the same starting point for the relationship they want to explore.",
+        },
+        /*
+         * The one bounded callout for counselors, therapists and coaches: the brief allows exactly
+         * one, and it must not describe AlignSynch as a clinical tool. Lead and rest are two rows
+         * because the lead is the bolded subject of the sentence.
+         */
+        { id: "templates-counselor-lead", label: "For counselors, therapists, and coaches:" },
+        {
+          id: "templates-counselor-rest",
+          label:
+            "AlignSynch can be an optional structure for reflection alongside your existing support. It is not a clinical assessment, diagnosis, therapy, or a substitute for professional judgment.",
+        },
+      ],
+    },
+    {
+      /** `id="questions"` is load-bearing: the shared header and footer both link to
+       *  `/#questions`, and that anchor predates this page. */
+      id: "questions",
+      heading: "See where your perspectives meet—or differ.",
+      body: "You both answer the same relationship Aspects. Depending on the assessment, you can record how you feel, what you wish for, and what you think or guess about the other person’s perspective.",
+      items: [
+        { id: "eyebrow-questions", label: "The AlignSynch model" },
+        { id: "bread-step", label: "The Bread" },
+        { id: "bread-kicker", label: "Feel · Wish · Think · Guess" },
+        { id: "bread-title", label: "Four ways a gap can form" },
+        {
+          id: "bread-deck",
+          label:
+            "Notice the difference between what you feel or wish and what you think or guess about the other person.",
+        },
+        {
+          id: "bread-line-feel",
+          label: "FEEL",
+          body: "You feel it is different than they feel.",
+        },
+        {
+          id: "bread-line-wish",
+          label: "WISH",
+          body: "You wish it to be different than they wish.",
+        },
+        {
+          id: "bread-line-think",
+          label: "THINK",
+          body: "You think they feel it is different than they really feel.",
+        },
+        {
+          id: "bread-line-guess",
+          label: "GUESS",
+          body: "You guess they wish it to be different than they really wish.",
+        },
+        { id: "bread-note-lead", label: "Four potential pitfalls" },
+        { id: "bread-note-rest", label: "to notice in most relationships." },
+        { id: "bread-list-name", label: "Four potential relationship pitfalls" },
+        { id: "butter-step", label: "The Butter" },
+        { id: "butter-kicker", label: "Opinions are on a sliding scale" },
+        { id: "butter-title", label: "Opinions fall along a scale" },
+        {
+          id: "butter-deck",
+          label:
+            "An answer can be somewhere between yes and no. A small difference is still useful to notice.",
+        },
+        {
+          id: "butter-scale-name",
+          label: "A scale from yes to no, with room somewhere in between",
+        },
+        { id: "butter-scale-yes", label: "YES" },
+        { id: "butter-scale-no", label: "NO" },
+        { id: "butter-scale-middle", label: "Somewhere in between" },
+        {
+          id: "butter-line-feel",
+          label: "FEEL",
+          body: "Actually, you FEEL it is only slightly different.",
+        },
+        {
+          id: "butter-line-wish",
+          label: "WISH",
+          body: "You WISH it to slowly change only a little bit.",
+        },
+        {
+          id: "butter-line-they-feel",
+          label: "FEEL",
+          body: "They FEEL it is just a tad different.",
+        },
+        {
+          id: "butter-line-they-wish",
+          label: "WISH",
+          body: "They WISH it to be just a touch different.",
+        },
+        { id: "butter-list-name", label: "Examples of opinions between yes and no" },
+      ],
+    },
+    {
+      id: "stories",
+      heading: "A clearer view can open a conversation.",
+      body: "These reflections describe seeing where things stand, finding a gentler way to talk, and recognizing that answers aren’t always just yes or no.",
+      items: [
+        { id: "eyebrow-stories", label: "What participants said" },
+        { id: "story-1-title", label: "See where things stand" },
+        {
+          id: "story-1-quote",
+          label: "“This let me see where things stand and where we wish them to go in the future.”",
+        },
+        {
+          id: "story-1-support",
+          label: "A shared prompt can give both people a concrete place to begin.",
+        },
+        { id: "story-2-title", label: "Open a softer conversation" },
+        {
+          id: "story-2-quote",
+          label: "“This works because it opened an easy soft communication channel for me!”",
+        },
+        {
+          id: "story-2-quote-alt",
+          label:
+            "“It was hard for us to discuss these things. This opened our eyes to what we need to work on.”",
+        },
+        {
+          id: "story-2-support",
+          label: "A shared prompt can give people a gentler way to begin a difficult conversation.",
+        },
+        { id: "story-3-title", label: "Find more than yes or no" },
+        {
+          id: "story-3-quote",
+          label:
+            "“There would have been no other way for me to see all the angles of this relationship!”",
+        },
+        {
+          id: "story-3-quote-alt",
+          label:
+            "“It allowed us to visit some important relationship aspects in a nice soft way to see what we need to work on.”",
+        },
+        {
+          id: "story-3-support",
+          label: "Some prompts use a scale so each person can show degrees of difference.",
+        },
+        { id: "prompts-title", label: "Questions to ask" },
+        { id: "prompts-note", label: "You don’t know until you ask." },
+        { id: "prompts-name", label: "Relationship conversation starters" },
+        { id: "prompt-1", label: "Are you on the same page as ______?" },
+        { id: "prompt-2", label: "Are you In-Synch with ______?" },
+        { id: "prompt-3", label: "Are you in Alignment with ______?" },
+        { id: "prompt-4", label: "Where are your differences with ______?" },
+        { id: "stories-action-body", label: "Choose a relationship to explore." },
+        { id: "stories-action", label: "Choose a relationship" },
+      ],
+    },
+    {
+      id: "benefits",
+      heading: "A structured way to talk through what matters.",
+      body: "Compare expectations in business and corporate relationships, or take a more intentional approach to personal relationships and friendships.",
+      items: [
+        /* The band's eyebrow is "What you can do" while the in-page menu's row for this target stays
+           "Why it matters": the reference draws those two strings differently, and both are copy. */
+        { id: "eyebrow-benefits", label: "What you can do" },
+        { id: "benefits-action", label: "Explore templates" },
+        /* Five rows, exactly as the reference draws them — the sheet's `.benefit` list is five items
+           in a two-column grid with the callout spanning both. */
+        {
+          id: "benefit-1",
+          label: "Start with a relevant template",
+          body: "Choose a business relationship first, or browse personal relationship and friendship templates.",
+        },
+        {
+          id: "benefit-2",
+          label: "Answer the same questions",
+          body: "You and the other person respond to the same Aspects, so you can compare views topic by topic.",
+        },
+        {
+          id: "benefit-3",
+          label: "Keep answers private while you respond",
+          body: "You each complete and review your own answers before the shared report is available.",
+        },
+        {
+          id: "benefit-4",
+          label: "Open the report together",
+          body: "Your shared report becomes available after both of you explicitly accept your answers.",
+        },
+        {
+          id: "benefit-5",
+          label: "See differences by topic",
+          body: "The report organizes your perspectives across the Aspects without reducing your relationship to one score.",
+        },
+        {
+          id: "benefits-callout",
+          label:
+            "AlignSynch organizes your answers. You decide what they mean and what to discuss next.",
+        },
+      ],
+    },
+    {
+      id: "final-cta",
+      heading: "Start with a relationship that matters to you.",
+      body: "Explore business and corporate templates first, or browse personal relationships and friendships.",
+      items: [{ id: "final-cta-action", label: "Explore business templates" }],
     },
   ],
 });

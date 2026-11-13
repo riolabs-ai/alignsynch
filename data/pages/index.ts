@@ -16,8 +16,15 @@
 import { zPageCopyTable, type PageCopyTable } from "../../content/pages";
 import { adminAuditPageCopy } from "./admin-audit";
 import { adminBillingPageCopy } from "./admin-billing";
+// #906 — the brand and audience profile, behind the console's gate.
+import { adminBrandPageCopy } from "./admin-brand";
 import { adminBroadcastPageCopy } from "./admin-broadcast";
+// #892 — the documentation home and one document of the tree under `docs/`.
+import { adminDocPageCopy } from "./admin-docs-document";
+import { adminDocsPageCopy } from "./admin-docs";
 import { adminGapsPageCopy } from "./admin-gaps";
+// #920 — the growth model: cohorts, plan mix, churn and invoices from one committed artifact.
+import { adminGrowthPageCopy } from "./admin-growth";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
@@ -30,7 +37,7 @@ import { adminReportPageCopy } from "./admin-report";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
-import { myInstancesPageCopy } from "./assessment-instances";
+import { assessmentsPageCopy } from "./assessments";
 import { assessmentTemplatePageCopy } from "./assessment-template-new";
 import { templateDetailPageCopy } from "./assessment-template-detail";
 import { templateLibraryPageCopy } from "./assessment-templates";
@@ -88,7 +95,16 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/broadcast": adminBroadcastPageCopy,
   // #505 — the billing control screen: one row per relationship, and the owner's comp.
   "/admin/billing": adminBillingPageCopy,
+  // #906 — the brand and audience profile: the canon, rendered for the operator who writes from it.
+  "/admin/brand": adminBrandPageCopy,
+  // #892 — the documentation home, and one document in it. Two fixtures because they say different
+  // things: the hub is a list with a filter, the document is its own chrome around a body the tree
+  // owns.
+  "/admin/docs": adminDocsPageCopy,
+  "/admin/docs/[...slug]": adminDocPageCopy,
   "/admin/gaps": adminGapsPageCopy,
+  // #920 — the growth model and the sampled operational set beside it.
+  "/admin/growth": adminGrowthPageCopy,
   "/admin/health": adminHealthPageCopy,
   "/admin/instances": adminInstancesPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
@@ -101,7 +117,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/inbox": adminInboxPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
-  "/assessment/instances": myInstancesPageCopy,
+  // #877 — the member's assessment-session listing, plural and a sibling of `/dashboard/
+  // relationships`. It replaced `/assessment/instances`, which is a 308 here now; the three
+  // session routes below it did not move.
+  "/assessments": assessmentsPageCopy,
   "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
   "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
   // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
@@ -173,8 +192,16 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
   "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
   "/templates/relationship/new": assessmentTemplatePageCopy,
-  // The public Relationship Types catalogue (#794) — the taxonomy the shop sells, addressed by
-  // `relationship-types.ts`'s own ids.
+  /**
+   * The public catalogue, at two addresses and one fixture (#905).
+   *
+   * `/relationship-templates` is the catalogue the header, the footer and every "start with a
+   * template" action point at — the V2 composition (`lib/templates-catalogue.ts`).
+   * `/relationship-types` is the retained #889 variation (`lib/templates-page.ts`) and the
+   * namespace a type's own page lives in. Both read this fixture, which is why its rows are keyed
+   * by surface rather than edited in place: one copy table, two pages, neither renaming the other.
+   */
+  "/relationship-templates": templatesPageCopy,
   "/relationship-types": templatesPageCopy,
   "/relationship-types/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,

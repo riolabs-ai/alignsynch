@@ -2,6 +2,20 @@
 
 // template-ancestor: components/ui/card.tsx   (variation: the subscription panel — the current plan, a feature list and a change-plan button)
 
+/**
+ * **The plan panel, and only the plan panel (#912).**
+ *
+ * This component is a QuizHub commerce asset and it is **unreachable**: `AccountSettings` mounts it
+ * and no route mounts `AccountSettings` (`/settings` renders `components/identity/settings-view.tsx`
+ * — measured, grep below). Its second card used to be a "Payment Method" panel with a Visa row and
+ * an **Add Payment Method** button, i.e. a card capture on a surface that is not the pay modal.
+ *
+ * The card is deleted rather than the component: "every other card-capture path either becomes a
+ * route into that modal or is deleted", and deleting a QuizHub surface is not this card's business.
+ * What is left draws no payment control at all, so the tree holds exactly one capture — stage 5's
+ * walk, which mounts `components/billing/stripe-frame.tsx`.
+ */
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { formatMetricValue, formatPercentValue } from "@/content/metrics";
 import { metric } from "@/data/metrics";
-import { Check, CreditCard, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -234,29 +248,6 @@ export function SubscriptionSettings() {
             </Button>
           )}
         </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Method</CardTitle>
-          <CardDescription>Manage your payment methods and billing information.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="flex items-center space-x-4">
-              <CreditCard className="h-6 w-6 text-primary" />
-              <div>
-                <p className="font-medium">Visa ending in 4242</p>
-                <p className="text-sm text-muted-foreground">Expires 12/2025</p>
-              </div>
-            </div>
-            <Badge>Default</Badge>
-          </div>
-
-          <Button variant="outline" className="w-full">
-            Add Payment Method
-          </Button>
-        </CardContent>
       </Card>
 
       <Card>

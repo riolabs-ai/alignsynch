@@ -162,7 +162,10 @@ export function ReviewArtifacts({
             </CardHeader>
             <CardContent className={cn("px-0", shelf.groups.length === 0 && "px-6")}>
               {shelf.groups.length === 0 ? (
-                <p data-empty="true" className="text-sm text-muted-foreground">
+                <p
+                  data-empty="true"
+                  className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground"
+                >
                   {itemLabel(listCopy, "empty")}
                 </p>
               ) : (
@@ -344,7 +347,10 @@ export function ReviewArtifacts({
                       </CardHeader>
                       <CardContent className="px-0">
                         {selected.issues.length === 0 ? (
-                          <p data-empty="true" className="px-6 text-sm text-muted-foreground">
+                          <p
+                            data-empty="true"
+                            className="mx-6 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground"
+                          >
                             {itemLabel(feedbackCopy, "empty")}
                           </p>
                         ) : (

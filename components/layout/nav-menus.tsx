@@ -10,7 +10,7 @@ import { surfaceFor } from "@/data/surface-registry";
 import { accountProfileHref } from "@/lib/auth/profile-href";
 import type { ShellAccount } from "@/lib/auth/shell-account";
 import { leavesApp } from "@/lib/marketing-routes";
-import { RELATIONSHIP_TYPES_PATH } from "@/lib/flow/paths";
+import { TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
 import { type NavIconName, menuFor } from "@/lib/nav-menu";
 import { type NavViewer, sees } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ import {
   BarChart3,
   BookOpen,
   ClipboardCheck,
+  ClipboardList,
   Compass,
   CreditCard,
   DollarSign,
@@ -42,6 +43,7 @@ import {
   ShieldCheck,
   Sparkles,
   Swords,
+  TrendingUp,
   Trophy,
   Users,
   Workflow,
@@ -474,6 +476,12 @@ function QuizHubMenu({
 const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
   dashboard: Gauge,
   relationships: HeartHandshake,
+  /**
+   * #877 — **My Assessments is `ClipboardList`.** A list of sessions, one line each, is exactly
+   * what the glyph draws; `HeartHandshake` is the relationship row's ("two people in agreement"),
+   * and reusing it here would say the two destinations are the same screen.
+   */
+  assessments: ClipboardList,
   templates: LayoutTemplate,
   library: Library,
   help: Workflow,
@@ -481,6 +489,7 @@ const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
   console: LayoutDashboard,
   instances: ShieldCheck,
   gaps: BarChart3,
+  growth: TrendingUp,
   inbox: Inbox,
   health: Activity,
   billing: CreditCard,
@@ -695,7 +704,7 @@ function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
       <Link className={PUBLIC_ROW_CLASS} href="/">
         {itemLabel(nav, "home")}
       </Link>
-      <Link className={PUBLIC_ROW_CLASS} href={RELATIONSHIP_TYPES_PATH}>
+      <Link className={PUBLIC_ROW_CLASS} href={TEMPLATE_CATALOGUE_PATH}>
         {itemLabel(nav, "templates")}
       </Link>
       <Link className={PUBLIC_ROW_CLASS} href="/#questions">

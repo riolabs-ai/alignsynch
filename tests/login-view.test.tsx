@@ -32,6 +32,7 @@ import { quizHubBrand } from "@/data/brand";
 import { loginCopy } from "@/data/pages/login";
 import { loginCopyFor } from "@/lib/auth-copy";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const BRANDS = [
   ["quizhub", quizHubBrand as Brand],
@@ -100,5 +101,52 @@ describe("the sign-in panel's marks on both brands", () => {
     // beside the panel's book, which is what the page has always rendered.
     expect(html.split("lucide-book-open").length - 1).toBe(3);
     expect(html.split("lucide-trophy").length - 1).toBe(1);
+  });
+});
+
+/**
+ * The OAuth control's mark (#777).
+ *
+ * Stage 4 of the create flow mounts this same view inside a stage column, so the Google control a
+ * person meets there is this one. The issue asks for the mark so the control is recognised by shape
+ * as well as words; the fixture's own comment says `label` is the button's whole accessible name,
+ * which is what makes a decorative mark safe. Both halves are pinned here.
+ */
+describe("the Google control's mark (#777)", () => {
+  /** The one `<button>` whose words are the Google label — the mark must sit inside it. */
+  function googleButton(html: string): string {
+    const buttons = html.match(/<button[^>]*>[\s\S]*?<\/button>/g) ?? [];
+    return buttons.find((button) => button.includes("Continue with Google")) ?? "";
+  }
+
+  it("draws the provider's own mark inside the button, on both brands", () => {
+    for (const [id, record] of BRANDS) {
+      const html = renderToStaticMarkup(createElement(LoginView, viewProps(id, record)));
+      const button = googleButton(html);
+      expect(button, `${id} renders the Google control`).not.toBe("");
+      // The mark is the four-colour G itself, not a stand-in glyph from the brand's own set.
+      for (const fill of ["#4285F4", "#34A853", "#FBBC05", "#EA4335"]) {
+        expect(button, `${id} draws the ${fill} path`).toContain(`fill="${fill}"`);
+      }
+      // One button, one mark: a click and a keyboard focus still have one target.
+      expect(html.split("Continue with Google").length - 1, `${id} draws it once`).toBe(1);
+    }
+  });
+
+  it("keeps the fixture's label as the button's whole accessible name", () => {
+    const record = quizHubBrand as Brand;
+    const label = itemLabel(
+      sectionOf(loginCopyFor(loginCopy(record), "quizhub"), "google"),
+      "label",
+    );
+    const button = googleButton(
+      renderToStaticMarkup(createElement(LoginView, viewProps("quizhub", record))),
+    );
+
+    // The mark contributes no words: hidden from the accessibility tree, no title of its own.
+    expect(button).toContain('aria-hidden="true"');
+    expect(button).not.toContain("<title");
+    // A logo alone is not an accessible name — the text the label names is still the button.
+    expect(button.replace(/<[^>]*>/g, "").trim()).toBe(label);
   });
 });

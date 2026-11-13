@@ -21,6 +21,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { ArticleDetail } from "@/components/support/article-detail";
 import { supportArticlePageCopy } from "@/data/pages/support-article";
 import { requireRole } from "@/lib/auth/require-role";
@@ -53,12 +54,14 @@ export default async function DashboardSupportArticlePage({
   if (article === undefined) notFound();
 
   return (
-    <ArticleDetail
-      article={article}
-      relatedArticles={relatedArticles(article)}
-      copy={supportArticlePageCopy}
-      backHref={DASHBOARD_SUPPORT_PATH}
-      articleHrefBase={DASHBOARD_ARTICLE_BASE}
-    />
+    <StageColumn>
+      <ArticleDetail
+        article={article}
+        relatedArticles={relatedArticles(article)}
+        copy={supportArticlePageCopy}
+        backHref={DASHBOARD_SUPPORT_PATH}
+        articleHrefBase={DASHBOARD_ARTICLE_BASE}
+      />
+    </StageColumn>
   );
 }

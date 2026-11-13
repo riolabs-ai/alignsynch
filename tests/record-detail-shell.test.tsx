@@ -9,8 +9,10 @@
  *      summary to one `DetailBand`;
  *   2. **exactly one `<h1>` per page** — the relationship screen used to draw a page heading above a
  *      `CardTitle`, and two headings for one record is the defect the shell exists to prevent;
- *   3. **a back link on both** — `All templates` existed and `All relationships` did not (the
- *      artifact's F5), and the shell renders whichever the page hands it.
+ *   3. **a crumb where the page asks for one** — `All templates` existed and `All relationships` did
+ *      not (the artifact's F5), and the shell renders whichever the page hands it. Since #873 the
+ *      relationship page hands none: it renders under the rail, and the rail is the way back, so
+ *      the case now asserts the absence instead.
  *
  * Plus the two declared axes, and nothing else: the relationship's working panels sit in the
  * actions slot where the template draws “What you can do with it”, at the shell's panel heading size
@@ -103,6 +105,7 @@ function relationshipView(overrides: Partial<MemberRelationshipView> = {}): Memb
     viewerRole: "initiator",
     isInitiator: true,
     templateId: record.id,
+    templateSlug: record.slug,
     title: record.title,
     summary: record.summary,
     createdAt: "2026-11-01T00:00:00.000Z",
@@ -126,11 +129,11 @@ function relationshipView(overrides: Partial<MemberRelationshipView> = {}): Memb
     trialEndsAt: null,
     lapseSentence: null,
     inviteLinkAvailable: false,
+    /* #785 — the fork is not this file's subject; `tests/relationship-fork.test.tsx` drives it. */
+    canForkTemplate: false,
     ...overrides,
   };
 }
-
-const BACK_HREF = "/dashboard/relationships";
 
 function templateHtml(): string {
   return renderToStaticMarkup(
@@ -144,13 +147,12 @@ function relationshipHtml(view: MemberRelationshipView = relationshipView()): st
     createElement(RelationshipDetail, {
       copy: dashboardRelationshipDetailPageCopy,
       relationship: view,
-      backHref: BACK_HREF,
       onSaveAspects: noop,
       onPublish: noop,
       onRepublish: noop,
-      onCapture: noop,
-      onResolve: noop,
       onComplete: noop,
+      onFork: noop,
+      templatesHref: "/templates/relationship?view=mine",
     }),
   );
 }
@@ -174,7 +176,7 @@ function countOf(html: string, needle: string): number {
   return html.split(needle).length - 1;
 }
 
-describe("one band, one h1, one back link", () => {
+describe("one band, one h1, and the crumb each page asks for", () => {
   it("draws the same band component on both pages", () => {
     const template = templateHtml();
     const relationship = relationshipHtml();
@@ -206,19 +208,18 @@ describe("one band, one h1, one back link", () => {
     expect(countOf(relationshipHtml(), "<h1")).toBe(1);
   });
 
-  it("gives each page a back link to its own list", () => {
+  it("gives the template its crumb, and the relationship none — the rail is its way back (#873)", () => {
     const back = itemLabel(sectionOf(templateDetailPageCopy, "back"), "all");
     expect(templateHtml()).toContain(`data-record-back="template"`);
     expect(templateHtml()).toContain(`href="${TEMPLATE_LIBRARY_PATH}"`);
     expect(templateHtml()).toContain(`>${back}<`);
 
-    const relationshipBack = itemLabel(
-      sectionOf(dashboardRelationshipDetailPageCopy, "back"),
-      "all",
-    );
-    expect(relationshipHtml()).toContain('data-record-back="relationship"');
-    expect(relationshipHtml()).toContain(`href="${BACK_HREF}"`);
-    expect(relationshipHtml()).toContain(`>${relationshipBack}<`);
+    // The relationship detail renders under the shell's rail, so a second "All relationships"
+    // control above the title is the redundancy #873 struck out. The shell draws no `<nav>` when
+    // no crumb is handed in — not a hidden one.
+    const relationship = relationshipHtml();
+    expect(relationship).not.toContain("data-record-back");
+    expect(relationship).not.toContain('aria-label="All relationships"');
   });
 });
 
@@ -243,17 +244,26 @@ describe("the shell's order — band, facts, actions, content", () => {
     }
   });
 
-  it("opens with the back link, then the band, then the aside", () => {
+  it("opens with the band — the template after its crumb, the relationship without one", () => {
+    const template = templateHtml();
+    const templateBack = template.indexOf('data-record-back="template"');
+    expect(templateBack, "template: no crumb").toBeGreaterThan(-1);
+    expect(template.indexOf('data-record-band="template"')).toBeGreaterThan(templateBack);
+
+    // #873 — the relationship's first element is the band: no crumb above it.
+    const relationship = relationshipHtml();
+    expect(relationship.indexOf('data-record-band="relationship"')).toBeLessThan(
+      relationship.indexOf("<aside"),
+    );
+
     for (const [page, html] of [
-      ["template", templateHtml()],
-      ["relationship", relationshipHtml()],
+      ["template", template],
+      ["relationship", relationship],
     ] as const) {
-      const back = html.indexOf(`data-record-back="${page}"`);
       const band = html.indexOf(`data-record-band="${page}"`);
       const aside = html.indexOf("<aside");
       const content = html.indexOf('<div class="min-w-0 space-y-6">');
-      expect(back, `${page}: no back link`).toBeGreaterThan(-1);
-      expect(band, `${page}: no band`).toBeGreaterThan(back);
+      expect(band, `${page}: no band`).toBeGreaterThan(-1);
       expect(aside, `${page}: no aside`).toBeGreaterThan(band);
       expect(content, `${page}: no content column`).toBeGreaterThan(aside);
     }

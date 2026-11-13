@@ -27,7 +27,17 @@ const STATIC_ROUTES = [
   "/admin/broadcast",
   // #505 — billing control: subscription state per relationship, and the owner's comp.
   "/admin/billing",
+  // #906 — the brand and audience profile: the canon, rendered for the operator who writes from it.
+  // Reached from the admin notice bar (the only door), gated by the console capability *and* the
+  // alignment product — a quiz-only build answers 404.
+  "/admin/brand",
+  // #892 — the documentation home: the 117 pages under docs/, rendered from the manifest the gate
+  // already walks. Its document route is a catch-all and lives in `DYNAMIC_ROUTES` below.
+  "/admin/docs",
   "/admin/gaps",
+  // #920 — the growth model: 36 cohorts on the way to a $3M run-rate, charted from one committed
+  // artifact (`data/demo/growth-model.json`), with the sampled operational set beside it.
+  "/admin/growth",
   "/admin/health",
   "/admin/instances",
   // #665 — the console's review shelf: published artifacts, their to-dos and their feedback.
@@ -38,7 +48,10 @@ const STATIC_ROUTES = [
   "/admin/inbox",
   "/affiliate",
   "/assessment",
-  "/assessment/instances",
+  // #877 — the member's assessment-session listing, a sibling of `/dashboard/relationships`. It
+  // replaced `/assessment/instances`, which is now a 308 here (`next.config.mjs`); the session's
+  // own page stays in `DYNAMIC_ROUTES` below.
+  "/assessments",
   "/battle",
   "/categories",
   "/chat",
@@ -72,9 +85,11 @@ const STATIC_ROUTES = [
   "/privacy",
   "/quiz-discussions",
   "/register",
-  // The public Relationship Types catalogue — the header's `Templates` row and the front page
-  // band's one call to action. The taxonomy, not the templates: it used to own `/templates`, and
-  // #794 moved it here so the template noun means the template records.
+  // The public catalogue — the header's `Templates` row, the footer's catalogue link and every
+  // "start with a template" action. Since #905 the catalogue answers here; `/relationship-types`
+  // is the retained #889 variation and the namespace a type's own page lives in, and it used to
+  // own `/templates` (#794) before that.
+  "/relationship-templates",
   "/relationship-types",
   "/reset/complete",
   "/search",
@@ -92,6 +107,9 @@ const STATIC_ROUTES = [
 
 /** Routes with `[param]` segments, as Next spells them. */
 const DYNAMIC_ROUTES = [
+  // #892 — one document, a catch-all because the tree nests (`docs/wiki/modules/app.md` is three
+  // segments). Filed beside the other `[id]` entries and matched by `walkRoutes` exactly as spelled.
+  "/admin/docs/[...slug]",
   "/admin/console/relationships/[id]",
   "/admin/console/templates/[id]",
   // #503 — one relationship's repair screen, a child of the registry route above it.
@@ -178,8 +196,10 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/help", title: "Help" },
   { path: "/pricing", title: "Pricing Plan" },
   // The public catalogue. Indexable because it is the page a reader looking for a relationship
-  // type is actually looking for; the route is in `(marketing)` and needs no session.
-  { path: "/relationship-types", title: "Relationship Templates" },
+  // type is actually looking for; the route is in `(marketing)` and needs no session. The retained
+  // `/relationship-types` variation is deliberately **not** listed: two index entries with one
+  // title is a search result nobody can choose between.
+  { path: "/relationship-templates", title: "Relationship Templates" },
 ];
 
 export const routeManifest: RouteManifest = zRouteManifest.parse({

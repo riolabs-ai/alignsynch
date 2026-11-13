@@ -101,7 +101,7 @@ export function AdminUsersList() {
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-4xl space-y-4 p-4 sm:p-8">
+      <div className="space-y-4">
         <LoadingState rows={3} />
       </div>
     );
@@ -110,7 +110,7 @@ export function AdminUsersList() {
   const groups = adminUserGroups(accounts);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8" data-admin-users="true">
+    <div className="space-y-6" data-admin-users="true">
       <SectionIntro
         title="Users"
         subtitle={`${accounts.length} accounts: ${groups.seats.length} seats and ${groups.members.length} members. Roles and last sign-in come from the store — no addresses are rendered.`}

@@ -104,19 +104,38 @@ export interface BillingPlan {
 export const billingPlans: readonly BillingPlan[] = [
   {
     id: "free",
+    // The **name** stays "Free": it is the tier's identity in the `billing_plan` mirror that
+    // `scripts/db-seed.mjs` writes and `db:verify` (V13) compares back, and every refusal sentence
+    // says it ("The Free plan includes 1 active assessment"). Renaming it would need a production
+    // re-seed to avoid V13 drift, for a label. The card says what it is in its description and its
+    // limitations, which is where a reader looks.
     name: "Free",
-    description: "For one relationship at a time",
+    // #848 — this card is the **trial**, not a durable tier. The seven days start when the
+    // invitation is sent (`lib/billing/publish-trial.ts`, measured from `relationship.published_at`),
+    // so an account that takes a month to write its first relationship still gets the whole week.
+    // The row stays zero-price and `checkout: false` — the trial is a `trialing` subscription the
+    // publish writes at plan `basic`, and this row must never sell anything (`billing-plans.ts`'s
+    // own invariants enforce that).
+    description: "One relationship free for seven days, starting when you send the invitation",
     monthlyCents: 0,
     yearlyCents: 0,
     features: [
-      "One active relationship, start to finish",
-      "Basic Mode: how it feels to each side, and how each wishes it to be",
+      "One active relationship, start to finish — for 7 days from the send",
+      // #835 — the trial is the Advanced entitlement. The publish grants the entry paid tier for
+      // the seven days, and that tier plays both modes, so the Free card sells both. The line used
+      // to say "Basic Mode" alone, which described a gate this build no longer runs.
+      "Basic Mode and Advanced Mode — both for those seven days",
       "Blind answers — neither party sees the other's until both have answered",
       "The report, one line per Gap",
       "Invite the other party by link",
     ],
-    limitations: ["One active relationship at a time", "Advanced Mode needs a paid plan"],
-    cta: { label: "Start free", href: "/register" },
+    limitations: [
+      "Seven days from the invitation, then a paid plan to open the Gap",
+      // #835 — was "Advanced Mode needs a paid plan". True of day eight, false of the trial, and
+      // the card is the trial: the publish hands over the tier that plays Advanced Mode.
+      "Advanced Mode is part of the same seven days; after them, a paid plan to keep it",
+    ],
+    cta: { label: "Start your 7 days", href: "/register" },
     popular: false,
     checkout: false,
   },

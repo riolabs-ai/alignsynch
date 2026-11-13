@@ -1,39 +1,51 @@
 "use client";
 
-// template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the invite stage's left column is a five-panel walk — plan, account, method, confirmation, done — so the pay decision happens in this stage instead of on a pricing page)
+// template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the invite stage's left column is a three-step walk — join a plan, save a card, thank you — so the money decision happens in this stage instead of on a pricing page, and the stage's send waits for it)
 
 /**
- * `InviteWalk` — the payment decision, walked **in place** on stage 5 (#771, moved by #825).
+ * `InviteWalk` — the payment walk on stage 5 (#771, three steps since #911).
  *
- * **Why this is a client component of its own.** The walk is one panel at a time, chosen by state;
- * stage 5's other column is server markup, so a client boundary here is what lets the state live
- * without turning the whole stage client-side. It used to also own the stage's foot — the advance
- * read "Create relationship and send invite" until the walk finished and "Complete and Connect"
- * after — and that coupling is gone with v9: the send is stage 5's own act and its label does not
- * depend on which panel is open, so the foot belongs to the stage, not to the walk.
+ * **Three steps, and the artifact draws them in this order.** The approved reference is
+ * `docs/review/artifacts/prototype-relationship-lifecycle-v9.html`, whose Invite screen puts the pay
+ * flow in the left column (`payFlowCard()`) and the send in the right one:
  *
- * **Nothing here charges, and nothing here blocks.** The owner's rule is a soft prompt at the
- * invite and a hard gate at publish: choosing a plan commits nothing, the walk's method step defers
- * the capture to publish, and the send goes through either way.
+ *   plan    Join a membership plan. The two things the money buys are named here — the plan joined
+ *           and the relationship activated — because a price without its purpose is what makes a
+ *           checkout feel like a toll.
+ *   card    Stripe's card fields, mounted **in this panel** from
+ *           `components/billing/stripe-frame.tsx`. Since #912 this walk is that module's **only**
+ *           caller — the dashboard's capture dialog is deleted, so the modal is the one way to pay
+ *           and there is no second capture surface and no second set of card fields.
+ *   thanks  A thank-you with **no button**. The walk ends here, and the step's one sentence says
+ *           where the reader goes next: the send control beside it, or the draft.
  *
- * **The account panel is a confirmation, not a form** (#825). The account is stage 4, so by the time
- * this stage draws, the person has one; `account` is the sentence that says so, passed in by the
- * page. A sign-up form here would be the second implementation of sign-in the spec forbids.
+ * **Nothing here charges.** Saving a card puts a method on file and starts the 7-day trial; the fee
+ * is taken later, by the product's own completion path. That is why the card step says so twice and
+ * why the draft path can be taken at any point with nothing charged.
+ *
+ * **The walk reports up, it does not own the gate.** `onPaid` tells the stage the card is on file;
+ * the stage is what enables the send and what posts it, so a walk that is drawn but not finished can
+ * never make the send fire (#911's "doomed if"). The server refuses an unpaid send on its own, in
+ * `sendDraftInvitation()` — the UI gate is the courtesy, not the enforcement.
+ *
+ * **It moves focus like a step, not like a page.** `Next` puts focus on the new step's first
+ * control, and the thank-you's heading takes focus so a screen reader is told the walk is over. The
+ * first render is deliberately silent: a stage that grabs focus on load steals it from the dialog's
+ * own close control.
  *
  * Every reader-visible word is `data/pages/assessment-create.ts` (`plans`, `payment-flow`) through
- * `sectionOf`/`itemLabel` — E23 counts what a component writes, and this one writes none.
+ * `sectionOf`/`itemLabel`/`fillLabel` — E23 counts what a component writes, and this one writes no
+ * sentence.
  */
-import { useRef, useState } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PageCopy } from "@/content/pages";
+import type { CaptureOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { MODE_LABELS, SETTING_LABELS } from "@/content/assessment";
-import { personName } from "@/lib/flow/names";
-import type { CreateDraft } from "@/lib/flow/create-draft";
 import { PlanChoices, type PlanId } from "./plan-choices";
+import { StripeFrame } from "@/components/billing/stripe-frame";
 
-/** The walk, in the order the artifact draws it. `plan` is the first panel, `done` the last. */
-export const PAY_FLOW_STEPS = ["plan", "account", "method", "confirm", "done"] as const;
+/** The walk, in the order the artifact draws it. `plan` is first, `thanks` is the end. */
+export const PAY_FLOW_STEPS = ["plan", "card", "thanks"] as const;
 
 export type PayFlowStep = (typeof PAY_FLOW_STEPS)[number];
 
@@ -43,31 +55,80 @@ const HEADING = "text-lg font-semibold text-gray-900 dark:text-gray-100";
 const MUTED = "text-sm text-gray-600 dark:text-gray-300";
 const SMALL = "text-xs text-gray-600 dark:text-gray-300";
 const PRIMARY =
-  "inline-flex h-11 w-full items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-white hover:brightness-95";
+  "inline-flex h-11 w-full items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 disabled:hover:brightness-100 dark:disabled:bg-gray-800 dark:disabled:text-gray-500";
 const GHOST =
   "inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800";
 
+/** One answer from the server, either presentation. Never throws: a refusal is a drawn state. */
+export type CaptureHandlers = {
+  readonly onCapture: (payload: {
+    relationshipId?: string;
+    presentation?: string;
+  }) => Promise<CaptureOutcome>;
+  readonly onResolve: (payload: {
+    relationshipId?: string;
+    captureSessionId?: string;
+  }) => Promise<CaptureOutcome>;
+};
+
 export function InviteWalk({
   copy,
-  draft,
-  account,
+  relationshipId,
+  paid,
+  onPaid,
+  capture,
+  planIncluded,
   initialStep,
 }: {
   copy: PageCopy;
-  /** The three stages' answers, so the confirmation can recap what is being sent. */
-  draft: CreateDraft;
-  /** The signed-in confirmation for the walk's account panel (#825). */
-  account: ReactNode;
-  /** Where the walk starts. Only a test passes this: the page always starts at the plan. */
+  /** The relationship stage 4 wrote. The card is put on **it**, so the send's gate is one fact. */
+  relationshipId: string;
+  /** The card is already on file — the returning state (`paymentArmed`), or the walk just finished. */
+  paid: boolean;
+  /** The card was saved. The stage owns the gate; this only reports. */
+  onPaid: () => void;
+  /** The server's capture actions. Absent in a render-only test, where nothing can be pressed. */
+  capture?: CaptureHandlers;
+  /**
+   * What the account already pays for (#870), when the page measured it. An entitled account gets a
+   * **summary** of its tier instead of the radio group — the walk must not ask somebody on a paid
+   * tier to join a plan they hold. Absent means "not measured", and the panel is the choice.
+   */
+  planIncluded?: { readonly name: string; readonly entitled: boolean };
+  /** Where the walk starts. Only a test passes this: the stage always starts at the plan. */
   initialStep?: PayFlowStep;
 }) {
   const plans = sectionOf(copy, "plans");
   const flow = sectionOf(copy, "payment-flow");
-  const review = sectionOf(copy, "review");
 
-  const [step, setStep] = useState<PayFlowStep>(initialStep ?? "plan");
+  const [step, setStep] = useState<PayFlowStep>(initialStep ?? (paid ? "thanks" : "plan"));
   const [plan, setPlan] = useState<PlanId | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [publishableKey, setPublishableKey] = useState<string | null>(null);
+  const [captureSessionId, setCaptureSessionId] = useState<string | null>(null);
+  const [hostedUrl, setHostedUrl] = useState<string | null>(null);
+
   const plansRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const firstRender = useRef(true);
+
+  /**
+   * The walk's Next moves the *reader* as well as the panel: focus lands on the new step's first
+   * control. The first render is skipped on purpose — a stage that grabs focus on load takes it off
+   * the dialog's close control, which is where Radix puts it.
+   */
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const target = panelRef.current?.querySelector<HTMLElement>(
+      "[data-panel-first], input[name=plan]",
+    );
+    target?.focus();
+  }, [step]);
 
   /** The plan chosen in the radio group, read at the moment somebody continues. */
   function chosenPlan(): PlanId | null {
@@ -75,150 +136,224 @@ export function InviteWalk({
     return (checked?.value as PlanId | undefined) ?? null;
   }
 
-  /** The confirmation's recap: the plan's own name from the fixture, or the fixture's dash. */
-  function planLabel(): string {
-    if (plan === null) return itemLabel(review, "none");
-    return `${itemLabel(plans, plan)} · ${itemLabel(plans, `${plan}-price`)}${itemLabel(plans, "per")}`;
+  const planChosen = plan !== null || (planIncluded !== undefined && planIncluded.entitled);
+
+  /** The plan's own words from the fixture, or the tier the account already holds (#870). */
+  function planLabel(picked: PlanId | null): string {
+    if (picked === null) return planIncluded?.name ?? itemLabel(shortCopy(copy), "none");
+    return `${itemLabel(plans, picked)} · ${itemLabel(plans, `${picked}-price`)}${itemLabel(plans, "per")}`;
   }
 
-  const panels: Record<PayFlowStep, ReactNode> = {
-    plan: (
-      <>
-        <p className={MUTED}>{sectionBody(plans)}</p>
-        <div ref={plansRef}>
-          <PlanChoices copy={copy} initial={plan ?? undefined} />
+  /**
+   * Start a capture. Three answers, and every one of them is drawn:
+   *
+   *   embedded  the frame mounts in this panel (the Stripe adapter with keys)
+   *   inline    the adapter saved the card inside the request (the mock, and any offline one), so
+   *             there is nothing to mount and the walk is done
+   *   hosted    the adapter answered a page — the walk says so and links to it rather than
+   *             pretending it captured something
+   */
+  async function startCard(): Promise<void> {
+    setRefusal(null);
+    setHostedUrl(null);
+    if (capture === undefined) {
+      setRefusal(itemLabel(flow, "card-refused"));
+      return;
+    }
+    setStarting(true);
+    try {
+      const answer = await capture.onCapture({ relationshipId, presentation: "embedded" });
+      if (!answer.ok) {
+        setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
+        return;
+      }
+      if (answer.clientSecret !== undefined && answer.clientSecret !== null) {
+        setClientSecret(answer.clientSecret);
+        setPublishableKey(answer.publishableKey ?? null);
+        setCaptureSessionId(answer.captureSessionId ?? null);
+        return;
+      }
+      if (answer.captured === true) {
+        onPaid();
+        setStep("thanks");
+        return;
+      }
+      setHostedUrl(answer.url ?? null);
+      if (answer.url === null || answer.url === "") setRefusal(itemLabel(flow, "card-refused"));
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  /** The frame reported the card was saved: resolve it by the session the server minted. */
+  async function completeCard(): Promise<void> {
+    if (capture === undefined || captureSessionId === null) {
+      setRefusal(itemLabel(flow, "card-refused"));
+      return;
+    }
+    const answer = await capture.onResolve({ relationshipId, captureSessionId });
+    if (!answer.ok) {
+      setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
+      return;
+    }
+    onPaid();
+    setStep("thanks");
+  }
+
+  const planPanel = (
+    <>
+      <p className={MUTED}>{sectionBody(plans)}</p>
+      {/*
+        A measured, already-paying account gets a **summary**, not the radio group (#870): the walk
+        would otherwise sell a tier the person holds, and the thank-you would recap a plan nobody
+        picked. The words are the fixture's; the tier name is the entitlement's own.
+      */}
+      {planIncluded !== undefined && planIncluded.entitled ? (
+        <div data-pay-plan-included="true">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {itemLabel(plans, "included-plan-label")}
+          </p>
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">{planIncluded.name}</p>
+          <p className={`mt-2 ${SMALL}`}>
+            {fillLabel(itemLabel(plans, "included"), { plan: planIncluded.name })}
+          </p>
         </div>
-        <p className={SMALL}>{itemLabel(plans, "trial")}</p>
-        <p className={SMALL}>{itemLabel(plans, "add-method-note")}</p>
+      ) : (
+        <div ref={plansRef}>
+          <PlanChoices copy={copy} initial={plan ?? undefined} onSelect={setPlan} />
+        </div>
+      )}
+
+      {/* What the money buys, named: the plan joined, and the relationship it activates. */}
+      <div data-pay-buys="true" className="space-y-1">
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {itemLabel(plans, "buys-heading")}
+        </p>
+        <ul className="list-disc space-y-0.5 pl-5">
+          <li className={SMALL}>
+            {fillLabel(itemLabel(plans, "buys-join"), { plan: planLabel(plan) })}
+          </li>
+          <li className={SMALL}>{itemLabel(plans, "buys-activate")}</li>
+        </ul>
+      </div>
+
+      <p className={SMALL}>{itemLabel(plans, "trial")}</p>
+
+      <button
+        type="button"
+        data-pay-action="card"
+        data-panel-first={planIncluded !== undefined && planIncluded.entitled ? "true" : undefined}
+        className={PRIMARY}
+        disabled={!planChosen}
+        onClick={() => {
+          setPlan(chosenPlan());
+          setStep("card");
+        }}
+      >
+        {itemLabel(flow, "continue")}
+      </button>
+    </>
+  );
+
+  const cardPanel = (
+    <>
+      <p className={MUTED}>{itemLabel(flow, "card-body")}</p>
+      <p className={SMALL}>{itemLabel(flow, "card-charged")}</p>
+
+      {clientSecret !== null && publishableKey !== null ? (
+        <div
+          className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700"
+          data-capture-frame="embedded"
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
+              {itemLabel(flow, "card-secure")}
+            </span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              {itemLabel(flow, "card-test-mode")}
+            </span>
+          </div>
+          <StripeFrame
+            clientSecret={clientSecret}
+            publishableKey={publishableKey}
+            placeholder={itemLabel(flow, "card-frame")}
+            onComplete={() => void completeCard()}
+            onError={() => setRefusal(itemLabel(flow, "card-refused"))}
+          />
+          <p className="px-3 pb-2 text-xs text-gray-600 dark:text-gray-300">
+            {itemLabel(flow, "card-frame-note")}
+          </p>
+        </div>
+      ) : (
         <button
           type="button"
-          data-pay-action="account"
+          data-pay-action="capture"
+          data-panel-first="true"
           className={PRIMARY}
-          onClick={() => {
-            setPlan(chosenPlan());
-            setStep("account");
-          }}
+          disabled={starting}
+          onClick={() => void startCard()}
         >
-          {itemLabel(flow, "continue")}
+          {starting ? itemLabel(flow, "card-starting") : itemLabel(flow, "card-start")}
         </button>
-      </>
-    ),
-    account: (
-      <>
-        {account}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            data-pay-action="plan"
-            className={GHOST}
-            onClick={() => setStep("plan")}
+      )}
+
+      {hostedUrl === null ? null : (
+        <div className="space-y-1" data-pay-hosted="true">
+          <p className={SMALL}>{itemLabel(flow, "card-hosted")}</p>
+          <a
+            href={hostedUrl}
+            className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
           >
-            {itemLabel(flow, "back")}
-          </button>
-          <button
-            type="button"
-            data-pay-action="method"
-            className={PRIMARY}
-            onClick={() => setStep("method")}
-          >
-            {itemLabel(flow, "continue")}
-          </button>
+            {itemLabel(flow, "card-hosted-link")}
+          </a>
         </div>
-      </>
-    ),
-    method: (
-      <>
-        <p className={SMALL}>{itemLabel(flow, "method-note")}</p>
-        <p className={SMALL}>{itemLabel(flow, "method-defer-note")}</p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            data-pay-action="account"
-            className={GHOST}
-            onClick={() => setStep("account")}
-          >
-            {itemLabel(flow, "back")}
-          </button>
-          <button
-            type="button"
-            data-pay-action="confirm"
-            className={PRIMARY}
-            onClick={() => setStep("confirm")}
-          >
-            {itemLabel(flow, "method-defer")}
-          </button>
-        </div>
-      </>
-    ),
-    confirm: (
-      <>
-        <dl className="space-y-1.5 text-sm">
-          <div className="flex justify-between gap-3" data-pay-recap="plan">
-            <dt className="text-gray-500 dark:text-gray-400">{itemLabel(flow, "confirm-plan")}</dt>
-            <dd className="text-right text-gray-900 dark:text-gray-100">{planLabel()}</dd>
-          </div>
-          <div className="flex justify-between gap-3" data-pay-recap="method">
-            <dt className="text-gray-500 dark:text-gray-400">
-              {itemLabel(flow, "confirm-method")}
-            </dt>
-            <dd className="text-right text-gray-900 dark:text-gray-100">
-              {itemLabel(flow, "confirm-method-draft")}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-3" data-pay-recap="counterparty">
-            <dt className="text-gray-500 dark:text-gray-400">{itemLabel(flow, "confirm-to")}</dt>
-            <dd className="text-right text-gray-900 dark:text-gray-100">
-              {fillLabel(itemLabel(flow, "confirm-to-value"), {
-                name: personName(draft.counterpartyFirst, draft.counterpartyLast),
-                email: draft.email,
-              })}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-3" data-pay-recap="mode">
-            <dt className="text-gray-500 dark:text-gray-400">{itemLabel(flow, "confirm-mode")}</dt>
-            <dd className="text-right text-gray-900 dark:text-gray-100">
-              {MODE_LABELS[draft.mode as keyof typeof MODE_LABELS] ?? itemLabel(review, "none")}
-              {" · "}
-              {SETTING_LABELS[draft.alignmentSetting as keyof typeof SETTING_LABELS] ??
-                itemLabel(review, "none")}
-            </dd>
-          </div>
-        </dl>
-        <p className={SMALL}>{itemLabel(flow, "confirm-body")}</p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            data-pay-action="method"
-            className={GHOST}
-            onClick={() => setStep("method")}
-          >
-            {itemLabel(flow, "change-plan")}
-          </button>
-          <button
-            type="button"
-            data-pay-action="done"
-            className={PRIMARY}
-            onClick={() => setStep("done")}
-          >
-            {itemLabel(flow, "confirm-cta")}
-          </button>
-        </div>
-      </>
-    ),
-    done: (
-      <>
-        <p className={SMALL}>{itemLabel(flow, "done-body")}</p>
-        <p className={SMALL}>{planLabel()}</p>
-      </>
-    ),
+      )}
+
+      {refusal === null ? null : (
+        <p data-pay-refusal="true" role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {refusal}
+        </p>
+      )}
+
+      <button
+        type="button"
+        data-pay-action="plan"
+        className={GHOST}
+        onClick={() => {
+          setRefusal(null);
+          setHostedUrl(null);
+          setStep("plan");
+        }}
+      >
+        {itemLabel(flow, "back")}
+      </button>
+    </>
+  );
+
+  const thanksPanel = (
+    <>
+      <p className={MUTED}>{itemLabel(flow, "thanks-body")}</p>
+      {/* No button: the walk ends here, and this is the sentence that says where to go. */}
+      <p className={SMALL} data-pay-thanks-next="true">
+        {itemLabel(flow, "thanks-next")}
+      </p>
+      <p className={SMALL}>{planLabel(plan)}</p>
+    </>
+  );
+
+  const panels: Record<PayFlowStep, React.ReactNode> = {
+    plan: planPanel,
+    card: cardPanel,
+    thanks: thanksPanel,
   };
 
   const headings: Record<PayFlowStep, string> = {
-    plan: plans.heading ?? itemLabel(flow, "confirm-plan"),
-    account: itemLabel(flow, "account-heading"),
-    method: itemLabel(flow, "method-heading"),
-    confirm: itemLabel(flow, "confirm-heading"),
-    done: itemLabel(flow, "done-heading"),
+    // The step's name is the plans section's own heading ("Join a membership plan"); the section
+    // heading behind the whole walk is the fallback, because both are fixture words and neither can
+    // be typed here (E23).
+    plan: plans.heading ?? flow.heading ?? "",
+    card: itemLabel(flow, "card-heading"),
+    thanks: itemLabel(flow, "thanks-heading"),
   };
 
   return (
@@ -229,16 +364,26 @@ export function InviteWalk({
       className={`${CARD} pay-flow-panel`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="create-pay-heading" className={HEADING}>
+        <h2
+          id="create-pay-heading"
+          className={HEADING}
+          tabIndex={step === "thanks" ? -1 : undefined}
+          {...(step === "thanks" ? { "data-panel-first": "true" } : {})}
+        >
           {headings[step]}
         </h2>
-        {step === "done" ? null : (
+        {step === "thanks" ? null : (
           <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
             {itemLabel(plans, "trial-short")}
           </span>
         )}
       </div>
-      {panels[step]}
+      <div ref={panelRef}>{panels[step]}</div>
     </section>
   );
+}
+
+/** The fixture's dash, for a plan nobody has chosen yet. `review.none` is the one home for "—". */
+function shortCopy(copy: PageCopy) {
+  return sectionOf(copy, "review");
 }

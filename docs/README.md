@@ -22,21 +22,21 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**108 documents in 9 sections.** Every page carries the same nav block, generated
+**136 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
 ## Contents
 
-- [Start here](#start-here) — 4 documents
+- [Start here](#start-here) — 6 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 19 documents
-- [Operations](#operations) — 8 documents
+- [Product](#product) — 36 documents
+- [Operations](#operations) — 10 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 18 documents
-- [Records & QA](#records-qa) — 18 documents
+- [Release notes](#release-notes) — 20 documents
+- [Records & QA](#records-qa) — 23 documents
 
 ## Start here
 
@@ -45,6 +45,8 @@ Read these before your first command.
 - [`ENV-SPEC.md`](ENV-SPEC.md) — **Environment & ops spec** — What is installed, what does the team own, and what did the P1–P4 gates demand?
 - [`ITERATION.md`](ITERATION.md) — **Iteration rhythm** — Which loop do I run for this edit — `check:fast` or the full gate?
 - [`REPO-LAYERS.md`](REPO-LAYERS.md) — **Repo layers** — Why does the gate cost what my change costs, and which lane am I in?
+- [`WORKFLOW.md`](WORKFLOW.md) — **Request → release** — How does an annotation become a versioned release, and how deep is this request?
+- [`templates/RELEASE-TRAIN.md`](templates/RELEASE-TRAIN.md) — **Release-train card template** — What does a release-train card carry — children, sequence, cutoff, proof?
 - [`GATE.md`](GATE.md) — **The gate** — What does `scripts/verify.sh` run, in what order, and what are its current numbers?
 
 ## Architecture
@@ -106,6 +108,23 @@ What the product promises, and the specifications behind it.
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
 - [`specs/ux-stages.md`](specs/ux-stages.md) — **Stage display** — How is each stage shown, and who acts next?
 - [`specs/ux-reference-patterns.md`](specs/ux-reference-patterns.md) — **Reference UX patterns** — What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?
+- [`specs/spec-as2-style-home-redesign/README.md`](specs/spec-as2-style-home-redesign/README.md) — **AS2 home redesign (handoff)** — What is in the approved home-redesign package, and how do I preview it?
+- [`specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md`](specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md) — **AS2 home redesign — implementation brief** — Which existing components does the redesign reuse, and what must not change?
+- [`specs/spec-as2-style-home-redesign/ASSET-SOURCES.md`](specs/spec-as2-style-home-redesign/ASSET-SOURCES.md) — **AS2 redesign — asset sources and credits** — Where did each photograph come from, who took it, and under which licence?
+- [`specs/spec-design-page-rel-templates-v2/README.md`](specs/spec-design-page-rel-templates-v2/README.md) — **V2 home and brand package (handoff)** — What is in the V2 package, which files ship with it, and what is it authoritative for?
+- [`specs/spec-design-page-rel-templates-v2/home/README.md`](specs/spec-design-page-rel-templates-v2/home/README.md) — **V2 home page (handoff)** — How do I preview the V2 home page, and which files make it up?
+- [`specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md`](specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md) — **V2 home page — implementation brief** — Which components, tokens and fixtures does the V2 home page reuse, and what must not change?
+- [`specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md`](specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md) — **V2 home page — asset sources and credits** — Where did each V2 home-page photograph come from, and under which licence?
+- [`specs/spec-design-page-rel-templates-v2/brand-profile/README.md`](specs/spec-design-page-rel-templates-v2/brand-profile/README.md) — **V2 brand and audience profile (handoff)** — How do I open the private brand profile, and which sections does it carry?
+- [`specs/spec-design-page-rel-templates-v2/banner/README.md`](specs/spec-design-page-rel-templates-v2/banner/README.md) — **Admin notice banner (V2 package)** — Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?
+- [`specs/spec-design-page-rel-templates-v2/admin-brand/README.md`](specs/spec-design-page-rel-templates-v2/admin-brand/README.md) — **/admin/brand (V2 package)** — Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?
+- [`specs/spec-as2-style-templates-redesign/README.md`](specs/spec-as2-style-templates-redesign/README.md) — **AS2 templates redesign (handoff)** — What is in the approved Templates-catalogue package, and how do I preview it?
+- [`specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md`](specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md) — **AS2 templates redesign — implementation brief** — Which existing components does the catalogue rewrite reuse, and what must not change?
+- [`specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md`](specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md) — **AS2 catalogue UI system** — What are the reusable realm tints, icon map, card anatomy and detail order?
+- [`specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md`](specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md) — **AS2 templates redesign — source notes** — Which live routes, fixtures and assets did the approved catalogue read from?
+- [`qa-as2-home/README.md`](qa-as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
+- [`qa-templates-redesign/README.md`](qa-templates-redesign/README.md) — **AS2 templates catalogue visual QA** — Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?
+- [`qa-home-comments/README.md`](qa-home-comments/README.md) — **Home review comments — the logo** — Is the public header's brand lockup a link home, and what did the page look like before it was?
 
 ## Operations
 
@@ -114,9 +133,11 @@ Deploying, releasing, demoing and running the fleet.
 - [`DEPLOYING.md`](DEPLOYING.md) — **Deploying** — How does this repository reach `alignsynch.com`?
 - [`RELEASING.md`](RELEASING.md) — **Releasing** — Which four artefacts must agree for a release, and how is the tag cut?
 - [`ORCHESTRATION.md`](ORCHESTRATION.md) — **Orchestration rules** — How does the orchestrator behave — decisions, blocking, re-carding?
+- [`QA-LINKS.md`](QA-LINKS.md) — **QA links** — Which local routes do I click to QA this change range, and what will each one cost me?
 - [`BRANCH-TRIAGE.md`](BRANCH-TRIAGE.md) — **Branch triage** — Which of the non-main heads is safe, and on what evidence?
 - [`DEMO.md`](DEMO.md) — **The demo** — How is the demo branch built, reset and bundled?
 - [`DEMO-AUTH.md`](DEMO-AUTH.md) — **Demo auth** — How do the demo roles and the PIN gate work?
+- [`GROWTH-MODEL.md`](GROWTH-MODEL.md) — **The growth model** — Where does the $3M demonstration business come from, and how is it proven?
 - [`RESEND-INBOUND.md`](RESEND-INBOUND.md) — **Resend inbound** — How do bounces, complaints and suppression marks reach us?
 - [`P3-EXIT.md`](P3-EXIT.md) — **P3 exit record** — Did bulk generation meet its gate, and with what numbers?
 
@@ -150,6 +171,8 @@ The five Mermaid charts, one home each.
 One page per release, a view of `CHANGELOG.md`.
 
 - [`changelog/README.md`](changelog/README.md) — **Release blog** — What shipped in which release, and where does this page come from?
+- [`changelog/v1-17-0.md`](changelog/v1-17-0.md) — **v1.17.0** — Which release made stage 5 a three-step payment walk, and what does it defer?
+- [`changelog/v1-16-0.md`](changelog/v1-16-0.md) — **v1.16.0** — Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?
 - [`changelog/v1-0-0.md`](changelog/v1-0-0.md) — **v1.0.0** — The release where the webapp stopped being a mock.
 - [`changelog/v1-1-0-rc1.md`](changelog/v1-1-0-rc1.md) — **v1.1.0-rc1** — The release candidate that made the template a product.
 - [`changelog/v1-2-0.md`](changelog/v1-2-0.md) — **v1.2.0** — The release where five surfaces read the database.
@@ -178,15 +201,20 @@ What was measured, on which tree, and what the migration changed.
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
+- [`qa-surface-sweep-913/README.md`](qa-surface-sweep-913/README.md) — **Surface sweep, #913** — Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
+- [`qa-rail-handle/README.md`](qa-rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?
 - [`qa-brand-lockup/README.md`](qa-brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
+- [`qa-comments-mockup/README.md`](qa-comments-mockup/README.md) — **Comments mockup, both placements** — Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?
 - [`qa-contact-land/README.md`](qa-contact-land/README.md) — **Contact landing** — What do the contact pages look like?
 - [`qa-help-two-column/README.md`](qa-help-two-column/README.md) — **Help two-column** — Did `/help` get its two-column layout?
 - [`qa-home-polish/README.md`](qa-home-polish/README.md) — **Home hero polish** — Were the six hero defects fixed, before and after?
 - [`qa-lockup-2rem/README.md`](qa-lockup-2rem/README.md) — **Lockup 2rem** — Is the lockup 2rem in every expanded-header viewport?
 - [`qa-noun-crud/README.md`](qa-noun-crud/README.md) — **Templates and relationships after creation** — Can a template be revised and retired, and does a bound relationship keep the version it was answered under?
 - [`qa-recharts-3/README.md`](qa-recharts-3/README.md) — **recharts 3** — Do the pie labels still render after the recharts 3 bump?
+- [`qa-rel-detail-edit/README.md`](qa-rel-detail-edit/README.md) — **Relationship detail — the edit form is asked for** — Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?
+- [`qa-stage5/README.md`](qa-stage5/README.md) — **Stage 5, both states** — Does stage 5 offer the payment walk and send/draft instead of a band with no action?
 - [`qa-swiper-12/README.md`](qa-swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa-template-catalogue/README.md`](qa-template-catalogue/README.md) — **Template catalogue** — What do the catalogue pages look like from the AlignSynch build?
 - [`qa-v1x-ui-cohort/README.md`](qa-v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?

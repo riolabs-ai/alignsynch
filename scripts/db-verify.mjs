@@ -13,7 +13,13 @@
  *   V3  every instance's `template_record_id` resolves to a template record
  *   V4  an instance's copy holds the Aspects of the **version its relationship is bound to**, in
  *       that version's order (E31, #502b) — not the template's working copy, which an edit may have
- *       moved and which no relationship reads
+ *       moved and which no relationship reads. **Two copies, two answers (#699):** when
+ *       `session.aspects_authored_at` is NULL the copy is compared to the version id for id and in
+ *       order; when it is set, the creator wrote the list at stage 3 (added, removed or reordered an
+ *       Aspect) and the copy is validated as a list of Aspects instead — at least one, unique ids,
+ *       dense positions, every row through `zAspect` (`lib/db/rows.ts::authoredAspectProblems`).
+ *       The equality rule is not weakened for a copy: it is asked of exactly the copies that still
+ *       are one.
  *   V5  exactly one initiator and one counterparty per instance — a **flow** instance may
  *       have no counterparty until its invitation is claimed (#146), and must have one after
  *   V6  every party answers every Aspect exactly once, and think comes with guess — checked
@@ -50,6 +56,9 @@
  *       nullable and carry no DEFAULT — each is an absence until somebody writes it — and a seat
  *       carrying `submitted_at` has answered every Aspect of its instance, because "submitted"
  *       on a sheet with a blank line is the one state a support read would draw as done.
+ *       `session.aspects_authored_at` (#699) is checked in the same list for the same reason: it is
+ *       the copy's provenance, absent until a create authors one, so a NOT NULL or a DEFAULT would
+ *       make "copied from the version" indistinguishable from "written by the creator".
  *   V16 no table and no column in `public` is named like the old noun `instance` (#340): the
  *       split renamed the three objects that carried it (see `0013_relationship_sessions.sql`),
  *       and this is the standing guard, the same shape as V2's Gap guard, so a later migration
@@ -514,6 +523,7 @@ async function main() {
     assessmentInstanceFromRows,
     assessmentTemplateFromPayload,
     assessmentTemplateFromRows,
+    authoredAspectProblems,
     copyDriftProblems,
     itemIdsOf,
   } = await import("@/lib/db/rows.ts");
@@ -687,18 +697,22 @@ async function main() {
     }
     const hasSettingColumn = settingColumn.length > 0;
 
-    // V15 — the console's three columns (#289 follow-up). Checked beside V11/V12 and for the same
-    // reason: the instance read selects `ai.name` and the party read carries `submitted_at`, so a
-    // database migrated before 0011 fails the read instead of this check naming the fix.
+    // V15 — the console's three columns (#289 follow-up), and the copy's provenance instant
+    // (#699). Checked beside V11/V12 and for the same reason: the instance read selects `ai.name`
+    // and the party read carries `submitted_at`, so a database migrated before 0011 fails the read
+    // instead of this check naming the fix; V4 reads `session.aspects_authored_at`, so a database
+    // migrated before 0039 would report every authored copy as drift.
     //
     // Nullability and the *absence* of a DEFAULT are part of the claim, not decoration: every one
-    // of these three is an absence until a person writes it (no author = the platform's template,
-    // no name = the template's title, no instant = nobody recorded when), so a NOT NULL or a
-    // defaulted column would be a backfilled value a reader could not tell from an authored one.
+    // of these four is an absence until a person writes it (no author = the platform's template,
+    // no name = the template's title, no instant = nobody recorded when, no authored instant = the
+    // copy is the version's), so a NOT NULL or a defaulted column would be a backfilled value a
+    // reader could not tell from an authored one.
     const CONSOLE_COLUMNS = [
       { table: "record", column: "author_user_id", type: "text" },
       { table: "session", column: "name", type: "text" },
       { table: "party", column: "submitted_at", type: "timestamp with time zone" },
+      { table: "session", column: "aspects_authored_at", type: "timestamp with time zone" },
     ];
     const { rows: consoleColumns } = await client.query(
       `SELECT table_name, column_name, data_type, is_nullable, column_default
@@ -707,7 +721,8 @@ async function main() {
           AND (table_name, column_name) IN
               (('record', 'author_user_id'),
                ('session', 'name'),
-               ('party', 'submitted_at'))`,
+               ('party', 'submitted_at'),
+               ('session', 'aspects_authored_at'))`,
     );
     const consoleColumnOf = new Map(
       consoleColumns.map((column) => [`${column.table_name}.${column.column_name}`, column]),
@@ -745,6 +760,12 @@ async function main() {
 
     const instances = await listAssessmentInstances();
     let templatesChecked = 0;
+    /**
+     * How many copies authored their own list (#699) — counted so the verdict line proves V4's
+     * second branch was looked at rather than skipped. Zero is the normal answer on a seeded branch:
+     * `db:seed` writes copies, and a copy of a version is exactly what the equality rule covers.
+     */
+    let authoredCopies = 0;
 
     // V12 — the Setting's vocabulary and the fixture parity (#259). The fixture map is
     // `data/assessments.ts` itself, not a list copied into this script: a setting written by
@@ -799,9 +820,17 @@ async function main() {
        * drift — which is exactly the false alarm that made #502a refuse to edit at all. The version
        * is what the page reads (`lib/db/assessments.ts::SCREEN_BY_SLUG_SQL`), so it is what the
        * copy must equal.
+       *
+       * **Unless the copy authored itself (#699).** Stage 3 lets the creator add, remove or reorder
+       * an Aspect; the create then writes that list and stamps `aspects_authored_at`. Comparing an
+       * authored list to the version would report the decision the card exists to allow as drift,
+       * so V4 asks the other question of it: is this a list of Aspects at all — one or more, unique
+       * ids, dense positions, every row through `zAspect`. The equality rule stays exactly as it
+       * was for every copy that is still a copy, which is every row written before this column.
        */
       const { rows: binding } = await client.query(
-        `SELECT rel.template_version_id, tv.template_record_id, tv.payload
+        `SELECT rel.template_version_id, tv.template_record_id, tv.payload,
+                ai.aspects_authored_at
            FROM session ai
            JOIN relationship rel ON rel.id = ai.relationship_id
            LEFT JOIN template_version tv ON tv.id = rel.template_version_id
@@ -819,6 +848,16 @@ async function main() {
           "V23",
           `instance "${listed.slug}" is bound to a version of "${bound.template_record_id}", not of the template it names ("${listed.templateRecordId}")`,
         );
+      } else if (bound.aspects_authored_at !== null && bound.aspects_authored_at !== undefined) {
+        // Authored at create: its own structure is the rule. Counted, so the verdict line proves the
+        // branch was taken rather than assumed.
+        authoredCopies += 1;
+        for (const problem of authoredAspectProblems({
+          instanceId: listed.recordId,
+          items: rows.items,
+        })) {
+          fail("V4", problem);
+        }
       } else {
         try {
           const offered = assessmentTemplateFromPayload(
@@ -1754,7 +1793,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one, no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

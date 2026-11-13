@@ -106,8 +106,13 @@ export default async function TemplateCreateCommitPage({
 
   const jar = await cookies();
   const viewer = await currentUserIfConfigured();
-  const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
+  // #870 — the read comes first so the refusal can name its door: the template's page is addressed
+  // by slug, its editor by `record.id`, and a band without either is the wall this card removes.
   const detail = await readLibraryTemplate(slug, viewer?.userId ?? null);
+  const refusal = createRefusal(firstValue(query.problem), firstValue(query.field), {
+    slug,
+    ...(detail === undefined ? {} : { recordId: detail.template.id }),
+  });
   if (detail === undefined && refusal === null) notFound();
 
   // #794 — the cookie is the record's, the address is the row's slug.
@@ -185,9 +190,6 @@ export default async function TemplateCreateCommitPage({
         </p>
         <p className="text-sm text-gray-600 dark:text-gray-300">
           {itemLabel(section, "signed-in-body")}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {itemLabel(section, "saved-on-device")}
         </p>
       </div>
     );

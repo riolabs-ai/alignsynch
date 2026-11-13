@@ -67,6 +67,7 @@ import type { PageCopy } from "@/content/pages";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
+  RELATIONSHIPS_PATH,
   SAVE_MODE_PATH,
   SAVE_WHO_PATH,
   TEMPLATE_LIBRARY_PATH,
@@ -75,7 +76,7 @@ import {
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
-import { InviteWalk } from "./invite-walk";
+import { type CaptureHandlers } from "./invite-walk";
 import { StageAccount } from "./stage-account";
 import { StageColumn } from "./stage-column";
 import { StageInvite } from "./stage-invite";
@@ -104,25 +105,41 @@ export interface CreateTemplate {
   readonly aspectCount: number;
 }
 
-/** The band a refusal is drawn in, shared by both stages and by the read-nothing one. */
+/**
+ * The band a refusal is drawn in, shared by every stage and by the read-nothing one.
+ *
+ * **It always carries an action (#870).** The rule this component exists to enforce: *no stage
+ * renders a band that has no action and no primary action below it.* Before the card every refusal
+ * code returned `link: null`, and stage 5 — where an unpublished template was refused — drew a
+ * yellow band, the right-hand summary and **nothing else**: no send, no draft, no way out. A refusal
+ * is correct information; a refusal with no handle is a dead end.
+ *
+ * So `link` is what the page named, and when the page named nothing the fallback is the
+ * relationships list — the one destination every refusal can honestly offer, because the person is
+ * always somewhere in the middle of starting a relationship. When a specific door *is* named it is
+ * drawn as the primary act and the list is kept beside it as the way back, so "fix it" and "leave
+ * this" are never confused for one another.
+ */
 function ProblemBand({
   heading,
   sentence,
   link,
+  back,
 }: {
   heading: string | undefined;
   sentence: string | null;
   /**
-   * The door the sentence names, when it names one (#618).
-   *
-   * `relationship-limit` and `mode-not-entitled` both tell a person to change their plan and, until
-   * that card, drew nothing to click. The label comes from the page fixture; the address is
-   * `/pricing` rather than a checkout session, because a checkout is started from the plan card
-   * that sells a specific tier (`components/pricing/plan-checkout-button.tsx`).
+   * The door the sentence names. `relationship-limit` and `mode-not-entitled` point at the plans
+   * page (#618); the template codes point at the template or the library (#870).
    */
   link?: { readonly href: string; readonly label: string } | null;
+  /** The fixture's "back to my relationships" — the fallback door, and the secondary one. */
+  back: { readonly href: string; readonly label: string };
 }) {
   if (sentence === null) return null;
+  // One door, always: the named one when the page named one, the relationships list otherwise.
+  const primary = link ?? back;
+  const secondary = link === undefined || link === null ? null : back;
   return (
     <div
       data-create-problem="true"
@@ -133,12 +150,63 @@ function ProblemBand({
       <p id="create-problem" className="mt-1">
         {sentence}
       </p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4">
+        <Link
+          href={primary.href}
+          data-create-problem-link={primary.href}
+          className="font-medium text-action underline"
+        >
+          {primary.label}
+        </Link>
+        {secondary === null ? null : (
+          <Link
+            href={secondary.href}
+            data-create-problem-secondary={secondary.href}
+            // 44px like every other in-card link (#745's floor). It sits on its own row, so it can
+            // carry the box without breaking a sentence — and it is *not* the band's inline link,
+            // so it is not the one target `tests/stage-shell-mobile.test.tsx` exempts.
+            className="inline-flex h-11 items-center font-medium text-gray-700 underline dark:text-gray-200"
+          >
+            {secondary.label}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A plan the stage is telling you about, **not refusing you** (#834).
+ *
+ * Same words as the refusal's (`problems.mode-not-entitled`), different job: after #834 a draft is
+ * written whatever Mode it asks for, and the plan question is asked here, on the stage that carries
+ * the send. So this is `role="status"`, drawn with `data-create-notice` rather than
+ * `data-create-problem`, and the stage's own action stays enabled — the point is that the person can
+ * still send, or keep the draft and read the plans, instead of meeting a wall one stage too early.
+ */
+function NoticeBand({
+  sentence,
+  link,
+}: {
+  sentence: string | null;
+  link?: { readonly href: string; readonly label: string } | null;
+}) {
+  if (sentence === null) return null;
+  return (
+    <div
+      data-create-notice="true"
+      role="status"
+      className="rounded-lg border border-gray-300 bg-gray-50 p-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+    >
+      <p id="create-notice">{sentence}</p>
       {link === undefined || link === null ? null : (
         <p className="mt-2">
           <Link
             href={link.href}
-            data-create-problem-link={link.href}
-            className="font-medium text-action underline"
+            data-create-notice-link={link.href}
+            // 44px like every other in-card link (#745's floor): this one sits in its own line,
+            // so it can carry the box without breaking the sentence it is not inside.
+            className="inline-flex h-11 items-center font-medium text-action underline"
           >
             {link.label}
           </Link>
@@ -254,9 +322,17 @@ export function CreateRelationship({
   backHref,
   problem,
   problemLink,
+  notice,
+  noticeLink,
   account,
   accountAdvanceHref,
   instanceRecordId,
+  relationshipId,
+  publishAction,
+  capture,
+  initialPaid,
+  planIncluded,
+  copyBlocked,
 }: {
   copy: PageCopy;
   /** 1 = Details, 2 = Settings, 3 = Aspects, 4 = Account, 5 = Invite. Both read it. */
@@ -274,8 +350,15 @@ export function CreateRelationship({
   backHref: string;
   /** The fixture's sentence for the refusal that brought the person back; `null` on a clean visit. */
   problem: string | null;
-  /** The page the refusal's sentence points at, when it names one (#618). */
+  /** The page the refusal's sentence points at, when it names one (#618, #870). */
   problemLink?: { readonly href: string; readonly label: string } | null;
+  /**
+   * A plan line the stage states without refusing anything (#834) — stage 5 tells a person their
+   * Mode is not on their plan, and lets them send or keep the draft anyway.
+   */
+  notice?: string | null;
+  /** The plans page the notice points at, when it names one. */
+  noticeLink?: { readonly href: string; readonly label: string } | null;
   /**
    * Stage 4's account column (#825). The page builds it: `LoginView` with `layout="embedded"` when
    * nobody is signed in, a confirmation when somebody is. Absent on every other stage.
@@ -288,6 +371,46 @@ export function CreateRelationship({
   accountAdvanceHref?: string;
   /** Stage 5's relationship — the id its send form posts to (#825). Absent on every other stage. */
   instanceRecordId?: string;
+  /**
+   * The relationship's own row id, for the payment walk (#911).
+   *
+   * The stage's URL carries the **record** id (`?instance=`) and the send posts to it; the capture
+   * names the **relationship**, and passing the record id there is refused with "no relationship
+   * holds the id" — the card form's one failure mode. Optional, because a render-only test mounts
+   * this stage without a database and presses nothing that captures.
+   */
+  relationshipId?: string;
+  /**
+   * Stage 1's one-click publish, for a refusal the author can fix (#870). The page builds it as a
+   * form posting to the **existing** `status` endpoint, because the rule is that a publish is the
+   * status transition called from one more place, never a second write path.
+   *
+   * Absent for a built-in (nobody may publish it), for a template that is already published, and
+   * for a viewer who is not its author.
+   */
+  publishAction?: ReactNode;
+  /**
+   * Stage 5's gate (#911). The page passes the server's capture actions and the two facts the walk
+   * reads — whether a card is already on file, and what the account's plan already covers — because
+   * all three are the page's to know (a session, an entitlement, a row) and none of them can be read
+   * inside a client component.
+   */
+  capture?: CaptureHandlers;
+  /** A card is already on file for this relationship: the walk opens on the thank-you. */
+  initialPaid?: boolean;
+  /** What the account's plan already covers (#870), measured by the page. */
+  planIncluded?: { readonly name: string; readonly entitled: boolean };
+  /**
+   * **This template cannot be copied, so stage 1 must not collect anything (#870).**
+   *
+   * The page sets it when `templateCopyRefusal()` answered — not published, no published version,
+   * no Aspects, or somebody else's. The template band still draws (it says *which* template was
+   * refused), the band above names the reason and its door, the publish action sits under it when
+   * the author can fix it, and the **form is absent**: four stages of typing for a create the store
+   * is guaranteed to refuse is the defect this flag removes. `store.ts` keeps its own refusal as
+   * the last line of defence.
+   */
+  copyBlocked?: boolean;
 }) {
   const band = sectionOf(copy, "template");
   const who = sectionOf(copy, "who");
@@ -296,6 +419,15 @@ export function CreateRelationship({
   const accountSection = sectionOf(copy, "account");
   const inviteSection = sectionOf(copy, "invite");
   const problems = sectionOf(copy, "problems");
+  /**
+   * Every refusal's second door (#870): the relationships list, where a draft already lives and
+   * where a person who cannot copy this template can start from another. Read once here so the
+   * band cannot be handed a door and a different fallback on two stages.
+   */
+  const backDoor = {
+    href: RELATIONSHIPS_PATH,
+    label: itemLabel(problems, "back-to-relationships"),
+  };
   // The foot's one shared word (#760): `Cancel` is the same act on all five stages, so it has
   // one row in the fixture rather than five copies that could drift.
   const foot = sectionOf(copy, "foot");
@@ -364,7 +496,16 @@ export function CreateRelationship({
                 {sectionBody(empty)}
               </p>
             </div>
-            <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
+            <ProblemBand
+              heading={problems.heading}
+              sentence={problem}
+              link={problemLink}
+              back={backDoor}
+            />
+            {/* The authored template's one-click publish (#870). Drawn under the band, because it
+                is the fix for the sentence above it — and it is the *existing* status transition,
+                mounted one more place, not a second way to publish anything. */}
+            {publishAction === undefined ? null : <div className="mt-3">{publishAction}</div>}
           </div>
         </StageColumn>
       </StageShell>
@@ -410,7 +551,18 @@ export function CreateRelationship({
             </p>
           </div>
 
-          <ProblemBand heading={problems.heading} sentence={problem} link={problemLink} />
+          <ProblemBand
+            heading={problems.heading}
+            sentence={problem}
+            link={problemLink}
+            back={backDoor}
+          />
+          {/* The fix for an authored template that is not published yet (#870). It sits on stage 1
+              because a template that cannot be copied is a door problem, not a form problem — and
+              the store's own refusal at commit stays as the last line of defence. */}
+          {publishAction === undefined ? null : <div>{publishAction}</div>}
+
+          <NoticeBand sentence={notice ?? null} link={noticeLink ?? null} />
 
           {stage === 1 ? (
             <>
@@ -442,16 +594,30 @@ export function CreateRelationship({
                 </p>
               </section>
 
-              <form
-                action={SAVE_WHO_PATH}
-                method="post"
-                aria-labelledby="create-stage-heading"
-                className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-              >
-                {/* The template is the route's own fact; the form carries it so the POST names it. */}
-                <input type="hidden" name="templateRecordId" value={template.recordId} />
+              {/*
+               * #870 — a template that cannot be copied draws no form. The refusal above names the
+               * reason and its door, the publish action sits under it when the author can fix it,
+               * and this foot is the way out. Collecting six facts here would be four stages of
+               * typing for a create the store is guaranteed to refuse.
+               */}
+              {copyBlocked === true ? (
+                <StageFoot
+                  backHref={backHref}
+                  backLabel={itemLabel(who, "back")}
+                  cancelHref={shell.closeHref}
+                  cancelLabel={cancelLabel}
+                />
+              ) : (
+                <form
+                  action={SAVE_WHO_PATH}
+                  method="post"
+                  aria-labelledby="create-stage-heading"
+                  className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+                >
+                  {/* The template is the route's own fact; the form carries it so the POST names it. */}
+                  <input type="hidden" name="templateRecordId" value={template.recordId} />
 
-                {/*
+                  {/*
                 The seven fields, and the one derivation in the flow (#825): the title follows the
                 four name inputs until somebody types in it. That is a keystroke-level behaviour, so
                 the controls live in a client component (`StageOneFields`) while the form, the
@@ -462,51 +628,55 @@ export function CreateRelationship({
                 marks — a sixth field, a moved one or a bare required label is red rather than a
                 reviewer's memory.
               */}
-                <StageOneFields
-                  copy={{
-                    titleLabel: itemLabel(who, "title-label"),
-                    titleHelp: itemLabel(who, "title-help"),
-                    initiatorFirstLabel: itemLabel(who, "initiator-first-label"),
-                    initiatorLastLabel: itemLabel(who, "initiator-last-label"),
-                    initiatorLastPlaceholder: itemLabel(who, "initiator-last-placeholder"),
-                    initiatorHelp: itemLabel(who, "initiator-help"),
-                    counterpartyFirstLabel: itemLabel(who, "counterparty-first-label"),
-                    counterpartyFirstPlaceholder: itemLabel(who, "counterparty-first-placeholder"),
-                    counterpartyLastLabel: itemLabel(who, "counterparty-last-label"),
-                    counterpartyLastPlaceholder: itemLabel(who, "counterparty-last-placeholder"),
-                    counterpartyHelp: itemLabel(who, "counterparty-help"),
-                    emailLabel: itemLabel(who, "email-label"),
-                    emailPlaceholder: itemLabel(who, "email-placeholder"),
-                    descriptionLabel: itemLabel(who, "description-label"),
-                    descriptionPlaceholder: itemLabel(who, "description-placeholder"),
-                    descriptionHelp: itemLabel(who, "description-help"),
-                    requiredNote: itemLabel(who, "required-note"),
-                  }}
-                  values={{
-                    initiatorFirst: draft.initiatorFirst,
-                    initiatorLast: draft.initiatorLast,
-                    counterpartyFirst: draft.counterpartyFirst,
-                    counterpartyLast: draft.counterpartyLast,
-                    title: draft.title,
-                    email: draft.email,
-                    description: draft.description,
-                  }}
-                  descriptionDefault={template.summary}
-                />
+                  <StageOneFields
+                    copy={{
+                      titleLabel: itemLabel(who, "title-label"),
+                      titleHelp: itemLabel(who, "title-help"),
+                      initiatorFirstLabel: itemLabel(who, "initiator-first-label"),
+                      initiatorLastLabel: itemLabel(who, "initiator-last-label"),
+                      initiatorLastPlaceholder: itemLabel(who, "initiator-last-placeholder"),
+                      initiatorHelp: itemLabel(who, "initiator-help"),
+                      counterpartyFirstLabel: itemLabel(who, "counterparty-first-label"),
+                      counterpartyFirstPlaceholder: itemLabel(
+                        who,
+                        "counterparty-first-placeholder",
+                      ),
+                      counterpartyLastLabel: itemLabel(who, "counterparty-last-label"),
+                      counterpartyLastPlaceholder: itemLabel(who, "counterparty-last-placeholder"),
+                      counterpartyHelp: itemLabel(who, "counterparty-help"),
+                      emailLabel: itemLabel(who, "email-label"),
+                      emailPlaceholder: itemLabel(who, "email-placeholder"),
+                      descriptionLabel: itemLabel(who, "description-label"),
+                      descriptionPlaceholder: itemLabel(who, "description-placeholder"),
+                      descriptionHelp: itemLabel(who, "description-help"),
+                      requiredNote: itemLabel(who, "required-note"),
+                    }}
+                    values={{
+                      initiatorFirst: draft.initiatorFirst,
+                      initiatorLast: draft.initiatorLast,
+                      counterpartyFirst: draft.counterpartyFirst,
+                      counterpartyLast: draft.counterpartyLast,
+                      title: draft.title,
+                      email: draft.email,
+                      description: draft.description,
+                    }}
+                    descriptionDefault={template.summary}
+                  />
 
-                {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
-                <StageFoot
-                  backHref={backHref}
-                  backLabel={itemLabel(who, "back")}
-                  cancelHref={shell.closeHref}
-                  cancelLabel={cancelLabel}
-                  advance={
-                    <button type="submit" className={ADVANCE_CLASSES}>
-                      {itemLabel(who, "submit")}
-                    </button>
-                  }
-                />
-              </form>
+                  {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
+                  <StageFoot
+                    backHref={backHref}
+                    backLabel={itemLabel(who, "back")}
+                    cancelHref={shell.closeHref}
+                    cancelLabel={cancelLabel}
+                    advance={
+                      <button type="submit" className={ADVANCE_CLASSES}>
+                        {itemLabel(who, "submit")}
+                      </button>
+                    }
+                  />
+                </form>
+              )}
             </>
           ) : stage === 2 ? (
             <form
@@ -577,6 +747,7 @@ export function CreateRelationship({
                 copy={copy}
                 templateRecordId={template.recordId}
                 aspects={aspects ?? []}
+                addRemove
               />
 
               {/*
@@ -624,17 +795,10 @@ export function CreateRelationship({
               copy={copy}
               draft={draft}
               instanceRecordId={instanceRecordId ?? ""}
-              walk={
-                <InviteWalk
-                  copy={copy}
-                  draft={draft}
-                  account={
-                    <p className="text-xs text-gray-600 dark:text-gray-300">
-                      {itemLabel(accountSection, "signed-in-body")}
-                    </p>
-                  }
-                />
-              }
+              relationshipId={relationshipId ?? ""}
+              {...(capture === undefined ? {} : { capture })}
+              {...(initialPaid === undefined ? {} : { initialPaid })}
+              {...(planIncluded === undefined ? {} : { planIncluded })}
               backHref={backHref}
               cancelHref={shell.closeHref}
               cancelLabel={cancelLabel}

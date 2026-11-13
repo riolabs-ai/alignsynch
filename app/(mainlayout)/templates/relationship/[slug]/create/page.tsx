@@ -48,12 +48,18 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
+import { ADVANCE_CLASSES } from "@/components/assessment-flow/stage-foot";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { EMPTY_CREATE_DRAFT, parseCreateDraft, type CreateDraft } from "@/lib/flow/create-draft";
-import { createRefusal } from "@/lib/flow/create-copy";
+import { type CopyReadiness, stageRefusal } from "@/lib/flow/create-copy";
 import { readLibraryTemplate } from "@/lib/db/template-library";
-import { RELATIONSHIP_TEMPLATES_PATH, relationshipTemplatePath } from "@/lib/flow/paths";
+import {
+  RELATIONSHIP_TEMPLATES_PATH,
+  relationshipTemplatePath,
+  templateStatusPath,
+} from "@/lib/flow/paths";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { createDraftCookieName } from "@/lib/flow/session";
 
 export const dynamic = "force-dynamic";
@@ -91,15 +97,77 @@ export default async function TemplateCreatePage({
 }) {
   const { slug } = await params;
   const query = await searchParams;
-  const refusal = createRefusal(firstValue(query.problem), firstValue(query.field));
   const viewer = await currentUserIfConfigured();
   const viewerUserId = viewer?.userId ?? null;
   const detail = await readLibraryTemplate(slug, viewerUserId);
-  if (detail === undefined && refusal === null) notFound();
+
+  // A refusal that sent us here and a template nobody can read are two different states: the first
+  // is a screen (the band, and a way back), the second is a 404 — an address nobody posted from is
+  // not a screen, and answering it with a sentence would confirm that the handle exists.
+  if (detail === undefined && query.problem === undefined) notFound();
+
+  const context = { slug, ...(detail === undefined ? {} : { recordId: detail.template.id }) };
+
+  /**
+   * **The door guard (#870).** Before this card a template that could not be copied was accepted by
+   * stages 1–3 and refused by the store at the end of stage 4, after four screens of typing. The
+   * question is now asked here, with the same sentences and the same order the store uses, so the
+   * two ends of the flow cannot disagree about why — and `store.ts` keeps its own check as the last
+   * line of defence for a crafted post.
+   */
+  const readiness: CopyReadiness | null =
+    detail === undefined
+      ? null
+      : {
+          status: detail.template.status,
+          aspectCount: detail.aspects.length,
+          authorship: detail.template.authorship,
+          ...(detail.hasVersion === undefined ? {} : { hasVersion: detail.hasVersion }),
+        };
+  const refusal = stageRefusal(
+    firstValue(query.problem),
+    firstValue(query.field),
+    readiness,
+    context,
+  );
+  const blocked =
+    detail !== undefined &&
+    readiness !== null &&
+    stageRefusal(undefined, undefined, readiness, context) !== null;
 
   // #794 — the storage handle for the cookie and the form field; the slug is only the address.
   const recordId = detail?.template.id ?? "";
   const draft = await savedDraft(recordId);
+
+  /**
+   * The one-click publish (#870), drawn only where it is honest: the viewer **wrote** this template
+   * and it is not usable yet. It posts `status=published` to the endpoint the template page already
+   * posts to and asks that endpoint to come back here (`return=create`), so publishing is the
+   * existing status transition called from one more place — not a second write path, and not a
+   * second set of rules.
+   */
+  const problems = sectionOf(assessmentCreatePageCopy, "problems");
+  const publishAction =
+    detail !== undefined &&
+    detail.template.authorship === "mine" &&
+    (detail.template.status !== "published" || detail.hasVersion === false) ? (
+      <form
+        action={templateStatusPath(detail.template.slug)}
+        method="post"
+        data-create-publish="true"
+        className="space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+      >
+        <input type="hidden" name="status" value="published" />
+        {/* A validated enum, never a URL: the route rebuilds the destination itself. */}
+        <input type="hidden" name="return" value="create" />
+        <button type="submit" className={ADVANCE_CLASSES}>
+          {itemLabel(problems, "publish-template")}
+        </button>
+        <p className="text-xs text-gray-600 dark:text-gray-300">
+          {itemLabel(problems, "publish-template-note")}
+        </p>
+      </form>
+    ) : undefined;
 
   return (
     <CreateRelationship
@@ -124,6 +192,8 @@ export default async function TemplateCreatePage({
       }
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
+      {...(publishAction === undefined ? {} : { publishAction })}
+      {...(blocked ? { copyBlocked: true } : {})}
     />
   );
 }

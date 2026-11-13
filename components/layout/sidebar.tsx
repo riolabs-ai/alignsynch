@@ -15,7 +15,7 @@ import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { BrandGlyph } from "@/components/layout/brand-glyph";
 import { LeavingLink } from "@/components/layout/leaving-link";
 
@@ -77,14 +77,24 @@ const FOCUSABLE =
  * `app/(mainlayout)/layout.tsx`, which read the cookie on the server, so there is no state here
  * and no width that changes after hydration.
  */
-export function railClassName(open: boolean, collapsed = false): string {
+export function railClassName(open: boolean, collapsed = false, notice = false): string {
   return cn(
     // Below `md`: an overlay. Out of the flow, off-canvas, and absent from the a11y tree while
     // closed — `transform` alone moves paint, not focus.
     "fixed inset-y-0 left-0 z-50 flex w-[250px] max-w-[85vw] flex-col border-r bg-background transition-transform duration-200 ease-out",
     open ? "visible translate-x-0 shadow-2xl" : "invisible -translate-x-full",
     // From `md`: a column again — sticky, 64px, always visible — and from `lg` the expanded rail.
-    "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none",
+    //
+    // **The admin notice bar (#906) moves the column's top and shortens its height**, and only when
+    // it is mounted (`notice`). The bar is a row above the shell, so a rail pinned at `top-0` would
+    // run from behind the bar to the viewport's bottom edge — past it by exactly the bar's height.
+    // `top` and `height` are therefore one pair: `md:top-[var(--admin-notice-h)]` with
+    // `md:h-[calc(100vh_-_var(--admin-notice-h)_-_4rem)]`, the 4rem being the app header the column
+    // sits under. Without the bar both resolve to the constants this file shipped with, and the
+    // class list is the same string (see `tests/admin-notice-bar.test.tsx`, which pins both).
+    notice
+      ? "md:visible md:sticky md:top-[var(--admin-notice-h)] md:bottom-auto md:z-auto md:h-[calc(100vh_-_var(--admin-notice-h)_-_4rem)] md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none"
+      : "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none",
     collapsed ? "lg:w-16" : "lg:w-[250px]",
   );
 }
@@ -98,6 +108,7 @@ export function AppSidebar({
   collapsed = false,
   open,
   onClose,
+  notice = false,
 }: {
   copy: PageCopy;
   mark?: BrandMark;
@@ -123,6 +134,13 @@ export function AppSidebar({
   open: boolean;
   /** Close the drawer. Stable identity — the focus effect below re-runs if it changes. */
   onClose: () => void;
+  /**
+   * Is the admin notice bar mounted above the shell (#906)? Forwarded from `MainLayout`, which
+   * receives it from the layout: at `md` and up the column's `top` and height move down by exactly
+   * the bar's published height (`--admin-notice-h`), and below `md` nothing changes — the drawer is
+   * an overlay, not a column, and a `top` there would push it off the viewport's edge.
+   */
+  notice?: boolean;
 }) {
   const nav = sectionOf(copy, "nav");
   const rail = sectionOf(copy, "rail");
@@ -142,6 +160,29 @@ export function AppSidebar({
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
+  const [railToggling, startRailToggle] = useTransition();
+
+  /**
+   * **The width control (#875)** — the server action, from a click.
+   *
+   * It used to be a `<form action={toggleRail}>` around a submit button, and the owner's report
+   * was the DOM that produced: `action="javascript:throw new Error('A React form was unexpectedly
+   * submitted…')"`. React writes that placeholder for *any* function `action` and replays the
+   * submission from a document-level listener, so the control had two paths and only one of them
+   * collapsed the rail — the other threw. A `type="button"` has no second path: the click is the
+   * action, and Enter and Space both produce one, natively, which is what the issue asks for.
+   *
+   * The width still arrives as a prop from the server (`collapsed`), so this writes no client copy
+   * of it: `startTransition` keeps the rail responsive while `revalidatePath` re-renders the shell
+   * in the same round trip. `railToggling` guards a double press only — the action *toggles* a
+   * value, so two in flight would land back where the first started.
+   */
+  const toggleRailWidth = () => {
+    if (railToggling) return;
+    startRailToggle(async () => {
+      await toggleRail();
+    });
+  };
 
   /**
    * The drawer, while it is open: focus goes in, the page behind cannot scroll, Escape and the
@@ -290,14 +331,31 @@ export function AppSidebar({
          */
         tabIndex={-1}
         {...(open ? { role: "dialog", "aria-modal": true, "aria-label": railLabel } : {})}
-        className={railClassName(open, collapsed)}
+        className={railClassName(open, collapsed, notice)}
       >
-        <div className="flex h-16 items-center justify-between gap-2 border-b px-3 md:justify-center md:px-2 lg:justify-start lg:px-4">
+        <div
+          className={cn(
+            "relative flex h-16 items-center justify-between gap-2 border-b px-3 md:justify-center md:px-2",
+            /**
+             * The reader's own collapse narrows this row from `lg` too, so it keeps the 8px padding
+             * the `md` rail already draws: `lg:px-4` (32px) beside the 40px monogram window is 72px
+             * in a 64px column, and the mark spilled past the rail's trailing border by 16px.
+             */
+            narrow ? "lg:justify-center lg:px-2" : "lg:justify-start lg:px-4",
+          )}
+        >
+          {/**
+           * The "opens in a new tab" marker is a word-sized affordance: in the 64px column it has
+           * no room, and it is what pushed the mark's window to -0.5px — half a pixel outside the
+           * rail — while the handle's half-out position sits over its own box. The link's
+           * accessible name still ends "opens in a new tab" at every width, so nothing is lost
+           * from the announcement; only the glyph goes.
+           */}
           <LeavingLink
             href="/"
             label={copy.heading}
             className="flex justify-center items-center gap-2"
-            iconClassName={open ? undefined : "hidden lg:inline"}
+            iconClassName={open ? undefined : narrow ? "hidden" : "hidden lg:inline"}
           >
             {mark ? (
               /**
@@ -388,6 +446,42 @@ export function AppSidebar({
           >
             <X className="size-5" aria-hidden="true" />
           </button>
+
+          {/**
+           * **The width handle (#875)** — the rail's own edge, half in and half out.
+           *
+           * `absolute -right-3 size-6` centres a 24px box on the rail's 1px trailing border, so
+           * that border runs through the middle of the control: half of it sits inside the rail
+           * and half over the page header, which is the "stick out past the sidebar's border" the
+           * owner asked for. It is a real overlap, not a negative margin — nothing above it clips
+           * (the rail carries no `overflow-hidden`, and `tests/rail-responsive.test.ts` holds
+           * that), so the protruding half is painted rather than cut off at 64px and at 250px.
+           *
+           * It is also **out of the flex flow**, which is the row's arithmetic: an absolutely
+           * positioned handle takes no width from the row, so the search beside it can neither be
+           * pushed aside nor covered, and the handle can never be pushed off the rail. The 12px
+           * that crosses the border lands in the header's own gutter, and the search starts beyond
+           * it at every width (`docs/qa-rail-handle/measurements.json` carries the x-coordinates).
+           *
+           * `hidden md:inline-flex`: below `md` the rail is an overlay drawer whose width is the
+           * viewport's business, so a control that narrows it means nothing — and half a handle
+           * hanging over the scrim, or off the left edge of a 390px screen, is exactly what the
+           * issue forbids.
+           */}
+          <button
+            type="button"
+            onClick={toggleRailWidth}
+            aria-expanded={!collapsed}
+            aria-label={toggleLabel}
+            title={toggleLabel}
+            className="absolute top-1/2 -right-3 hidden size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
+          >
+            {collapsed ? (
+              <ChevronRight className="size-4" aria-hidden="true" />
+            ) : (
+              <ChevronLeft className="size-4" aria-hidden="true" />
+            )}
+          </button>
         </div>
 
         <div className="flex-1 overflow-auto py-4">
@@ -424,36 +518,12 @@ export function AppSidebar({
           </nav>
           {signOutFailed && <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>}
           {/**
-           * **The width control** (#542 phase 2) — a form, not a handler.
-           *
-           * Submitting posts to `app/(mainlayout)/rail-actions.ts`, a server action that writes
-           * the `shell.rail` cookie and revalidates the shell, so the next render is already the
-           * width asked for. There is no client state here and nothing in browser storage, which is
-           * the difference between this control and the one this file records as removed: that
-           * one changed the browser after the server had already drawn the other width.
-           *
-           * Desktop only (`md:flex`): below `md` the rail is a drawer whose width is the viewport's
-           * business, and a control that narrows a panel already sliding over the page is noise.
-           * `formAction`-free and POST-only, so a keyboard user reaches it after sign-out and the
-           * version badge stays the last stop in the panel.
+           * **The width control** used to live here (#542 phase 2): a
+           * `<form action={toggleRail}>` with a submit button, under the sign-out row. It moved to
+           * the top row in #875, where it is the handle on the rail's own border — and it is a
+           * button calling the same action, not a form. Nothing replaced it here: this section is
+           * the account row (sign out) and nothing else.
            */}
-          <form
-            action={toggleRail}
-            className={cn("hidden px-2 pt-2 md:flex", narrow ? "justify-center" : "justify-end")}
-          >
-            <button
-              type="submit"
-              aria-label={toggleLabel}
-              title={toggleLabel}
-              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {collapsed ? (
-                <ChevronRight className="size-4" aria-hidden="true" />
-              ) : (
-                <ChevronLeft className="size-4" aria-hidden="true" />
-              )}
-            </button>
-          </form>
         </div>
 
         {/* The version badge — the bottom of the rail (issue #269). Last in the document, so it is

@@ -59,6 +59,7 @@ function viewOf(input: {
     viewerRole: isInitiator ? "initiator" : "counterparty",
     isInitiator,
     templateId: template.id,
+    templateSlug: template.slug,
     title: template.title,
     summary: template.summary,
     createdAt: "2026-11-01T00:00:00.000Z",
@@ -84,6 +85,8 @@ function viewOf(input: {
     trialEndsAt: null,
     lapseSentence: null,
     inviteLinkAvailable: false,
+    /* #785 — the fork is not this file's subject; `tests/relationship-fork.test.tsx` drives it. */
+    canForkTemplate: false,
   };
 }
 
@@ -94,13 +97,12 @@ function html(view: MemberRelationshipView): string {
     createElement(RelationshipDetail, {
       copy: dashboardRelationshipDetailPageCopy,
       relationship: view,
-      backHref: "/dashboard/relationships",
       onSaveAspects: noop,
       onPublish: noop,
       onRepublish: noop,
-      onCapture: noop,
-      onResolve: noop,
       onComplete: noop,
+      onFork: noop,
+      templatesHref: "/templates/relationship?view=mine",
     }),
   );
 }

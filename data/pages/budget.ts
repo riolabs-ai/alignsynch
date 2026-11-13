@@ -74,6 +74,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-broadcast",
     budget: 0,
   },
+  // #906 — the brand and audience profile. Budget 0 from the first commit, like the console's other
+  // screens: the eleven headings, the story's three paragraphs, the three value cards, both audience
+  // cards with their example rows, the counselor and participant notes, the four steps, the three
+  // reusable descriptions, the hero figure's eight labels and the two hero actions are all
+  // `data/pages/admin-brand.ts`, so the next string written in `brand-profile.tsx` is a red build.
+  // Attribution is reachability, so this row counts one component.
+  "/admin/brand": {
+    page: "app/(mainlayout)/admin/brand/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-brand",
+    budget: 0,
+  },
   // #505 — billing control. Budget 0 from the first commit, like the console's other screens: the
   // test-mode banner's three states, the six stat captions, the nine column labels, the five
   // subscription states, the four plan sources, the plan-limit sentences, the comp band's eleven
@@ -90,6 +102,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/admin/gaps/page.tsx",
     dirs: ["components/console"],
     fixture: "data/pages/admin-gaps",
+    budget: 0,
+  },
+  // #920 — the growth model. Budget 0 from the first commit: the five band headings, every stat
+  // caption, the series and axis labels, the invoice table's column heads and the two failure
+  // sentences are `data/pages/admin-growth.ts`, so the next literal written in the console is a red
+  // build. Attribution is reachability, so this row counts `components/admin/growth-console.tsx`
+  // only — the model itself is `content/`, and its numbers are not copy.
+  "/admin/growth": {
+    page: "app/(mainlayout)/admin/growth/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-growth",
     budget: 0,
   },
   // The operator's platform health (#508): four measurements, each with its own source line. Budget
@@ -133,6 +156,24 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/admin/review/page.tsx",
     dirs: ["components/admin"],
     fixture: "data/pages/admin-review",
+    budget: 0,
+  },
+  // #892 — the documentation home. Budget 0: the filter's placeholder, the two singular/plural counts,
+  // the empty-filter sentence and the unreadable panel are `data/pages/admin-docs.ts`, so the next
+  // literal written in `docs-hub.tsx` is a red build. Attribution is the subdirectory, not the whole
+  // `components/admin` domain, because the row above already owns that number.
+  "/admin/docs": {
+    page: "app/(mainlayout)/admin/docs/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs",
+    budget: 0,
+  },
+  // …and one document: the way back, the sibling heading, the two step labels and the two panels are
+  // `data/pages/admin-docs-document.ts`. The body is the tree's, and markdown is not a literal.
+  "/admin/docs/[...slug]": {
+    page: "app/(mainlayout)/admin/docs/[...slug]/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs-document",
     budget: 0,
   },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
@@ -424,7 +465,24 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/relationship-types` — the public Relationship Types catalogue (#794).
+   * `/relationship-templates` — the public catalogue, V2 composition (#905).
+   *
+   * Budget 0, the same rule the #889 row below keeps: the hero's kicker and promise line, the two
+   * life cards, the menu rows, the catalogue band's frame and counselor note, the four steps, the
+   * membership facts and the closing band are all `data/pages/templates.ts`, so the next literal
+   * written in `components/templates/**` or in the page module is a red build. The templates
+   * themselves are `purchasableTypesByGroup()` over `data/relationship-types.ts` — records, not
+   * words — and the bands' geometry is `components/home/as2-*`'s, which the `/` row already owns.
+   */
+  "/relationship-templates": {
+    page: "app/(marketing)/relationship-templates/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates",
+    budget: 0,
+  },
+  /**
+   * `/relationship-types` — the retained #889 catalogue variation, and the namespace a type's own
+   * page lives in (#794, retained by #905).
    *
    * Budget 0 from the first commit, like every surface this tree adds: the hero, the three bands'
    * chrome, the five strings a card repeats and the counted catalogue sentence are all
@@ -530,10 +588,15 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment",
     budget: 0,
   },
-  "/assessment/instances": {
-    page: "app/(mainlayout)/assessment/instances/page.tsx",
-    dirs: ["components/assessment-flow"],
-    fixture: "data/pages/assessment-instances",
+  // #877 — the member's assessment-session listing. Budget 0 from the first commit, like the
+  // dashboard record lists: the heading, the toolbar's eight labels, the four state tabs, the four
+  // row links, the two empty states, the console's filter band and the failure panel are all
+  // `data/pages/assessments.ts`, so the next literal written in `assessments-list.tsx` is a red
+  // build. Attribution is reachability, so this row counts the one component the page imports.
+  "/assessments": {
+    page: "app/(mainlayout)/assessments/page.tsx",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/assessments",
     budget: 0,
   },
   "/assessment/instances/[instanceId]": {

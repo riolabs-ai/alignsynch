@@ -106,6 +106,17 @@ function libraryTemplateOf(row: LibraryRow, viewerUserId: string | null): Librar
  * screen would be a template with no action that could make it usable, so the platform's blank
  * stays out; a draft the *viewer* wrote would stay in, because a person has to be able to manage
  * their own row whatever state it is in.
+ *
+ * **A relationship's private copy is not a template, and this read now says so (#743).** Creating
+ * a relationship copies the chosen template into a `record` of its own and points
+ * `relationship.template_id` at that copy (`lib/member/relationships.ts`). The copy is written
+ * `draft`, `private`, and `author_user_id = actor` — which satisfied every clause above, so it was
+ * listed on this screen as one of the account's own templates. Measured on the demo branch before
+ * the fix: a freshly created relationship added a phantom "Yours" row whose archive and delete
+ * controls would have reached a live relationship's own record. The exclusion is the same one
+ * `lib/member/templates.ts` states for `/dashboard/templates` (`OWNED_TEMPLATE_PREDICATE`), spelled
+ * the same way, because it is one fact: a private record somebody started a relationship from is
+ * that relationship's configuration, not a template of theirs.
  */
 export async function listLibraryTemplates(
   viewerUserId: string | null,
@@ -117,6 +128,10 @@ export async function listLibraryTemplates(
       WHERE r.record_type = 'assessment'
         AND (r.status <> 'draft' OR r.author_user_id = $1)
         AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
+        AND NOT EXISTS (
+          SELECT 1 FROM relationship rel
+           WHERE rel.template_id = r.id AND r.visibility = 'private'
+        )
         AND (r.author_user_id IS NULL OR r.author_user_id = $1)
       ORDER BY r.title`,
     [viewerUserId],
@@ -137,6 +152,20 @@ export interface TemplateAspect {
 export interface LibraryTemplateDetail {
   readonly template: LibraryTemplate;
   readonly aspects: readonly TemplateAspect[];
+  /**
+   * Does a `template_version` row exist for this template? (#870)
+   *
+   * The one fact `LibraryTemplate.status` cannot answer: a row can be `published` and still have no
+   * version — a template archived before publishing recorded versions, and then unarchived by a
+   * path that did not write one. `createInstanceFromTemplate` refuses exactly that shape, so the
+   * stage-1 guard has to be able to ask it before the person types anything.
+   *
+   * **Optional, because absent is "not measured" and it must not become a refusal.** Every fixture
+   * and suite written before this field legitimately omits it, and a guard that treated a missing
+   * measurement as "no version" would refuse a copyable template on a page whose read simply did
+   * not fill the field in. The production read always supplies it.
+   */
+  readonly hasVersion?: boolean;
 }
 
 interface AspectRow {
@@ -219,6 +248,10 @@ export async function readLibraryTemplate(
   return {
     template: libraryTemplateOf(row, viewerUserId),
     aspects,
+    // The live version's presence, read off the same lateral join the columns come from — so a
+    // page asking "is there anything to copy" reads the row this read already fetched rather than
+    // issuing a second query that could disagree with it.
+    hasVersion: row.live_payload !== null,
   };
 }
 

@@ -1,4 +1,5 @@
 // template-ancestor: components/assessment-flow/template-detail.tsx
+import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AdminTemplateDetail } from "@/components/v1/admin-template-detail";
 
 /**
@@ -10,5 +11,9 @@ import { AdminTemplateDetail } from "@/components/v1/admin-template-detail";
  */
 export default async function AdminTemplatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <AdminTemplateDetail templateId={id} />;
+  return (
+    <StageColumn>
+      <AdminTemplateDetail templateId={id} />
+    </StageColumn>
+  );
 }

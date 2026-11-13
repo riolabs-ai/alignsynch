@@ -35,11 +35,11 @@ links (17 unique, 19 total)
   /quiz/q123                                           1
   /support                                             1
   /tournaments                                         1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.15.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.17.0 2
 
 counts
-  elements  547
+  elements  545
   images    0
   buttons   18
   inputs    1
-  classes   318 (sha 0295ecf483db)
+  classes   318 (sha 5a7656a515d6)

@@ -51,6 +51,12 @@
 # are copied into each page by `scripts/changelog-view.mjs` — so the entry is docs,
 # the generator is config and the pages are docs: the same three lanes, one check.
 #
+# THE COLUMNS STEP IS IN EVERY LANE TOO (#858). `data/surface-columns.ts` is the registry of
+# which width each `app/(mainlayout)/` page draws in, and `scripts/column-refs.ts` holds it against
+# the tree: a page with no row, a `wide` with no reason, a `bleed` whose `back` does not resolve,
+# or a column page whose view still centres itself all fail here. The registry is data, the check
+# is a script, the pages are app — three lanes, one check, ~0.4 s.
+#
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
@@ -384,6 +390,18 @@ else
   skip_step "ui-registry" "no ui:registry:check script in package.json"
 fi
 
+# The left edge (#858). `data/surface-columns.ts` says which width every `app/(mainlayout)/` page
+# draws in; `scripts/column-refs.ts` holds it against the filesystem in both directions and fails
+# a column page that re-centres its body. Same placement as the glossary step and for the fifth
+# time the same reason: the registry is a fixture (data/), the check is a script (scripts/), the
+# pages are code (app/), and those three paths classify into three different lanes — a lane that
+# skipped it would hand a green local gate to a red CI run. ~0.4 s.
+if has_script "columns:check"; then
+  run_step "columns (every shell page declares its width; no column page re-centres)" pnpm columns:check || fail
+else
+  skip_step "columns" "no columns:check script in package.json"
+fi
+
 # The CHANGELOG is generated from the commits and is the source of the release notes (#144), so
 # drift here is drift in a published document: `--check` proves the newest entry names the version
 # in `package.json`, that no entry has lost its Known limits block, and — once the version is
@@ -421,6 +439,20 @@ else
   skip_step "docs:check" "no docs:check script in package.json"
 fi
 
+# The rail's document (`data/nav-menu.json`, #861) is the Admin sidebar: the groups, their rows,
+# their order, their rung and their visibility. The schema is `content/nav.ts`; this step is the
+# other half — every href resolves in `content/routes.ts`, every icon is a `NavIconName`, every
+# label id exists in `data/pages/shell.ts`, every `needs` is a rung, every hidden row says why, and
+# no id or href is drawn twice. It reads files only (~0.1 s), so it runs in every lane for the same
+# reason the steps above do: the document is `data/`, the schema is `content/`, the script and this
+# line are `scripts/` — three lanes, one check, and a malformed rail must fail the gate rather
+# than a request.
+if has_script "nav:menu"; then
+  run_step "nav:menu (data/nav-menu.json — routes, icons, labels, rungs)" pnpm nav:menu --check || fail
+else
+  skip_step "nav:menu" "no nav:menu script in package.json"
+fi
+
 if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi
@@ -445,6 +477,21 @@ if [ "$LANE" != "docs" ]; then
     run_step "data:check (schema + collection invariants)" pnpm data:check || fail
   else
     skip_step "data:check" "no data:check script in package.json"
+  fi
+
+  # The growth model (#920). `data/demo/growth-model.json` is generated from
+  # `content/growth-model.ts` by `pnpm growth`, and every number `/admin/growth` charts comes out of
+  # it — so a parameter edited without regenerating is a page describing a business the code no
+  # longer computes, and nothing above can see it: `typecheck` is happy, `data:check` has no
+  # invariant over the model, and the JSON parses. The step regenerates the model from the committed
+  # file's own parameters and diffs field by field, naming the first path that moved. ~0.6 s.
+  # It runs in the content lane because that is the lane a model or fixture edit classifies into —
+  # and in every other non-docs lane for the reason the steps above run everywhere: the content is
+  # `content/` + `data/`, the generator is `scripts/`, and the page is `app/`.
+  if has_script "growth:check"; then
+    run_step "growth:check (data/demo/growth-model.json is what this tree generates)" pnpm growth:check || fail
+  else
+    skip_step "growth:check" "no growth:check script in package.json"
   fi
 
   # The demo dataset, end to end: seed it, drive the app, diff against

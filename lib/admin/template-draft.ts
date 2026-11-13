@@ -20,8 +20,8 @@
  * `date`, because those are facts about the row that is being written, not about the form.
  * `tests/admin-template-draft.test.ts` drives every refusal without a database.
  */
-import { zAssessment, type Assessment } from "@/content/assessment";
-import { SCORE_MAX, SCORE_MIN } from "@/content/record";
+import { zAssessment, zAssessmentObject, type Assessment } from "@/content/assessment";
+import { SCORE_MAX, SCORE_MIN, uniqueItemIds } from "@/content/record";
 
 /** One Aspect as the editor holds it: the item's own fields, and no id until it is saved. */
 export interface AspectDraft {
@@ -30,6 +30,35 @@ export interface AspectDraft {
   readonly prompt: string;
   readonly leftValue: string;
   readonly rightValue: string;
+}
+
+/**
+ * The editor's rows as a record input: **a `new-` id is the list's placeholder, not an id** (#936).
+ *
+ * `AspectList` mints `new-N` for a row the person just added and that prefix is the protocol —
+ * the list reads it back as "not on record yet" (`aspect-list.tsx::isNew`). `buildTemplateRecord`
+ * derives an id from the prompt when one is absent, so a placeholder that reaches it is written
+ * verbatim: the relationship's copy then holds `item_id = 'new-1'`, which is a row the screen that
+ * wrote it can never recognise as saved. Every writer goes through this one function so the two
+ * paths on the relationship detail cannot disagree about it again.
+ */
+export function aspectStatesOf(
+  list: readonly {
+    readonly id?: string;
+    readonly prompt: string;
+    readonly leftValue: string;
+    readonly rightValue: string;
+  }[],
+): AspectDraft[] {
+  return list.map((row) => ({
+    id:
+      row.id === undefined || row.id.trim() === "" || row.id.startsWith("new-")
+        ? undefined
+        : row.id,
+    prompt: row.prompt,
+    leftValue: row.leftValue,
+    rightValue: row.rightValue,
+  }));
 }
 
 /** Everything the editor sends. `status` is the row's, never a control (publishing is #502b). */
@@ -257,4 +286,76 @@ export function validateTemplateRecord(raw: unknown): TemplateDraftResult {
 /** Assemble the editor's fields into a record and validate it — the form's whole save decision. */
 export function validateTemplateDraft(input: TemplateDraftInput): TemplateDraftResult {
   return validateTemplateRecord(buildTemplateRecord(input));
+}
+
+/* ------------------------------------------------------------------ *
+ * The edit path: a record whose item list may be absent (#943)
+ * ------------------------------------------------------------------ */
+
+/**
+ * What an **edit** posts: a template's own fields, and `items` only if the caller means them.
+ *
+ * The distinction this type exists to carry is the one #935's panel could not express. An edit
+ * surface that does not draw the Aspects — the relationship's edit dialog, whose list belongs to
+ * the detail screen's `AspectList` — has no business naming them, and `items: []` is not a way of
+ * saying "unchanged" (it is a way of saying *delete every Aspect*). Omitted is the only value that
+ * means *leave the stored rows exactly as they are*, so it is the value the writer reads as a
+ * no-op — and the type has to allow it for that to be true rather than merely stated.
+ *
+ * A caller that **does** mean to send a list is unaffected: `items` present is validated by
+ * `zAssessment`'s own `z.array(zAspect).min(1)`, so an item-less or malformed list is still
+ * refused field by field. That is why this is a variant of the same schema and not a second one.
+ */
+export type EditedRecord = Omit<Assessment, "items"> & {
+  readonly items?: Assessment["items"];
+};
+
+/** What an edit's record is judged against: `zAssessment` with `items` optional, and no other change. */
+const zEditedRecord = zAssessmentObject.partial({ items: true }).superRefine((record, ctx) => {
+  // The id rule still applies to the list *when there is one* — an omitted list has nothing to
+  // collide, and a supplied list is held to the same uniqueness every fixture is.
+  if (record.items !== undefined) uniqueItemIds({ id: record.id, items: record.items }, ctx);
+});
+
+export type EditedRecordResult =
+  | { readonly ok: true; readonly record: EditedRecord }
+  | { readonly ok: false; readonly problems: readonly DraftProblem[] };
+
+/**
+ * Ask the same model about an **edit's** body: `validateTemplateRecord` with `items` optional.
+ *
+ * One validator family, one answer shape — the only difference is that the item list may be
+ * absent, which `zAssessment` refuses and an edit must accept (#943). `buildTemplateRecord`'s
+ * `.min(1)` is untouched: creating a template with no Aspects is still not creating a template.
+ */
+export function validateEditedRecord(raw: unknown): EditedRecordResult {
+  const result = zEditedRecord.safeParse(raw);
+  if (result.success) return { ok: true, record: result.data };
+  return {
+    ok: false,
+    problems: result.error.issues.map((issue) => ({
+      path: issue.path.join("."),
+      message: issue.message,
+    })),
+  };
+}
+
+/**
+ * The record an edit posts — **and it has no item list at all**, which is the point.
+ *
+ * It is not `buildTemplateRecord` with an empty array: that would post `items: []` and delete
+ * every Aspect on a title change. The absence is the payload, so the surface that draws no aspect
+ * control cannot name one, and the server's "omitted means unchanged" branch is the only thing
+ * that decides.
+ */
+export function buildEditedRecord(input: Omit<TemplateDraftInput, "aspects">): unknown {
+  return {
+    id: input.id,
+    slug: input.slug,
+    type: "assessment",
+    status: input.status,
+    date: input.date,
+    title: input.title.trim(),
+    summary: input.summary.trim(),
+  };
 }

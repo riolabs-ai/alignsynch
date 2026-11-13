@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Orchestration rules · prev [Releasing](RELEASING.md) · next [Branch triage](BRANCH-TRIAGE.md)
+[Docs hub](README.md) › **Operations** › Orchestration rules · prev [Releasing](RELEASING.md) · next [QA links](QA-LINKS.md)
 
 <!-- docs-nav:end -->
 
@@ -133,6 +133,6 @@ Card `t_4988e8f6` burned a run discovering this — the same diff took one inter
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Orchestration rules · prev [Releasing](RELEASING.md) · next [Branch triage](BRANCH-TRIAGE.md)
+[Docs hub](README.md) › **Operations** › Orchestration rules · prev [Releasing](RELEASING.md) · next [QA links](QA-LINKS.md)
 
 <!-- docs-nav:end -->

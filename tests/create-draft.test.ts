@@ -293,7 +293,7 @@ describe("a refusal names the field by its label", () => {
     expect(fieldSentence("email", "nonsense")).toBeNull();
   });
 
-  it("still resolves the store's own codes, and only two of them carry a link", () => {
+  it("still resolves the store's own codes, and only the field refusal carries no link", () => {
     const problems = sectionOf(assessmentCreatePageCopy, "problems");
     expect(createRefusal("invalid-input", undefined)).toEqual({
       sentence: itemLabel(problems, "invalid-input"),

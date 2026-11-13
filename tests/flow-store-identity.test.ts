@@ -206,6 +206,12 @@ const stub = vi.hoisted(() => {
   async function rows<T>(text: string, values: readonly unknown[] = []): Promise<T[]> {
     calls.push({ text, values });
     const sql = narrow(text);
+    // #835 — the publish trial, written by `grantPublishTrial()`. Asked before the read below
+    // because this statement's `WHERE NOT EXISTS` also selects `FROM billing_subscription`, and
+    // a write must not be answered as a read. One row: the fixture grants the trial.
+    if (sql.startsWith("INSERT INTO billing_subscription")) {
+      return [{ provider_subscription_id: `trial:${String(values[0])}` }] as T[];
+    }
     // No subscription row: the account is on the Free plan.
     if (sql.includes("FROM billing_subscription")) return [] as T[];
     if (sql.includes("FROM party vp") && sql.includes("JOIN session ai")) {
@@ -422,6 +428,49 @@ describe("createInstanceFromTemplate writes the Setting the form chose", () => {
 });
 
 /* ------------------------------------------------------------------ *\
+ * Create — the publish trial (#835)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A create that publishes opens the trial, on **both** publish paths.
+ *
+ * The draft path has granted it since #840 (`sendDraftInvitation`). The pre-#825 one-form create
+ * publishes inside its own transaction and granted nothing — so the row it committed read
+ * `lapsed` on the next membership read and the counterparty's claim was refused. #835 makes the
+ * two paths agree: whichever write moves a relationship to `published` opens the week.
+ */
+describe("a create that publishes opens the trial", () => {
+  function trialInserts() {
+    return callsMatching(/^INSERT INTO billing_subscription/);
+  }
+
+  it("grants it for the account that published, after the relationship is committed", async () => {
+    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+
+    const [grant] = trialInserts();
+    expect(grant).toBeDefined();
+    // After COMMIT, not inside the transaction: a trial that described a rolled-back relationship
+    // would be a paid week for nothing.
+    expect(onlyIndex(/^INSERT INTO billing_subscription/)).toBeGreaterThan(onlyIndex(/^COMMIT$/));
+    expect(grant.values[0]).toBe("account-avery");
+    // The entry paid tier — `PUBLISH_TRIAL_PLAN_ID`, the one whose entitlement plays both modes.
+    expect(grant.values[1]).toBe("basic");
+  });
+
+  it("writes none for a draft — the send is what publishes, and it grants there", async () => {
+    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery", draft: true }));
+
+    expect(trialInserts()).toHaveLength(0);
+  });
+
+  it("writes none for a signed-out create — there is no account to hold a trial", async () => {
+    await createInstanceFromTemplate(createInput({ viewerUserId: null }));
+
+    expect(trialInserts()).toHaveLength(0);
+  });
+});
+
+/* ------------------------------------------------------------------ *\
  * Claim — the Counterparty's row
  * ------------------------------------------------------------------ */
 
@@ -541,10 +590,17 @@ describe("a seat already held is not taken twice", () => {
  * ------------------------------------------------------------------ */
 
 /**
- * Stage 3 edits the Aspects the relationship will ask (#689), and the copy is what carries the
- * words. The ids and their order are the version's — `db:verify` V4 compares a relationship's copy
- * with the version it is bound to — so these cases assert the arrays the `INSERT … SELECT
- * unnest()` is handed: id, position, prompt, left, right.
+ * Stage 3 edits the Aspects the relationship will ask (#689), and — since #699 — may add or remove
+ * one. So the create makes one decision and the store records it:
+ *
+ *   - **a copy** (reworded only): the version's ids *and order*, carrying the person's words.
+ *     `aspects_authored_at` stays NULL and `db:verify` V4 compares it to the pinned version.
+ *   - **the creator's own list** (an Aspect added, removed or reordered): every row as they left
+ *     it, an id minted for each row they added, and `aspects_authored_at` set — which is what tells
+ *     V4 to validate the copy's structure instead of an equality that was never true.
+ *
+ * The cases below read the arrays the `INSERT … SELECT unnest()` is handed (id, position, prompt,
+ * left, right) and the session INSERT's sixth parameter.
  */
 describe("createInstanceFromTemplate writes stage 3's list", () => {
   /** The item INSERT's bound arrays, in the order the statement names them. */
@@ -559,6 +615,12 @@ describe("createInstanceFromTemplate writes stage 3's list", () => {
       prompts: insert.values[3] as readonly string[],
       lefts: insert.values[4] as readonly string[],
       rights: insert.values[5] as readonly string[],
+      /** `session.aspects_authored_at` — the sixth parameter of the session INSERT (#699). */
+      authoredAt: (() => {
+        const [session] = callsMatching(/^INSERT INTO session \(record_id, template_record_id/);
+        expect(session).toBeDefined();
+        return session.values[5];
+      })(),
     };
   }
 
@@ -569,37 +631,78 @@ describe("createInstanceFromTemplate writes stage 3's list", () => {
     expect(copy.prompts).toEqual(["Aspect One", "Aspect Two", "Aspect Three"]);
     expect(copy.lefts).toEqual(["Low", "Low", "Low"]);
     expect(copy.rights).toEqual(["High", "High", "High"]);
+    // No instant: this copy is the version's, and V4 compares it to the pin.
+    expect(copy.authoredAt).toBeNull();
   });
 
   it("writes the words the person reworded, keeping the version's ids and order", async () => {
+    // The draft holds the **whole list** — stage 3 posts the list the person is looking at, not a
+    // patch — so a reworded copy arrives as all three rows with one changed.
     const copy = await itemCopy({
       aspects: [
+        { id: "aspect-one", prompt: "Aspect One", leftValue: "Low", rightValue: "High" },
         {
           id: "aspect-two",
           prompt: "Do we say it early?",
           leftValue: "Rarely",
           rightValue: "Always",
         },
+        { id: "aspect-three", prompt: "Aspect Three", leftValue: "Low", rightValue: "High" },
       ],
     });
     expect(copy.ids).toEqual(["aspect-one", "aspect-two", "aspect-three"]);
     expect(copy.prompts).toEqual(["Aspect One", "Do we say it early?", "Aspect Three"]);
     expect(copy.lefts).toEqual(["Low", "Rarely", "Low"]);
     expect(copy.rights).toEqual(["High", "Always", "High"]);
+    // Rewording is not authorship: the copy is still the version's list.
+    expect(copy.authoredAt).toBeNull();
   });
 
-  it("ignores an id the version does not offer, and keeps the order the version has", async () => {
+  it("stores a row the person added, in their order, with a minted id and the instant (#699)", async () => {
     const copy = await itemCopy({
       aspects: [
-        { id: "aspect-mine", prompt: "Not the version's", leftValue: "x", rightValue: "y" },
-        // The list's own order is a draft fact; the copy stays in the version's order, because
-        // `copyDriftProblems` compares the id sequence, not just the set.
-        { id: "aspect-three", prompt: "Aspect Three", leftValue: "Low", rightValue: "High" },
         { id: "aspect-one", prompt: "Aspect One", leftValue: "Low", rightValue: "High" },
+        { id: "new-1", prompt: "Do we say thank you?", leftValue: "Never", rightValue: "Daily" },
+        { id: "aspect-two", prompt: "Aspect Two", leftValue: "Low", rightValue: "High" },
+        { id: "aspect-three", prompt: "Aspect Three", leftValue: "Low", rightValue: "High" },
       ],
     });
-    expect(copy.ids).toEqual(["aspect-one", "aspect-two", "aspect-three"]);
-    expect(copy.prompts).not.toContain("Not the version's");
+
+    expect(copy.ids).toHaveLength(4);
+    expect(copy.ids[0]).toBe("aspect-one");
+    expect(copy.ids[2]).toBe("aspect-two");
+    expect(copy.ids[3]).toBe("aspect-three");
+    // The added row's id is a record id — never the browser's `new-1` placeholder.
+    expect(copy.ids[1]).toMatch(/^aspect-[0-9a-f-]{36}$/);
+    expect(copy.positions).toEqual([0, 1, 2, 3]);
+    expect(copy.prompts[1]).toBe("Do we say thank you?");
+    expect(copy.authoredAt).not.toBeNull();
+  });
+
+  it("keeps a removed Aspect removed, and records the copy as authored (#699)", async () => {
+    const copy = await itemCopy({
+      aspects: [
+        { id: "aspect-one", prompt: "Aspect One", leftValue: "Low", rightValue: "High" },
+        { id: "aspect-three", prompt: "Aspect Three", leftValue: "Low", rightValue: "High" },
+      ],
+    });
+
+    // The old reduction wrote the version's three rows back, silently undoing the removal.
+    expect(copy.ids).toEqual(["aspect-one", "aspect-three"]);
+    expect(copy.authoredAt).not.toBeNull();
+  });
+
+  it("keeps a dragged list in the order it was dragged into (#699)", async () => {
+    const copy = await itemCopy({
+      aspects: [
+        { id: "aspect-three", prompt: "Aspect Three", leftValue: "Low", rightValue: "High" },
+        { id: "aspect-one", prompt: "Aspect One", leftValue: "Low", rightValue: "High" },
+        { id: "aspect-two", prompt: "Aspect Two", leftValue: "Low", rightValue: "High" },
+      ],
+    });
+
+    expect(copy.ids).toEqual(["aspect-three", "aspect-one", "aspect-two"]);
+    expect(copy.authoredAt).not.toBeNull();
   });
 
   it("falls back to the version's words for a blank value, never writing an empty prompt", async () => {
@@ -609,5 +712,34 @@ describe("createInstanceFromTemplate writes stage 3's list", () => {
     expect(copy.prompts[0]).toBe("Aspect One");
     expect(copy.lefts[0]).toBe("Low");
     expect(copy.rights[0]).toBe("High");
+  });
+
+  it("refuses an emptied list before the transaction opens — a relationship asks at least one", async () => {
+    stub.reset();
+    await expect(createInstanceFromTemplate(createInput({ aspects: [] }))).rejects.toMatchObject({
+      code: "aspects-none",
+    });
+
+    // Not "wrote nothing and rolled back": the refusal is before `getPool()`.
+    expect(stub.calls).toHaveLength(0);
+  });
+
+  it("refuses a blank row the person added — nothing can stand in for its question", async () => {
+    stub.reset();
+    await expect(
+      createInstanceFromTemplate(
+        createInput({
+          aspects: [
+            { id: "aspect-one", prompt: "Aspect One", leftValue: "Low", rightValue: "High" },
+            { id: "new-1", prompt: "   ", leftValue: "Never", rightValue: "Daily" },
+          ],
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "invalid-input" });
+
+    // The check needs the version in hand, so it runs inside the transaction — and the transaction
+    // is rolled back rather than committed.
+    expect(callsMatching(/^COMMIT$/)).toHaveLength(0);
+    expect(callsMatching(/^INSERT INTO item/)).toHaveLength(0);
   });
 });

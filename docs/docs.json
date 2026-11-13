@@ -22,6 +22,16 @@
           "question": "Why does the gate cost what my change costs, and which lane am I in?"
         },
         {
+          "path": "WORKFLOW.md",
+          "title": "Request → release",
+          "question": "How does an annotation become a versioned release, and how deep is this request?"
+        },
+        {
+          "path": "templates/RELEASE-TRAIN.md",
+          "title": "Release-train card template",
+          "question": "What does a release-train card carry — children, sequence, cutoff, proof?"
+        },
+        {
           "path": "GATE.md",
           "title": "The gate",
           "question": "What does `scripts/verify.sh` run, in what order, and what are its current numbers?"
@@ -271,6 +281,91 @@
           "path": "specs/ux-reference-patterns.md",
           "title": "Reference UX patterns",
           "question": "What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/README.md",
+          "title": "AS2 home redesign (handoff)",
+          "question": "What is in the approved home-redesign package, and how do I preview it?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md",
+          "title": "AS2 home redesign — implementation brief",
+          "question": "Which existing components does the redesign reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/ASSET-SOURCES.md",
+          "title": "AS2 redesign — asset sources and credits",
+          "question": "Where did each photograph come from, who took it, and under which licence?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/README.md",
+          "title": "V2 home and brand package (handoff)",
+          "question": "What is in the V2 package, which files ship with it, and what is it authoritative for?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/README.md",
+          "title": "V2 home page (handoff)",
+          "question": "How do I preview the V2 home page, and which files make it up?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md",
+          "title": "V2 home page — implementation brief",
+          "question": "Which components, tokens and fixtures does the V2 home page reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md",
+          "title": "V2 home page — asset sources and credits",
+          "question": "Where did each V2 home-page photograph come from, and under which licence?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/brand-profile/README.md",
+          "title": "V2 brand and audience profile (handoff)",
+          "question": "How do I open the private brand profile, and which sections does it carry?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/banner/README.md",
+          "title": "Admin notice banner (V2 package)",
+          "question": "Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/admin-brand/README.md",
+          "title": "/admin/brand (V2 package)",
+          "question": "Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/README.md",
+          "title": "AS2 templates redesign (handoff)",
+          "question": "What is in the approved Templates-catalogue package, and how do I preview it?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md",
+          "title": "AS2 templates redesign — implementation brief",
+          "question": "Which existing components does the catalogue rewrite reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md",
+          "title": "AS2 catalogue UI system",
+          "question": "What are the reusable realm tints, icon map, card anatomy and detail order?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md",
+          "title": "AS2 templates redesign — source notes",
+          "question": "Which live routes, fixtures and assets did the approved catalogue read from?"
+        },
+        {
+          "path": "qa-as2-home/README.md",
+          "title": "AS2 home visual QA",
+          "question": "Does the built front page match the approved page, and where do its anchor targets land?"
+        },
+        {
+          "path": "qa-templates-redesign/README.md",
+          "title": "AS2 templates catalogue visual QA",
+          "question": "Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?"
+        },
+        {
+          "path": "qa-home-comments/README.md",
+          "title": "Home review comments — the logo",
+          "question": "Is the public header's brand lockup a link home, and what did the page look like before it was?"
         }
       ]
     },
@@ -295,6 +390,11 @@
           "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
         },
         {
+          "path": "QA-LINKS.md",
+          "title": "QA links",
+          "question": "Which local routes do I click to QA this change range, and what will each one cost me?"
+        },
+        {
           "path": "BRANCH-TRIAGE.md",
           "title": "Branch triage",
           "question": "Which of the non-main heads is safe, and on what evidence?"
@@ -308,6 +408,11 @@
           "path": "DEMO-AUTH.md",
           "title": "Demo auth",
           "question": "How do the demo roles and the PIN gate work?"
+        },
+        {
+          "path": "GROWTH-MODEL.md",
+          "title": "The growth model",
+          "question": "Where does the $3M demonstration business come from, and how is it proven?"
         },
         {
           "path": "RESEND-INBOUND.md",
@@ -419,6 +524,16 @@
           "path": "changelog/README.md",
           "title": "Release blog",
           "question": "What shipped in which release, and where does this page come from?"
+        },
+        {
+          "path": "changelog/v1-17-0.md",
+          "title": "v1.17.0",
+          "question": "Which release made stage 5 a three-step payment walk, and what does it defer?"
+        },
+        {
+          "path": "changelog/v1-16-0.md",
+          "title": "v1.16.0",
+          "question": "Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?"
         },
         {
           "path": "changelog/v1-0-0.md",
@@ -543,6 +658,11 @@
           "question": "Does the assessment flow work end to end with two real identities?"
         },
         {
+          "path": "qa-surface-sweep-913/README.md",
+          "title": "Surface sweep, #913",
+          "question": "Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?"
+        },
+        {
           "path": "qa-payment/README.md",
           "title": "Payment capture & completion",
           "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
@@ -553,9 +673,19 @@
           "question": "Is the rail role-constrained data, with focused-flow chrome?"
         },
         {
+          "path": "qa-rail-handle/README.md",
+          "title": "Rail collapse handle",
+          "question": "Does the width control toggle from the rail's border, and is the icon rail coherent?"
+        },
+        {
           "path": "qa-brand-lockup/README.md",
           "title": "Brand lockup",
           "question": "Is the lockup back in the chrome, at a seal's size?"
+        },
+        {
+          "path": "qa-comments-mockup/README.md",
+          "title": "Comments mockup, both placements",
+          "question": "Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?"
         },
         {
           "path": "qa-contact-land/README.md",
@@ -586,6 +716,16 @@
           "path": "qa-recharts-3/README.md",
           "title": "recharts 3",
           "question": "Do the pie labels still render after the recharts 3 bump?"
+        },
+        {
+          "path": "qa-rel-detail-edit/README.md",
+          "title": "Relationship detail — the edit form is asked for",
+          "question": "Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?"
+        },
+        {
+          "path": "qa-stage5/README.md",
+          "title": "Stage 5, both states",
+          "question": "Does stage 5 offer the payment walk and send/draft instead of a band with no action?"
         },
         {
           "path": "qa-swiper-12/README.md",

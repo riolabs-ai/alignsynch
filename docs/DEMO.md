@@ -70,9 +70,12 @@ Three operations, in this order, and nothing else:
    state to be preserved as `<branch>-preserved-<UTC stamp>`. The API moves every child under that
    preserved branch, so the demo comes out of the restore with none and the next run needs nothing
    different — the repair is once per child, not once per night. A preserved branch is a real
-   branch: one against the project's branch limit, the storage its rows occupy, no compute, and the
-   reset never deletes it (it is the recovery point the parameter exists to create — retiring one
-   is `neon branches delete`).
+   branch: one against the project's branch limit, the storage its rows occupy, no compute. It is a
+   recovery point, so the newest one per branch is kept — but it is not kept forever: the reset's
+   pre-flight (`scripts/demo-branch-prune.mjs`, proved by `tests/demo-branch-prune.test.ts`) retires
+   a preserved branch that is not the newest for its parent, and any older than
+   `DEMO_PRESERVED_MAX_AGE_DAYS` (7). See [the branch ceiling](#the-branch-ceiling) for why that
+   bound exists and what it never touches.
 
 3. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
    `DEMO_AUTH=1`, pointed at _that branch's_ connection string and _that branch's_ auth host. The
@@ -87,7 +90,35 @@ content tables, `user_profile`, `demo_account` and `neon_auth`'s users go, in de
 inside one `BEGIN … COMMIT` on a branch that is already valid. It is deliberately in the reset
 script rather than in `db-seed`, whose refusal to delete a row it did not author is the right rule
 on **production** and the wrong one on a demo. The normal path empties nothing: the restore already
-landed on an empty branch.
+landed on an empty branch. Since #865 `db-seed` has exactly one bundle-scoped exception, described
+below: it sweeps `relationship` rows the bundle does not describe. A `record` row is still refused,
+never deleted.
+
+### A drifted branch converges instead of refusing (#865)
+
+The demo branch is shared fleet-wide, so it collects rows no seed authored — a killed `flow:e2e`
+used to leave its `relationship` row behind, because `DELETE FROM record` never took it: a
+relationship is keyed by the template, not by the instance. `pnpm db:seed` then aborted on them
+(`relationship: expected 4 row(s) … found 38`) _after_ phase 1 had removed the demo accounts, which
+is how the branch lost its only admin identity. Now phase 1 sweeps them:
+
+- **The predicate is the bundle, and nothing else.** Every `relationship` whose id is not
+  `relationship-<instance id>` for an instance in the source goes, children first —
+  `relationship_payment`, `relationship_member`, `coach_invite`, then `opinion`, `party`,
+  `session_invite`, `session`, then the `relationship` itself, because `0036` declares that FK with
+  no cascade. It is never a delete by email, by id prefix or by "looks like a test row".
+- **The exact-count assertion is unchanged.** Convergence is what makes it affordable; weakening it
+  is what would make the next drift invisible.
+- **`record` rows are still refused, not deleted.** A record this seed did not author is content
+  somebody may have meant: the seed names it and rolls back, and the sweep never touches `record`.
+- **`pnpm db:seed:check`** (or `node scripts/db-seed.mjs --check`) prints what the sweep _would_
+  remove and exits **1** on any drift — read-only, no advisory lock, no write, no auth call. It is
+  the safe question to ask about a branch every card shares, and it answers 0 when every
+  relationship row is the bundle's.
+
+`scripts/flow-e2e.mjs` also cleans up after itself — the relationship, its payment and membership
+rows, and the account it signed up — in a `finally` and on `SIGINT`/`SIGTERM`. The sweep is the net
+for a `kill -9`, not the plan.
 
 `demo-base` must never hold content rows, auth users or an app deployment. It is a schema, not an
 environment: nothing reads it directly, so a row written there is invisible until a restore copies
@@ -154,6 +185,9 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
 
 ### What it refuses
 
+- **A project with no free branch slot.** A restore spends one, so at the ceiling the run stops
+  before it writes anything, in words that name the branches holding the slots — never with the
+  API's raw `422 — branches limit exceeded`. See [the branch ceiling](#the-branch-ceiling).
 - **The project's default branch** (`production`), by id and by name. The demo reset never touches
   it, and the check is the API's own `default` flag rather than a string, so a renamed default is
   still refused.
@@ -181,6 +215,43 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
   writing. The same holds for the migrate step, which sets `DATABASE_URL_UNPOOLED` to the source's
   URI for the child process — `scripts/load-env.mjs` does not override a variable that is already
   set.
+
+### The branch ceiling
+
+Neon's plan gives this project ten branches, and a **restore spends one** — even a restore that
+preserves nothing. On 2026-11-12 the nightly reset failed twice on `422 — branches limit exceeded`
+while the project held ten of ten and the restore body carried no `preserve_under_name` at all (run
+43263203497's log: `children none — the body carries no preserve_under_name`). The slots had been
+taken by the reset's own recovery points, and nothing was watching the ceiling.
+
+So the reset checks capacity **before** it writes anything (`scripts/demo-branch-prune.mjs`):
+
+1. It reads the project's branches and applies the preserved-branch policy. A branch is a candidate
+   only when its name parses as `<branch>-preserved-<YYYYMMDD-HHMMSS>`; the newest per parent and
+   anything younger than `DEMO_PRESERVED_MAX_AGE_DAYS` (7) are kept, and the rest are deleted
+   (`DELETE /projects/{id}/branches/{id}`). The clock is the **stamp in the name**, not
+   `created_at` — a preserved branch reports its parent's creation date, which for
+   `demo-preserved-20261106-111855` is the day `demo-base` was cut.
+2. It re-reads the list and, if the project is still at or over its limit, **refuses by name**: the
+   count, the ceiling, every branch that holds a slot and why it was kept. The raw 422 is never
+   surfaced; if the API answers one anyway (a slot filled between the two reads) the error is
+   translated into the same sentence.
+
+What it never deletes, whatever the name looks like: `production`, `demo`, `demo-base`, the
+project's default branch by its own flag, anything in `DEMO_KEEP_BRANCHES`, and the experiment
+branches `coach-card`, `rel-schema-533-p1`, `initiator-crud-533-p2`, `lapse-533-p3`. Those four are
+the owner's work in progress: they are named in the code so that a later reader who notices they
+occupy four of the ten slots does not "fix" the problem by deleting them. Anything whose name is not
+a preserved branch is kept too — the policy prunes what the reset created, never what a person made.
+
+`--dry-run` prints the same plan and the count it would delete (`would prune N`), deletes nothing,
+and decides capacity as if the deletions had happened — so it answers "is tomorrow's run wedged?"
+without touching the project.
+
+Tuning is by environment: `DEMO_BRANCH_LIMIT` (default 10), `DEMO_PRESERVED_MAX_AGE_DAYS` (default
+7) and `DEMO_KEEP_BRANCHES` (comma- or space-separated names). The gate and `pnpm test` never make a
+live Neon call: the policy is a pure function of the branch list and a clock, and
+`tests/demo-branch-prune.test.ts` drives it over a fake API.
 
 ### When it fails
 

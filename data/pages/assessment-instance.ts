@@ -124,6 +124,16 @@ export const inviteBandSection: PageCopySection = {
     },
     { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
     { id: "no-invite", label: "This relationship has no invitation to send again." },
+    /**
+     * #911 — the send's own refusal, in the same band. The stage's send waits for the walk, and a
+     * request that skips it is answered here rather than published: the sentence says what is
+     * missing (the card), what was not done (nothing was sent), and what costs nothing (the draft).
+     */
+    {
+      id: "no-payment-method",
+      label:
+        "The invitation was not sent: this relationship has no card on file yet. Finish the plan and the card on the invite screen, or keep the draft — nothing has been charged.",
+    },
   ],
 };
 

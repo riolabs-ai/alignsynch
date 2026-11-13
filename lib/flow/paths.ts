@@ -23,13 +23,41 @@ export const ASSESSMENTS_PATH = "/assessment";
 export const OVERVIEW_PATH = "/dashboard";
 
 /**
- * `/assessment/instances` — the instances **this signed-in account** is a party to (#213).
+ * Where a member's relationships are **listed** (#841).
  *
- * A static path beside the dynamic `/assessment/instances/[instanceId]`, not a child of it: the
- * list is its own surface, and a browser that types it gets the list rather than a 404 for an
- * instance id nobody holds.
+ * `OVERVIEW_PATH` is the dashboard home, which is still fixture-driven; this is the page that
+ * renders rows — `listMyRelationships()`, drafts included, because its query filters only on
+ * `VIEWER_IS_PARTY`. The two were conflated, so stage 5's keep-as-draft control sent a creator to a
+ * home page that cannot show the draft it had just saved. A destination that promises "saved under
+ * your relationships" has to be the list.
  */
-export const MY_INSTANCES_PATH = "/assessment/instances";
+export const RELATIONSHIPS_PATH = `${OVERVIEW_PATH}/relationships`;
+
+/**
+ * One relationship's own screen (#620).
+ *
+ * `RELATIONSHIPS_PATH` is the **base**, not the destination — a child of it is spelled by building
+ * on it, or the two halves drift into `/dashboard/relationships/relationships/<id>`. It lives in
+ * this module rather than beside the read because the card that draws it is a client component
+ * (#841 part 2): a value import from `lib/member/relationships.ts` would drag `pg` into the
+ * browser graph, and `data:check` E34 fails exactly that crossing.
+ */
+export function relationshipPath(relationshipId: string): string {
+  return `${RELATIONSHIPS_PATH}/${relationshipId}`;
+}
+
+/**
+ * `/assessments` — the **assessment sessions** this signed-in account is a party to (#877).
+ *
+ * Plural, and a sibling of `/dashboard/relationships` and `/dashboard/templates`: the three are
+ * the member's own record lists, and the owner's correction was that this one is a *listing*
+ * (`assessments/`), not a page under the `/assessment` record-kind (`assessment/`). It replaced
+ * `/assessment/instances`, which is now a 308 here (`next.config.mjs`) — one listing, one address.
+ *
+ * It is not `instancePath()`'s base: a session is still addressed at
+ * `/assessment/instances/<record id>`, because that is the flow's own route and it did not move.
+ */
+export const MY_ASSESSMENTS_PATH = "/assessments";
 
 /** The create endpoint — a POST-only route handler. */
 export const CREATE_INSTANCE_PATH = "/assessment/new";
@@ -141,13 +169,29 @@ export const TEMPLATE_LIBRARY_PATH = RELATIONSHIP_TEMPLATES_PATH;
 export const NEW_TEMPLATE_PATH = `${RELATIONSHIP_TEMPLATES_PATH}/new`;
 
 /**
- * `/relationship-types` — the public catalogue (#794).
+ * `/relationship-types` — one relationship *type*'s public page (#794).
  *
  * The reachable half of `TEMPLATES_PATH`: the *taxonomy* of relationship types the shop sells,
  * one page per purchasable type, and no session needed. It is in `(marketing)` — wordmark, no
  * sidebar — because a stranger is who it is for.
+ *
+ * **Since #905 this is not the catalogue.** The public catalogue answers at
+ * `TEMPLATE_CATALOGUE_PATH`; this constant is the namespace the type pages and their worked
+ * examples live in, and the address the #889 catalogue composition is retained at as a variation
+ * (`app/(marketing)/relationship-types/page.tsx`).
  */
 export const RELATIONSHIP_TYPES_PATH = "/relationship-types";
+
+/**
+ * `/relationship-templates` — the public catalogue of templates (#905).
+ *
+ * The door the shared header's `Templates` row, the footer's catalogue link and every "start with
+ * a template" action point at: the V2 catalogue, which lists the taxonomy by group and links each
+ * type to its page under `RELATIONSHIP_TYPES_PATH`. It is a separate constant from
+ * `RELATIONSHIP_TEMPLATES_PATH` (`/templates/relationship`, the member's library) on purpose —
+ * two surfaces, two nouns, and a reader should not have to guess which one a link means.
+ */
+export const TEMPLATE_CATALOGUE_PATH = "/relationship-templates";
 
 /**
  * One relationship type's public page — `/relationship-types/<id>`.
@@ -196,9 +240,40 @@ export function templateStatusPath(slug: string): string {
   return `${relationshipTemplatePath(slug)}/status`;
 }
 
+/**
+ * One template's **own** editor — the surface that can change its Aspects (#870).
+ *
+ * Not the read-only detail page above: `/templates/relationship/<slug>` draws what the catalogue
+ * offers and writes nothing but archive/duplicate, so a refusal that says "this template has no
+ * Aspects" pointing there would send a person to a page that cannot fix it. This address is the
+ * member's editor, which is the console's editor mounted with `band="private"`
+ * (`app/(mainlayout)/dashboard/templates/[id]/page.tsx`).
+ *
+ * **Takes `record.id`, and that is the one place the id belongs in a URL here** — the editor route
+ * is keyed on the record, not on a slug, and it is the only such address this flow links to.
+ *
+ * It carries no "come back here" parameter: the editor does not read one, so a `?return=` would be
+ * a promise the page never keeps. A person who fixes an Aspect there returns to the flow from the
+ * editor's own navigation, which is the honest shape until the editor grows that parameter.
+ */
+export function dashboardTemplateEditorPath(recordId: string): string {
+  return `${OVERVIEW_PATH}/templates/${recordId}`;
+}
+
 /** The duplicate endpoint — a POST, so a GET never writes a copy. */
 export function templateDuplicatePath(slug: string): string {
   return `${relationshipTemplatePath(slug)}/duplicate`;
+}
+
+/**
+ * The delete endpoint — a POST, and a separate address from `/status` on purpose.
+ *
+ * Archiving and deleting are two different promises ("hidden, and still recoverable" versus
+ * "gone"), and an address that carried either a state or an absence would make the same URL mean
+ * both a move and a destruction. The row's delete control posts here, and only here.
+ */
+export function templateDeletePath(slug: string): string {
+  return `${relationshipTemplatePath(slug)}/delete`;
 }
 
 /**
