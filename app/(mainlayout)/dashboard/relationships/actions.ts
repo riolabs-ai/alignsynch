@@ -28,10 +28,13 @@
  * one click again once the account is entitled. The screen draws it as a link, not as an error.
  */
 import { ActRefused } from "@/lib/admin/act";
-import { validateTemplateRecord } from "@/lib/admin/template-draft";
+import {
+  validateEditedRecord,
+  validateTemplateRecord,
+  type EditedRecord,
+} from "@/lib/admin/template-draft";
 import { currentUser } from "@/lib/auth/session";
 import { BillingRefusal } from "@/lib/billing/port";
-import type { Assessment } from "@/content/assessment";
 import { zAlignmentSetting, zAssessmentMode } from "@/content/assessment";
 import { baseUrl } from "@/lib/flow/email";
 import { forkRelationshipTemplate } from "@/lib/flow/templates";
@@ -373,10 +376,17 @@ export async function forkRelationshipTemplateAction(payload: {
   };
 }
 
-/** The posted record, validated exactly as a save validates it — one validator, one answer. */
+/**
+ * The posted record, validated exactly as a save validates it — one validator, one answer.
+ *
+ * `items` is **optional** here (#943): the relationship's edit dialog draws no Aspect control, so
+ * it posts no list, and `validateEditedRecord` is `zAssessment` with that one field allowed to be
+ * absent. A body that *does* name a list is held to the same schema — `.min(1)`, the 1..5 scale,
+ * two named ends, unique ids — so sending rows is still a checked act rather than an ignored one.
+ */
 function parseEditedRecord(
   posted: unknown,
-): { ok: true; record: Assessment } | { ok: false; code: string; message?: string } {
+): { ok: true; record: EditedRecord } | { ok: false; code: string; message?: string } {
   if (typeof posted !== "object" || posted === null || Array.isArray(posted)) {
     return { ok: false, code: "invalid-draft" };
   }
@@ -387,7 +397,7 @@ function parseEditedRecord(
     type: "assessment",
     status: "draft",
   };
-  const parsed = validateTemplateRecord(body);
+  const parsed = validateEditedRecord(body);
   if (!parsed.ok) {
     return {
       ok: false,
@@ -400,7 +410,7 @@ function parseEditedRecord(
 
 /** The draft the library takes, from a validated record and the payload's side fields. */
 function editDraftOf(
-  record: Assessment,
+  record: EditedRecord,
   payload: {
     versionId?: string | null;
     counterpartyName?: string;

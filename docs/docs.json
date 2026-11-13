@@ -546,6 +546,11 @@
           "question": "What shipped in which release, and where does this page come from?"
         },
         {
+          "path": "changelog/v1-17-0.md",
+          "title": "v1.17.0",
+          "question": "Which release made stage 5 a three-step payment walk, and what does it defer?"
+        },
+        {
           "path": "changelog/v1-16-0.md",
           "title": "v1.16.0",
           "question": "Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?"
