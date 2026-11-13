@@ -1,6 +1,6 @@
 "use client";
 
-// template-ancestor: components/admin/template-editor.tsx   (variation: one relationship's every editable field in a single form surface — meta, Aspects, the pin, the invitee and the invitation's window — with the cost of the change computed from real rows and shown before the save, where the editor has a save band and an answer-sheet preview)
+// template-ancestor: components/admin/template-editor.tsx   (variation: one relationship's every editable field in a single form surface — meta, the pin, the invitee and the invitation's window — with the cost of the change computed from real rows and shown before the save, where the editor has a save band and an answer-sheet preview)
 
 /**
  * The relationship edit surface — #623, for the initiator and for staff on the console.
@@ -26,6 +26,15 @@
  * (`db-verify` V18 refuses an `UPDATE session` that touches them), so this panel prints them with
  * the reason they are fixed. A control that the server would refuse is the "disabled button that
  * explains nothing" #533's card names as the failure to avoid.
+ *
+ * **The Aspects are not on this surface, and that is #935.** The detail screen already draws them
+ * through `AspectList` (`components/assessment-flow/aspect-list.tsx`) — rows, a pointer drag that
+ * reorders them, an in-place editor and its own save — so a second, always-open stack of forms here
+ * printed the same five questions twice and offered two different writers for one fact. The owner
+ * read that off the running screen and asked for the drag list to be kept and the stacked forms
+ * removed. So this panel carries **no aspect state**: `payload()` rebuilds the record from
+ * `state.aspects`, the rows the page read, which makes the write a no-op for them instead of an
+ * overwrite by an array this surface can no longer show anyone.
  */
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,16 +49,6 @@ import type { EditInvalidation } from "@/lib/relationship/edit";
 import type { RelationshipEditState } from "@/lib/relationship/edit-view";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { useState, useTransition } from "react";
-
-/** One Aspect while it is being edited. `id` is absent only for a row added in this edit. */
-interface AspectState {
-  readonly id?: string;
-  readonly prompt: string;
-  readonly leftValue: string;
-  readonly rightValue: string;
-}
-
-const BLANK_ASPECT: AspectState = { prompt: "", leftValue: "", rightValue: "" };
 
 /** The payload both calls take — one shape, so the preview and the save cannot disagree. */
 export interface RelationshipEditPayload {
@@ -99,14 +98,10 @@ export function RelationshipEditPanel({
 }) {
   const editCopy = sectionOf(copy, "edit");
   const rail = variant === "panel";
-  const fieldRow = rail ? "grid gap-2" : "grid gap-2 sm:grid-cols-2";
 
   const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState(state.title);
   const [summary, setSummary] = useState(state.summary);
-  const [aspects, setAspects] = useState<AspectState[]>(
-    state.aspects.map((aspect) => ({ ...aspect })),
-  );
   const [versionId, setVersionId] = useState<string | null>(null);
   const [counterpartyName, setCounterpartyName] = useState(state.invite?.name ?? "");
   const [counterpartyEmail, setCounterpartyEmail] = useState(state.invite?.email ?? "");
@@ -127,12 +122,13 @@ export function RelationshipEditPanel({
    */
   const boundVersion = state.versions.find((version) => version.current);
 
-  function patchAspect(index: number, patch: Partial<AspectState>): void {
-    setAspects((current) =>
-      current.map((aspect, at) => (at === index ? { ...aspect, ...patch } : aspect)),
-    );
-  }
-
+  /**
+   * The record the edit posts — and the Aspects in it are the ones the page read, never a copy this
+   * panel can edit (#935). `state.aspects` is the row set the detail's `AspectList` shows; posting
+   * anything else here would be a second writer for one fact, and posting nothing (`items: []`)
+   * would delete every Aspect on a title change. So the list travels exactly as read: the server's
+   * arithmetic sees no move, and the Aspect save stays where the drag is.
+   */
   function payload(confirm: boolean): RelationshipEditPayload {
     return {
       ...(instanceRecordId === undefined
@@ -145,7 +141,7 @@ export function RelationshipEditPanel({
         summary,
         status: state.record.status,
         date: state.record.date,
-        aspects,
+        aspects: state.aspects,
       }),
       versionId,
       ...(claimed ? {} : { counterpartyName, counterpartyEmail }),
@@ -262,57 +258,6 @@ export function RelationshipEditPanel({
         ) : (
           <p className="text-sm text-muted-foreground">{itemLabel(editCopy, "mode-help")}</p>
         )}
-
-        <div className="space-y-3">
-          <p className="text-sm font-medium">{itemLabel(editCopy, "aspects")}</p>
-          <ul data-edit-aspects className="space-y-3">
-            {aspects.map((aspect, index) => (
-              <li key={aspect.id ?? `new-${index}`} className="space-y-2 rounded-lg border p-3">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor={`edit-prompt-${index}`}>{itemLabel(editCopy, "prompt")}</Label>
-                  <Input
-                    id={`edit-prompt-${index}`}
-                    value={aspect.prompt}
-                    onChange={(event) => patchAspect(index, { prompt: event.target.value })}
-                  />
-                </div>
-                <div className={fieldRow}>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor={`edit-left-${index}`}>{itemLabel(editCopy, "left")}</Label>
-                    <Input
-                      id={`edit-left-${index}`}
-                      value={aspect.leftValue}
-                      onChange={(event) => patchAspect(index, { leftValue: event.target.value })}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor={`edit-right-${index}`}>{itemLabel(editCopy, "right")}</Label>
-                    <Input
-                      id={`edit-right-${index}`}
-                      value={aspect.rightValue}
-                      onChange={(event) => patchAspect(index, { rightValue: event.target.value })}
-                    />
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setAspects((current) => current.filter((_, at) => at !== index))}
-                >
-                  {itemLabel(editCopy, "remove")}
-                </Button>
-              </li>
-            ))}
-          </ul>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setAspects((current) => [...current, BLANK_ASPECT])}
-          >
-            {itemLabel(editCopy, "add")}
-          </Button>
-        </div>
 
         {state.versions.length > 1 ? (
           <div className="flex flex-col gap-2">
