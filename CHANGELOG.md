@@ -6,10 +6,16 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
-## [1.17.1] - 2026-11-13
+## [1.18.0] - 2026-11-13
+
+### Added
+
+- `feat(qa)` — #945 the release atlas — capture and verify every surface, backfilled for v1.17.0 ([#968](https://github.com/riolabs-ai/alignsynch/pull/968))
+- `feat(docs)` — report a problem from the page into the next release (#894) ([#973](https://github.com/riolabs-ai/alignsynch/pull/973))
 
 ### Fixed
 
+- `fix(seed)` — publish the templates the catalogue marks published (#962) ([#974](https://github.com/riolabs-ai/alignsynch/pull/974))
 - `fix(flow)` — POST /assessment/new writes the draft and nothing else (#957) ([#969](https://github.com/riolabs-ai/alignsynch/pull/969))
 - `fix(brand)` — the icons fill their box and round at the app's own --radius (#963) ([#967](https://github.com/riolabs-ai/alignsynch/pull/967))
 - `fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) ([#964](https://github.com/riolabs-ai/alignsynch/pull/964))
@@ -18,6 +24,9 @@ with a **Known limits** block, because a release that does not say what it canno
 
 ### Maintenance
 
+- fix(modal) · #975 stage 2 says why it will not advance — the D7 refusal is visible ([#984](https://github.com/riolabs-ai/alignsynch/pull/984))
+- fix(relationships) · #958 a relationship with no initiator member has an initiator ([#981](https://github.com/riolabs-ai/alignsynch/pull/981))
+- feat(admin) — /admin/docs gains a features index and a release shelf, both derived (#893) ([#978](https://github.com/riolabs-ai/alignsynch/pull/978))
 - `chore(gate)` — the slot covers the heavy section, not just the build (default 3, measured) ([#951](https://github.com/riolabs-ai/alignsynch/pull/951))
 - `perf(gate)` — share the Turbopack and tsc caches across worktrees ([#952](https://github.com/riolabs-ai/alignsynch/pull/952))
 - `docs(specs)` — publish the owner's spec packages and manuals, registered in the hub (#931) ([#940](https://github.com/riolabs-ai/alignsynch/pull/940))
@@ -30,6 +39,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
 - **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
 - **The modal rule has not been audited screen by screen.** This version applies it where it touched a surface — the create path and the pay step — and does not claim the audit. #913 was closed by the narrower fix it produced, so the screen-by-screen pass is still owed.
+- **The docs tree is not reorganised yet.** #922's by-question move (PR #965) is still in flight, so `docs/` is the flat tree this release's pages live in. #922 moved to the v1.19.0 milestone and lands as its own change; nothing in this version renumbers or moves a docs path.
 
 ## [1.17.0] - 2026-11-13
 
@@ -75,7 +85,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
 - **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
 - **The modal rule has not been audited screen by screen.** #913 asks for every screen, page, menu and button to be validated against it. This version applies the rule where it touched a surface — the relationship edit form is a dialog and the pay step is a modal — and does not claim the audit.
-- **The edit panel still posts a snapshot of the Aspects.** Reorder in the detail's list, then save the panel in the same page session without a refresh, and the pre-reorder order is written back (#943). It was scheduled to land before this release and is not in it; the fix ships in the next patch.
+- **The edit panel still posts a snapshot of the Aspects.** Reorder in the detail's list, then save the panel in the same page session without a refresh, and the pre-reorder order is written back (#943). It was scheduled to land before this release and is not in it; the fix ships in the next release.
 
 ## [1.16.0] - 2026-11-12
 
