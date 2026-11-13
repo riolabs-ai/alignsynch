@@ -480,7 +480,7 @@ fi
 if [ "$LANE" = "docs" ]; then
   run_step "whitespace (git diff --check)" check_whitespace || fail
 else
-  run_step "typecheck (next typegen && tsc --noEmit)" pnpm typecheck || fail
+  run_step "typecheck (next typegen && tsc --noEmit, shared buildinfo)" pnpm typecheck || fail
 fi
 
 # Biome formats markdown too, so this is the docs lane's real gate as well as

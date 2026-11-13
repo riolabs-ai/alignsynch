@@ -234,6 +234,48 @@ The budget rows in `scripts/verify.sh`'s header (`docs` 1–2 s, `content` 16–
 understate all four. They are left as they are here: this change is `docs/` only, and a stale
 comment is a smaller defect than an untested edit to the gate.
 
+### The shared build cache, measured 2026-11-12
+
+`.next` is per-worktree, so `next build`'s Turbopack cache — `<distDir>/cache/turbopack/<version>`,
+the path `next/dist/lib/turbopack-cache-seed.js` names — was per-worktree as well, and every worktree
+started cold: 70 worktrees held 64 separate `.next` caches totalling 27 GB. `tsconfig.json` is
+`incremental`, but the buildinfo it writes is per-tree too, so `tsc --noEmit` was cold on every card.
+
+`scripts/build-cache.mjs` keeps both under `~/.cache/quizhub/`, keyed by a hash of the `next`
+version, the `typescript` version, the Node major and the `pnpm-lock.yaml` digest, so a bump lands on
+a different directory and misses rather than half-hitting. `link` points `.next/cache` at the shared
+directory while the build slot is held, and `unlink` puts an empty real directory back afterwards, so
+a dev server never opens the store a gate build holds. Every directory carries a `.cache-key`
+sentinel, and a directory whose sentinel does not match is deleted, never read.
+
+```bash
+node scripts/build-cache.mjs status          # key, paths, sizes
+time GATE_LANE=full bash scripts/verify.sh   # cold, then the same command again warm
+```
+
+| Same head, 8-core host under fleet load (2026-11-12) | cold        | warm       |
+| ---------------------------------------------------- | ----------- | ---------- |
+| `typecheck` (`next typegen` + the shared buildinfo)  | 29.7 s      | 5.6 s      |
+| `build` (`next build`, flock slot)                   | 54.0 s      | 12.9 s     |
+| **gate total**                                       | **146.9 s** | **84.1 s** |
+
+The cold run is a **deliberate full miss**: the shared directory's `.cache-key` was overwritten with
+`corrupted-key-do-not-trust` and one 100 MB RocksDB `.sst` was replaced with text. The step printed
+`build cache: slot 1 · key … · poisoned, wiped`, rebuilt everything and went green — an untrustworthy
+cache costs one build, never a verdict. Two further probes, in a second worktree that had never built
+(`git worktree add --detach`, `pnpm install --frozen-lockfile`):
+
+- that tree built in **31.8 s** (`Compiled successfully in 11.1 s`) off the directory the first tree
+  filled, and `du -sh ~/.cache/quizhub/next/<key>/` stayed **one** directory — 274 MB for both
+  trees, against 232 MB per tree when each kept its own;
+- editing a component after a warm build changed the compiled output (the marker appeared in 136
+  server chunks and then disappeared when it moved), and a deliberate `TS2322` in `lib/utils.ts`
+  failed both `pnpm typecheck` and `pnpm build`. A warm cache hides neither an edit nor a type error.
+
+Slot 1 uses the key's own directory and the other slots use siblings (`<key>/slot-N/`), because the
+store is a single-writer RocksDB: a second concurrent opener fails rather than merges. The cache
+therefore grows with `QUIZHUB_BUILD_SLOTS`, not with the number of worktrees.
+
 ### Budget
 
 **CI < 4 min holds** (p95 176 s to the last job; the 1440 s `updated_at` p95 is explained above).
@@ -241,6 +283,10 @@ comment is a smaller defect than an untested edit to the gate.
 ceiling was written for a 45 s gate (2026-10-29, history below). The two honest ceilings are the
 ones `docs/ITERATION.md` states: `pnpm check:fast` for the inner loop and the full gate as the
 boundary, at ≤ 3 min. Do not make a step optional to buy time.
+
+**The shared build cache puts the local gate back inside 90 s** — 84.1 s warm, one measurement
+(2026-11-12, section above) — and it buys that without dropping a check: the same steps, the same
+flags, the same lanes. CI is unaffected, because a runner starts with an empty `~/.cache`.
 
 ## Baseline history
 
@@ -262,6 +308,7 @@ still quoted in older notes. **Nothing here is current.**
 | 2026-11-02    | First-pass yield, same window                                           | 185/190 = 97.4 % (185/186 = 99.5 % excluding cancelled)                |
 | 2026-11-02    | Retries, same window                                                    | 2.84 (190 runs over 67 branches)                                       |
 | 2026-11-02    | Local full gate, n=2, 8-core host                                       | 151.7 s / 137.6 s, `build` 63.8 / 74.4                                 |
+| 2026-11-12    | Local full gate, cold / warm **shared** Turbopack + `tsc` cache         | 146.9 s / 84.1 s, `build` 54.0 / 12.9                                  |
 
 The 2026-10-29 rows are the gate's first day, and they are why the old yield read 81.8 %: 4 of
 22 pushes needed a second look, and the failures were toolchain/docs branches — the cheapest
