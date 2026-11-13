@@ -38,7 +38,7 @@ One person starts and invites the other. Both people answer the same relationshi
 | `home/homepage-redesign.html` | Responsive static preview of the complete home page. |
 | `home/css/` | Home-page preview styles. |
 | `home/images/` | Local logo and page photography used in the preview. |
-| `home/reference/alignsynch_home.jpg` | Supplied source screenshot. |
+| `alignsynch_home.jpg` (held outside this repository, in `project-spec/`) | Supplied source screenshot. |
 | `home/IMPLEMENTATION-PROMPT.md` | React, Tailwind CSS v3, integration, rollout, and review brief. |
 | `home/ASSET-SOURCES.md` | Local image source and attribution notes. |
 | `brand-profile/brand-and-audience-profile.html` | Private, responsive company and app profile page. It includes `noindex,nofollow,noarchive`. |
