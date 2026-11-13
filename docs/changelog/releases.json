@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.17.1",
+      "theme": "the patch the last note promised",
+      "headline": "`fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) (#964)"
+    },
+    {
       "version": "1.17.0",
       "theme": "the pay-flow ship",
       "headline": "`feat(flow)` — stage 5 is the three-step payment walk and the send it gates (#911) (#918)"
