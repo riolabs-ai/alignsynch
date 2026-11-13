@@ -28,7 +28,7 @@ import { captureRefusal, coverageProblems } from "../scripts/qa-atlas-registry.m
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CHECK = join(ROOT, "scripts/qa-atlas-check.mjs");
-const ATLAS = "docs/qa-atlas/v1.17.1";
+const ATLAS = "docs/qa-atlas/v1.18.0";
 
 const TREE = "c2029a5ea34831cb3a392d491fdfdd2ee06a624a";
 const OTHER = "b34d09b82043b8b257b92326858bf001ed9fbf0b";
@@ -179,7 +179,7 @@ describe("pnpm qa:atlas:check on the bytes it would gate", () => {
     const dir = sandbox();
     const result = check(dir);
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("captured at c2029a5e");
+    expect(result.stdout).toContain("captured at 73a78ceb");
   }, 120_000);
 
   it("fails on a manifest that does not name the commit it measured", () => {
