@@ -34,6 +34,12 @@ const STATIC_ROUTES = [
   // #892 — the documentation home: the 117 pages under docs/, rendered from the manifest the gate
   // already walks. Its document route is a catch-all and lives in `DYNAMIC_ROUTES` below.
   "/admin/docs",
+  // #893 — the two derived views over the same tree, both under the hub's address: the features
+  // index groups `feat(<area>)` scopes out of CHANGELOG.md, and the releases shelf joins
+  // `docs/changelog/releases.json` to the pages it generated. Static segments under a catch-all,
+  // so Next resolves them before `[...slug]`.
+  "/admin/docs/features",
+  "/admin/docs/releases",
   "/admin/gaps",
   // #920 — the growth model: 36 cohorts on the way to a $3M run-rate, charted from one committed
   // artifact (`data/demo/growth-model.json`), with the sampled operational set beside it.

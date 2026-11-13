@@ -176,6 +176,25 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-docs-document",
     budget: 0,
   },
+  // #893 — the features index. Budget 0 from the first commit: the area counts, the two section
+  // headings inside a card, the gap sentence and the derivation rule are `data/pages/admin-docs.ts`,
+  // so the next literal written in `features-index.tsx` is a red build. Nothing about a *scope* is
+  // in the fixture, which is the point — a release adds a card without a copy edit.
+  "/admin/docs/features": {
+    page: "app/(mainlayout)/admin/docs/features/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs",
+    budget: 0,
+  },
+  // #893 — the releases shelf. Budget 0: the eight fact labels, the row meta, the build sentences
+  // and the unreadable panel are the same fixture. Attribution is the subdirectory, so this row and
+  // the two above share it without sharing a count — each route measures its own reachable set.
+  "/admin/docs/releases": {
+    page: "app/(mainlayout)/admin/docs/releases/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is
