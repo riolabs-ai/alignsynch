@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.17.0",
+      "theme": "the pay-flow ship",
+      "headline": "`feat(flow)` — stage 5 is the three-step payment walk and the send it gates (#911) (#918)"
+    },
+    {
       "version": "1.16.0",
       "theme": "the relationship is a destination and the shell gets out of the way — its detail page stops being a flow step and carries its own door, the rail folds to a handle on any width, /assessments lists the member's sessions beside their relationships, and the front page, header and footer each say one thing.",
       "headline": "`fix(flow)` — stage 5 is not a dead end — payment walk, send/draft, and the template guard at stage 1 (#870) (#878)"

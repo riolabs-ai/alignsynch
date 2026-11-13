@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.16.0](v1-16-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.0](v1-17-0.md)
 
 <!-- docs-nav:end -->
 
@@ -43,6 +43,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
+
+### [v1.17.0](v1-17-0.md)
+
+- **Released** 2026-11-13
+- **Tag** [`v1.17.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.17.0)
+- **Pull requests named** 27
+- **Theme:** the pay-flow ship
+- **Headline:** `feat(flow)` — stage 5 is the three-step payment walk and the send it gates (#911) (#918)
 
 ### [v1.16.0](v1-16-0.md)
 
@@ -206,6 +214,6 @@ history should read v1.3.0 (the flow closes), v1.4.0 (the console and the audite
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.16.0](v1-16-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.0](v1-17-0.md)
 
 <!-- docs-nav:end -->
