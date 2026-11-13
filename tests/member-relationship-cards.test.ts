@@ -232,6 +232,26 @@ describe("a draft's two CTAs", () => {
     expect(html).not.toContain("data-invite-blocked");
   });
 
+  it("sends Publish to Counterparty into the same modal, because the send is the modal's act (#913)", () => {
+    /*
+     * The row used to point this at the relationship's screen, which was one click short of the
+     * modal that holds the card and the Send — the owner's "blocked to get back to the modal step
+     * needed". The primary's own href is the proof, not the label.
+     */
+    const html = render(flowDraft);
+    expect(html).toContain('data-publish-to-counterparty="true"');
+    expect(html).toContain(
+      'href="/templates/relationship/member-config-abc123/create/invite?instance=member-session-abc123"',
+    );
+  });
+
+  it("keeps Publish to Counterparty on the relationship screen when there is no session to open", () => {
+    const html = render({ status: "draft", view: "not-published", sessionRecordId: null });
+    // No session means no stage 5 to render, so the row is honest about the only address it has.
+    expect(html).toContain('href="/dashboard/relationships/relationship-member-abc123"');
+    expect(html).not.toContain("data-pay-modal");
+  });
+
   it("takes no card on the card itself — the capture lives on the modal and nowhere else", () => {
     const html = render(flowDraft);
     expect(html).not.toContain("data-capture");

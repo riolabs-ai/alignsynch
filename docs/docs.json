@@ -678,6 +678,11 @@
           "question": "Does the assessment flow work end to end with two real identities?"
         },
         {
+          "path": "qa-surface-sweep-913/README.md",
+          "title": "Surface sweep, #913",
+          "question": "Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?"
+        },
+        {
           "path": "qa-payment/README.md",
           "title": "Payment capture & completion",
           "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
