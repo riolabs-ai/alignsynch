@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › V1 retirement · prev [P1 migration](p1-migration/MIGRATION.md) · next [P4 dogfood pass](QA-DOGFOOD-P4.md)
+[Docs hub](README.md) › **Records & QA** › V1 retirement · prev [P1 migration](p1-migration/MIGRATION.md) · next [QA atlas](qa-atlas/README.md)
 
 <!-- docs-nav:end -->
 
@@ -326,6 +326,6 @@ Four cards, in this order. The order is not stylistic: three of them break the b
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › V1 retirement · prev [P1 migration](p1-migration/MIGRATION.md) · next [P4 dogfood pass](QA-DOGFOOD-P4.md)
+[Docs hub](README.md) › **Records & QA** › V1 retirement · prev [P1 migration](p1-migration/MIGRATION.md) · next [QA atlas](qa-atlas/README.md)
 
 <!-- docs-nav:end -->

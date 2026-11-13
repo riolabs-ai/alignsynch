@@ -517,6 +517,21 @@ else
   skip_step "docs:check" "no docs:check script in package.json"
 fi
 
+# The release atlas (#945): every route `data/pages/budget.ts` registers has a row in the current
+# version's `docs/qa-atlas/<version>/manifest.json`, every claimed status agrees with the boundary
+# table (`tests/parity/boundary.ts`), every thumbnail the manifest points at exists, and the atlas
+# directory stays inside its 5 MB budget. **Static on purpose** — no browser, no connection, nothing
+# from `lib/db/**` — because the capture needs a server and the demo branch's rows, which CI has not
+# got, while the *claim* that every route was captured is exactly what a gate can hold. In every lane
+# for the fifth time and the same reason as the steps above: the registry is `data/`, the boundary is
+# `tests/`, the generator is `scripts/`, the manifest is `docs/`, and a lane that skipped it would be
+# green over a stale atlas. ~0.2 s. A route the manifest does not carry fails **by route name**.
+if has_script "qa:atlas:check"; then
+  run_step "qa:atlas:check (the registry and the atlas manifest agree)" pnpm qa:atlas:check || fail
+else
+  skip_step "qa:atlas:check" "no qa:atlas:check script in package.json"
+fi
+
 # The rail's document (`data/nav-menu.json`, #861) is the Admin sidebar: the groups, their rows,
 # their order, their rung and their visibility. The schema is `content/nav.ts`; this step is the
 # other half — every href resolves in `content/routes.ts`, every icon is a `NavIconName`, every

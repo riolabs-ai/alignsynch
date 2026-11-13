@@ -81,12 +81,30 @@
  * The environment arrives through `withenv.sh` (see the repo skill): `.env.local` is the demo branch
  * and it wins over `.env`, so "which branch did this touch" is answered by the file set.
  */
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { Client } from "pg";
+import {
+  attach,
+  chooseDemoRole,
+  click,
+  configureCdp,
+  demoGateIsOpen,
+  evaluate,
+  fill,
+  launchChrome,
+  navigate,
+  shutter,
+  sleep,
+  stopChrome,
+  submitDemoPin,
+  text,
+  url,
+  waitFor,
+} from "./cdp.mjs";
 import { repoRoot } from "./load-env.mjs";
 
 /* ------------------------------------------------------------------ *
@@ -165,8 +183,6 @@ const PERSONA = {
  * Small utilities
  * ------------------------------------------------------------------ */
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 /** Deterministic slug for a file name: lowercase, dashes, no punctuation. */
 function slugOf(text) {
   return text
@@ -182,325 +198,20 @@ function ensureDir(path) {
 }
 
 /* ------------------------------------------------------------------ *
- * Chrome, and the CDP session (the shape `docs/qa-as2-home/capture.mjs` proved)
+ * Chrome, and the CDP session
+ *
+ * The client lives in `scripts/cdp.mjs` (#945): the release atlas drives the same browser, and
+ * two copies would be two places for the shutter geometry to drift. This file keeps only what is
+ * its own — the walk, the transcript and the findings.
  * ------------------------------------------------------------------ */
 
-let chrome = null;
-
-async function launchChrome() {
-  if (!existsSync(CHROME)) throw new Error(`no Chrome at ${CHROME} — set CHROME_BIN`);
-  // **Never under the repo.** A Chrome profile is ~1 200 files, and one left in `docs/` makes
-  // `biome check` die on its own gitignore walk (`path is expected to be under the root`) — a red
-  // gate for a scratch directory nobody meant to commit.
-  const profile = mkdtempSync(join(tmpdir(), "demo-flow-profile-"));
-  chrome = spawn(
-    CHROME,
-    [
-      "--headless=new",
-      `--remote-debugging-port=${DEBUG_PORT}`,
-      `--user-data-dir=${profile}`,
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--disable-gpu",
-      "--disable-dev-shm-usage",
-      "--hide-scrollbars",
-      "--force-device-scale-factor=1",
-      `--window-size=${WIDTH},${VIEWPORT_HEIGHT}`,
-      "about:blank",
-    ],
-    { stdio: ["ignore", "ignore", "pipe"] },
-  );
-  chrome.stderr.on("data", () => {});
-
-  // `/json/version` is the readiness signal: the port is bound before the page target exists.
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/version`);
-      if (response.ok) return;
-    } catch {
-      // Not listening yet.
-    }
-    await sleep(100);
-  }
-  throw new Error(`Chrome did not answer on ${DEBUG_PORT} within 10 s`);
-}
-
-function stopChrome() {
-  if (chrome !== null && chrome.exitCode === null) chrome.kill("SIGTERM");
-  chrome = null;
-}
-
-async function json(path) {
-  const response = await fetch(`http://127.0.0.1:${DEBUG_PORT}${path}`);
-  return await response.json();
-}
-
-/**
- * A session-scoped CDP connection to the page target.
- *
- * **Targets are auto-attached, because one screen in this flow is not in this document.** Stage 5's
- * card step mounts the provider's own checkout in a cross-origin iframe (#911). Same-origin policy
- * hides its DOM from `Runtime.evaluate` on the page target, and a driver that cannot type into the
- * card cannot prove the payment step ran — so every sub-target is attached flat and reachable by
- * `sessionId`. `waitForDebuggerOnStart: false` keeps a freshly attached target running; nothing here
- * pauses one.
- */
-async function attach() {
-  const listed = await json("/json/list");
-  const targetInfos = Array.isArray(listed) ? listed : listed.targetInfos;
-  const page = targetInfos.find((target) => target.type === "page");
-  if (page === undefined) throw new Error("no page target — is Chrome headless running?");
-
-  const socket = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => {
-    socket.addEventListener("open", resolve, { once: true });
-    socket.addEventListener("error", reject, { once: true });
-  });
-
-  let nextId = 1;
-  const pending = new Map();
-  /** targetId → sessionId, and targetId → the target's own description. */
-  const sessions = new Map();
-  const targets = new Map();
-  /**
-   * Every JavaScript context the page has announced, keyed by id.
-   *
-   * A cross-origin frame is not always handed to `Target.setAutoAttach` as a sub-target; when it is
-   * not, its world is still a context `Runtime` announced, and `Runtime.evaluate` can run in it by
-   * `contextId`. This is the second door to the payment frame, and the one that works whether or not
-   * Chrome decides the frame deserves its own process.
-   */
-  const contexts = new Map();
-
-  socket.addEventListener("message", (event) => {
-    const message = JSON.parse(event.data);
-    if (message.method === "Target.attachedToTarget") {
-      sessions.set(message.params.targetInfo.targetId, message.params.sessionId);
-      targets.set(message.params.targetInfo.targetId, message.params.targetInfo);
-      // A sub-target's own contexts are announced on its session, not the page's.
-      void send("Runtime.enable", {}, message.params.sessionId).catch(() => undefined);
-      return;
-    }
-    if (message.method === "Target.detachedFromTarget") {
-      sessions.delete(message.params.targetId);
-      targets.delete(message.params.targetId);
-      return;
-    }
-    if (message.method === "Runtime.executionContextCreated") {
-      // The session is part of the context's identity: a context announced on a sub-target's session
-      // has to be evaluated on **that** session, and sending it to the page answers
-      // "Cannot find context with specified id".
-      contexts.set(message.params.context.id, {
-        ...message.params.context,
-        sessionId: message.sessionId,
-      });
-      return;
-    }
-    if (
-      message.method === "Runtime.executionContextDestroyed" ||
-      message.method === "Runtime.executionContextsCleared"
-    ) {
-      if (message.method === "Runtime.executionContextsCleared") contexts.clear();
-      else contexts.delete(message.params.executionContextId);
-      return;
-    }
-    if (message.id === undefined) return;
-    const entry = pending.get(message.id);
-    if (entry === undefined) return;
-    pending.delete(message.id);
-    if (message.error)
-      entry.reject(new Error(`${message.method ?? ""} ${JSON.stringify(message.error)}`));
-    else entry.resolve(message.result);
-  });
-
-  const send = (method, params = {}, sessionId) =>
-    new Promise((resolve, reject) => {
-      const id = nextId++;
-      pending.set(id, { resolve, reject });
-      socket.send(
-        JSON.stringify({ id, method, params, ...(sessionId === undefined ? {} : { sessionId }) }),
-      );
-    });
-
-  await send("Target.setAutoAttach", {
-    autoAttach: true,
-    waitForDebuggerOnStart: false,
-    flatten: true,
-  });
-
-  cdp = { send, sessions, targets, contexts };
-  return { send, close: () => socket.close() };
-}
-
-/** Runs an expression in the page and returns its JSON value. */
-async function evaluate(send, expression) {
-  const result = await send("Runtime.evaluate", {
-    expression,
-    returnByValue: true,
-    awaitPromise: true,
-    userGesture: true,
-  });
-  if (result.exceptionDetails !== undefined) {
-    throw new Error(
-      `page threw: ${result.exceptionDetails.text} ${String(
-        result.exceptionDetails.exception?.description ?? "",
-      ).slice(0, 300)}`,
-    );
-  }
-  return result.result.value;
-}
-
-/** Polls an expression until it is truthy. A destroyed context during navigation is a retry, not a failure. */
-async function waitFor(send, expression, { timeout = 20000, label = expression } = {}) {
-  const deadline = Date.now() + timeout;
-  let lastError = null;
-  while (Date.now() < deadline) {
-    try {
-      if (await evaluate(send, expression)) return true;
-    } catch (error) {
-      lastError = error;
-    }
-    await sleep(120);
-  }
-  throw new Error(
-    `timed out after ${timeout} ms waiting for ${label}${lastError === null ? "" : ` (last: ${lastError.message.slice(0, 160)})`}`,
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * The page helpers — one verb per thing a person does
- * ------------------------------------------------------------------ */
-
-/**
- * Fill a control the way a keyboard does, then prove the value landed.
- *
- * Focus and `Input.insertText` is a real typing path: the browser fires `input` before the value
- * exists, which is what a React controlled input listens for. The native setter is the fallback for
- * a control that `insertText` cannot reach (a `<select>`, a masked field that swallows keys); it
- * dispatches the same events React listens for. Either way the verdict is the same question —
- * `el.value === value` — so the transcript never claims a value the page did not take.
- */
-async function fill(send, selector, value) {
-  const focused = await evaluate(
-    send,
-    `(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      if (el === null) return false;
-      el.focus();
-      return document.activeElement === el;
-    })()`,
-  );
-  if (focused !== true) throw new Error(`no focusable control at ${selector}`);
-  await send("Input.insertText", { text: value });
-  const landed = await evaluate(
-    send,
-    `document.querySelector(${JSON.stringify(selector)}).value === ${JSON.stringify(value)}`,
-  );
-  if (landed === true) return value;
-
-  await evaluate(
-    send,
-    `(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, "value").set.call(el, ${JSON.stringify(value)});
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    })()`,
-  );
-  const again = await evaluate(
-    send,
-    `document.querySelector(${JSON.stringify(selector)}).value === ${JSON.stringify(value)}`,
-  );
-  if (again !== true) throw new Error(`the control at ${selector} did not take the value`);
-  return value;
-}
-
-/** Click an element and wait for the navigation it starts, when it starts one. */
-async function click(send, selector, { navigate = true, timeout = 25000 } = {}) {
-  const before = await url(send);
-  const clicked = await evaluate(
-    send,
-    `(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      if (el === null) return false;
-      el.click();
-      return true;
-    })()`,
-  );
-  if (clicked !== true) throw new Error(`no control at ${selector}`);
-  if (!navigate) return before;
-  try {
-    await waitFor(
-      send,
-      `document.readyState === "complete" && location.href !== ${JSON.stringify(before)}`,
-      { timeout, label: `navigation away from ${before}` },
-    );
-  } catch (error) {
-    // A click that legitimately stays put (a dialog opening, a validation refusal) is not a
-    // navigation failure; the caller's own assertion says what should have happened.
-    if (!/timed out/.test(error.message)) throw error;
-  }
-  return await url(send);
-}
-
-async function url(send) {
-  try {
-    return await evaluate(send, "location.href");
-  } catch {
-    return "about:blank";
-  }
-}
-
-async function navigate(send, path) {
-  await send("Page.navigate", { url: `${BASE}${path}` });
-  await waitFor(send, `document.readyState === "complete"`, { timeout: 30000, label: path });
-  // Two frames, so hydration has run and a client panel has measured itself before any shutter.
-  await evaluate(send, "new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))");
-  await sleep(250);
-}
-
-/** The page's own words, normalised — the one probe most assertions read. */
-async function text(send) {
-  return await evaluate(send, `document.body.innerText.replace(/\\s+/g, " ").trim()`);
-}
-
-/**
- * The screen, at 1440 CSS pixels wide and as tall as the document.
- *
- * `captureScreenshot` frames the viewport, so the viewport is set to the measured height first and
- * restored afterwards — otherwise every later assertion runs at the height of the last shutter.
- */
-async function shutter(send, file) {
-  // A focused input draws a blinking caret, and a caret is the difference between two identical runs.
-  // Nothing is typed between the blur and the frame, and the value stays in the control.
-  await evaluate(
-    send,
-    `(() => { const el = document.activeElement; if (el && typeof el.blur === "function") el.blur(); return true; })()`,
-  );
-  // Motion is a rendering difference too: the same tree with a spinner at frame 3 and frame 9 hashes
-  // differently. Reduced motion is the page's own switch for it.
-  const height = await evaluate(
-    send,
-    "Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, 900)",
-  );
-  await send("Emulation.setDeviceMetricsOverride", {
-    width: WIDTH,
-    height: Math.min(height, 6000),
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await sleep(250);
-  const shot = await send("Page.captureScreenshot", { format: "png", fromSurface: true });
-  writeFileSync(file, Buffer.from(shot.data, "base64"));
-  await send("Emulation.setDeviceMetricsOverride", {
-    width: WIDTH,
-    height: VIEWPORT_HEIGHT,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  return createHash("sha256").update(Buffer.from(shot.data, "base64")).digest("hex");
-}
+configureCdp({
+  chrome: CHROME,
+  port: DEBUG_PORT,
+  width: WIDTH,
+  height: VIEWPORT_HEIGHT,
+  base: BASE,
+});
 
 /* ------------------------------------------------------------------ *
  * The transcript
@@ -851,51 +562,26 @@ async function advanceStage(send, formSelector, navigateTo) {
 
 /** Sign in through the demo gate — the app's own door, PIN then role (#183/#218). */
 async function demoSignIn(send, role) {
-  const pin = process.env.DEMO_PIN;
-  if (pin === undefined || pin.trim() === "") {
-    throw new Error("DEMO_PIN is not set — the demo sign-in is the one door this driver may use");
-  }
-  await navigate(send, "/demo");
-  const onGate =
-    (await text(send)).includes("demo PIN") ||
-    (await evaluate(send, `!!document.querySelector("#demo-pin")`));
+  const onGate = await demoGateIsOpen(send);
   if (onGate !== true)
     throw new Error("/demo did not render the PIN gate — is DEMO_AUTH=1 and DEMO_PIN set?");
 
-  const pinStep = await record(send, {
+  await record(send, {
     action: "assert",
     expect: "the demo gate answers /demo with a PIN field",
     name: "demo-gate",
   });
 
-  await fill(send, "#demo-pin", pin);
-  await click(send, `form button[type=submit]`);
-  await waitFor(send, `location.pathname === "/login"`, {
-    timeout: 25000,
-    label: "the PIN to unlock /login",
-  });
+  await submitDemoPin(send);
 
-  const unlocked = await record(send, {
+  await record(send, {
     action: "click",
     values: { pin: "<DEMO_PIN>" },
     expect: "the PIN unlocks /login's three demo role buttons",
     name: "demo-unlocked",
   });
-  void pinStep;
-  void unlocked;
 
-  const selector = `form:has(input[name="as"][value="${role}"]) button[type=submit]`;
-  const present = await evaluate(send, `!!document.querySelector(${JSON.stringify(selector)})`);
-  if (present !== true) {
-    throw new Error(
-      `no demo role button for "${role}" — is demo_account seeded (DEMO_AUTH=1 db:seed)?`,
-    );
-  }
-  await click(send, selector, { timeout: 30000 });
-  await waitFor(send, `location.pathname !== "/login"`, {
-    timeout: 25000,
-    label: "the demo role button to sign in",
-  });
+  await chooseDemoRole(send, role);
   await record(send, {
     action: "click",
     values: { role },
@@ -1285,7 +971,7 @@ async function waitForCardFields({ timeout = 60000 } = {}) {
  * Returns what it did, so a step can record it — the transcript carries the field names and the
  * values as they were entered, and never the client secret.
  */
-async function fillCardFrame(send, { email }) {
+async function fillCardFrame({ email }) {
   // **Wait for the checkout document, not for the panel.** The panel's marker appears the moment the
   // server mints a client secret; the provider then injects its script, fetches the session and mounts
   // its form, which is a second or two later. Surveying at marker time finds the loader, not the card.
@@ -1480,7 +1166,7 @@ async function payWalk(send, { pathLabel, complete, plan }) {
     return { completed: false };
   }
 
-  const card = await fillCardFrame(send, { email: PERSONA.published.email });
+  const card = await fillCardFrame({ email: PERSONA.published.email });
   await record(send, {
     action: "fill",
     values: card.typed ?? {},
@@ -2294,7 +1980,6 @@ function seed(drift) {
 }
 
 async function main() {
-  const started = Date.now();
   ensureDir(OUT);
 
   console.log(`demo-flow · ${CHECK ? "check" : "run"} · base ${BASE} · out ${OUT}`);
@@ -2318,6 +2003,8 @@ async function main() {
 
   await launchChrome();
   const page = await attach();
+  // The frame-walking helpers below read the session's own maps, so the client is kept here.
+  cdp = page;
   try {
     await page.send("Page.enable");
     await page.send("Runtime.enable");
