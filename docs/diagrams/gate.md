@@ -40,23 +40,23 @@ flowchart TD
 
 ## What each lane pays for
 
-| Step                                      | docs | content | config | code |
-| ----------------------------------------- | ---- | ------- | ------ | ---- |
-| `deps` (`pnpm install --frozen-lockfile`) | ✓    | ✓       | ✓      | ✓    |
-| `glossary` (`pnpm glossary:check`)        | ✓    | ✓       | ✓      | ✓    |
-| `ui-registry` (`pnpm ui:registry:check`)  | ✓    | ✓       | ✓      | ✓    |
-| `release:check`                           | ✓    | ✓       | ✓      | ✓    |
-| `bash -n` on every script                 |      |         | ✓      |      |
-| `whitespace` (`git diff --check`)         | ✓    |         |        |      |
-| `links` (relative links resolve)          | ✓    |         |        |      |
-| `typecheck`                               |      | ✓       | ✓      | ✓    |
-| `lint` (biome + brand classes)            | ✓    | ✓       | ✓      | ✓    |
-| `format:check`                            | ✓    | ✓       | ✓      | ✓    |
-| `data:check`                              |      | ✓       | ✓      | ✓    |
-| `demo:verify --gate`                      |      | ✓       | ✓      | ✓    |
-| `test` (vitest)                           |      | ✓       | ✓      | ✓    |
-| `parity` (both brands)                    |      | ✓       | ✓      | ✓    |
-| `build` (`next build`)                    |      |         |        | ✓    |
+| Step                                                              | docs | content | config | code |
+| ----------------------------------------------------------------- | ---- | ------- | ------ | ---- |
+| `deps` (`pnpm install --frozen-lockfile`, skipped when unchanged) | ✓    | ✓       | ✓      | ✓    |
+| `glossary` (`pnpm glossary:check`)                                | ✓    | ✓       | ✓      | ✓    |
+| `ui-registry` (`pnpm ui:registry:check`)                          | ✓    | ✓       | ✓      | ✓    |
+| `release:check`                                                   | ✓    | ✓       | ✓      | ✓    |
+| `bash -n` on every script                                         |      |         | ✓      |      |
+| `whitespace` (`git diff --check`)                                 | ✓    |         |        |      |
+| `links` (relative links resolve)                                  | ✓    |         |        |      |
+| `typecheck`                                                       |      | ✓       | ✓      | ✓    |
+| `lint` (biome + brand classes)                                    | ✓    | ✓       | ✓      | ✓    |
+| `format:check`                                                    | ✓    | ✓       | ✓      | ✓    |
+| `data:check`                                                      |      | ✓       | ✓      | ✓    |
+| `demo:verify --gate`                                              |      | ✓       | ✓      | ✓    |
+| `test` (vitest)                                                   |      | ✓       | ✓      | ✓    |
+| `parity` (both brands)                                            |      | ✓       | ✓      | ✓    |
+| `build` (`next build`)                                            |      |         |        | ✓    |
 
 Four steps run before the lane branch — `glossary`, `ui-registry` and `release:check` are generated
 documents whose inputs classify into three different lanes, so a lane that skipped them would hand a

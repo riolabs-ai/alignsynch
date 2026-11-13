@@ -234,6 +234,28 @@ The budget rows in `scripts/verify.sh`'s header (`docs` 1–2 s, `content` 16–
 understate all four. They are left as they are here: this change is `docs/` only, and a stale
 comment is a smaller defect than an untested edit to the gate.
 
+### The `deps` step skips itself when nothing could have changed, measured 2026-11-12 (n=3)
+
+`scripts/verify.sh` no longer runs `pnpm install --frozen-lockfile` blindly. `scripts/install-guard.mjs`
+decides in one node process — the rules are its header — and prints
+`install: skipped (lockfile unchanged, <hash>)` with the seconds it saved. Anything it cannot prove
+installs, a lockfile that disagrees with `package.json` still fails in the install, and CI always
+installs because an ephemeral runner carries no marker. `QUIZHUB_FORCE_INSTALL=1` overrides the skip.
+
+| What                                                         | Measured on this box |
+| ------------------------------------------------------------ | -------------------- |
+| `pnpm install --frozen-lockfile`, warm                       | 0.05–0.06 s (n=3)    |
+| `pnpm install --frozen-lockfile`, fresh worktree, warm store | 1.18 s (n=1)         |
+| `node scripts/install-guard.mjs check`, skip path            | 0.05–0.06 s (n=3)    |
+
+**Read this as a measurement, not a win.** The step this replaces was described as "a few seconds
+of pure waste"; on this host it is 0.05–0.06 s warm, and the guard's own check costs the same — so
+the skip swaps one 0.05 s process for another and buys **no measurable time**. The one large figure,
+1.18 s, belongs to a worktree that has never installed, which is exactly the run that cannot be
+skipped: it has no `node_modules`, so the probe forces the install. The tables above (2026-11-05)
+already recorded the step at 0.0–0.1 s; a change card claiming otherwise should be re-measured
+before it is scheduled, not after it is built.
+
 ### Budget
 
 **CI < 4 min holds** (p95 176 s to the last job; the 1440 s `updated_at` p95 is explained above).

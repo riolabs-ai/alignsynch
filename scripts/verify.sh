@@ -71,6 +71,21 @@
 # now runs inside one of QUIZHUB_BUILD_SLOTS (default 2) flock slots under
 # ~/.cache/quizhub/, and the step prints whether it waited.
 #
+# THE DEPS STEP IS SKIPPED WHEN NOTHING COULD HAVE CHANGED — `pnpm install
+# --frozen-lockfile` runs in every lane, including the docs-only card that could
+# not have touched a dependency. `scripts/install-guard.mjs check` answers in one
+# node process whether a skip is safe: a per-worktree marker in the shared cache
+# dir whose fingerprint of `pnpm-lock.yaml` + `package.json` (+ `.npmrc` /
+# `pnpm-workspace.yaml`) matches the files now, written by the same pnpm, newer
+# than both manifests, over a `node_modules` whose `.modules.yaml`, `.bin/next`
+# and `.pnpm/lock.yaml` copy all still agree. Everything else installs. No step
+# is conditional on the skip, `--frozen-lockfile` is unchanged, a lockfile that
+# disagrees with `package.json` still fails here, and CI keeps installing because
+# an ephemeral runner has no marker — there is deliberately no `if CI` branch.
+# `QUIZHUB_FORCE_INSTALL=1` bypasses the skip. Measured on this box: the install
+# is 0.19–0.22 s warm and 1.18 s in a fresh worktree, and the skip prints the
+# seconds it saved, because a skip nobody can see is not evidence.
+#
 # TEST RUNNERS — `pnpm test` is `vitest run` over `tests/**/*.test.ts` (#8): app-side
 # units that import `lib/quiz-cards.ts` and `data/searchdata.ts` through the `@/` alias.
 # The `node --test` suite over `.datacheck/scripts/__tests__/*.test.js` stays inside
@@ -126,6 +141,7 @@ fi
 STEP=""
 STEP_NAMES=()
 STEP_MS=()   # -1 marks a skipped step
+PNPM_V=""    # set by preflight; the install marker records it
 
 now_ms() {
   local ns
@@ -226,6 +242,7 @@ preflight() {
     exit 1
   fi
   pnpm_v="$(pnpm -v)"
+  PNPM_V="$pnpm_v"
   if [ "${pnpm_v%%.*}" != "${EXPECTED_PNPM%%.*}" ]; then
     printf '%s✗ pnpm %s on PATH, this repo needs pnpm %s.%s\n' \
       "$C_RED" "$pnpm_v" "$EXPECTED_PNPM" "$C_OFF" >&2
@@ -342,6 +359,62 @@ build_with_lock() {
   return "$rc"
 }
 
+# --- the dependency install: run it, or prove it cannot have changed ----------
+# `pnpm install --frozen-lockfile` is the first step in every lane, and in most lanes nothing it
+# reads has changed since the last install on this host: the lockfile and `package.json` are
+# byte-identical, `node_modules` is intact, and the step spends a pnpm process re-proving a fact it
+# proved an hour ago — while other workers on the same box do the same thing in their own
+# worktrees. `scripts/install-guard.mjs` answers the question `check` (exit 0 = skip is safe) and
+# `record`s the marker after a real install. Its header carries the rules; the short version:
+#
+#   * a skip needs a marker for *this worktree* (node_modules is per-worktree) whose fingerprint of
+#     `pnpm-lock.yaml` + `package.json` (+ `.npmrc` / `pnpm-workspace.yaml`) matches the files on
+#     disk now, written by the same pnpm version, newer than both manifests;
+#   * and a `node_modules` that is *usable*: `.modules.yaml` present, `.bin/next` resolvable, and
+#     pnpm's own lockfile copy at `.pnpm/lock.yaml` still hashing to what the marker recorded.
+#
+# Everything else installs. There is deliberately no `if CI` branch: a CI runner is ephemeral, the
+# marker is absent, and absence is the fallback. `QUIZHUB_FORCE_INSTALL=1` overrides the skip.
+# The skip changes no check — `--frozen-lockfile` stays, a lockfile that disagrees with
+# `package.json` still runs the install and still fails there, and a manifest edit forces one.
+DEP_CACHE_DIR="${QUIZHUB_CACHE_DIR:-$BUILD_LOCK_DIR}"
+DEP_STEP_NAME="deps (pnpm install --frozen-lockfile)"
+
+deps_check() { # exit 0 = the install cannot have changed; prints the decision either way
+  node "$ROOT/scripts/install-guard.mjs" check \
+    --root "$ROOT" --pnpm "${PNPM_V:-}" --cache-dir "$DEP_CACHE_DIR"
+}
+
+deps_step() { # a real install, timed, recorded so the next gate can skip it
+  local ms0 ms1 rc
+  ms0="$(now_ms)"
+  set +e
+  pnpm install --frozen-lockfile
+  rc=$?
+  set -e
+  ms1="$(now_ms)"
+  if [ "$rc" -eq 0 ]; then
+    node "$ROOT/scripts/install-guard.mjs" record \
+      --root "$ROOT" --pnpm "${PNPM_V:-}" --ms "$((ms1 - ms0))" --cache-dir "$DEP_CACHE_DIR" ||
+      printf '%s! install marker not written — the next gate installs again (harmless)%s\n' \
+        "$C_YEL" "$C_OFF" >&2
+  fi
+  return "$rc"
+}
+
+deps() { # the step: skip with proof, or run the install
+  local decision
+  if decision="$(deps_check)"; then
+    printf '\n%s▶ %s%s\n' "$C_BOLD" "$DEP_STEP_NAME" "$C_OFF"
+    printf '%s%s%s\n' "$C_GRN" "$decision" "$C_OFF"
+    STEP_NAMES+=("$DEP_STEP_NAME")
+    STEP_MS+=("-1")
+    return 0
+  fi
+  printf '%s%s%s\n' "$C_DIM" "$decision" "$C_OFF"
+  run_step "$DEP_STEP_NAME" deps_step
+}
+
 # --- run ---------------------------------------------------------------------
 preflight
 
@@ -369,7 +442,7 @@ if [ "$LANE" != "code" ] && printf '%s\n' "$LANE_FILES" |
 fi
 
 # Order is deliberate: cheap-and-certain first, the build last.
-run_step "deps (pnpm install --frozen-lockfile)" pnpm install --frozen-lockfile || fail
+deps || fail
 
 # Generated docs are a drift check, not a compile: `docs/glossary.md` is rebuilt from the
 # schema comments and compared byte for byte (#138). It runs before the lane branch because
