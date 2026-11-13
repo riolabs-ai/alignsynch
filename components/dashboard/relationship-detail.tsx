@@ -536,6 +536,13 @@ export function RelationshipDetail({
              * and a draft that came through the flow has the session and the staged invitation it
              * needs. A draft with no session cannot open it at all (`payHref === null`), so the
              * pricing link stays as that case's door rather than being deleted from under it.
+             *
+             * #958 — **the pair, in the state that has nothing configured.** This is the band a
+             * relationship with no card on file draws, and the owner's rule is that both acts are
+             * decided in the modal: `Publish to Counterparty` *is* stage 5's Send, and
+             * `Invite Members` is the same screen a step earlier. So both are here and both go to
+             * `payHref` — the card draws the same pair to the same address (#913), and a band that
+             * offered only the invite read as if publishing lived somewhere else.
              */
             <DetailPanel
               title={publishGateCopy.heading}
@@ -551,14 +558,23 @@ export function RelationshipDetail({
                   {itemLabel(publishGateCopy, "plans")}
                 </a>
               ) : (
-                <a
-                  className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
-                  href={payHref}
-                  data-publish-gate-link="pay-modal"
-                  data-invite-members="true"
-                >
-                  {itemLabel(publishGateCopy, "invite-members")}
-                </a>
+                <div className="flex flex-wrap items-center gap-3">
+                  <a
+                    className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                    href={payHref}
+                    data-publish-gate-link="pay-modal"
+                    data-invite-members="true"
+                  >
+                    {itemLabel(publishGateCopy, "invite-members")}
+                  </a>
+                  <a
+                    className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+                    href={payHref}
+                    data-publish-to-counterparty="true"
+                  >
+                    {itemLabel(publishGateCopy, "publish-to-counterparty")}
+                  </a>
+                </div>
               )}
             </DetailPanel>
           ) : null}

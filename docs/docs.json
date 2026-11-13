@@ -432,6 +432,11 @@
           "question": "Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?"
         },
         {
+          "path": "qa/958-no-initiator-member/README.md",
+          "title": "A relationship with no initiator member, #958",
+          "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
+        },
+        {
           "path": "qa/as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"
@@ -545,6 +550,21 @@
           "path": "qa/v1x-ui-cohort/README.md",
           "title": "v1.x UI cohort",
           "question": "Were all ten owner items measured in a real browser?"
+        },
+        {
+          "path": "qa-atlas/README.md",
+          "title": "QA atlas",
+          "question": "How is every registered surface captured, asserted and checked, and what is committed?"
+        },
+        {
+          "path": "qa-atlas/v1.17.0/index.md",
+          "title": "QA atlas — v1.17.0",
+          "question": "What did every registered surface render in v1.17.0, and did it read the record it claims?"
+        },
+        {
+          "path": "qa-atlas/v1.17.1/index.md",
+          "title": "QA atlas — v1.17.1",
+          "question": "What did every registered surface render in v1.17.1, and what changed since v1.17.0?"
         }
       ]
     },
@@ -721,6 +741,11 @@
           "path": "changelog/v1-17-0.md",
           "title": "v1.17.0",
           "question": "Which release made stage 5 a three-step payment walk, and what does it defer?"
+        },
+        {
+          "path": "changelog/v1-17-1.md",
+          "title": "v1.17.1",
+          "question": "Which patch paid v1.17.0's written promise that the edit panel would stop posting the Aspects?"
         },
         {
           "path": "changelog/v1-2-0.md",

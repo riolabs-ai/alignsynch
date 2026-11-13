@@ -204,38 +204,94 @@ The fetch step is not fatal if it fails: it prints a `::warning` and the gate
 falls back to the full gate. A red run on a network hiccup would be a worse
 trade than the 60 s of build it saves.
 
-## The build semaphore
+## The gate slot
 
-`next build` runs inside one of `QUIZHUB_BUILD_SLOTS` (default **2**) `flock`
-slots under `~/.cache/quizhub/`, and prints which one it holds and whether it
-waited:
+One `flock` slot family under `~/.cache/quizhub/` caps how many **compute-heavy gate
+sections** run at once: `QUIZHUB_GATE_SLOTS` (default **3**), `QUIZHUB_GATE_LOCK_DIR`,
+`QUIZHUB_GATE_LOCK_WAIT`. The older names still work — `QUIZHUB_BUILD_SLOTS`,
+`QUIZHUB_BUILD_LOCK_DIR` and `QUIZHUB_BUILD_LOCK_WAIT` set the same three values, and the lock
+_files_ kept their old `build.lock.N` names on purpose: a gate running from a tree that predates
+this change locks them during its `next build`, so the fleet budgets one slot set rather than two
+that cannot see each other.
+
+The slot is taken **once**, at the first heavy step (`typecheck`; in the docs lane the pass starts
+at `lint`), and held to the end of `next build`. Inside it: `next typegen` + `tsc --noEmit`,
+`biome check` + the brand rule, `biome format --check`, the `data:check` compile, `test`,
+`parity`'s two renders and `next build`. An `EXIT` trap releases it when a step fails, so a crashed
+gate never parks a slot. Every wait prints the seconds it cost, and a wait longer than 15 s says so
+while it happens:
 
 ```text
-  build lock: slot 2/2 free, building now (/home/you/.cache/quizhub/build.lock.2)
-  build lock: all 2 slot(s) busy — waiting (this is the queue, not a failure)
-  build lock: waited, now holds slot 1/2 (waited lock)
+  gate slot: slot 1/3 free, heavy section starts now (/home/you/.cache/quizhub/build.lock.1)
+  gate slot: all 3 slot(s) busy — waiting (this is the queue, not a failure)
+  gate slot: still waiting (30s) — all 3 slot(s) held
+  gate slot: waited 201s, now holds slot 3/3 — heavy section starts
+  gate slot: released slot 3/3 (held 131s, waited 201s)
 ```
 
-Why a lock _family_ (`build.lock.1`, `build.lock.2`) instead of one
-`build.lock`: `flock` on a single file has exactly one holder — a single
-lockfile can express "serialize", never "at most two". Two slot files is the
-whole mechanism; slot 1 is not more privileged than slot 2.
+**Why the whole section and not one slot per step.** A run that released the slot after `tsc` and
+re-acquired it for `next build` would interleave with another run's build — the exact contention
+the slot exists to prevent. Held once, a run is a single unit of CPU budget from its first compile
+to its last.
 
-Why 2 and not 8: at eight concurrent compiles the box spent its time in
-scheduler and memory pressure (load 39.5) and each build ran _slower_ than a
-serial one. Two keeps a pair of builds overlapping — the CPU stays busy — while
-the rest of the fleet runs the cheap lanes and waits its turn.
+**Why a lock _family_** (`build.lock.1` … `build.lock.N`) instead of one file: `flock` on a single
+file has exactly one holder, so one lockfile can express "serialize" and never "at most N". Slot 1
+is not more privileged than slot 3.
 
-| Knob                      | Default            | Use                                                 |
-| ------------------------- | ------------------ | --------------------------------------------------- |
-| `QUIZHUB_BUILD_SLOTS`     | `2`                | `1` on a box that is already loaded                 |
-| `QUIZHUB_BUILD_LOCK_DIR`  | `~/.cache/quizhub` | leave it: the lock must be shared, not per-worktree |
-| `QUIZHUB_BUILD_LOCK_WAIT` | `1800` s           | a slot that never frees is a failure, not a hang    |
+### Why 3, measured
 
-The lock is a **CPU budget, not a `.next/` mutex**. Two builds in the _same_
-worktree still corrupt `.next/` — workers each have their own worktree, and a
-single shell must not run two gates at once (same rule as "stop `pnpm dev`
-before `pnpm build`"). `QUIZHUB_BUILD_SLOTS=1` makes even that safe.
+The slot used to wrap `next build` alone — one step out of nineteen — while `next typegen`, `tsc`,
+`biome`, `format:check` and the `data:check` compile ran uncapped. Measured 2026-11-12 on this
+8-core box (Node 24.22.0, pnpm 12.16.1, warm `node_modules` and warm `.next`), each cohort in the
+same worktrees so installs and build cache are identical for both arms:
+
+| runs at once | gate                  | each run, wall clock          | cohort makespan | peak 1-min load |
+| ------------ | --------------------- | ----------------------------- | --------------- | --------------- |
+| 1            | build-only slot       | 80 / 82 / 89 / 104 s          | —               | 12.1            |
+| 1            | section slot          | 88 / 88 / 91 / 106 s          | —               | 12.1            |
+| 2            | build-only slot       | 160 s / 162 s                 | 162 s           | 22.8            |
+| 2            | section slot, 2 slots | 168 s / 168 s (no wait)       | 168 s           | 26.3            |
+| 3            | build-only slot       | 183 s / 183 s / 200 s         | 200 s           | 30.3            |
+| 3            | section slot, 2 slots | 213 s / 214 s / 315 s         | 315 s           | 26.4            |
+| 5            | build-only slot       | 289–358 s                     | 358 s           | 41.3            |
+| 5            | section slot, 3 slots | 205 / 205 / 205 / 332 / 333 s | 333 s           | 29.9            |
+
+The single runs are four alternations of the two scripts in the same tree (old, new, old, new, then
+new, old, new, old), which is the control for "did one honest gate get slower": the two arms
+overlap — 80–104 s against 88–106 s, medians 85 s and 90 s — and the run-to-run spread of a _single_
+script on this box is that wide. What is not noise is the per-step comparison inside those runs:
+every step the change touches is flat (`typecheck` 5.9 → 6.0 s, `lint` 2.8 → 2.6 s, `data:check`
+15.2 → 15.9 s, `build` 10.8 → 10.5 s), and the whole spread of the totals is `test`, which no
+change here touches — it varies 31–53 s across runs of the same script. A direct probe of that
+suspect settles it: `pnpm test` with the slot held and without it, alternating, measured 40 s / 37 s
+unlocked against 45 s / 35 s locked. The lock costs nothing; the box's ambient load (other agents'
+gates, 10–20 through every cohort) costs more than this change ever will.
+
+Read it three ways:
+
+- **At two runs at once the slot changes nothing** (168 s against 162 s), because two slots are
+  never all held by two runs. That is the point: the incidents were at five to eight workers.
+- **Two slots is the wrong number.** A third run at two slots does not slow down — it waits for a
+  whole extra wave (315 s against 200 s). Queueing only pays when the run it waits for is _much_
+  faster in isolation, and at 3 runs the isolated run was 104 s: the wave costs more than it buys.
+- **Three slots wins where it counts.** At five concurrent runs, three slots finished the cohort in
+  333 s against 358 s, with a peak 1-minute load of **29.9 against 41.3** — the load figure is what
+  the workers feel, because at 41 every phase in every run is inflated: the five runs spread
+  289–358 s, while with the cap three of them finished in 205 s and the two that waited finished in
+  131 s of actual work.
+
+`QUIZHUB_GATE_SLOTS=2` is still available for a box that is already loaded; `1` serialises the
+heavy section entirely.
+
+| Knob                     | Default            | Use                                                   |
+| ------------------------ | ------------------ | ----------------------------------------------------- |
+| `QUIZHUB_GATE_SLOTS`     | `3`                | `2` on a box that is already loaded; `1` to serialize |
+| `QUIZHUB_GATE_LOCK_DIR`  | `~/.cache/quizhub` | leave it: the lock must be shared, not per-worktree   |
+| `QUIZHUB_GATE_LOCK_WAIT` | `1800` s           | a slot that never frees is a failure, not a hang      |
+
+The lock is a **CPU budget, not a `.next/` mutex**. Two gates in the _same_ worktree still corrupt
+`.next/` — workers each have their own worktree, and a single shell must not run two gates at once
+(same rule as "stop `pnpm dev` before `pnpm build`"). `QUIZHUB_GATE_SLOTS=1` makes even that safe.
 
 ## Proving it
 

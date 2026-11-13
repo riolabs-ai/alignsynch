@@ -58,10 +58,9 @@ export const INK_DELTA = 16;
  * where either side has ink (see `scripts/__tests__/icon-fingerprint.test.ts`, which prints the
  * numbers as assertions):
  *
- *   the monogram, regenerated from `alignsynch-mark-1024.png`   < 4    (3.46 measured)
+ *   the monogram, regenerated from `alignsynch-mark-1024.png`   < 4    (2.0 measured at 0.661)
  *   the white book glyph, the icon this card replaced            > 80
- *   the same mark placed at the app fraction (0.62)              < 12
- *   the shipped icon compared at the glyph fraction (0.56)       < 30 — why the default below is
+ *   the same mark placed at a smaller fraction (0.56)            < 30 — why the default below is
  *                                                                `MASKABLE_MARK_FRACTION`
  *
  * so the threshold sits far above the resampling noise of a legitimate regeneration and far below

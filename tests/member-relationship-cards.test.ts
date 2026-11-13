@@ -82,8 +82,13 @@ const TO_COUNTERPARTY_LABEL = "Publish to Counterparty";
 const INVITE_MEMBERS_LABEL = "Invite Members";
 /** The menu item's reason, on the trigger, for the state where there is no session to open. */
 const NO_SESSION_WHY = "No session yet — publish first";
-/** #912 — the reason the draft's `Invite Members` is inert when the row has no session. */
-const NO_INVITE_WHY = "No invitation yet — this draft has no session";
+/**
+ * #958 — the draft with no session, in words rather than in a tooltip. The label is a sentence now
+ * because the control it used to sit on is gone: a disabled `Invite Members` carrying its reason in
+ * a `title` is exactly what the owner rejected.
+ */
+const NO_INVITE_WHY =
+  "No session yet, so the pay modal has nothing to open — start it again from its template and the modal comes with it. This draft stays as it is.";
 
 describe("the relationship card", () => {
   it("carries the three actions the product can actually perform", () => {
@@ -198,8 +203,9 @@ describe("the relationship card a Counterparty reads", () => {
  * the pay modal, never a capture of this card's own.
  *
  * Two shapes, and they are different row states rather than a preference: a draft written by the
- * create flow has a session (stage 4 writes it) and the modal can open; a draft written by this
- * list's own create band has none, so the modal cannot read it and the control says so.
+ * create flow has a session (stage 4 writes it) and the modal can open; a draft written by the
+ * list's own create band — a path #913 deleted — has none, and #958's answer to that row is a
+ * sentence and a door rather than a dead control.
  */
 describe("a draft's two CTAs", () => {
   /** A draft as the create flow leaves it: a session, a staged invitation, no method yet. */
@@ -259,12 +265,23 @@ describe("a draft's two CTAs", () => {
     expect(html).not.toContain("<input");
   });
 
-  it("draws Invite Members inert, with its reason, when the draft has no session", () => {
+  it("says why the modal cannot open, and offers a door, when the draft has no session (#958)", () => {
+    /*
+     * **#958 reverses this test's old acceptance on purpose.** It used to require an inert
+     * `Invite Members` — a `span[aria-disabled]` carrying its reason in a `title` — and the owner's
+     * answer to that pattern was "use the modal, not explain why you cannot". So the reason is now
+     * words on the card and the control is not drawn at all, because a control that cannot act is
+     * the failure mode the card names as doomed. The door is the template's own create flow, which
+     * is the only writer of a session.
+     */
     const html = render({ status: "draft", view: "not-published", sessionRecordId: null });
-    // The control is still on the row — the pair is the rule — but it is not a link, because stage 5
-    // would refuse a relationship with no session by sending the reader back to stage 1.
-    expect(html).toContain(INVITE_MEMBERS_LABEL);
-    expect(html).toContain(`data-invite-blocked="${NO_INVITE_WHY}"`);
+    expect(html).toContain('data-invite-blocked-why="no-session"');
+    expect(html).toContain(NO_INVITE_WHY);
+    expect(html).toContain('href="/templates/relationship/member-config-abc123/create"');
+    expect(html).toContain('data-invite-blocked-door="restart"');
+    // Nothing inert: no disabled control, and no label with its reason hidden in a `title`.
+    expect(html).not.toContain("aria-disabled");
+    expect(html).not.toContain(`title="${NO_INVITE_WHY}"`);
     expect(html).not.toContain("data-pay-modal");
     // …and the other half survives: publishing is still offered.
     expect(html).toContain(TO_COUNTERPARTY_LABEL);

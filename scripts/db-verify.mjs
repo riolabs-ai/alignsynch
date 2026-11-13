@@ -150,6 +150,16 @@
  *       who will believe the list. The duplicate-number half is here for the same reason — the
  *       constraint makes it impossible, and a rule that only checks what is already impossible is
  *       how the constraint's absence goes unnoticed.
+ *   V30 a **published record is a template somebody can start from** (#962): every assessment
+ *       record with `status = 'published'` that is not a session's copy has at least one
+ *       `template_version` row. `record.status` and `template_version` are two statements about one
+ *       fact — "this template is offered" — and the seed wrote only the first, so the demo branch
+ *       carried 28 published templates with no version at all: `/admin/templates` painted 29 green
+ *       `published` badges over a catalogue where every create answered "has no published version
+ *       — publish it before a relationship can copy it". The refusal is right; the badge was the
+ *       lie, and nothing measured the pair. A **draft** is exempt (no version is what "not offered"
+ *       means) and a **session record** is exempt (it is a played copy, never a template).
+ *       Numbered after #667's V29, which landed first.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -456,6 +466,42 @@ export function reviewIssueProblems(issues) {
     }
     numbers.add(issue.number);
     seen.set(issue.artifact_id, numbers);
+  }
+  return problems;
+}
+
+/**
+ * V30 over `record`'s rows — a published record is a template somebody can start from (#962).
+ *
+ * The defect this names was measured on the demo branch: 28 records `status = 'published'` with
+ * zero `template_version` rows, so `/admin/templates` painted 29 green `published` badges over a
+ * catalogue that could not start a single relationship — `lib/flow/store.ts` refused each one with
+ * "has no published version — publish it before a relationship can copy it", which tells an
+ * operator to publish something the badge already calls published. `db:seed` was writing the
+ * status and not the version; nothing checked the pair, so the branch stayed green.
+ *
+ * Two exemptions, and both are the rule rather than a hole in it:
+ *
+ *   a **draft**        has no version on purpose — that is what "not offered" means, and a check
+ *                      that demanded one would force the seed to publish everything.
+ *   a **session record** is a played copy, never a template: an instance record carries
+ *                      `status = 'published'` because it went live, and it can never be the
+ *                      `template_record_id` of a version. Without this, the card's own count could
+ *                      never reach zero — 4 of the 29 rows that query returned were instances.
+ *
+ * The failure line names the slug, because a slug is what an operator types and what the refusal
+ * sentence quotes; the fix is named too, so the reader does not have to know which script writes it.
+ */
+export function publishedWithoutVersionProblems(records) {
+  const problems = [];
+  for (const record of records) {
+    if (record.status !== "published") continue;
+    if (record.is_session === true) continue;
+    if (Number(record.versions) > 0) continue;
+    problems.push({
+      code: "V30",
+      message: `record "${record.slug}" is published and has no template_version — the admin registry paints it published while createInstanceFromTemplate() refuses it with "has no published version": run \`pnpm db:seed\` (it publishes every record the fixtures mark published) or publish it at /admin/templates`,
+    });
   }
   return problems;
 }
@@ -1319,6 +1365,37 @@ async function main() {
       }
     }
 
+    /* V30 — a record the catalogue marks published is a template a relationship can start from
+     * (#962).
+     *
+     * `record.status` and `template_version` are two statements about one fact, and the seed wrote
+     * only the first: 28 templates read `published` with no version at all, so `/admin/templates`
+     * drew 29 green badges over a catalogue where every create answered "has no published version
+     * — publish it before a relationship can copy it". Nothing measured the pair, so a green
+     * `db:verify` said nothing about the one screen an operator would open.
+     *
+     * The rows are read for every assessment record and handed to `publishedWithoutVersionProblems()`
+     * — one row per record, with its version count and whether it is a session's copy — so the rule
+     * is a function a test can drive with no connection, and the SQL here only reports facts.
+     */
+    let publishedTemplates = 0;
+    const { rows: publicationRows } = await client.query(
+      `SELECT r.slug,
+              r.status,
+              EXISTS (SELECT 1 FROM session s WHERE s.record_id = r.id) AS is_session,
+              (SELECT count(*)::int FROM template_version v WHERE v.template_record_id = r.id)
+                AS versions
+         FROM record r
+        WHERE r.record_type = 'assessment'
+        ORDER BY r.slug`,
+    );
+    publishedTemplates = publicationRows.filter(
+      (row) => row.status === "published" && row.is_session !== true,
+    ).length;
+    for (const problem of publishedWithoutVersionProblems(publicationRows)) {
+      fail(problem.code, problem.message);
+    }
+
     const { rows: unlockMarks } = hasUnlockColumn
       ? await client.query("SELECT count(*)::int AS n FROM party WHERE unlock_seen_at IS NOT NULL")
       : [{ n: 0 }];
@@ -1793,7 +1870,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

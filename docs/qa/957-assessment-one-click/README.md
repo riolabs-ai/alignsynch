@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [#542 phase 2](../542-phase2/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [#542 phase 2](../542-phase2/README.md) · next [A relationship with no initiator member, #958](../958-no-initiator-member/README.md)
 
 <!-- docs-nav:end -->
 
@@ -110,6 +110,6 @@ not a create path, and repairing it changes what the catalogue lists on both bra
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [#542 phase 2](../542-phase2/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [#542 phase 2](../542-phase2/README.md) · next [A relationship with no initiator member, #958](../958-no-initiator-member/README.md)
 
 <!-- docs-nav:end -->

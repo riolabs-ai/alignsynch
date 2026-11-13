@@ -134,8 +134,13 @@ describe("the delete order", () => {
     }
   });
 
-  test("ends with the relationship, so its FK children are already gone", () => {
-    expect(sweepOrder().at(-1)).toBe("relationship");
+  test("ends with the instance's own record, after every row that names it", () => {
+    // The session's `record` row is the one a flow-created relationship leaves behind when its
+    // session is swept (#962 follow-up), so it must go last: `session.record_id`, `item.record_id`
+    // and the parties' `session_record_id` all name it, and each is deleted earlier in the list.
+    expect(sweepOrder().at(-1)).toBe("record");
+    expect(sweepOrder().indexOf("session")).toBeLessThan(sweepOrder().indexOf("record"));
+    expect(sweepOrder().indexOf("item")).toBeLessThan(sweepOrder().indexOf("record"));
   });
 
   test("covers the whole subtree, `relationship_payment` first", () => {
@@ -148,7 +153,15 @@ describe("the delete order", () => {
       "session_invite",
       "session",
       "relationship",
+      "item",
+      "record",
     ]);
+  });
+
+  test("the record delete is scoped to the sessions' ids and to assessment rows", () => {
+    const record = SWEEP_STATEMENTS.find((statement) => statement.table === "record");
+    expect(record?.scope).toBe("session");
+    expect(record?.sql).toContain("record_type = 'assessment'");
   });
 
   test("and `removeStrays` issues exactly those statements, in that order", async () => {
@@ -238,7 +251,7 @@ describe("--check", () => {
 });
 
 describe("what the seed prints", () => {
-  test("a clean run says the branch is the bundle's, in words rather than eight zeroes", () => {
+  test("a clean run says the branch is the bundle's, in words rather than zeroes", () => {
     const line = sweepLine({ strays: [], counts: emptyCounts(), source: "the bundle" });
     expect(line).toContain("0 stray relationship(s)");
     expect(line).toContain("the bundle");

@@ -40,11 +40,14 @@
  * `@resvg/resvg-js`, which is deterministic for a pinned version and still compares byte-for-byte
  * in `--check`. Either way the file is drawn from this module, never hand-edited.
  *
- *   - the favicon (`-icon.svg`) is the app mark: a rounded box, the mark at 62 % of the canvas.
+ *   - the favicon (`-icon.svg`) is the app mark: a rounded box, the mark's ink at 78 % of the
+ *     canvas, rounded at the app's own `--radius` ÷ the 40 px tile the chrome draws
+ *     (`lib/brand-radius.ts` — the corner is derived from the token, never retyped here).
  *   - the maskable set (`-apple-touch-icon.png`, `-icon-192.png`, `-icon-512.png`) is full
  *     bleed — the background fills the square, no rounded corners, no transparency — because
  *     iOS and the OS mask it themselves, and a pre-rounded corner double-rounds. The mark
- *     drops to 56 % so it sits inside the 80 % safe circle the OS is allowed to crop to.
+ *     drops to 98 % of its safe-circle ceiling (58 % of the canvas for the book, 66.1 % for a
+ *     1024×654 mark) so it sits inside the 80 % circle the OS is allowed to crop to.
  *   - the favicon file the browser asks for by convention (`/favicon.ico`, served from the
  *     generated `-favicon.ico`) is the same app mark in a container browsers read as an icon.
  *
@@ -73,43 +76,101 @@ export const MARK_PATHS: readonly string[] = [
 export const MARK_SIZE = 512;
 
 /**
- * The glyph's canvas fraction. The book's own 24-unit box is scaled by this fraction of the
- * canvas; 0.62 on the app mark matches the in-app box (24 px glyph in a 40 px tile), and 0.56
- * keeps the maskable mark inside the 80 % safe circle (its farthest corner is 0.56 × 512 ×
- * 14.87 / 24 ≈ 178 px from centre, under the 205 px safe radius).
+ * The glyph's ink inside its own 24-unit viewBox — the book's two paths *plus their 2-unit stroke*.
+ *
+ * The paths span x 2–22 and y 3–21 and the stroke adds a unit on every side, so what a reader
+ * actually sees is 22 × 20 units centred at (12, 12), not the 24 × 24 box. Every fraction below is
+ * a fraction of **this** box: the numbers that shipped before #963 were fractions of the viewBox,
+ * which is why `0.62` drew a mark that measured 51 % of the tile and why the comment beside it
+ * could say "24 px glyph in a 40 px tile" while the pixels said otherwise.
  */
-export const APP_GLYPH_FRACTION = 0.62;
-export const MASKABLE_GLYPH_FRACTION = 0.56;
+export const MARK_INK_BOX = { x: 1, y: 2, width: 22, height: 20 } as const;
 
 /**
- * The canvas fraction a **raster mark** fills on the maskable set: 0.64, the owner's number.
+ * The tile the chrome draws the app mark in, in px — `components/layout/footer.tsx`:
+ * `<div className="bg-action p-2 rounded-lg"><BrandGlyph className="h-6 w-6" /></div>`, a 24 px
+ * glyph plus `p-2` (8 px) on each side = 40 px, rounded at `rounded-lg` = `var(--radius)`.
  *
- * A mark is not a glyph. The template's book is a 24-unit stroked path, so 0.56 of the canvas is
- * what keeps *its* farthest corner inside the 80 % safe circle. A raster mark's ink is a rectangle
- * placed by `markBoxOf`, so how much of the circle it uses depends on its own aspect ratio — the
- * AS monogram's ink is 1024 × 654, and at 0.64 the box is 327.7 × 209.3 whose half-diagonal is
- * 194 px, inside the 205 px radius the OS may crop to. That is measured on the shipped raster by
- * `tests/brand-icon.test.ts` rather than asserted here, because a second mark with a squarer
- * aspect would need a different number and the test is what would say so.
+ * It is the reference tile the icon's corner is derived from (`lib/brand-radius.ts` divides the
+ * `--radius` token by this), so a change to the footer's app mark is a change to every icon's
+ * corner — which is the point: the icons match the app, the app does not bend to the icons.
+ */
+export const APP_MARK_TILE_PX = 40;
+
+/**
+ * The canvas fraction the mark's **ink** fills on the app surface (the favicon, the `.ico`).
+ *
+ * `0.78` leaves 11 % of the canvas on the longest axis: enough that the 12.5 % corner arc never
+ * comes near the ink, and little enough that the mark still reads as a mark at 16 px instead of a
+ * postage stamp in a field — which is what `0.62` of the *viewBox* (≈ 51 % of the tile) shipped.
+ * The safe circle is not budgeted here: the OS crops maskable icons, never a tab icon.
+ */
+export const APP_GLYPH_FRACTION = 0.78;
+
+/**
+ * The circle a maskable icon may be cropped to: 40 % of the canvas, the 80 % "safe zone" the
+ * maskable spec draws. Only the maskable surfaces pay for it — the favicon is never cropped.
+ */
+export const MASKABLE_SAFE_RADIUS = 0.4 * MARK_SIZE;
+
+/**
+ * The largest canvas fraction at which ink of this aspect keeps its farthest corner inside
+ * `MASKABLE_SAFE_RADIUS`: the ink box's half-diagonal, as a share of its longest side, grows
+ * linearly with the fraction, so the ceiling is `safeRadius / halfDiagonalShare`.
+ *
+ * One rule for both kinds of mark — a glyph's ink and a raster's ink are both rectangles here, and
+ * their aspect ratios are all that decides how much of the circle they can use.
+ */
+export function safeCircleFill(ink: { width: number; height: number }): number {
+  const longest = Math.max(ink.width, ink.height);
+  const halfDiagonalShare = (0.5 * Math.hypot(ink.width, ink.height)) / longest;
+  return MASKABLE_SAFE_RADIUS / MARK_SIZE / halfDiagonalShare;
+}
+
+/**
+ * The share of the exact ceiling a maskable surface actually fills.
+ *
+ * Not 1.0 on purpose: at the ceiling the ink's corner sits *on* the crop circle, and the
+ * rasteriser's antialiased edge then lands a pixel outside it — the one place a rounded corner is
+ * allowed to clip ink. 98 % of the ceiling is 4 px of slack at 512 and is still inside the circle
+ * by measurement (`tests/brand-icon.test.ts` measures the shipped raster, not this arithmetic).
+ */
+const SAFE_FILL = 0.98;
+
+/** The glyph's maskable fill: 98 % of the circle ceiling for its 22 × 20 ink box (≈ 0.580). */
+export const MASKABLE_GLYPH_FRACTION = SAFE_FILL * safeCircleFill(MARK_INK_BOX);
+
+/**
+ * The canvas fraction a **raster mark** fills on the maskable set: 0.661, which is 98 % of the
+ * ceiling for the mark this brand ships.
+ *
+ * A mark is not a glyph. The template's book is a 22 × 20 unit ink box, so its maskable ceiling is
+ * `safeCircleFill(MARK_INK_BOX)` ≈ 0.592. A raster mark's ink is a rectangle placed by
+ * `markBoxOf`, so how much of the circle it can use depends on its own aspect ratio: AlignSynch's
+ * AS monogram is 1024 × 654, whose half-diagonal is 0.593 of its longest side, so the ceiling is
+ * 0.4 / 0.593 ≈ 0.6745 and 98 % of it is 0.661 — a 338 × 216 box at 512 whose half-diagonal is
+ * ≈ 201 px, inside the 205 px radius the OS may crop to. The old 0.64 was 95 % of that ceiling
+ * and read as a small logo floating in a field.
+ *
+ * That the ceiling is *this* mark's is why it is measured: `tests/brand-icon.test.ts` reads the
+ * shipped `-icon-512.png` and fails when the ink leaves the circle or drops below this target, so
+ * a second mark with a squarer aspect cannot quietly inherit a number that clips it.
  *
  * The ground is transparent, on the owner's instruction — there is no field to bleed, so the
  * margin around the ink *is* the safe zone. A maskable icon with no background is not what the
  * spec recommends and it is what this brand ships, deliberately.
  */
-export const MASKABLE_MARK_FRACTION = 0.64;
-
-/** The app mark's corner radius as a fraction of the canvas — the `rounded-lg` the chrome draws. */
-export const APP_RADIUS_FRACTION = 0.2;
+export const MASKABLE_MARK_FRACTION = 0.661;
 
 /**
  * Where a mark's ink sits on a 512-unit surface: a box centred on the canvas whose **longest
  * side** is `fraction × canvas`, at the ink's own aspect ratio.
  *
- * The longest side, not the width: a wide mark (AlignSynch's AS monogram is 1024×660 of ink)
- * given 0.56 of the canvas by width would be 0.36 by height and unreadable at a tab size, while
- * a square or tall mark would overflow. One rule for both, and the safe circle still holds: the
- * box's half-diagonal is at most `fraction × canvas / √2`, which at 0.56 is 203 < the 205 px
- * radius the OS may crop to.
+ * The longest side, not the width: a wide mark (AlignSynch's AS monogram is 1024×654 of ink)
+ * given the same fraction of the canvas by width would be 0.42 of it by height and unreadable at a
+ * tab size, while a square or tall mark would overflow. One rule for both, and the safe circle
+ * holds for each mark's own aspect: the box's half-diagonal is `0.5 × √(w²+h²) / max(w,h)` of the
+ * longest side, which for this monogram at 0.661 is ≈ 201 px, inside the 205 px radius.
  */
 export interface MarkBox {
   x: number;
@@ -152,7 +213,7 @@ export const ICON_SUFFIXES = {
   faviconIco: "-favicon.ico",
   /** `apple-touch-icon`, 180×180 — a glyph brand's full bleed and opaque, a mark brand's clear. */
   appleTouchIcon: "-apple-touch-icon.png",
-  /** The PWA 192 icon — full bleed and opaque for a glyph, a transparent mark at 64 % otherwise. */
+  /** The PWA 192 icon — full bleed and opaque for a glyph, a transparent mark at 66.1 % otherwise. */
   icon192: "-icon-192.png",
   /** The PWA 512 icon, same rule as the 192. */
   icon512: "-icon-512.png",
@@ -186,14 +247,16 @@ function num(value: number): string {
  *
  * `ground` paints the square (the brand's `action` on the icon, its `actionForeground` on the
  * share badge); `ink` strokes the book. `radius === 0` is full bleed (maskable/apple); a
- * positive radius is the rounded app mark. `glyph` is the canvas fraction the book fills.
+ * positive radius is the rounded app mark. `glyph` is the canvas fraction the book's **ink**
+ * fills — not its viewBox: the ink box is placed by `markBoxOf`, scaled uniformly and centred, so
+ * the fraction means what a reader sees rather than a box the paths do not reach.
  */
 export function markSvg(args: {
   ground: string;
   ink: string;
   /** Corner radius in canvas units — `0` for the full-bleed maskable/apple square. */
   radius: number;
-  /** The book's canvas fraction (`APP_GLYPH_FRACTION` or `MASKABLE_GLYPH_FRACTION`). */
+  /** The book's ink fraction of the canvas (`APP_GLYPH_FRACTION`, `MASKABLE_GLYPH_FRACTION`). */
   glyph: number;
   /** Nominal `width`/`height` the consumer asks for (32, 180, 192, 512). */
   width: number;
@@ -201,10 +264,11 @@ export function markSvg(args: {
   title: string;
 }): string {
   const { ground, ink, radius, glyph, width, height, title } = args;
-  // The 24-unit glyph centred on the canvas: translate its centre (12,12) to the origin, scale,
-  // then move to the canvas centre. Stroke width 2 scales with the glyph, exactly as lucide's.
-  const scale = (glyph * MARK_SIZE) / 24;
-  const centre = MARK_SIZE / 2;
+  // The ink box centred on the canvas, at its own aspect ratio, then a uniform scale that takes
+  // the 24-unit viewBox onto it: move the ink's corner to the origin, scale, move it to the box.
+  // Stroke width 2 scales with the glyph, exactly as lucide's.
+  const box = markBoxOf(MARK_INK_BOX, glyph);
+  const scale = box.width / MARK_INK_BOX.width;
   const groundRect =
     radius > 0
       ? `<rect width="${MARK_SIZE}" height="${MARK_SIZE}" rx="${num(radius)}" fill="${ground}"/>`
@@ -214,7 +278,7 @@ export function markSvg(args: {
   <!-- Generated by scripts/gen-brand-icons.mjs from data/brand.ts — do not edit by hand. -->
   <title>${title}</title>
   ${groundRect}
-  <g transform="translate(${num(centre)} ${num(centre)}) scale(${num(scale)}) translate(-12 -12)" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(${pt(box.x)} ${pt(box.y)}) scale(${pt(scale)}) translate(-${MARK_INK_BOX.x} -${MARK_INK_BOX.y})" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     ${paths}
   </g>
 </svg>

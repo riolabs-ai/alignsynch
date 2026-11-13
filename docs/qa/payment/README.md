@@ -29,7 +29,7 @@ Three commands, in order, all from the worktree root:
 pnpm payment:e2e setup          # 20 checks ✔, writes .payment-e2e.json (gitignored)
 
 # 2. the browser: press both acts, read the DOM back, keep the stills
-python3 …/cdp-payment.py --state .payment-e2e.json --out docs/qa-payment
+python3 …/cdp-payment.py --state .payment-e2e.json --out docs/qa/payment
 
 # 3. the rows: the method, the fee, the status, the audit trail
 pnpm payment:e2e verify         # 7 checks ✔
@@ -147,12 +147,12 @@ Two passes, because they answer different questions and one server cannot answer
 ```bash
 # the flow pass, on the keyless adapter — `pnpm payment:e2e` unchanged
 pnpm payment:e2e setup                                  # 20 checks ✔
-python3 …/cdp-payment-dialog.py --mode flow --state .payment-e2e.json --out docs/qa-payment/capture-dialog
+python3 …/cdp-payment-dialog.py --mode flow --state .payment-e2e.json --out docs/qa/payment/capture-dialog
 pnpm payment:e2e verify                                 # 7 checks ✔
 
 # the frame pass, on the test-mode keys — nothing is completed and nothing is written
 BILLING_PROVIDER=stripe pnpm dev --port 3100
-python3 …/cdp-payment-dialog.py --mode frame --state .payment-e2e.json --out docs/qa-payment/capture-dialog
+python3 …/cdp-payment-dialog.py --mode frame --state .payment-e2e.json --out docs/qa/payment/capture-dialog
 ```
 
 | Step               | `data-capture-stage` | plans | `data-add-method` | note                                                            |

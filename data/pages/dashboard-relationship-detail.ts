@@ -265,6 +265,13 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
          * primary door whenever the relationship has a session for stage 5 to read.
          */
         { id: "invite-members", label: "Invite Members" },
+        /**
+         * #958 — **the same door, named for the act it performs.** On a draft the pay modal's Send
+         * *is* the publish, so the band offers both of the owner's verbs rather than implying one
+         * act lives on a different screen. Same label as the card's (`dashboard-relationships.ts`),
+         * deliberately: one act, one word, whichever surface draws it.
+         */
+        { id: "publish-to-counterparty", label: "Publish to Counterparty" },
       ],
     },
     {

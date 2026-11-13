@@ -179,14 +179,25 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
          * centre instead of one verb and a menu:
          *
          *   invite-members        the pay modal (`…/create/invite?instance=`), which is the only
-         *                         surface that takes a card. It needs a session to open, which is
-         *                         the second label below: a draft written by this list's own create
-         *                         band has none, and the card says so rather than drawing a link that
-         *                         would land on stage 1 again.
-         *   publish-to-counterparty  the relationship's own screen, where the publish band is.
+         *                         surface that takes a card. It needs a session to open.
+         *   publish-to-counterparty  the same address (#913) — the modal's own Send is what
+         *                         publishes, so the row does not stop one click short of it.
+         *
+         * #958 — **`invite-members-why` is a sentence now, not a tooltip.** It used to be the
+         * `title` on an inert, greyed-out `Invite Members`; a disabled control carrying its reason
+         * in a hover is the pattern the owner rejected ("use the modal", not "explain why you
+         * cannot"), so the card prints the reason in words beside a door — the template's own
+         * create flow, which is the only writer of a session. The branch is unreachable for any
+         * row created since #913 deleted the list's create band; it exists for a tree that still
+         * holds one, and it exists as words rather than as a dead button.
          */
         { id: "invite-members", label: "Invite Members" },
-        { id: "invite-members-why", label: "No invitation yet — this draft has no session" },
+        {
+          id: "invite-members-why",
+          label:
+            "No session yet, so the pay modal has nothing to open — start it again from its template and the modal comes with it. This draft stays as it is.",
+        },
+        { id: "invite-members-why-door", label: "Start it again" },
         { id: "publish-to-counterparty", label: "Publish to Counterparty" },
         /**
          * #706 — the card's primary action for the seat that cannot publish. The destination is
