@@ -10,7 +10,8 @@
  * **Numbering.** `version` starts at 1 and the publish path writes `max + 1`, so "the live
  * version" is the highest number and `superseded_at` is the fact "a later one exists" rather than
  * a second opinion about which row is current. The migration's backfill writes v1 from the rows as
- * they stood; `scripts/db-seed.mjs` carries the same statement for a database seeded after it.
+ * they stood; `scripts/db-seed.mjs` publishes the catalogue through `snapshotTemplateVersion()`
+ * below, so a seeded version is written by the same statement a publish writes (#962).
  *
  * **Immutability is the database's.** `db/migrations/0026_template_version.sql` installs a
  * `BEFORE UPDATE` trigger that refuses any change except `superseded_at` NULL → instant, so the
@@ -228,9 +229,13 @@ export async function insertTemplateVersion(
 ): Promise<string | undefined> {
   const id = templateVersionIdOf(input.templateRecordId, input.version);
   const result = await sql.query<{ id: string }>(
+    // `$5` stays the actor and `$6` is the optional instant, even though the instant appears first
+    // in the VALUES list: the parameter positions are part of this statement's contract (the
+    // publish tests read `values[4]` as the actor), so an argument added after them does not move
+    // the ones an existing caller passes.
     `INSERT INTO template_version
        (id, template_record_id, version, payload, published_at, published_by)
-     VALUES ($1, $2, $3, $4::jsonb, COALESCE($5::timestamptz, now()), $6)
+     VALUES ($1, $2, $3, $4::jsonb, COALESCE($6::timestamptz, now()), $5)
      ON CONFLICT (template_record_id, version) DO NOTHING
      RETURNING id`,
     [
@@ -238,8 +243,8 @@ export async function insertTemplateVersion(
       input.templateRecordId,
       input.version,
       JSON.stringify(input.template),
-      input.publishedAt ?? null,
       input.publishedBy,
+      input.publishedAt ?? null,
     ],
   );
   return result.rows[0]?.id;
