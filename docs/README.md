@@ -213,6 +213,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-surface-sweep-913/README.md`](qa-surface-sweep-913/README.md) — **Surface sweep, #913** — Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?
 - [`qa-957-assessment-one-click/README.md`](qa-957-assessment-one-click/README.md) — **One-click create on /assessment, #957** — Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?
 - [`qa-958-no-initiator-member/README.md`](qa-958-no-initiator-member/README.md) — **A relationship with no initiator member, #958** — Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?
+- [`qa-976-sent-none/README.md`](qa-976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa-rail-handle/README.md`](qa-rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?

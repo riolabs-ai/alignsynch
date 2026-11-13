@@ -15,7 +15,8 @@
  *              one home rather than two.
  *
  * The two bands authored here are the ones only this screen has: `status` (the one sentence naming
- * where the invitation stands) and `timeline` (the variation: the invitation as three moments, not
+ * where the invitation stands — the four `inviteStateOf()` states plus `none`, the absent row) and
+ * `timeline` (the variation: the invitation as three moments, not
  * as a status word). The owner's sentences are the artifact's — `s9.*` in
  * `docs/review/artifacts/prototype-relationship-lifecycle-v5.html` — with `{counterparty}` and
  * `{date}` where the prototype typed Rowan's name and the day.
@@ -35,6 +36,11 @@ export const assessmentSentPageCopy: PageCopy = zPageCopy.parse({
        * The state line. One sentence per derived state — `inviteStateOf()` answers `unclaimed`,
        * `expired`, `claimed` or `revoked` and this band has exactly those four — plus the address
        * the invitation went to, which is a fact about the row and not a sentence about the state.
+       *
+       * `none` is the fifth, and it is not derived from a row: `session_invite` holding nothing for
+       * the session is a legitimate state (#976), and `SentState` asks for it by name. It says the
+       * invitation was never created rather than borrowing `unclaimed`, because "the link has not
+       * been claimed" and "there is no link" are different facts.
        */
       id: "status",
       items: [
@@ -42,6 +48,7 @@ export const assessmentSentPageCopy: PageCopy = zPageCopy.parse({
         { id: "claimed", label: "Accepted — {counterparty} claimed the invitation" },
         { id: "expired", label: "Expired — the invitation ran out before it was claimed" },
         { id: "revoked", label: "Withdrawn — the invitation was cancelled before it was used" },
+        { id: "none", label: "Not sent — no invitation was created for this relationship yet" },
         { id: "email", label: "Sent to {email}" },
       ],
     },
