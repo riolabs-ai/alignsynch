@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.0 · prev [QA atlas](../README.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.0 · prev [QA atlas](../README.md) · next [QA atlas — v1.17.1](../v1.17.1/index.md)
 
 <!-- docs-nav:end -->
 
@@ -191,6 +191,6 @@ Full-size PNGs (207 files, 54039728 bytes before compression) are not committed 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.0 · prev [QA atlas](../README.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.0 · prev [QA atlas](../README.md) · next [QA atlas — v1.17.1](../v1.17.1/index.md)
 
 <!-- docs-nav:end -->

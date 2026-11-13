@@ -29,8 +29,9 @@ evidence of the failure.
 - **Committed:** 480 px WebP thumbnails, `manifest.json` and the markdown. The whole directory is
   held to **≤ 5 MB** by the check.
 - **Not committed:** the full-size PNG set. `pnpm qa:atlas` packs them into
-  `qa-atlas-v<version>-full-size.zip`, which is attached to that version's GitHub Release; the atlas
-  page links it.
+  `qa-atlas-v<version>-full-size.zip`, which is attached to that version's GitHub Release and linked
+  from the atlas page. A release whose assets are immutable cannot take one — `gh release upload`
+  answers `HTTP 422` — so the page names the archive and its sha256 instead of linking a 404.
 
 ## Running a capture
 
@@ -68,7 +69,9 @@ Static on purpose — no browser, no connection, nothing from `lib/db/**` — so
 every lane. It fails, by route name, when:
 
 - a route `data/pages/budget.ts` registers has no row in the current version's `manifest.json` (or the
-  manifest carries a route the registry does not know);
+  manifest carries a route the registry does not know), **or the tree's version has no atlas at all** —
+  which is why a release cut carries one: bumping `package.json` without capturing turns the gate red,
+  by design, and the step says which version is undocumented;
 - a row's `expected` status disagrees with the boundary table, or a capture whose measured status
   differs is reported as anything other than a `fail` — publishing a real mismatch is the atlas's job,
   filing it as a pass is the contradiction the check refuses;

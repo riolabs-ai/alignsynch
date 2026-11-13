@@ -1162,7 +1162,7 @@ async function main() {
       kind: "closed-surface-console",
       route: `${captured.filter((row) => row.expected === 404).length} boundary-closed routes`,
       note:
-        `the app's not-found logs ${closedLines.size} distinct console line(s) in dev mode ` +
+        `the app's not-found logs ${closedLines.size} distinct console line(s) ` +
         `(${count} capture(s) carry "${first.replace(/\|/g, "\\|")}"); recorded, not failed — the ` +
         "console assertion measures product surfaces",
     });
@@ -1321,8 +1321,8 @@ function changedSince(manifest) {
     previous,
     summary:
       changes.length === 0
-        ? `No route changed verdict, status or widths since v${previous}.`
-        : `Against v${previous}:\n\n${changes.map((line) => `- ${line}`).join("\n")}`,
+        ? `No route changed verdict, status or widths since ${previous}.`
+        : `Against ${previous}:\n\n${changes.map((line) => `- ${line}`).join("\n")}`,
   };
 }
 
