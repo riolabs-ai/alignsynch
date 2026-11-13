@@ -89,6 +89,7 @@ export function Header({
   navigationOpen,
   onOpenNavigation,
   focusFlow,
+  notice = false,
 }: {
   copy: PageCopy;
   /**
@@ -158,6 +159,16 @@ export function Header({
     /** Its label, from `data/pages/shell.ts`'s `focus` section. */
     readonly backLabel: string;
   };
+  /**
+   * Is the admin notice bar mounted above this header (#906)?
+   *
+   * The bar is a row in the document flow, so a `sticky top-0` header would stick *over* it — the
+   * exact "cover the header" failure the banner spec's §3 arithmetic exists to stop. When the bar
+   * is present the header's top is `var(--admin-notice-h)` (the height the bar publishes on the
+   * layout wrapper); when it is not, this is `undefined` and the class list stays byte-for-byte what
+   * it was, which is what keeps a signed-out or QuizHub render out of `pnpm parity`'s diff.
+   */
+  notice?: boolean;
 }) {
   // The shell's copy, resolved here rather than in each band: `data/pages/shell.ts`
   // owns the words, this file owns which ids it renders. A renamed id is a red build
@@ -306,7 +317,9 @@ export function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+      <header
+        className={`sticky ${notice ? "top-[var(--admin-notice-h)]" : "top-0"} z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6`}
+      >
         <div className="flex items-center gap-4">
           {/**
            * The focused flow's own left-hand chrome (#542 phase 2): the wordmark, and one explicit

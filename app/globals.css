@@ -149,6 +149,18 @@
        of five anchors landing under a bar. */
     --site-header-height: 5rem;
 
+    /* The admin notice bar's height (#906), and the only place the number is written.
+       `components/layout/admin-notice-bar.tsx` draws its row at `min-height: var(--admin-notice-h)`
+       and the shell's three offsets — the app header's `top`, the marketing header's `top`, the
+       rail's `top` and height — read the same property, so the row and the offsets cannot disagree.
+
+       **`0px` is the default, and that is the mechanism, not a placeholder.** The bar publishes a
+       height only when it renders, by putting `.admin-notice-shell` on the layout's wrapper; every
+       other render resolves this to `0px`, which is exactly the offset the shells had before the
+       bar existed. A build where the bar is absent is therefore byte-identical, not "close enough".
+       `banner/README.md` §3 argues the shape; the comment below carries the two heights. */
+    --admin-notice-h: 0px;
+
     /* The Gap scale (#539 item 2): graphite at 0, the green family at 4. The five steps and
        their measured contrast on white are in this file's header. */
     --gap-0: 200 17.9% 26.3%;
@@ -264,6 +276,31 @@
   }
 
   /*
+   * The admin notice bar's shell marker (#906) — the *only* thing that changes when the bar renders.
+   *
+   * `components/layout/admin-notice-bar.tsx` is mounted by both group layouts, and each layout puts
+   * this class on the element that wraps the shell. The two heights are the ones
+   * `banner/README.md` §4 publishes: **40px** where the row is one line (1024 and 1440), **56px** at
+   * 390, where the label wraps to two 20px lines plus two 8px paddings. The phone case is the media
+   * query below, unlayered so it wins over this layer whatever the order.
+   *
+   * `--admin-notice-h` itself defaults to `0px` on `:root` (above), so a wrapper that does not carry
+   * this class inherits the zero and every consumer — the two headers, the rail, the in-page menus,
+   * the anchor offsets — draws exactly the geometry it drew before.
+   */
+  .admin-notice-shell {
+    --admin-notice-h: 40px;
+
+    /*
+     * The row is `position: fixed`, so it takes no space in the layout; the wrapper reserves the
+     * same height here instead, which is what moves the header, the rail and the page down by
+     * exactly one bar. Padding inside `border-box` keeps `min-h-screen` at 100vh rather than
+     * 100vh + the bar.
+     */
+    padding-top: var(--admin-notice-h);
+  }
+
+  /*
    * The AlignSynch front page's measure (#904) — deliberately **not** `.marketing-container`.
    *
    * The approved V2 page (`docs/specs/spec-design-page-rel-templates-v2/home/`, landed by #903) is
@@ -316,7 +353,12 @@
    */
   .home-anchors {
     --home-section-nav-height: 3.25rem;
-    --home-anchor-offset: calc(var(--site-header-height) + var(--home-section-nav-height) + 0.5rem);
+    --home-anchor-offset: calc(
+      var(--admin-notice-h) +
+      var(--site-header-height) +
+      var(--home-section-nav-height) +
+      0.5rem
+    );
   }
 
   .home-anchors [data-home-anchor] {
@@ -329,6 +371,21 @@
 @media (max-width: 767px) {
   .home-anchors {
     --home-section-nav-height: 3rem;
+  }
+}
+
+/*
+ * The admin notice bar at a phone width (#906) — **56px, and the reason it is not 40**.
+ *
+ * At 390 the row's label wraps to two 20px lines, and two 8px paddings around them make 56px. The
+ * number is derived, so a change to the row's line-height or padding has to change this figure in
+ * the same commit — which is what the build card's measurement (bar height printed beside the
+ * published number) catches. Unlayered on purpose: an unlayered rule outranks the `@layer
+ * components` block above, so this wins at a phone width whatever order the two are emitted in.
+ */
+@media (max-width: 639px) {
+  .admin-notice-shell {
+    --admin-notice-h: 56px;
   }
 }
 
@@ -376,7 +433,12 @@ html:has(.home-anchors) {
  */
 .templates-anchors {
   --templates-nav-height: 3rem;
-  --templates-anchor-offset: calc(var(--site-header-height) + var(--templates-nav-height) + 0.5rem);
+  --templates-anchor-offset: calc(
+    var(--admin-notice-h) +
+    var(--site-header-height) +
+    var(--templates-nav-height) +
+    0.5rem
+  );
 }
 
 .templates-anchors [data-templates-realm],

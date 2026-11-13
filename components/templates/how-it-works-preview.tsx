@@ -35,7 +35,7 @@ export function HowItWorksPreview({
 }) {
   return (
     <section
-      className="scroll-mt-[calc(var(--site-header-height)+0.75rem)] border-b border-border bg-background"
+      className="scroll-mt-[calc(var(--admin-notice-h)_+_var(--site-header-height)_+_0.75rem)] border-b border-border bg-background"
       data-templates-how=""
       id="how-it-works"
     >

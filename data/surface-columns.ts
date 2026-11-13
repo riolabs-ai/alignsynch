@@ -90,6 +90,7 @@ const rows: readonly SurfaceColumn[] = [
   // ── Admin: the console family. #717 already put all eighteen on `StageColumn`. ──────────────
   { path: "/admin/audit", mode: "column" },
   { path: "/admin/billing", mode: "column" },
+  { path: "/admin/brand", mode: "column" },
   { path: "/admin/broadcast", mode: "column" },
   { path: "/admin/console", mode: "column" },
   { path: "/admin/console/relationships", mode: "column" },
