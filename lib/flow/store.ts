@@ -1312,7 +1312,15 @@ export async function sendDraftInvitation(input: {
   const client = await getPool().connect();
   let status: string | undefined;
   let relationshipId: string | undefined;
-  /** `relationship.method_captured_at` — null is "no card on file", which the send now waits for. */
+  /**
+   * The captured method, read from **`relationship_payment`** — the row that owns the fact.
+   *
+   * `null` means "no card on file", which the send waits for; `relationship_payment` is keyed by
+   * `relationship_id`, so the join cannot fan out. A relationship with no payment row yet is the
+   * normal state before a method is captured, and the `LEFT JOIN` is what makes that absence read
+   * as `null` rather than as a missing row (#948 — the column was selected from `relationship`,
+   * which does not have it, so every send answered `42703`).
+   */
   let methodCaptured: Date | null = null;
   try {
     const found = await client.query<{
@@ -1320,9 +1328,10 @@ export async function sendDraftInvitation(input: {
       status: string | null;
       method_captured_at: Date | null;
     }>(
-      `SELECT ai.relationship_id, r.status, r.method_captured_at
+      `SELECT ai.relationship_id, r.status, p.method_captured_at
          FROM session ai
          LEFT JOIN relationship r ON r.id = ai.relationship_id
+         LEFT JOIN relationship_payment p ON p.relationship_id = r.id
         WHERE ai.record_id = $1`,
       [input.instanceRecordId],
     );
