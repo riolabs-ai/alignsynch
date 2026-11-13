@@ -28,9 +28,9 @@
  * keyline, and the owner asked for it to sit on transparency on every surface rather than on a
  * painted square. The maskable PNGs are the case that used to require a ground — the spec wants a
  * full-bleed field so the OS can crop into it — and a transparent maskable icon is what this brand
- * ships deliberately: the mark is drawn at 64 % (`MASKABLE_MARK_FRACTION`) and the margin around
- * it is the safe zone. That is a stated choice, not an oversight; the alternative was a blue tile
- * the owner has now rejected twice.
+ * ships deliberately: the mark's ink is drawn at 98 % of its safe-circle ceiling
+ * (`MASKABLE_MARK_FRACTION`) and the margin around it is the safe zone. That is a stated choice,
+ * not an oversight; the alternative was a blue tile the owner has now rejected twice.
  *
  * ## Both brands, one generator, two marks
  *
@@ -66,7 +66,6 @@ import { Resvg } from "@resvg/resvg-js";
 
 import {
   APP_GLYPH_FRACTION,
-  APP_RADIUS_FRACTION,
   MASKABLE_GLYPH_FRACTION,
   MASKABLE_MARK_FRACTION,
   MARK_SIZE,
@@ -74,15 +73,16 @@ import {
   markSvg,
   rasterMarkSvg,
 } from "../lib/brand-icon.ts";
+import { APP_RADIUS_FRACTION } from "../lib/brand-radius.ts";
 import { alphaBBox, decodePng, encodeIco, pngDataUrl } from "./image-bytes.ts";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CHECK = process.argv.includes("--check");
 
 /**
- * The resolution the SVG favicon embeds. A tab icon is 16–32 CSS px and the mark fills 62 % of it,
- * so 64 px of source covers a 3× display with pixels to spare — and keeps the favicon a ~10 KB
- * text file instead of a 400 KB one.
+ * The resolution the SVG favicon embeds. A tab icon is 16–32 CSS px and the mark's ink fills 78 %
+ * of it, so 64 px of source covers a 3× display with pixels to spare — and keeps the favicon a
+ * ~10 KB text file instead of a 400 KB one.
  */
 const FAVICON_EMBED_SIZE = 64;
 
@@ -93,12 +93,13 @@ const ICO_SIZES = [32, 48];
 const { brands } = await import("../data/brand.ts");
 
 /**
- * The surfaces one brand emits. `glyph` is the canvas fraction a *vector* mark fills on that
- * surface and `mark` the fraction a *raster* mark fills — two numbers because a glyph's box is
- * scaled from a 24-unit path while a raster mark's ink is a rectangle, and the safe-circle maths
- * differs (see `MASKABLE_MARK_FRACTION`). `radius` is the corner radius in canvas units, used only
- * when a ground is painted (a glyph brand); a mark brand's canvas is transparent and has no tile
- * to round.
+ * The surfaces one brand emits. `glyph` is the canvas fraction a *vector* mark's ink fills on that
+ * surface and `mark` the fraction a *raster* mark's ink fills — two numbers because a glyph's ink
+ * box is squared to its 24-unit viewBox while a raster mark's ink is the rectangle the file drew,
+ * and the safe-circle ceiling each can reach depends on its aspect (`safeCircleFill`). `radius` is
+ * the corner radius in canvas units, used only when a ground is painted (a glyph brand); a mark
+ * brand's canvas is transparent and has no tile to round. It comes from `lib/brand-radius.ts`,
+ * which divides the app's `--radius` token by the tile the chrome draws — never a typed decimal.
  */
 const SURFACES = [
   {
