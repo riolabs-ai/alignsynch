@@ -170,6 +170,7 @@ export function AdminAuditLog({
   const filtersCopy = sectionOf(copy, "filters");
   const changesCopy = sectionOf(copy, "changes");
   const actorCopy = sectionOf(copy, "actor");
+  const reasonCopy = sectionOf(copy, "reason");
   const summaryCopy = sectionOf(copy, "summary");
   const listCopy = sectionOf(copy, "list");
 
@@ -411,7 +412,15 @@ export function AdminAuditLog({
                             </Link>
                           )}
                         </TableCell>
-                        <TableCell className="max-w-[24rem] text-sm">{row.reason}</TableCell>
+                        <TableCell className="max-w-[24rem] text-sm">
+                          {row.reason === null ? (
+                            <span className="text-muted-foreground">
+                              {itemLabel(reasonCopy, "not-stated")}
+                            </span>
+                          ) : (
+                            row.reason
+                          )}
+                        </TableCell>
                         <TableCell className="align-top">
                           <div className="space-y-3">
                             <ChangeFields
