@@ -1,0 +1,71 @@
+{
+  "phase": "before",
+  "base": "http://localhost:4317",
+  "relationship": "95505193-1b22-4c9c-a563-b7abeeb2ff15",
+  "widths": {
+    "390": {
+      "ready": true,
+      "opened": true,
+      "pageStill": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa935/before/before-390-page.png",
+      "dialogStill": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa935/before/before-390-edit-open.png",
+      "pageAspectSurfaces": 1,
+      "pageRows": 5,
+      "pageGrips": 5,
+      "pageOrder": [
+        "aspect-work-priorities",
+        "aspect-feedback",
+        "aspect-workload",
+        "aspect-decisions",
+        "aspect-development"
+      ],
+      "editPanelAspectLists": 1,
+      "editPanelAspectInputs": 5,
+      "dialogAspectRows": 0,
+      "totalAspectListsWithDialogOpen": 1,
+      "horizontalOverflow": false,
+      "innerWidth": 390,
+      "heading": "Staff & Manager",
+      "editTrigger": 1,
+      "pageRowText": [
+        "01 ⠿ How are the week's priorities agreed? Set for me ↔ Agreed together ✎ ✕",
+        "02 ⠿ How is feedback on the work given? Never said ↔ Said directly ✎ ✕",
+        "03 ⠿ How is the workload split between the two of you? All on me ↔ Evenly shared ✎ ✕",
+        "04 ⠿ How are the decisions about the work made? Manager decides ↔ Decided together ✎ ✕",
+        "05 ⠿ How much do you talk about growth and what comes next? Never ↔ Every review ✎ ✕"
+      ],
+      "editPanelText": "Edit this relationship Edit this relationship Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered. Title Summary Mode Advanced Setting Soft Answered under version 4 The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship. Aspects What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove Add an Aspect Version Keep the version this relationship is on Move to version 4, saved 2026-11-12T22:58:10.533Z Move to version 3, saved 2026-11-12T22:58:02.395Z Move to version 2, saved 2026-11-12T22:57:56.170Z Move to version 1, saved 2026-10-26T09:00:00.000Z A version is what the whole relationship reads from. Moving the pin applies that version's words and Aspects, and the cost below is what it would take. Their name Their email The invitation stays open for (days) Extending the window does not touch the Aspects or anybody's answers. Check the cost Save the change Close"
+    },
+    "1440": {
+      "ready": true,
+      "opened": true,
+      "pageStill": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa935/before/before-1440-page.png",
+      "dialogStill": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa935/before/before-1440-edit-open.png",
+      "pageAspectSurfaces": 1,
+      "pageRows": 5,
+      "pageGrips": 5,
+      "pageOrder": [
+        "aspect-work-priorities",
+        "aspect-feedback",
+        "aspect-workload",
+        "aspect-decisions",
+        "aspect-development"
+      ],
+      "editPanelAspectLists": 1,
+      "editPanelAspectInputs": 5,
+      "dialogAspectRows": 0,
+      "totalAspectListsWithDialogOpen": 1,
+      "horizontalOverflow": false,
+      "innerWidth": 1440,
+      "heading": "Staff & Manager",
+      "editTrigger": 1,
+      "pageRowText": [
+        "01 ⠿ How are the week's priorities agreed? Set for me ↔ Agreed together ✎ ✕",
+        "02 ⠿ How is feedback on the work given? Never said ↔ Said directly ✎ ✕",
+        "03 ⠿ How is the workload split between the two of you? All on me ↔ Evenly shared ✎ ✕",
+        "04 ⠿ How are the decisions about the work made? Manager decides ↔ Decided together ✎ ✕",
+        "05 ⠿ How much do you talk about growth and what comes next? Never ↔ Every review ✎ ✕"
+      ],
+      "editPanelText": "Edit this relationship Edit this relationship Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered. Title Summary Mode Advanced Setting Soft Answered under version 4 The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship. Aspects What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove What is asked Left Value (1) Right Value (5) Remove Add an Aspect Version Keep the version this relationship is on Move to version 4, saved 2026-11-12T22:58:10.533Z Move to version 3, saved 2026-11-12T22:58:02.395Z Move to version 2, saved 2026-11-12T22:57:56.170Z Move to version 1, saved 2026-10-26T09:00:00.000Z A version is what the whole relationship reads from. Moving the pin applies that version's words and Aspects, and the cost below is what it would take. Their name Their email The invitation stays open for (days) Extending the window does not touch the Aspects or anybody's answers. Check the cost Save the change Close"
+    }
+  }
+}

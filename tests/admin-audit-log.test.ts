@@ -573,7 +573,15 @@ describe("a row the read cannot parse is a defect, not a blank cell", () => {
     expect(auditRowOf({ ...base, actor_role: null }).actorRole).toBeNull();
   });
 
-  it("refuses a row with no reason, and a rung is not required", () => {
+  it("answers a null reason as 'nobody stated one', and still refuses an empty string", () => {
+    // `0038` dropped `NOT NULL` on purpose (#732): the Reason field was removed from twelve
+    // screens, so a new row carries no reason and the read must not throw on it. `null` is that
+    // absence; `""` is not — an empty string is neither a reason nor the absence of one, so a row
+    // carrying one is still a defect rather than a blank the screen has to guess at.
+    expect(auditRowOf({ ...base, reason: null }).reason).toBeNull();
+    expect(auditRowOf({ ...base, reason: "promoted after a reviewer asked" }).reason).toBe(
+      "promoted after a reviewer asked",
+    );
     expect(() => auditRowOf({ ...base, reason: "" })).toThrow();
     expect(auditRowOf({ ...base, actor_email: null }).actorEmail).toBeNull();
   });

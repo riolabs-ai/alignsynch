@@ -56,7 +56,7 @@ const zAuditRow = z.object({
   action: z.string().min(1),
   target_table: z.string().min(1),
   target_id: z.string().min(1),
-  reason: z.string().min(1),
+  reason: z.string().min(1).nullable(),
   before: z.unknown(),
   after: z.unknown(),
   created_at: z.union([z.date(), z.string().min(1)]),

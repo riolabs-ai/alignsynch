@@ -131,5 +131,18 @@ export const adminAuditPageCopy: PageCopy = zPageCopy.parse({
         { id: "account-gone", label: "No address on this database" },
       ],
     },
+    {
+      /**
+       * The reason column when nobody stated one.
+       *
+       * `reason` is nullable by design since `0038` (#732): the owner removed every required
+       * Reason field because *"a sentence typed to satisfy a constraint is not provenance, it is
+       * a tax on the operator"*. So `NULL` means exactly one thing — nobody stated one — and the
+       * column says so in words instead of rendering a blank cell, which reading as "we lost it"
+       * is the defect this row exists to prevent.
+       */
+      id: "reason",
+      items: [{ id: "not-stated", label: "No reason stated" }],
+    },
   ],
 });
