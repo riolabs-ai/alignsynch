@@ -71,6 +71,21 @@
 # now runs inside one of QUIZHUB_BUILD_SLOTS (default 2) flock slots under
 # ~/.cache/quizhub/, and the step prints whether it waited.
 #
+# SHARED BUILD CACHE — the slot buys ordering, not warmth, so the cache is shared
+# too (`scripts/build-cache.mjs`). `.next` is per-worktree, so every worktree used
+# to start `next build` with an empty Turbopack cache and recompile all 34 routes:
+# 70 worktrees held 64 separate caches totalling 27 GB. While the slot is held, the
+# step links `.next/cache` to `~/.cache/quizhub/next/<key>/` and unlinks it after,
+# so a worktree with nothing built yet reads what the last build left there — and a
+# dev server never opens a store a build holds. `pnpm typecheck` does the same for
+# its `tsc` buildinfo. The key is a hash of the `next` version, the `typescript`
+# version, the Node major and the `pnpm-lock.yaml` digest, so a bump lands on a
+# different directory and misses; every directory carries a `.cache-key` sentinel
+# and one that does not match is deleted, never read. Slot 1 uses the key's own
+# directory and the other slots use siblings, because the store is a single-writer
+# RocksDB and a second concurrent build on it fails rather than merges.
+# `node scripts/build-cache.mjs status` prints the key, the paths and their sizes.
+#
 # TEST RUNNERS — `pnpm test` is `vitest run` over `tests/**/*.test.ts` (#8): app-side
 # units that import `lib/quiz-cards.ts` and `data/searchdata.ts` through the `@/` alias.
 # The `node --test` suite over `.datacheck/scripts/__tests__/*.test.js` stays inside
@@ -334,9 +349,14 @@ build_with_lock() {
   fi
 
   set +e
+  export QUIZHUB_BUILD_SLOT="$slot"
+  node scripts/build-cache.mjs link
   pnpm build
   rc=$?
   set -e
+  # A dev server keeps its own cache under the same path and must never open the
+  # shared store a build holds; put the tree's own empty directory back.
+  node scripts/build-cache.mjs unlink || true
   build_release
   [ "$waited" -eq 1 ] && printf '  build lock: released slot after %s\n' "$([ "$rc" -eq 0 ] && echo green || echo failure)"
   return "$rc"
