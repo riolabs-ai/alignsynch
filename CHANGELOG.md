@@ -10,6 +10,8 @@ with a **Known limits** block, because a release that does not say what it canno
 
 ### Fixed
 
+- `fix(flow)` — POST /assessment/new writes the draft and nothing else (#957) ([#969](https://github.com/riolabs-ai/alignsynch/pull/969))
+- `fix(brand)` — the icons fill their box and round at the app's own --radius (#963) ([#967](https://github.com/riolabs-ai/alignsynch/pull/967))
 - `fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) ([#964](https://github.com/riolabs-ai/alignsynch/pull/964))
 - `fix(relationships)` — one create path, and it is the flow's modal (#913) ([#959](https://github.com/riolabs-ai/alignsynch/pull/959))
 - `fix(flow)` — the edit panel posts no Aspect list, and the server leaves an omitted list alone (#943) ([#960](https://github.com/riolabs-ai/alignsynch/pull/960))

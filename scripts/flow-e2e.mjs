@@ -295,12 +295,12 @@ function instanceIdIn(location) {
 /**
  * One relationship, created through the four stages: Who, Mode, Aspects, then Create's own control.
  *
- * **The stages are the app's, not this script's.** A single post to `POST /assessment/new` still
- * works — the endpoint keeps the pre-#688 shape for a post that carries no draft — and that is
- * what this script used to do, which is how three slices of the create (#688 who, #689 aspects,
- * #690 commit) shipped without the e2e ever seeing them (#704). What is driven here is what a
- * person does: two form posts that only write a draft cookie, one JSON save from the list, and
- * then the commit that writes.
+ * **The stages are the app's, not this script's, and the endpoint no longer accepts a short cut.**
+ * A post to `POST /assessment/new` with no `draft=1` is refused with `?problem=create-not-from-flow`
+ * (#957's server half), so the pre-#688 single-post create this script used to do is gone — the only
+ * way to a relationship is stages 1–3's draft and stage 4's write, followed by stage 5's send. What
+ * is driven here is what a person does: two form posts that only write a draft cookie, one JSON save
+ * from the list, then the commit that writes, and then the send that publishes it.
  *
  * **The id is registered before anything after it can throw.** `created` is what `cleanup()`
  * deletes, and a throw between the commit and the registration is what left `record` rows on the

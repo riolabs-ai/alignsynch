@@ -134,6 +134,21 @@ describe("one create path", () => {
     expect(posters[0]?.text).toContain('name="draft"');
     expect(posters[0]?.text).toContain('value="1"');
   });
+
+  it("cannot publish from the endpoint either: the route names no mailer and no capture", () => {
+    // **#957's server half.** The catalogue's form is gone, but a `curl` can still post `/assessment/new`
+    // — and until this landed the endpoint kept a bare post that wrote the relationship **published**
+    // and mailed it, past #911's plan-and-card gate. The send is stage 5's act
+    // (`POST /assessment/instances/[id]/send`), so the create endpoint must not own one: no mailer, no
+    // payment, and the refusal named rather than a create.
+    const route = sourceOf("app/(mainlayout)/assessment/new/route.ts");
+    expect(route).not.toMatch(/from "@\/lib\/flow\/email"/);
+    expect(route).not.toContain("sendInvitation(");
+    expect(route).not.toContain("invitationMessage(");
+    // The guard is the flag, checked before the store is ever asked anything.
+    expect(route).toContain('const asDraft = value("draft") === "1"');
+    expect(route).toMatch(/if \(!asDraft\) \{[\s\S]*?CREATE_NOT_FROM_FLOW/);
+  });
 });
 
 describe("the start band", () => {
