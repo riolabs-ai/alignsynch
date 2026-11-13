@@ -65,11 +65,23 @@
 # push to main, where HEAD *is* origin/main — means the full gate, because "I
 # could not tell what changed" is never evidence that a change is cheap.
 #
-# BUILD SEMAPHORE — the build is 90 % of the code lane, and eight workers each
-# compiling 34 routes took load average from ~6 to 39.5 on this 8-core box,
-# which is why the same gate measured 145 s here and 50–71 s on CI. `next build`
-# now runs inside one of QUIZHUB_BUILD_SLOTS (default 2) flock slots under
-# ~/.cache/quizhub/, and the step prints whether it waited.
+# GATE SLOTS — one CPU budget for the whole heavy section, not just the build.
+# `next typegen`, `tsc --noEmit`, `biome check`, `biome format --check`, the `data:check`
+# compile, `parity` and `next build` are the phases that saturate the box. The slot used to
+# wrap `next build` alone — one step out of nineteen — so two gate runs in flight measured
+# **load 20.7 / 15.9 / 13.7** on this 8-core host with every one of those phases running 5–10x
+# its documented cost, workers heartbeating for 55 min without progress, and cards reclaimed
+# while their process kept compiling.
+#
+# One slot is now taken at the first heavy step and held for the whole section — not
+# re-acquired per step, because a run that released after `tsc` and re-acquired for `next build`
+# would interleave with another run's build, which is the interleaving the slot exists to
+# prevent. The section ends when the run finishes its build (or fails — the EXIT trap hands the
+# slot back either way), and every wait is printed with the seconds it cost.
+#
+# The lock *files* keep their old names (`build.lock.N`) on purpose: a gate running from an
+# older tree still holds them during its `next build`, so a mixed fleet budgets one set of slots
+# rather than two that cannot see each other.
 #
 # TEST RUNNERS — `pnpm test` is `vitest run` over `tests/**/*.test.ts` (#8): app-side
 # units that import `lib/quiz-cards.ts` and `data/searchdata.ts` through the `@/` alias.
@@ -279,68 +291,100 @@ check_whitespace() {
   return "$rc"
 }
 
-# --- next build, at most QUIZHUB_BUILD_SLOTS at a time ------------------------
-BUILD_LOCK_DIR="${QUIZHUB_BUILD_LOCK_DIR:-$HOME/.cache/quizhub}"
-BUILD_SLOTS="${QUIZHUB_BUILD_SLOTS:-2}"
-BUILD_LOCK_WAIT="${QUIZHUB_BUILD_LOCK_WAIT:-1800}" # seconds before giving up
-BUILD_FD=""
+# --- gate slots: one CPU budget for the whole heavy section -------------------
+# Taken once, at the first heavy step, and held to the end of the build. See the header for why
+# the section is not re-acquired per step and why the lock files kept their old names.
+GATE_LOCK_DIR="${QUIZHUB_GATE_LOCK_DIR:-${QUIZHUB_BUILD_LOCK_DIR:-$HOME/.cache/quizhub}}"
+GATE_SLOTS="${QUIZHUB_GATE_SLOTS:-${QUIZHUB_BUILD_SLOTS:-2}}"
+GATE_LOCK_WAIT="${QUIZHUB_GATE_LOCK_WAIT:-${QUIZHUB_BUILD_LOCK_WAIT:-1800}}" # seconds before giving up
+GATE_FD=""
+GATE_SLOT=""
+GATE_WAIT_S=0
+GATE_HOLD_0=0
 
-build_slot_try() { # $1 = slot number; on success sets BUILD_FD
+gate_slot_try() { # $1 = slot number; on success sets GATE_FD/GATE_SLOT
   local slot="$1" fd
   fd=$((40 + slot))
-  eval "exec ${fd}>>\"${BUILD_LOCK_DIR}/build.lock.${slot}\""
+  eval "exec ${fd}>>\"${GATE_LOCK_DIR}/build.lock.${slot}\""
   if flock -n -x "$fd" 2>/dev/null; then
-    BUILD_FD="$fd"
+    GATE_FD="$fd"
+    GATE_SLOT="$slot"
     return 0
   fi
   eval "exec ${fd}>&-"
   return 1
 }
 
-build_release() {
-  [ -n "$BUILD_FD" ] || return 0
-  eval "exec ${BUILD_FD}>&-" 2>/dev/null || true
-  BUILD_FD=""
-}
+gate_slot_acquire() {
+  [ -z "$GATE_FD" ] || return 0 # already held: one slot for the whole section
+  case "$GATE_SLOTS" in
+    '' | *[!0-9]*)
+      printf '✗ gate slot: the slot count must be a positive integer, got "%s"\n' "$GATE_SLOTS" >&2
+      return 1
+      ;;
+  esac
+  if [ "$GATE_SLOTS" -lt 1 ] || [ "$GATE_SLOTS" -gt 16 ]; then
+    printf '✗ gate slot: %s slot(s) is outside 1..16\n' "$GATE_SLOTS" >&2
+    return 1
+  fi
+  mkdir -p "$GATE_LOCK_DIR"
 
-build_with_lock() {
-  local waited=0 slot deadline rc
-  mkdir -p "$BUILD_LOCK_DIR"
-
-  for slot in $(seq 1 "$BUILD_SLOTS"); do
-    if build_slot_try "$slot"; then
-      printf '  build lock: slot %s/%s free, building now (%s/build.lock.%s)\n' \
-        "$slot" "$BUILD_SLOTS" "$BUILD_LOCK_DIR" "$slot"
-      break
+  local slot start waited note_at
+  for slot in $(seq 1 "$GATE_SLOTS"); do
+    if gate_slot_try "$slot"; then
+      GATE_HOLD_0="$(date +%s)"
+      printf '  gate slot: slot %s/%s free, heavy section starts now (%s/build.lock.%s)\n' \
+        "$slot" "$GATE_SLOTS" "$GATE_LOCK_DIR" "$slot"
+      return 0
     fi
   done
 
-  if [ -z "$BUILD_FD" ]; then
-    waited=1
-    printf '%s  build lock: all %s slot(s) busy — waiting (this is the queue, not a failure)%s\n' \
-      "$C_YEL" "$BUILD_SLOTS" "$C_OFF"
-    deadline=$(($(date +%s) + BUILD_LOCK_WAIT))
-    while [ -z "$BUILD_FD" ]; do
-      if [ "$(date +%s)" -ge "$deadline" ]; then
-        printf '✗ build lock: waited %ss for a slot, giving up\n' "$BUILD_LOCK_WAIT" >&2
-        return 1
+  start="$(date +%s)"
+  note_at="$start"
+  printf '%s  gate slot: all %s slot(s) busy — waiting (this is the queue, not a failure)%s\n' \
+    "$C_YEL" "$GATE_SLOTS" "$C_OFF"
+  while :; do
+    waited=$(($(date +%s) - start))
+    if [ "$waited" -ge "$GATE_LOCK_WAIT" ]; then
+      printf '✗ gate slot: waited %ss for a slot, giving up\n' "$GATE_LOCK_WAIT" >&2
+      return 1
+    fi
+    sleep 1
+    for slot in $(seq 1 "$GATE_SLOTS"); do
+      if gate_slot_try "$slot"; then
+        GATE_WAIT_S=$(($(date +%s) - start))
+        GATE_HOLD_0="$(date +%s)"
+        printf '  gate slot: waited %ss, now holds slot %s/%s — heavy section starts\n' \
+          "$GATE_WAIT_S" "$slot" "$GATE_SLOTS"
+        return 0
       fi
-      sleep 1
-      for slot in $(seq 1 "$BUILD_SLOTS"); do
-        if build_slot_try "$slot"; then break; fi
-      done
     done
-    printf '  build lock: waited, now holds slot %s/%s (waited lock)\n' "$slot" "$BUILD_SLOTS"
-  fi
-
-  set +e
-  pnpm build
-  rc=$?
-  set -e
-  build_release
-  [ "$waited" -eq 1 ] && printf '  build lock: released slot after %s\n' "$([ "$rc" -eq 0 ] && echo green || echo failure)"
-  return "$rc"
+    # A wait long enough to matter says so while it happens, not only when it ends.
+    if [ $(($(date +%s) - note_at)) -ge 15 ]; then
+      note_at="$(date +%s)"
+      printf '%s  gate slot: still waiting (%ss) — all %s slot(s) held%s\n' \
+        "$C_DIM" "$((note_at - start))" "$GATE_SLOTS" "$C_OFF"
+    fi
+  done
 }
+
+gate_slot_release() { # idempotent: explicit release at the end of the section, trap on failure
+  local held
+  [ -n "$GATE_FD" ] || return 0
+  eval "exec ${GATE_FD}>&-" 2>/dev/null || true
+  held=$(( $(date +%s) - GATE_HOLD_0 ))
+  printf '  gate slot: released slot %s/%s (held %ss, waited %ss)\n' \
+    "$GATE_SLOT" "$GATE_SLOTS" "$held" "$GATE_WAIT_S"
+  GATE_FD=""
+  GATE_SLOT=""
+}
+
+build_in_slot() { # the slot is already held by the section; this is a guard, not a second lock
+  gate_slot_acquire || return 1
+  pnpm build
+}
+
+trap gate_slot_release EXIT
 
 # --- run ---------------------------------------------------------------------
 preflight
@@ -457,6 +501,12 @@ if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi
 
+# The heavy section starts here and holds one gate slot to the end of the build: `next typegen`,
+# `tsc --noEmit`, `biome check`, `biome format --check`, the `data:check` compile, `parity` and
+# `next build` all saturate the box, and two runs of them at once cost more than they save.
+STEP="gate slot (heavy section)"
+gate_slot_acquire || fail
+
 if [ "$LANE" = "docs" ]; then
   run_step "whitespace (git diff --check)" check_whitespace || fail
 else
@@ -524,10 +574,14 @@ if [ "$LANE" != "docs" ]; then
 fi
 
 if [ "$LANE" = "code" ]; then
-  run_step "build (next build, flock slot)" build_with_lock || fail
+  run_step "build (next build)" build_in_slot || fail
 else
   skip_step "build (next build)" "lane=$LANE has no build step — CI re-runs the full gate on the merge head"
 fi
+
+# End of the heavy section: hand the slot back before the summary prints. The EXIT trap is the
+# same call, so a failing step releases it too — a crashed gate must not hold a slot.
+gate_slot_release
 
 STEP=""
 summary

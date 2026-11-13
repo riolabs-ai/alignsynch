@@ -51,10 +51,11 @@ classifies in that job: `ci.yml` checks out full history and fetches `origin/mai
 is what every CI run did until `.github/workflows/ci.yml` was fixed, because
 `actions/checkout`'s default depth-1 clone contains no `origin/main`.
 
-`next build` is capped at `QUIZHUB_BUILD_SLOTS` (default 2) concurrent builds by `flock`
-under `~/.cache/quizhub/`: eight workers compiling at once took load from ~6 to 39.5 and
-stretched this gate to 145 s. The layer table, the classifier rules and the lock are in
-**`docs/REPO-LAYERS.md`**.
+`next build` is capped at `QUIZHUB_GATE_SLOTS` (default 2) concurrent gate runs by `flock`
+under `~/.cache/quizhub/`, and that slot now covers the whole heavy section — typecheck,
+lint, `format:check`, the `data:check` compile, `parity` and the build — not the build alone:
+eight workers compiling at once took load from ~6 to 39.5 and stretched this gate to 145 s.
+The layer table, the classifier rules and the slot are in **`docs/REPO-LAYERS.md`**.
 
 ## Lanes in CI, measured 2026-10-30
 
