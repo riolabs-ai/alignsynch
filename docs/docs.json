@@ -366,6 +366,26 @@
           "path": "qa-home-comments/README.md",
           "title": "Home review comments — the logo",
           "question": "Is the public header's brand lockup a link home, and what did the page look like before it was?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates/README.md",
+          "title": "Brand & audience profile page (handoff)",
+          "question": "How do I preview the brand and audience profile page, and in what order does it place the audiences?"
+        },
+        {
+          "path": "specs/spec-help-center/README.md",
+          "title": "Help Center design spec (handoff)",
+          "question": "How do I preview the Help Center, and which three files make up the page?"
+        },
+        {
+          "path": "specs/spec-help-center/IMPLEMENTATION-BRIEF.md",
+          "title": "Help Center — implementation brief",
+          "question": "Which route does the Help Center redesign target, which files drive it, and what must not change?"
+        },
+        {
+          "path": "specs/spec-help-center/GLOSSARY-CONTENT-MAP.md",
+          "title": "Glossary source map",
+          "question": "Which 2024 glossary terms feed the public Help page, and how is each editorial decision recorded?"
         }
       ]
     },
