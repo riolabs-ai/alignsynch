@@ -62,8 +62,16 @@ tests/parity/artifacts/
 .hermes/
 
 # The audience and positioning canon is held outside this repository on purpose (#903): the repo
-# is public, and the note is a private copy handoff. The three copies stay on disk, untracked,
+# is public, and the note is a private copy handoff. The copies stay on disk, untracked,
 # and this rule is what stops the next `git add -A` from publishing them.
+#
+# **Five copies exist on disk and four are byte-identical** (`sha256 283263361742…`, 6,436 B); the
+# fifth is a 3,672-byte variant. The rule named three paths, so the other two were one
+# `git add -A` away from publishing the same canon through a different directory — the gap was the
+# rule's, not the author's (#931, decision A). A rule that lists some of the copies is a rule that
+# documents where the leak is; list every copy.
 docs/specs/spec-design-page-rel-templates-v2/AUDIENCE-AND-POSITIONING.md
 docs/specs/spec-design-page-rel-templates-v2/home/AUDIENCE-AND-POSITIONING.md
 docs/specs/spec-design-page-rel-templates-v2/brand-profile/AUDIENCE-AND-POSITIONING.md
+docs/specs/spec-design-page-rel-templates/AUDIENCE-AND-POSITIONING.md
+docs/specs/spec-as2-style-home-redesign/AUDIENCE-AND-POSITIONING.md
