@@ -42,6 +42,7 @@
  */
 import type { Assessment, AssessmentInstance, Party } from "@/content/assessment";
 import type { Brand } from "@/content/brand";
+import { brandIdOf } from "@/data/brand";
 import { GAP_KIND_LABELS } from "@/content/gaps";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { gapOf } from "@/content/record";
@@ -54,6 +55,7 @@ import {
 import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
 import { brandMark, type BrandMark } from "@/lib/brand-mark";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import { visitorOf } from "@/lib/start-path";
 import {
   CATALOGUE_PATH,
   featuredTemplateTypes,
@@ -624,10 +626,19 @@ export function alignmentHome(
    *
    * `viewAll` is the band's one action. The label is the fixture's, the href is the catalogue
    * route's (`CATALOGUE_PATH`), so neither the words nor the destination are typed in a component.
+   *
+   * **The viewer is the visitor, and that is honest here rather than convenient (#979).** This
+   * composition renders no route since #853 — `/` draws `lib/home-alignsynch.ts::as2Home`, whose
+   * every action is an in-page anchor — so there is no request to read a session from. A card's
+   * `start` is therefore the public one (`/register?next=…`). If this composition is ever mounted
+   * again it needs the request's viewer as a parameter, exactly as `templatesPage()` now takes it;
+   * the alternative — defaulting the viewer in `templateCards()` — is the shape that let the defect
+   * spread across four surfaces in the first place.
    */
   const featuredCards = templateCards(
     copy,
     featuredTemplateTypes(FEATURED_TEMPLATE_TYPE_IDS, relationshipTypes),
+    visitorOf(brandIdOf(brand)),
   );
   const viewAll = {
     label: pageItemOf(copy, "templates-view-all").label,
