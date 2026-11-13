@@ -16,10 +16,13 @@
  *   the seed        the form opens on the relationship's own title and summary — an edit surface
  *                   that starts blank would be a second creation form.
  *   no Aspects      **the panel draws no Aspect row, no aspect form and no add/remove control**
- *                   (#935). The detail screen's `AspectList` is the one writer: it has the drag,
- *                   the in-place editor and its own save, so a second stack of forms here printed
- *                   the same questions twice. The `state.aspects` the panel is handed is posted
- *                   back unchanged, which is what keeps a title edit from deleting them.
+ *                   (#935), **and it posts no Aspect list either** (#943). The detail screen's
+ *                   `AspectList` is the one writer: it has the drag, the in-place editor and its
+ *                   own save, so a second stack of forms here printed the same questions twice.
+ *                   `state.aspects` is not drawn and not sent back — an omitted list is the
+ *                   server's "leave the stored rows alone", and a posted snapshot of the rows the
+ *                   page read was what undid a drag made in the same session. That half is proven
+ *                   at the writer in `tests/relationship-edit-reorder-race.test.ts`.
  *   the gate        **Save is disabled until a preview has run.** This is the owner's decision on
  *                   #623 stated as markup: no cost has been shown, so no write is on offer.
  *   the lock        `mode`/`setting` are printed, never offered, and say why — a control the server

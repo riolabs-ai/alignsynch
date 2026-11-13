@@ -1,0 +1,7 @@
+capture_id,route,page,state,viewport,app_version,source,image,notes
+0001,/settings,Account settings,Profile and account settings at top,"ChatGPT in-app browser viewport, 1815×960 window",1.16.0,alignsynch.com,0001-settings-profile-top.png,Production page; top viewport only. Page continues below fold.
+0002,/settings,Account settings,"Profile details, save action, and password section start","ChatGPT in-app browser viewport, 1815×960 window",1.16.0,alignsynch.com,0002-settings-profile-lower-password-top.png,"Production page; next scroll segment, overlapping the profile section."
+0003,/settings,Account settings,Password form and delete-account section start,"ChatGPT in-app browser viewport, 1815×960 window",1.16.0,alignsynch.com,0003-settings-password-delete-start.png,Production page; middle viewport.
+0004,/settings,Account settings,Password and destructive account-deletion controls,"ChatGPT in-app browser viewport, 1815×960 window",1.16.0,alignsynch.com,0004-settings-delete-account.png,Production page; delete action not invoked.
+0005,/settings,Account settings,Account email and sign-out controls at page bottom,"ChatGPT in-app browser viewport, 1815×960 window",1.16.0,alignsynch.com,0005-settings-account-bottom.png,Production page; sign-out not invoked.
+0006,/dashboard/relationships,My Relationships,"Relationship cards, status tabs, search, sorting, and actions","ChatGPT in-app browser viewport, 1815×960 window",1.16.0,alignsynch.com,0006-my-relationships-list-top.png,Production page; first viewport; four records in demo account.

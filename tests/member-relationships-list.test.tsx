@@ -127,7 +127,6 @@ function render(list: readonly MemberRelationshipRow[] = rows): string {
       copy,
       rows: list,
       templates: [],
-      onCreate: () => Promise.resolve({ ok: false, code: "failed" } as never),
       unreadable: null,
     }),
   );
