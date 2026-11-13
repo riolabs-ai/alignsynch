@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › #542 phase 2 · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › #542 phase 2 · next [One-click create on /assessment, #957](../957-assessment-one-click/README.md)
 
 <!-- docs-nav:end -->
 
@@ -122,6 +122,6 @@ browser storage.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › #542 phase 2 · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › #542 phase 2 · next [One-click create on /assessment, #957](../957-assessment-one-click/README.md)
 
 <!-- docs-nav:end -->

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [#542 phase 2](../542-phase2/README.md) · next [Brand lockup](../brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [One-click create on /assessment, #957](../957-assessment-one-click/README.md) · next [Brand lockup](../brand-lockup/README.md)
 
 <!-- docs-nav:end -->
 
@@ -91,6 +91,6 @@ to settle, and reads where the target landed (`measurements.json`).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [#542 phase 2](../542-phase2/README.md) · next [Brand lockup](../brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [One-click create on /assessment, #957](../957-assessment-one-click/README.md) · next [Brand lockup](../brand-lockup/README.md)
 
 <!-- docs-nav:end -->

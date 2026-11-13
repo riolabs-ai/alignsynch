@@ -17,11 +17,11 @@ team, [operations/gate.md](operations/gate.md) for what a green run actually pro
 
 **Where a page lives is the question it answers.** `getting-started/` (install, run, demo),
 `guides/` (how to do one thing), `reference/` (the model, the environment, the generated tables),
-`operations/` (the gate, releasing, deploying, and `operations/history/`), `specs/` (authored
-specs and design briefs), `qa/` (what was measured and when), `wiki/`, `diagrams/` and
-`changelog/`. `review/` and `assets/` hold artefacts, not prose; the three files at the root
-(`glossary.md`, `ui-registry.md`, `gate-baseline.py`) stay where their generators and scripts
-write and read them.
+`operations/` (the gate, releasing, deploying, and `operations/history/` for superseded records),
+`specs/` (authored specs and design briefs), `qa/` (one directory per measurement,
+`qa/<issue-or-release>/`), plus the `wiki/`, `diagrams/` and `changelog/` shelves. `review/` and
+`assets/` hold artefacts rather than prose, and three files stay at the root because a script writes
+or reads that exact path: `glossary.md`, `ui-registry.md` and `gate-baseline.py`.
 
 **Adding a document.** Add a row to [`docs.json`](docs.json) — path, a short title, and the question
 the page answers — write the page, then run `pnpm docs:nav`. One edit produces the row below and the
@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**140 documents in 9 sections.** Every page carries the same nav block, generated
+**141 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
-- [Records & QA](#records-qa) — 24 documents
+- [Records & QA](#records-qa) — 25 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 20 documents
@@ -153,6 +153,7 @@ What the product promises, written down before it was built.
 What was measured, on which tree, and what it looked like.
 
 - [`qa/542-phase2/README.md`](qa/542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
+- [`qa/957-assessment-one-click/README.md`](qa/957-assessment-one-click/README.md) — **One-click create on /assessment, #957** — Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?
 - [`qa/as2-home/README.md`](qa/as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
 - [`qa/brand-lockup/README.md`](qa/brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa/comments-mockup/README.md`](qa/comments-mockup/README.md) — **Comments mockup, both placements** — Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?

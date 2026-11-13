@@ -147,12 +147,12 @@ Two passes, because they answer different questions and one server cannot answer
 ```bash
 # the flow pass, on the keyless adapter — `pnpm payment:e2e` unchanged
 pnpm payment:e2e setup                                  # 20 checks ✔
-python3 …/cdp-payment-dialog.py --mode flow --state .payment-e2e.json --out docs/qa/payment/capture-dialog
+python3 …/cdp-payment-dialog.py --mode flow --state .payment-e2e.json --out docs/qa-payment/capture-dialog
 pnpm payment:e2e verify                                 # 7 checks ✔
 
 # the frame pass, on the test-mode keys — nothing is completed and nothing is written
 BILLING_PROVIDER=stripe pnpm dev --port 3100
-python3 …/cdp-payment-dialog.py --mode frame --state .payment-e2e.json --out docs/qa/payment/capture-dialog
+python3 …/cdp-payment-dialog.py --mode frame --state .payment-e2e.json --out docs/qa-payment/capture-dialog
 ```
 
 | Step               | `data-capture-stage` | plans | `data-add-method` | note                                                            |

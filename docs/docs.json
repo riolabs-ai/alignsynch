@@ -427,6 +427,11 @@
           "question": "Is the rail role-constrained data, with focused-flow chrome?"
         },
         {
+          "path": "qa/957-assessment-one-click/README.md",
+          "title": "One-click create on /assessment, #957",
+          "question": "Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?"
+        },
+        {
           "path": "qa/as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"
