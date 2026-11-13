@@ -663,6 +663,16 @@
           "question": "What happened to every `/v1` item?"
         },
         {
+          "path": "qa-atlas/README.md",
+          "title": "QA atlas",
+          "question": "How is every registered surface captured, asserted and checked, and what is committed?"
+        },
+        {
+          "path": "qa-atlas/v1.17.0/index.md",
+          "title": "QA atlas — v1.17.0",
+          "question": "What did every registered surface render in v1.17.0, and did it read the record it claims?"
+        },
+        {
           "path": "QA-DOGFOOD-P4.md",
           "title": "P4 dogfood pass",
           "question": "Did every route answer, on a production build?"
