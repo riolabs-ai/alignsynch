@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **95** — 59 static, 36 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 349 files under `components/`, 342 of them `.tsx`
+- component domains: **43** — 350 files under `components/`, 343 of them `.tsx`
 - route handlers: **31** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 73 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 48 · AlignSynch 46 · QuizHub 42 · No template yet 2
@@ -238,7 +238,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/auth` — **live**
   - capability: The sign-in and sign-up forms, including pending, invalid-credentials and network states, plus the two demo surfaces `/login` draws only in demo mode: the anchor to the PIN gate and, under a valid unlock cookie, the three role buttons.
-  - files (11): `auth-home-link.tsx`, `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `forgot-password-view.tsx`, `login-view.tsx`, `mark-icon.tsx`, `password-strength.tsx`, `register-view.tsx`, `reset-complete-view.tsx`, `reset-password-view.tsx`
+  - files (12): `auth-hero.tsx`, `auth-home-link.tsx`, `demo-entry.tsx`, `demo-gate.tsx`, `demo-roles.tsx`, `forgot-password-view.tsx`, `login-view.tsx`, `mark-icon.tsx`, `password-strength.tsx`, `register-view.tsx`, `reset-complete-view.tsx`, `reset-password-view.tsx`
   - routes (7): `/demo`, `/forgot-password`, `/login`, `/register`, `/reset/[token]`, `/reset/complete`, `/templates/relationship/[slug]/create/commit`
   - notes: The demo surfaces are decided on the server (`lib/auth/demo-surface.ts`) and render nothing outside demo mode; the PIN gate itself is `/demo` (`components/auth/demo-gate.tsx`), not this route.
 
