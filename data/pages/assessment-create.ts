@@ -566,6 +566,20 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Advanced Mode is included in your seven-day trial. After the trial ends, it needs a plan that includes it.",
         },
+        {
+          /**
+           * #957's server half — the create endpoint is stage 4's draft write, and a post that did
+           * not come through the stages is refused by name rather than created.
+           *
+           * The sentence names **what the product does** and not the technical fact ("the post
+           * carried no draft flag"), because the person reading it pressed something that should
+           * have started the flow: the relationship is saved as a draft first, and stage 5 decides
+           * whether the invitation goes out. The door beside it is stage 1 of that same template.
+           */
+          id: "create-not-from-flow",
+          label:
+            "A relationship is saved as a draft from the create flow, and the invitation is sent from the step after it. Start it from the template and it will be saved — nothing has gone out.",
+        },
         // #618 — the door the two plan lines above name and neither drew. One label for both
         // codes, because it points at the same page: the plan grid, which is where a tier is
         // chosen and where the checkout button for that tier lives. Neither sentence changed.
@@ -582,6 +596,12 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
          * with no fix at all (not yours, not there, already a relationship).
          */
         { id: "open-template", label: "Open this template" },
+        /**
+         * #957's server half — the door a refused bare post names: stage 1 of the template it
+         * could not copy from. It is the same address every catalogue card opens since #957, so the
+         * refusal hands the person the flow rather than the library.
+         */
+        { id: "start-the-flow", label: "Start the relationship" },
         { id: "fix-aspects", label: "Edit this template's Aspects" },
         { id: "back-to-templates", label: "Back to your templates" },
         { id: "back-to-relationships", label: "Back to my relationships" },

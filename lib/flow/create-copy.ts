@@ -35,9 +35,23 @@ import {
   PRICING_PATH,
   RELATIONSHIP_TEMPLATES_PATH,
   createAspectsPath,
+  createRelationshipPath,
   dashboardTemplateEditorPath,
   relationshipTemplatePath,
 } from "./paths";
+
+/**
+ * The one refusal **the create endpoint itself** raises, rather than the store (#957's server half).
+ *
+ * `POST /assessment/new` writes stage 4's relationship as a `draft` and sends nothing; the send is
+ * stage 5's act. A post that carries no `draft=1` never came through the stages, so it is not a
+ * create this product offers — and the code lives here, exported, because the route raises it and
+ * this module turns it into a sentence: one literal, so a rename cannot leave the band blank.
+ *
+ * It is deliberately **not** a `FlowErrorCode`: nothing in `lib/flow/store.ts` raises it, and the
+ * union there is the store's contract with `tests/flow-refusal-actions.test.tsx`.
+ */
+export const CREATE_NOT_FROM_FLOW = "create-not-from-flow";
 
 /** Where each field's label lives. The section is per stage; the item id is the label. */
 const FIELD_COPY: Readonly<Record<CreateDraftField, { section: string; item: string }>> = {
@@ -186,6 +200,19 @@ export function createRefusal(
   // `/pricing` door and its sentence is about the day after the trial.
   if (code === "mode-not-entitled") {
     return { sentence: itemLabel(problems, "mode-not-entitled"), link: plans };
+  }
+  // #957's server half — `POST /assessment/new` is stage 4's draft write and nothing else, so a
+  // post that did not come through the flow is refused by name. The fix is the flow itself, so the
+  // door is **stage 1 of this template's own create** — the same address every catalogue card
+  // already opens — and never the library, which would make the person find the template again.
+  if (code === CREATE_NOT_FROM_FLOW) {
+    return {
+      sentence: itemLabel(problems, CREATE_NOT_FROM_FLOW),
+      link:
+        slug === ""
+          ? library
+          : { href: createRelationshipPath(slug), label: itemLabel(problems, "start-the-flow") },
+    };
   }
   return null;
 }

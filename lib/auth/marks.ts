@@ -88,7 +88,7 @@ export const AUTH_MARKS_BY_BRAND: Readonly<Record<BrandId, AuthMarkSet>> = {
  * **It is the icon itself, not a second raster.** An earlier revision shipped a
  * `-mark-192.png` because the icon spent a third of its canvas on a painted ground the card's own
  * tile already supplied. The icon set is now the mark on transparency (owner, 2026-11-03), so
- * drawing `brand.icon` in the tile *is* the mark at the card's size — 0.62 × 40 px ≈ 25 px of ink,
+ * drawing `brand.icon` in the tile *is* the mark at the card's size — 0.78 × 40 px ≈ 31 px of ink,
  * the size that measured crisp — and a second file would have been the same pixels under a
  * different name.
  *

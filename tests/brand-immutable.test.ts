@@ -77,22 +77,27 @@ const MARK = "/brand/alignsynch-mark-1024.png";
  * The icon and the apple-touch icon moved when the icon set stopped being drawn from a glyph and
  * started being generated from `MARK` — the AS monogram, at the sizes `lib/brand-icon.ts` derives.
  * They moved **again** when the owner removed the tile behind the mark (2026-11-03): the ground is
- * now transparent on every surface, so both bytes are a different file and the same decision. That
- * is what this table records, not a redraw — the generator reproduces both files byte for byte
- * (`pnpm brand:icons` is a no-op on this tree), and `MARK` and `LOGO` are untouched.
+ * now transparent on every surface, so both bytes are a different file and the same decision. They
+ * moved a **third** time for #963, and this one is the owner's own instruction — *"fill the icon
+ * bounds, and have the same corner radius as the app"* — so the mark fills 78 % of the app surface
+ * instead of 51 % and the maskable set 66.1 % instead of 64 %, and the corner is derived from
+ * `--radius` (5 px on a 40 px tile) instead of a typed `0.2`. That is what this table records, not
+ * a redraw — the generator reproduces every file byte for byte (`pnpm brand:icons` is a no-op on
+ * this tree), and `MARK` and `LOGO` are untouched, which is the half of the rule that matters: the
+ * *mark* is still the file the owner signed off, only its placement changed.
  */
 const SHA256: Record<string, string> = {
   [LOGO]: "6ddd15a2031cab928cd7a87c6316aee81fe93e6a4f57ac55b9b0be01b3d3e4af",
-  [ICON]: "bda9b0a526103ea6b50eb412f4edef2844bf81f72598276a8c26ccbcacc09c9f",
-  [APPLE]: "1edf9fab49e091bf7e3a179ff9dc321b98c2bdb94528fa468a86d6ed847d3a80",
+  [ICON]: "a34a3ce2e074a6c9864c54ecd2fb802f8b746b69cd61e263a93187dcd642abed",
+  [APPLE]: "49a2e1a3a3e57475cb9e616c5bdc8b10ee0ab79663c3449bdb762f570ddd2a03",
   [MARK]: "7f73c77c2f9c0d7a2029f088f6c567207f7b41b9c901b3cdbb1650a3d95804c3",
   // The PWA set and the tab. They are in this table because the chrome's lockup is a *different*
   // file: a change that "fixes" the logo by re-rastering the icon set shows up here, and a change
   // that swaps the chrome to the icon shows up in the render assertions below. Between them, the
   // icon can only move on purpose.
-  [ICON_192]: "96578af75fda5dc8ab671a49da662347ef39f56822902646325e47c0c9eec824",
-  [ICON_512]: "3ee0aed19fd12e3c859b7b270e242d7f36b20557f39ffd5eeaa18c2a109057b0",
-  [FAVICON]: "897d0b432bc3a5751a22d783ca0ebf8760cdc8b0d1ca5345757913907b82d5ab",
+  [ICON_192]: "e123f595d8a9a742d7b689329b9984cc1b7d49cd6c05755df112cf880fd19345",
+  [ICON_512]: "6f761ed6d753378c9c9629fb430e68bcf282a0f5fe00e2b408de86b5591b3e80",
+  [FAVICON]: "49e96a3c411fbc2dfa4eea005fea9a4d4714efb9e0bcf8aa32f0ce4e27e3322d",
 };
 
 /** A `public/` path as a repo-relative file. */

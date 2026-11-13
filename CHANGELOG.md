@@ -6,6 +6,29 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.17.1] - 2026-11-13
+
+### Fixed
+
+- `fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) ([#964](https://github.com/riolabs-ai/alignsynch/pull/964))
+- `fix(relationships)` — one create path, and it is the flow's modal (#913) ([#959](https://github.com/riolabs-ai/alignsynch/pull/959))
+- `fix(flow)` — the edit panel posts no Aspect list, and the server leaves an omitted list alone (#943) ([#960](https://github.com/riolabs-ai/alignsynch/pull/960))
+
+### Maintenance
+
+- `chore(gate)` — the slot covers the heavy section, not just the build (default 3, measured) ([#951](https://github.com/riolabs-ai/alignsynch/pull/951))
+- `perf(gate)` — share the Turbopack and tsc caches across worktrees ([#952](https://github.com/riolabs-ai/alignsynch/pull/952))
+- `docs(specs)` — publish the owner's spec packages and manuals, registered in the hub (#931) ([#940](https://github.com/riolabs-ai/alignsynch/pull/940))
+- `docs(release)` — v1.17.0's Known limits name the fix that did not ship ([#956](https://github.com/riolabs-ai/alignsynch/pull/956))
+- `chore(health)` — re-record platform health at v1.17.0 ([#955](https://github.com/riolabs-ai/alignsynch/pull/955))
+
+### Known limits
+
+- **`demo.alignsynch.com` is still down.** The hostname answers `DEPLOYMENT_NOT_FOUND` (#833); the demo dataset is reachable through `pnpm demo:verify` and the review rig, not through that address. Deferred by owner decision, not by oversight.
+- **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
+- **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
+- **The modal rule has not been audited screen by screen.** This version applies it where it touched a surface — the create path and the pay step — and does not claim the audit. #913 was closed by the narrower fix it produced, so the screen-by-screen pass is still owed.
+
 ## [1.17.0] - 2026-11-13
 
 ### Added
