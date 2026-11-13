@@ -51,10 +51,11 @@ classifies in that job: `ci.yml` checks out full history and fetches `origin/mai
 is what every CI run did until `.github/workflows/ci.yml` was fixed, because
 `actions/checkout`'s default depth-1 clone contains no `origin/main`.
 
-`next build` is capped at `QUIZHUB_BUILD_SLOTS` (default 2) concurrent builds by `flock`
-under `~/.cache/quizhub/`: eight workers compiling at once took load from ~6 to 39.5 and
-stretched this gate to 145 s. The layer table, the classifier rules and the lock are in
-**`docs/REPO-LAYERS.md`**.
+`next build` is capped at `QUIZHUB_GATE_SLOTS` (default 3) concurrent gate runs by `flock`
+under `~/.cache/quizhub/`, and that slot now covers the whole heavy section — typecheck,
+lint, `format:check`, the `data:check` compile, `parity` and the build — not the build alone:
+eight workers compiling at once took load from ~6 to 39.5 and stretched this gate to 145 s.
+The layer table, the classifier rules and the slot are in **`docs/REPO-LAYERS.md`**.
 
 ## Lanes in CI, measured 2026-10-30
 
@@ -273,8 +274,9 @@ cache costs one build, never a verdict. Two further probes, in a second worktree
   failed both `pnpm typecheck` and `pnpm build`. A warm cache hides neither an edit nor a type error.
 
 Slot 1 uses the key's own directory and the other slots use siblings (`<key>/slot-N/`), because the
-store is a single-writer RocksDB: a second concurrent opener fails rather than merges. The cache
-therefore grows with `QUIZHUB_BUILD_SLOTS`, not with the number of worktrees.
+store is a single-writer RocksDB: a second concurrent opener fails rather than merges. The slot number
+comes from the gate slot the run is holding (`QUIZHUB_GATE_SLOTS`, legacy `QUIZHUB_BUILD_SLOTS`
+honoured), so the cache grows with the slot count, not with the number of worktrees.
 
 ### Budget
 
