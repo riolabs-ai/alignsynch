@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.0](v1-17-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.1](v1-17-1.md)
 
 <!-- docs-nav:end -->
 
@@ -43,6 +43,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
+
+### [v1.17.1](v1-17-1.md)
+
+- **Released** 2026-11-13
+- **Tag** [`v1.17.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.17.1)
+- **Pull requests named** 10
+- **Theme:** the patch the last note promised
+- **Headline:** `fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) (#964)
 
 ### [v1.17.0](v1-17-0.md)
 
@@ -214,6 +222,6 @@ history should read v1.3.0 (the flow closes), v1.4.0 (the console and the audite
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.0](v1-17-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.1](v1-17-1.md)
 
 <!-- docs-nav:end -->
