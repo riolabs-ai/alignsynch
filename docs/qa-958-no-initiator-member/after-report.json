@@ -1,0 +1,67 @@
+{
+  "phase": "after",
+  "base": "http://localhost:3411",
+  "relationship": "relationship-assessment-instance-avery-rowan",
+  "capturedAt": "2026-11-13T20:55:29.083Z",
+  "list": {
+    "found": true,
+    "role": "initiator",
+    "status": "draft",
+    "inviteMembers": {
+      "text": "Invite Members",
+      "href": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan"
+    },
+    "publishToCounterparty": {
+      "text": "Publish to Counterparty",
+      "href": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan"
+    },
+    "inertInvite": null,
+    "blockedWhy": null,
+    "primary": "Publish to Counterparty",
+    "disabled": []
+  },
+  "detail": {
+    "readOnlyBand": [],
+    "publishGate": {
+      "state": "method-required",
+      "links": [
+        {
+          "text": "Invite Members",
+          "href": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan"
+        },
+        {
+          "text": "Publish to Counterparty",
+          "href": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan"
+        }
+      ]
+    },
+    "inviteMembers": [
+      {
+        "text": "Invite Members",
+        "href": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan"
+      },
+      {
+        "text": "Open the payment step",
+        "href": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan"
+      }
+    ],
+    "publishToCounterparty": [
+      {
+        "text": "Publish to Counterparty",
+        "href": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan"
+      }
+    ],
+    "aspectsEditor": true,
+    "forkPanel": 0
+  },
+  "modal": {
+    "path": "/templates/relationship/relationship-basics/create/invite?instance=assessment-instance-avery-rowan",
+    "title": "Send the invitation",
+    "planChoices": 2,
+    "payWalk": true,
+    "payBuys": "What the money buysJoin membership plan — FreeActivate relationship — the invitation goes out and both seats go live.",
+    "sendGate": true,
+    "sendDisabled": true,
+    "sendLabel": "send email to counterparty now"
+  }
+}

@@ -708,6 +708,11 @@
           "question": "Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?"
         },
         {
+          "path": "qa-958-no-initiator-member/README.md",
+          "title": "A relationship with no initiator member, #958",
+          "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
+        },
+        {
           "path": "qa-payment/README.md",
           "title": "Payment capture & completion",
           "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [Surface sweep, #913](../qa-surface-sweep-913/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [Surface sweep, #913](../qa-surface-sweep-913/README.md) · next [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md)
 
 <!-- docs-nav:end -->
 
@@ -110,6 +110,6 @@ not a create path, and repairing it changes what the catalogue lists on both bra
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [Surface sweep, #913](../qa-surface-sweep-913/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › One-click create on /assessment, #957 · prev [Surface sweep, #913](../qa-surface-sweep-913/README.md) · next [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md)
 
 <!-- docs-nav:end -->
