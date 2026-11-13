@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**146 documents in 9 sections.** Every page carries the same nav block, generated
+**147 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
-- [Records & QA](#records-qa) — 29 documents
+- [Records & QA](#records-qa) — 30 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
@@ -181,6 +181,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
 - [`qa-atlas/v1.17.0/index.md`](qa-atlas/v1.17.0/index.md) — **QA atlas — v1.17.0** — What did every registered surface render in v1.17.0, and did it read the record it claims?
 - [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — v1.17.1** — What did every registered surface render in v1.17.1, and what changed since v1.17.0?
+- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since v1.17.1?
 
 ## Code wiki
 
@@ -227,7 +228,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-15-0.md`](changelog/v1-15-0.md) — **v1.15.0** — Which release made the create flow five stages, with the account at stage 4 and the invitation at stage 5?
 - [`changelog/v1-16-0.md`](changelog/v1-16-0.md) — **v1.16.0** — Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?
 - [`changelog/v1-17-0.md`](changelog/v1-17-0.md) — **v1.17.0** — Which release made stage 5 a three-step payment walk, and what does it defer?
-- [`changelog/v1-17-1.md`](changelog/v1-17-1.md) — **v1.17.1** — Which patch paid v1.17.0's written promise that the edit panel would stop posting the Aspects?
+- [`changelog/v1-18-0.md`](changelog/v1-18-0.md) — **v1.18.0** — Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?
 - [`changelog/v1-2-0.md`](changelog/v1-2-0.md) — **v1.2.0** — The release where five surfaces read the database.
 - [`changelog/v1-3-0.md`](changelog/v1-3-0.md) — **v1.3.0** — The release where the flow closed.
 - [`changelog/v1-4-0.md`](changelog/v1-4-0.md) — **v1.4.0** — The release where the console arrived and templates became products.

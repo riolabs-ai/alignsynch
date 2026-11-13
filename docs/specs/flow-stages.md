@@ -143,6 +143,19 @@ the Alignment Setting carries its lens line above the cells and its threshold li
 their definitions are the model's (`MODE_LABELS`, `SETTING_LABELS`, `SETTING_DEFINITIONS` in
 `content/assessment.ts`), never a second copy of them.
 
+**Nothing is pre-selected, and the press says what is missing.** A default would be this form
+choosing a bar for two people who never saw the question, so both groups arrive unchecked and both
+are `required`. The consequence the stage has to own is what happens on a press with nothing chosen:
+the group nobody answered prints the fixture's own `{field} is required.` sentence (`Opinions Mode is
+required.`, `Alignment Setting is required.`) **at that group**, its radios carry `aria-describedby`
+and `aria-invalid` while it stands, and the cursor lands on the first of them. The advance is never
+disabled — a disabled control cannot be focused, so its reason cannot be reached from the keyboard —
+and the sentence is never a toast, because it has to still be there while the person reads it. The
+refusal clears group by group as choices land; with both answered the press posts. The form carries
+`noValidate` to make that possible (a native-invalid form fires no `submit` event, so the screen could
+draw nothing), which relaxes no field: every radio keeps `required`, and a crafted post is refused by
+`modeDraft()` and lands back here as `?problem=invalid-input`.
+
 **Fixed at creation means fixed per session.** `session.mode` is a column of the session row, and a
 relationship holds rounds (`session.round`, unique per relationship) — so the next round is a new
 session and may carry its own mode. What the chip forbids is a _mid-cycle_ switch: one party cannot
