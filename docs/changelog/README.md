@@ -48,7 +48,7 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 
 - **Released** 2026-11-13
 - **Tag** [`v1.17.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.17.1)
-- **Pull requests named** 8
+- **Pull requests named** 10
 - **Theme:** the patch the last note promised
 - **Headline:** `fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) (#964)
 
