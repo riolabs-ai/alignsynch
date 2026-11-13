@@ -302,7 +302,9 @@ const RELATIONSHIP_COLUMNS = `
   -- template read identically and the draft a creator had just named could not be found by name.
   sr.title AS relationship_title,
   s.record_id AS session_record_id,
-  (SELECT count(*)::int FROM item i WHERE i.record_id = t.id) AS aspect_count,
+  -- #936 — the count is of the Aspects this relationship **holds**, and for a relationship the
+  -- flow created those live on the session's copy (s.record_id), not on the template it names.
+  (SELECT count(*)::int FROM item i WHERE i.record_id = COALESCE(s.record_id, t.id)) AS aspect_count,
   inv.counterparty_name,
   (inv.claimed_at IS NOT NULL) AS claimed,
   (inv.revoked_at IS NOT NULL) AS revoked,
@@ -489,6 +491,34 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
 }
 
 /**
+ * Which `record` holds this relationship's Aspects (#936).
+ *
+ * There are two, and which one is the relationship's own depends on how it was created:
+ *
+ *   the member write   `createRelationship()` copies the member's template into a **private
+ *                      `record`** and points `relationship.template_id` at it. No session exists
+ *                      yet, so that copy is the relationship's own Aspect list.
+ *   the flow           `createInstanceFromTemplate()` copies the version into the **instance
+ *                      record** (`session.record_id`) and keeps `template_id` naming the template
+ *                      it was copied from — V23 requires the pin to be a version *of that
+ *                      template*, so `template_id` cannot move. The instance copy is the list.
+ *
+ * Every reader on the relationship screen used `template_id`, which is only ever right for the
+ * first. For a relationship the flow created it is the shared template itself, so an Aspect the
+ * creator added at stage 3 — written to the instance copy, and present in the session the pair
+ * answers — was simply not in the list the detail screen drew. That is #936: saved, never shown.
+ *
+ * The rule is one line: the session's copy when there is a session, the private copy otherwise.
+ * Pure, so the read and the save cannot answer it differently (see `saveAspects`).
+ */
+export function aspectsRecordOf(input: {
+  readonly templateId: string;
+  readonly sessionRecordId: string | null;
+}): string {
+  return input.sessionRecordId ?? input.templateId;
+}
+
+/**
  * One relationship, if this member is a party to it — and the Aspects it was configured with.
  *
  * **A stranger's id is still `undefined`** — the page turns it into `notFound()` — but "stranger"
@@ -497,10 +527,12 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
  * three write flags below are gated on `isInitiator`, so the read-only half is the derivation, not
  * the route.
  *
- * The Aspects are read from the relationship's **own copy** (`rel.template_id`), which is what the
- * member is editing while the relationship is a draft. After publish the lock is the model's
- * (`aspectsEditable`) and the copy is frozen for the same reason: the pair was invited on those
- * words, and the session that runs them holds its own snapshot of the same version.
+ * The Aspects are read from the relationship's **own copy** — see `aspectsRecordOf()` (#936): the
+ * session's record when the flow created this relationship, `template_id` when the member write
+ * did. The pin (`template_version_id`) still names a version of `template_id` for both, which is
+ * why the two are not the same column. After publish the lock is the model's (`aspectsEditable`)
+ * and the copy is frozen for the same reason: the pair was invited on those words, and the session
+ * that runs them holds its own snapshot of the same version.
  */
 export async function readMyRelationship(
   userId: string,
@@ -516,20 +548,32 @@ export async function readMyRelationship(
   const row = rows[0];
   if (row === undefined) return undefined;
 
+  /*
+   * #936 — **the list is read from the relationship's own copy, not from `template_id`.**
+   *
+   * `template_id` names the template for a relationship the flow created and the private copy for
+   * one the member write created (`aspectsRecordOf`). Reading the template there meant the detail
+   * screen drew the catalogue's Aspects and never the creator's added one: saved, in the session,
+   * and invisible. The title above the list comes from the same copy for the same reason.
+   */
+  const aspectsRecordId = aspectsRecordOf({
+    templateId: row.template_id,
+    sessionRecordId: row.session_record_id,
+  });
   const record = await queryRows<RecordRow & { id: string; owner_user_id: string | null }>(
     `SELECT id, slug, record_type, status, date, title, summary, owner_user_id
        FROM record WHERE id = $1`,
-    [row.template_id],
+    [aspectsRecordId],
   );
   const items = await queryRows<ItemRow>(
     `SELECT record_id, item_id, position, prompt, scale_kind, left_value, right_value
        FROM item WHERE record_id = $1 ORDER BY position`,
-    [row.template_id],
+    [aspectsRecordId],
   );
   const options = await queryRows<OptionRow>(
     `SELECT record_id, item_id, option_id, position, text
        FROM response_option WHERE record_id = $1 ORDER BY position`,
-    [row.template_id],
+    [aspectsRecordId],
   );
   const primary = record[0];
   if (primary === undefined) return undefined;
@@ -570,7 +614,20 @@ export async function readMyRelationship(
   const membership = base.membership;
   return {
     ...base,
-    template: assessmentTemplateFromRows({ record: primary, items, options }),
+    /*
+     * #936 — the identity of the record this list came from, and the template's **slug** with it.
+     *
+     * The copy's own slug is derived (`staff-manager-95505193`), and `relationshipTypeOf()` reads
+     * the catalogue's slug to name the type in the identity band — so the parsed copy is drawn
+     * under `template_slug`, which is the one address this screen already carried. Every writer on
+     * this page sends `templateId` back as the record to write, so it has to be the copy the read
+     * drew: a save that named the template would write the words here and nowhere the screen looks.
+     */
+    templateId: aspectsRecordId,
+    template: {
+      ...assessmentTemplateFromRows({ record: primary, items, options }),
+      slug: row.template_slug,
+    },
     /*
      * #706 — **every write flag is `isInitiator && …`.**
      *
@@ -663,6 +720,23 @@ async function latestVersion(sql: ActSql, templateId: string): Promise<number> {
   const rows = await sql.query<{ version: number | null }>(
     "SELECT max(version) AS version FROM template_version WHERE template_record_id = $1",
     [templateId],
+  );
+  const value = rows.rows[0]?.version;
+  return value === null || value === undefined ? 0 : Number(value);
+}
+
+/**
+ * The version a relationship is pinned to, by id — the answer a save to a session's own copy gives
+ * for "which version is this", because that save writes no version at all (#936).
+ *
+ * `0` when the pin is absent, the same answer `latestVersion` gives a template nobody has
+ * snapshotted; nothing reads the number as more than a label on the saved line.
+ */
+async function pinnedVersion(sql: ActSql, versionId: string | null): Promise<number> {
+  if (versionId === null) return 0;
+  const rows = await sql.query<{ version: number | null }>(
+    "SELECT version FROM template_version WHERE id = $1",
+    [versionId],
   );
   const value = rows.rows[0]?.version;
   return value === null || value === undefined ? 0 : Number(value);
@@ -931,9 +1005,10 @@ export async function saveAspects(
           id: string;
           status: string;
           template_id: string;
+          template_version_id: string | null;
           initiator_user_id: string | null;
         }>(
-          `SELECT id, status, template_id, initiator_user_id
+          `SELECT id, status, template_id, template_version_id, initiator_user_id
              FROM relationship WHERE id = $1 FOR UPDATE`,
           [request.relationshipId],
         );
@@ -957,16 +1032,33 @@ export async function saveAspects(
             `relationship "${rel.id}" is ${status}: its Aspects are fixed once the invitation has gone out`,
           );
         }
-        if (request.record.id !== rel.template_id) {
+        /*
+         * #936 — **the same record the screen drew, so a save lands where the person is looking.**
+         *
+         * A relationship the flow created holds its Aspects on the session's copy, not on
+         * `template_id` (`aspectsRecordOf`), and the detail page now draws that copy. Writing
+         * `template_id` here would have saved the words onto the template behind the list — on a
+         * built-in template, onto a row every member shares. One resolver, both halves.
+         */
+        const session = await sql.query<{ record_id: string }>(
+          `SELECT record_id FROM session WHERE relationship_id = $1
+            ORDER BY round DESC LIMIT 1`,
+          [rel.id],
+        );
+        const aspectsRecordId = aspectsRecordOf({
+          templateId: rel.template_id,
+          sessionRecordId: session.rows[0]?.record_id ?? null,
+        });
+        if (request.record.id !== aspectsRecordId) {
           throw new MemberRefused(
             "invalid-draft",
-            `the Aspects name record "${request.record.id}" and this relationship configures "${rel.template_id}"`,
+            `the Aspects name record "${request.record.id}" and this relationship configures "${aspectsRecordId}"`,
           );
         }
 
         const copy = await sql.query<{ id: string }>(
           "SELECT id FROM record WHERE id = $1 FOR UPDATE",
-          [rel.template_id],
+          [aspectsRecordId],
         );
         if (copy.rows[0] === undefined) {
           throw new MemberRefused(
@@ -984,7 +1076,7 @@ export async function saveAspects(
           }>(
             `SELECT item_id, prompt, left_value, right_value FROM item
               WHERE record_id = $1 ORDER BY position`,
-            [rel.template_id],
+            [aspectsRecordId],
           )
         ).rows.map((item) => ({
           id: item.item_id,
@@ -994,31 +1086,49 @@ export async function saveAspects(
         }));
 
         await sql.query("UPDATE record SET title = $2, summary = $3 WHERE id = $1", [
-          rel.template_id,
+          aspectsRecordId,
           request.record.title,
           request.record.summary,
         ]);
         // Replace, do not diff. The copy has no `opinion` row and no session until publish, so
         // nothing cascades from these items and a replaced set cannot leave a stale Aspect behind.
-        await sql.query("DELETE FROM item WHERE record_id = $1", [rel.template_id]);
+        await sql.query("DELETE FROM item WHERE record_id = $1", [aspectsRecordId]);
         for (const [position, item] of request.record.items.entries()) {
           await sql.query(
             `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
              VALUES ($1, $2, $3, $4, 'score', $5, $6)`,
-            [rel.template_id, item.id, position, item.prompt, item.leftValue, item.rightValue],
+            [aspectsRecordId, item.id, position, item.prompt, item.leftValue, item.rightValue],
           );
         }
 
-        const snapshot = await snapshotVersion(sql, {
-          templateId: rel.template_id,
-          record: request.record,
-          actorUserId: request.actorUserId,
-          now,
-        });
-        await sql.query("UPDATE relationship SET template_version_id = $2 WHERE id = $1", [
-          rel.id,
-          snapshot.id,
-        ]);
+        /*
+         * **The pin moves only when the list IS what the pin describes.**
+         *
+         * For the member write, `template_id` is the private copy and `template_version` rows hang
+         * off it, so a save writes the next version and repins — V4 compares the session's copy to
+         * it. For a relationship the flow created, the list lives on the instance copy and the pin
+         * names a version of the *template*; writing this list as a version of that template would
+         * publish one member's private words to everyone who copies it (#502b), so the pin stays
+         * where it is. That copy is an authored one (#699) — `session.aspects_authored_at` is what
+         * tells V4 to validate its structure instead of comparing it to a version it deliberately
+         * left — and V18 forbids rewriting that column from here, so this path may not stamp it.
+         */
+        const version =
+          aspectsRecordId === rel.template_id
+            ? await (async () => {
+                const snapshot = await snapshotVersion(sql, {
+                  templateId: rel.template_id,
+                  record: request.record,
+                  actorUserId: request.actorUserId,
+                  now,
+                });
+                await sql.query("UPDATE relationship SET template_version_id = $2 WHERE id = $1", [
+                  rel.id,
+                  snapshot.id,
+                ]);
+                return snapshot.version;
+              })()
+            : await pinnedVersion(sql, rel.template_version_id);
 
         let after = status;
         if (request.saveAs === "pending" && canTransition(status, "pending", "initiator")) {
@@ -1031,11 +1141,17 @@ export async function saveAspects(
         }
 
         return {
-          before: { status, version: snapshot.version - 1, aspects: before },
+          before: {
+            status,
+            // The member write wrote a version, so "before" is the one it superseded; a save to
+            // the session's own copy moves no version, so before and after name the same pin (#936).
+            version: aspectsRecordId === rel.template_id ? version - 1 : version,
+            aspects: before,
+          },
           after: {
             relationshipId: rel.id,
             status: after,
-            version: snapshot.version,
+            version,
             aspectIds: request.record.items.map((item) => item.id),
           },
         };

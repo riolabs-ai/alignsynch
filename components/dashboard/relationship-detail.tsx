@@ -67,7 +67,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy, PageCopySection } from "@/content/pages";
-import { buildTemplateRecord } from "@/lib/admin/template-draft";
+import { aspectStatesOf, buildTemplateRecord } from "@/lib/admin/template-draft";
 import { formatCurrency, formatDate } from "@/content/core";
 import {
   refusalSentence,
@@ -275,9 +275,11 @@ export function RelationshipDetail({
    * to publish, and "Save and mark ready" is still the control that makes that decision.
    */
   async function persistAspects(next: readonly AspectDraft[]): Promise<AspectSaveResult> {
+    // `aspectStatesOf`, not the raw list: a row that is still `new-N` is one the record does not
+    // hold, and its placeholder must not become the item id (#936).
     const answer = await onSaveAspects({
       relationshipId: relationship.id,
-      record: buildRecord(next),
+      record: buildRecord(aspectStatesOf(next)),
       saveAs: "draft",
     });
     setAspectsOutcome(answer);
@@ -286,14 +288,9 @@ export function RelationshipDetail({
 
   /** The rows the person is looking at, kept so a status change writes them rather than the mount. */
   function mirrorAspects(next: readonly AspectDraft[]): void {
-    setAspects(
-      next.map((row) => ({
-        id: row.id.startsWith("new-") ? undefined : row.id,
-        prompt: row.prompt,
-        leftValue: row.leftValue,
-        rightValue: row.rightValue,
-      })),
-    );
+    // One function for both writers: the status buttons and the row's own Save must agree about
+    // what a `new-` id means, or a saved row comes back named as unsaved (#936).
+    setAspects(aspectStatesOf(next));
   }
 
   /** The relationship's template record with this list on it — one builder for both writers. */
