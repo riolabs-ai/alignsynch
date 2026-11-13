@@ -52,7 +52,7 @@ links (44 unique, 60 total)
   /pricing                                             2
   /privacy                                             2
   /register                                            1
-  /relationship-types                                  2
+  /relationship-templates                              2
   /relationship-types/brother-sister                   1
   /relationship-types/brothers                         1
   /relationship-types/business-partners                1

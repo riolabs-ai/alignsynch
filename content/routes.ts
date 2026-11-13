@@ -81,9 +81,11 @@ const STATIC_ROUTES = [
   "/privacy",
   "/quiz-discussions",
   "/register",
-  // The public Relationship Types catalogue — the header's `Templates` row and the front page
-  // band's one call to action. The taxonomy, not the templates: it used to own `/templates`, and
-  // #794 moved it here so the template noun means the template records.
+  // The public catalogue — the header's `Templates` row, the footer's catalogue link and every
+  // "start with a template" action. Since #905 the catalogue answers here; `/relationship-types`
+  // is the retained #889 variation and the namespace a type's own page lives in, and it used to
+  // own `/templates` (#794) before that.
+  "/relationship-templates",
   "/relationship-types",
   "/reset/complete",
   "/search",
@@ -190,8 +192,10 @@ const INDEXABLE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
   { path: "/help", title: "Help" },
   { path: "/pricing", title: "Pricing Plan" },
   // The public catalogue. Indexable because it is the page a reader looking for a relationship
-  // type is actually looking for; the route is in `(marketing)` and needs no session.
-  { path: "/relationship-types", title: "Relationship Templates" },
+  // type is actually looking for; the route is in `(marketing)` and needs no session. The retained
+  // `/relationship-types` variation is deliberately **not** listed: two index entries with one
+  // title is a search result nobody can choose between.
+  { path: "/relationship-templates", title: "Relationship Templates" },
 ];
 
 export const routeManifest: RouteManifest = zRouteManifest.parse({

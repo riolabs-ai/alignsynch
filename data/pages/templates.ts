@@ -91,6 +91,39 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
 
     /** The realm menu's first row: every group at once. */
     { id: "realm-all", label: "All" },
+
+    /* ------------------------------------------------------------------ *
+     * The V2 catalogue (`/relationship-templates`, #905)
+     *
+     * A second page renders this fixture: the V2 re-cut of the catalogue, drawn from the patterns
+     * `docs/specs/spec-design-page-rel-templates-v2/home/` already draws. Its words are its own
+     * rows rather than edits to the rows above, so the #889 composition it replaces keeps the copy
+     * it shipped with — one fixture, two surfaces, and neither one renames the other's sentences.
+     * ------------------------------------------------------------------ */
+
+    /** The V2 hero's kicker: the audience the catalogue leads with. */
+    { id: "hero-eyebrow", label: "For business and corporate relationships" },
+    /** The hero's promise line, under the two actions. */
+    {
+      id: "hero-note",
+      label:
+        "One relationship at a time. Two private views. A shared report when you are both ready.",
+    },
+    /** The hero's two doors, drawn as the package's pair of life cards. */
+    { id: "life-business-kicker", label: "For work and corporate use" },
+    { id: "life-business-title", label: "Business relationships" },
+    { id: "life-business-action", label: "View templates" },
+    { id: "life-business-name", label: "Explore business relationship templates" },
+    { id: "life-personal-kicker", label: "Personal growth and relationship skills" },
+    { id: "life-personal-title", label: "Personal relationships" },
+    { id: "life-personal-action", label: "View templates" },
+    { id: "life-personal-name", label: "Explore personal relationship templates" },
+
+    /** The in-page menu: its accessible name and its three rows. */
+    { id: "catalogue-nav-name", label: "On this page" },
+    { id: "catalogue-nav-templates", label: "Templates" },
+    { id: "catalogue-nav-how", label: "How it works" },
+    { id: "catalogue-nav-included", label: "What's included" },
   ],
   sections: [
     /**
@@ -119,7 +152,29 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
           label: "Review together",
           body: "See where expectations meet and what may need a conversation.",
         },
+        /**
+         * The fourth step, and the reason it exists: the V2 package draws the how-it-works band as
+         * **four** numbered steps in one row across four columns, and a three-item list in that grid
+         * is a row with a hole in it. The canon already carries this step — the shared report opens
+         * once both people accept — so the band's rhythm and the product's rule agree.
+         */
+        {
+          id: "how-step-four",
+          label: "Accept, then read it together",
+          body: "The shared report opens when you are both ready.",
+        },
         { id: "how-more", label: "Learn more about AlignSynch" },
+        /**
+         * The how-it-works band's start-here strip and its one action. These three rows are the V2
+         * catalogue's; the #889 composition reads `how-more` instead and never these.
+         */
+        { id: "how-start-eyebrow", label: "Start with work, or explore personal" },
+        {
+          id: "how-start-body",
+          label:
+            "Choose a business relationship template first, or browse options for personal growth, relationships, and friendship.",
+        },
+        { id: "how-action", label: "View templates" },
         /** The example panel: kicker, position, the scale's own name, and its foot. */
         { id: "example-kicker", label: "Inside a template" },
         { id: "example-position", label: "{name} · {ordinal} of {total}" },
@@ -139,8 +194,17 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
      */
     {
       id: "membership",
+      /**
+       * The band's heading and body — the V2 catalogue's "what's included" band heads itself, and
+       * the #889 composition reads only this section's items, so these two fields are invisible to
+       * it. They restate only what the rows below already assert (all templates included, the
+       * invited person pays nothing); no figure is typed here.
+       */
+      heading: "One membership covers both people.",
+      body: "All templates are included. One person starts and invites the other person; the invited person pays nothing.",
       cta: { label: "See plans", href: "/pricing" },
       items: [
+        { id: "membership-eyebrow", label: "What's included" },
         {
           id: "membership-note",
           label: "All templates are included",
@@ -201,6 +265,56 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
           body: "Both answer privately. The report opens once both have accepted.",
         },
       ],
+    },
+
+    /**
+     * The V2 catalogue's core band (`/relationship-templates`): the two published groups of
+     * templates, head and frame. The group *names* and every type are records
+     * (`data/relationship-types.ts` via `purchasableTypesByGroup()`); only the heading, the
+     * sentence and the two group actions are words.
+     *
+     * Business leads, personal follows — the order the canon asks for and the order the drawn band
+     * draws. `choose-action` and `choose-secondary` are the two jump links into the groups below
+     * them, not routes: a reader deciding between work and home should not leave the page to
+     * answer it.
+     */
+    {
+      id: "choose",
+      heading: "Choose a relationship to explore.",
+      body: "Begin with a business relationship at work, or choose a personal relationship or friendship. Each template gives both people the same topics to consider.",
+      items: [
+        { id: "eyebrow-choose", label: "Relationship templates" },
+        { id: "choose-action", label: "Business & corporate" },
+        { id: "choose-secondary", label: "Personal & friendship" },
+        { id: "templates-group-business", label: "Business & corporate relationships" },
+        {
+          id: "templates-group-personal",
+          label: "Personal relationships, friendships, and adjacent contexts",
+        },
+        {
+          id: "templates-note",
+          label:
+            "Templates give both people the same starting point for the relationship they want to explore.",
+        },
+        { id: "counselor-lead", label: "For counselors, therapists, and coaches:" },
+        {
+          id: "counselor-rest",
+          label:
+            "AlignSynch can be an optional structure for reflection alongside your existing support. It is not a clinical assessment, diagnosis, therapy, or a substitute for professional judgment.",
+        },
+      ],
+    },
+
+    /**
+     * The closing band. One outcome, one supporting sentence, one action — the drawn band's shape.
+     * The action is `/register`, because the creator signs up before the relationship exists
+     * (`docs/specs/flow-stages.md`, stage 4).
+     */
+    {
+      id: "final-cta",
+      heading: "Start with the relationship in front of you.",
+      body: "Choose a template, answer privately, and open the report when you are both ready.",
+      cta: { label: "Create a relationship", href: "/register" },
     },
   ],
 });
