@@ -1,25 +1,30 @@
 /**
- * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: cards over Postgres template records grouped by the type each names, surface-owned action row)
+ * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: cards over Postgres template records grouped by the type each names, surface-supplied notice above a grid the shared card owns)
  *
- * `/assessment`'s list: the published templates, each card carrying its own create form (#146,
- * #409).
+ * `/assessment`'s list: the published templates, each card drawing the **same** action row the
+ * library at `/templates/relationship` draws (#146, #409).
  *
  * The **card** is not this file's: it is `TemplateCard` in `template-card.tsx`, shared with
- * `/templates/relationship`. This file owns what the picker adds — the create form per template, the
- * notice a save leaves, and the copy object the card draws with, resolved from
- * `data/pages/assessment.ts` (E23, budget 0) — so the two catalogue surfaces render one card and
- * two action rows rather than two cards that drift.
+ * `/templates/relationship`. This file owns what the catalogue adds — the notice a save leaves and
+ * the copy object the card draws with, resolved from `data/pages/assessment.ts` (E23, budget 0) —
+ * so the two catalogue surfaces render one card rather than two cards that drift.
  *
- * One form per template rather than a template picker plus one form: the template is the thing
- * being copied, so it belongs in the form's own payload (`templateRecordId`) and a submit cannot be
- * posted against the wrong one. Plain HTML forms, `name`d fields, no `"use client"` — which is also
- * what makes the flow drivable with `curl` and two plain browser sessions.
+ * **This page once carried a second create path, and #957 deleted it.** Each card shipped its own
+ * six-field form posting to `POST /assessment/new` with no `draft` flag, so one press on a public
+ * page wrote a **published** relationship, minted its invitation and mailed it — skipping Settings,
+ * Aspects, Account and Invite, and never meeting stage 5's send gate (no plan, no card). The price
+ * is the gate (#911) and the flow's store is the one writer of a relationship row (#913); a form
+ * here was a third answer to both.
+ *
+ * **The door is the card's own, not this file's.** `TemplateCard` already renders
+ * `Create Relationship` as a link to `createRelationshipPath(template.slug)` — stage 1 of the one
+ * flow — because the library needed it too. So `/assessment` and `/templates/relationship` now have
+ * one create path *by construction*: the same component, the same href. Nothing here may add a
+ * `<form>`, and `tests/one-create-path.test.ts` fails the page if one comes back.
  */
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { PageCopy } from "@/content/pages";
-import { ASSESSMENT_MODES } from "@/content/assessment";
 import { formatCurrency } from "@/content/core";
-import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
 import type { TemplateSummary } from "@/lib/flow/store";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import {
@@ -31,8 +36,6 @@ import {
 
 const CARD = "rounded-lg border border-border bg-card p-6";
 const MUTED = "text-sm text-muted-foreground";
-const PRIMARY =
-  "inline-flex h-10 items-center justify-center rounded-md bg-action px-4 text-sm font-medium text-action-foreground hover:bg-action-hover";
 
 /** The card's words, out of this surface's fixture — see `CatalogueCardCopy`. */
 function catalogueCardCopyOf(copy: PageCopy): CatalogueCardCopy {
@@ -125,76 +128,6 @@ export function TemplateList({
             copy={catalogueCardCopyOf(copy)}
             groups={templateGroupsOf(templates)}
             groupLabelOf={templateGroupLabelOf(copy)}
-            actionsOf={(template) => (
-              <form action={CREATE_INSTANCE_PATH} method="post" className="grid gap-3">
-                <input type="hidden" name="templateRecordId" value={template.id} />
-
-                {/* The mode is chosen **here**, when the instance is created (#213): it belongs to
-                    the play, and the answer sheet never offers a way to change it. Basic is ticked
-                    because it is what the flow asked before modes existed. */}
-                <fieldset className="grid gap-1 text-sm">
-                  <legend className="font-medium text-foreground">
-                    {itemLabel(create, "mode-label")}
-                  </legend>
-                  {ASSESSMENT_MODES.map((mode) => (
-                    <label key={mode} className="inline-flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="mode"
-                        value={mode}
-                        defaultChecked={mode === "basic"}
-                      />
-                      <span>
-                        {itemLabel(create, mode === "basic" ? "mode-basic" : "mode-advanced")}
-                      </span>
-                    </label>
-                  ))}
-                  <p className="text-xs text-muted-foreground">{itemLabel(create, "mode-help")}</p>
-                </fieldset>
-
-                <label className="grid gap-1 text-sm" htmlFor={`initiator-name-${template.id}`}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(create, "initiator-name")}
-                  </span>
-                  <input
-                    id={`initiator-name-${template.id}`}
-                    name="initiatorName"
-                    required
-                    placeholder={itemLabel(create, "initiator-placeholder")}
-                    className="rounded-md border border-border bg-background px-3 py-2"
-                  />
-                </label>
-
-                <label className="grid gap-1 text-sm" htmlFor={`counterparty-name-${template.id}`}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(create, "counterparty-name")}
-                  </span>
-                  <input
-                    id={`counterparty-name-${template.id}`}
-                    name="counterpartyName"
-                    required
-                    placeholder={itemLabel(create, "counterparty-placeholder")}
-                    className="rounded-md border border-border bg-background px-3 py-2"
-                  />
-                </label>
-
-                <label className="grid gap-1 text-sm" htmlFor={`email-${template.id}`}>
-                  <span className="font-medium text-foreground">{itemLabel(create, "email")}</span>
-                  <input
-                    id={`email-${template.id}`}
-                    name="email"
-                    type="email"
-                    required
-                    placeholder={itemLabel(create, "email-placeholder")}
-                    className="rounded-md border border-border bg-background px-3 py-2"
-                  />
-                </label>
-
-                <button type="submit" className={`justify-self-start ${PRIMARY}`}>
-                  {itemLabel(create, "submit")}
-                </button>
-              </form>
-            )}
           />
         )}
       </section>
