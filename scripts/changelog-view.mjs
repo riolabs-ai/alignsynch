@@ -52,108 +52,40 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// One parser, never two (#893): the entry's shape and its addressing live in a pure module the
+// features index imports as well, so the generator and `/admin/docs/features` cannot disagree
+// about what an entry is. This file keeps what only it does — rendering the blocks and the diff.
+import {
+  CHANGELOG_PATH as CHANGELOG,
+  LIMITS_SECTION,
+  REPO_URL,
+  pageOf,
+  parseChangelog,
+  tagOf,
+} from "../lib/docs/changelog.ts";
+
 const DEFAULT_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 let ROOT = DEFAULT_ROOT;
 
-const CHANGELOG = "CHANGELOG.md";
 const DIR = "docs/changelog";
 const MANIFEST = `${DIR}/releases.json`;
 const INDEX = `${DIR}/README.md`;
-const REPO_URL = "https://github.com/riolabs-ai/alignsynch";
 
 /** The block each release page must carry, and the index's one block. */
 const PAGE_REGIONS = ["entry", "limits"];
 const INDEX_REGIONS = ["index"];
 
-const LIMITS_SECTION = "Known limits";
 const BEGIN = (name) => `<!-- changelog-view:begin ${name} -->`;
 const END = "<!-- changelog-view:end -->";
 const PROVENANCE =
   "<!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->";
 
-/** `## [1.6.0] - 2026-11-07` — the one heading shape `scripts/release.sh` emits. */
-const ENTRY_HEADING = /^## \[([0-9][^\]]*)\] - (\d{4}-\d{2}-\d{2})$/;
-/** `[1.6.0]: https://github.com/...` — the link footer after the last entry, not an entry. */
-const LINK_FOOTER = /^\[[^\]]+\]: \S+$/;
-const SECTION_HEADING = /^### (.+)$/;
-/** A full-width PR link, as `release.sh` writes one: `([#634](https://…/pull/634))`. */
-const PR_LINK = /\(\[#(\d+)\]\(https:\/\/github\.com\/[^)]+\/pull\/\1\)\)/g;
-
 class ViewError extends Error {}
-
-/* ------------------------------------------------------------------ *
- * The entry
- * ------------------------------------------------------------------ */
-
-/**
- * Every release entry in `CHANGELOG.md`, newest first — the order the file holds.
- *
- * A section's `lines` are the entry's own lines, verbatim, with trailing blank lines trimmed.
- * Sections therefore keep their prose, their bullets and their wrapping exactly as published; this
- * function classifies nothing but where one section ends and the next begins.
- */
-function parseChangelog(text) {
-  const entries = [];
-  let current = null;
-  let section = null;
-
-  const closeSection = () => {
-    if (current && section) {
-      // A section's body is the entry's own lines verbatim; only the blank line the heading is
-      // written with is layout, so both ends are trimmed and nothing inside is touched.
-      while (section.lines.length > 0 && section.lines.at(-1).trim() === "") section.lines.pop();
-      while (section.lines.length > 0 && section.lines[0].trim() === "") section.lines.shift();
-      current.sections.push(section);
-    }
-    section = null;
-  };
-
-  for (const line of text.split("\n")) {
-    const heading = ENTRY_HEADING.exec(line);
-    if (heading) {
-      closeSection();
-      current = { version: heading[1], date: heading[2], intro: [], sections: [] };
-      entries.push(current);
-      continue;
-    }
-    if (!current) continue;
-    if (LINK_FOOTER.test(line)) {
-      closeSection();
-      current = null;
-      continue;
-    }
-    const sub = SECTION_HEADING.exec(line);
-    if (sub) {
-      closeSection();
-      section = { title: sub[1].trim(), lines: [] };
-      continue;
-    }
-    if (section) section.lines.push(line);
-    else current.intro.push(line);
-  }
-  closeSection();
-
-  for (const entry of entries) {
-    while (entry.intro.length > 0 && entry.intro.at(-1).trim() === "") entry.intro.pop();
-    while (entry.intro.length > 0 && entry.intro[0].trim() === "") entry.intro.shift();
-    const limits = entry.sections.find((s) => s.title === LIMITS_SECTION.trim());
-    entry.hasLimits = Boolean(limits) && limits.lines.length > 0;
-    const prs = new Set();
-    for (const s of entry.sections) {
-      for (const line of s.lines) for (const m of line.matchAll(PR_LINK)) prs.add(m[1]);
-    }
-    entry.pullRequests = prs.size;
-  }
-
-  return entries;
-}
 
 /* ------------------------------------------------------------------ *
  * Rendering — deterministic, and the only writer of a generated block
  * ------------------------------------------------------------------ */
 
-const tagOf = (version) => `v${version}`;
-const pageOf = (version) => `v${version.replaceAll(".", "-")}.md`;
 const tagUrl = (version) => `${REPO_URL}/releases/tag/${tagOf(version)}`;
 
 function renderEntry(entry) {
@@ -475,5 +407,3 @@ try {
     process.exitCode = 1;
   } else throw error;
 }
-
-export { parseChangelog, renderEntry, renderLimits, pageOf };

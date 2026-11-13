@@ -6682,6 +6682,54 @@
     },
     {
       "kind": "route",
+      "route": "/admin/docs/features",
+      "area": "admin",
+      "page": "app/(mainlayout)/admin/docs/features/page.tsx",
+      "fixture": "data/pages/admin-docs",
+      "path": "/admin/docs/features",
+      "params": {},
+      "role": "admin",
+      "brandGate": {
+        "kind": "admin",
+        "at": "app/(mainlayout)/admin/docs/features/page.tsx:requireAdminProduct("
+      },
+      "expected": 200,
+      "gateReason": null,
+      "status": null,
+      "widths": [],
+      "thumb": null,
+      "verdict": "skipped",
+      "captures": [],
+      "skip": {
+        "reason": "added in #893 after the v1.17.1 capture — the demo branch offered no admin session to capture it, so the next release cut recaptures this route"
+      }
+    },
+    {
+      "kind": "route",
+      "route": "/admin/docs/releases",
+      "area": "admin",
+      "page": "app/(mainlayout)/admin/docs/releases/page.tsx",
+      "fixture": "data/pages/admin-docs",
+      "path": "/admin/docs/releases",
+      "params": {},
+      "role": "admin",
+      "brandGate": {
+        "kind": "admin",
+        "at": "app/(mainlayout)/admin/docs/releases/page.tsx:requireAdminProduct("
+      },
+      "expected": 200,
+      "gateReason": null,
+      "status": null,
+      "widths": [],
+      "thumb": null,
+      "verdict": "skipped",
+      "captures": [],
+      "skip": {
+        "reason": "added in #893 after the v1.17.1 capture — the demo branch offered no admin session to capture it, so the next release cut recaptures this route"
+      }
+    },
+    {
+      "kind": "route",
       "route": "/admin/gaps",
       "area": "admin",
       "page": "app/(mainlayout)/admin/gaps/page.tsx",
