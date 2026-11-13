@@ -1,6 +1,74 @@
 {
-  "version": 1,
+  "version": 2,
   "groups": [
+    {
+      "id": "group-admin",
+      "label": "group-admin",
+      "items": [
+        {
+          "id": "admin-inbox",
+          "href": "/admin/inbox",
+          "icon": "inbox",
+          "needs": "support",
+          "note": "#542 phase 2 — the one queue a support seat works, and the only row in this group below admin. The hub page links neither this nor the health row."
+        },
+        {
+          "id": "console",
+          "href": "/admin/console",
+          "icon": "console",
+          "needs": "admin",
+          "note": "#542 phase 2 — the hub for its own subtree (users, templates, relationships). It had no row anywhere in the UI before this, and it leads the group."
+        },
+        {
+          "id": "admin-instances",
+          "href": "/admin/instances",
+          "icon": "instances",
+          "needs": "admin",
+          "note": "#542 phase 2 — the console's five existing destinations, in the order they were carried."
+        },
+        {
+          "id": "console-gaps",
+          "href": "/admin/gaps",
+          "icon": "gaps",
+          "needs": "admin"
+        },
+        {
+          "id": "admin-growth",
+          "href": "/admin/growth",
+          "icon": "growth",
+          "needs": "admin",
+          "note": "#920 — the growth model: 36 cohorts to a $3M run-rate, charted from one committed artifact, beside the Gap it aggregates over. The row exists because the page had no other way in: the console hub links none of its staff destinations."
+        },
+        {
+          "id": "admin-billing",
+          "href": "/admin/billing",
+          "icon": "billing",
+          "needs": "admin",
+          "note": "#505 — billing control: the plan each relationship carries, and the owner's comp."
+        },
+        {
+          "id": "admin-broadcast",
+          "href": "/admin/broadcast",
+          "icon": "broadcast",
+          "needs": "admin",
+          "note": "#507 — the broadcast: a one-off notice to the news list."
+        },
+        {
+          "id": "admin-docs",
+          "href": "/admin/docs",
+          "icon": "library",
+          "needs": "admin",
+          "note": "#901 — the docs home renders the 117-page manifest and had no row, so the tree was URL-only. It sits after the review shelf and before the log: the reference you look things up in, then what the rows above it did."
+        },
+        {
+          "id": "admin-audit",
+          "href": "/admin/audit",
+          "icon": "audit",
+          "needs": "admin",
+          "note": "#503 — the log every row above it commits into, and last in the group for that reason: an operator reads it after acting."
+        }
+      ]
+    },
     {
       "id": "group-app",
       "label": "group-app",
@@ -33,58 +101,17 @@
       "label": "group-support",
       "items": [
         {
+          "id": "review",
+          "href": "/admin/review",
+          "icon": "review",
+          "needs": "admin",
+          "note": "#665 — the review shelf: published artifacts, each with its to-dos and its feedback. One row, between Broadcast and the audit log."
+        },
+        {
           "id": "how-it-works",
           "href": "/dashboard/help",
           "icon": "help",
           "needs": "member"
-        },
-        {
-          "id": "support",
-          "href": "/dashboard/support",
-          "icon": "support",
-          "needs": "member",
-          "tourAnchor": "help",
-          "note": "The first-run tour points at this row (data-tour=\"help\"), still in the Support group — group-support is the help/contact pair, not a second workspace."
-        }
-      ]
-    },
-    {
-      "id": "group-admin",
-      "label": "group-admin",
-      "items": [
-        {
-          "id": "console",
-          "href": "/admin/console",
-          "icon": "console",
-          "needs": "admin",
-          "note": "#542 phase 2 — the hub for its own subtree (users, templates, relationships). It had no row anywhere in the UI before this, and it leads the group."
-        },
-        {
-          "id": "admin-instances",
-          "href": "/admin/instances",
-          "icon": "instances",
-          "needs": "admin",
-          "note": "#542 phase 2 — the console's five existing destinations, in the order they were carried."
-        },
-        {
-          "id": "console-gaps",
-          "href": "/admin/gaps",
-          "icon": "gaps",
-          "needs": "admin"
-        },
-        {
-          "id": "admin-growth",
-          "href": "/admin/growth",
-          "icon": "growth",
-          "needs": "admin",
-          "note": "#920 — the growth model: 36 cohorts to a $3M run-rate, charted from one committed artifact, beside the Gap it aggregates over. The row exists because the page had no other way in: the console hub links none of its staff destinations."
-        },
-        {
-          "id": "admin-inbox",
-          "href": "/admin/inbox",
-          "icon": "inbox",
-          "needs": "support",
-          "note": "#542 phase 2 — the one queue a support seat works, and the only row in this group below admin. The hub page links neither this nor the health row."
         },
         {
           "id": "admin-health",
@@ -93,39 +120,12 @@
           "needs": "admin"
         },
         {
-          "id": "admin-billing",
-          "href": "/admin/billing",
-          "icon": "billing",
-          "needs": "admin",
-          "note": "#505 — billing control: the plan each relationship carries, and the owner's comp."
-        },
-        {
-          "id": "admin-broadcast",
-          "href": "/admin/broadcast",
-          "icon": "broadcast",
-          "needs": "admin",
-          "note": "#507 — the broadcast: a one-off notice to the news list."
-        },
-        {
-          "id": "review",
-          "href": "/admin/review",
-          "icon": "review",
-          "needs": "admin",
-          "note": "#665 — the review shelf: published artifacts, each with its to-dos and its feedback. One row, between Broadcast and the audit log."
-        },
-        {
-          "id": "admin-docs",
-          "href": "/admin/docs",
-          "icon": "library",
-          "needs": "admin",
-          "note": "#901 — the docs home renders the 117-page manifest and had no row, so the tree was URL-only. It sits after the review shelf and before the log: the reference you look things up in, then what the rows above it did."
-        },
-        {
-          "id": "admin-audit",
-          "href": "/admin/audit",
-          "icon": "audit",
-          "needs": "admin",
-          "note": "#503 — the log every row above it commits into, and last in the group for that reason: an operator reads it after acting."
+          "id": "support",
+          "href": "/dashboard/support",
+          "icon": "support",
+          "needs": "member",
+          "tourAnchor": "help",
+          "note": "The first-run tour points at this row (data-tour=\"help\"), still in the Support group — group-support is the help/contact pair, not a second workspace."
         }
       ]
     }

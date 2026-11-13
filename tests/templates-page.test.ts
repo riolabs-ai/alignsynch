@@ -41,7 +41,12 @@ import { EXCLUDED_TYPE_IDS, REALMS, relationshipTypes } from "@/data/relationshi
 import { templatesPageCopy } from "@/data/pages/templates";
 import { signInDestination } from "@/lib/auth/next-path";
 import { ROUTE_PATTERNS } from "@/content/routes";
-import { OVERVIEW_PATH, createRelationshipPath } from "@/lib/flow/paths";
+import {
+  OVERVIEW_PATH,
+  RELATIONSHIP_TYPES_PATH,
+  TEMPLATE_CATALOGUE_PATH,
+  createRelationshipPath,
+} from "@/lib/flow/paths";
 import { CATALOGUE_PATH, START_PATH, startPathFor } from "@/lib/template-catalogue";
 import { templatesPage } from "@/lib/templates-page";
 import { leafLiterals } from "@/scripts/copy-refs";
@@ -221,7 +226,7 @@ describe("the catalogue is complete without JavaScript", () => {
   it("renders every card in the static markup", () => {
     for (const card of cards) {
       expect(html).toContain(`data-template-card="${card.id}"`);
-      expect(card.detail).toBe(`${CATALOGUE_PATH}/${card.id}`);
+      expect(card.detail).toBe(`${RELATIONSHIP_TYPES_PATH}/${card.id}`);
       expect(html).toContain(`href="${card.detail}"`);
     }
     expect(html.match(/data-template-card="/g)?.length).toBe(model.catalogue.total);
@@ -459,7 +464,13 @@ describe("the components write no words and no palette", () => {
   });
 
   it("keeps the catalogue route in one place", () => {
-    // #794 — one author for the address: `lib/flow/paths.ts` owns it and this module re-exports it.
-    expect(CATALOGUE_PATH).toBe("/relationship-types");
+    // #794, #905 — one author for both addresses: `lib/flow/paths.ts` owns the catalogue endpoint
+    // and the type namespace, and `lib/template-catalogue.ts` re-exports the first as the one
+    // `CATALOGUE_PATH` every "view all" and "back" reads. The catalogue is no longer the type
+    // namespace, which is why this asserts the pair and not one string.
+    expect(CATALOGUE_PATH).toBe(TEMPLATE_CATALOGUE_PATH);
+    expect(CATALOGUE_PATH).toBe("/relationship-templates");
+    expect(RELATIONSHIP_TYPES_PATH).toBe("/relationship-types");
+    expect(CATALOGUE_PATH).not.toBe(RELATIONSHIP_TYPES_PATH);
   });
 });

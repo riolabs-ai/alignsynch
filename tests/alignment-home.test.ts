@@ -204,8 +204,9 @@ describe("the templates band: a capped shelf, one call to action", () => {
     // The action is in the served markup, and it is the only link the shelf draws: the cards are
     // not linked, so the band offers one destination instead of seven.
     expect(html).toContain('data-templates-view-all=""');
-    // #794 — the band's one destination is the public catalogue's new noun.
-    expect(html).toContain('href="/relationship-types"');
+    // #905 — the band's one destination is the public catalogue, whose endpoint is now
+    // `/relationship-templates`; `CATALOGUE_PATH` is the module that authors it.
+    expect(html).toContain(`href="${CATALOGUE_PATH}"`);
     expect(html).not.toContain(model.templates.featured[0]?.useLabel ?? "\u0000");
   });
 
@@ -448,7 +449,7 @@ describe("the render", () => {
       expect(html).toContain(`data-template-card="${card.id}"`);
     }
     // The one action, and the proof link the hero still carries.
-    expect(html).toContain('href="/relationship-types"');
+    expect(html).toContain(`href="${CATALOGUE_PATH}"`);
     expect(html).toContain("/assessment/avery-rowan");
   });
 

@@ -324,12 +324,6 @@ export const NON_EMPTY_LISTS: readonly NonEmptyList[] = [
       "the docstring states it and the caller does it: `cards.length === 0` is `templates-page.tsx`'s `TemplateShelfNotice`, not this component's hole",
   },
   {
-    file: "components/relationship/relationship-edit-panel.tsx",
-    receiver: "aspects",
-    reason:
-      "the relationship's own sheet, seeded from the template's items (`.min(1)`); the panel edits words, never the row count",
-  },
-  {
     file: "components/v1/admin-template-detail.tsx",
     receiver: "template.items",
     reason: "the template's Aspects; `zAssessment.items` is `.min(1)`",

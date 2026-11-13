@@ -32,6 +32,35 @@ export interface AspectDraft {
   readonly rightValue: string;
 }
 
+/**
+ * The editor's rows as a record input: **a `new-` id is the list's placeholder, not an id** (#936).
+ *
+ * `AspectList` mints `new-N` for a row the person just added and that prefix is the protocol —
+ * the list reads it back as "not on record yet" (`aspect-list.tsx::isNew`). `buildTemplateRecord`
+ * derives an id from the prompt when one is absent, so a placeholder that reaches it is written
+ * verbatim: the relationship's copy then holds `item_id = 'new-1'`, which is a row the screen that
+ * wrote it can never recognise as saved. Every writer goes through this one function so the two
+ * paths on the relationship detail cannot disagree about it again.
+ */
+export function aspectStatesOf(
+  list: readonly {
+    readonly id?: string;
+    readonly prompt: string;
+    readonly leftValue: string;
+    readonly rightValue: string;
+  }[],
+): AspectDraft[] {
+  return list.map((row) => ({
+    id:
+      row.id === undefined || row.id.trim() === "" || row.id.startsWith("new-")
+        ? undefined
+        : row.id,
+    prompt: row.prompt,
+    leftValue: row.leftValue,
+    rightValue: row.rightValue,
+  }));
+}
+
 /** Everything the editor sends. `status` is the row's, never a control (publishing is #502b). */
 export interface TemplateDraftInput {
   readonly id: string;

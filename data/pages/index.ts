@@ -192,8 +192,16 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
   "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
   "/templates/relationship/new": assessmentTemplatePageCopy,
-  // The public Relationship Types catalogue (#794) — the taxonomy the shop sells, addressed by
-  // `relationship-types.ts`'s own ids.
+  /**
+   * The public catalogue, at two addresses and one fixture (#905).
+   *
+   * `/relationship-templates` is the catalogue the header, the footer and every "start with a
+   * template" action point at — the V2 composition (`lib/templates-catalogue.ts`).
+   * `/relationship-types` is the retained #889 variation (`lib/templates-page.ts`) and the
+   * namespace a type's own page lives in. Both read this fixture, which is why its rows are keyed
+   * by surface rather than edited in place: one copy table, two pages, neither renaming the other.
+   */
+  "/relationship-templates": templatesPageCopy,
   "/relationship-types": templatesPageCopy,
   "/relationship-types/[slug]": templatesDetailPageCopy,
   "/tournaments": tournamentsPageCopy,
