@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **97** — 61 static, 36 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 353 files under `components/`, 346 of them `.tsx`
+- component domains: **43** — 354 files under `components/`, 347 of them `.tsx`
 - route handlers: **32** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 75 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 50 · AlignSynch 46 · QuizHub 42 · No template yet 2
@@ -498,13 +498,13 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/templates/relationship/[slug]/create` — **db**
   - capability: Create a relationship from one template, stage 1 (Who): the template and its two seats, the counterparty's address, and the card title both parties will read.
   - components: `components/assessment-flow`, `components/billing`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: Split into two stages by #688. Stage 1 posts `templateRecordId`, both seats, the address, the title and an optional description to `POST /assessment/new/who`, which validates them server-side (`lib/flow/create-draft.ts`), writes one draft cookie (`flow_draft_<templateId>`, 24 h) and answers a 303 to `…/create/mode`. A refusal is a 303 back to this path carrying `?problem=<reason>&field=<field>`, so the band names the field by its own label from `data/pages/assessment-create.ts` — never a column name. Coming back to this stage renders the saved values into the inputs. A child of the template's own address, so the template being copied is the route's fact; the read is `readLibraryTemplate()` with the session's id, the same author rule the library and the detail page apply. A signed-out visitor still gets the account gate (#618).
 
 - `/templates/relationship/[slug]/create/aspects` — **db**
   - capability: Stage 3 of the create flow (Aspects): the template's Aspects with both opinion labels, each collapsed to one row, opened in place, reworded, added to, removed from and reordered by drag before the relationship is created.
   - components: `components/assessment-flow`, `components/billing`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: The one interactive stage (#689). It reads the draft stages 1–2 wrote and the template through `readLibraryTemplate()`, and renders the working list: the draft's own when stage 3 has saved, the template's on a first visit (`lib/flow/aspects.ts::workingAspects` — absent means "untouched", an emptied array means "the person emptied it"). `components/assessment-flow/aspect-list.tsx` is the flow's only client component: a row opens in place, saves itself with `POST /assessment/new/aspects` (JSON, one small request per committed gesture) and collapses on success; the order is a pointer drag on the handle (pointer events, not HTML5 dnd, so a finger works) with Arrow Up/Down on the same handle as the keyboard path. Both write the list into the same draft cookie, which is what makes the order and the words survive a reload. **Add and remove are drawn here since #699**: the create asks `aspectsToWrite()` whether the list is still the version's copy (reworded only — ids and order stay the version's, and `db:verify` V4 compares it to the pin) or the creator's own (an added, removed or reordered Aspect — `aspects_authored_at` is stamped on the session and V4 validates the copy's structure instead). The last Aspect cannot be removed: a relationship asks at least one, and the create refuses an empty list (`aspects-none`) rather than writing an instance the model cannot parse.
 
 - `/templates/relationship/[slug]/create/commit` — **db**
@@ -522,7 +522,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/templates/relationship/[slug]/create/mode` — **db**
   - capability: Stage 2 of the create flow (Mode): the Mode (fixed at creation) and the Setting (the one choice a party may change later), over the draft stage 1 wrote.
   - components: `components/assessment-flow`, `components/billing`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/rows.ts`, `lib/db/template-library.ts` · an `/api` path — `data/billing-plans.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
   - notes: Saves, and hands over (#688, #689). It reads the draft cookie, refuses a missing draft or a signed-out viewer by sending them back to stage 1, and its form posts the Mode and the Setting to `POST /assessment/new/mode`, which merges the two choices into the same draft and answers a 303 to `…/create/aspects`. The create itself moved to stage 3's control when the approved flow put Aspects between Mode and the invite: this step no longer copies a template or writes any row. The page is a sibling of `/…/create` rather than a `?step=` switch because the flow is a sequence of stages. It renders the same `CreateRelationship` component and the same fixture as stages 1 and 3, so the steps cannot drift into three vocabularies.
 
 - `/templates/relationship/new` — **fixture**
@@ -763,7 +763,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/dashboard` — **fixture**
   - capability: The prototype dashboard shell: overview, affiliate and wallet panes, an earnings chart, my-quizzes and settings panes.
-  - files (17): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-edit-dialog.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
+  - files (18): `affiliate-dashboard.tsx`, `assessments-list.tsx`, `dashboard-header.tsx`, `dashboard-overview.tsx`, `dashboard-page.tsx`, `earnings-chart.tsx`, `my-quizzes-dashboard.tsx`, `recent-quizzes.tsx`, `relationship-aspects-note.tsx`, `relationship-cards.tsx`, `relationship-create.tsx`, `relationship-detail.tsx`, `relationship-edit-dialog.tsx`, `relationships-list.tsx`, `settings-dashboard.tsx`, `template-gallery.tsx`, `template-shelf.tsx`, `wallet-dashboard.tsx`
   - routes (4): `/assessments`, `/dashboard/relationships`, `/dashboard/relationships/[id]`, `/dashboard/templates`
   - notes: No route renders this domain any more — /dashboard/user is the account home since #164, and only dashboard-page.tsx imports the panes. A candidate to delete or to relayout, not a surface to pick yet.
 
