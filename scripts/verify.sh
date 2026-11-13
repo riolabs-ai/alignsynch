@@ -83,6 +83,21 @@
 # older tree still holds them during its `next build`, so a mixed fleet budgets one set of slots
 # rather than two that cannot see each other.
 #
+# SHARED BUILD CACHE — the slot buys ordering, not warmth, so the cache is shared
+# too (`scripts/build-cache.mjs`). `.next` is per-worktree, so every worktree used
+# to start `next build` with an empty Turbopack cache and recompile all 34 routes:
+# 70 worktrees held 64 separate caches totalling 27 GB. While the slot is held, the
+# step links `.next/cache` to `~/.cache/quizhub/next/<key>/` and unlinks it after,
+# so a worktree with nothing built yet reads what the last build left there — and a
+# dev server never opens a store a build holds. `pnpm typecheck` does the same for
+# its `tsc` buildinfo. The key is a hash of the `next` version, the `typescript`
+# version, the Node major and the `pnpm-lock.yaml` digest, so a bump lands on a
+# different directory and misses; every directory carries a `.cache-key` sentinel
+# and one that does not match is deleted, never read. Slot 1 uses the key's own
+# directory and the other slots use siblings, because the store is a single-writer
+# RocksDB and a second concurrent build on it fails rather than merges.
+# `node scripts/build-cache.mjs status` prints the key, the paths and their sizes.
+#
 # TEST RUNNERS — `pnpm test` is `vitest run` over `tests/**/*.test.ts` (#8): app-side
 # units that import `lib/quiz-cards.ts` and `data/searchdata.ts` through the `@/` alias.
 # The `node --test` suite over `.datacheck/scripts/__tests__/*.test.js` stays inside
@@ -387,8 +402,20 @@ gate_slot_release() { # idempotent: explicit release at the end of the section, 
 }
 
 build_in_slot() { # the slot is already held by the section; this is a guard, not a second lock
+  local rc
   gate_slot_acquire || return 1
+  # The shared cache is keyed per slot (scripts/build-cache.mjs): the store is a
+  # single-writer RocksDB, so the slot that is held decides which directory it opens.
+  export QUIZHUB_BUILD_SLOT="$GATE_SLOT"
+  node scripts/build-cache.mjs link
+  set +e
   pnpm build
+  rc=$?
+  set -e
+  # A dev server keeps its own cache under the same path and must never open the
+  # shared store a build holds; put the tree's own empty directory back.
+  node scripts/build-cache.mjs unlink || true
+  return "$rc"
 }
 
 trap gate_slot_release EXIT
@@ -517,7 +544,7 @@ gate_slot_acquire || fail
 if [ "$LANE" = "docs" ]; then
   run_step "whitespace (git diff --check)" check_whitespace || fail
 else
-  run_step "typecheck (next typegen && tsc --noEmit)" pnpm typecheck || fail
+  run_step "typecheck (next typegen && tsc --noEmit, shared buildinfo)" pnpm typecheck || fail
 fi
 
 # Biome formats markdown too, so this is the docs lane's real gate as well as

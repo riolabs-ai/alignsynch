@@ -229,26 +229,14 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "new",
       heading: "Start a relationship",
-      body: "Pick one of your templates. The relationship gets its own copy of the Aspects, so tuning them here never changes the template you started from.",
+      body: "Pick the template to start from — yours, or one the platform publishes. The flow opens in its own window, where you name the relationship, tune its Aspects and send it; the relationship gets its own copy of them, so tuning that never changes the template you started from.",
       items: [
         /** #841 part 2 — the header action's word, and the empty state's. */
         { id: "start", label: "Start a relationship" },
         { id: "choose", label: "Template" },
         { id: "submit", label: "Start the relationship" },
-        { id: "starting", label: "Starting…" },
-        { id: "created", label: "Started. Open it to configure the Aspects." },
-        { id: "open", label: "Open it" },
-        { id: "none", label: "You have no templates yet." },
+        { id: "none", label: "No template is published to start from yet." },
         { id: "new-template", label: "Create a template first" },
-        { id: "not-yours", label: "That template belongs to another account." },
-        { id: "no-such-template", label: "That template is not in this database." },
-        {
-          id: "not-editable",
-          label: "That template is archived — it cannot start a relationship.",
-        },
-        { id: "role-too-low", label: "Your role may not start a relationship." },
-        { id: "signed-out", label: "Your session ended. Sign in and try again." },
-        { id: "failed", label: "The relationship was not started." },
       ],
     },
     {

@@ -40,7 +40,14 @@
  */
 import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/lib/admin/act";
 import type { AdminAction } from "@/lib/admin/roles";
-import type { AlignmentSetting, Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
+import type { EditedRecord } from "@/lib/admin/template-draft";
+import type {
+  AlignmentSetting,
+  Aspect,
+  Assessment,
+  AssessmentMode,
+  PartyRole,
+} from "@/content/assessment";
 import { assessmentTemplateFromPayload } from "@/lib/db/rows";
 import { queryRows } from "@/lib/db/client";
 import { emailLooksDeliverable } from "@/lib/flow/resend";
@@ -161,8 +168,8 @@ function iso(value: Date | string): string {
 }
 
 /** An `Assessment`'s items as the editor's four fields — the shape the invalidation arithmetic takes. */
-function aspectsOf(record: Assessment): EditAspect[] {
-  return record.items.map((item) => ({
+function aspectsOf(items: readonly Aspect[]): EditAspect[] {
+  return items.map((item) => ({
     id: item.id,
     prompt: item.prompt,
     leftValue: item.leftValue ?? "",
@@ -416,12 +423,19 @@ export async function previewRelationshipEdit(input: {
     setting: state.setting,
     aspects: state.aspects,
   };
+  /*
+   * #943 — **the preview prices nothing the caller did not send.** An edit that omits its item list
+   * leaves the stored rows alone, so the "after" list is the "before" list: no Aspect can be
+   * discarded, reworded or added, and the cost list the screen draws is the cost of the fields the
+   * form actually holds. A pin move is the exception by construction — its payload *is* the list.
+   */
+  const appliedItems = pinned !== undefined ? pinned.items : input.draft.record.items;
   const after: EditSnapshot = {
     title: pinned?.title ?? input.draft.record.title,
     summary: pinned?.summary ?? input.draft.record.summary,
     mode: state.mode,
     setting: state.setting,
-    aspects: aspectsOf(pinned ?? input.draft.record),
+    aspects: appliedItems === undefined ? before.aspects : aspectsOf(appliedItems),
   };
 
   return previewOf({ before, after, state });
@@ -545,9 +559,25 @@ export async function editRelationship(
         // The pin's payload *is* the new content, so a pin move replaces the caller's fields
         // rather than merging with them — a half-pin (new Aspects, old title) would be a version
         // no row in `template_version` ever held.
-        const record: Assessment = pinnedTemplate ?? request.draft.record;
-        const afterAspects = aspectsOf(record);
-        const beforeAspects = aspectsOf(bound);
+        const record: EditedRecord = pinnedTemplate ?? request.draft.record;
+        /*
+         * #943 — **an omitted item list means *leave the stored rows exactly as they are*.**
+         *
+         * The relationship's edit dialog draws no Aspect control (#935): the detail screen's
+         * `AspectList` owns the list, its drag and its save. So the dialog posts no list at all,
+         * and the old shape — a snapshot of the rows the page read — was a second writer for one
+         * fact: reorder, then save the dialog without a reload, and the pre-reorder array was
+         * written back over the drag.
+         *
+         * `appliedItems === undefined` is therefore not a missing value, it is the answer: the
+         * "after" list is the "before" list, `aspectsMoved` cannot be true, and nothing in the
+         * `item` table or the pin is touched. A list that **is** supplied is applied in full, so
+         * a caller that means to send rows is unaffected.
+         */
+        const appliedItems =
+          pinnedTemplate !== undefined ? pinnedTemplate.items : request.draft.record.items;
+        const beforeAspects = aspectsOf(bound.items);
+        const afterAspects = appliedItems === undefined ? beforeAspects : aspectsOf(appliedItems);
 
         const before: EditSnapshot = {
           title: copy.title,
@@ -604,7 +634,16 @@ export async function editRelationship(
           );
         }
 
-        const aspectsMoved = !sameAspects(beforeAspects, afterAspects);
+        /*
+         * The list to write, or `null` when this edit names none. Narrowing the *items* rather
+         * than a boolean is what makes "an omitted list never reaches an INSERT" a property of the
+         * code instead of a claim about it.
+         */
+        const movedItems =
+          appliedItems !== undefined && !sameAspects(beforeAspects, afterAspects)
+            ? appliedItems
+            : null;
+        const aspectsMoved = movedItems !== null;
         const titleMoved = before.title !== after.title || before.summary !== after.summary;
         if (!aspectsMoved && !titleMoved && !pinned && !seatOrWindowIsAsked(request.draft)) {
           throw new MemberRefused(
@@ -638,11 +677,11 @@ export async function editRelationship(
         let versionNumber: number | null = null;
         let discarded = 0;
 
-        if (aspectsMoved) {
+        if (movedItems !== null) {
           // Replace, do not diff — the same rule `saveAspects` follows, for the same reason: a
           // stale Aspect that survives a removal is a question nobody can answer.
           await sql.query("DELETE FROM item WHERE record_id = $1", [rel.template_id]);
-          for (const [position, aspect] of record.items.entries()) {
+          for (const [position, aspect] of movedItems.entries()) {
             await sql.query(
               `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
                VALUES ($1, $2, $3, $4, 'score', $5, $6)`,
@@ -659,7 +698,7 @@ export async function editRelationship(
 
           const snapshot = await snapshotVersion(sql, {
             templateId: rel.template_id,
-            record: { ...record, title: after.title, summary: after.summary },
+            record: { ...record, items: movedItems, title: after.title, summary: after.summary },
             actorUserId: request.actorUserId,
             now,
           });
@@ -705,7 +744,7 @@ export async function editRelationship(
                 aspectId,
               ]);
             }
-            for (const [position, aspect] of record.items.entries()) {
+            for (const [position, aspect] of movedItems.entries()) {
               const existed = beforeAspects.some((was) => was.id === aspect.id);
               if (existed) {
                 await sql.query(

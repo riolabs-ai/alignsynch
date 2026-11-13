@@ -62,10 +62,9 @@ import { act, type ActResult, type ActSql, type ActTransactionRunner } from "@/l
 import type { AdminAction } from "@/lib/admin/roles";
 import type { AlignmentSetting, Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
-import { billingProvider } from "@/lib/billing";
 import { readActiveSubscription } from "@/lib/db/billing";
 import { queryRows } from "@/lib/db/client";
-import { readRelationshipPayment, openPaymentObligation } from "@/lib/db/relationship-payment";
+import { readRelationshipPayment } from "@/lib/db/relationship-payment";
 import {
   assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
@@ -672,25 +671,8 @@ export async function readMyRelationship(
 }
 
 /* ------------------------------------------------------------------ *
- * createRelationship
+ * freeRecordIdentity — the copy's id and slug
  * ------------------------------------------------------------------ */
-
-/** What creating a relationship is asked for: who, why, and which of the member's templates. */
-export interface CreateRelationshipRequest {
-  readonly actorUserId: string;
-  readonly reason: string;
-  readonly templateId: string;
-  /** A clock, injectable so a test can pin the relationship's instants. */
-  readonly now?: Date;
-}
-
-/** What a create answers, inside the audit row's `after`. */
-export interface CreatedRelationship {
-  readonly relationshipId: string;
-  readonly templateId: string;
-  readonly status: RelationshipStatus;
-  readonly version: number;
-}
 
 /** Six hex characters — enough to make a slug or id unique, short enough to read. */
 function suffix(): string {
@@ -790,164 +772,14 @@ export async function snapshotVersion(
   return { id, version };
 }
 
-/**
- * Start a relationship from one of the member's own templates.
- *
- * Three rows, in one transaction, and each has a job:
- *
- *   1. the **copy** (`record` + `item`) — the relationship's own Aspects, which the member will
- *      edit until they publish and which no other relationship shares;
- *   2. the **version** (`template_version`) — the immutable snapshot the relationship is bound to,
- *      so the session created at publish has something to be compared with (`V4`);
- *   3. the **relationship** at `draft` — the row the rest of the lifecycle moves.
- *
- * No session and no invitation: a draft is a configuration, and "the invitation goes out and the
- * session opens" is publish's sentence (`0030`). `relationship_member` records the initiator, the
- * same row `createInstanceFromTemplate` writes, so a coach seat could later be invited.
+/*
+ * **There is no member-side create (#913).** This module used to export a `createRelationship` that
+ * copied the template itself, and the relationships list called it — writing a relationship with no
+ * session and no seats, which meant the dashboard card's `Invite Members` had no pay modal to open
+ * and publishing it had no invitation to mint. The create flow's modal is the one writer
+ * (`lib/flow/store.ts::createInstanceFromTemplate`), because stage 4 is where the session and the
+ * staged invitation are written and stage 5 is what sends them.
  */
-export async function createRelationship(
-  request: CreateRelationshipRequest,
-  runner?: ActTransactionRunner,
-): Promise<ActResult<CreatedRelationship>> {
-  const now = request.now ?? new Date();
-  const relationshipId = `relationship-member-${suffix()}`;
-
-  return act<CreatedRelationship>(
-    {
-      actorUserId: request.actorUserId,
-      action: "relationship.create" satisfies AdminAction,
-      target: { table: "relationship", id: relationshipId },
-      reason: request.reason,
-      mutate: async (sql) => {
-        const source = await sql.query<{
-          id: string;
-          slug: string;
-          record_type: string;
-          status: string;
-          title: string;
-          summary: string;
-          owner_user_id: string | null;
-        }>(
-          `SELECT id, slug, record_type, status, title, summary, owner_user_id
-             FROM record
-            WHERE id = $1
-              AND NOT EXISTS (SELECT 1 FROM session own WHERE own.record_id = record.id)
-              FOR SHARE`,
-          [request.templateId],
-        );
-        const from = source.rows[0];
-        if (from === undefined || from.record_type !== "assessment") {
-          throw new MemberRefused(
-            "no-such-template",
-            `no template record holds the id "${request.templateId}" to start a relationship from`,
-          );
-        }
-        if (from.owner_user_id !== request.actorUserId) {
-          throw new MemberRefused(
-            "not-yours",
-            `template "${from.slug}" belongs to another account; a relationship starts from a template you own`,
-          );
-        }
-        const aspects = await sql.query<{ count: number }>(
-          "SELECT count(*)::int AS count FROM item WHERE record_id = $1",
-          [from.id],
-        );
-        if (Number(aspects.rows[0]?.count ?? 0) === 0) {
-          throw new MemberRefused(
-            "invalid-draft",
-            `template "${from.slug}" has no Aspects — a relationship with nothing to ask cannot be published`,
-          );
-        }
-
-        // The copy. Its id is derived from the relationship so the two are recognisable together,
-        // and its slug keeps the template's stem with the same short suffix.
-        const copy = await freeRecordIdentity(sql, from.slug, "member-config");
-        await sql.query(
-          `INSERT INTO record
-             (id, slug, record_type, status, date, title, summary,
-              author_user_id, owner_user_id, visibility)
-           VALUES ($1, $2, 'assessment', 'draft', $3, $4, $5, $6, $6, 'private')`,
-          [copy.id, copy.slug, now.toISOString(), from.title, from.summary, request.actorUserId],
-        );
-        await sql.query(
-          `INSERT INTO item (record_id, item_id, position, prompt, scale_kind, left_value, right_value)
-           SELECT $1, i.item_id, i.position, i.prompt, 'score', i.left_value, i.right_value
-             FROM item i WHERE i.record_id = $2 ORDER BY i.position`,
-          [copy.id, from.id],
-        );
-
-        const configRows = await sql.query<RecordRow & { id: string }>(
-          `SELECT id, slug, record_type, status, date, title, summary FROM record WHERE id = $1`,
-          [copy.id],
-        );
-        const configItems = await sql.query<ItemRow>(
-          `SELECT record_id, item_id, position, prompt, scale_kind, left_value, right_value
-             FROM item WHERE record_id = $1 ORDER BY position`,
-          [copy.id],
-        );
-        const configOptions = await sql.query<OptionRow>(
-          `SELECT record_id, item_id, option_id, position, text
-             FROM response_option WHERE record_id = $1 ORDER BY position`,
-          [copy.id],
-        );
-        const configRecord = configRows.rows[0];
-        if (configRecord === undefined) {
-          throw new Error("member/relationships: the copy was written and cannot be read back");
-        }
-        const config = assessmentTemplateFromRows({
-          record: configRecord,
-          items: configItems.rows,
-          options: configOptions.rows,
-        });
-
-        const version = await snapshotVersion(sql, {
-          templateId: copy.id,
-          record: config,
-          actorUserId: request.actorUserId,
-          now,
-        });
-
-        await sql.query(
-          `INSERT INTO relationship
-             (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
-              purchased_at, plan, created_at, status)
-           VALUES ($1, $2, $3, $4, NULL, $5, NULL, $5, 'draft')`,
-          [relationshipId, copy.id, version.id, request.actorUserId, now.toISOString()],
-        );
-        await sql.query(
-          `INSERT INTO relationship_member (relationship_id, user_id, role, joined_at)
-           VALUES ($1, $2, 'initiator', $3)`,
-          [relationshipId, request.actorUserId, now.toISOString()],
-        );
-
-        /*
-         * #619 — the payment obligation opens with the relationship, and names its one payer.
-         *
-         * Written here rather than at publish because the payer is fixed **at creation**: a second
-         * round the counterparty opens still bills this account, and a create that was abandoned
-         * leaves an obligation that simply never captures a method (which is `none`, not a charge).
-         * `ON CONFLICT DO NOTHING` inside the insert keeps a retried create a no-op.
-         */
-        await openPaymentObligation(sql, {
-          relationshipId,
-          payerUserId: request.actorUserId,
-          provider: billingProvider(),
-        });
-
-        return {
-          before: null,
-          after: {
-            relationshipId,
-            templateId: copy.id,
-            status: "draft" as const,
-            version: version.version,
-          },
-        };
-      },
-    },
-    runner,
-  );
-}
 
 /* ------------------------------------------------------------------ *
  * saveAspects

@@ -642,6 +642,15 @@ h2.section-title {
   color: var(--body);
   font-size: 11px;
 }
+.counselor-note {
+  border-left: 2px solid var(--green);
+  padding: 9px 11px;
+  background: #f5f8f1;
+  line-height: 1.5;
+}
+.counselor-note strong {
+  color: var(--blue);
+}
 
 .what-section {
   background: white;

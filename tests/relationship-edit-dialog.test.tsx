@@ -84,6 +84,38 @@ async function press(element: HTMLButtonElement): Promise<void> {
   });
 }
 
+/**
+ * Wait for an assertion to start passing, then let it speak for itself.
+ *
+ * **Radix restores focus asynchronously, and the assertion here used to read it synchronously.**
+ * `@radix-ui/react-focus-scope` registers focus return in the scope's unmount effect as
+ * `setTimeout(() => { … focus(previouslyFocusedElement ?? ownerDocument.body) }, 0)`, while
+ * `await act(…)` completes on React's own task. Which lands first is a scheduling race: on an
+ * unloaded machine the timer usually wins and the bare `expect` passed for months; on a loaded
+ * runner it loses, `document.activeElement` is still `<body>` when the assertion runs, and the
+ * suite goes red on a product that behaves correctly. Measured on `main` `cde3d2c4`: the same
+ * assertion failed 2 of 40 consecutive runs of this file with no code change between them.
+ *
+ * So the timing changes and the assertion does not: same `toBe(door)`, retried until the restore
+ * lands or the deadline passes, and the original `AssertionError` is rethrown when it does not —
+ * a focus path that genuinely stopped returning would still fail here, one second later.
+ */
+async function waitForFocus(assertion: () => void, timeoutMs = 1000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    try {
+      assertion();
+      return;
+    } catch (error) {
+      if (Date.now() >= deadline) throw error;
+      // One macrotask, inside `act`, so the pending restore timer gets its turn.
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    }
+  }
+}
+
 describe("#923 · the edit form is asked for, not mounted", () => {
   it("closed — the trigger is the only edit affordance, and the panel is not in the document", () => {
     mount();
@@ -126,12 +158,8 @@ describe("#923 · the edit form is asked for, not mounted", () => {
 
     expect(panel()).toBeNull();
     expect(document.querySelector('[role="dialog"]')).toBeNull();
-    // Radix restores focus in `onCloseAutoFocus`, which runs after the exit transition has
-    // already unmounted the content — so the panel is gone one tick before focus lands. Reading
-    // `document.activeElement` synchronously here raced the restore: measured red on three CI
-    // runs with `<body>` as the active element while every other assertion in this test passed,
-    // and green 3/3 on the same trees locally. The claim is unchanged, only awaited.
-    await expect.poll(() => document.activeElement).toBe(door);
+    // Same assertion as before; only its timing changed. See `waitForFocus` for why.
+    await waitForFocus(() => expect(document.activeElement).toBe(door));
     expect(door.getAttribute("aria-expanded")).toBe("false");
   });
 });
