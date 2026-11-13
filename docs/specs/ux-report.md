@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › The Gap report · prev [Answer input](ux-input.md) · next [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The Gap report · prev [Reference UX patterns](ux-reference-patterns.md) · next [Stage display](ux-stages.md)
 
 <!-- docs-nav:end -->
 
@@ -121,7 +121,7 @@ since Soft/Full change the verdict on the same numbers.
   three group headings ("Feelings and Wishes Differ", "Desires To Change", "Prediction Gaps &
   Analysis") — the headings are the spec's own words; the build adopts them instead of inventing
   "Basic / Prediction".
-- **docs/SPEC-DRIFT.md §1, §6** — Doubt gaps are not computable (frozen opinions, no history);
+- **docs/operations/spec-drift.md §1, §6** — Doubt gaps are not computable (frozen opinions, no history);
   quick win #4 "In synch" capitalisation; quick win #5 "name the gap groups".
 
 ## Implementation sketch (real files)
@@ -175,11 +175,11 @@ since Soft/Full change the verdict on the same numbers.
 
 ## Related
 
-- [PRD.md](../pay-to-complete/PRD.md) — the report is what the completion fee buys.
+- [PRD.md](pay-to-complete/PRD.md) — the report is what the completion fee buys.
 - [ux-input.md](ux-input.md) — the answers the report is derived from.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › The Gap report · prev [Answer input](ux-input.md) · next [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The Gap report · prev [Reference UX patterns](ux-reference-patterns.md) · next [Stage display](ux-stages.md)
 
 <!-- docs-nav:end -->

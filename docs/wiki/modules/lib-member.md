@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › lib/member · prev [lib/flow](lib-flow.md) · next [lib/admin](lib-admin.md)
+[Docs hub](../../README.md) › **Code wiki** › lib/member · prev [lib/flow](lib-flow.md) · next [Code wiki index](../README.md)
 
 <!-- docs-nav:end -->
 
@@ -72,6 +72,6 @@ operations that use them. `lib/relationship/status.ts` is the state machine —
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › lib/member · prev [lib/flow](lib-flow.md) · next [lib/admin](lib-admin.md)
+[Docs hub](../../README.md) › **Code wiki** › lib/member · prev [lib/flow](lib-flow.md) · next [Code wiki index](../README.md)
 
 <!-- docs-nav:end -->

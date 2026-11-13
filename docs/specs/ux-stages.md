@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md)
 
 <!-- docs-nav:end -->
 
@@ -128,7 +128,7 @@ testing every transition, the same discipline as `myInstanceStateOf`.
   from M3).
 - **WCAG 2.2** — https://www.w3.org/TR/WCAG22/ SC 1.3.1 (list semantics), 1.4.1 (never
   check-only completion), and ARIA `aria-current="step"`.
-- **docs/SPEC-DRIFT.md §3–4** — glossary says six stages, spec says eight, ruling #4.3 says four
+- **docs/operations/spec-drift.md §3–4** — glossary says six stages, spec says eight, ruling #4.3 says four
   relationship stages with "No Stage Bar visual until the four are derived and named";
   mockups are inspiration, not requirements (§9); UC150: the initiator never learns an invite
   expired.
@@ -189,11 +189,11 @@ testing every transition, the same discipline as `myInstanceStateOf`.
 
 ## Related
 
-- [STAGES.md](../STAGES.md) — the two ladders behind the four stages.
+- [STAGES.md](stages.md) — the two ladders behind the four stages.
 - [lifecycle.md](../diagrams/lifecycle.md) — the state chart these displays follow.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md)
 
 <!-- docs-nav:end -->

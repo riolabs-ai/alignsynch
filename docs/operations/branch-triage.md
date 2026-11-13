@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Branch triage · prev [QA links](QA-LINKS.md) · next [The demo](DEMO.md)
+[Docs hub](../README.md) › **Operations** › Branch triage · next [Two brands, one tree](brand-release.md)
 
 <!-- docs-nav:end -->
 
@@ -108,7 +108,7 @@ goes away. It is now `pnpm deploy:demo` that creates it, `pnpm deploy:prune` tha
 domain is a branch domain, not an alias, and the prune used to read only the alias table), and
 `curl -s https://demo.alignsynch.com/api/version` that says which build is behind it. `demo` is now
 merged up to `main` at `9ac71c38` and serving `1.15.0`; the rest is
-[`docs/DEPLOYING.md`](DEPLOYING.md#the-demo-alias-one-command-and-what-an-empty-one-means).
+[`docs/operations/deploying.md`](deploying.md#the-demo-alias-one-command-and-what-an-empty-one-means).
 
 ## What the sprawl measured
 
@@ -228,7 +228,7 @@ b6e4e178 feat(shell): the rail answers the viewport, the page titles match it, a
  data/pages/support.ts                       |  80 +++-----
  data/ui-registry.ts                         |  10 +
  db/migrations/0020_contact_message.sql      |  44 ++++
- docs/legal/PROVENANCE.md                    |  20 +-
+ docs/reference/provenance.md                    |  20 +-
  docs/ui-registry.md                         | 111 +++++-----
  lib/contact/ip.ts                           |  34 ++++
  lib/contact/mail.ts                         | 118 +++++++++++
@@ -279,7 +279,7 @@ b4d380be wip(brand): icons regenerated from the cropped AS mark, preserved from 
  content/brand.ts                             |  38 +++
  data/brands/alignsynch.ts                    |  17 +-
  data/media.ts                                |  28 ++
- docs/BRAND-RELEASE.md                        |  20 +-
+ docs/operations/brand-release.md                        |  20 +-
  docs/ui-registry.md                          |   3 +-
  lib/auth/marks.ts                            |  43 ++-
  lib/brand-icon.ts                            | 227 +++++++++++++--
@@ -443,6 +443,6 @@ copies are the pruner's business. Deleting a remote ref cannot remove a local br
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Branch triage · prev [QA links](QA-LINKS.md) · next [The demo](DEMO.md)
+[Docs hub](../README.md) › **Operations** › Branch triage · next [Two brands, one tree](brand-release.md)
 
 <!-- docs-nav:end -->

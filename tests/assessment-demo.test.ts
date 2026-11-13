@@ -18,7 +18,7 @@
  *      rendered, the plan-at-completion claim is stated, and the one way to a price is `/pricing`
  *      (#805, and the move that brought this page into `(marketing)`).
  *
- * The starter check is `docs/V1-RETIREMENT.md`'s demo row: the surface was `/v1/...` and marked
+ * The starter check is `docs/operations/history/V1-RETIREMENT.md`'s demo row: the surface was `/v1/...` and marked
  * **release** for launch criterion 5, so it moved here rather than being deleted.
  */
 import { readFileSync } from "node:fs";

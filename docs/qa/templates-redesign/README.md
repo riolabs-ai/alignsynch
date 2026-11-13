@@ -2,14 +2,14 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › AS2 templates catalogue visual QA · prev [AS2 home visual QA](../qa-as2-home/README.md) · next [Home review comments — the logo](../qa-home-comments/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 templates catalogue visual QA · prev [Template catalogue](../template-catalogue/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
 
 <!-- docs-nav:end -->
 
 The screenshots and measurements behind
-[`docs/specs/spec-as2-style-templates-redesign/`](../specs/spec-as2-style-templates-redesign/README.md),
+[`docs/specs/spec-as2-style-templates-redesign/`](../../specs/spec-as2-style-templates-redesign/README.md),
 the approved design package `/relationship-types` was rebuilt from. Same shape as
-[`../qa-as2-home/`](../qa-as2-home/README.md), which is the record for the home page's equivalent
+[`../qa-as2-home/`](../as2-home/README.md), which is the record for the home page's equivalent
 rebuild.
 
 ## What is here
@@ -30,10 +30,10 @@ rebuild.
 
 ```bash
 PORT=3011 pnpm dev                       # the gate owns 3000; any free port does
-node docs/qa-templates-redesign/capture.mjs \
+node docs/qa/templates-redesign/capture.mjs \
   http://localhost:3011/relationship-types \
   docs/qa-templates-redesign 1440x900 1024x800 768x900 390x844 360x780
-node docs/qa-templates-redesign/interact.mjs http://localhost:3011/relationship-types
+node docs/qa/templates-redesign/interact.mjs http://localhost:3011/relationship-types
 ```
 
 Both scripts shell out to `google-chrome --headless=new` and talk to it over `--remote-debugging-port`,
@@ -62,6 +62,6 @@ these images are therefore not the colours the AlignSynch deployment shows; the 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › AS2 templates catalogue visual QA · prev [AS2 home visual QA](../qa-as2-home/README.md) · next [Home review comments — the logo](../qa-home-comments/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 templates catalogue visual QA · prev [Template catalogue](../template-catalogue/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
 
 <!-- docs-nav:end -->

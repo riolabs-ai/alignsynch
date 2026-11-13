@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [Rail collapse handle](../qa-rail-handle/README.md) · next [Comments mockup, both placements](../qa-comments-mockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Brand lockup · prev [AS2 home visual QA](../as2-home/README.md) · next [Comments mockup, both placements](../comments-mockup/README.md)
 
 <!-- docs-nav:end -->
 
@@ -83,11 +83,11 @@ assertion — the run is in the PR.
 
 ## Related
 
-- [BRAND-RELEASE.md](../BRAND-RELEASE.md) — tokens + name + mark — the three things a brand ships.
-- [ui-registry.md](../ui-registry.md) — the surfaces whose chrome carries the lockup.
+- [BRAND-RELEASE.md](../../operations/brand-release.md) — tokens + name + mark — the three things a brand ships.
+- [ui-registry.md](../../ui-registry.md) — the surfaces whose chrome carries the lockup.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Brand lockup · prev [Rail collapse handle](../qa-rail-handle/README.md) · next [Comments mockup, both placements](../qa-comments-mockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Brand lockup · prev [AS2 home visual QA](../as2-home/README.md) · next [Comments mockup, both placements](../comments-mockup/README.md)
 
 <!-- docs-nav:end -->

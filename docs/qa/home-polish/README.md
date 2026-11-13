@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [Lockup 2rem](../qa-lockup-2rem/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Home hero polish · prev [Home review comments — the logo](../home-comments/README.md) · next [Lockup 2rem](../lockup-2rem/README.md)
 
 <!-- docs-nav:end -->
 
@@ -68,11 +68,11 @@ than a spacing change, which is the line the card draws.
 
 ## Related
 
-- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map the hero is a variation of.
-- [ui-registry.md](../ui-registry.md) — the home surface and its status.
+- [UI-MAPPING.md](../../specs/ui-mapping.md) — the surface map the hero is a variation of.
+- [ui-registry.md](../../ui-registry.md) — the home surface and its status.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Home hero polish · prev [Help two-column](../qa-help-two-column/README.md) · next [Lockup 2rem](../qa-lockup-2rem/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Home hero polish · prev [Home review comments — the logo](../home-comments/README.md) · next [Lockup 2rem](../lockup-2rem/README.md)
 
 <!-- docs-nav:end -->

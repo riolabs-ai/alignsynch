@@ -3,7 +3,7 @@
     "name": "details",
     "width": 390,
     "height": 844,
-    "file": "docs/qa-modal-mobile/details-390.png",
+    "file": "docs/qa/modal-mobile/details-390.png",
     "url": "/assessment/templates/assessment-relationship-basics/create",
     "shell": true,
     "overflowX": false,
@@ -87,7 +87,7 @@
         "w": 390,
         "h": 500
       },
-      "file": "docs/qa-modal-mobile/details-390x500.png",
+      "file": "docs/qa/modal-mobile/details-390x500.png",
       "overflowX": false,
       "docScrollWidth": 390,
       "scroller": {
@@ -131,7 +131,7 @@
     "name": "settings",
     "width": 390,
     "height": 844,
-    "file": "docs/qa-modal-mobile/settings-390.png",
+    "file": "docs/qa/modal-mobile/settings-390.png",
     "url": "/assessment/templates/assessment-relationship-basics/create/mode",
     "shell": true,
     "overflowX": false,
@@ -215,7 +215,7 @@
         "w": 390,
         "h": 500
       },
-      "file": "docs/qa-modal-mobile/settings-390x500.png",
+      "file": "docs/qa/modal-mobile/settings-390x500.png",
       "overflowX": false,
       "docScrollWidth": 390,
       "scroller": {
@@ -259,7 +259,7 @@
     "name": "aspects",
     "width": 390,
     "height": 844,
-    "file": "docs/qa-modal-mobile/aspects-390.png",
+    "file": "docs/qa/modal-mobile/aspects-390.png",
     "url": "/assessment/templates/assessment-relationship-basics/create/aspects",
     "shell": true,
     "overflowX": false,
@@ -463,7 +463,7 @@
         "w": 390,
         "h": 500
       },
-      "file": "docs/qa-modal-mobile/aspects-390x500.png",
+      "file": "docs/qa/modal-mobile/aspects-390x500.png",
       "overflowX": false,
       "docScrollWidth": 390,
       "scroller": {
@@ -537,7 +537,7 @@
     "name": "invite",
     "width": 390,
     "height": 844,
-    "file": "docs/qa-modal-mobile/invite-390.png",
+    "file": "docs/qa/modal-mobile/invite-390.png",
     "url": "/assessment/templates/assessment-relationship-basics/create/commit",
     "shell": true,
     "overflowX": false,
@@ -633,7 +633,7 @@
         "w": 390,
         "h": 500
       },
-      "file": "docs/qa-modal-mobile/invite-390x500.png",
+      "file": "docs/qa/modal-mobile/invite-390x500.png",
       "overflowX": false,
       "docScrollWidth": 390,
       "scroller": {
@@ -683,7 +683,7 @@
     "name": "account-gate",
     "width": 390,
     "height": 844,
-    "file": "docs/qa-modal-mobile/account-gate-390.png",
+    "file": "docs/qa/modal-mobile/account-gate-390.png",
     "url": "/assessment/templates/assessment-relationship-basics/create/account?instance=1bcfc9a4-ba09-4a26-9d24-8bc1756384d8",
     "shell": true,
     "overflowX": false,
@@ -774,7 +774,7 @@
         "w": 390,
         "h": 500
       },
-      "file": "docs/qa-modal-mobile/account-gate-390x500.png",
+      "file": "docs/qa/modal-mobile/account-gate-390x500.png",
       "overflowX": false,
       "docScrollWidth": 390,
       "scroller": {

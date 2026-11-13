@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Payer-present state · prev [Payer copy inventory](COPY-INVENTORY.md) · next [Billing](../billing.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Payer-present state · prev [Payer copy inventory](COPY-INVENTORY.md) · next [PRD](PRD.md)
 
 <!-- docs-nav:end -->
 
@@ -18,7 +18,7 @@ complement — the states, not the labels.
 
 ## 1. The finding
 
-`docs/pay-to-complete/SPEC.md` §9 is titled, verbatim:
+`docs/specs/pay-to-complete/SPEC.md` §9 is titled, verbatim:
 
 > ## 9. What remains in PR #634
 
@@ -43,9 +43,9 @@ Three measurements, so this is not an opinion:
 The belief that §9 holds the payer-present copy comes from two sentences that mean something
 narrower than they read:
 
-- `docs/pay-to-complete/README.md:40` — "remaining work is [SPEC §9](SPEC.md#9-what-remains-in-pr-634):
+- `docs/specs/pay-to-complete/README.md:40` — "remaining work is [SPEC §9](SPEC.md#9-what-remains-in-pr-634):
   the payer's UI." True as a pointer to the work, false as a pointer to copy.
-- `docs/pay-to-complete/COPY-INVENTORY.md:225` — "The §9 payer-present state (`Approve payment`, the
+- `docs/specs/pay-to-complete/COPY-INVENTORY.md:225` — "The §9 payer-present state (`Approve payment`, the
   band's sentence) has no shipped copy at all". That is the correct reading, and it is why the
   mockup's band is marked _proposed_ in the mockup's own ledger
   (`mockup-pay-to-complete-v2-final.html:568` — "SPEC §9 copy — this is the ask").
@@ -211,12 +211,12 @@ new copy.
 
 ```bash
 export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
-sed -n '164,176p' docs/pay-to-complete/SPEC.md        # §1 — §9 is a PR checklist
+sed -n '164,176p' docs/specs/pay-to-complete/SPEC.md        # §1 — §9 is a PR checklist
 grep -rIl "3DS\|3-D Secure" . | grep -v node_modules  # §1 — zero files
 grep -n "PAYMENT_REFUSALS" -A8 lib/flow/payment.ts     # §1 — six codes
 grep -n "ChargeOutcome" -A8 lib/billing/types.ts       # §1 — three codes
 grep -n "PAYMENT_JOB_KINDS" lib/flow/payment-jobs.ts   # §1 — four jobs
-sed -n '135,147p' docs/pay-to-complete/ADR.md          # §5 — ADR-8 verbatim
+sed -n '135,147p' docs/specs/pay-to-complete/ADR.md          # §5 — ADR-8 verbatim
 ```
 
 A row in §4 stays true only while its grep returns nothing: if a string appears in the tree, move it
@@ -224,6 +224,6 @@ into §3.1 with its `file:line` rather than editing the absence claim.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Payer-present state · prev [Payer copy inventory](COPY-INVENTORY.md) · next [Billing](../billing.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Payer-present state · prev [Payer copy inventory](COPY-INVENTORY.md) · next [PRD](PRD.md)
 
 <!-- docs-nav:end -->

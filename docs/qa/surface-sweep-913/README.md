@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Surface sweep, #913 · prev [Flow validation, 2026-11-07](../qa-flow-validation/2026-11-07.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Surface sweep, #913 · prev [Stage 5, both states](../stage5/README.md) · next [swiper 12](../swiper-12/README.md)
 
 <!-- docs-nav:end -->
 
@@ -91,6 +91,6 @@ still or the line that backs it.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Surface sweep, #913 · prev [Flow validation, 2026-11-07](../qa-flow-validation/2026-11-07.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Surface sweep, #913 · prev [Stage 5, both states](../stage5/README.md) · next [swiper 12](../swiper-12/README.md)
 
 <!-- docs-nav:end -->

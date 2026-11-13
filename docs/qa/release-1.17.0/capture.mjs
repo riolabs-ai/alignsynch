@@ -4,7 +4,7 @@
  * the v1.17.0 release notes).
  *
  * No Playwright, no Puppeteer — the same headless-Chrome-over-CDP loop every other `docs/qa-*` folder
- * uses (`docs/qa-as2-home/capture.mjs` is the ancestor). Node 24 has a global `WebSocket`, so this is
+ * uses (`docs/qa/as2-home/capture.mjs` is the ancestor). Node 24 has a global `WebSocket`, so this is
  * a hand-rolled session: attach to the page target, send commands with an incrementing id, await the
  * matching response.
  *
@@ -14,13 +14,13 @@
  * to it and captures the whole page — `Page.captureScreenshot` with a clip below the fold returns a
  * blank frame, and `captureBeyondViewport` alone still frames only the viewport.
  *
- * Usage: node docs/qa-release-1.17.0/capture.mjs <base-url> <route> <out.png> [width]
+ * Usage: node docs/qa/release-1.17.0/capture.mjs <base-url> <route> <out.png> [width]
  */
 import { writeFileSync } from "node:fs";
 
 const BASE = process.argv[2] ?? "http://127.0.0.1:3413";
 const ROUTE = process.argv[3] ?? "/relationship-templates";
-const OUT = process.argv[4] ?? "docs/qa-release-1.17.0/relationship-templates-1440.png";
+const OUT = process.argv[4] ?? "docs/qa/release-1.17.0/relationship-templates-1440.png";
 const WIDTH = Number(process.argv[5] ?? 1440);
 const DEBUG_PORT = 9333;
 

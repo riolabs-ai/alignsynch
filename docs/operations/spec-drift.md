@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Spec drift · prev [UI/UX audit](UI-UX-AUDIT.md) · next [Bundles](BUNDLES.md)
+[Docs hub](../README.md) › **Operations** › Spec drift · prev [Resend inbound](resend-inbound.md)
 
 <!-- docs-nav:end -->
 
@@ -180,7 +180,7 @@ kinds — it was compared as a computation on real rows, not as the presence of 
 the spec promises items it never defines, this file says so instead of inventing them. Where the
 build is better than the spec, it says that too.
 
-Mockups from the specification are in `docs/reference/mockups/`, indexed by `docs/REFERENCE-MOCKUPS.md`.
+Mockups from the specification are in `docs/reference/mockups/`, indexed by `docs/reference/mockup-index.md`.
 They are inspiration, not requirements.
 
 The research behind the recommendations above lives in `docs/specs/`, one file per question, indexed
@@ -188,11 +188,11 @@ by `docs/specs/README.md`.
 
 ## Related
 
-- [RELATIONSHIP-TYPES-SOURCE.md](RELATIONSHIP-TYPES-SOURCE.md) — the owner's own catalogue, which the build is measured against.
-- [README.md](specs/README.md) — the research specifications produced by this drift review.
+- [RELATIONSHIP-TYPES-SOURCE.md](../reference/relationship-types-source.md) — the owner's own catalogue, which the build is measured against.
+- [README.md](../specs/README.md) — the research specifications produced by this drift review.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Spec drift · prev [UI/UX audit](UI-UX-AUDIT.md) · next [Bundles](BUNDLES.md)
+[Docs hub](../README.md) › **Operations** › Spec drift · prev [Resend inbound](resend-inbound.md)
 
 <!-- docs-nav:end -->

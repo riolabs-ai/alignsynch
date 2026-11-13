@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Template doctrine · prev [Stages](STAGES.md) · next [Two brands, one tree](BRAND-RELEASE.md)
+[Docs hub](../README.md) › **Guides** › Template doctrine · prev [MiMo harness guide](mimo-guide.md)
 
 <!-- docs-nav:end -->
 
@@ -16,7 +16,7 @@ This page turns that into a decision rule. It is normative: a card that adds a s
 questions below before it writes a component, and a card that cannot answer them says so in its handoff
 instead of guessing.
 
-Two worked tables of the answer, per file: [UI-DIVERGENCE.md](UI-DIVERGENCE.md) audits every bespoke surface, and [UI-MAPPING.md](UI-MAPPING.md) maps every quiz ancestor to its AlignSynch variation with the measured mobile mechanics.
+Two worked tables of the answer, per file: [UI-DIVERGENCE.md](../specs/ui-divergence.md) audits every bespoke surface, and [UI-MAPPING.md](../specs/ui-mapping.md) maps every quiz ancestor to its AlignSynch variation with the measured mobile mechanics.
 
 ## This repo is a base core webapp
 
@@ -26,7 +26,7 @@ routes under both brands so neither moves without the other noticing. The form-b
 owner names — a questionnaire in, an answer out — is the third, not built yet.
 
 A brand is tokens + name + mark, and how a brand version is released without breaking that parity is
-[`BRAND-RELEASE.md`](BRAND-RELEASE.md): edit the record, regenerate the icon set, rewrite the parity
+[`BRAND-RELEASE.md`](../operations/brand-release.md): edit the record, regenerate the icon set, rewrite the parity
 manifest with a reason, both-brand CI green.
 
 The core is the product. A template is a configuration of it: a brand record, a copy fixture set, and
@@ -120,7 +120,7 @@ Worth stating because the word is overloaded, and a card that confuses them asks
 
 - **a product expression** — AlignSynch, QuizHub, a future form-based product. This page.
 - **a content template** — `content/quiz.ts` or `content/assessment.ts`, the two content models that
-  both import `content/record.ts` (`docs/DATA-MODEL.md`, #128).
+  both import `content/record.ts` (`docs/reference/data-model.md`, #128).
 - **an assessment template** — a fixture record in `data/assessments.ts` that an instance is copied
   from.
 
@@ -183,6 +183,6 @@ exactly the deletion this page forbids.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Template doctrine · prev [Stages](STAGES.md) · next [Two brands, one tree](BRAND-RELEASE.md)
+[Docs hub](../README.md) › **Guides** › Template doctrine · prev [MiMo harness guide](mimo-guide.md)
 
 <!-- docs-nav:end -->

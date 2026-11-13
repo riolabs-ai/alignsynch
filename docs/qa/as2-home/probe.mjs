@@ -16,12 +16,12 @@
  * `prefers-reduced-motion` is honoured by the page (`html:has(.home-anchors)` scrolls smoothly), so
  * the probe waits for the scroll to settle rather than reading a mid-animation rect.
  *
- * Usage: node docs/qa-as2-home/probe.mjs <base-url> <out-file>
+ * Usage: node docs/qa/as2-home/probe.mjs <base-url> <out-file>
  */
 import { writeFileSync } from "node:fs";
 
 const BASE = process.argv[2] ?? "http://127.0.0.1:3199";
-const OUT = process.argv[3] ?? "docs/qa-as2-home/measurements.json";
+const OUT = process.argv[3] ?? "docs/qa/as2-home/measurements.json";
 const DEBUG_PORT = 9333;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

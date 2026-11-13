@@ -84,7 +84,7 @@ export function RelationshipEditPanel({
    * #795 — **which column this panel is drawn in.** `page` (the default, and what the console's
    * staff mount keeps) is the shipped form: a `text-2xl` `CardTitle` and two-column field rows.
    * `panel` is the member detail screen's 320 px actions rail, where the artifact
-   * (`docs/mockups/one-card-one-detail-v2.html` §5) draws every working panel at the shell's
+   * (`docs/reference/mockups/one-card-one-detail-v2.html` §5) draws every working panel at the shell's
    * `text-base` heading and a 24 px title would be the size that makes two pages read as two
    * products. The field rows collapse to one column for the same reason: `sm:` reads the viewport,
    * not this rail, so two 130 px inputs is what `sm:grid-cols-2` would produce here.

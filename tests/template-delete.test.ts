@@ -18,7 +18,7 @@
  *                    (`0001_content_model.sql`), and a relationship's own copy is a different
  *                    record reached through `relationship.template_id` — never this row.
  *
- * **The client is a stub, on purpose.** The gate is database-free (`docs/GATE.md`), so the SQL is
+ * **The client is a stub, on purpose.** The gate is database-free (`docs/operations/gate.md`), so the SQL is
  * driven through a recording `PoolClient` and the claims are asserted on the statements it issued.
  * The live proof — the rows really gone, a started relationship still resolving its title and its
  * Aspects — is `tests/template-delete-live.test.ts`, which runs against a branch.

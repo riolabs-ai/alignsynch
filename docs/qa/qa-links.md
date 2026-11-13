@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › QA links · prev [Orchestration rules](ORCHESTRATION.md) · next [Branch triage](BRANCH-TRIAGE.md)
+[Docs hub](../README.md) › **Records & QA** › QA links · prev [P4 dogfood pass](qa-dogfood-p4.md) · next [Rail collapse handle](rail-handle/README.md)
 
 <!-- docs-nav:end -->
 
@@ -108,7 +108,7 @@ qa:links · 4861f176..610dfff2 · 2 commits · 56 files changed · http://localh
 
 — not a route — no QA link
 - `app/globals.css` (#853) — global — every route renders through it; no single link
-- `docs/billing.md` (#835) — documentation
+- `docs/reference/billing.md` (#835) — documentation
 - `tests/billing-gate.test.ts` (#835) — a test
 ...
 
@@ -147,6 +147,6 @@ listed under `— removed —`: there is nothing to click, but the range did tou
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › QA links · prev [Orchestration rules](ORCHESTRATION.md) · next [Branch triage](BRANCH-TRIAGE.md)
+[Docs hub](../README.md) › **Records & QA** › QA links · prev [P4 dogfood pass](qa-dogfood-p4.md) · next [Rail collapse handle](rail-handle/README.md)
 
 <!-- docs-nav:end -->

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Releasing · prev [Deploying](DEPLOYING.md) · next [Orchestration rules](ORCHESTRATION.md)
+[Docs hub](../README.md) › **Operations** › Releasing · prev [Release-train card template](release-train.md) · next [Repo layers](repo-layers.md)
 
 <!-- docs-nav:end -->
 
@@ -184,7 +184,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://alignsynch.com/       # 200
 version at the tag's commit is proof that production is serving the tagged tree — nothing is
 inferred. `STALE` is a deployment that has to be promoted, not a check to re-run until it agrees:
 [`main → production`](#main--production-promoting-a-release) is that procedure, and
-[`DEPLOYING.md`](DEPLOYING.md) is why the build policy is shaped the way it is. Then the party rules,
+[`DEPLOYING.md`](deploying.md) is why the build policy is shaped the way it is. Then the party rules,
 read back from the database the deploy is actually using:
 
 ```bash
@@ -215,7 +215,7 @@ integration creates production deployments, the push that merges a PR is the dep
 production serves `main`'s tip once the build finishes (measured on 2026-11-03 — see
 [`main → production`](#main--production-promoting-a-release) below). The API promotion in that
 section is the deliberate path for everything a merge does not cover, and
-[`DEPLOYING.md`](DEPLOYING.md) is why the build policy is shaped the way it is.
+[`DEPLOYING.md`](deploying.md) is why the build policy is shaped the way it is.
 
 ## Prerequisites
 
@@ -330,7 +330,7 @@ cut, and the mode's usage text says what that would need.
 
 ## The blog is a view of the entry, and the gate keeps it one
 
-[`docs/changelog/`](changelog/README.md) tells the same releases as pages: what was painful before,
+[`docs/changelog/`](../changelog/README.md) tells the same releases as pages: what was painful before,
 what the release does now, a diagram, the screens it landed on. It **retypes nothing** the entry
 already says — the date, the tag, the entry's own sections and the whole Known limits block are
 copied into each page by `scripts/changelog-view.mjs`, and `pnpm changelog:check` (a step in
@@ -614,7 +614,7 @@ curl -s https://alignsynch.com/api/version      # {"version":"…","commit":"…
 Both read `GET /api/version`, which the build answers from the `APP_VERSION` and `APP_COMMIT` values
 `next.config.mjs` bakes in — no token, no inference. A `READY` deployment whose alias still points
 at the previous build answers `STALE`, and the fix is to promote the new deployment rather than to
-build a third one ([`DEPLOYING.md`](DEPLOYING.md), _When the check says `STALE`_).
+build a third one ([`DEPLOYING.md`](deploying.md), _When the check says `STALE`_).
 
 ### 5. When it has to be undone
 
@@ -686,6 +686,6 @@ the gap it prints.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Releasing · prev [Deploying](DEPLOYING.md) · next [Orchestration rules](ORCHESTRATION.md)
+[Docs hub](../README.md) › **Operations** › Releasing · prev [Release-train card template](release-train.md) · next [Repo layers](repo-layers.md)
 
 <!-- docs-nav:end -->

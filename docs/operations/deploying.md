@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Deploying · next [Releasing](RELEASING.md)
+[Docs hub](../README.md) › **Operations** › Deploying · prev [Two brands, one tree](brand-release.md) · next [The gate](gate.md)
 
 <!-- docs-nav:end -->
 
@@ -11,13 +11,13 @@ Whether a **push** produces that build is a setting on the project, not a proper
 2026-11-01 the project reported deployment creation switched off; on 2026-11-03 two merges to `main`
 were serving within about two minutes each. So this page documents both the policy of record (the
 `ignoreCommand` below) and the deliberate promotion path
-([`RELEASING.md`](RELEASING.md#main--production-promoting-a-release)), and "did that merge deploy?"
+([`RELEASING.md`](releasing.md#main--production-promoting-a-release)), and "did that merge deploy?"
 is answered by `scripts/deploy-check.mjs`, never by assumption. Two things about deployment are easy
 to get wrong, and both have already cost a day: **what a deployment is allowed to build**, and
 **whether what is serving is what merged**.
 
 Neither is visible to `bash scripts/verify.sh`. The gate is network-free by contract — it "never
-opens a connection" ([`AGENTS.md`](../AGENTS.md)) — so it cannot see a deployment, and a green gate
+opens a connection" ([`AGENTS.md`](../../AGENTS.md)) — so it cannot see a deployment, and a green gate
 is not a claim about production. It is a claim about the tree.
 
 ## The runtime: Node 24, in four places
@@ -25,12 +25,12 @@ is not a claim about production. It is a claim about the tree.
 **Production, CI and every `pnpm` command in this tree run Node 24.** That is one decision recorded in
 four places, and a change that touches one has to touch all four:
 
-| Place                                        | States                                   | Read by                                                                                                                           |
-| -------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [`.nvmrc`](../.nvmrc)                        | `24`                                     | `scripts/verify.sh` (runtime parity: it refuses to gate a shell on another major) and `actions/setup-node` in all three workflows |
-| `package.json` → `engines.node`              | `24.x`                                   | Vercel's build image, `pnpm install`, and anyone asking what the tree supports                                                    |
-| [`.github/workflows/`](../.github/workflows) | `node-version-file: .nvmrc` — no literal | GitHub Actions; three workflows set Node up and each reads the file                                                               |
-| the Vercel project `alignsynch`              | `nodeVersion: "24.x"`                    | every deployment of this repository                                                                                               |
+| Place                                           | States                                   | Read by                                                                                                                           |
+| ----------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| [`.nvmrc`](../../.nvmrc)                        | `24`                                     | `scripts/verify.sh` (runtime parity: it refuses to gate a shell on another major) and `actions/setup-node` in all three workflows |
+| `package.json` → `engines.node`                 | `24.x`                                   | Vercel's build image, `pnpm install`, and anyone asking what the tree supports                                                    |
+| [`.github/workflows/`](../../.github/workflows) | `node-version-file: .nvmrc` — no literal | GitHub Actions; three workflows set Node up and each reads the file                                                               |
+| the Vercel project `alignsynch`                 | `nodeVersion: "24.x"`                    | every deployment of this repository                                                                                               |
 
 Until #682 the last row said **26.x** while the other three said 24, so a green check and a green gate
 were evidence about a runtime production did not use: a dependency could pass CI and fail in
@@ -47,7 +47,7 @@ is now a card with a gate run on it rather than something the platform does to t
 
 The two halves are verified differently, and the difference is the point:
 
-- **the three files are a unit test.** [`tests/runtime-pin.test.ts`](../tests/runtime-pin.test.ts) fails
+- **the three files are a unit test.** [`tests/runtime-pin.test.ts`](../../tests/runtime-pin.test.ts) fails
   when `.nvmrc`, `engines.node` and the workflows stop agreeing, so the invariant is enforced by the
   gate instead of by this paragraph.
 - **the project setting is not in the repository**, so nothing offline can read it. It is `nodeVersion`
@@ -72,7 +72,7 @@ built by 24 and agrees with it.
 
 ## 1. What a deployment is allowed to build: production, plus one branch named in the file
 
-The rule lives in [`vercel.json`](../vercel.json), in one `ignoreCommand`:
+The rule lives in [`vercel.json`](../../vercel.json), in one `ignoreCommand`:
 
 ```json
 "ignoreCommand": "if [ \"${VERCEL_ENV:-}\" = production ] || [ \"${VERCEL_GIT_COMMIT_REF:-}\" = demo ]; then exit 1; fi; exit 0"
@@ -172,7 +172,7 @@ opt-in is one command: [`scripts/preview.mjs`](#a-preview-for-review-one-command
 ### A preview for review: one command, and the toolbar comes with it
 
 The project's own Ignored Build Step string already ended with the answer, before this script
-existed: _"Run `vercel deploy` by hand if you need a preview."_ [`scripts/preview.mjs`](../scripts/preview.mjs)
+existed: _"Run `vercel deploy` by hand if you need a preview."_ [`scripts/preview.mjs`](../../scripts/preview.mjs)
 is that sentence with the parts a hand-run gets wrong made mechanical — it links the checkout when
 `.vercel/project.json` is missing, deploys with `--yes`, takes the URL out of the CLI's own output,
 and refuses `--prod` outright so a preview can never become a production deployment:
@@ -250,7 +250,7 @@ pnpm deploy:demo                 # build ref demo from GitHub, wait for READY, p
 pnpm deploy:demo -- --verify     # …and read the alias's own /api/version as the proof
 ```
 
-[`scripts/deploy-demo.mjs`](../scripts/deploy-demo.mjs) asks the API to build the **git ref**
+[`scripts/deploy-demo.mjs`](../../scripts/deploy-demo.mjs) asks the API to build the **git ref**
 (`POST /v13/deployments` with `gitSource`), which is the request the GitHub integration would have
 made — never this tree. Three things follow, and each is why the shape is that one: the deployment
 carries `meta.githubCommitRef: demo`, so the branch domain follows it with no `vercel alias` call; the
@@ -306,7 +306,7 @@ switched off — so nothing has been created since.
 `chore(release): 1.3.0`, with no promotion call made from this machine and no deploy hook in the
 tree. What the 2026-11-01 paragraph describes is therefore a dashboard state that has already
 changed once, which is exactly why the promotion procedure in
-[`RELEASING.md`](RELEASING.md#main--production-promoting-a-release) begins by measuring what
+[`RELEASING.md`](releasing.md#main--production-promoting-a-release) begins by measuring what
 production serves rather than trusting either reading. The `ignoreCommand` below is the effective
 gate in this state: it is what decides whether the deployment a push created builds at all.
 
@@ -376,7 +376,7 @@ deploys:    66 / 100 in the last 24h — 34 remaining
   while production is three merges behind is the reading that costs a day.
 
 The served commit comes from `GET <url>/api/version`
-([`app/api/version/route.ts`](../app/api/version/route.ts)), which answers with the `APP_VERSION`
+([`app/api/version/route.ts`](../../app/api/version/route.ts)), which answers with the `APP_VERSION`
 and `APP_COMMIT` values `next.config.mjs` bakes in at build time. It needs no token, so the check
 runs anywhere; the endpoint is public and carries nothing that the public repository does not.
 
@@ -409,7 +409,7 @@ after a merge, or from a scheduled job.
 ## 3. Environment variables: the file is the source of truth, `pnpm env:sync` pushes it
 
 Vercel's environment is written from a local env file by
-[`scripts/env-sync.mjs`](../scripts/env-sync.mjs) (`pnpm env:sync`), not by hand in the dashboard.
+[`scripts/env-sync.mjs`](../../scripts/env-sync.mjs) (`pnpm env:sync`), not by hand in the dashboard.
 The file is the source of truth and `.env*` is gitignored, so the script is the only thing that
 talks to Vercel and the only way to say what a target holds. It prints **key names only** — never a
 value, never a prefix of one — on every path, including errors, so its output can be pasted into a
@@ -502,6 +502,6 @@ contract. Run it when Function Storage passes roughly 70 %, or before a release 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Deploying · next [Releasing](RELEASING.md)
+[Docs hub](../README.md) › **Operations** › Deploying · prev [Two brands, one tree](brand-release.md) · next [The gate](gate.md)
 
 <!-- docs-nav:end -->

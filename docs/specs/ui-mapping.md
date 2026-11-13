@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Quiz-surface map · prev [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md) · next [Divergence table](UI-DIVERGENCE.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Quiz-surface map · prev [Divergence table](ui-divergence.md) · next [UI/UX audit](ui-ux-audit.md)
 
 <!-- docs-nav:end -->
 
@@ -18,9 +18,9 @@ path that does not exist under that spelling at `87663a5e`.** Seven of those fif
 built under another name, and eight are genuinely missing. A card that starts from the guessed name
 will rebuild something that is already there, which is the defect this page exists to prevent.
 
-The rule this page enforces is [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md)'s decision order: name
+The rule this page enforces is [TEMPLATE-DOCTRINE.md](../guides/template-doctrine.md)'s decision order: name
 the surface you reused (the file), name the axis that changes, and only then write the generic new
-surface. The per-file audit of bespoke composition is [UI-DIVERGENCE.md](UI-DIVERGENCE.md); this
+surface. The per-file audit of bespoke composition is [UI-DIVERGENCE.md](ui-divergence.md); this
 page is the quiz→alignment axis of the same question.
 
 ## The rule: every quiz file is a read-only ancestor
@@ -335,6 +335,6 @@ grep -rln "requireQuizProduct" app | sort
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Quiz-surface map · prev [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md) · next [Divergence table](UI-DIVERGENCE.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Quiz-surface map · prev [Divergence table](ui-divergence.md) · next [UI/UX audit](ui-ux-audit.md)
 
 <!-- docs-nav:end -->

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [Request → release](WORKFLOW.md)
+[Docs hub](../README.md) › **Operations** › Repo layers · prev [Releasing](releasing.md) · next [Resend inbound](resend-inbound.md)
 
 <!-- docs-nav:end -->
 
@@ -106,7 +106,7 @@ for the same reason: a `content/` or `data/` edit changes rendered text exactly 
 component edit does, and a lane that dropped it would hand a green local gate to a red CI
 run. The docs lane skips it — no rendered output depends on prose. Updating a hash is
 `pnpm parity:update --reason "…"` and a stated reason in the PR:
-[`tests/parity/README.md`](../tests/parity/README.md).
+[`tests/parity/README.md`](../../tests/parity/README.md).
 
 Two deviations from the layer table, both in the same direction — a lane may be
 **deeper** than its row, never shallower:
@@ -167,7 +167,7 @@ internal depths of one script, not separate jobs:
 - CI has no contention to relieve. The lanes were built because eight local
   workers compiling at once saturated this box; on a GitHub runner the win is
   the required check's wall time (19 s docs vs 59 s code, measured in
-  `docs/GATE.md`), not throughput — which is another reason it belongs inside
+  `docs/operations/gate.md`), not throughput — which is another reason it belongs inside
   the job rather than in a second one.
 
 **Why two brands (#171).** The repo ships two products from one tree and CI compiled one of
@@ -250,7 +250,7 @@ bash -c 'source scripts/gate-lanes.sh; lane_of_path components/x.tsx'   # code
 ps -eo pid,etimes,args | grep 'next build' | grep -v grep
 ```
 
-Measured lane costs and how to re-measure them are in `docs/GATE.md`.
+Measured lane costs and how to re-measure them are in `docs/operations/gate.md`.
 
 ## What this does not fix
 
@@ -267,6 +267,6 @@ Measured lane costs and how to re-measure them are in `docs/GATE.md`.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Repo layers · prev [Iteration rhythm](ITERATION.md) · next [Request → release](WORKFLOW.md)
+[Docs hub](../README.md) › **Operations** › Repo layers · prev [Releasing](releasing.md) · next [Resend inbound](resend-inbound.md)
 
 <!-- docs-nav:end -->

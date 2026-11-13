@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › MiMo harness guide · prev [Reference mockups](REFERENCE-MOCKUPS.md) · next [Legal provenance](legal/PROVENANCE.md)
+[Docs hub](../README.md) › **Guides** › MiMo harness guide · prev [The growth model](growth-model.md) · next [Template doctrine](template-doctrine.md)
 
 <!-- docs-nav:end -->
 
@@ -171,10 +171,10 @@ Sources:
 
 ## Related
 
-- [ENV-SPEC.md](ENV-SPEC.md) — the tooling contract this model is wired into.
+- [ENV-SPEC.md](../reference/env-spec.md) — the tooling contract this model is wired into.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › MiMo harness guide · prev [Reference mockups](REFERENCE-MOCKUPS.md) · next [Legal provenance](legal/PROVENANCE.md)
+[Docs hub](../README.md) › **Guides** › MiMo harness guide · prev [The growth model](growth-model.md) · next [Template doctrine](template-doctrine.md)
 
 <!-- docs-nav:end -->

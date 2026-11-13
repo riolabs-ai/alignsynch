@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › Prototype copy saves · prev [V1 prototype](V1-PROTOTYPE.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Prototype copy saves · prev [Technical spec](pay-to-complete/SPEC.md) · next [Prototype wiring](prototype-wiring.md)
 
 <!-- docs-nav:end -->
 
@@ -84,6 +84,6 @@ payload carrying one edited key must report exactly one change, never nine.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › Prototype copy saves · prev [V1 prototype](V1-PROTOTYPE.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Prototype copy saves · prev [Technical spec](pay-to-complete/SPEC.md) · next [Prototype wiring](prototype-wiring.md)
 
 <!-- docs-nav:end -->

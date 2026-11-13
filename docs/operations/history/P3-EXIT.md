@@ -2,13 +2,13 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › P3 exit record · prev [Resend inbound](RESEND-INBOUND.md)
+[Docs hub](../../README.md) › **Operations** › P3 exit record · prev [P2 inventory](P2-INVENTORY.md) · next [V1 prototype](V1-PROTOTYPE.md)
 
 <!-- docs-nav:end -->
 
 **Status: PASS** · verified on `main` @ `f5e1b00a` · 2026-10-30
 
-Gate definition (`docs/ENV-SPEC.md` §5):
+Gate definition (`docs/reference/env-spec.md` §5):
 
 > **P3 — bulk generation / variation.** A generator emits N variants from templates and validates
 > them with the same schema. _Exit:_ `npm run gen -- --count 20 --seed 42` produces reproducible,
@@ -62,7 +62,7 @@ registry both-directions, metric computability, image dimensions).
 
 - **No database, no auth, no deploy** — still hard non-goals until after P4.
 - **No tournament domain.** WU-11 rendered tournament copy through `PageCopy` and left the domain
-  out (`docs/DATA-MODEL.md` unchanged, no Tournament entity). That decision is recorded in #58.
+  out (`docs/reference/data-model.md` unchanged, no Tournament entity). That decision is recorded in #58.
 - **No second vertical.** P4 owns that, and it starts with a decision, not a card.
 
 ## P4 entry criteria
@@ -76,11 +76,11 @@ registry both-directions, metric computability, image dimensions).
 
 ## Related
 
-- [ENV-SPEC.md](ENV-SPEC.md) — the P3 gate definition this record closes.
+- [ENV-SPEC.md](../../reference/env-spec.md) — the P3 gate definition this record closes.
 - [MIGRATION.md](p1-migration/MIGRATION.md) — the content model the bulk generation writes.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › P3 exit record · prev [Resend inbound](RESEND-INBOUND.md)
+[Docs hub](../../README.md) › **Operations** › P3 exit record · prev [P2 inventory](P2-INVENTORY.md) · next [V1 prototype](V1-PROTOTYPE.md)
 
 <!-- docs-nav:end -->

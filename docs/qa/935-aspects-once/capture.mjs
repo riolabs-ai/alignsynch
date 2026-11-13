@@ -8,7 +8,7 @@
  * `Origin` (403) and accepts a server-side POST, then hands the cookies to Chrome.
  *
  *   withenv.sh <main checkout> bash -c 'cd <this worktree> && node24.sh node \
- *     docs/qa-935-aspects-once/capture.mjs --base http://localhost:4317 --phase before --out <dir>'
+ *     docs/qa/935-aspects-once/capture.mjs --base http://localhost:4317 --phase before --out <dir>'
  *
  * Every claim is measured before its shutter and written into `before-report.json` /
  * `after-report.json`: how many `[data-aspect-list]` surfaces the page renders, how many rows and

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Reference** › Legal provenance · prev [MiMo harness guide](../MIMO-GUIDE.md) · next [Prototype wiring](../PROTOTYPE-WIRING.md)
+[Docs hub](../README.md) › **Reference** › Legal provenance · prev [Reference mockups](mockup-index.md) · next [QuizHub capability map](quizhub-capability-map.md)
 
 <!-- docs-nav:end -->
 
@@ -41,7 +41,7 @@ Each of these describes a product we do not ship, a provider we have not engaged
 we do not hold. Filling one in would have been a false statement in a legal document.
 
 - **Terms §5 "Payments and Billing"** — removed. There is no payment, billing, checkout or
-  subscription code anywhere in the tree, and `docs/ENV-SPEC.md` keeps payments a hard non-goal.
+  subscription code anywhere in the tree, and `docs/reference/env-spec.md` keeps payments a hard non-goal.
   The liability cap says the product currently charges nothing rather than inventing paid tiers.
 - **Terms §12.3 "Arbitration"** — removed, not filled. The template carries a `[PLACEHOLDER]` for an
   arbitration provider and no provider is designated anywhere. The section was replaced with the
@@ -136,6 +136,6 @@ the policy itself would need one added back deliberately, and the form reaches t
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Reference** › Legal provenance · prev [MiMo harness guide](../MIMO-GUIDE.md) · next [Prototype wiring](../PROTOTYPE-WIRING.md)
+[Docs hub](../README.md) › **Reference** › Legal provenance · prev [Reference mockups](mockup-index.md) · next [QuizHub capability map](quizhub-capability-map.md)
 
 <!-- docs-nav:end -->

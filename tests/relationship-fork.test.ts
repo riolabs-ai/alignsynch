@@ -23,7 +23,7 @@
  *                   template row is not a source this write can reach.
  *
  * **The client is a stub, on purpose**, and this one is a small model rather than a script of
- * answers: the gate is database-free (`docs/GATE.md`), and a fork's whole claim is that the rows it
+ * answers: the gate is database-free (`docs/operations/gate.md`), and a fork's whole claim is that the rows it
  * wrote say what the fixture said — so the stub keeps `record`/`item`/`template_version` rows and
  * lets `writeFirstVersion()` read back what the transaction just wrote, exactly as production does.
  * The live proof is `pnpm db:verify` and a two-account probe on a branch, not this file.

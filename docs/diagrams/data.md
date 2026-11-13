@@ -72,9 +72,9 @@ Two caveats, so the mark is read exactly:
 
 ## Where to read the rest
 
-- [`docs/DATA-MODEL.md`](../DATA-MODEL.md) — entities, invariants E0–E37, strictness.
+- [`docs/reference/data-model.md`](../reference/data-model.md) — entities, invariants E0–E37, strictness.
 - [`lib/db/rows.ts`](../../lib/db/rows.ts) — the row→model mapping, and its tests.
-- [`docs/BUNDLES.md`](../BUNDLES.md) — a template or the demo dataset as one JSON document.
+- [`docs/guides/bundles.md`](../guides/bundles.md) — a template or the demo dataset as one JSON document.
 - [`db/migrations/`](../../db/migrations) — plain SQL, one file per change.
 
 <!-- docs-nav:begin -->

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 home page (handoff) · prev [V2 home and brand package (handoff)](../README.md) · next [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 home page (handoff) · prev [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md) · next [V2 home and brand package (handoff)](../README.md)
 
 <!-- docs-nav:end -->
 
@@ -24,6 +24,6 @@ To preview from this directory, serve the folder with any static HTTP server and
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 home page (handoff) · prev [V2 home and brand package (handoff)](../README.md) · next [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 home page (handoff) · prev [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md) · next [V2 home and brand package (handoff)](../README.md)
 
 <!-- docs-nav:end -->

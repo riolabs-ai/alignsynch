@@ -5,7 +5,7 @@
   "widths": [
     {
       "width": 1440,
-      "file": "docs/qa-home-comments/footer-links-after-1440.png",
+      "file": "docs/qa/home-comments/footer-links-after-1440.png",
       "innerWidth": 1440,
       "scrollWidth": 1425,
       "documentHeight": 5667,
@@ -40,7 +40,7 @@
     },
     {
       "width": 390,
-      "file": "docs/qa-home-comments/footer-links-after-390.png",
+      "file": "docs/qa/home-comments/footer-links-after-390.png",
       "innerWidth": 390,
       "scrollWidth": 390,
       "documentHeight": 10241,

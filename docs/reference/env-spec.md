@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Environment & ops spec · next [Iteration rhythm](ITERATION.md)
+[Docs hub](../README.md) › **Reference** › Environment & ops spec · prev [Data model](data-model.md) · next [Reference mockups](mockup-index.md)
 
 <!-- docs-nav:end -->
 
@@ -105,7 +105,7 @@ python3 docs/gate-baseline.py --window 2026-11-02   # gate baseline from CI hist
 ```
 
 Gate baseline — first-pass yield, CI run p50/p95, per-leg job wall — has **one home**:
-`docs/GATE.md`, measured 2026-11-03 over the 2026-11-02 window; re-derive it with the command
+`docs/operations/gate.md`, measured 2026-11-03 over the 2026-11-02 window; re-derive it with the command
 above rather than quoting a copy. This spec carried no baseline at all until then, which is how
 two documents end up disagreeing about the same hour.
 
@@ -152,7 +152,7 @@ WARN  98  [W1] 24, [W2] 42, [W4] 32   (W3: 0, W5: 0, W6: 0)
   until issue #103 untangled it from the media rule, and the `next/image` rule was `E27` until the same
   pass untangled it from the battle-mode rule; `scripts/rule-codes.ts` keeps one code to one rule now.
 - Landed as PR #16 (`content/zod-model`); the migration is documented in
-  `docs/p1-migration/MIGRATION.md` with a per-field `ledger.json`.
+  `docs/operations/history/p1-migration/MIGRATION.md` with a per-field `ledger.json`.
 
 **P2 — media & content templatization. IN PROGRESS.** Every string and media reference a page
 shows comes from the schema; media is addressed by registry key, not by literal `/public` path.
@@ -394,11 +394,11 @@ advertising to follow; only the route's 404/200 answer moves on a restart.
 
 ## Related
 
-- [GATE.md](GATE.md) — the gate this spec's P1–P4 phases were judged against.
-- [RELEASING.md](RELEASING.md) — how the environment reaches a release.
+- [GATE.md](../operations/gate.md) — the gate this spec's P1–P4 phases were judged against.
+- [RELEASING.md](../operations/releasing.md) — how the environment reaches a release.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Environment & ops spec · next [Iteration rhythm](ITERATION.md)
+[Docs hub](../README.md) › **Reference** › Environment & ops spec · prev [Data model](data-model.md) · next [Reference mockups](mockup-index.md)
 
 <!-- docs-nav:end -->

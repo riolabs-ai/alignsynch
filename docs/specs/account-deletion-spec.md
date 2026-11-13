@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Product** › Account deletion · prev [Billing](billing.md) · next [Specifications index](specs/README.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Account deletion · next [Template catalogue](catalogue.md)
 
 <!-- docs-nav:end -->
 
@@ -565,11 +565,11 @@ deletion** (the route in §4.3 is a runbook step, and a console surface is a pro
 
 ## Related
 
-- [DATA-MODEL.md](DATA-MODEL.md) — the record and party rows the deletion has to reach.
-- [TWO-PARTY-FLOW.md](TWO-PARTY-FLOW.md) — the shared record both people are part of.
+- [DATA-MODEL.md](../reference/data-model.md) — the record and party rows the deletion has to reach.
+- [TWO-PARTY-FLOW.md](two-party-flow.md) — the shared record both people are part of.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Product** › Account deletion · prev [Billing](billing.md) · next [Specifications index](specs/README.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Account deletion · next [Template catalogue](catalogue.md)
 
 <!-- docs-nav:end -->

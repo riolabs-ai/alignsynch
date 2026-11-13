@@ -29,7 +29,7 @@
           "hrefs": ["/admin/review", "/dashboard/help", "/admin/health", "/dashboard/support"]
         }
       ],
-      "shot": "/home/jadenblack/Desktop/dev.local/alignsynch/quizhub/quizhub/.worktrees/t_6e012a9c/docs/qa-nav-ordering/admin-console-1440.png",
+      "shot": "/home/jadenblack/Desktop/dev.local/alignsynch/quizhub/quizhub/.worktrees/t_6e012a9c/docs/qa/nav-ordering/admin-console-1440.png",
       "sha256": "538b3e8f544e2e151e2e2c04be068a0d33b25732862cc3ef2afdabfb2118fbb4",
       "h": 1218
     },
@@ -46,7 +46,7 @@
           "hrefs": ["/dashboard/help", "/dashboard/support"]
         }
       ],
-      "shot": "/home/jadenblack/Desktop/dev.local/alignsynch/quizhub/quizhub/.worktrees/t_6e012a9c/docs/qa-nav-ordering/member-relationships-1440.png",
+      "shot": "/home/jadenblack/Desktop/dev.local/alignsynch/quizhub/quizhub/.worktrees/t_6e012a9c/docs/qa/nav-ordering/member-relationships-1440.png",
       "sha256": "cf5bc3e100c181840b2e4150c7ab88be9559a2083fd4140a170951ac9e2a9ee9",
       "h": 900
     }

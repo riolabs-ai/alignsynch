@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../qa-comments-mockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../comments-mockup/README.md) · next [Six flow stages](../flow-stages/README.md)
 
 <!-- docs-nav:end -->
 
@@ -33,11 +33,11 @@ the header disc is neutral.
 
 ## Related
 
-- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map the contact pages are variations of.
-- [ui-registry.md](../ui-registry.md) — the contact surfaces themselves.
+- [UI-MAPPING.md](../../specs/ui-mapping.md) — the surface map the contact pages are variations of.
+- [ui-registry.md](../../ui-registry.md) — the contact surfaces themselves.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../qa-comments-mockup/README.md) · next [Help two-column](../qa-help-two-column/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../comments-mockup/README.md) · next [Six flow stages](../flow-stages/README.md)
 
 <!-- docs-nav:end -->

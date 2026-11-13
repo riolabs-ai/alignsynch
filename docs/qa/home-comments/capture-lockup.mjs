@@ -26,7 +26,7 @@
  * `captureScreenshot` with a `clip` below the fold returns a blank frame and `captureBeyondViewport`
  * still frames only the viewport, so the viewport is resized to the document height before the shot.
  *
- * Usage: node docs/qa-home-comments/capture.mjs <base-url> <before|after> [out-dir]
+ * Usage: node docs/qa/home-comments/capture.mjs <base-url> <before|after> [out-dir]
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";

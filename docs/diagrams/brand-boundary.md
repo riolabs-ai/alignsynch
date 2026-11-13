@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Brand boundary · prev [Payment](payment.md) · next [Schemas → fixtures → tables](data.md)
+[Docs hub](../README.md) › **Diagrams** › Brand boundary · next [Schemas → fixtures → tables](data.md)
 
 <!-- docs-nav:end -->
 
@@ -85,10 +85,10 @@ not a measured gate.
 - [`lib/brand-boundary.ts`](../../lib/brand-boundary.ts) — the three helpers and why each exists.
 - [`tests/parity/boundary.ts`](../../tests/parity/boundary.ts) — the route lists.
 - [`data/flags.ts`](../../data/flags.ts) — every flag, its default and the templates that claim it.
-- [`docs/UI-DIVERGENCE.md`](../UI-DIVERGENCE.md) — what the two brands say differently.
+- [`docs/specs/ui-divergence.md`](../specs/ui-divergence.md) — what the two brands say differently.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Brand boundary · prev [Payment](payment.md) · next [Schemas → fixtures → tables](data.md)
+[Docs hub](../README.md) › **Diagrams** › Brand boundary · next [Schemas → fixtures → tables](data.md)
 
 <!-- docs-nav:end -->

@@ -67,7 +67,7 @@
       "notchCount": 50,
       "notchMinHeight": 44,
       "notchMinWidth": 202,
-      "shot": "docs/qa-conformance/answer-1440.png",
+      "shot": "docs/qa/conformance/answer-1440.png",
       "viewport": "1440",
       "instance": "a08d0082-fac5-4348-836a-d9ce9b704a9f"
     },
@@ -135,7 +135,7 @@
       "notchCount": 50,
       "notchMinHeight": 44,
       "notchMinWidth": 57,
-      "shot": "docs/qa-conformance/answer-390.png",
+      "shot": "docs/qa/conformance/answer-390.png",
       "viewport": "390",
       "instance": "a08d0082-fac5-4348-836a-d9ce9b704a9f"
     }

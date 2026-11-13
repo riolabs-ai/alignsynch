@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * `docs/qa-nav-ordering/capture.mjs` — the stills and the measurements for #929 (card
+ * `docs/qa/nav-ordering/capture.mjs` — the stills and the measurements for #929 (card
  * `t_6e012a9c`): the rail's **standard menu for every role**, drawn as the owner ordered it.
  *
- *   BASE_URL=http://127.0.0.1:3411 DEMO_PIN=… node docs/qa-nav-ordering/capture.mjs
+ *   BASE_URL=http://127.0.0.1:3411 DEMO_PIN=… node docs/qa/nav-ordering/capture.mjs
  *
  * The card's claim is a claim about the *rendered* rail, so a JSON diff is not enough:
  * `data/nav-menu.json` can be right while the shell draws something else. So this walks the app

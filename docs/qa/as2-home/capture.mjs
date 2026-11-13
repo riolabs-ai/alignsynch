@@ -15,7 +15,7 @@
  * `captureScreenshot` with a `clip` below the fold returns a blank frame and `captureBeyondViewport`
  * still frames only the viewport, so the viewport is resized to the measured height before the shot.
  *
- * Usage: node docs/qa-as2-home/capture.mjs <base-url> <out-dir>
+ * Usage: node docs/qa/as2-home/capture.mjs <base-url> <out-dir>
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";

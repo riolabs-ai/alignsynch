@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Stages · prev [The two-party flow](TWO-PARTY-FLOW.md) · next [Template doctrine](TEMPLATE-DOCTRINE.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stages · prev [Help Center design spec (handoff)](spec-help-center/README.md) · next [The two-party flow](two-party-flow.md)
 
 <!-- docs-nav:end -->
 
@@ -13,7 +13,7 @@ the whole of this note:
 - the **relationship ladder** — four stages, numbered **1–4**: Invited → Connected → Sharing →
   Aligned. This is the ladder the build derives;
 - the **ladder of the User** — four lettered account states, **A–D**: Play, Registered, Parties
-  Locked, Subscribed. That is billing, and it is **out of scope** (`docs/SPEC-DRIFT.md` §4.2, §4.3).
+  Locked, Subscribed. That is billing, and it is **out of scope** (`docs/operations/spec-drift.md` §4.2, §4.3).
   Nothing here models it.
 
 Only the first is a relationship. Nothing is undefined between the two: an earlier reading of the
@@ -46,7 +46,7 @@ mockup on page 57 labels the eight as two ladders:
 > A–D are _stage of User_ (Play → Registered → **Parties Locked at Account Bank zero** → Subscribed);
 > 1–4 are _stage of Relationship_ (Invited → Connected → Sharing → Aligned).
 >
-> — `docs/REFERENCE-MOCKUPS.md`, row `08-stage-bar-and-stage-terms.png`, p57
+> — `docs/reference/mockup-index.md`, row `08-stage-bar-and-stage-terms.png`, p57
 
 So the glossary's "missing" rows were never relationship stages. They are the account ladder the
 specification letters **A–D**:
@@ -58,7 +58,7 @@ specification letters **A–D**:
 | C     | Locked     | Initiator's Account Bank is zero — functions locked and watermarked | Account Bank currency does not exist here     |
 | D     | Paid       | Initiator subscribed — Account Bank increases                       | subscriptions do not exist here               |
 
-The ruling, quoted from `docs/SPEC-DRIFT.md`:
+The ruling, quoted from `docs/operations/spec-drift.md`:
 
 > **4.2 Accounts from the start.** … the spec's A–D ladder (free week, Account Bank, locked
 > watermarks, 30-day expiry) is **out of scope**, and no work should assume it.
@@ -116,12 +116,12 @@ stage.
 - `scripts/__tests__/stages.test.ts` — the four states with real fixture values, the Soft/Full
   difference on one Gap, and the leak bound; runs under `pnpm data:check`.
 - `lib/flow/state.ts` — the derived three-value status the stage composes with, and the blind rule
-  it must never outrun ([TWO-PARTY-FLOW](TWO-PARTY-FLOW.md)).
-- `docs/SPEC-DRIFT.md` — the specification against the build; §4 holds the rulings this note
-  applies, and [REFERENCE-MOCKUPS](REFERENCE-MOCKUPS.md) indexes the page renders quoted above.
+  it must never outrun ([TWO-PARTY-FLOW](two-party-flow.md)).
+- `docs/operations/spec-drift.md` — the specification against the build; §4 holds the rulings this note
+  applies, and [REFERENCE-MOCKUPS](../reference/mockup-index.md) indexes the page renders quoted above.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Stages · prev [The two-party flow](TWO-PARTY-FLOW.md) · next [Template doctrine](TEMPLATE-DOCTRINE.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stages · prev [Help Center design spec (handoff)](spec-help-center/README.md) · next [The two-party flow](two-party-flow.md)
 
 <!-- docs-nav:end -->

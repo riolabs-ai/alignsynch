@@ -4,7 +4,7 @@
  * screenshots every screen it lands on, and writes the whole thing down as a committed transcript
  * (#898, card 1 of 2).
  *
- *   pnpm demo:flow          walk the three paths, write PNGs + docs/qa-demo-flow/transcript.json
+ *   pnpm demo:flow          walk the three paths, write PNGs + docs/qa/demo-flow/transcript.json
  *   pnpm demo:flow:check    re-run on an unchanged tree and diff the transcript and the PNG hashes
  *
  * ## Not a second `flow:e2e`
@@ -19,7 +19,7 @@
  *
  * ## No browser dependency
  *
- * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa-as2-home/capture.mjs` and
+ * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa/as2-home/capture.mjs` and
  * the rest of `docs/qa-*` use — Node 24 has a global `WebSocket`, so this is a hand-rolled session
  * with no Playwright and no Puppeteer in `package.json`, and there never will be one from this file.
  *
@@ -33,7 +33,7 @@
  *
  * ## The transcript is the deliverable, and card 2 renders it
  *
- * `docs/qa-demo-flow/transcript.json` — `demo-flow/v1`. The schema is documented in the file's own
+ * `docs/qa/demo-flow/transcript.json` — `demo-flow/v1`. The schema is documented in the file's own
  * `about` block, because a JSON file has no comments and the second reader is a script. Fields:
  *
  *   step   1..n, contiguous across the three paths (a reader can key on it)
@@ -42,7 +42,7 @@
  *          an unchanged tree produce the same bytes
  *   action "fill" | "click" | "assert"
  *   values { field: value } — verbatim what was entered, empty for clicks and asserts
- *   shot   "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png"
+ *   shot   "docs/qa/demo-flow/<path>/<n>-<slug>-1440.png"
  *   expect the assertion this step proved, in words
  *   ok     whether it held; `actual` carries what was measured when it did not
  *
@@ -182,7 +182,7 @@ function ensureDir(path) {
 }
 
 /* ------------------------------------------------------------------ *
- * Chrome, and the CDP session (the shape `docs/qa-as2-home/capture.mjs` proved)
+ * Chrome, and the CDP session (the shape `docs/qa/as2-home/capture.mjs` proved)
  * ------------------------------------------------------------------ */
 
 let chrome = null;
@@ -530,7 +530,7 @@ const transcript = {
       route: "where the step happened; run-specific ids are normalised to <instance> and <token>",
       action: "fill | click | assert",
       values: "verbatim what was entered; {} for clicks and asserts",
-      shot: "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png",
+      shot: "docs/qa/demo-flow/<path>/<n>-<slug>-1440.png",
       expect: "the assertion this step proved, in words",
       ok: "whether it held; `actual` carries what was measured when it did not",
       actual: "only present when ok is false",
@@ -569,7 +569,7 @@ function normaliseRoute(href) {
 async function record(send, { action, expect, values = {}, ok, actual, name, route }) {
   stepNumber += 1;
   const shotName = `${String(stepNumber).padStart(2, "0")}-${slugOf(name ?? route)}-${WIDTH}.png`;
-  const relative = `docs/qa-demo-flow/${currentPath}/${shotName}`;
+  const relative = `docs/qa/demo-flow/${currentPath}/${shotName}`;
   const file = join(OUT, currentPath, shotName);
   ensureDir(dirname(file));
   const sha256 = await shutter(send, file);

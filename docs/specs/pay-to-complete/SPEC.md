@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Technical spec · prev [PRD](PRD.md) · next [ADR](ADR.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Technical spec · prev [Research](RESEARCH.md) · next [Prototype copy saves](../prototype-save.md)
 
 <!-- docs-nav:end -->
 
@@ -219,6 +219,6 @@ a degraded path, not a false claim.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Technical spec · prev [PRD](PRD.md) · next [ADR](ADR.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Technical spec · prev [Research](RESEARCH.md) · next [Prototype copy saves](../prototype-save.md)
 
 <!-- docs-nav:end -->

@@ -5,7 +5,7 @@
  * (#console 5/5, reshaped by #409, re-cast onto the shared detail shell by #795).
  *
  * **This page is the shell's precedent, not a second layout.** The approved artifact
- * (`docs/mockups/one-card-one-detail-v2.html` §4) draws it as "the shell, as it ships", and since
+ * (`docs/reference/mockups/one-card-one-detail-v2.html` §4) draws it as "the shell, as it ships", and since
  * #795 that shell is `components/assessment-flow/record-detail-shell.tsx`: identity band → facts →
  * content → actions, with the 320 px aside / content grid. What stays local is only what a
  * *template* says:

@@ -63,7 +63,7 @@
  * definitions in the tree, so the three chart callers named a property with no value behind it.
  * Those thirteen properties were folded into the two blocks below and the file was deleted;
  * every other rule in it was a duplicate of this sheet at a different value, which is the drift
- * this header exists to prevent (`docs/UI-DIVERGENCE.md`).
+ * this header exists to prevent (`docs/specs/ui-divergence.md`).
  *
  * `.dark` stays valid and stays here: the brand record's colours are mode-blind (they are
  * painted on `<html>` inline, outranking both blocks), and a later card restores the
@@ -344,7 +344,7 @@
    * rule means the smooth scroll is on before the first click. `prefers-reduced-motion` restores
    * the instant jump; the page otherwise has no animation to disable.
    *
-   * Measured in a browser (`docs/qa-as2-home/probe.mjs`, 1440 and 390): the header's box is **81px**
+   * Measured in a browser (`docs/qa/as2-home/probe.mjs`, 1440 and 390): the header's box is **81px**
    * — 80 of row plus its own 1px bottom border — so the pinned menu, at `top: 80px`, overlaps that
    * border by exactly 1px. That is deliberate and it is why the variable stays at the *row* height:
    * the header paints at `z-10` and the menu at `z-5`, so the border draws over the menu's top edge

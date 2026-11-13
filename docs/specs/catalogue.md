@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Template catalogue · prev [Specifications index](README.md) · next [Transactional email lifecycle](flow-emails.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Template catalogue · prev [Account deletion](account-deletion-spec.md) · next [Transactional email lifecycle](flow-emails.md)
 
 <!-- docs-nav:end -->
 
@@ -210,11 +210,11 @@ So the split requires one column, nothing else:
 
 ## Related
 
-- [DATA-MODEL.md](../DATA-MODEL.md) — the record model these categories project.
-- [BUNDLES.md](../BUNDLES.md) — how a catalogue template travels between deployments.
+- [DATA-MODEL.md](../reference/data-model.md) — the record model these categories project.
+- [BUNDLES.md](../guides/bundles.md) — how a catalogue template travels between deployments.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Template catalogue · prev [Specifications index](README.md) · next [Transactional email lifecycle](flow-emails.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Template catalogue · prev [Account deletion](account-deletion-spec.md) · next [Transactional email lifecycle](flow-emails.md)
 
 <!-- docs-nav:end -->

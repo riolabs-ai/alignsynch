@@ -1,7 +1,7 @@
 /**
  * #921 QA stills — the comments mockup, captured from the artifact itself.
  *
- * No driver dependency: headless Chrome over CDP, the same plumbing as `docs/qa-873/stills.mjs`.
+ * No driver dependency: headless Chrome over CDP, the same plumbing as `docs/qa/873/stills.mjs`.
  * Unlike that rig this one needs no server, no cookies and no database — the artifact is a
  * standalone document, so the shutter opens on `file://<the committed file>` at the address the
  * reviewer would use (`?variant=&subject=&viewport=&spec=`). The picture and the page the owner
@@ -14,7 +14,7 @@
  *   — the specimen count is the one the address implies
  *
  * Usage, from the repo root:
- *   node docs/qa-comments-mockup/stills.mjs [outDir]
+ *   node docs/qa/comments-mockup/stills.mjs [outDir]
  */
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";

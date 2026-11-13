@@ -1,5 +1,5 @@
 /**
- * GENERATED from the P1 fixture migration — see docs/p1-migration/MIGRATION.md §10.
+ * GENERATED from the P1 fixture migration — see docs/operations/history/p1-migration/MIGRATION.md §10.
  *
  * The 16 quizzes decision A authored so that all 31 card records project instead
  * of orphaning: `title`, `cover.src`, `author` and `stats` are lifted from the card

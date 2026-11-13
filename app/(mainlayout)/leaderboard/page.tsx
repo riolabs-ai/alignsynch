@@ -24,7 +24,7 @@
  * agree **in the build the flag was set for** — which is the build a demo ships. The two halves
  * do not move at the same speed, and that matters: this route is request-time, so an env change
  * plus a restart flips the 404 immediately, while the sidebar is rendered into the prerendered
- * shell at build time and needs a rebuild to match (see `docs/ENV-SPEC.md` §9 for the measured
+ * shell at build time and needs a rebuild to match (see `docs/reference/env-spec.md` §9 for the measured
  * numbers). Turning a surface *off* is therefore the safe direction to flip without a build: the
  * worst case is an advertised entry that lands on a 404, never a render of the surface.
  *

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Resend inbound · prev [The growth model](GROWTH-MODEL.md) · next [P3 exit record](P3-EXIT.md)
+[Docs hub](../README.md) › **Operations** › Resend inbound · prev [Repo layers](repo-layers.md) · next [Spec drift](spec-drift.md)
 
 <!-- docs-nav:end -->
 
@@ -94,11 +94,11 @@ failing row's values.
 
 ## Related
 
-- [flow-emails.md](specs/flow-emails.md) — which mail the app sends, and when.
-- [DEPLOYING.md](DEPLOYING.md) — where the webhook and its secret live.
+- [flow-emails.md](../specs/flow-emails.md) — which mail the app sends, and when.
+- [DEPLOYING.md](deploying.md) — where the webhook and its secret live.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Resend inbound · prev [The growth model](GROWTH-MODEL.md) · next [P3 exit record](P3-EXIT.md)
+[Docs hub](../README.md) › **Operations** › Resend inbound · prev [Repo layers](repo-layers.md) · next [Spec drift](spec-drift.md)
 
 <!-- docs-nav:end -->

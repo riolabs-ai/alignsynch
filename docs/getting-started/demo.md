@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › The demo · prev [Branch triage](BRANCH-TRIAGE.md) · next [Demo auth](DEMO-AUTH.md)
+[Docs hub](../README.md) › **Start here** › The demo · prev [Demo auth](demo-auth.md) · next [Request → release](workflow.md)
 
 <!-- docs-nav:end -->
 
@@ -31,7 +31,7 @@ pnpm demo:reset        # migrate `demo-base`, restore `demo` from it, reseed fro
 
 Three demo accounts (`initiator@`, `counterparty@`, `admin@demo.alignsynch.test`) are created by
 that reseed, through the demo branch's own sign-up endpoint — see
-[DEMO-AUTH.md](DEMO-AUTH.md) for the credentials' shape, how the role field works, and `/demo`,
+[DEMO-AUTH.md](demo-auth.md) for the credentials' shape, how the role field works, and `/demo`,
 the PIN-gated panel that signs a browser in as one of them (`DEMO_AUTH=1` plus a `DEMO_PIN`;
 refused in production without `DEMO_ALLOW_PRODUCTION=1` as well).
 
@@ -314,6 +314,6 @@ someone meant.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › The demo · prev [Branch triage](BRANCH-TRIAGE.md) · next [Demo auth](DEMO-AUTH.md)
+[Docs hub](../README.md) › **Start here** › The demo · prev [Demo auth](demo-auth.md) · next [Request → release](workflow.md)
 
 <!-- docs-nav:end -->

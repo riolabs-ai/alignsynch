@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Template catalogue · prev [swiper 12](../qa-swiper-12/README.md) · next [v1.x UI cohort](../qa-v1x-ui-cohort/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Template catalogue · prev [swiper 12](../swiper-12/README.md) · next [AS2 templates catalogue visual QA](../templates-redesign/README.md)
 
 <!-- docs-nav:end -->
 
@@ -65,11 +65,11 @@ card's business.
 
 ## Related
 
-- [catalogue.md](../specs/catalogue.md) — the specification the catalogue pages implement.
-- [BUNDLES.md](../BUNDLES.md) — how a template travels as a bundle.
+- [catalogue.md](../../specs/catalogue.md) — the specification the catalogue pages implement.
+- [BUNDLES.md](../../guides/bundles.md) — how a template travels as a bundle.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Template catalogue · prev [swiper 12](../qa-swiper-12/README.md) · next [v1.x UI cohort](../qa-v1x-ui-cohort/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Template catalogue · prev [swiper 12](../swiper-12/README.md) · next [AS2 templates catalogue visual QA](../templates-redesign/README.md)
 
 <!-- docs-nav:end -->

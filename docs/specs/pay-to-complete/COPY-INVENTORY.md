@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Payer copy inventory · prev [Research](RESEARCH.md) · next [Payer-present state](PAYER-PRESENT.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Payer copy inventory · prev [ADR](ADR.md) · next [Payer-present state](PAYER-PRESENT.md)
 
 <!-- docs-nav:end -->
 
@@ -160,7 +160,7 @@ copy that has to be written before the surfaces in the mockup can ship.
 | a card-capture surface at all           | `grep -rln "stripe\|Elements" components app`  | no capture component; `app/api/billing/**` only                                                                        |
 | `Approve payment`                       | `grep -rn "Approve payment"`                   | zero                                                                                                                   |
 | `Your bank needs you …` (§9 band)       | `grep -rn "Your bank needs you"`               | zero                                                                                                                   |
-| a `needs-action` outcome word           | `grep -rn "needs-action"`                      | prose only — `docs/pay-to-complete/ADR.md:67`, `RESEARCH.md:97`                                                        |
+| a `needs-action` outcome word           | `grep -rn "needs-action"`                      | prose only — `docs/specs/pay-to-complete/ADR.md:67`, `RESEARCH.md:97`                                                  |
 | a pay-now / pay-later control label     | `grep -rni "pay now\|pay later\|decide later"` | comments only — `actions.ts:399`, `lib/member/payment.ts:8`, `lib/billing/port.ts:44`, `PRD.md:91`; no rendered string |
 | reminder / retry / expiry copy          | `grep -rni "reminder"` on fixtures             | no payer reminder label                                                                                                |
 
@@ -250,6 +250,6 @@ its surface table with the new `file:line` rather than editing the absence claim
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Payer copy inventory · prev [Research](RESEARCH.md) · next [Payer-present state](PAYER-PRESENT.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Payer copy inventory · prev [ADR](ADR.md) · next [Payer-present state](PAYER-PRESENT.md)
 
 <!-- docs-nav:end -->

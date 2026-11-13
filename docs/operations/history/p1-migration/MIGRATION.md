@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › P1 migration · prev [Screenshot registry](../assets/screens/README.md) · next [V1 retirement](../V1-RETIREMENT.md)
+[Docs hub](../../../README.md) › **Operations** › P1 migration · prev [The gate](../../gate.md) · next [P2 inventory](../P2-INVENTORY.md)
 
 <!-- docs-nav:end -->
 
@@ -13,7 +13,7 @@ build, not a field the UI silently carries.
 
 - Issue: [#10](https://github.com/riolabs-ai/alignsynch/issues/10)
 - Spec: `content-model.md` (the audit that catalogued drifts D1–D18)
-- Machine-readable edit log: [`ledger.json`](./ledger.json) — one row per changed
+- Machine-readable edit log: [`ledger.json`](ledger.json) — one row per changed
   field, with the old value, the new value and the reason.
 
 ## Run it
@@ -422,7 +422,7 @@ registry had already taken `E17`–`E19` for _"no component writes an asset path
 were live in one run, so `[E17]` named two unrelated failures — a slot no shelf renders, and a component
 writing `"/hero-bg.jpg"` — and a log line could not say which. Issue #103 renumbered the slot guard to
 **`E28`**, the next free code: the media set is a contiguous `E17`–`E19` referenced by this table, by
-`docs/P2-INVENTORY.md` and by PR #65, while the promotion guard is a single code and the later claim.
+`docs/operations/history/P2-INVENTORY.md` and by PR #65, while the promotion guard is a single code and the later claim.
 Promotion set: `E14`–`E16` + `W6`, plus the `E28` slot guard. Media set: `E17`–`E19`, unchanged.
 `scripts/rule-codes.ts` now mints every code exactly once, under one owner, and
 `scripts/__tests__/rule-codes.test.ts` fails when a second rule emits a code another owner declared —
@@ -714,6 +714,6 @@ delivered with the card that implemented B-01).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › P1 migration · prev [Screenshot registry](../assets/screens/README.md) · next [V1 retirement](../V1-RETIREMENT.md)
+[Docs hub](../../../README.md) › **Operations** › P1 migration · prev [The gate](../../gate.md) · next [P2 inventory](../P2-INVENTORY.md)
 
 <!-- docs-nav:end -->

@@ -15,7 +15,7 @@
  * dev server with the demo env (`.env.local` wins), from this worktree:
  *
  *   withenv.sh <main-checkout> bash -c 'cd <worktree> && node24.sh pnpm dev --port 4317'
- *   withenv.sh <main-checkout> bash -c 'cd <worktree> && node24.sh node docs/qa-rel-detail-edit/rig.mjs'
+ *   withenv.sh <main-checkout> bash -c 'cd <worktree> && node24.sh node docs/qa/rel-detail-edit/rig.mjs'
  */
 import pg from "pg";
 

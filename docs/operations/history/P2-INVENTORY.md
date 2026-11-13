@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › P2 inventory · prev [Prototype wiring](PROTOTYPE-WIRING.md) · next [V1 prototype](V1-PROTOTYPE.md)
+[Docs hub](../../README.md) › **Operations** › P2 inventory · prev [P1 migration](p1-migration/MIGRATION.md) · next [P3 exit record](P3-EXIT.md)
 
 <!-- docs-nav:end -->
 
@@ -21,7 +21,7 @@ that deletion taken out: rows that died with those files are gone, and each affe
 it lost. Every path this page still names exists on `main`; re-check any of them with
 `git cat-file -e origin/main:<path>` before opening one, because the next WU card can delete it too.
 
-- **Full hit list:** [`docs/p2-inventory/hits.csv`](p2-inventory/hits.csv) — 2,614 rows,
+- **Full hit list:** [`docs/operations/history/p2-inventory/hits.csv`](p2-inventory/hits.csv) — 2,614 rows,
   `tier,unit,file,line,kind,literal,should_come_from,fixture_carries,route,island`. Every hit in this
   page cites the same `file:line` the CSV carries, and `fixture_carries` answers "does a fixture
   already own this value?" per row: **26 yes**, **45 partial** (a fixture references the same asset
@@ -337,7 +337,7 @@ explore component, so the tree carries 1,702 and every other unit's baseline is 
 ### META — 26 route metadata strings
 
 `export const metadata = { title, description }` is page copy in a module the content model does not
-reach. `docs/DATA-MODEL.md` already declares route metadata out of scope (D14); it is inventoried
+reach. `docs/reference/data-model.md` already declares route metadata out of scope (D14); it is inventoried
 here so the decision is recorded rather than forgotten (W7).
 
 | file:line                                      | field    | literal                                                            |
@@ -496,7 +496,7 @@ the fixture is reachable from the page module — copy written and not wired cha
 
 ## Invariants (proposed for P2; E = hard, W = declared deviation)
 
-Each names the check that proves it, per the P1 convention in `docs/DATA-MODEL.md`.
+Each names the check that proves it, per the P1 convention in `docs/reference/data-model.md`.
 
 | code | invariant                                                                                                                    | proof                                                                                                                                                                                                                                 |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -507,7 +507,7 @@ Each names the check that proves it, per the P1 convention in `docs/DATA-MODEL.m
 | E21  | no module-level record array in `components/**` (≥ 2 object elements)                                                        | `data:check` E21: island scan = 0 (24 after WU-12; 29 measured)                                                                                                                                                                       |
 | E22  | no metric literal (digit + unit/delta) in a component                                                                        | `data:check` E22 (40 after WU-12; 48 measured)                                                                                                                                                                                        |
 | E23  | every route in `content/routes.ts` has a `PageCopy` key; an editorial component renders no leaf literal longer than 24 chars | `data:check` E23: surface = page module + import closure inside the route's `dirs`; a literal > 24 chars is an error naming `file:line`, and the count may not exceed `data/pages/budget.ts`. `/` measures **0**. Established by WU-6 |
-| W7   | route metadata `title`/`description` stays hardcoded (26 strings, 13 routes)                                                 | declared: D14, `docs/DATA-MODEL.md` out-of-scope                                                                                                                                                                                      |
+| W7   | route metadata `title`/`description` stays hardcoded (26 strings, 13 routes)                                                 | declared: D14, `docs/reference/data-model.md` out-of-scope                                                                                                                                                                            |
 | W8   | product-surface microcopy stays hardcoded (691 strings)                                                                      | declared: chrome, not content — a vertical reuses the screens                                                                                                                                                                         |
 | W9   | the tournament domain ships static in P2 (`zTournamentRef` is a ref only)                                                    | declared: DATA-MODEL out-of-scope; WU-11 is a decision, not a build                                                                                                                                                                   |
 | W10  | chrome stays hardcoded (425 strings)                                                                                         | declared: identical across verticals                                                                                                                                                                                                  |
@@ -667,7 +667,7 @@ file. The other rows are untouched on purpose — a card that wants "hits remain
     on, a round default outside the options its selector renders, a `{placeholder}` the view cannot
     fill, or a fixture nothing imports is a red build.
 12. **WU-11 — tournaments** (248): blocked on a decision, not on effort —
-    the domain is declared out of scope in `docs/DATA-MODEL.md`, so either the domain comes in first or
+    the domain is declared out of scope in `docs/reference/data-model.md`, so either the domain comes in first or
     tournament copy is a static `PageCopy` fixture with no tournament records.
 
 Representative hits per unit (full list in the CSV):
@@ -818,6 +818,6 @@ these numbers by hand.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › P2 inventory · prev [Prototype wiring](PROTOTYPE-WIRING.md) · next [V1 prototype](V1-PROTOTYPE.md)
+[Docs hub](../../README.md) › **Operations** › P2 inventory · prev [P1 migration](p1-migration/MIGRATION.md) · next [P3 exit record](P3-EXIT.md)
 
 <!-- docs-nav:end -->

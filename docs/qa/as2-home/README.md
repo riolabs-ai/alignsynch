@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › AS2 home visual QA · prev [AS2 templates redesign — source notes](../specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md) · next [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [#542 phase 2](../542-phase2/README.md) · next [Brand lockup](../brand-lockup/README.md)
 
 <!-- docs-nav:end -->
 
@@ -83,14 +83,14 @@ to settle, and reads where the target landed (`measurements.json`).
 
 ## Related
 
-- [The AS2 package](../specs/spec-as2-style-home-redesign/README.md) — the approved page this
+- [The AS2 package](../../specs/spec-as2-style-home-redesign/README.md) — the approved page this
   build is compared against.
-- [ui-registry.md](../ui-registry.md) — the surfaces that render the bands.
+- [ui-registry.md](../../ui-registry.md) — the surfaces that render the bands.
 - Photography credits live at `/terms` (section "Photography credits", `data/pages/legal.ts`) — once,
   not on this page.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › AS2 home visual QA · prev [AS2 templates redesign — source notes](../specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md) · next [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [#542 phase 2](../542-phase2/README.md) · next [Brand lockup](../brand-lockup/README.md)
 
 <!-- docs-nav:end -->

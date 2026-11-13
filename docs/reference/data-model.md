@@ -2,13 +2,13 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Data model · next [The two-party flow](TWO-PARTY-FLOW.md)
+[Docs hub](../README.md) › **Reference** › Data model · prev [Billing](billing.md) · next [Environment & ops spec](env-spec.md)
 
 <!-- docs-nav:end -->
 
 One typed model: `content/*.ts` zod schemas are the single source of truth; types are `z.infer`red,
 every `data/*` fixture is validated at build by `pnpm data:check` (134 tests, exit 0). A drift is a
-red build. `content/` has no React/Next import. Full history: docs/p1-migration/MIGRATION.md.
+red build. `content/` has no React/Next import. Full history: docs/operations/history/p1-migration/MIGRATION.md.
 
 ## Inventory — every `data/*` module → entity (62 quizzes · 4 assessment templates + 4 instances · 9 news · 6 tips · 9 kb — one of them a draft · 5 contacts · 5 conv · 6 notifs)
 
@@ -184,7 +184,7 @@ record: `selectQuizCard`→`QuizCard`, `selectQuizAuthoringCard`→`QuizAuthorin
   can only render with real tournament data renders its copy and leaves its record list — the mock
   objects already inside the components — exactly as it was. `zTournamentRef` stays a minimal ref
   (`prizeCents` vs `rewardCents` unresolved); growing it into an entity is a P4 question, not a
-  copy-model one. W9 in docs/P2-INVENTORY.md stands.
+  copy-model one. W9 in docs/operations/history/P2-INVENTORY.md stands.
 - User / profile domain (`lib/data/users.ts` nested `CreatedQuiz` — a profile-model change).
 - Quiz results / per-question `correctPercentage` tables (observed results, not content).
 - Auth, accounts, route metadata (D14).
@@ -192,11 +192,11 @@ record: `selectQuizCard`→`QuizCard`, `selectQuizAuthoringCard`→`QuizAuthorin
 
 ## Related
 
-- [data.md](diagrams/data.md) — the same model drawn schemas → fixtures → tables.
-- [MIGRATION.md](p1-migration/MIGRATION.md) — what the P1 model changed, field by field.
+- [data.md](../diagrams/data.md) — the same model drawn schemas → fixtures → tables.
+- [MIGRATION.md](../operations/history/p1-migration/MIGRATION.md) — what the P1 model changed, field by field.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Data model · next [The two-party flow](TWO-PARTY-FLOW.md)
+[Docs hub](../README.md) › **Reference** › Data model · prev [Billing](billing.md) · next [Environment & ops spec](env-spec.md)
 
 <!-- docs-nav:end -->

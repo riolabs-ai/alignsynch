@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Divergence table · prev [Quiz-surface map](UI-MAPPING.md) · next [UI/UX audit](UI-UX-AUDIT.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Divergence table · prev [The two-party flow](two-party-flow.md) · next [Quiz-surface map](ui-mapping.md)
 
 <!-- docs-nav:end -->
 
@@ -11,7 +11,7 @@ file, with a verdict: what it is, who renders it, and whether it should compose 
 already exists. Compiled on `2fedcd58` (2026-11-01) for the parent card _Repair · restore the top
 menu + footer, header identity, and audit every bespoke surface_.
 
-The rule it enforces is the owner's, from [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md): AlignSynch
+The rule it enforces is the owner's, from [TEMPLATE-DOCTRINE.md](../guides/template-doctrine.md): AlignSynch
 and QuizHub are two configurations of one core, so a screen only one expression can ever use is a
 screen the next expression has to rebuild. "Bespoke" here is **composition, not file location** — a
 page that hand-rolls its title band, its own table, its own empty state or its own spacing is
@@ -20,7 +20,7 @@ bespoke even when it lives in `components/`.
 ## How a row was decided
 
 For each file: name the surface it is a version of, then count the axes that change against
-[TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md)'s table — columns, filters, row actions, empty state,
+[TEMPLATE-DOCTRINE.md](../guides/template-doctrine.md)'s table — columns, filters, row actions, empty state,
 detail panel, data source. **One axis** is a configuration of an existing surface. **Several at
 once, or a different object**, is a new surface, and then the question is whether the template for
 it exists as a file. The reference files this table names, and what each one is the template of:
@@ -241,6 +241,6 @@ loses:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Divergence table · prev [Quiz-surface map](UI-MAPPING.md) · next [UI/UX audit](UI-UX-AUDIT.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Divergence table · prev [The two-party flow](two-party-flow.md) · next [Quiz-surface map](ui-mapping.md)
 
 <!-- docs-nav:end -->

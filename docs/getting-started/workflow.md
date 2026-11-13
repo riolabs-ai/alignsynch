@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Request → release · prev [Repo layers](REPO-LAYERS.md) · next [Release-train card template](templates/RELEASE-TRAIN.md)
+[Docs hub](../README.md) › **Start here** › Request → release · prev [The demo](demo.md)
 
 <!-- docs-nav:end -->
 
@@ -66,13 +66,13 @@ chat, the milestone is the release, and a minor or major cuts in its own session
 
 ## See also
 
-- [Iteration rhythm](ITERATION.md) — the inner loop, `check:fast` against the full gate.
-- [Repo layers](REPO-LAYERS.md) — the lane classifier that makes the depth table pay.
-- [The gate](GATE.md) — what `scripts/verify.sh` runs, in order, and its current numbers.
-- [Releasing](RELEASING.md) — the eight steps that turn a green `main` into a version.
+- [Iteration rhythm](../operations/iteration.md) — the inner loop, `check:fast` against the full gate.
+- [Repo layers](../operations/repo-layers.md) — the lane classifier that makes the depth table pay.
+- [The gate](../operations/gate.md) — what `scripts/verify.sh` runs, in order, and its current numbers.
+- [Releasing](../operations/releasing.md) — the eight steps that turn a green `main` into a version.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Request → release · prev [Repo layers](REPO-LAYERS.md) · next [Release-train card template](templates/RELEASE-TRAIN.md)
+[Docs hub](../README.md) › **Start here** › Request → release · prev [The demo](demo.md)
 
 <!-- docs-nav:end -->

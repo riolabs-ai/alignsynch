@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › The growth model · prev [Demo auth](DEMO-AUTH.md) · next [Resend inbound](RESEND-INBOUND.md)
+[Docs hub](../README.md) › **Guides** › The growth model · prev [Bundles](bundles.md) · next [MiMo harness guide](mimo-guide.md)
 
 <!-- docs-nav:end -->
 
@@ -90,6 +90,6 @@ Charts are `recharts` through `components/ui/chart.tsx`; no dependency was added
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › The growth model · prev [Demo auth](DEMO-AUTH.md) · next [Resend inbound](RESEND-INBOUND.md)
+[Docs hub](../README.md) › **Guides** › The growth model · prev [Bundles](bundles.md) · next [MiMo harness guide](mimo-guide.md)
 
 <!-- docs-nav:end -->

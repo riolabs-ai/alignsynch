@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › The two-party flow · prev [Data model](DATA-MODEL.md) · next [Stages](STAGES.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [Divergence table](ui-divergence.md)
 
 <!-- docs-nav:end -->
 
@@ -221,11 +221,11 @@ assessment row makes `pnpm db:seed` refuse.
 
 ## Related
 
-- [lifecycle.md](diagrams/lifecycle.md) — every state the flow can reach, and the event that moves it.
-- [STAGES.md](STAGES.md) — the four stages a relationship passes through.
+- [lifecycle.md](../diagrams/lifecycle.md) — every state the flow can reach, and the event that moves it.
+- [STAGES.md](stages.md) — the four stages a relationship passes through.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › The two-party flow · prev [Data model](DATA-MODEL.md) · next [Stages](STAGES.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The two-party flow · prev [Stages](stages.md) · next [Divergence table](ui-divergence.md)
 
 <!-- docs-nav:end -->

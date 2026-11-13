@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Answer input · prev [Maintenance fields](maintenance-fields.md) · next [The Gap report](ux-report.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Answer input · prev [UI/UX audit](ui-ux-audit.md) · next [Reference UX patterns](ux-reference-patterns.md)
 
 <!-- docs-nav:end -->
 
@@ -168,11 +168,11 @@ below; guard with a min-width and test at 320 px.
 
 ## Related
 
-- [DATA-MODEL.md](../DATA-MODEL.md) — the opinion row the scale writes.
+- [DATA-MODEL.md](../reference/data-model.md) — the opinion row the scale writes.
 - [ux-report.md](ux-report.md) — what these answers are rendered as.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Answer input · prev [Maintenance fields](maintenance-fields.md) · next [The Gap report](ux-report.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Answer input · prev [UI/UX audit](ui-ux-audit.md) · next [Reference UX patterns](ux-reference-patterns.md)
 
 <!-- docs-nav:end -->

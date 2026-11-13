@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [Templates and relationships after creation](../qa-noun-crud/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../home-polish/README.md) · next [Templates and relationships after creation](../noun-crud/README.md)
 
 <!-- docs-nav:end -->
 
@@ -75,11 +75,11 @@ Identical, and `git status public/brand` is empty.
 
 ## Related
 
-- [BRAND-RELEASE.md](../BRAND-RELEASE.md) — the lockup as one of a brand's three artefacts.
-- [ui-registry.md](../ui-registry.md) — the header and footer surfaces measured here.
+- [BRAND-RELEASE.md](../../operations/brand-release.md) — the lockup as one of a brand's three artefacts.
+- [ui-registry.md](../../ui-registry.md) — the header and footer surfaces measured here.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../qa-home-polish/README.md) · next [Templates and relationships after creation](../qa-noun-crud/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Lockup 2rem · prev [Home hero polish](../home-polish/README.md) · next [Templates and relationships after creation](../noun-crud/README.md)
 
 <!-- docs-nav:end -->

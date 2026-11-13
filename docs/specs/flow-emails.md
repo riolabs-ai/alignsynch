@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
 
 <!-- docs-nav:end -->
 
@@ -140,7 +140,7 @@ The evidence, and what each piece is used for here:
   EMAIL TERMS" (p. 71) — the eleven-artefact list dispositioned above.
 - In-repo: `lib/flow/email.ts` (the two senders, `sent|unset|failed`, no retry, no queue),
   `lib/flow/unlock-notice.ts` (#258), `db/migrations/0007_party_unlock_seen.sql` (#252),
-  `docs/SPEC-DRIFT.md` §4.1/§5/§7.
+  `docs/operations/spec-drift.md` §4.1/§5/§7.
 
 ## 6. Implementation sketch (what a card would touch)
 
@@ -152,8 +152,8 @@ The evidence, and what each piece is used for here:
 - **Unlock path unchanged:** `sendUnlockNotice` remains the only post-submit send, triggered by
   the `ok && complete` transition, other-seat-only via `otherRoleOf`, no-opinion read via
   `readUnlockFacts`.
-- **Docs:** `docs/TWO-PARTY-FLOW.md` "Email" section gains the channel table above;
-  `docs/SPEC-DRIFT.md` §7's "~10 spec email types" entry is replaced with this disposition (the
+- **Docs:** `docs/specs/two-party-flow.md` "Email" section gains the channel table above;
+  `docs/operations/spec-drift.md` §7's "~10 spec email types" entry is replaced with this disposition (the
   rejection record).
 - **Explicitly out of scope, named so they stop reappearing:** bounce webhooks and address
   suppression, delivery tracking, a scheduler/queue, per-event opt-outs, and marketing mail.
@@ -182,19 +182,19 @@ The evidence, and what each piece is used for here:
 6. No scheduler, queue or cron is introduced; every send remains triggered by a request's write
    (creation, resend, completing submit), and no pre-expiry reminder exists for the recipient.
 7. The spec's Analysis, Congratulations, Change, Daily, Weekly, Interest, Coach and
-   Counterparty-Registered emails remain absent, and `docs/SPEC-DRIFT.md` + `docs/TWO-PARTY-FLOW.md`
+   Counterparty-Registered emails remain absent, and `docs/operations/spec-drift.md` + `docs/specs/two-party-flow.md`
    record that disposition (rejection is a document, not a hope).
 8. Gate stays green and dependency-free: `bash scripts/verify.sh` passes with no new package and
    no database access; `pnpm data:check` still validates the new copy items (E23/E10).
 
 ## Related
 
-- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the flow every one of these emails belongs to.
-- [RESEND-INBOUND.md](../RESEND-INBOUND.md) — what happens when a send bounces or is complained about.
+- [TWO-PARTY-FLOW.md](two-party-flow.md) — the flow every one of these emails belongs to.
+- [RESEND-INBOUND.md](../operations/resend-inbound.md) — what happens when a send bounces or is complained about.
 - [flow-reinvite.md](flow-reinvite.md) — the expired-invitation case, specified separately.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
 
 <!-- docs-nav:end -->

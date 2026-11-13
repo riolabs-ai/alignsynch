@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › Relationship types · prev [UI registry](ui-registry.md) · next [Reference mockups](REFERENCE-MOCKUPS.md)
+[Docs hub](../README.md) › **Reference** › Relationship types · prev [QuizHub capability map](quizhub-capability-map.md) · next [UI registry](../ui-registry.md)
 
 <!-- docs-nav:end -->
 
@@ -47,11 +47,11 @@ GuyFriend-GalFriend                                GuyFriend-GalFriend          
 
 ## Related
 
-- [DATA-MODEL.md](DATA-MODEL.md) — where these types land in the content model.
-- [STAGES.md](STAGES.md) — the four stages the types are rendered in.
+- [DATA-MODEL.md](data-model.md) — where these types land in the content model.
+- [STAGES.md](../specs/stages.md) — the four stages the types are rendered in.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › Relationship types · prev [UI registry](ui-registry.md) · next [Reference mockups](REFERENCE-MOCKUPS.md)
+[Docs hub](../README.md) › **Reference** › Relationship types · prev [QuizHub capability map](quizhub-capability-map.md) · next [UI registry](../ui-registry.md)
 
 <!-- docs-nav:end -->

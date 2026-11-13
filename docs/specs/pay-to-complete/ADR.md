@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › ADR · prev [Technical spec](SPEC.md) · next [Research](RESEARCH.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › ADR · prev [Maintenance fields](../maintenance-fields.md) · next [Payer copy inventory](COPY-INVENTORY.md)
 
 <!-- docs-nav:end -->
 
@@ -201,6 +201,6 @@ keep: it found three fixture defects and the missing charge branch.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › ADR · prev [Technical spec](SPEC.md) · next [Research](RESEARCH.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › ADR · prev [Maintenance fields](../maintenance-fields.md) · next [Payer copy inventory](COPY-INVENTORY.md)
 
 <!-- docs-nav:end -->

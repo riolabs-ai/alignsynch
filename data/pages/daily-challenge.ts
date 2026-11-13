@@ -16,7 +16,7 @@
  *  - **the badge set** — six records in `data/daily-challenge.ts` (label + unlocked), so
  *    "which badges has this player earned" is a fixture question, not a CSS class.
  *  - **the day's quiz** — `daily-quiz.tsx` still carries its five-question mock. It is a
- *    Quiz, not copy: it belongs to the quiz fixture (`docs/P2-INVENTORY.md` puts WU-10's
+ *    Quiz, not copy: it belongs to the quiz fixture (`docs/operations/history/P2-INVENTORY.md` puts WU-10's
  *    MOCK tier at 0; moving it would change which questions render, which this unit may
  *    not do).
  *

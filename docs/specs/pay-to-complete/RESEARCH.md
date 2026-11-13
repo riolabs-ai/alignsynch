@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Payer copy inventory](COPY-INVENTORY.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Research · prev [Pay-to-complete set](README.md) · next [Technical spec](SPEC.md)
 
 <!-- docs-nav:end -->
 
@@ -29,7 +29,7 @@ answering         everyoneAnswered && everyoneAccepted ? "complete" : "answering
 
 `complete` requires both parties to have answered every Aspect **and** both to have accepted. There is no
 payment term. Two acceptances therefore open the Gap report, which is the product's whole output — measured
-on demo in the 2026-11-07 flow validation (`#622`, `docs/qa-flow-validation/2026-11-07.md`): both seats read
+on demo in the 2026-11-07 flow validation (`#622`, `docs/qa/flow-validation/2026-11-07.md`): both seats read
 `data-feel-gap="3"` with no charge anywhere in the path.
 
 ### The charge happens at creation, which is the inverse of the intended model
@@ -152,6 +152,6 @@ Not re-litigated here; they are inputs to the PRD:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Research · prev [ADR](ADR.md) · next [Payer copy inventory](COPY-INVENTORY.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Research · prev [Pay-to-complete set](README.md) · next [Technical spec](SPEC.md)
 
 <!-- docs-nav:end -->

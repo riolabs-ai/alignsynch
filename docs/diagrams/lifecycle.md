@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Lifecycle · next [Payment](payment.md)
+[Docs hub](../README.md) › **Diagrams** › Lifecycle · prev [Gate](gate.md) · next [Payment](payment.md)
 
 <!-- docs-nav:end -->
 
@@ -76,12 +76,12 @@ reach — a dead surface, which is the defect these diagrams exist to prevent.
 
 ## Where to read the rest
 
-- [`docs/TWO-PARTY-FLOW.md`](../TWO-PARTY-FLOW.md) — the same lifecycle in prose, screen by screen.
+- [`docs/specs/two-party-flow.md`](../specs/two-party-flow.md) — the same lifecycle in prose, screen by screen.
 - [`lib/flow/store.ts`](../../lib/flow/store.ts) — the reads and writes behind each edge.
-- [`docs/pay-to-complete/SPEC.md`](../pay-to-complete/SPEC.md) — what completion costs.
+- [`docs/specs/pay-to-complete/SPEC.md`](../specs/pay-to-complete/SPEC.md) — what completion costs.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Lifecycle · next [Payment](payment.md)
+[Docs hub](../README.md) › **Diagrams** › Lifecycle · prev [Gate](gate.md) · next [Payment](payment.md)
 
 <!-- docs-nav:end -->

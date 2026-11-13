@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Bundles · prev [Spec drift](SPEC-DRIFT.md)
+[Docs hub](../README.md) › **Guides** › Bundles · next [The growth model](growth-model.md)
 
 <!-- docs-nav:end -->
 
@@ -113,7 +113,7 @@ Deleting it resets the tenant to the fixtures, which stay untouched as the demo 
 
 Every refusal is one line per problem, `[B<n>] <path>: <message>`, where the path is the key a
 person has to change: `[B4] payload.templates.0.secret: forbidden key "secret" — …`. The codes
-are declared once in [`scripts/rule-codes.ts`](../scripts/rule-codes.ts) with one owner each, the
+are declared once in [`scripts/rule-codes.ts`](../../scripts/rule-codes.ts) with one owner each, the
 same way the `E` codes are.
 
 ## The platform package (`bundleVersion: 2`)
@@ -288,7 +288,7 @@ version, so a release bump does not churn a fixture, and `--fix` re-stamps it.
 - **A package never applies SQL.** `schemaVersion` is a refusal (`B7`); `pnpm db:migrate` stays a
   deliberate human step on the target.
 - **The app does not read the store yet.** `/assessment/[slug]` reads six Postgres tables
-  ([`docs/TWO-PARTY-FLOW.md`](TWO-PARTY-FLOW.md), #145/#146), so the flow and the bundle
+  ([`docs/specs/two-party-flow.md`](../specs/two-party-flow.md), #145/#146), so the flow and the bundle
   store are two sources today. Switching that route to the store would undo the two-party flow,
   and the store is not a database: it carries templates and instances, not invitations or
   submitted answers. `data/tenant-assessments.ts` in the original spec is therefore not part of
@@ -297,6 +297,6 @@ version, so a release bump does not churn a fixture, and `--fix` re-stamps it.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Bundles · prev [Spec drift](SPEC-DRIFT.md)
+[Docs hub](../README.md) › **Guides** › Bundles · next [The growth model](growth-model.md)
 
 <!-- docs-nav:end -->

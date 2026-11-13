@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [The growth model](GROWTH-MODEL.md)
+[Docs hub](../README.md) › **Start here** › Demo auth · next [The demo](demo.md)
 
 <!-- docs-nav:end -->
 
@@ -255,11 +255,11 @@ when there is none.
 
 ## Related
 
-- [DEMO.md](DEMO.md) — the demo branch these accounts are seeded into.
-- [DEPLOYING.md](DEPLOYING.md) — the deployment the demo gate is disabled on.
+- [DEMO.md](demo.md) — the demo branch these accounts are seeded into.
+- [DEPLOYING.md](../operations/deploying.md) — the deployment the demo gate is disabled on.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Operations** › Demo auth · prev [The demo](DEMO.md) · next [The growth model](GROWTH-MODEL.md)
+[Docs hub](../README.md) › **Start here** › Demo auth · next [The demo](demo.md)
 
 <!-- docs-nav:end -->

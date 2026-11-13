@@ -10,7 +10,7 @@
   before any of it becomes a component in app/ or components/.
 
   NAME. This file is `mockup-pay-to-complete-v1.html` because that is the path the card and
-  docs/pay-to-complete/COPY-INVENTORY.md §9 name. It supersedes the card attachment
+  docs/specs/pay-to-complete/COPY-INVENTORY.md §9 name. It supersedes the card attachment
   `mockup-pay-to-complete-v2-final.html`: that file's copy ledger marks six strings "verbatim"
   which COPY-INVENTORY §9 re-checked and found stale, composed, or absent from the tree. Here
   every visible string carries a machine-checkable source, and the ledger is generated from the
@@ -20,7 +20,7 @@
     v  verbatim      an exact fixture literal          data-src="data/pages/x.ts:123"
     t  template      a fixture template, {slot} filled  data-src + data-literal="{slot}"
     c  composed      shipped parts joined at render     data-src lists every part
-    s  spec          the spec's own sentence, adopted   data-src="docs/pay-to-complete/…:N"
+    s  spec          the spec's own sentence, adopted   data-src="docs/specs/pay-to-complete/…:N"
                      verbatim but not yet a fixture     — it needs a fixture row before shipping
     p  proposed      NO source anywhere                 data-approval="who must approve it"
     d  data          a fixture value (name, date, count) — not reader-visible copy
@@ -32,7 +32,7 @@
   THE OPEN DECISION. The `needs-action` band (screen 4) has no copy in the tree, the spec or
   the code: SPEC §9 is a PR checklist, `grep -rn "3DS\|Approve payment"` returns zero files, and
   PRD §9 q3 has not chosen link-vs-expire. Its four sentences are therefore marked `p`, and the
-  band must not be built until they are approved — docs/pay-to-complete/PAYER-PRESENT.md §6.
+  band must not be built until they are approved — docs/specs/pay-to-complete/PAYER-PRESENT.md §6.
 -->
 <meta name="robots" content="noindex, nofollow" />
 <style>
@@ -200,7 +200,7 @@
   <div class="wrap">
     <b>Mockup — not shipped</b>
     <span>No route renders this file and nothing imports it. Building any of it needs the owner's approval of the strings marked <span class="badge k-p">p</span>.</span>
-    <code>docs/pay-to-complete/mockup-pay-to-complete-v1.html</code>
+    <code>docs/specs/pay-to-complete/mockup-pay-to-complete-v1.html</code>
   </div>
 </div>
 
@@ -310,11 +310,11 @@
       <div class="row" style="gap:1rem">
         <label class="radio">
           <input type="radio" name="when" value="now" checked />
-          <span data-copy="s" data-src="docs/pay-to-complete/PRD.md:90" data-literal="pay now / later">pay now</span>
+          <span data-copy="s" data-src="docs/specs/pay-to-complete/PRD.md:90" data-literal="pay now / later">pay now</span>
         </label>
         <label class="radio">
           <input type="radio" name="when" value="later" />
-          <span data-copy="s" data-src="docs/pay-to-complete/PRD.md:91" data-literal="Choosing &#34;later&#34;">later</span>
+          <span data-copy="s" data-src="docs/specs/pay-to-complete/PRD.md:91" data-literal="Choosing &#34;later&#34;">later</span>
         </label>
       </div>
 
@@ -337,7 +337,7 @@
             </div>
           </div>
           <p style="margin:.75rem 0 0">
-            <span class="btn btn-primary" data-mock-action="capturePaymentMethodAction" data-copy="s" data-src="docs/pay-to-complete/PRD.md:90" data-literal="pay now / later">pay now</span>
+            <span class="btn btn-primary" data-mock-action="capturePaymentMethodAction" data-copy="s" data-src="docs/specs/pay-to-complete/PRD.md:90" data-literal="pay now / later">pay now</span>
             <span class="muted" style="margin-left:.5rem" data-copy="p" data-approval="owner — one sentence stating what capture does not do; lib/member/payment.ts:14-17 is the fact, not the sentence" data-literal="Nothing is charged today — this only makes the completion possible.">Nothing is charged today — this only makes the completion possible.</span>
           </p>
         </div>
@@ -382,7 +382,7 @@
     </div>
     <div class="body">
       <div class="band amber" style="margin-bottom:1rem">
-        <h2 data-copy="s" data-src="docs/pay-to-complete/SPEC.md:112" data-literal="add a payment method to open the Gap">add a payment method to open the Gap</h2>
+        <h2 data-copy="s" data-src="docs/specs/pay-to-complete/SPEC.md:112" data-literal="add a payment method to open the Gap">add a payment method to open the Gap</h2>
         <p class="muted" data-copy="x" data-src="optional annotation">The server's own refusal, <code>method-required</code> (SPEC §4). The screen may draw it; a test asserts the action refuses without it.</p>
       </div>
 
@@ -460,7 +460,7 @@
       </div>
 
       <div class="band amber" style="margin-top:1rem">
-        <h2 data-copy="s" data-src="docs/pay-to-complete/PRD.md:73" data-literal="opens on &lt;date&gt;">opens on <span data-copy="d" data-src="stored instant, not a clock">Nov 14, 2026</span></h2>
+        <h2 data-copy="s" data-src="docs/specs/pay-to-complete/PRD.md:73" data-literal="opens on &lt;date&gt;">opens on <span data-copy="d" data-src="stored instant, not a clock">Nov 14, 2026</span></h2>
         <p class="muted" data-copy="x" data-src="optional annotation">The <code>charge-due</code> state: the trial's window is stated, never hidden (PRD §4, R3). The date is a stored instant rendered once, as <code>Bought {date}</code> already is.</p>
       </div>
 
@@ -499,7 +499,7 @@
 
   <!-- state: charge-failed — the decline a retry CAN fix. Wording is the spec's. -->
   <section class="band amber" id="payer-band-failed" data-payer-band="charge-failed" hidden>
-    <h2 data-copy="s" data-src="docs/pay-to-complete/PRD.md:75" data-literal="we&#39;ll try again on &lt;date&gt;">we'll try again on <span data-copy="d" data-src="stored instant, not a clock">Nov 14, 2026</span></h2>
+    <h2 data-copy="s" data-src="docs/specs/pay-to-complete/PRD.md:75" data-literal="we&#39;ll try again on &lt;date&gt;">we'll try again on <span data-copy="d" data-src="stored instant, not a clock">Nov 14, 2026</span></h2>
     <p class="muted" data-copy="x" data-src="optional annotation">The <code>charge-declined</code> refusal (SPEC §4) already covers every decline a retry can fix. No new string is needed for the common failure — which is why the band below is the only unwritten state.</p>
   </section>
 
@@ -521,7 +521,7 @@
 
   <!-- state: charged — spec wording only. -->
   <section class="band emerald" id="payer-band-charged" data-payer-band="charged" hidden>
-    <h2 data-copy="s" data-src="docs/pay-to-complete/PRD.md:74" data-literal="the Gap report">the Gap report</h2>
+    <h2 data-copy="s" data-src="docs/specs/pay-to-complete/PRD.md:74" data-literal="the Gap report">the Gap report</h2>
     <p class="muted" data-copy="x" data-src="optional annotation">The <code>charged</code> row of PRD §4: the fee landed and the report is open to both. `Approve payment` returning here is the whole point of the band above.</p>
   </section>
 
@@ -572,7 +572,7 @@
   <p style="margin:.5rem 0 1.5rem; font-weight:600" data-copy="v" data-src="data/pages/assessment-instance.ts:66-68" data-literal="Sharing — both sheets are sealed; the Gap opens when the assessment is published." data-blind-anchor="sealed">Sharing — both sheets are sealed; the Gap opens when the assessment is published.</p>
 
   <section class="band amber">
-    <h2 data-copy="s" data-src="docs/pay-to-complete/ADR.md:139" data-literal="waiting for &lt;name&gt; to publish">Waiting for Daniel to publish</h2>
+    <h2 data-copy="s" data-src="docs/specs/pay-to-complete/ADR.md:139" data-literal="waiting for &lt;name&gt; to publish">Waiting for Daniel to publish</h2>
   </section>
 
   <div class="note" data-copy="x" data-src="review annotation — not product text">
@@ -720,7 +720,7 @@
      ══════════════════════════════════════════════════════════════════════════ -->
 <main id="screen-audit" class="wrap" style="padding-top:2.5rem; padding-bottom:3rem" hidden>
   <h1>Blind rule, checked</h1>
-  <p class="muted" style="margin:.5rem 0 1rem">Nine assertions over the DOM, run on load and re-run by the button. The list is <code>docs/pay-to-complete/PAYER-PRESENT.md</code> §5, minus the three that are properties of the server rather than of a screen, plus the three surfaces this card asks for.</p>
+  <p class="muted" style="margin:.5rem 0 1rem">Nine assertions over the DOM, run on load and re-run by the button. The list is <code>docs/specs/pay-to-complete/PAYER-PRESENT.md</code> §5, minus the three that are properties of the server rather than of a screen, plus the three surfaces this card asks for.</p>
   <p><button class="sw" type="button" id="rerun">Re-run</button> <span class="status" id="audit-chip-2" data-ok="false">not run</span></p>
   <pre id="audit-out">not run</pre>
 
@@ -730,12 +730,12 @@ export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
 node --input-type=module -e '
   import { readFileSync } from "node:fs";
   import { JSDOM } from "jsdom";
-  const html = readFileSync("docs/pay-to-complete/mockup-pay-to-complete-v1.html", "utf8");
+  const html = readFileSync("docs/specs/pay-to-complete/mockup-pay-to-complete-v1.html", "utf8");
   const dom = new JSDOM(html, { runScripts: "dangerously" });
   console.log(dom.window.document.getElementById("audit-out").textContent);'
 
 # 2. every `v` / `t` / `c` citation, against the tree (the check the v2-final ledger failed)
-grep -c "data-copy=\"v\"" docs/pay-to-complete/mockup-pay-to-complete-v1.html
+grep -c "data-copy=\"v\"" docs/specs/pay-to-complete/mockup-pay-to-complete-v1.html
 sed -n '130p' data/pages/assessment-instances.ts      # Paid
 sed -n '66,68p' data/pages/assessment-instance.ts     # Sharing — both sheets are sealed…
 sed -n '82,84p' data/pages/assessment-template-detail.ts  # Creating a relationship is free…

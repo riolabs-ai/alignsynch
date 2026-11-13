@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Comments mockup, both placements · prev [Brand lockup](../qa-brand-lockup/README.md) · next [Contact landing](../qa-contact-land/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Comments mockup, both placements · prev [Brand lockup](../brand-lockup/README.md) · next [Contact landing](../contact-land/README.md)
 
 <!-- docs-nav:end -->
 
@@ -27,12 +27,12 @@ pictures of it.
 ## How they were taken
 
 No Playwright in this tree. `stills.mjs` drives **headless Chrome over CDP**, the same plumbing as
-`docs/qa-873/stills.mjs`, and it needs no server, no cookies and no database: the artifact is a
+`docs/qa/873/stills.mjs`, and it needs no server, no cookies and no database: the artifact is a
 standalone document, so the shutter opens on `file://<the committed file>` at the address a reviewer
 would use.
 
 ```bash
-node docs/qa-comments-mockup/stills.mjs          # writes the five frames and capture-report.json
+node docs/qa/comments-mockup/stills.mjs          # writes the five frames and capture-report.json
 ```
 
 The artifact carries its own state in the query string (`?variant=A|B&subject=opinion|assessment|relationship&viewport=1440|390&spec=<specimen>`),
@@ -59,7 +59,7 @@ as the seeded demo admin through the app's own `/api/auth/sign-in/email` and rea
 ```bash
 pnpm db:seed --review                                  # the shelf reads review_artifact, not the fixture
 pnpm exec next dev --turbo -p 3007                     # on the demo branch
-node docs/qa-comments-mockup/live-check.mjs http://127.0.0.1:3007
+node docs/qa/comments-mockup/live-check.mjs http://127.0.0.1:3007
 ```
 
 ```
@@ -92,6 +92,6 @@ header is what `scripts/flow-e2e.mjs` already does.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Comments mockup, both placements · prev [Brand lockup](../qa-brand-lockup/README.md) · next [Contact landing](../qa-contact-land/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Comments mockup, both placements · prev [Brand lockup](../brand-lockup/README.md) · next [Contact landing](../contact-land/README.md)
 
 <!-- docs-nav:end -->

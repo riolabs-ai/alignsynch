@@ -798,7 +798,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - `chore(deps)` — bump next from 16.1.6 to 16.4.1 ([#563](https://github.com/riolabs-ai/alignsynch/pull/563))
 - `chore(ci)` — dependabot.yml and CODEOWNERS for the security surfaces (#441) ([#567](https://github.com/riolabs-ai/alignsynch/pull/567))
 - `docs(ops)` — the twelve non-main branches, triaged by what proves each removal safe ([#560](https://github.com/riolabs-ai/alignsynch/pull/560))
-- `docs(agents)` — ## Numbers points at docs/GATE.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
+- `docs(agents)` — ## Numbers points at docs/operations/gate.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
 - `docs(gate)` — re-measure the baseline over 2026-11-04 — 156 s a run, 176 s to the last job ([#557](https://github.com/riolabs-ai/alignsynch/pull/557))
 - feat(email) — the release note: one band, plain text first, sent once per tag (#548) ([#551](https://github.com/riolabs-ai/alignsynch/pull/551))
 - feat(dashboard) — support, help and the library live in the console (#542) ([#546](https://github.com/riolabs-ai/alignsynch/pull/546))
@@ -818,7 +818,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - `docs(registry)` — the answer sheet's inbound paths name the report's CTA too ([#490](https://github.com/riolabs-ai/alignsynch/pull/490))
 - `docs(release)` — the v1.3.0 Known limit said the answer sheet had no link — it has one ([#487](https://github.com/riolabs-ai/alignsynch/pull/487))
 - fix(shell) — the surface registry calls create and answer live, because they are ([#485](https://github.com/riolabs-ai/alignsynch/pull/485))
-- `docs(v1)` — disposition all 118 /v1 items into docs/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
+- `docs(v1)` — disposition all 118 /v1 items into docs/operations/history/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
 - `docs(release)` — a merge deploys production, measured during the v1.3.0 cut ([#483](https://github.com/riolabs-ai/alignsynch/pull/483))
 - `docs(gate)` — the 2026-10-29 → 2026-11-03 comparison states the per-step numbers, not a ratio ([#482](https://github.com/riolabs-ai/alignsynch/pull/482))
 - `docs(gate)` — a measured baseline — 97.4 % yield / 144 s on 2026-11-02, and how to re-derive it ([#480](https://github.com/riolabs-ai/alignsynch/pull/480))
@@ -1013,16 +1013,16 @@ with a **Known limits** block, because a release that does not say what it canno
 - `chore(deps)` — bump next from 16.1.6 to 16.4.1 ([#563](https://github.com/riolabs-ai/alignsynch/pull/563))
 - `chore(ci)` — dependabot.yml and CODEOWNERS for the security surfaces (#441) ([#567](https://github.com/riolabs-ai/alignsynch/pull/567))
 - `docs(ops)` — the twelve non-main branches, triaged by what proves each removal safe ([#560](https://github.com/riolabs-ai/alignsynch/pull/560))
-- `docs(agents)` — ## Numbers points at docs/GATE.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
+- `docs(agents)` — ## Numbers points at docs/operations/gate.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
 - `docs(gate)` — re-measure the baseline over 2026-11-04 — 156 s a run, 176 s to the last job ([#557](https://github.com/riolabs-ai/alignsynch/pull/557))
 
 ### Known limits
 
 - **Account deletion needs a live session.** The control lives on `/settings` and acts on the signed-in person. Anyone whose managed-auth user is already gone cannot self-serve it, and there is no operator tool in the product for that case.
-- **A failed scrub is resumable, not automatic.** When the auth deletion succeeds and the sweep then throws, the intent survives in `account_deletion_job`, an operator finishes it with the command in `docs/ACCOUNT-DELETION-SPEC.md`, and `scripts/db-verify.mjs` fails on a row still open after 24 hours. That is a check somebody runs, not a pager: nothing alerts on its own and nothing retries automatically, so an abandoned row is visible only to whoever runs the verify.
+- **A failed scrub is resumable, not automatic.** When the auth deletion succeeds and the sweep then throws, the intent survives in `account_deletion_job`, an operator finishes it with the command in `docs/specs/account-deletion-spec.md`, and `scripts/db-verify.mjs` fails on a row still open after 24 hours. That is a check somebody runs, not a pager: nothing alerts on its own and nothing retries automatically, so an abandoned row is visible only to whoever runs the verify.
 - **The marketing opt-out row keeps the email address on purpose.** It is the one retained identifier, it exists so the address is never mailed again, and the privacy policy says so rather than claiming no address is kept. Billing records (7 years) and security audit entries (24 months) carry no name or address.
-- **A shared assessment survives the deletion of one participant.** The other person keeps their report; the deleted person's seat reads "Deleted account" and their answers remain inside that completed report with the identifying prose rewritten. That is the product decision, recorded in `docs/ACCOUNT-DELETION-SPEC.md`.
-- **The dependency cohort moved major versions with no application change.** react 19.3.1, recharts 3.10.1 and swiper 12.2.0 all landed without source edits; the carousel screenshots in `docs/qa-swiper-12/` are the visual evidence, and the two pairs that differ are autoplay timing rather than regressions.
+- **A shared assessment survives the deletion of one participant.** The other person keeps their report; the deleted person's seat reads "Deleted account" and their answers remain inside that completed report with the identifying prose rewritten. That is the product decision, recorded in `docs/specs/account-deletion-spec.md`.
+- **The dependency cohort moved major versions with no application change.** react 19.3.1, recharts 3.10.1 and swiper 12.2.0 all landed without source edits; the carousel screenshots in `docs/qa/swiper-12/` are the visual evidence, and the two pairs that differ are autoplay timing rather than regressions.
 
 ## [1.4.0] - 2026-11-04
 
@@ -1114,7 +1114,7 @@ The admin console, and relationship templates become products.
 - `docs(registry)` — the answer sheet's inbound paths name the report's CTA too ([#490](https://github.com/riolabs-ai/alignsynch/pull/490))
 - `docs(release)` — the v1.3.0 Known limit said the answer sheet had no link — it has one ([#487](https://github.com/riolabs-ai/alignsynch/pull/487))
 - fix(shell) — the surface registry calls create and answer live, because they are ([#485](https://github.com/riolabs-ai/alignsynch/pull/485))
-- `docs(v1)` — disposition all 118 /v1 items into docs/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
+- `docs(v1)` — disposition all 118 /v1 items into docs/operations/history/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
 - `docs(release)` — a merge deploys production, measured during the v1.3.0 cut ([#483](https://github.com/riolabs-ai/alignsynch/pull/483))
 - **Stripe is test mode only** — no `sk_live` path exists in the code; checkout cannot charge
 - **Chat has no persistence** — `/chat` is a mocked surface with no tables behind it.

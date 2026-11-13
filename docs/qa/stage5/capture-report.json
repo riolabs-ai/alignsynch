@@ -3,7 +3,7 @@
   "capturedAt": "2026-11-12T12:51:35.384Z",
   "shots": [
     {
-      "file": "docs/qa-stage5/stage5-not-entitled-1440.png",
+      "file": "docs/qa/stage5/stage5-not-entitled-1440.png",
       "width": 1440,
       "innerWidth": 1440,
       "scrollWidth": 1440,
@@ -20,7 +20,7 @@
       "leak": false
     },
     {
-      "file": "docs/qa-stage5/stage5-not-entitled-390.png",
+      "file": "docs/qa/stage5/stage5-not-entitled-390.png",
       "width": 390,
       "innerWidth": 390,
       "scrollWidth": 390,
@@ -37,7 +37,7 @@
       "leak": false
     },
     {
-      "file": "docs/qa-stage5/stage5-entitled-1440.png",
+      "file": "docs/qa/stage5/stage5-entitled-1440.png",
       "width": 1440,
       "innerWidth": 1440,
       "scrollWidth": 1440,
@@ -54,7 +54,7 @@
       "leak": false
     },
     {
-      "file": "docs/qa-stage5/stage5-entitled-390.png",
+      "file": "docs/qa/stage5/stage5-entitled-390.png",
       "width": 390,
       "innerWidth": 390,
       "scrollWidth": 390,

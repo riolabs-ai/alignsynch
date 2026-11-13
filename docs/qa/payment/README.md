@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [Surface sweep, #913](../qa-surface-sweep-913/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Payment capture & completion · prev [Templates and relationships after creation](../noun-crud/README.md) · next [P4 dogfood pass](../qa-dogfood-p4.md)
 
 <!-- docs-nav:end -->
 
@@ -135,7 +135,7 @@ A member pays: a method is captured, the $8.95 fee lands against it, the relatio
 #739 shipped the two acts; the capture was still the hosted adapter's **link**. The approved
 artifact draws the other thing: a plan card, then the provider's own card fields in a frame _inside
 the page_. This is that build, walked in a browser at 1440 and 390, with the DOM read back at every
-step. Stills and both reports are in [`capture-dialog/`](capture-dialog/).
+step. Stills and both reports are in [`capture-dialog/`](capture-dialog).
 
 Two passes, because they answer different questions and one server cannot answer both:
 
@@ -147,12 +147,12 @@ Two passes, because they answer different questions and one server cannot answer
 ```bash
 # the flow pass, on the keyless adapter — `pnpm payment:e2e` unchanged
 pnpm payment:e2e setup                                  # 20 checks ✔
-python3 …/cdp-payment-dialog.py --mode flow --state .payment-e2e.json --out docs/qa-payment/capture-dialog
+python3 …/cdp-payment-dialog.py --mode flow --state .payment-e2e.json --out docs/qa/payment/capture-dialog
 pnpm payment:e2e verify                                 # 7 checks ✔
 
 # the frame pass, on the test-mode keys — nothing is completed and nothing is written
 BILLING_PROVIDER=stripe pnpm dev --port 3100
-python3 …/cdp-payment-dialog.py --mode frame --state .payment-e2e.json --out docs/qa-payment/capture-dialog
+python3 …/cdp-payment-dialog.py --mode frame --state .payment-e2e.json --out docs/qa/payment/capture-dialog
 ```
 
 | Step               | `data-capture-stage` | plans | `data-add-method` | note                                                            |
@@ -183,6 +183,6 @@ The dialog's copy is asserted against `data/pages/dashboard-relationship-detail.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [Surface sweep, #913](../qa-surface-sweep-913/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Payment capture & completion · prev [Templates and relationships after creation](../noun-crud/README.md) · next [P4 dogfood pass](../qa-dogfood-p4.md)
 
 <!-- docs-nav:end -->

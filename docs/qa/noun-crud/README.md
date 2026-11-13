@@ -2,12 +2,12 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Templates and relationships after creation · prev [Lockup 2rem](../qa-lockup-2rem/README.md) · next [recharts 3](../qa-recharts-3/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Templates and relationships after creation · prev [Lockup 2rem](../lockup-2rem/README.md) · next [Payment capture & completion](../payment/README.md)
 
 <!-- docs-nav:end -->
 
 Evidence for the card. The requirement is [issue #711](https://github.com/riolabs-ai/alignsynch/issues/711);
-the binding spec for the flow the revision sits in is [`docs/specs/flow-stages.md`](../specs/flow-stages.md).
+the binding spec for the flow the revision sits in is [`docs/specs/flow-stages.md`](../../specs/flow-stages.md).
 This page is what the build does when asked for it — the two stills below are the shipped components,
 rendered from the branch's own tree at `next start` (production build, node 24), at 1440 and 390.
 
@@ -66,6 +66,6 @@ database's, and the panel's `blocked` refusal names it (`mode-fixed`).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Templates and relationships after creation · prev [Lockup 2rem](../qa-lockup-2rem/README.md) · next [recharts 3](../qa-recharts-3/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Templates and relationships after creation · prev [Lockup 2rem](../lockup-2rem/README.md) · next [Payment capture & completion](../payment/README.md)
 
 <!-- docs-nav:end -->

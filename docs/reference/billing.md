@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Product** › Billing · prev [Payer-present state](pay-to-complete/PAYER-PRESENT.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
+[Docs hub](../README.md) › **Reference** › Billing · prev [Glossary](../glossary.md) · next [Data model](data-model.md)
 
 <!-- docs-nav:end -->
 
@@ -239,11 +239,11 @@ No tax, invoices, dunning, coupons or seats. No coach role — `party.role` is s
 
 ## Related
 
-- [SPEC.md](pay-to-complete/SPEC.md) — the payment obligation this implements.
-- [payment.md](diagrams/payment.md) — when money is owed, retried or written off.
+- [SPEC.md](../specs/pay-to-complete/SPEC.md) — the payment obligation this implements.
+- [payment.md](../diagrams/payment.md) — when money is owed, retried or written off.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Product** › Billing · prev [Payer-present state](pay-to-complete/PAYER-PRESENT.md) · next [Account deletion](ACCOUNT-DELETION-SPEC.md)
+[Docs hub](../README.md) › **Reference** › Billing · prev [Glossary](../glossary.md) · next [Data model](data-model.md)
 
 <!-- docs-nav:end -->

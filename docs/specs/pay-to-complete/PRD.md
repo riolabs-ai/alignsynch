@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › PRD · prev [Pay-to-complete set](README.md) · next [Technical spec](SPEC.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › PRD · prev [Payer-present state](PAYER-PRESENT.md) · next [Pay-to-complete set](README.md)
 
 <!-- docs-nav:end -->
 
@@ -204,6 +204,6 @@ None of the three blocks the build; each blocks the **release**.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › PRD · prev [Pay-to-complete set](README.md) · next [Technical spec](SPEC.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › PRD · prev [Payer-present state](PAYER-PRESENT.md) · next [Pay-to-complete set](README.md)
 
 <!-- docs-nav:end -->

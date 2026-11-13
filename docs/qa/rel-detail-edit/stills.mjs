@@ -15,7 +15,7 @@
  * Cookies come from `rig.mjs` (Node signs in; a page-origin sign-in answers 403 INVALID_ORIGIN on
  * this branch). Run against the dev server on :4317:
  *
- *   node docs/qa-rel-detail-edit/stills.mjs
+ *   node docs/qa/rel-detail-edit/stills.mjs
  */
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";

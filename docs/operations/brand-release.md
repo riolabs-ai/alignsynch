@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Two brands, one tree · prev [Template doctrine](TEMPLATE-DOCTRINE.md) · next [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md)
+[Docs hub](../README.md) › **Operations** › Two brands, one tree · prev [Branch triage](branch-triage.md) · next [Deploying](deploying.md)
 
 <!-- docs-nav:end -->
 
@@ -105,15 +105,15 @@ The rule in one line: **edit the record → regenerate the icons → `parity:upd
 both-brand CI green.** A change that skips step 3 and 4 is how a parity rewrite ends up hiding a
 real drift; a change that skips step 2 is how the favicon drifts from the page.
 
-See also: `tests/parity/README.md`, `docs/TEMPLATE-DOCTRINE.md`, `lib/brand-icon.ts`.
+See also: `tests/parity/README.md`, `docs/guides/template-doctrine.md`, `lib/brand-icon.ts`.
 
 ## Related
 
-- [brand-boundary.md](diagrams/brand-boundary.md) — which routes each brand owns.
-- [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md) — one core, many expressions — the rule a brand version follows.
+- [brand-boundary.md](../diagrams/brand-boundary.md) — which routes each brand owns.
+- [TEMPLATE-DOCTRINE.md](../guides/template-doctrine.md) — one core, many expressions — the rule a brand version follows.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › Two brands, one tree · prev [Template doctrine](TEMPLATE-DOCTRINE.md) · next [QuizHub capability map](QUIZHUB-CAPABILITY-MAP.md)
+[Docs hub](../README.md) › **Operations** › Two brands, one tree · prev [Branch triage](branch-triage.md) · next [Deploying](deploying.md)
 
 <!-- docs-nav:end -->

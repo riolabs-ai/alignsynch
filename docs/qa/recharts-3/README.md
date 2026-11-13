@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [Relationship detail — the edit form is asked for](../qa-rel-detail-edit/README.md)
+[Docs hub](../../README.md) › **Records & QA** › recharts 3 · prev [Rail collapse handle](../rail-handle/README.md) · next [Relationship detail — the edit form is asked for](../rel-detail-edit/README.md)
 
 <!-- docs-nav:end -->
 
@@ -43,11 +43,11 @@ that reason.
 
 ## Related
 
-- [ui-registry.md](../ui-registry.md) — the surfaces that render the pies.
-- [README.md](../qa-v1x-ui-cohort/README.md) — the UI cohort this dependency move belongs to.
+- [ui-registry.md](../../ui-registry.md) — the surfaces that render the pies.
+- [README.md](../v1x-ui-cohort/README.md) — the UI cohort this dependency move belongs to.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › recharts 3 · prev [Templates and relationships after creation](../qa-noun-crud/README.md) · next [Relationship detail — the edit form is asked for](../qa-rel-detail-edit/README.md)
+[Docs hub](../../README.md) › **Records & QA** › recharts 3 · prev [Rail collapse handle](../rail-handle/README.md) · next [Relationship detail — the edit form is asked for](../rel-detail-edit/README.md)
 
 <!-- docs-nav:end -->

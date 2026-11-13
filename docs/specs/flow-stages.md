@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › The five flow stages (binding spec) · prev [Re-invite](flow-reinvite.md) · next [Maintenance fields](maintenance-fields.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The five flow stages (binding spec) · prev [Re-invite](flow-reinvite.md) · next [Maintenance fields](maintenance-fields.md)
 
 <!-- docs-nav:end -->
 
@@ -265,6 +265,6 @@ later visit.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › The five flow stages (binding spec) · prev [Re-invite](flow-reinvite.md) · next [Maintenance fields](maintenance-fields.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The five flow stages (binding spec) · prev [Re-invite](flow-reinvite.md) · next [Maintenance fields](maintenance-fields.md)
 
 <!-- docs-nav:end -->

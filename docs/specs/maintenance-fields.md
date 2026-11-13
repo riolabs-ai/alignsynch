@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Maintenance fields · prev [The five flow stages (binding spec)](flow-stages.md) · next [Answer input](ux-input.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Maintenance fields · prev [The five flow stages (binding spec)](flow-stages.md) · next [ADR](pay-to-complete/ADR.md)
 
 <!-- docs-nav:end -->
 
@@ -204,11 +204,11 @@ name per party — a prior "one more field" cut, and the right one; nothing here
 
 ## Related
 
-- [DATA-MODEL.md](../DATA-MODEL.md) — the relationship rows these fields land in.
-- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the flow the form is reached from.
+- [DATA-MODEL.md](../reference/data-model.md) — the relationship rows these fields land in.
+- [TWO-PARTY-FLOW.md](two-party-flow.md) — the flow the form is reached from.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Maintenance fields · prev [The five flow stages (binding spec)](flow-stages.md) · next [Answer input](ux-input.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Maintenance fields · prev [The five flow stages (binding spec)](flow-stages.md) · next [ADR](pay-to-complete/ADR.md)
 
 <!-- docs-nav:end -->

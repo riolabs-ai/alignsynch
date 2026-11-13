@@ -2,7 +2,7 @@
  * Probe: count the purchasable relationship types and the per-realm distribution straight from
  * the fixture, so the PR body quotes a measured number and its source rather than the spec's prose.
  *
- *   node docs/qa-templates-redesign/count-probe.mjs
+ *   node docs/qa/templates-redesign/count-probe.mjs
  *
  * Uses the same `@/` resolve hook `pnpm data:check` and the `db:*` scripts use
  * (`scripts/ts-modules.mjs`), so it reads the real module and not a copy of the data.

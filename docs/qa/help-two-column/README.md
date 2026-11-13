@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Help two-column · prev [Contact landing](../qa-contact-land/README.md) · next [Home hero polish](../qa-home-polish/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Help two-column · prev [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md) · next [Home review comments — the logo](../home-comments/README.md)
 
 <!-- docs-nav:end -->
 
@@ -77,11 +77,11 @@ sticky card room to travel; the narrow chip row is sticky against the section in
 
 ## Related
 
-- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map `/help` is a variation of.
-- [ui-registry.md](../ui-registry.md) — the `/help` surface and its status.
+- [UI-MAPPING.md](../../specs/ui-mapping.md) — the surface map `/help` is a variation of.
+- [ui-registry.md](../../ui-registry.md) — the `/help` surface and its status.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Help two-column · prev [Contact landing](../qa-contact-land/README.md) · next [Home hero polish](../qa-home-polish/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Help two-column · prev [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md) · next [Home review comments — the logo](../home-comments/README.md)
 
 <!-- docs-nav:end -->

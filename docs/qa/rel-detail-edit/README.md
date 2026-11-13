@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [recharts 3](../qa-recharts-3/README.md) · next [Stage 5, both states](../qa-stage5/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [recharts 3](../recharts-3/README.md) · next [Stage 5, both states](../stage5/README.md)
 
 <!-- docs-nav:end -->
 
@@ -45,11 +45,11 @@ server on **:4317** (never 3000 — a concurrent gate reaps whatever holds it).
 withenv.sh <main-checkout> bash -c 'cd <worktree> && exec node24.sh pnpm dev --port 4317'
 
 # 2. the rows, then the stills
-withenv.sh <main-checkout> bash -c 'cd <worktree> && node24.sh node docs/qa-rel-detail-edit/rig.mjs'
-node24.sh node docs/qa-rel-detail-edit/stills.mjs
+withenv.sh <main-checkout> bash -c 'cd <worktree> && node24.sh node docs/qa/rel-detail-edit/rig.mjs'
+node24.sh node docs/qa/rel-detail-edit/stills.mjs
 
 # 3. put the shared demo branch back
-withenv.sh <main-checkout> bash -c 'cd <worktree> && node24.sh node docs/qa-rel-detail-edit/cleanup.mjs'
+withenv.sh <main-checkout> bash -c 'cd <worktree> && node24.sh node docs/qa/rel-detail-edit/cleanup.mjs'
 ```
 
 `rig.mjs` signs in two throwaway accounts through the app's own sign-up proxy (a page-origin
@@ -66,6 +66,6 @@ than the viewport it is in. `stills.mjs` resets the metrics before each interact
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [recharts 3](../qa-recharts-3/README.md) · next [Stage 5, both states](../qa-stage5/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [recharts 3](../recharts-3/README.md) · next [Stage 5, both states](../stage5/README.md)
 
 <!-- docs-nav:end -->

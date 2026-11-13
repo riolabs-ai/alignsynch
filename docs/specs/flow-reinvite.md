@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
 
 <!-- docs-nav:end -->
 
@@ -256,11 +256,11 @@ _is_ an invitation, and the `sent|unset|failed` outcome vocabulary and the redir
 
 ## Related
 
-- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the invitation half of the flow this recovers.
+- [TWO-PARTY-FLOW.md](two-party-flow.md) — the invitation half of the flow this recovers.
 - [flow-emails.md](flow-emails.md) — the mail a re-invite sends.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
 
 <!-- docs-nav:end -->

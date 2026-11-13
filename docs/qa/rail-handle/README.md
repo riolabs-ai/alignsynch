@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Rail collapse handle · prev [#542 phase 2](../qa-542-phase2/README.md) · next [Brand lockup](../qa-brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Rail collapse handle · prev [QA links](../qa-links.md) · next [recharts 3](../recharts-3/README.md)
 
 <!-- docs-nav:end -->
 
@@ -14,7 +14,7 @@ renders on a signed-out session. The rail is the shell: it draws the same chrome
 Widths 1440 / 1024 / 768 / 390, headless Chrome over the DevTools protocol
 (`Emulation.setDeviceMetricsOverride` → asserts → `Page.captureScreenshot`). Every number below is
 read from `getBoundingClientRect()` **before** the shutter and is kept in
-[`measurements.json`](./measurements.json).
+[`measurements.json`](measurements.json).
 
 ## What was wrong
 
@@ -107,6 +107,6 @@ above, and `measurements.json` is its output, verbatim.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Rail collapse handle · prev [#542 phase 2](../qa-542-phase2/README.md) · next [Brand lockup](../qa-brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Rail collapse handle · prev [QA links](../qa-links.md) · next [recharts 3](../recharts-3/README.md)
 
 <!-- docs-nav:end -->

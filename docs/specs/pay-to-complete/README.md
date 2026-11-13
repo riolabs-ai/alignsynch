@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Pay-to-complete set · next [PRD](PRD.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Pay-to-complete set · prev [PRD](PRD.md) · next [Research](RESEARCH.md)
 
 <!-- docs-nav:end -->
 
@@ -49,6 +49,6 @@ render.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Pay-to-complete set · next [PRD](PRD.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Pay-to-complete set · prev [PRD](PRD.md) · next [Research](RESEARCH.md)
 
 <!-- docs-nav:end -->

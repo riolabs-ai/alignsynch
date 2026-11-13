@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › UI/UX audit · prev [Divergence table](UI-DIVERGENCE.md) · next [Spec drift](SPEC-DRIFT.md)
+[Docs hub](../README.md) › **Specs & design briefs** › UI/UX audit · prev [Quiz-surface map](ui-mapping.md) · next [Answer input](ux-input.md)
 
 <!-- docs-nav:end -->
 
@@ -36,11 +36,11 @@ The template the audit scores against. Every path below was opened in this tree.
 | play surface                      | `components/quiz/quiz-play.tsx`                                                                                | `Progress` + "Question n of m", feedback overlay, timer, results screen                                                                                                  |
 | forms + validation                | `components/create/quiz-editor.tsx`, `components/auth/login-view.tsx`, `components/auth/register-view.tsx`     | `Tabs` details/questions/settings, `Accordion` per item, `AlertDialog` for destructive, toast for save; error as a visible `Alert`, pending state, disabled-when-invalid |
 | table on mobile                   | `components/leaderboard/leaderboard-table.tsx`                                                                 | `overflow-x-auto whitespace-nowrap` wrapper + `min-w-[600px]` inner + `hidden md:block` column drop                                                                      |
-| dialogs / sheets / toasts         | `components/ui/dialog.tsx` (all seven callers), `components/ui/sheet.tsx` (unused), `components/ui/sonner.tsx` | centered modal is the only dialog form; `sheet`/`drawer` exist and are imported zero times (`docs/UI-MAPPING.md`); toast via sonner in `app/layout.tsx`                  |
+| dialogs / sheets / toasts         | `components/ui/dialog.tsx` (all seven callers), `components/ui/sheet.tsx` (unused), `components/ui/sonner.tsx` | centered modal is the only dialog form; `sheet`/`drawer` exist and are imported zero times (`docs/specs/ui-mapping.md`); toast via sonner in `app/layout.tsx`            |
 | spacing / card / heading / button | `components/ui/card.tsx`, `components/ui/button.tsx`, `components/ui/badge.tsx`                                | `Card` = `rounded-lg border bg-card shadow-sm`; button variants `default`/`action`/`outline`/`destructive`/`ghost`; heading `text-3xl`/`text-2xl`/`text-xl` ladder       |
 
-The quiz→alignment axis of this same question is already mapped in `docs/UI-MAPPING.md`; the
-per-file composition audit is `docs/UI-DIVERGENCE.md`. This page is the interaction and behaviour
+The quiz→alignment axis of this same question is already mapped in `docs/specs/ui-mapping.md`; the
+per-file composition audit is `docs/specs/ui-divergence.md`. This page is the interaction and behaviour
 half those two do not cover: verdicts that only a click-through (or a read of the handler) reveals.
 
 ---
@@ -48,14 +48,14 @@ half those two do not cover: verdicts that only a click-through (or a read of th
 ## 2. Scored table — every route in `content/routes.ts` (50), each once
 
 The ancestor named is the file that establishes the pattern; where that ancestor was read through
-`docs/UI-MAPPING.md` rather than opened here, the row says so.
+`docs/specs/ui-mapping.md` rather than opened here, the row says so.
 
 ### Shared core and marketing (render on both brands)
 
 | surface                    | ancestor                                                                                     | verdict | the specific fix                                                                                                                                                 |
 | -------------------------- | -------------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/` (marketing home)       | `components/home/alignment-home.tsx` vs the QuizHub home bands in `app/(marketing)/page.tsx` | varies  | brand-composed `switch` over `BrandId`, no edit — correct; the AlignSynch home is three bands, not the twelve quiz bands, and that is the doctrine's own pattern |
-| `/welcome`                 | `components/marketing/marketing-landing.tsx` (per `docs/UI-DIVERGENCE.md`)                   | follows | the template's landing; `UI-DIVERGENCE.md` already flags its hand-rolled cards/CTAs for a later reshape                                                          |
+| `/welcome`                 | `components/marketing/marketing-landing.tsx` (per `docs/specs/ui-divergence.md`)             | follows | the template's landing; `UI-DIVERGENCE.md` already flags its hand-rolled cards/CTAs for a later reshape                                                          |
 | `/pricing`                 | `app/(marketing)/pricing/page.tsx` → `components/pricing/*`                                  | follows | thin route + fixture sections, no markup of its own                                                                                                              |
 | `/support`                 | `components/support/support-page.tsx`                                                        | follows | same                                                                                                                                                             |
 | `/support/articles/[slug]` | `components/support/article-detail.tsx`                                                      | follows | same article template as `/news/[slug]`                                                                                                                          |
@@ -74,17 +74,17 @@ The ancestor named is the file that establishes the pattern; where that ancestor
 
 | surface                              | ancestor                                                                                                                                           | verdict      | the specific fix                                                                                                                                                                                              |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/dashboard`                         | `components/console/overview.tsx` ← `components/identity/account-home.tsx` + `components/console/stat-card-grid.tsx`                               | follows      | composes `PageHeader` + `StatCardGrid`; the failure panel should be `Alert` (`docs/UI-DIVERGENCE.md` names it)                                                                                                |
+| `/dashboard`                         | `components/console/overview.tsx` ← `components/identity/account-home.tsx` + `components/console/stat-card-grid.tsx`                               | follows      | composes `PageHeader` + `StatCardGrid`; the failure panel should be `Alert` (`docs/specs/ui-divergence.md` names it)                                                                                          |
 | `/assessment`                        | `components/assessment-flow/template-list.tsx` ← `components/my-quizzes/my-quizzes.tsx`                                                            | varies       | the list shape, but plain-HTML per-template create forms (no-JS, `curl`-drivable) instead of a client grid — recorded                                                                                         |
 | `/assessment/templates`              | `components/assessment-flow/template-library.tsx` ← `components/my-quizzes/my-quizzes.tsx`                                                         | varies       | tabs/search/status filter kept, grid/list dropped for a table; **but** see the mobile row — `table-fixed` with no `overflow-x-auto` wrapper                                                                   |
 | `/assessment/templates/new`          | `components/assessment-flow/template-form.tsx` ← `components/create/quiz-editor.tsx`                                                               | varies       | eight fixed Aspect rows instead of an accordion-plus-add-button; no-JS on purpose, refusal drawn above the form                                                                                               |
-| `/assessment/templates/[templateId]` | `components/assessment-flow/template-detail.tsx` ← `components/my-quizzes/quiz-details.tsx` (per `docs/UI-MAPPING.md`)                             | follows      | back link → facts `dl` → aspects list → actions; read-only on purpose, edit is a later card                                                                                                                   |
+| `/assessment/templates/[templateId]` | `components/assessment-flow/template-detail.tsx` ← `components/my-quizzes/quiz-details.tsx` (per `docs/specs/ui-mapping.md`)                       | follows      | back link → facts `dl` → aspects list → actions; read-only on purpose, edit is a later card                                                                                                                   |
 | `/assessment/instances`              | `components/assessment-flow/my-instances.tsx`                                                                                                      | follows      | list of rows with three derived states; empty state has a create CTA; the "unseen" marker is a row line, not a toast                                                                                          |
 | `/assessment/instances/[instanceId]` | `components/assessment-flow/instance-view.tsx` ← `components/quiz/quiz-play.tsx` (shell only)                                                      | varies       | stage **sentence** instead of a progress bar; invite panel tones by state; answer sheet below — the blind rule is structural, not a hidden conditional                                                        |
-| `/assessment/[slug]`                 | `components/assessment/assessment-report.tsx` ← `components/quiz/quiz-results.tsx` (per `docs/UI-MAPPING.md`)                                      | **diverges** | the report renders no back link — not to the instance, not to `/assessment/instances`. The template's detail pages all open with a back link; this one is a dead end the shell sidebar is the only way out of |
-| `/invite/[token]`                    | none — the claim page has no quiz ancestor (`docs/UI-MAPPING.md` part 2)                                                                           | varies       | GET renders, POST consumes; `already-a-party` drawn not toasted; checkbox confirm — correct, keep                                                                                                             |
+| `/assessment/[slug]`                 | `components/assessment/assessment-report.tsx` ← `components/quiz/quiz-results.tsx` (per `docs/specs/ui-mapping.md`)                                | **diverges** | the report renders no back link — not to the instance, not to `/assessment/instances`. The template's detail pages all open with a back link; this one is a dead end the shell sidebar is the only way out of |
+| `/invite/[token]`                    | none — the claim page has no quiz ancestor (`docs/specs/ui-mapping.md` part 2)                                                                     | varies       | GET renders, POST consumes; `already-a-party` drawn not toasted; checkbox confirm — correct, keep                                                                                                             |
 | `/admin/instances`                   | `components/admin/instance-registry.tsx` ← `components/my-quizzes/my-quizzes.tsx` (table shape) + `components/leaderboard/leaderboard-filters.tsx` | follows      | the positive control: `Table` + `Tabs` + `Select`, filters client-side over one read                                                                                                                          |
-| `/admin/gaps`                        | `components/console/gap-analysis.tsx` ← `components/ui/page-header.tsx` + `components/ui/card.tsx` + `components/ui/table.tsx`                     | varies       | response-analytics shell; `docs/UI-DIVERGENCE.md` flags the hand-rolled `StatCard` and the un-wrapped kinds table                                                                                             |
+| `/admin/gaps`                        | `components/console/gap-analysis.tsx` ← `components/ui/page-header.tsx` + `components/ui/card.tsx` + `components/ui/table.tsx`                     | varies       | response-analytics shell; `docs/specs/ui-divergence.md` flags the hand-rolled `StatCard` and the un-wrapped kinds table                                                                                       |
 
 ### Retained quiz product (404 on AlignSynch — the ancestor itself, not an AlignSynch screen)
 
@@ -208,11 +208,11 @@ Breakpoints are not Tailwind's defaults (`tailwind.config.ts` L103–107: `sm` 5
 - **390px, `/admin/gaps`** — the five-column kinds `Table` has no wrapper (`components/console/gap-analysis.tsx` L194).
 - **390px, `/assessment/[slug]` report** — the three-column gap `table` survives by luck with no
   wrapper (`components/assessment/assessment-report.tsx` L304); one added column breaks it
-  (`docs/UI-MAPPING.md` records the same).
+  (`docs/specs/ui-mapping.md` records the same).
 - **390px, `/assessment/instances/[instanceId]`** — the submit button sits at the bottom of a sheet
   that is eight Aspects × up to four score kinds long; it scrolls away, and no sticky action bar
   exists anywhere in the tree (`components/assessment-flow/answer-form.tsx` L164,
-  `docs/UI-MAPPING.md` part 3).
+  `docs/specs/ui-mapping.md` part 3).
 - **390px, `/v1/relationships/[id]`** — the answers table does it right (`overflow-x-auto`,
   `components/v1/relationship-detail.tsx`); the prototype is ahead of the production tables here.
 - **390px, `/v1` persona picker** — the two-column persona grid (`sm:grid-cols-2`) is single-column
@@ -232,7 +232,7 @@ Breakpoints are not Tailwind's defaults (`tailwind.config.ts` L103–107: `sm` 5
    `/v1` editor copied this verbatim rather than fixing it at the source.
 4. **The mobile table is a sideways scroll, nothing more.** `components/leaderboard/leaderboard-table.tsx`
    forces `min-w-[600px]` + `overflow-x-auto`; there is no table→card collapse in the whole tree
-   (`docs/UI-MAPPING.md`). It is the _correct_ pattern to copy, but it is still a horizontal-scroll
+   (`docs/specs/ui-mapping.md`). It is the _correct_ pattern to copy, but it is still a horizontal-scroll
    band-aid, and its `success` variant paints a raw `bg-green-400` palette step inside the primitive
    that `components/ui/button.tsx` itself says the palette has one home.
 5. **A form that asks for data it discards.** `components/auth/register-view.tsx` collects phone,
@@ -247,11 +247,11 @@ fixture or route file was modified — `git status` is clean apart from this fil
 
 ## Related
 
-- [UI-DIVERGENCE.md](UI-DIVERGENCE.md) — the row-by-row divergence table behind this audit.
-- [UI-MAPPING.md](UI-MAPPING.md) — which quiz surface each AlignSynch file varies from.
+- [UI-DIVERGENCE.md](ui-divergence.md) — the row-by-row divergence table behind this audit.
+- [UI-MAPPING.md](ui-mapping.md) — which quiz surface each AlignSynch file varies from.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › UI/UX audit · prev [Divergence table](UI-DIVERGENCE.md) · next [Spec drift](SPEC-DRIFT.md)
+[Docs hub](../README.md) › **Specs & design briefs** › UI/UX audit · prev [Quiz-surface map](ui-mapping.md) · next [Answer input](ux-input.md)
 
 <!-- docs-nav:end -->

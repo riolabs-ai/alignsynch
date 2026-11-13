@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Six flow stages](qa-flow-stages/README.md)
+[Docs hub](../README.md) › **Records & QA** › P4 dogfood pass · prev [Payment capture & completion](payment/README.md) · next [QA links](qa-links.md)
 
 <!-- docs-nav:end -->
 
@@ -33,7 +33,7 @@ PR: #108 · `main` sha tested: `f5e1b00a2d1fe59419fcb5f2fe0d9eff6dfbf3e9`
 
 ## Route-by-route table
 
-Screenshots live in `docs/qa-p4-screenshots/` (committed alongside this file). Status
+Screenshots live in `docs/qa/p4-screenshots/` (committed alongside this file). Status
 is the HTTP status; "console" is the count of captured console errors/warnings; the
 verdict is against the acceptance criteria (broken / blank / mismatched / 404).
 
@@ -94,7 +94,7 @@ verdict is against the acceptance criteria (broken / blank / mismatched / 404).
   property `--tw-translate-x` computes to `-100%`, but the computed `transform` resolves
   to `matrix(1, 0, 0, 1, 0, 0)` (identity). The sidebar never moves; it is permanently
   visible over the page content.
-- **Evidence:** `docs/qa-p4-screenshots/home-390.png` (drawer open, obscuring hero +
+- **Evidence:** `docs/qa/p4-screenshots/home-390.png` (drawer open, obscuring hero +
   content), plus the live probe: `aside` `left:0 right:250`, `transform` identity despite
   `--tw-translate-x:-100%`.
 - **Root cause (confirmed on fix):** the "Expected" above was too generous. The class and
@@ -107,7 +107,7 @@ verdict is against the acceptance criteria (broken / blank / mismatched / 404).
 - **Fixed in #119** — closed is now the CSS default below `xl`
   (`max-xl:invisible max-xl:-translate-x-full`), the drawer has its own `mobileOpen` state
   instead of borrowing the desktop rail's `collapsed`, and it gets a backdrop, `Escape`
-  and close-on-navigate. Evidence: `docs/qa-p4-screenshots/sidebar-fix-390-closed.png`,
+  and close-on-navigate. Evidence: `docs/qa/p4-screenshots/sidebar-fix-390-closed.png`,
   `sidebar-fix-390-drawer-open.png`, `sidebar-fix-768-closed.png`,
   `sidebar-fix-768-drawer-open.png`, `sidebar-fix-1280-desktop.png`,
   `sidebar-fix-1440-desktop.png` (desktop boxes unchanged).
@@ -193,11 +193,11 @@ Three routes render the wrong page (no `notFound()`) instead of a 404 for an unk
 
 ## Related
 
-- [ENV-SPEC.md](ENV-SPEC.md) — the P4 gate this pass closes.
-- [GATE.md](GATE.md) — the gate the walked build had to pass first.
+- [ENV-SPEC.md](../reference/env-spec.md) — the P4 gate this pass closes.
+- [GATE.md](../operations/gate.md) — the gate the walked build had to pass first.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [V1 retirement](V1-RETIREMENT.md) · next [Six flow stages](qa-flow-stages/README.md)
+[Docs hub](../README.md) › **Records & QA** › P4 dogfood pass · prev [Payment capture & completion](payment/README.md) · next [QA links](qa-links.md)
 
 <!-- docs-nav:end -->

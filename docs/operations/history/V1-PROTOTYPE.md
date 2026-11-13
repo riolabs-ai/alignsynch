@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › V1 prototype · prev [P2 inventory](P2-INVENTORY.md) · next [Prototype copy saves](PROTOTYPE-SAVE.md)
+[Docs hub](../../README.md) › **Operations** › V1 prototype · prev [P3 exit record](P3-EXIT.md) · next [V1 retirement](V1-RETIREMENT.md)
 
 <!-- docs-nav:end -->
 
@@ -107,6 +107,6 @@ differently, the verdict is **Not yet aligned**.)
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › V1 prototype · prev [P2 inventory](P2-INVENTORY.md) · next [Prototype copy saves](PROTOTYPE-SAVE.md)
+[Docs hub](../../README.md) › **Operations** › V1 prototype · prev [P3 exit record](P3-EXIT.md) · next [V1 retirement](V1-RETIREMENT.md)
 
 <!-- docs-nav:end -->

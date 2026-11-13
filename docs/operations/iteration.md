@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Iteration rhythm · prev [Environment & ops spec](ENV-SPEC.md) · next [Repo layers](REPO-LAYERS.md)
+[Docs hub](../README.md) › **Operations** › Iteration rhythm · prev [V1 retirement](history/V1-RETIREMENT.md) · next [Orchestration rules](orchestration.md)
 
 <!-- docs-nav:end -->
 
@@ -97,11 +97,11 @@ git push                          # one push → one CI run → one merge
 
 ## Related
 
-- [GATE.md](GATE.md) — what the cohort boundary actually runs.
-- [REPO-LAYERS.md](REPO-LAYERS.md) — the four lanes and their costs.
+- [GATE.md](gate.md) — what the cohort boundary actually runs.
+- [REPO-LAYERS.md](repo-layers.md) — the four lanes and their costs.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › Iteration rhythm · prev [Environment & ops spec](ENV-SPEC.md) · next [Repo layers](REPO-LAYERS.md)
+[Docs hub](../README.md) › **Operations** › Iteration rhythm · prev [V1 retirement](history/V1-RETIREMENT.md) · next [Orchestration rules](orchestration.md)
 
 <!-- docs-nav:end -->

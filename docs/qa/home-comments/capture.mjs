@@ -12,7 +12,7 @@
  * whole document, clips the `<footer>` element's box and writes the still.
  *
  * Usage:
- *   node docs/qa-home-comments/capture.mjs <base-url> <out-dir> <label> [--port 9444]
+ *   node docs/qa/home-comments/capture.mjs <base-url> <out-dir> <label> [--port 9444]
  *
  * The expected rows are stated here rather than read from the fixture: a capture that asks the
  * page to confirm itself proves nothing. The caller passes the list it wants to see — the

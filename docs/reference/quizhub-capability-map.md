@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › QuizHub capability map · prev [Two brands, one tree](BRAND-RELEASE.md) · next [Quiz-surface map](UI-MAPPING.md)
+[Docs hub](../README.md) › **Reference** › QuizHub capability map · prev [Legal provenance](provenance.md) · next [Relationship types](relationship-types-source.md)
 
 <!-- docs-nav:end -->
 
@@ -13,8 +13,8 @@ inventing a screen and a data model beside it.
 
 Measured at `0ebc7828` (`origin/main`, 2026-11-01) by reading every page module in the list and the
 components in its import closure — not by reading the specification PDF (that analysis is
-[SPEC-DRIFT.md](SPEC-DRIFT.md) and [specs/](specs/)), and not by trusting
-[ui-registry.md](ui-registry.md), which answers a narrower question (§1.4).
+[SPEC-DRIFT.md](../operations/spec-drift.md) and [specs/](../specs)), and not by trusting
+[ui-registry.md](../ui-registry.md), which answers a narrower question (§1.4).
 
 **This is a registry, not a backlog.** Nothing here is proposed, scheduled or estimated in days. A
 capability's size is written as tables, endpoints and screens — the countable parts — and where a
@@ -25,13 +25,13 @@ number cannot be counted it says `unknown`.
 For each route: open the page module, follow every import into `components/`, then follow what those
 components read. The row records five things and the fourth is the point of the document:
 
-| column                            | what it answers                                                                                                         |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `route`                           | the pattern as `content/routes.ts` spells it, exercised with the params [boundary.ts](../tests/parity/boundary.ts) uses |
-| `component(s)`                    | the page module's component closure — the files that decide what is drawn                                               |
-| `what it presents today`          | the screen as a reader meets it, in one clause per band                                                                 |
-| `data source today`               | **what the records on that screen are made of** — the honesty mechanism                                                 |
-| `what a full-stack version needs` | the rows, endpoints and rules that are missing, in the order they would have to land                                    |
+| column                            | what it answers                                                                                                            |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `route`                           | the pattern as `content/routes.ts` spells it, exercised with the params [boundary.ts](../../tests/parity/boundary.ts) uses |
+| `component(s)`                    | the page module's component closure — the files that decide what is drawn                                                  |
+| `what it presents today`          | the screen as a reader meets it, in one clause per band                                                                    |
+| `data source today`               | **what the records on that screen are made of** — the honesty mechanism                                                    |
+| `what a full-stack version needs` | the rows, endpoints and rules that are missing, in the order they would have to land                                       |
 
 ### The four data-source values
 
@@ -60,7 +60,7 @@ Two boundary calls, made once so each row can be read:
 ### 1.1 The twenty-two routes the quiz product owns
 
 These are the routes `requireQuizProduct()` closes on the alignment build
-([boundary.ts](../tests/parity/boundary.ts)). Every one of them renders on `quizhub`.
+([boundary.ts](../../tests/parity/boundary.ts)). Every one of them renders on `quizhub`.
 
 | route                         | component(s)                                                                       | what it presents today                                                                                                                                              | data source today | what a full-stack version needs                                                                                                                                                                                 |
 | ----------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -609,14 +609,14 @@ it was written to catch.
 - **Not a backlog.** Nothing in Parts 1–4 is proposed. A capability's size is a shape, not a
   schedule.
 - **Not a claim that a rendered surface is real.** That is what the fourth column is for.
-- **Not a replacement for [ui-registry.md](ui-registry.md)**, which is generated, gate-checked, and
+- **Not a replacement for [ui-registry.md](../ui-registry.md)**, which is generated, gate-checked, and
   answers "what exists and what is it wired to". This page answers "what is it made of, and what would
   it cost" — the two questions a brand asks before it claims a surface.
-- **Not a decision about any brand.** Which of these AlignSynch claims is [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md)'s
+- **Not a decision about any brand.** Which of these AlignSynch claims is [TEMPLATE-DOCTRINE.md](../guides/template-doctrine.md)'s
   question; this page only records what is there to claim.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Architecture** › QuizHub capability map · prev [Two brands, one tree](BRAND-RELEASE.md) · next [Quiz-surface map](UI-MAPPING.md)
+[Docs hub](../README.md) › **Reference** › QuizHub capability map · prev [Legal provenance](provenance.md) · next [Relationship types](relationship-types-source.md)
 
 <!-- docs-nav:end -->

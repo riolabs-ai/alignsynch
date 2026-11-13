@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Stage 5, both states · prev [Relationship detail — the edit form is asked for](../qa-rel-detail-edit/README.md) · next [swiper 12](../qa-swiper-12/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Stage 5, both states · prev [Relationship detail — the edit form is asked for](../rel-detail-edit/README.md) · next [Surface sweep, #913](../surface-sweep-913/README.md)
 
 <!-- docs-nav:end -->
 
@@ -56,6 +56,6 @@ demo branch is shared and a stray active relationship makes `pnpm db:seed` refus
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Stage 5, both states · prev [Relationship detail — the edit form is asked for](../qa-rel-detail-edit/README.md) · next [swiper 12](../qa-swiper-12/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Stage 5, both states · prev [Relationship detail — the edit form is asked for](../rel-detail-edit/README.md) · next [Surface sweep, #913](../surface-sweep-913/README.md)
 
 <!-- docs-nav:end -->

@@ -14,12 +14,12 @@
  * a page that 404s an unknown id and 200s this one is the row resolving.
  *
  * Usage, from the repo root, against a server already running on the demo branch:
- *   node docs/qa-comments-mockup/live-check.mjs [baseUrl] [outFile]
+ *   node docs/qa/comments-mockup/live-check.mjs [baseUrl] [outFile]
  */
 import { writeFileSync } from "node:fs";
 
 const BASE = process.argv[2] ?? "http://127.0.0.1:3007";
-const OUT = process.argv[3] ?? "docs/qa-comments-mockup/live-check.json";
+const OUT = process.argv[3] ?? "docs/qa/comments-mockup/live-check.json";
 const ADMIN_EMAIL = process.env.DEMO_ADMIN_EMAIL ?? "admin@demo.alignsynch.test";
 
 /** The seeded credential, read where the demo reader reads it. Never printed. */

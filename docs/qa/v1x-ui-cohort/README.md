@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › v1.x UI cohort · prev [Template catalogue](../qa-template-catalogue/README.md)
+[Docs hub](../../README.md) › **Records & QA** › v1.x UI cohort · prev [AS2 templates catalogue visual QA](../templates-redesign/README.md)
 
 <!-- docs-nav:end -->
 
@@ -77,11 +77,11 @@ faintest thing in the chart.
 
 ## Related
 
-- [UI-MAPPING.md](../UI-MAPPING.md) — the surface map every item in this cohort moved.
-- [ui-registry.md](../ui-registry.md) — the surfaces these frames capture.
+- [UI-MAPPING.md](../../specs/ui-mapping.md) — the surface map every item in this cohort moved.
+- [ui-registry.md](../../ui-registry.md) — the surfaces these frames capture.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › v1.x UI cohort · prev [Template catalogue](../qa-template-catalogue/README.md)
+[Docs hub](../../README.md) › **Records & QA** › v1.x UI cohort · prev [AS2 templates catalogue visual QA](../templates-redesign/README.md)
 
 <!-- docs-nav:end -->

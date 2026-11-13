@@ -23,7 +23,7 @@
  *
  * The chat, notification, subscription and review slices are deleted with the screens that read
  * them: `lib/v1/chat.ts`, `data/v1/notifications.ts`, `data/v1/plans.ts` and `lib/v1/review.ts`
- * are `delete` rows in `docs/V1-RETIREMENT.md` §5.3/§5.4, and none of them has a surviving
+ * are `delete` rows in `docs/operations/history/V1-RETIREMENT.md` §5.3/§5.4, and none of them has a surviving
  * reader (its hard constraint 2). Nothing the console draws read them.
  *
  * `localStorage` is read only after hydration: the first render seeds from the fixtures,

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › Prototype wiring · prev [Legal provenance](legal/PROVENANCE.md) · next [P2 inventory](P2-INVENTORY.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Prototype wiring · prev [Prototype copy saves](prototype-save.md) · next [Specifications index](README.md)
 
 <!-- docs-nav:end -->
 
@@ -377,11 +377,11 @@ still has a subject.
 
 ## Related
 
-- [V1-PROTOTYPE.md](V1-PROTOTYPE.md) — the prototype screen the wiring plan moves into the build.
-- [TEMPLATE-DOCTRINE.md](TEMPLATE-DOCTRINE.md) — the three questions every new surface has to answer.
+- [V1-PROTOTYPE.md](../operations/history/V1-PROTOTYPE.md) — the prototype screen the wiring plan moves into the build.
+- [TEMPLATE-DOCTRINE.md](../guides/template-doctrine.md) — the three questions every new surface has to answer.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › Prototype wiring · prev [Legal provenance](legal/PROVENANCE.md) · next [P2 inventory](P2-INVENTORY.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Prototype wiring · prev [Prototype copy saves](prototype-save.md) · next [Specifications index](README.md)
 
 <!-- docs-nav:end -->

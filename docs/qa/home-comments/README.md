@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Home review comments — the logo · prev [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md) · next [Brand & audience profile page (handoff)](../specs/spec-design-page-rel-templates/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Home review comments — the logo · prev [Help two-column](../help-two-column/README.md) · next [Home hero polish](../home-polish/README.md)
 
 <!-- docs-nav:end -->
 
@@ -109,11 +109,11 @@ does not move.
 
 ## Related
 
-- [AS2 home visual QA](../qa-as2-home/README.md) — the stills of the page this chrome sits on.
-- [The flow stages spec](../specs/flow-stages.md) — the shell rules this header is outside of.
+- [AS2 home visual QA](../as2-home/README.md) — the stills of the page this chrome sits on.
+- [The flow stages spec](../../specs/flow-stages.md) — the shell rules this header is outside of.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Home review comments — the logo · prev [AS2 templates catalogue visual QA](../qa-templates-redesign/README.md) · next [Brand & audience profile page (handoff)](../specs/spec-design-page-rel-templates/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Home review comments — the logo · prev [Help two-column](../help-two-column/README.md) · next [Home hero polish](../home-polish/README.md)
 
 <!-- docs-nav:end -->

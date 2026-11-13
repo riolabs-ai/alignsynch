@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Payment capture & completion](../qa-payment/README.md) · next [Rail collapse handle](../qa-rail-handle/README.md)
+[Docs hub](../../README.md) › **Records & QA** › #542 phase 2 · next [AS2 home visual QA](../as2-home/README.md)
 
 <!-- docs-nav:end -->
 
@@ -117,11 +117,11 @@ browser storage.
 
 ## Related
 
-- [UI-MAPPING.md](../UI-MAPPING.md) — which quiz surface the rail and chrome vary from.
-- [ui-registry.md](../ui-registry.md) — the surfaces these frames capture.
+- [UI-MAPPING.md](../../specs/ui-mapping.md) — which quiz surface the rail and chrome vary from.
+- [ui-registry.md](../../ui-registry.md) — the surfaces these frames capture.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › #542 phase 2 · prev [Payment capture & completion](../qa-payment/README.md) · next [Rail collapse handle](../qa-rail-handle/README.md)
+[Docs hub](../../README.md) › **Records & QA** › #542 phase 2 · next [AS2 home visual QA](../as2-home/README.md)
 
 <!-- docs-nav:end -->

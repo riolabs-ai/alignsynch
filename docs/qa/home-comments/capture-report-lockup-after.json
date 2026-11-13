@@ -5,7 +5,7 @@
   "widths": [
     {
       "width": 1440,
-      "file": "docs/qa-home-comments/logo-after-1440.png",
+      "file": "docs/qa/home-comments/logo-after-1440.png",
       "axLinks": [
         {
           "role": "link",
@@ -65,7 +65,7 @@
     },
     {
       "width": 390,
-      "file": "docs/qa-home-comments/logo-after-390.png",
+      "file": "docs/qa/home-comments/logo-after-390.png",
       "axLinks": [
         {
           "role": "link",

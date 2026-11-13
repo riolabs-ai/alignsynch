@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../qa-stage5/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
+[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Surface sweep, #913](../surface-sweep-913/README.md) · next [Template catalogue](../template-catalogue/README.md)
 
 <!-- docs-nav:end -->
 
@@ -56,11 +56,11 @@ across the two versions at both widths.
 
 ## Related
 
-- [ui-registry.md](../ui-registry.md) — the surfaces that render the carousels.
-- [README.md](../qa-v1x-ui-cohort/README.md) — the UI cohort this dependency move belongs to.
+- [ui-registry.md](../../ui-registry.md) — the surfaces that render the carousels.
+- [README.md](../v1x-ui-cohort/README.md) — the UI cohort this dependency move belongs to.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../qa-stage5/README.md) · next [Template catalogue](../qa-template-catalogue/README.md)
+[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Surface sweep, #913](../surface-sweep-913/README.md) · next [Template catalogue](../template-catalogue/README.md)
 
 <!-- docs-nav:end -->

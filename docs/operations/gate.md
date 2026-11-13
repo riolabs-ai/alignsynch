@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › The gate · prev [Release-train card template](templates/RELEASE-TRAIN.md)
+[Docs hub](../README.md) › **Operations** › The gate · prev [Deploying](deploying.md) · next [P1 migration](history/p1-migration/MIGRATION.md)
 
 <!-- docs-nav:end -->
 
@@ -54,7 +54,7 @@ is what every CI run did until `.github/workflows/ci.yml` was fixed, because
 `next build` is capped at `QUIZHUB_BUILD_SLOTS` (default 2) concurrent builds by `flock`
 under `~/.cache/quizhub/`: eight workers compiling at once took load from ~6 to 39.5 and
 stretched this gate to 145 s. The layer table, the classifier rules and the lock are in
-**`docs/REPO-LAYERS.md`**.
+**`docs/operations/repo-layers.md`**.
 
 ## Lanes in CI, measured 2026-10-30
 
@@ -67,7 +67,7 @@ and **every** run — docs or code — logged the conservative fallback:
 ```
 
 `ci.yml` now checks out with `fetch-depth: 0` and fetches `refs/heads/main` before the gate
-(the mechanism is in `docs/REPO-LAYERS.md`), so the same job classifies the same way it does
+(the mechanism is in `docs/operations/repo-layers.md`), so the same job classifies the same way it does
 locally. Measured job wall time, GitHub `ubuntu-24.04` runner, pnpm cache warm:
 
 | PR head                   | lane                    | job wall |
@@ -195,8 +195,8 @@ builds.
 Two runs are not a p50 and are not reported as one. Almost all of the 29 s spread is `build`
 (51.2 → 72.4 s): both runs took a free build slot immediately, so that is host contention —
 load 3.05 → 5.11 — not the `flock` wait. Expect ±30 s before reading anything into a single run;
-the same gate has been recorded at 145 s under eight-way contention (`docs/REPO-LAYERS.md`,
-2026-10-29) and at 176 s in `docs/ITERATION.md` (2026-11-02).
+the same gate has been recorded at 145 s under eight-way contention (`docs/operations/repo-layers.md`,
+2026-10-29) and at 176 s in `docs/operations/iteration.md` (2026-11-02).
 
 ### Lanes, measured 2026-11-05 (n=2 each)
 
@@ -239,7 +239,7 @@ comment is a smaller defect than an untested edit to the gate.
 **CI < 4 min holds** (p95 176 s to the last job; the 1440 s `updated_at` p95 is explained above).
 **Local p50 < 90 s no longer does** — 96–125 s measured above, `build` 51–72 s of it — and that
 ceiling was written for a 45 s gate (2026-10-29, history below). The two honest ceilings are the
-ones `docs/ITERATION.md` states: `pnpm check:fast` for the inner loop and the full gate as the
+ones `docs/operations/iteration.md` states: `pnpm check:fast` for the inner loop and the full gate as the
 boundary, at ≤ 3 min. Do not make a step optional to buy time.
 
 ## Baseline history
@@ -405,11 +405,11 @@ Rules that keep this file honest:
 
 ## Related
 
-- [REPO-LAYERS.md](REPO-LAYERS.md) — which of the four lanes a diff lands in, and why the gate costs what it costs.
-- [ITERATION.md](ITERATION.md) — the inner loop and the cohort boundary this gate sits at.
+- [REPO-LAYERS.md](repo-layers.md) — which of the four lanes a diff lands in, and why the gate costs what it costs.
+- [ITERATION.md](iteration.md) — the inner loop and the cohort boundary this gate sits at.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Start here** › The gate · prev [Release-train card template](templates/RELEASE-TRAIN.md)
+[Docs hub](../README.md) › **Operations** › The gate · prev [Deploying](deploying.md) · next [P1 migration](history/p1-migration/MIGRATION.md)
 
 <!-- docs-nav:end -->
