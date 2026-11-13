@@ -85,7 +85,15 @@ export interface AdminActionRow {
   readonly action: string;
   readonly targetTable: string;
   readonly targetId: string;
-  readonly reason: string;
+  /**
+   * What the operator said they were doing, or `null` when nobody stated one.
+   *
+   * Nullable by design since `0038` (#732): the Reason field was removed from twelve screens
+   * because a sentence typed to satisfy a constraint is not provenance. `null` therefore means
+   * exactly one thing — nobody stated one — and it is not an empty string, which would be
+   * indistinguishable from a reason somebody typed and then blanked.
+   */
+  readonly reason: string | null;
   readonly before: unknown;
   readonly after: unknown;
   /** ISO instant: the row crosses to a component, so no `Date` objects. */
