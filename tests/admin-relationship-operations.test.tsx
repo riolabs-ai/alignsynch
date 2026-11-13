@@ -209,3 +209,52 @@ describe("a row with nothing to repair draws a disabled band, never a hopeful bu
     expect(isDisabled(band(html, "revoke"))).toBe(true);
   });
 });
+
+/**
+ * A `<p>` may not contain a block element, and `Badge` **is** a `<div>` (`components/ui/badge.tsx`).
+ *
+ * The invitation card drew the state badge inside a `<p>`, so the server wrote markup the browser
+ * re-parents and the client then refuses to hydrate: React logged `<p> cannot contain a nested
+ * <div>` and regenerated the whole tree, which is a hydration failure on an operator's screen —
+ * found beside #980 while proving the page's console is clean. This is the static half of that
+ * claim: the rendered markup carries no paragraph wrapping a block element, so there is nothing
+ * for hydration to disagree with. The interacting half (the address field) is
+ * `tests/admin-relationship-email-input.test.tsx`.
+ */
+describe("no paragraph wraps a block element, so the page hydrates", () => {
+  /** Every `<p>…</p>` whose contents open a block-level tag. */
+  function blockedParagraphs(html: string): string[] {
+    const offenders: string[] = [];
+    for (const match of html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)) {
+      const inner = match[1] ?? "";
+      if (/<(div|p|section|article|ul|ol|table|form|h[1-6])\b/.test(inner)) {
+        offenders.push(match[0].slice(0, 160));
+      }
+    }
+    return offenders;
+  }
+
+  it("draws the invitation's state badge beside the paragraph, not inside it", () => {
+    const html = render();
+    expect(html).toContain("Unclaimed");
+    expect(blockedParagraphs(html)).toEqual([]);
+  });
+
+  it("holds for every invitation state the card can draw", () => {
+    for (const state of ["unclaimed", "claimed", "revoked", "expired"] as const) {
+      const html = render(
+        detail({
+          invite: {
+            email: "rowan@example.com",
+            expiresAt: EXPIRY_INSTANT,
+            claimedAt: null,
+            revokedAt: null,
+            state,
+            resentCount: 1,
+          },
+        }),
+      );
+      expect(blockedParagraphs(html), `the ${state} row nests a block in a paragraph`).toEqual([]);
+    }
+  });
+});
