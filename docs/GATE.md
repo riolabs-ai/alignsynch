@@ -51,7 +51,7 @@ classifies in that job: `ci.yml` checks out full history and fetches `origin/mai
 is what every CI run did until `.github/workflows/ci.yml` was fixed, because
 `actions/checkout`'s default depth-1 clone contains no `origin/main`.
 
-`next build` is capped at `QUIZHUB_GATE_SLOTS` (default 2) concurrent gate runs by `flock`
+`next build` is capped at `QUIZHUB_GATE_SLOTS` (default 3) concurrent gate runs by `flock`
 under `~/.cache/quizhub/`, and that slot now covers the whole heavy section — typecheck,
 lint, `format:check`, the `data:check` compile, `parity` and the build — not the build alone:
 eight workers compiling at once took load from ~6 to 39.5 and stretched this gate to 145 s.

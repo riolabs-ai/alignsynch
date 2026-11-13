@@ -110,9 +110,12 @@
 #   lane=content  16–30 s   (n=3: 15.6 / 27.9 / 30.4) — typecheck + data:check, no build
 #   lane=config   20–31 s   (n=4: 20.5 / 21.0 / 31.2 / 31.3) — content depth + bash -n
 #   lane=code     65 s warm .next (n=1), 82 s cold (n=1), and 95–150 s when a
-#                 sibling build holds the other slot (n=2: 94.5 / 147.5 — the
-#                 difference is the lock wait, printed by the build step).
+#                 sibling run holds the other slot (n=2: 94.5 / 147.5 — the
+#                 difference is the lock wait, printed by the gate-slot step).
 #                 Target: p50 < 90 s. The flat gate was 145 s under the same load.
+#                 The gate slot now covers the whole heavy section rather than the
+#                 build alone; the measured table and why the default is 3 are in
+#                 docs/REPO-LAYERS.md ("The gate slot").
 #
 # If a lane gets slower than its row, measure before adding a step: the build is
 # the only expensive one, and it is the only one a cheaper lane is allowed to
@@ -295,7 +298,11 @@ check_whitespace() {
 # Taken once, at the first heavy step, and held to the end of the build. See the header for why
 # the section is not re-acquired per step and why the lock files kept their old names.
 GATE_LOCK_DIR="${QUIZHUB_GATE_LOCK_DIR:-${QUIZHUB_BUILD_LOCK_DIR:-$HOME/.cache/quizhub}}"
-GATE_SLOTS="${QUIZHUB_GATE_SLOTS:-${QUIZHUB_BUILD_SLOTS:-2}}"
+# Default 3, not 2: measured on this 8-core host (docs/REPO-LAYERS.md carries the table). Two slots
+# cost a whole extra wave the moment a third run arrives — 3 runs at 2 slots took 315 s against
+# 200 s with no cap — while three slots never queue at the concurrency the fleet reaches and beat
+# the uncapped gate at five: 333 s against 358 s, peak 1-min load 29.9 against 41.3.
+GATE_SLOTS="${QUIZHUB_GATE_SLOTS:-${QUIZHUB_BUILD_SLOTS:-3}}"
 GATE_LOCK_WAIT="${QUIZHUB_GATE_LOCK_WAIT:-${QUIZHUB_BUILD_LOCK_WAIT:-1800}}" # seconds before giving up
 GATE_FD=""
 GATE_SLOT=""

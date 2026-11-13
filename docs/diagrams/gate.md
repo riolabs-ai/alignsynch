@@ -94,7 +94,7 @@ it a step breaks branch protection or duplicates the gate; neither is a rename.
 box's load average to 39.5. The slot covers the whole **heavy section** — `next typegen`, `tsc
 --noEmit`, `biome check`, `biome format --check`, the `data:check` compile, `parity` and `next build`
 — because the phases that saturate the box ran outside a lock that wrapped one step out of nineteen.
-One of `QUIZHUB_GATE_SLOTS` (default **2**, legacy `QUIZHUB_BUILD_SLOTS` honoured) `flock` slots under
+One of `QUIZHUB_GATE_SLOTS` (default **3**, legacy `QUIZHUB_BUILD_SLOTS` honoured) `flock` slots under
 `~/.cache/quizhub/` is taken at the first heavy step and held to the end of the build, and every wait
 is printed with its seconds. The lock is a **CPU budget, not a `.next/` mutex**: two gates in one
 worktree still corrupt `.next/`, so a single shell must not run two gates at once.
