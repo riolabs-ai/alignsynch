@@ -1,19 +1,23 @@
 "use client";
 
-// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: a four-field create band above the list — a template picker instead of a title/thumbnail form, and the outcome a link to the relationship it started rather than a card inserted into the grid)
+// template-ancestor: components/my-quizzes/my-quizzes.tsx   (variation: a one-field chooser above the record list — a template picker that hands the reader to the flow, where a quiz's create form would write the record in place)
 
 /**
- * "Start a relationship" — the band above the member's relationship list (#533 phase 2).
+ * "Start a relationship" — the template chooser above the member's relationship list (#533, #913).
  *
- * **The picker is the member's own templates, and the server re-checks it.** `listMyTemplates`
- * supplies the options; `createRelationship` re-reads the template under `FOR SHARE` inside the
- * transaction and refuses `not-yours` for a row the actor does not own. The picker is a convenience,
- * not the rule — a posted id for somebody else's template is refused with a sentence, which is what
- * #533's "enforce in the server action" means when the control happens to be a `<Select>`.
+ * **This band writes nothing: starting a relationship is the create flow's modal (#913).** It used
+ * to copy the template itself, and that row was written with no session and no seats — so the
+ * dashboard card's `Invite Members` had no pay modal to open, and publishing it had no invitation
+ * to mint. The member's own complaint was exactly that ("it's blocked to get back to the modal step
+ * needed"), and the cause was a second create path beside the flow. Choosing a template here
+ * navigates to `/templates/relationship/<slug>/create`, which is stage 1 of the one flow that
+ * writes a relationship: Details → Settings → Aspects → **Account** (writes the draft, the session
+ * and the staged invitation) → Invite (the pay modal). Every row the product can then complete has
+ * what those two later stages read.
  *
- * **The copy is honest about what starting does.** A relationship gets its own copy of the Aspects,
- * so configuring it later cannot mutate the template; the band says so, because "start" otherwise
- * reads like a reference.
+ * **The picker is the member's own templates.** `listMyTemplates` supplies the options, and the
+ * flow's own read re-checks the template under its own authorization when stage 1 loads, so a
+ * crafted slug is refused there with a sentence rather than silently honoured here.
  *
  * **No templates is a state, not an error.** A member who has nothing to start from gets the
  * fixture's sentence and a link to create one, rather than an empty select that cannot be submitted.
@@ -28,44 +32,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { PageCopy, PageCopySection } from "@/content/pages";
-import type { MemberTemplateRow } from "@/lib/member/templates";
-import type { RelationshipCreateOutcome } from "@/lib/member/outcomes";
+import type { PageCopy } from "@/content/pages";
+import { createRelationshipPath } from "@/lib/flow/paths";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-/** The sentence for a refusal code: the fixture's line for that id, else `failed`. */
-function lineFor(refusals: PageCopySection, outcome: { code: string; message?: string }): string {
-  const known = (refusals.items ?? []).find((item) => item.id === outcome.code);
-  if (known !== undefined) return known.label;
-  if (outcome.message !== undefined && outcome.message.trim() !== "") return outcome.message;
-  return itemLabel(refusals, "failed");
+/**
+ * One option in the picker — the three fields the flow's address and the reader need.
+ *
+ * Deliberately not `MemberTemplateRow`: the options are the **library** the flow copies from
+ * (platform templates plus the member's own), not only the templates this account authored, so the
+ * page maps `LibraryTemplate` down to this and the band cannot accidentally depend on a field the
+ * wider read does not carry.
+ */
+export interface RelationshipStartTemplate {
+  readonly id: string;
+  readonly slug: string;
+  readonly title: string;
 }
 
-export function RelationshipCreate({
+export function RelationshipStart({
   copy,
   templates,
-  onCreate,
 }: {
   copy: PageCopy;
-  templates: readonly MemberTemplateRow[];
-  onCreate: (payload: {
-    templateId?: string;
-    reason?: string;
-  }) => Promise<RelationshipCreateOutcome>;
+  templates: readonly RelationshipStartTemplate[];
 }) {
   const fresh = sectionOf(copy, "new");
-  const [templateId, setTemplateId] = useState("");
-  const [outcome, setOutcome] = useState<RelationshipCreateOutcome | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  function submit(): void {
-    setOutcome(null);
-    startTransition(async () => {
-      setOutcome(await onCreate({ templateId }));
-    });
-  }
+  /** The chooser holds the template's **slug**, which is the flow's address (`#794`). */
+  const [slug, setSlug] = useState("");
+  const router = useRouter();
 
   return (
     <Card>
@@ -85,13 +83,13 @@ export function RelationshipCreate({
           <>
             <div className="flex flex-col gap-2">
               <Label htmlFor="relationship-template">{itemLabel(fresh, "choose")}</Label>
-              <Select value={templateId} onValueChange={setTemplateId}>
+              <Select value={slug} onValueChange={setSlug}>
                 <SelectTrigger id="relationship-template">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
+                    <SelectItem key={template.id} value={template.slug}>
                       {template.title}
                     </SelectItem>
                   ))}
@@ -99,25 +97,17 @@ export function RelationshipCreate({
               </Select>
             </div>
             <div className="flex flex-wrap items-center gap-4">
-              <Button type="button" onClick={submit} disabled={pending || templateId === ""}>
-                {pending ? itemLabel(fresh, "starting") : itemLabel(fresh, "submit")}
+              {/* A navigation, not a write: the modal behind this address owns the create. */}
+              <Button
+                type="button"
+                data-start-in-flow="true"
+                disabled={slug === ""}
+                onClick={() => {
+                  if (slug !== "") router.push(createRelationshipPath(slug));
+                }}
+              >
+                {itemLabel(fresh, "submit")}
               </Button>
-              {outcome?.ok === true ? (
-                <p data-relationship-created={outcome.actionId} className="text-sm">
-                  {itemLabel(fresh, "created")}{" "}
-                  <Link
-                    className="underline underline-offset-4"
-                    href={`/dashboard/relationships/${outcome.id}`}
-                  >
-                    {itemLabel(fresh, "open")}
-                  </Link>
-                </p>
-              ) : null}
-              {outcome !== null && !outcome.ok ? (
-                <p data-relationship-create-refusal={outcome.code} className="text-sm">
-                  {lineFor(sectionOf(copy, "new"), outcome)}
-                </p>
-              ) : null}
             </div>
           </>
         )}
