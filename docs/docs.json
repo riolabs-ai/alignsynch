@@ -713,6 +713,11 @@
           "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
         },
         {
+          "path": "qa-976-sent-none/README.md",
+          "title": "The Sent screen with no invitation row, #976",
+          "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
+        },
+        {
           "path": "qa-payment/README.md",
           "title": "Payment capture & completion",
           "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
