@@ -32,6 +32,23 @@ product or schema consequence the decision still belongs to §4 of `docs/SPEC-DR
 | [`spec-as2-style-home-redesign/`](spec-as2-style-home-redesign/README.md)           | Business-first home-page redesign, audience hierarchy, and React/Tailwind implementation brief.                                                              |
 | [`spec-design-page-rel-templates/`](spec-design-page-rel-templates/README.md)       | Private brand and audience profile page with reusable company and app descriptions.                                                                          |
 
+### Held outside the repository
+
+An artefact is not cloned with this repository when it is too large to be worth every contributor's
+checkout, or when it is private by policy. These live in the owner's `project-spec/` directory,
+beside the checkout, and are named here so they stay findable:
+
+| Artefact                                            | Size     | Why it is out                                                                                                 |
+| --------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------- |
+| `AlignSynch-Logged-In-Webapp-User-Guide.docx`       | 10.87 MB | Word manual — too large to version a copy per clone.                                                          |
+| `AlignSynch-Member-Experience-Manual-Volume-1.docx` | 7.16 MB  | Word manual — same reason.                                                                                    |
+| `alignsynch_home.jpg`                               | 3.08 MB  | The supplied home-page screenshot, referenced by both home-redesign packages.                                 |
+| `AUDIENCE-AND-POSITIONING.md`                       | 6.4 KB   | Private copy handoff; kept out of the **public** repository by [`.gitignore`](../../.gitignore), not by size. |
+
+`project-spec/` is not under version control: it has no git history and no remote backup, so the
+owner's disk is the only copy. The manuals were committed here once and taken back out for that
+reason — a handbook is read, not cloned.
+
 <!-- docs-nav:begin -->
 
 [Docs hub](../README.md) › **Product** › Specifications index · prev [Account deletion](../ACCOUNT-DELETION-SPEC.md) · next [Template catalogue](catalogue.md)

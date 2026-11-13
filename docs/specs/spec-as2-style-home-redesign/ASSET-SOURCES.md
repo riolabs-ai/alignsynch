@@ -16,7 +16,7 @@ The static prototype uses local files so the preview does not depend on third-pa
 | `images/relationship-gaps.avif` | The Bread / four-gap explainer                        | [Unsplash image endpoint](https://images.unsplash.com/photo-1713942590288-cd74f53b42d1?auto=format&fit=crop&w=1200&q=84)                                                                                                                                        |
 | `images/opinions-scale.avif`    | The Butter / opinion-scale explainer                  | [Unsplash image endpoint](https://images.unsplash.com/photo-1764173039891-b88c697ef093?auto=format&fit=crop&w=1200&q=84)                                                                                                                                        |
 
-The supplied screenshot is at `reference/alignsynch_home.jpg`. The photo files are bundled as AVIF; keep the `.avif` extension and serve them with the matching image MIME type. Before production deployment, confirm each photo's usage terms and any attribution requirements against its source page.
+The supplied screenshot is held outside this repository, in `project-spec/` beside the checkout, as `alignsynch_home.jpg`; it is not committed with this package. The photo files are bundled as AVIF; keep the `.avif` extension and serve them with the matching image MIME type. Before production deployment, confirm each photo's usage terms and any attribution requirements against its source page.
 
 ## Resolution — authors and licences (added when the credits landed)
 

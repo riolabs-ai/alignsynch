@@ -13,7 +13,7 @@ The audience hierarchy is business and corporate relationships first, personal g
 - Open `homepage-redesign.html` for the browser-ready page.
 - `css/homepage-redesign.css` contains the page styles.
 - `images/` contains the logo and four locally bundled page photos.
-- `reference/alignsynch_home.jpg` is the supplied source screenshot.
+- The supplied source screenshot, `alignsynch_home.jpg`, is held outside this repository in `project-spec/`, not committed with this package.
 - `IMPLEMENTATION-PROMPT.md` is the detailed React and Tailwind CSS v3 team brief.
 - `AUDIENCE-AND-POSITIONING.md` records the intended audience hierarchy and reusable copy direction.
 - `ASSET-SOURCES.md` records the source URLs for the bundled images.
