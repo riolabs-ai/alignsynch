@@ -106,27 +106,28 @@ describe("the shell's menus", () => {
       "/dashboard/support",
     ]);
     expect(hrefsOf(navHtml("admin"))).toEqual([
-      // #620: the reader's own rows, then help, then the staff group — which leads with
-      // the console hub that had no row anywhere before #542 phase 2.
-      "/dashboard/relationships",
-      "/assessments",
-      "/dashboard/templates",
-      "/dashboard/help",
-      "/dashboard/support",
+      // #929 — the owner's standard menu for every role: the staff group leads, in the owner's
+      // order (the inbox first), then the reader's own rows, then Support. The review shelf and
+      // the health page are admin-gated rows drawn inside Support, where the owner put them.
+      "/admin/inbox",
       "/admin/console",
       "/admin/instances",
       "/admin/gaps",
       // #920 — the growth model: 36 cohorts to a $3M run-rate, charted from one artifact.
       "/admin/growth",
-      "/admin/inbox",
-      "/admin/health",
       "/admin/billing",
       "/admin/broadcast",
-      // #665 — the review shelf: published artifacts with their to-dos and feedback.
-      "/admin/review",
       // #901 — the docs home: the manifest's 117 pages had no way in but the address bar.
       "/admin/docs",
       "/admin/audit",
+      "/dashboard/relationships",
+      "/assessments",
+      "/dashboard/templates",
+      // #665 — the review shelf: published artifacts with their to-dos and feedback.
+      "/admin/review",
+      "/dashboard/help",
+      "/admin/health",
+      "/dashboard/support",
     ]);
   });
 

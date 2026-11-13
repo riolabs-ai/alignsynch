@@ -187,6 +187,42 @@ describe("/admin/audit — what the page renders", () => {
     // A create has no before and a delete no after — the word is the fixture's, not "null".
     expect(html).toContain("Nothing was here");
   });
+
+  it("renders a row whose reason is NULL as 'No reason stated', not a blank cell", async () => {
+    // `0038` made `reason` nullable (#732), so every row written since carries none. This is the
+    // regression the screen shipped with: the read demanded a string, so `/admin/audit` threw on
+    // *every* row on a database seeded after that migration rather than on the one row that
+    // happens to have no reason.
+    gate.role = "admin";
+    read.mockClear();
+    read.mockResolvedValue([
+      {
+        id: "action-2",
+        actorUserId: "auth-owner",
+        actorEmail: "owner@example.com",
+        actorRole: "owner",
+        action: "role.change",
+        targetTable: "session",
+        targetId: "instance-2",
+        reason: null,
+        before: null,
+        after: null,
+        createdAt: "2026-11-12T10:00:00.000Z",
+      },
+    ]);
+    const { default: AdminAuditPage } = await import("@/app/(mainlayout)/admin/audit/page");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+
+    const html = renderToStaticMarkup(
+      (await AdminAuditPage({ searchParams: Promise.resolve({}) })) as ReactElement,
+    );
+
+    expect(html).toContain("No reason stated");
+    // The row itself still renders: a missing reason is one absent column, never a missing row.
+    expect(html).toContain("owner@example.com");
+    expect(html).toContain("session#instance-2");
+    expect(html).not.toContain(">null<");
+  });
 });
 
 describe("the screen's own source", () => {
