@@ -546,9 +546,9 @@
           "question": "What shipped in which release, and where does this page come from?"
         },
         {
-          "path": "changelog/v1-17-1.md",
-          "title": "v1.17.1",
-          "question": "Which patch paid v1.17.0's written promise that the edit panel would stop posting the Aspects?"
+          "path": "changelog/v1-18-0.md",
+          "title": "v1.18.0",
+          "question": "Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?"
         },
         {
           "path": "changelog/v1-17-0.md",
@@ -681,6 +681,11 @@
           "path": "qa-atlas/v1.17.1/index.md",
           "title": "QA atlas — v1.17.1",
           "question": "What did every registered surface render in v1.17.1, and what changed since v1.17.0?"
+        },
+        {
+          "path": "qa-atlas/v1.18.0/index.md",
+          "title": "QA atlas — v1.18.0",
+          "question": "What did every registered surface render in v1.18.0, and what changed since v1.17.1?"
         },
         {
           "path": "QA-DOGFOOD-P4.md",

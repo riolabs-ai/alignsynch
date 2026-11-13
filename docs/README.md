@@ -175,7 +175,7 @@ The five Mermaid charts, one home each.
 One page per release, a view of `CHANGELOG.md`.
 
 - [`changelog/README.md`](changelog/README.md) — **Release blog** — What shipped in which release, and where does this page come from?
-- [`changelog/v1-17-1.md`](changelog/v1-17-1.md) — **v1.17.1** — Which patch paid v1.17.0's written promise that the edit panel would stop posting the Aspects?
+- [`changelog/v1-18-0.md`](changelog/v1-18-0.md) — **v1.18.0** — Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?
 - [`changelog/v1-17-0.md`](changelog/v1-17-0.md) — **v1.17.0** — Which release made stage 5 a three-step payment walk, and what does it defer?
 - [`changelog/v1-16-0.md`](changelog/v1-16-0.md) — **v1.16.0** — Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?
 - [`changelog/v1-0-0.md`](changelog/v1-0-0.md) — **v1.0.0** — The release where the webapp stopped being a mock.
@@ -206,6 +206,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
 - [`qa-atlas/v1.17.0/index.md`](qa-atlas/v1.17.0/index.md) — **QA atlas — v1.17.0** — What did every registered surface render in v1.17.0, and did it read the record it claims?
 - [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — v1.17.1** — What did every registered surface render in v1.17.1, and what changed since v1.17.0?
+- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since v1.17.1?
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
