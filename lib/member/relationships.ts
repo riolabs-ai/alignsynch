@@ -6,8 +6,15 @@
  * nothing: the relationship was theirs to answer on `/assessment/instances` and absent from the
  * console's own list, so the screen said the relationship did not exist. The two questions are now
  * answered in two places and never merged — `viewerIsPartyOf` decides *membership* (the row is
- * listed), `relationshipOf` compares `initiator_user_id` with the viewer to decide *permission*
- * (`MemberRelationshipRow.isInitiator`, and the three write flags on the detail view).
+ * listed), `relationshipOf` decides *permission* (`MemberRelationshipRow.isInitiator`, and the
+ * three write flags on the detail view).
+ *
+ * **Permission has two sources, in one order (#958).** The account column
+ * (`relationship.initiator_user_id`) answers first and always wins when it names somebody; when it
+ * names nobody — the relationship has *no initiator member*, which is every row the demo seed
+ * writes — the viewer's own **Initiator seat** answers. `lib/relationship/initiator.ts` owns that
+ * rule and this module never re-derives it, because a screen's flag and a transaction's refusal
+ * disagreeing is the bug on both sides of it.
  *
  * **A relationship is configured before it is sent, and this module is the "before".** #533's
  * lifecycle (`0030_relationship_lifecycle.sql`) stores its seven states; `lib/relationship/
@@ -87,6 +94,7 @@ import {
   type Sql,
 } from "@/lib/relationship/enforcement";
 import { membershipOf, membershipSentence, type Membership } from "@/lib/relationship/membership";
+import { initiatorIsViewer } from "@/lib/relationship/initiator";
 import { trialStateOf, type TrialFacts, type TrialState } from "@/lib/relationship/trial";
 import {
   aspectsEditable,
@@ -155,11 +163,16 @@ export interface MemberRelationshipRow {
    */
   readonly viewerRole: PartyRole;
   /**
-   * #706 — is the viewer the account that started this relationship?
+   * #706 — is the viewer the account that starts this relationship?
    *
    * The one source of every write flag on the detail view (`aspectsEditable`, `publishable`,
-   * `offersRepublish`) and of the controls this row's screen draws. Compared against
-   * `relationship.initiator_user_id`; a party row that exists does **not** grant it.
+   * `offersRepublish`) and of the controls this row's screen draws.
+   *
+   * **#958 — two sources, in one order.** `relationship.initiator_user_id` when it names an
+   * account; otherwise the viewer's own **Initiator seat** (`party.role = 'initiator'` bound to
+   * them), which is the state a relationship with *no initiator member* is in. A party row that
+   * exists does **not** grant it while the column names somebody else — that order is #706's
+   * protection and `lib/relationship/initiator.ts` is where it lives.
    */
   readonly isInitiator: boolean;
   /** The relationship's own copy of the template — its title above the Aspects. */
@@ -334,6 +347,69 @@ function viewerRoleOf(row: RelationshipQueryRow, isInitiator: boolean): PartyRol
   return isInitiator ? "initiator" : "counterparty";
 }
 
+/* ------------------------------------------------------------------ *
+ * The initiator, inside a transaction (#958)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The seat **this account** holds on a relationship, read from its own `party` row.
+ *
+ * The same binding `VIEWER_ROLE` carries in the list's statement and `relationshipRoleOf()` reads
+ * for the flow, asked here for a write that must not trust a flag: the relationship's latest round
+ * first, because a relationship may hold several sessions and the newest is the live pair. `null`
+ * when the account holds no seat — a Counterparty's *opponent*, a coach, a stranger.
+ *
+ * `ORDER BY round DESC` and no `LIMIT`-less scan: `party`'s key is `(session_record_id, role)`, so
+ * one account has at most one row per round, and one row is all this asks for.
+ */
+async function seatOf(
+  sql: ActSql | Sql,
+  relationshipId: string,
+  userId: string,
+): Promise<PartyRole | null> {
+  const rows = await sql.query<{ role: string }>(
+    `SELECT p.role
+       FROM session s
+       JOIN party p ON p.session_record_id = s.record_id
+      WHERE s.relationship_id = $1 AND p.user_id = $2
+      ORDER BY s.round DESC
+      LIMIT 1`,
+    [relationshipId, userId],
+  );
+  const role = rows.rows[0]?.role;
+  return role === "initiator" || role === "counterparty" ? role : null;
+}
+
+/**
+ * **Is this actor the relationship's initiator?** — the question every write refuses on.
+ *
+ * The read's flags (`readMyRelationship`) and the writes (`saveAspects`, `publishRelationship`,
+ * `republishRelationship`) must answer it the same way, or a screen offers a control the
+ * transaction refuses — which is the whole defect #958 fixes from the other side: the demo
+ * relationship's Initiator is told they are a Counterparty, and when the flag is mended the write
+ * must follow it, not keep comparing a `NULL` column against an account id.
+ *
+ * The seat is read **only when the column names nobody**, which is also the only case where the
+ * extra statement runs: a relationship whose column names an account costs what it always did, and
+ * a hand-edited `party` row can never re-open that path while the column is set (#706).
+ */
+async function actorIsInitiator(
+  sql: ActSql | Sql,
+  relationship: { readonly id: string; readonly initiator_user_id: string | null },
+  actorUserId: string,
+): Promise<boolean> {
+  const column = relationship.initiator_user_id;
+  const viewerSeat =
+    column === null || column.trim() === ""
+      ? await seatOf(sql, relationship.id, actorUserId)
+      : null;
+  return initiatorIsViewer({
+    initiatorUserId: column,
+    viewerSeat,
+    viewerUserId: actorUserId,
+  });
+}
+
 function relationshipOf(
   row: RelationshipQueryRow,
   now: Date,
@@ -350,8 +426,20 @@ function relationshipOf(
    * `offersRepublish`) is gated on it. A Counterparty is listed and reads the screen; they never
    * get the controls, and the server actions refuse `not-yours` inside their transaction if a form
    * were posted anyway.
+   *
+   * **#958 — and the column is not the only half of the answer.** When it is `NULL` the
+   * relationship has *no initiator member*, and the person in the **Initiator seat** is its
+   * initiator: that is the state the demo seed ships on every row and the state every pre-#825
+   * signed-out create wrote, and reading the column alone told those people they were the
+   * Counterparty of their own relationship — no publish band, no Invite Members, so no route to
+   * the pay modal. `initiatorIsViewer()` owns the order (the column first, always), and
+   * `viewer_role` — the viewer's own `party` row, already in this query — is the seat.
    */
-  const isInitiator = row.initiator_user_id !== null && row.initiator_user_id === viewerUserId;
+  const isInitiator = initiatorIsViewer({
+    initiatorUserId: row.initiator_user_id,
+    viewerSeat: row.viewer_role,
+    viewerUserId,
+  });
   const invite =
     row.expires_at === null
       ? null
@@ -851,7 +939,9 @@ export async function saveAspects(
             `no relationship holds the id "${request.relationshipId}"`,
           );
         }
-        if (rel.initiator_user_id !== request.actorUserId) {
+        // #958 — the same question the screen asks, asked where the write would happen: the
+        // column first, the Initiator seat when the column names nobody.
+        if (!(await actorIsInitiator(sql, rel, request.actorUserId))) {
           throw new MemberRefused(
             "not-yours",
             `relationship "${rel.id}" was started by another account — Aspects and the invitation are the initiator's`,
@@ -1114,7 +1204,7 @@ export async function publishRelationship(
       `no relationship holds the id "${request.relationshipId}"`,
     );
   }
-  if (row.initiator_user_id !== request.actorUserId) {
+  if (!(await actorIsInitiator(poolSql, row, request.actorUserId))) {
     throw new MemberRefused(
       "not-yours",
       `relationship "${row.id}" was started by another account — only its initiator may publish it`,
@@ -1172,7 +1262,7 @@ export async function publishRelationship(
             `no relationship holds the id "${request.relationshipId}"`,
           );
         }
-        if (rel.initiator_user_id !== request.actorUserId) {
+        if (!(await actorIsInitiator(sql, rel, request.actorUserId))) {
           throw new MemberRefused(
             "not-yours",
             `relationship "${rel.id}" was started by another account — only its initiator may publish it`,
@@ -1420,7 +1510,7 @@ export async function republishRelationship(
               `no relationship holds the id "${request.relationshipId}"`,
             );
           }
-          if (rel.initiator_user_id !== request.actorUserId) {
+          if (!(await actorIsInitiator(sql, rel, request.actorUserId))) {
             throw new MemberRefused(
               "not-yours",
               `relationship "${rel.id}" was started by another account — only its initiator may reissue the invitation`,

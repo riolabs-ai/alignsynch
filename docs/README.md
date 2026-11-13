@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**145 documents in 9 sections.** Every page carries the same nav block, generated
+**146 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
-- [Records & QA](#records-qa) — 28 documents
+- [Records & QA](#records-qa) — 29 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
@@ -154,6 +154,7 @@ What was measured, on which tree, and what it looked like.
 
 - [`qa/542-phase2/README.md`](qa/542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa/957-assessment-one-click/README.md`](qa/957-assessment-one-click/README.md) — **One-click create on /assessment, #957** — Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?
+- [`qa/958-no-initiator-member/README.md`](qa/958-no-initiator-member/README.md) — **A relationship with no initiator member, #958** — Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?
 - [`qa/as2-home/README.md`](qa/as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
 - [`qa/brand-lockup/README.md`](qa/brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa/comments-mockup/README.md`](qa/comments-mockup/README.md) — **Comments mockup, both placements** — Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?
