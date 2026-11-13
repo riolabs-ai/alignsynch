@@ -92,6 +92,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-gaps",
     budget: 0,
   },
+  // #920 — the growth model. Budget 0 from the first commit: the five band headings, every stat
+  // caption, the series and axis labels, the invoice table's column heads and the two failure
+  // sentences are `data/pages/admin-growth.ts`, so the next literal written in the console is a red
+  // build. Attribution is reachability, so this row counts `components/admin/growth-console.tsx`
+  // only — the model itself is `content/`, and its numbers are not copy.
+  "/admin/growth": {
+    page: "app/(mainlayout)/admin/growth/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-growth",
+    budget: 0,
+  },
   // The operator's platform health (#508): four measurements, each with its own source line. Budget
   // 0 from the first commit — the four headings, every stat caption, the two alarm sentences and the
   // two provenance templates are `data/pages/admin-health.ts`, so the next literal written in the

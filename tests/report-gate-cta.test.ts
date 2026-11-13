@@ -69,6 +69,7 @@ function hrefOf(html: string, attribute: string): string {
 function lockedScreen(): FlowScreen {
   return {
     instanceRecordId: INSTANCE_ID,
+    relationshipId: "relationship-report-gate",
     slug: "relationship-basics-instance-report-gate",
     title: "Relationship Basics",
     summary: "An instance between two people.",

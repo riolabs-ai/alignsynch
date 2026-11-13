@@ -327,6 +327,7 @@ export function CreateRelationship({
   account,
   accountAdvanceHref,
   instanceRecordId,
+  relationshipId,
   publishAction,
   capture,
   initialPaid,
@@ -370,6 +371,15 @@ export function CreateRelationship({
   accountAdvanceHref?: string;
   /** Stage 5's relationship — the id its send form posts to (#825). Absent on every other stage. */
   instanceRecordId?: string;
+  /**
+   * The relationship's own row id, for the payment walk (#911).
+   *
+   * The stage's URL carries the **record** id (`?instance=`) and the send posts to it; the capture
+   * names the **relationship**, and passing the record id there is refused with "no relationship
+   * holds the id" — the card form's one failure mode. Optional, because a render-only test mounts
+   * this stage without a database and presses nothing that captures.
+   */
+  relationshipId?: string;
   /**
    * Stage 1's one-click publish, for a refusal the author can fix (#870). The page builds it as a
    * form posting to the **existing** `status` endpoint, because the rule is that a publish is the
@@ -785,6 +795,7 @@ export function CreateRelationship({
               copy={copy}
               draft={draft}
               instanceRecordId={instanceRecordId ?? ""}
+              relationshipId={relationshipId ?? ""}
               {...(capture === undefined ? {} : { capture })}
               {...(initialPaid === undefined ? {} : { initialPaid })}
               {...(planIncluded === undefined ? {} : { planIncluded })}
