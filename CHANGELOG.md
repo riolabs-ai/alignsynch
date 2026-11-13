@@ -50,6 +50,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
 - **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
 - **The modal rule has not been audited screen by screen.** #913 asks for every screen, page, menu and button to be validated against it. This version applies the rule where it touched a surface — the relationship edit form is a dialog and the pay step is a modal — and does not claim the audit.
+- **The edit panel still posts a snapshot of the Aspects.** Reorder in the detail's list, then save the panel in the same page session without a refresh, and the pre-reorder order is written back (#943). It was scheduled to land before this release and is not in it; the fix ships in the next patch.
 
 ## [1.16.0] - 2026-11-12
 
