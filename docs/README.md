@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**136 documents in 9 sections.** Every page carries the same nav block, generated
+**140 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,7 +31,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 6 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 36 documents
+- [Product](#product) — 40 documents
 - [Operations](#operations) — 10 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -125,6 +125,10 @@ What the product promises, and the specifications behind it.
 - [`qa-as2-home/README.md`](qa-as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
 - [`qa-templates-redesign/README.md`](qa-templates-redesign/README.md) — **AS2 templates catalogue visual QA** — Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?
 - [`qa-home-comments/README.md`](qa-home-comments/README.md) — **Home review comments — the logo** — Is the public header's brand lockup a link home, and what did the page look like before it was?
+- [`specs/spec-design-page-rel-templates/README.md`](specs/spec-design-page-rel-templates/README.md) — **Brand & audience profile page (handoff)** — How do I preview the brand and audience profile page, and in what order does it place the audiences?
+- [`specs/spec-help-center/README.md`](specs/spec-help-center/README.md) — **Help Center design spec (handoff)** — How do I preview the Help Center, and which three files make up the page?
+- [`specs/spec-help-center/IMPLEMENTATION-BRIEF.md`](specs/spec-help-center/IMPLEMENTATION-BRIEF.md) — **Help Center — implementation brief** — Which route does the Help Center redesign target, which files drive it, and what must not change?
+- [`specs/spec-help-center/GLOSSARY-CONTENT-MAP.md`](specs/spec-help-center/GLOSSARY-CONTENT-MAP.md) — **Glossary source map** — Which 2024 glossary terms feed the public Help page, and how is each editorial decision recorded?
 
 ## Operations
 
