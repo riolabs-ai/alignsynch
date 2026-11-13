@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../qa-957-assessment-one-click/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../qa-957-assessment-one-click/README.md) · next [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md)
 
 <!-- docs-nav:end -->
 
@@ -144,6 +144,6 @@ The database reads behind the table at the top (`initiator_user_id`, seats, `rel
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../qa-957-assessment-one-click/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../qa-957-assessment-one-click/README.md) · next [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md)
 
 <!-- docs-nav:end -->
