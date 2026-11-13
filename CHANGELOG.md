@@ -27,7 +27,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - **`demo.alignsynch.com` is still down.** The hostname answers `DEPLOYMENT_NOT_FOUND` (#833); the demo dataset is reachable through `pnpm demo:verify` and the review rig, not through that address. Deferred by owner decision, not by oversight.
 - **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
 - **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
-- **The modal rule has not been audited screen by screen.** #913 asks for every screen, page, menu and button to be validated against it. This version applies the rule where it touched a surface and does not claim the audit.
+- **The modal rule has not been audited screen by screen.** This version applies it where it touched a surface — the create path and the pay step — and does not claim the audit. #913 was closed by the narrower fix it produced, so the screen-by-screen pass is still owed.
 
 ## [1.17.0] - 2026-11-13
 
