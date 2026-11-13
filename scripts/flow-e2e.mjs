@@ -485,6 +485,54 @@ async function relationshipState(instanceRecordId) {
 }
 
 /**
+ * The card entry a person makes in stage 5's walk, written as the row a completed capture writes.
+ *
+ * **#911 gated the send on the walk** — a plan joined and a card on file — so a harness that POSTs
+ * `/send` with no method is refused `no-payment-method`. That refusal is the gate working, and this
+ * script used to fail on it in two places while the product was correct: it POSTed the send the way
+ * the pre-#911 screen allowed. Stripe's fields belong to the provider's own page, so the card entry
+ * cannot be typed here; the harness writes `relationship_payment` — the row `paymentArmedOf()`
+ * reads — and says so in its own line. Every other act in the walk is driven through the app.
+ */
+async function captureMethodStandIn(state, label) {
+  if (state === null || state?.id === undefined) {
+    console.log(`· ${label}: no relationship to put a method on`);
+    return false;
+  }
+  await db.query(
+    `INSERT INTO relationship_payment
+       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
+        charge_due_at)
+     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
+     ON CONFLICT (relationship_id) DO UPDATE
+       SET method_captured_at = EXCLUDED.method_captured_at,
+           charge_due_at = EXCLUDED.charge_due_at`,
+    [state.id, state.initiator_user_id],
+  );
+  console.log(`· ${label}: method stand-in written (the card entry is the browser's act)`);
+  return true;
+}
+
+/**
+ * The method stand-in taken back off the obligation — the state "no card on file".
+ *
+ * Stage 5's send needs the card (#911) and the fee gate needs its absence, and both are the product's
+ * rules: a published relationship whose payer has not finished the walk is exactly what the gate
+ * shuts. The **row stays** and only its capture is cleared, because `paymentArmedOf()` answers
+ * `undefined` — "not measured" — for a missing obligation and only `false` closes the gate
+ * (`lib/flow/payment.ts:157`). Section 6e puts the capture back through the provider's own endpoint.
+ */
+async function clearMethodStandIn(instanceRecordId, label) {
+  await db.query(
+    `UPDATE relationship_payment
+        SET method_captured_at = NULL, charge_due_at = NULL
+      WHERE relationship_id = (SELECT relationship_id FROM session WHERE record_id = $1)`,
+    [instanceRecordId],
+  );
+  console.log(`· ${label}: method stand-in cleared (the "no card on file" state)`);
+}
+
+/**
  * A fixture string as React writes it into a text node: `&` is `&amp;`, and the two quotes are
  * entities. Needed because a title like "Staff & Manager" is *drawn* escaped — comparing the raw
  * value against the markup would fail on a page that renders it correctly.
@@ -739,7 +787,24 @@ async function main() {
     JSON.stringify(stillDraft),
   );
 
-  /* 1d. Send and Continue publishes it -------------------------------- */
+  /* 1d. the send, gated on the walk (#911) --------------------------- */
+  // Without a method the send is refused and nothing moves — the gate, asserted first so the pair
+  // reads as one rule: no card, no publish; a card, publish.
+  const ungated = await initiator.post(sendInvitationPath(instanceId), {});
+  check(
+    "stage 5's send is refused before the walk: no card, no publish",
+    ungated.status === 303 && String(ungated.location ?? "").includes("resend=no-payment-method"),
+    `${ungated.status} ${ungated.location}`,
+  );
+  const stillUnsent = await relationshipState(instanceId);
+  check(
+    "and the row is still a draft after that refusal",
+    stillUnsent !== null && stillUnsent.status === "draft",
+    JSON.stringify(stillUnsent),
+  );
+
+  /* 1e. the walk's card step, then Send and Continue publishes it ----- */
+  await captureMethodStandIn(await relationshipState(instanceId), "stage 5 · draft");
   const sent = await initiator.post(sendInvitationPath(instanceId), {});
   check("Send and Continue answers 303", sent.status === 303, `${sent.status} ${sent.location}`);
   const published = await relationshipState(instanceId);
@@ -1335,6 +1400,12 @@ async function main() {
     `${counterpartyAccept.status} ${counterpartyAccept.location}`,
   );
 
+  /* 6d. the fee gate — the method is taken away, and the report shuts ----- */
+  // Since #911 the send needs a card, so a published relationship always has one when it is created
+  // through the walk. The gate this section proves is the one *after* that: a method that is not on
+  // file. Removing the stand-in row is how the harness reaches it, and 6e puts it back through the
+  // provider's own capture.
+  await clearMethodStandIn(instanceId, "6d · the fee gate");
   const reportViaAccept = await counterparty.get(counterpartyAccept.location ?? instancePath);
   dumpPage("report", reportViaAccept.html);
   check(
@@ -1373,11 +1444,12 @@ async function main() {
 
   // The blind rule outlives both sheets: with no method on file the report is shut, so neither
   // party's scores may be drawn. That is the **hard gate at publish opinions** the payment posture
-  // names, and it is checked before the method is captured.
+  // names, and the method was taken away above for exactly this state.
+  const unpaidScreen = await initiator.get(instancePath);
   check(
     "no Gap is drawn while the fee is unpaid — the blind rule holds after both acceptances",
-    alignmentGaps(afterAcceptance.html, TIME).length === 0,
-    `${alignmentGaps(afterAcceptance.html, TIME).length} gap row(s) rendered before payment`,
+    alignmentGaps(unpaidScreen.html, TIME).length === 0,
+    `${alignmentGaps(unpaidScreen.html, TIME).length} gap row(s) rendered before payment`,
   );
   check(
     "and the counterparty's screen draws none either",
@@ -1561,8 +1633,10 @@ async function main() {
   const advInstanceId = advCreate.instanceId;
   const advPath = `/assessment/instances/${advInstanceId}`;
 
-  // The draft is published the same way the first relationship's is: stage 5's send. The invitation
-  // row the create wrote holds the token the counterparty's link is built from.
+  // The draft is published the same way the first relationship's is: stage 5's send, after the
+  // walk's card step (the method stand-in — see `captureMethodStandIn`). The invitation row the
+  // create wrote holds the token the counterparty's link is built from.
+  await captureMethodStandIn(await relationshipState(advInstanceId), "stage 5 · advanced");
   const advSent = await advInitiator.post(sendInvitationPath(advInstanceId), {});
   const advPublished = await relationshipState(advInstanceId);
   check(

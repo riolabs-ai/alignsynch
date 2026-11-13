@@ -123,9 +123,9 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
    * The modal is stage 5's pay walk, and its own address needs both handles (#794): the
    * relationship's copy in the path, the session in `?instance=`. A draft written by the create
    * flow has both — stage 4 writes the session and a staged invitation, and stage 5 is where they
-   * go out. A draft written by this list's own create band has neither (no session, no seats), so
-   * there is no invitation to shape and the control says that instead of linking somewhere it
-   * would be refused.
+   * go out. Since #913 the flow is the only create path, so every new draft has them; a row with
+   * no session is data from the deleted list-create path, and the control says that instead of
+   * linking somewhere it would be refused.
    */
   const isDraft = row.status === "draft";
   const payHref =
@@ -133,6 +133,13 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
       ? null
       : createInviteForPath(row.templateSlug, row.sessionRecordId);
   const payWhy = itemLabel(card, "invite-members-why");
+  /**
+   * #913 — **publishing a draft is the pay modal's own Send, so that is where this goes.** The row
+   * used to send the reader to the relationship's screen, one click before the modal that carries
+   * the card and the send — the "blocked to get back to the modal step needed" the owner reported.
+   * A draft with no session has no modal to open, so it keeps the screen as its destination.
+   */
+  const publishHref = isDraft && row.isInitiator && payHref !== null ? payHref : relationshipHref;
 
   return (
     <li
@@ -205,9 +212,9 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
 
             `Invite Members` is the pay modal and nothing else: no card is taken here, and the
             relationship detail no longer opens a capture of its own (`payment-capture-dialog.tsx`
-            is deleted). When the draft has no session there is no invitation to shape, so the
-            control is drawn inert *with its reason* rather than as a link that would bounce the
-            reader back to stage 1.
+            is deleted). A draft that came through the flow always has a session; the inert branch
+            below is the shape of data written by the list-create path #913 deleted, and it says so
+            rather than linking somewhere stage 5 would bounce.
           */}
           {isDraft && row.isInitiator ? (
             payHref === null ? (
@@ -230,7 +237,11 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
               </Link>
             )
           ) : null}
-          <Link href={relationshipHref} className={ACTION_PRIMARY}>
+          <Link
+            href={publishHref}
+            className={ACTION_PRIMARY}
+            {...(isDraft && row.isInitiator ? { "data-publish-to-counterparty": "true" } : {})}
+          >
             {isDraft && row.isInitiator
               ? itemLabel(card, "publish-to-counterparty")
               : row.isInitiator

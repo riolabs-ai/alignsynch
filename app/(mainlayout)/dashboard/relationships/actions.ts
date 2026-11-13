@@ -3,8 +3,8 @@
 /**
  * The initiator's relationships, as four server actions (#533 phase 2).
  *
- * `createRelationship`, `saveAspects`, `publishRelationship` and `republishInvite`. Each ends in an
- * `act()` write inside `lib/member/relationships.ts` — `relationship.create`, `.aspects`, `.publish`
+ * `saveAspects`, `publishRelationship` and `republishInvite`. Each ends in an
+ * `act()` write inside `lib/member/relationships.ts` — `relationship.aspects`, `.publish`
  * and `.republish`, all floored at `member` — so each leaves an `admin_action` row with the actor's
  * reason in the same transaction as the change.
  *
@@ -39,7 +39,6 @@ import { zAlignmentSetting, zAssessmentMode } from "@/content/assessment";
 import { baseUrl } from "@/lib/flow/email";
 import { forkRelationshipTemplate } from "@/lib/flow/templates";
 import {
-  createRelationship,
   MemberCheckoutRequired,
   publishRelationship,
   republishRelationship,
@@ -64,7 +63,6 @@ import type {
   EditPreviewOutcome,
   ForkOutcome,
   PublishOutcome,
-  RelationshipCreateOutcome,
   RepublishOutcome,
 } from "@/lib/member/outcomes";
 
@@ -79,31 +77,6 @@ function returnUrlFor(relationshipId: string): string {
 }
 
 /** Start a relationship from one of the member's templates. */
-export async function createRelationshipAction(payload: {
-  templateId?: string;
-  reason?: string;
-}): Promise<RelationshipCreateOutcome> {
-  const user = await currentUser();
-  if (user === null) return { ok: false, code: "signed-out" };
-
-  const templateId = text(payload.templateId);
-  if (templateId === "") return { ok: false, code: "no-such-template" };
-
-  try {
-    const result = await createRelationship({
-      actorUserId: user.userId,
-      reason: text(payload.reason),
-      templateId,
-    });
-    return { ok: true, id: result.after.relationshipId, actionId: result.actionId };
-  } catch (error) {
-    if (error instanceof ActRefused) return { ok: false, code: error.reason };
-    if (error instanceof MemberRefused) {
-      return { ok: false, code: error.reason, message: error.message };
-    }
-    throw error;
-  }
-}
 
 /**
  * Save the relationship's Aspects, and optionally mark it ready.

@@ -43,14 +43,13 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PageCopy } from "@/content/pages";
-import type { RelationshipCreateOutcome } from "@/lib/member/outcomes";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
-import type { MemberTemplateRow } from "@/lib/member/templates";
+import type { RelationshipStartTemplate } from "./relationship-create";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { Grid3X3, List, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { RelationshipCards } from "./relationship-cards";
-import { RelationshipCreate } from "./relationship-create";
+import { RelationshipStart } from "./relationship-create";
 
 /** The tabs, in the order the artifact draws them. The id is the fixture item, the value the filter. */
 const STATUS_TABS = [
@@ -102,16 +101,11 @@ export function RelationshipsList({
   copy,
   rows,
   templates,
-  onCreate,
   unreadable,
 }: {
   copy: PageCopy;
   rows: readonly MemberRelationshipRow[];
-  templates: readonly MemberTemplateRow[];
-  onCreate: (payload: {
-    templateId?: string;
-    reason?: string;
-  }) => Promise<RelationshipCreateOutcome>;
+  templates: readonly RelationshipStartTemplate[];
   unreadable: string | null;
 }) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -150,10 +144,10 @@ export function RelationshipsList({
         {unreadable === null ? startAction : null}
       </header>
 
-      {/* The one write this page owns. A relationship is started from one of the member's own
-          templates, so the picker opens here rather than behind a route of its own. */}
+      {/* The way in, not a write (#913). Choosing a template here navigates to the create flow's
+          own modal, which is where a relationship is written — this page never creates one. */}
       {unreadable === null && createOpen ? (
-        <RelationshipCreate copy={copy} templates={templates} onCreate={onCreate} />
+        <RelationshipStart copy={copy} templates={templates} />
       ) : null}
 
       {unreadable !== null ? (
