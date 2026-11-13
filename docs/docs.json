@@ -545,6 +545,21 @@
           "path": "qa/v1x-ui-cohort/README.md",
           "title": "v1.x UI cohort",
           "question": "Were all ten owner items measured in a real browser?"
+        },
+        {
+          "path": "qa-atlas/README.md",
+          "title": "QA atlas",
+          "question": "How is every registered surface captured, asserted and checked, and what is committed?"
+        },
+        {
+          "path": "qa-atlas/v1.17.0/index.md",
+          "title": "QA atlas — v1.17.0",
+          "question": "What did every registered surface render in v1.17.0, and did it read the record it claims?"
+        },
+        {
+          "path": "qa-atlas/v1.17.1/index.md",
+          "title": "QA atlas — v1.17.1",
+          "question": "What did every registered surface render in v1.17.1, and what changed since v1.17.0?"
         }
       ]
     },

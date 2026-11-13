@@ -74,8 +74,20 @@ const NODE_ONLY_PACKAGES: readonly string[] = [
  * `lib/db/**` is the database layer: `client.ts` owns the `pg` pool and `user-profiles.ts` /
  * `assessments.ts` read through it. Catching the layer rather than only `pg` is what makes the
  * diagnostic say *which* server module was crossed instead of "the bundle contains a driver".
+ *
+ * `lib/docs/feedback-github.ts` is the documentation note's writer (#894) and the **only** reader of
+ * the feedback token — a fine-grained PAT with Issues: write. It imports nothing the browser
+ * cannot load (one `fetch`), so `pg`'s rule would not have caught it: the cost of a crossing is not
+ * a 500, it is a privileged token compiled into a bundle anybody can read. Naming the module here
+ * is what makes that rule structural instead of remembered.
  */
-const NODE_ONLY_PREFIXES: readonly string[] = ["lib/db/"];
+const NODE_ONLY_PREFIXES: readonly { readonly prefix: string; readonly reason: string }[] = [
+  { prefix: "lib/db/", reason: "is the database layer" },
+  {
+    prefix: "lib/docs/feedback-github",
+    reason: "is the docs feedback writer, the only reader of the feedback token",
+  },
+];
 
 /** A file's imports, relative to the repo root. */
 export interface ClientGraphSources {
@@ -329,9 +341,9 @@ export function resolveSpecifier(
 export function browserUnsafe(module: string): string | null {
   if (module.startsWith("node:")) return `${module} is a Node builtin`;
   if (NODE_ONLY_PACKAGES.includes(module)) return `${module} has no browser build`;
-  for (const prefix of NODE_ONLY_PREFIXES) {
+  for (const { prefix, reason } of NODE_ONLY_PREFIXES) {
     if (module === prefix.slice(0, -1) || module.startsWith(prefix)) {
-      return `${module} is the database layer`;
+      return `${module} ${reason}`;
     }
   }
   return null;

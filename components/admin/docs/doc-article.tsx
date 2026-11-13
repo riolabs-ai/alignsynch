@@ -27,6 +27,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import Markdown from "react-markdown";
 
+import { DocFeedback } from "@/components/admin/docs/doc-feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PageCopy } from "@/content/pages";
 import { resolveDocsTarget } from "@/lib/docs/links";
@@ -196,6 +197,7 @@ function StepLink({
 
 export function DocArticle({ copy, row, body, siblings, previous, next }: DocArticleProps) {
   const documentCopy = sectionOf(copy, "document");
+  const feedbackCopy = sectionOf(copy, "feedback");
   const empty = body.trim() === "";
 
   return (
@@ -225,6 +227,10 @@ export function DocArticle({ copy, row, body, siblings, previous, next }: DocArt
           <Markdown components={markdownComponents(row.path)}>{body}</Markdown>
         )}
       </article>
+
+      {/* #894 — the note a reader files about this page. It sits directly under the body, because
+          the panel quotes the heading the reader had in view and that is only true here. */}
+      <DocFeedback copy={feedbackCopy} path={row.path} title={row.title} />
 
       {previous === null && next === null ? null : (
         <div className="grid gap-3 sm:grid-cols-2">

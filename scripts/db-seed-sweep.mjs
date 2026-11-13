@@ -80,6 +80,32 @@ export const SWEEP_STATEMENTS = [
     scope: "relationship",
     sql: "DELETE FROM relationship WHERE id = ANY($1::text[])",
   },
+  /* The instance's own record rows (#962 follow-up).
+   *
+   * A relationship the sweep removes owns sessions, and every session **is** a `record` row — the
+   * flow writes `record` first (`lib/flow/store.ts`, the instance record) and the `session` row
+   * points at it with `ON DELETE CASCADE`. Deleting the session therefore leaves its record: a
+   * `draft` assessment record nothing authors, which the seed's own exact-count guard refuses
+   * ("record holds assessment row(s) this seed does not author") on the **next** run. Measured on
+   * the demo branch after a single create from the catalogue: two `relationship-basics-<hex>`
+   * records, two green relationships swept, and `db:seed` unable to run until they were removed
+   * by hand.
+   *
+   * The id set is still the sweep's — the stray relationships' session record ids — so an authored
+   * template is never in it. `item` goes first because it names the record and the counts are the
+   * evidence that the sweep did anything; `response_option` cascades from `item`, exactly as the
+   * seed's own `replaceItems()` relies on.
+   */
+  {
+    table: "item",
+    scope: "session",
+    sql: "DELETE FROM item WHERE record_id = ANY($1::text[])",
+  },
+  {
+    table: "record",
+    scope: "session",
+    sql: "DELETE FROM record WHERE id = ANY($1::text[]) AND record_type = 'assessment'",
+  },
 ];
 
 /** The parent of every table in the sweep that has one — the order proof reads this. */
@@ -91,6 +117,7 @@ export const SWEEP_PARENT = {
   relationship_payment: "relationship",
   relationship_member: "relationship",
   coach_invite: "relationship",
+  item: "record",
 };
 
 /** The tables, bottom-up. */
@@ -167,7 +194,10 @@ export async function inspectDrift(client, { bundleRelationshipIds }) {
             (SELECT count(*) FROM opinion   WHERE session_record_id = ANY($2::text[]))::int AS opinion,
             (SELECT count(*) FROM party     WHERE session_record_id = ANY($2::text[]))::int AS party,
             (SELECT count(*) FROM session_invite
-              WHERE session_record_id = ANY($2::text[]))::int AS session_invite`,
+              WHERE session_record_id = ANY($2::text[]))::int AS session_invite,
+            (SELECT count(*) FROM item      WHERE record_id = ANY($2::text[]))::int AS item,
+            (SELECT count(*) FROM record
+              WHERE id = ANY($2::text[]) AND record_type = 'assessment')::int AS record`,
     [strays, sessionRecordIds],
   );
 
