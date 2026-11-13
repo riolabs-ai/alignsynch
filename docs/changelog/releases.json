@@ -1,9 +1,9 @@
 {
   "releases": [
     {
-      "version": "1.17.1",
-      "theme": "the patch the last note promised",
-      "headline": "`fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) (#964)"
+      "version": "1.18.0",
+      "theme": "the patch that became a minor",
+      "headline": "`feat(qa)` — #945 the release atlas — capture and verify every surface, backfilled for v1.17.0 (#968)"
     },
     {
       "version": "1.17.0",
