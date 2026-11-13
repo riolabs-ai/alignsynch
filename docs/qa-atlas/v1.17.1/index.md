@@ -11,21 +11,18 @@ Every route `data/pages/budget.ts` registers, captured in a real browser at 390 
 ## Coverage
 
 ```
-75 registry surfaces · 74 routes · 68 captured and passing · 1 failing · 5 skipped
+77 registry surfaces · 74 routes · 69 captured and passing · 2 failing · 3 skipped
 3 non-route surfaces (not-found, shell, tour) — covered by the pages that mount them, listed below.
 ```
 
-Brand `alignsynch` · generated 2026-11-13T20:04:13.668Z · node `v24.22.0` · `/usr/bin/google-chrome` · the machine-readable form is [`manifest.json`](manifest.json).
+Brand `alignsynch` · generated 2026-11-13T21:59:44.754Z · node `v24.22.0` · `/usr/bin/google-chrome` · the machine-readable form is [`manifest.json`](manifest.json).
 
 ## Changed this release
 
 Against v1.17.0:
 
-- `/admin/instances/[id]` — verdict fail → pass
-- `/admin/docs/features`, `/admin/docs/releases` — registered after this capture (#893), so this atlas
-  records both as skipped with that reason; the next cut captures them like every other console route.
-  The capture attempt on this tree answered non-200 for `/admin/audit` too — the demo branch offered no
-  admin session that day — which is why they are not captured here rather than a statement about them.
+- `/admin/docs/features` — new (admin, pass)
+- `/admin/docs/releases` — new (admin, pass)
 
 ## Findings
 
@@ -44,17 +41,18 @@ A finding is a fact the derivation could not settle, reported rather than smooth
 | `/my-quizzes/[id]/statistics` | tests/parity/boundary.ts lists this route; data/pages/budget.ts carries no row for it                                                                                                                                              |
 | `/chat`                       | tests/parity/boundary.ts lists this route; data/pages/budget.ts carries no row for it                                                                                                                                              |
 | `/admin/console`              | tests/parity/boundary.ts lists this route; data/pages/budget.ts carries no row for it                                                                                                                                              |
-| `12 boundary-closed routes`   | the app's not-found logs 1 distinct console line(s) (36 capture(s) carry "Failed to load resource: the server responded with a status of 404 (Not Found)"); recorded, not failed — the console assertion measures product surfaces |
+| `12 boundary-closed routes`   | the app's not-found logs 2 distinct console line(s) (36 capture(s) carry "Failed to load resource: the server responded with a status of 404 (Not Found)"); recorded, not failed — the console assertion measures product surfaces |
 
 ## Failures
 
 One row per assertion, with the widths it failed at — a page can render beautifully and still be wrong, which is why each assertion is named rather than the route alone.
 
-| route                                     | widths           | assertion                | measured                                                                                                  |
-| ----------------------------------------- | ---------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `/assessment/instances/[instanceId]/sent` | 390 · 768 · 1440 | status 500, expected 200 | status 500, expected 200                                                                                  |
-| `/assessment/instances/[instanceId]/sent` | 390 · 768 · 1440 | console error            | console error: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-| `/assessment/instances/[instanceId]/sent` | 390 · 768 · 1440 | headline absent          | headline absent: "Invitation sent"                                                                        |
+| route                                     | widths           | assertion                | measured                                                                                                                                                        |
+| ----------------------------------------- | ---------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/assessment/instances/[instanceId]/sent` | 390 · 768 · 1440 | status 500, expected 200 | status 500, expected 200                                                                                                                                        |
+| `/assessment/instances/[instanceId]/sent` | 390 · 768 · 1440 | console error            | console error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)                                                       |
+| `/assessment/instances/[instanceId]/sent` | 390 · 768 · 1440 | headline absent          | headline absent: "Invitation sent"                                                                                                                              |
+| `/admin/instances/[id]`                   | 390 · 768 · 1440 | console error            | console error: %s contains an input of type %s with both value and defaultValue props. Input elements must be either controlled or uncontrolled (specify either |
 
 ## Skipped
 
@@ -124,7 +122,7 @@ The two-party flow — the template catalogue, the five stages, the sessions.
 | `/assessment/instances/[instanceId]/accept`     | 200 / 200 | 390 · 768 · 1440 | ![/assessment/instances/[instanceId]/accept](thumbs/assessment-instances-instanceid-accept.webp)         | ✓                                                                                                                                                  |
 | `/assessment/instances/[instanceId]/answer`     | 200 / 200 | 390 · 768 · 1440 | ![/assessment/instances/[instanceId]/answer](thumbs/assessment-instances-instanceid-answer.webp)         | ✓                                                                                                                                                  |
 | `/assessment/instances/[instanceId]/report`     | 200 / 200 | 390 · 768 · 1440 | ![/assessment/instances/[instanceId]/report](thumbs/assessment-instances-instanceid-report.webp)         | ✓                                                                                                                                                  |
-| `/assessment/instances/[instanceId]/sent`       | 500 / 200 | 390 · 768 · 1440 | ![/assessment/instances/[instanceId]/sent](thumbs/assessment-instances-instanceid-sent.webp)             | ✗ 9 assertion(s)                                                                                                                                   |
+| `/assessment/instances/[instanceId]/sent`       | 500 / 200 | 390 · 768 · 1440 | ![/assessment/instances/[instanceId]/sent](thumbs/assessment-instances-instanceid-sent.webp)             | ✗ 12 assertion(s)                                                                                                                                  |
 | `/assessments`                                  | 200 / 200 | 390 · 768 · 1440 | ![/assessments](thumbs/assessments.webp)                                                                 | ✓                                                                                                                                                  |
 | `/invite/[token]`                               | — (200)   |                  | —                                                                                                        | skipped — the demo branch holds no claimable invite token — `session_invite` stores `token_hash`, and the seeded dataset carries no pending invite |
 | `/templates/relationship`                       | 200 / 200 | 390 · 768 · 1440 | ![/templates/relationship](thumbs/templates-relationship.webp)                                           | ✓                                                                                                                                                  |
@@ -140,24 +138,26 @@ The two-party flow — the template catalogue, the five stages, the sessions.
 
 The operator console.
 
-| route                          | status    | widths           | thumbnail                                                              | verdict |
-| ------------------------------ | --------- | ---------------- | ---------------------------------------------------------------------- | ------- |
-| `/admin/audit`                 | 200 / 200 | 390 · 768 · 1440 | ![/admin/audit](thumbs/admin-audit.webp)                               | ✓       |
-| `/admin/billing`               | 200 / 200 | 390 · 768 · 1440 | ![/admin/billing](thumbs/admin-billing.webp)                           | ✓       |
-| `/admin/brand`                 | 200 / 200 | 390 · 768 · 1440 | ![/admin/brand](thumbs/admin-brand.webp)                               | ✓       |
-| `/admin/broadcast`             | 200 / 200 | 390 · 768 · 1440 | ![/admin/broadcast](thumbs/admin-broadcast.webp)                       | ✓       |
-| `/admin/docs`                  | 200 / 200 | 390 · 768 · 1440 | ![/admin/docs](thumbs/admin-docs.webp)                                 | ✓       |
-| `/admin/docs/[...slug]`        | 200 / 200 | 390 · 768 · 1440 | ![/admin/docs/[...slug]](thumbs/admin-docs-slug.webp)                  | ✓       |
-| `/admin/gaps`                  | 200 / 200 | 390 · 768 · 1440 | ![/admin/gaps](thumbs/admin-gaps.webp)                                 | ✓       |
-| `/admin/growth`                | 200 / 200 | 390 · 768 · 1440 | ![/admin/growth](thumbs/admin-growth.webp)                             | ✓       |
-| `/admin/health`                | 200 / 200 | 390 · 768 · 1440 | ![/admin/health](thumbs/admin-health.webp)                             | ✓       |
-| `/admin/inbox`                 | 200 / 200 | 390 · 768 · 1440 | ![/admin/inbox](thumbs/admin-inbox.webp)                               | ✓       |
-| `/admin/instances`             | 200 / 200 | 390 · 768 · 1440 | ![/admin/instances](thumbs/admin-instances.webp)                       | ✓       |
-| `/admin/instances/[id]`        | 200 / 200 | 390 · 768 · 1440 | ![/admin/instances/[id]](thumbs/admin-instances-id.webp)               | ✓       |
-| `/admin/instances/[id]/report` | 200 / 200 | 390 · 768 · 1440 | ![/admin/instances/[id]/report](thumbs/admin-instances-id-report.webp) | ✓       |
-| `/admin/review`                | 200 / 200 | 390 · 768 · 1440 | ![/admin/review](thumbs/admin-review.webp)                             | ✓       |
-| `/admin/templates`             | 200 / 200 | 390 · 768 · 1440 | ![/admin/templates](thumbs/admin-templates.webp)                       | ✓       |
-| `/admin/templates/[id]`        | 200 / 200 | 390 · 768 · 1440 | ![/admin/templates/[id]](thumbs/admin-templates-id.webp)               | ✓       |
+| route                          | status    | widths           | thumbnail                                                              | verdict          |
+| ------------------------------ | --------- | ---------------- | ---------------------------------------------------------------------- | ---------------- |
+| `/admin/audit`                 | 200 / 200 | 390 · 768 · 1440 | ![/admin/audit](thumbs/admin-audit.webp)                               | ✓                |
+| `/admin/billing`               | 200 / 200 | 390 · 768 · 1440 | ![/admin/billing](thumbs/admin-billing.webp)                           | ✓                |
+| `/admin/brand`                 | 200 / 200 | 390 · 768 · 1440 | ![/admin/brand](thumbs/admin-brand.webp)                               | ✓                |
+| `/admin/broadcast`             | 200 / 200 | 390 · 768 · 1440 | ![/admin/broadcast](thumbs/admin-broadcast.webp)                       | ✓                |
+| `/admin/docs`                  | 200 / 200 | 390 · 768 · 1440 | ![/admin/docs](thumbs/admin-docs.webp)                                 | ✓                |
+| `/admin/docs/[...slug]`        | 200 / 200 | 390 · 768 · 1440 | ![/admin/docs/[...slug]](thumbs/admin-docs-slug.webp)                  | ✓                |
+| `/admin/docs/features`         | 200 / 200 | 390 · 768 · 1440 | ![/admin/docs/features](thumbs/admin-docs-features.webp)               | ✓                |
+| `/admin/docs/releases`         | 200 / 200 | 390 · 768 · 1440 | ![/admin/docs/releases](thumbs/admin-docs-releases.webp)               | ✓                |
+| `/admin/gaps`                  | 200 / 200 | 390 · 768 · 1440 | ![/admin/gaps](thumbs/admin-gaps.webp)                                 | ✓                |
+| `/admin/growth`                | 200 / 200 | 390 · 768 · 1440 | ![/admin/growth](thumbs/admin-growth.webp)                             | ✓                |
+| `/admin/health`                | 200 / 200 | 390 · 768 · 1440 | ![/admin/health](thumbs/admin-health.webp)                             | ✓                |
+| `/admin/inbox`                 | 200 / 200 | 390 · 768 · 1440 | ![/admin/inbox](thumbs/admin-inbox.webp)                               | ✓                |
+| `/admin/instances`             | 200 / 200 | 390 · 768 · 1440 | ![/admin/instances](thumbs/admin-instances.webp)                       | ✓                |
+| `/admin/instances/[id]`        | 200 / 200 | 390 · 768 · 1440 | ![/admin/instances/[id]](thumbs/admin-instances-id.webp)               | ✗ 3 assertion(s) |
+| `/admin/instances/[id]/report` | 200 / 200 | 390 · 768 · 1440 | ![/admin/instances/[id]/report](thumbs/admin-instances-id-report.webp) | ✓                |
+| `/admin/review`                | 200 / 200 | 390 · 768 · 1440 | ![/admin/review](thumbs/admin-review.webp)                             | ✓                |
+| `/admin/templates`             | 200 / 200 | 390 · 768 · 1440 | ![/admin/templates](thumbs/admin-templates.webp)                       | ✓                |
+| `/admin/templates/[id]`        | 200 / 200 | 390 · 768 · 1440 | ![/admin/templates/[id]](thumbs/admin-templates-id.webp)               | ✓                |
 
 ## Quiz
 
@@ -190,9 +190,9 @@ The three declared non-route copy surfaces: the shell, the tour and the 404.
 
 ## How this was produced
 
-`pnpm qa:atlas` (`scripts/qa-atlas.mjs`) drove headless Chrome over the DevTools protocol — the same client `pnpm demo:flow` uses (`scripts/cdp.mjs`), no Playwright and no Puppeteer — against `http://127.0.0.1:3411` on the seeded demo branch. Routes come from `data/pages/budget.ts`; the boundary and the expected status come from `tests/parity/boundary.ts` and each page's own gate call; the headline comes from the route's copy fixture; the deep-route ids come from the branch's own rows. Nothing in this document is authored by hand, and `pnpm qa:atlas:check` fails the gate if the registry and `manifest.json` disagree.
+`pnpm qa:atlas` (`scripts/qa-atlas.mjs`) drove headless Chrome over the DevTools protocol — the same client `pnpm demo:flow` uses (`scripts/cdp.mjs`), no Playwright and no Puppeteer — against `http://127.0.0.1:3421` on the seeded demo branch. Routes come from `data/pages/budget.ts`; the boundary and the expected status come from `tests/parity/boundary.ts` and each page's own gate call; the headline comes from the route's copy fixture; the deep-route ids come from the branch's own rows. Nothing in this document is authored by hand, and `pnpm qa:atlas:check` fails the gate if the registry and `manifest.json` disagree.
 
-Full-size PNGs (207 files, 53322721 bytes before compression) are not committed and are not attached to this version's GitHub Release, whose assets are immutable: `qa-atlas-v1.17.1-full-size.zip` is the archive the capture wrote, sha256 `a226c20337a8d543f24f4538df9bfc58c20619b0aefe12b70cd7e17ad08789a2`. `pnpm qa:atlas` regenerates it byte for byte from the same fixtures at the commit the release was cut from.
+Full-size PNGs (213 files, 57395596 bytes before compression) are not committed and are not attached to this version's GitHub Release, whose assets are immutable: `qa-atlas-v1.17.1-full-size.zip` is the archive the capture wrote, sha256 `1bdf51e7a9191e1dffee722d898c34318890b15c985ccc0e5957bdb57421c5e7`. `pnpm qa:atlas` regenerates it byte for byte from the same fixtures at the commit the release was cut from.
 
 <!-- docs-nav:begin -->
 

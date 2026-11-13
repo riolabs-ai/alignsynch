@@ -2,8 +2,8 @@
   "schema": "qa-atlas/v1",
   "version": "1.17.1",
   "brand": "alignsynch",
-  "base": "http://127.0.0.1:3411",
-  "generatedAt": "2026-11-13T20:04:13.668Z",
+  "base": "http://127.0.0.1:3421",
+  "generatedAt": "2026-11-13T21:59:44.754Z",
   "runtime": {
     "node": "v24.22.0",
     "chrome": "/usr/bin/google-chrome",
@@ -11,16 +11,16 @@
   },
   "widths": [390, 768, 1440],
   "coverage": {
-    "keys": 75,
-    "routes": 72,
+    "keys": 77,
+    "routes": 74,
     "surfaces": 3,
-    "captured": 69,
-    "failing": 1,
+    "captured": 71,
+    "failing": 2,
     "skipped": 3
   },
   "boundary": {
     "quiz": 22,
-    "admin": 9
+    "admin": 11
   },
   "findings": [
     {
@@ -81,14 +81,14 @@
     {
       "kind": "closed-surface-console",
       "route": "12 boundary-closed routes",
-      "note": "the app's not-found logs 1 distinct console line(s) (36 capture(s) carry \"Failed to load resource: the server responded with a status of 404 (Not Found)\"); recorded, not failed — the console assertion measures product surfaces"
+      "note": "the app's not-found logs 2 distinct console line(s) (36 capture(s) carry \"Failed to load resource: the server responded with a status of 404 (Not Found)\"); recorded, not failed — the console assertion measures product surfaces"
     }
   ],
   "archive": {
     "name": "qa-atlas-v1.17.1-full-size.zip",
-    "entries": 207,
-    "bytes": 53322721,
-    "sha256": "a226c20337a8d543f24f4538df9bfc58c20619b0aefe12b70cd7e17ad08789a2",
+    "entries": 213,
+    "bytes": 57395596,
+    "sha256": "1bdf51e7a9191e1dffee722d898c34318890b15c985ccc0e5957bdb57421c5e7",
     "url": null
   },
   "routes": [
@@ -139,21 +139,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 6635,
-            "nodes": 358,
+            "chars": 6643,
+            "nodes": 363,
             "headings": ["Bring expectations into the open at work."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "e96ad29aa6f50e4d9d8d00e620519eab268308ea90a2fcf8c3e2233192c9e689",
+            "sha256": "da0e9f2f0c210c0833e418b424c0e8d21fb01cb0d36bfb3d316406b572c587b1",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 905,
-            "assertMs": 1062
+            "navigateMs": 2136,
+            "assertMs": 1069
           },
           "verdict": "pass",
           "problems": []
@@ -183,21 +183,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 6676,
-            "nodes": 358,
+            "chars": 6684,
+            "nodes": 363,
             "headings": ["Bring expectations into the open at work."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2a5ccedc55596241983e0683bacd529dd66a0039a40dad31938da699c5450803",
+            "sha256": "ce155fad7755542e039d046926dc7f88388d39bb34fa544eb0bb3e3745612458",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 606,
-            "assertMs": 1034
+            "navigateMs": 1605,
+            "assertMs": 1290
           },
           "verdict": "pass",
           "problems": []
@@ -227,21 +227,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 6676,
-            "nodes": 358,
+            "chars": 6684,
+            "nodes": 363,
             "headings": ["Bring expectations into the open at work."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "59c60faa0877959400b42ec28f3462d6796b5ea368c5d371cba4ea850620b482",
+            "sha256": "2f6da470ff7b0f9115f47a3d7dfacea1605ab95dc995d0a57d8875d2d0c52352",
             "width": 1440,
             "height": 5440
           },
           "timing": {
-            "navigateMs": 868,
-            "assertMs": 1189
+            "navigateMs": 1696,
+            "assertMs": 1361
           },
           "verdict": "pass",
           "problems": []
@@ -290,21 +290,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 1431,
-            "nodes": 291,
+            "chars": 1439,
+            "nodes": 296,
             "headings": ["Help"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "ac76dfaa64be6820ed6fc191465b0cf8dfe08d2e5df0451fba1b79e25e93b937",
+            "sha256": "2da31deae49821418ec30ad7d926d0cd96bfa1f592bcdac94e70fa96eb691468",
             "width": 390,
             "height": 3528
           },
           "timing": {
-            "navigateMs": 893,
-            "assertMs": 559
+            "navigateMs": 2354,
+            "assertMs": 733
           },
           "verdict": "pass",
           "problems": []
@@ -328,21 +328,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 1500,
-            "nodes": 291,
+            "chars": 1508,
+            "nodes": 296,
             "headings": ["Help"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "007ed958a4c7fc0b253ecec35ab2ba34649e7bbe644a4d57b5190a0cbb10424a",
+            "sha256": "e5164d2a01c936bb4aac1e31eb24b77f690454ace98fe5e1bfaf00f92c125a61",
             "width": 768,
             "height": 2516
           },
           "timing": {
-            "navigateMs": 860,
-            "assertMs": 593
+            "navigateMs": 1905,
+            "assertMs": 837
           },
           "verdict": "pass",
           "problems": []
@@ -366,21 +366,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 1500,
-            "nodes": 291,
+            "chars": 1508,
+            "nodes": 296,
             "headings": ["Help"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "088dfbf7552a05b4fe4673ca3f90300f1df21e8e65c685534ab4ab352dac4030",
+            "sha256": "a01274f6f35803ed67ce9c64f90ab343eb4603334527b828cd6542c2a3aa8db2",
             "width": 1440,
             "height": 2422
           },
           "timing": {
-            "navigateMs": 855,
-            "assertMs": 717
+            "navigateMs": 1778,
+            "assertMs": 1018
           },
           "verdict": "pass",
           "problems": []
@@ -427,20 +427,20 @@
             "selector": "body",
             "present": false,
             "chars": 3313,
-            "nodes": 357,
+            "nodes": 359,
             "headings": ["Simple, transparent pricing for relationship alignment"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "919bce6eff11745bcba5f2c068d51a05a9d5835d88b5544d43bc68b43a2d94cd",
+            "sha256": "f33ffd2a193152b8c35c484275dcf89d1ee78e466c149cce0e02f043c7390ef5",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 846,
-            "assertMs": 743
+            "navigateMs": 3589,
+            "assertMs": 1371
           },
           "verdict": "pass",
           "problems": []
@@ -462,20 +462,20 @@
             "selector": "body",
             "present": false,
             "chars": 3354,
-            "nodes": 357,
+            "nodes": 359,
             "headings": ["Simple, transparent pricing for relationship alignment"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "4c55cb256e4f943aabe0ff58c6d3692b423732a2116d37bc099407d3132ae4f2",
+            "sha256": "ae9da4e581d6113f51d4bee957b196930064807d55c8ba7eebbaf7dd07b1f736",
             "width": 768,
             "height": 4678
           },
           "timing": {
-            "navigateMs": 840,
-            "assertMs": 677
+            "navigateMs": 2289,
+            "assertMs": 1004
           },
           "verdict": "pass",
           "problems": []
@@ -497,20 +497,20 @@
             "selector": "body",
             "present": false,
             "chars": 3354,
-            "nodes": 357,
+            "nodes": 359,
             "headings": ["Simple, transparent pricing for relationship alignment"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "dcdda98bab86b872c2d0af57b55c434b9809e2490d03868474cd2880a73b20da",
+            "sha256": "f6ae788dfa7a57a8ec933cf18f97ad069c067dcd56915d596d93a8c298c8e7db",
             "width": 1440,
             "height": 4099
           },
           "timing": {
-            "navigateMs": 844,
-            "assertMs": 746
+            "navigateMs": 1470,
+            "assertMs": 880
           },
           "verdict": "pass",
           "problems": []
@@ -559,21 +559,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 12746,
-            "nodes": 337,
+            "chars": 12754,
+            "nodes": 342,
             "headings": ["Privacy Policy"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "de6474905a4e53d307071ed40858969ebc048dfdd2b5e91ca7ae798f112da815",
+            "sha256": "2126fdab06c79af83505f7e0581afe5d08f9eee47e512d5ec496446bc2e4e826",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 615,
-            "assertMs": 790
+            "navigateMs": 1371,
+            "assertMs": 1198
           },
           "verdict": "pass",
           "problems": []
@@ -597,21 +597,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 12787,
-            "nodes": 337,
+            "chars": 12795,
+            "nodes": 342,
             "headings": ["Privacy Policy"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "41c0a385b4e7ecbc0d386b734347a4ec78906daaadfab86e550739c0a26c2796",
+            "sha256": "16a3f4478f227ebda3d644a1c481958b5af2b908bbbfaac188d79087e9ce94ae",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 513,
-            "assertMs": 752
+            "navigateMs": 1642,
+            "assertMs": 1325
           },
           "verdict": "pass",
           "problems": []
@@ -635,21 +635,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 12787,
-            "nodes": 337,
+            "chars": 12795,
+            "nodes": 342,
             "headings": ["Privacy Policy"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "96446a1909a2aaa3a4025c0989a6eb4163dc2198715bc330897697787333f487",
+            "sha256": "9b248162dab249a75140981e7785ccd8f5ba091f37420e1faddc579c6237a27d",
             "width": 1440,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 429,
-            "assertMs": 878
+            "navigateMs": 1150,
+            "assertMs": 1279
           },
           "verdict": "pass",
           "problems": []
@@ -698,21 +698,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 3646,
-            "nodes": 261,
+            "chars": 3654,
+            "nodes": 266,
             "headings": ["Bring both perspectives into the conversation."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "a3cc99afd1aa4fd25c513efef0f7a5d4aa6aeac21bdab1940dc6c74cd46d83a8",
+            "sha256": "d6b82a34b180944bf1ca8ff638501e51e34b2ca79501850f7c8019f3ab09c7ee",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 480,
-            "assertMs": 683
+            "navigateMs": 1225,
+            "assertMs": 869
           },
           "verdict": "pass",
           "problems": []
@@ -736,21 +736,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 3687,
-            "nodes": 261,
+            "chars": 3695,
+            "nodes": 266,
             "headings": ["Bring both perspectives into the conversation."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "11cd57d6d43dd8bd5d1c9e784b769ff0500078a7b1b6b52f6de0a7fe30967016",
+            "sha256": "40c96d56691833c34840ef333d028fbcea09c3df5bef20446ef450c404173d0a",
             "width": 768,
             "height": 4233
           },
           "timing": {
-            "navigateMs": 450,
-            "assertMs": 684
+            "navigateMs": 1280,
+            "assertMs": 902
           },
           "verdict": "pass",
           "problems": []
@@ -774,21 +774,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 3687,
-            "nodes": 261,
+            "chars": 3695,
+            "nodes": 266,
             "headings": ["Bring both perspectives into the conversation."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "f4c4ec0d398b7578e33c2f761f000e77e7e02df539b97c149d3dd383d828f901",
+            "sha256": "3cead38d9287d6c002b10f4a3204df3643d240e7dcfe1327298993ecfe52cf66",
             "width": 1440,
             "height": 3548
           },
           "timing": {
-            "navigateMs": 433,
-            "assertMs": 733
+            "navigateMs": 1139,
+            "assertMs": 967
           },
           "verdict": "pass",
           "problems": []
@@ -837,21 +837,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 5054,
-            "nodes": 706,
+            "chars": 5062,
+            "nodes": 711,
             "headings": ["Bring both perspectives into the conversation."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "39d101610332212a62a591ef1d5eaa0566e6873df13aaa930c344e86e0bca344",
+            "sha256": "013c2cf4c6367e346288b47d6fbcadf5d602cd45df701672e60968953eb098c0",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 477,
-            "assertMs": 680
+            "navigateMs": 1570,
+            "assertMs": 868
           },
           "verdict": "pass",
           "problems": []
@@ -875,21 +875,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 5095,
-            "nodes": 706,
+            "chars": 5103,
+            "nodes": 711,
             "headings": ["Bring both perspectives into the conversation."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "da98fb5758cf418e4c1812c5fa91c47cbfee6f9080149eaec22ef84b2a0a9f87",
+            "sha256": "777c3cfad221d7b9d809d85a742392525bb973aea1afcca3b243e2f71f17ecd5",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 470,
-            "assertMs": 727
+            "navigateMs": 1551,
+            "assertMs": 933
           },
           "verdict": "pass",
           "problems": []
@@ -913,21 +913,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 5095,
-            "nodes": 706,
+            "chars": 5103,
+            "nodes": 711,
             "headings": ["Bring both perspectives into the conversation."]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "8413a89a6175c6cdc7f0ca961d9542df3046af7e1f0bd6a55cc69d463df6e7c3",
+            "sha256": "7119c7c0d22642c69f35ea78522b3038c1d66b69fdd9ad17a2dfa25b76729ca4",
             "width": 1440,
             "height": 5919
           },
           "timing": {
-            "navigateMs": 460,
-            "assertMs": 1000
+            "navigateMs": 1343,
+            "assertMs": 1274
           },
           "verdict": "pass",
           "problems": []
@@ -971,21 +971,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 1756,
-            "nodes": 166,
+            "chars": 1764,
+            "nodes": 171,
             "headings": ["Staff–Manager"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d54bc20e2036befc89542da310c7ec960c7441f55c5f0df82f1f24cee500baa4",
+            "sha256": "351f22518c8e3d5703f715eb43e8d8a5598b9b150f4c48a9c2cbfcbdfd7b90bb",
             "width": 390,
             "height": 3544
           },
           "timing": {
-            "navigateMs": 490,
-            "assertMs": 569
+            "navigateMs": 1745,
+            "assertMs": 783
           },
           "verdict": "pass",
           "problems": []
@@ -1002,21 +1002,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 1797,
-            "nodes": 166,
+            "chars": 1805,
+            "nodes": 171,
             "headings": ["Staff–Manager"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "06954a05e046c263f17f89ce6fad298b92588b450673a9f671f15bfcdeba9e0a",
+            "sha256": "6c5b856adb9c9a1426abd78c39c703c4c028e8c7dbdd875fac72403d5ca87180",
             "width": 768,
             "height": 2441
           },
           "timing": {
-            "navigateMs": 432,
-            "assertMs": 525
+            "navigateMs": 1538,
+            "assertMs": 657
           },
           "verdict": "pass",
           "problems": []
@@ -1033,21 +1033,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 1797,
-            "nodes": 166,
+            "chars": 1805,
+            "nodes": 171,
             "headings": ["Staff–Manager"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "04044077a160018b867f55310c494fe49b268dbe874d3b695fe571a1c8360457",
+            "sha256": "6f2fe70edfd198cb86ed385ee502bc55f1dc5e00f222d9c27e50a64efde2b4e1",
             "width": 1440,
             "height": 2441
           },
           "timing": {
-            "navigateMs": 424,
-            "assertMs": 598
+            "navigateMs": 1773,
+            "assertMs": 822
           },
           "verdict": "pass",
           "problems": []
@@ -1091,21 +1091,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 2502,
-            "nodes": 168,
+            "chars": 2510,
+            "nodes": 173,
             "headings": ["Your account and how you sign in"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "6c311808997ca825cfff3c8a05b388fa2a8a173bc0c25fc09fd6b693a51a7106",
+            "sha256": "302bf58a59d16419d77bd4b5b032979dea9f97f99ca05c82cdb7e5df139b895f",
             "width": 390,
             "height": 3053
           },
           "timing": {
-            "navigateMs": 804,
-            "assertMs": 556
+            "navigateMs": 2380,
+            "assertMs": 1016
           },
           "verdict": "pass",
           "problems": []
@@ -1122,21 +1122,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 2543,
-            "nodes": 168,
+            "chars": 2551,
+            "nodes": 173,
             "headings": ["Your account and how you sign in"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "ea5dad6c8cddaf07e0c6d18153e84f698b061ca5f787c34b07d01b5d55aeba7f",
+            "sha256": "e95c1eeef309e9d7d0d1146e2cbeeb8ebfd96c8d5290acabe54ed7adaa985a70",
             "width": 768,
             "height": 2067
           },
           "timing": {
-            "navigateMs": 976,
-            "assertMs": 781
+            "navigateMs": 1883,
+            "assertMs": 862
           },
           "verdict": "pass",
           "problems": []
@@ -1153,21 +1153,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 2543,
-            "nodes": 168,
+            "chars": 2551,
+            "nodes": 173,
             "headings": ["Your account and how you sign in"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "9441956c74bbc882f5aefcfa578ad0a273a7c5dc725e95246b52c486be010921",
+            "sha256": "8daa608238e353cc7edd474cf23a343248285013e4312ced6460500f9d6c6195",
             "width": 1440,
             "height": 2028
           },
           "timing": {
-            "navigateMs": 1155,
-            "assertMs": 781
+            "navigateMs": 1971,
+            "assertMs": 840
           },
           "verdict": "pass",
           "problems": []
@@ -1216,21 +1216,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 14277,
-            "nodes": 336,
+            "chars": 14285,
+            "nodes": 341,
             "headings": ["Terms of Service"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b0da525f9fd2517a87a0a02e80f63c7f123d952ce8ae4c714ffdeb13a1c59ab3",
+            "sha256": "e26ecd706344a3ff4247def0cfb8e95497071b975cfbb5ae596fd2c70ef37334",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 484,
-            "assertMs": 613
+            "navigateMs": 1600,
+            "assertMs": 826
           },
           "verdict": "pass",
           "problems": []
@@ -1254,21 +1254,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 14318,
-            "nodes": 336,
+            "chars": 14326,
+            "nodes": 341,
             "headings": ["Terms of Service"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "ea9004eef95bd2f2bdd4e8b79b691abfea004d6bc15ffb05e1132465b9372ace",
+            "sha256": "8767dbc4302ae6bb367a742e117be085c8389590980a844f7b218212e7c81d23",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 438,
-            "assertMs": 747
+            "navigateMs": 1402,
+            "assertMs": 1086
           },
           "verdict": "pass",
           "problems": []
@@ -1292,21 +1292,21 @@
           "main": {
             "selector": "body",
             "present": false,
-            "chars": 14318,
-            "nodes": 336,
+            "chars": 14326,
+            "nodes": 341,
             "headings": ["Terms of Service"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "a1e1b7011d4f003ab19346f78362f7893bf9476bb979f6ddc9e3a24bf98a727e",
+            "sha256": "8ec256b67d070c09fc7954f53fe7c0090fa8ff0b77b980870f5cfc03e9d92c34",
             "width": 1440,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 452,
-            "assertMs": 929
+            "navigateMs": 1502,
+            "assertMs": 1077
           },
           "verdict": "pass",
           "problems": []
@@ -1363,13 +1363,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "e698ede78cafceecec0b102cbb679e552b7afd50cb2dca50bdf62204c2b23069",
+            "sha256": "df0fcf5947323322b27ce898363cc31608c579490e4699ce8174457c9e208145",
             "width": 390,
             "height": 5798
           },
           "timing": {
-            "navigateMs": 444,
-            "assertMs": 603
+            "navigateMs": 1877,
+            "assertMs": 1313
           },
           "verdict": "pass",
           "problems": []
@@ -1401,13 +1401,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2bd222d9d6c8883593e37c9ccb5d26f29e4af762e1fbbb493d59025e27fffffa",
+            "sha256": "ca7c70c5b2c16dd4ecb3b6113d74a97d1d0a3ba31b3bdc8f77ae96a0b90384d2",
             "width": 768,
             "height": 3990
           },
           "timing": {
-            "navigateMs": 447,
-            "assertMs": 614
+            "navigateMs": 2552,
+            "assertMs": 976
           },
           "verdict": "pass",
           "problems": []
@@ -1439,13 +1439,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "51f866c55697819576f1db57793e5cf7bd4cbfb3e47380941ccb26152ffe4a38",
+            "sha256": "649d91b0e6eef918623d3a6f0875c336e7e2c4770ea159328974790e90e964fc",
             "width": 1440,
             "height": 3766
           },
           "timing": {
-            "navigateMs": 452,
-            "assertMs": 646
+            "navigateMs": 1516,
+            "assertMs": 976
           },
           "verdict": "pass",
           "problems": []
@@ -1502,13 +1502,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "48c77c6d77df15626eac267f2003db2a000c11d19e00c1a64c4e85d043b47db1",
+            "sha256": "342ebe23b38225a9a57c402ded67c9cba78e0d819a8819106ffc20e4e0c4810b",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 622,
-            "assertMs": 484
+            "navigateMs": 893,
+            "assertMs": 480
           },
           "verdict": "pass",
           "problems": []
@@ -1540,13 +1540,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "950325011a700b90991dee59ac77f41b78e0367ae11157d683da5a594a5e387d",
+            "sha256": "f94daffe9725680634790ff3f5c73bf82a2005de1152ac3768e2d6dcf518ba56",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 459,
-            "assertMs": 452
+            "navigateMs": 875,
+            "assertMs": 479
           },
           "verdict": "pass",
           "problems": []
@@ -1578,13 +1578,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "4da16598ff00856ba307e4410dac9d6f2fa0a5b95de1bf3ad88178bb941736d9",
+            "sha256": "4c6342fa50d53e8304c7010ff1380775466b9a1d1c2f83f94f62312d141b57cb",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 465,
-            "assertMs": 517
+            "navigateMs": 769,
+            "assertMs": 519
           },
           "verdict": "pass",
           "problems": []
@@ -1627,20 +1627,20 @@
             "selector": "body",
             "present": false,
             "chars": 274,
-            "nodes": 87,
+            "nodes": 89,
             "headings": []
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b38177522cec6ce90c940e5e4096ce3a7725ea894615a410229e8c29f9bfc2b7",
+            "sha256": "b691382282ae20d09e60aaaf2b552903b673e8c157b8454e49ab19f00002e521",
             "width": 390,
             "height": 967
           },
           "timing": {
-            "navigateMs": 831,
-            "assertMs": 588
+            "navigateMs": 1226,
+            "assertMs": 597
           },
           "verdict": "pass",
           "problems": []
@@ -1658,20 +1658,20 @@
             "selector": "body",
             "present": false,
             "chars": 274,
-            "nodes": 87,
+            "nodes": 89,
             "headings": []
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "6a304bd03e60b56f996d0a2d40bda98baeb5a40f7bacd0555fca40552f05c6e0",
+            "sha256": "f13a8410f32e3fabbdf0282c2713d9f105b9653fb0e6adae6a1b913905b85b30",
             "width": 768,
             "height": 967
           },
           "timing": {
-            "navigateMs": 653,
-            "assertMs": 548
+            "navigateMs": 1241,
+            "assertMs": 558
           },
           "verdict": "pass",
           "problems": []
@@ -1689,20 +1689,20 @@
             "selector": "body",
             "present": false,
             "chars": 437,
-            "nodes": 87,
+            "nodes": 89,
             "headings": []
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "38d2312f5657bb389b496d95fdca45bb12cc6fb3bc40153998b07100bb7687fe",
+            "sha256": "a4a701de5c5f65c8ff6990853b815e7de39d462da8dbab1bb3df337b4bc8db1b",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 521,
-            "assertMs": 584
+            "navigateMs": 1254,
+            "assertMs": 707
           },
           "verdict": "pass",
           "problems": []
@@ -1749,20 +1749,20 @@
             "selector": "body",
             "present": false,
             "chars": 160,
-            "nodes": 61,
+            "nodes": 63,
             "headings": ["The same questions, answered by both of you", "Join AlignSynch"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "8f7b97772a8d90ef735c18c0b664c739c402f505db4d33dc7ff1145c798fd550",
+            "sha256": "baa5cc0e14527ca7e91c7c5bcbff3574360655dfd9fd38aa1f696ab2894c40bf",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 728,
-            "assertMs": 511
+            "navigateMs": 1099,
+            "assertMs": 550
           },
           "verdict": "pass",
           "problems": []
@@ -1784,20 +1784,20 @@
             "selector": "body",
             "present": false,
             "chars": 160,
-            "nodes": 61,
+            "nodes": 63,
             "headings": ["The same questions, answered by both of you", "Join AlignSynch"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "4e1fa3cd8c82499d38967ce431d44c9d89a995314bc9de9ecab7e92d03da003e",
+            "sha256": "beebf51522f8d7533850de4fda5e365ce912aeca344dbe781851ce3ce8379e7e",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 650,
-            "assertMs": 530
+            "navigateMs": 1005,
+            "assertMs": 497
           },
           "verdict": "pass",
           "problems": []
@@ -1819,20 +1819,20 @@
             "selector": "body",
             "present": false,
             "chars": 316,
-            "nodes": 61,
+            "nodes": 63,
             "headings": ["The same questions, answered by both of you", "Join AlignSynch"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "98560a6e2998b64324f7684185353d866c91d1b72a651f662d5233d1b0486adc",
+            "sha256": "367610c3c38282d3a0544c6b0f220dc6d65f0010c2d4f5211fe9088fa5dfbb8b",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 654,
-            "assertMs": 655
+            "navigateMs": 718,
+            "assertMs": 612
           },
           "verdict": "pass",
           "problems": []
@@ -1914,13 +1914,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "74376410b8d6b7c14a2d7e1b89a4589048a33f3df6fa8871080094f30d69da3d",
+            "sha256": "673310500a178cb33d2067ecb293636fa1bd59565e4a1a9b92ae785b5dea1879",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 498,
-            "assertMs": 436
+            "navigateMs": 939,
+            "assertMs": 511
           },
           "verdict": "pass",
           "problems": []
@@ -1952,13 +1952,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "913bbb7337c9db57507f5f650cca5d3a5168d93eb86ab3f0ae082376e6d921b5",
+            "sha256": "a1a759b5fa493ccd38f514bf8ac4ba09c92314c9fcc51c8397299d6d64a4798b",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 446,
-            "assertMs": 449
+            "navigateMs": 805,
+            "assertMs": 500
           },
           "verdict": "pass",
           "problems": []
@@ -1990,13 +1990,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "dc97d85eb4430e0ccc686d490fb85dc5f6d290cc876b5a9aa91a82b449c71cc1",
+            "sha256": "734d5193436e5d8d7fdaad05bbbeaa11472fe83f26a952924bef3da13ba8e22e",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 435,
-            "assertMs": 457
+            "navigateMs": 700,
+            "assertMs": 531
           },
           "verdict": "pass",
           "problems": []
@@ -2063,13 +2063,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "f5027d650da17d0a208f3eaaf99ab8ebd8d7297dcf8494eff2fa2b2ada9d4378",
+            "sha256": "c37b5d96c566e129ca28e46aebc2342bf0b68f0e1dd0aaeb1af2405bc416f2b1",
             "width": 390,
             "height": 2107
           },
           "timing": {
-            "navigateMs": 947,
-            "assertMs": 482
+            "navigateMs": 2115,
+            "assertMs": 721
           },
           "verdict": "pass",
           "problems": []
@@ -2111,13 +2111,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "83098badc894fa04433acb8eda739904cfc31a58b65c289ce261156ab7845375",
+            "sha256": "a3aad9d8330d9edc36e7b2c769f95110ea383244405cee9ccee3b0181c1303cc",
             "width": 768,
             "height": 1536
           },
           "timing": {
-            "navigateMs": 933,
-            "assertMs": 490
+            "navigateMs": 1723,
+            "assertMs": 563
           },
           "verdict": "pass",
           "problems": []
@@ -2159,13 +2159,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "9ee8d62189200838f75a7a76299af67c2adb1e83876c212ef7d59c8eaa10d97e",
+            "sha256": "a52ed02bbfd283df98c198bb375ae0e420aa7a9ac0f946933746596149981d20",
             "width": 1440,
             "height": 1346
           },
           "timing": {
-            "navigateMs": 948,
-            "assertMs": 524
+            "navigateMs": 1640,
+            "assertMs": 607
           },
           "verdict": "pass",
           "problems": []
@@ -2222,13 +2222,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "7a856da062c620620298b8ae09387fca4bdee2d7182505928ac1e9e9e3bfdc11",
+            "sha256": "f01fca3165dd52ff4188530811a3143d688b5aa385aef6590aea0e36365d7c1e",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1144,
-            "assertMs": 454
+            "navigateMs": 1909,
+            "assertMs": 821
           },
           "verdict": "pass",
           "problems": []
@@ -2260,13 +2260,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "da8b29f41682706160a25c50d0b266049ecd4085d72b65169378f0553aa2767a",
+            "sha256": "9f899951f16ec6782f796969cfac74f14dd6edcf71f30e2a75773801729b5be1",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1079,
-            "assertMs": 448
+            "navigateMs": 1888,
+            "assertMs": 594
           },
           "verdict": "pass",
           "problems": []
@@ -2298,13 +2298,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b7438113fd620d7aaeaa734166985bfe3994d87035bc55dac8415a5cb1f7fe37",
+            "sha256": "fd50212478e9851ef14c0dd60fd7c550cb5e8740163882634c6352915b2d969a",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1084,
-            "assertMs": 483
+            "navigateMs": 1733,
+            "assertMs": 561
           },
           "verdict": "pass",
           "problems": []
@@ -2363,13 +2363,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "24fca9d7c3f8d199dafa0f7ec7c2fcbf03a998834cb0b0a736df84500ef008e6",
+            "sha256": "f081a5b4988cbd2790b9d416c13a984772da46d8232f3b66fc921910a8801807",
             "width": 390,
             "height": 2320
           },
           "timing": {
-            "navigateMs": 2067,
-            "assertMs": 514
+            "navigateMs": 3610,
+            "assertMs": 803
           },
           "verdict": "pass",
           "problems": []
@@ -2401,13 +2401,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b29a3f608bcc97ef5b8f6e7621c2181ffcd55d042463758d72d81985129426eb",
+            "sha256": "03c0a311d9ebd78517031747ed377c89bf7710cf9814e6a0d28baac5f3e88211",
             "width": 768,
             "height": 1916
           },
           "timing": {
-            "navigateMs": 2287,
-            "assertMs": 496
+            "navigateMs": 3967,
+            "assertMs": 757
           },
           "verdict": "pass",
           "problems": []
@@ -2439,13 +2439,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "7b6606b357b301c90306e73d51eb8f40745da5ac00933f62177c908ae8e6b126",
+            "sha256": "d0cb62f5ff1e76e24b323282f50c013c472956828f1caeb0aae33f4f4e23b9ae",
             "width": 1440,
             "height": 1432
           },
           "timing": {
-            "navigateMs": 2237,
-            "assertMs": 548
+            "navigateMs": 4745,
+            "assertMs": 793
           },
           "verdict": "pass",
           "problems": []
@@ -2502,13 +2502,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "9341e6e618b8e34a0fc469fbd65f5ccc5ac4f9086bdf44acde030dde239ca891",
+            "sha256": "501bc05195b6c04d0dc1e88468ea97d061f439e04d4f70a3977ded33921cb62e",
             "width": 390,
             "height": 2239
           },
           "timing": {
-            "navigateMs": 649,
-            "assertMs": 496
+            "navigateMs": 1304,
+            "assertMs": 607
           },
           "verdict": "pass",
           "problems": []
@@ -2540,13 +2540,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "e0e03929ac690ff5e4b80de1895589e5d5e9f2fb1f6eabe1b251bbfa013350de",
+            "sha256": "a8f9296cc62c8c89dadc8fd603dbaed2770a283400a2877980f2f1fed57e53dd",
             "width": 768,
             "height": 1719
           },
           "timing": {
-            "navigateMs": 603,
-            "assertMs": 485
+            "navigateMs": 1141,
+            "assertMs": 551
           },
           "verdict": "pass",
           "problems": []
@@ -2578,13 +2578,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c06db5e096fd9e566a9b9cedd15940c6d15ec8820f7c078ff6b7046d5cb71dea",
+            "sha256": "7dd05208955e99e46073b8ba87ae2ba5a54744e57409db7f468b993b06ac07cd",
             "width": 1440,
             "height": 1285
           },
           "timing": {
-            "navigateMs": 616,
-            "assertMs": 495
+            "navigateMs": 1023,
+            "assertMs": 550
           },
           "verdict": "pass",
           "problems": []
@@ -2641,13 +2641,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "0c3e9f2bbee588a11a788574371cd49870488be682dae253669cfe345428caa8",
+            "sha256": "fef834ae3ea2b03565ef7aba2c5235e02b0d99d37255c76daa6c38a553af7db8",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 1779,
-            "assertMs": 748
+            "navigateMs": 2922,
+            "assertMs": 893
           },
           "verdict": "pass",
           "problems": []
@@ -2679,13 +2679,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "f770d232723c0aac1c4cedee856156177d12a1a6e16b0845d916ab51aa2ca07e",
+            "sha256": "dbc24ada930305d250cd5643fa21812738c0cb39e5fac768777546bb51e74dee",
             "width": 768,
             "height": 5280
           },
           "timing": {
-            "navigateMs": 1805,
-            "assertMs": 746
+            "navigateMs": 1969,
+            "assertMs": 1009
           },
           "verdict": "pass",
           "problems": []
@@ -2717,13 +2717,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "0fa5cb624254cdbecdf9dd80112381b410c8b30a1f9c69f5f0fbceac5a937645",
+            "sha256": "f6dc6244bd8466f8934f0fe1a205935caed2c8f657ec2b78cd5bbd5095b17052",
             "width": 1440,
             "height": 3460
           },
           "timing": {
-            "navigateMs": 819,
-            "assertMs": 827
+            "navigateMs": 2946,
+            "assertMs": 1037
           },
           "verdict": "pass",
           "problems": []
@@ -2805,13 +2805,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "48723c877d52e62a5c86bc726d8ed2cb6648add8beec19aa37d25d97424392d2",
+            "sha256": "11ec9a30f6b7a1de8d5188882d907a534e2a4ee2673e85e1f0870ac901b0e4c0",
             "width": 390,
             "height": 3212
           },
           "timing": {
-            "navigateMs": 667,
-            "assertMs": 541
+            "navigateMs": 2103,
+            "assertMs": 1039
           },
           "verdict": "pass",
           "problems": []
@@ -2843,13 +2843,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "a2c4d0eca586b570e2752e20f2e47b744a7cbbe481b12d459e249020072747a6",
+            "sha256": "44b7a1ff83da0a58a0ebeca31583659be07466b42b9f8c5ebb0f5e38e7d89100",
             "width": 768,
             "height": 2244
           },
           "timing": {
-            "navigateMs": 642,
-            "assertMs": 558
+            "navigateMs": 2651,
+            "assertMs": 949
           },
           "verdict": "pass",
           "problems": []
@@ -2881,13 +2881,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "ecb37a6f1dec2ee557b5ea49d88df8351867e1755e109f2c6f19e374c06a1a9f",
+            "sha256": "bb4109f83960b6d3762fab6a3b5d8b67f7daf3260615cde6d859fcfb3c09f48d",
             "width": 1440,
             "height": 1860
           },
           "timing": {
-            "navigateMs": 697,
-            "assertMs": 766
+            "navigateMs": 2116,
+            "assertMs": 1033
           },
           "verdict": "pass",
           "problems": []
@@ -2937,13 +2937,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2c0c45323d4d143257e587fe641f4d29c1f602e52a6ebeb44c3b2501a493a593",
+            "sha256": "a8c27ff374088e23b38b43f9a6526692e89818b7054d5ad3d86a31fe494eb4ff",
             "width": 390,
             "height": 5476
           },
           "timing": {
-            "navigateMs": 1191,
-            "assertMs": 837
+            "navigateMs": 1404,
+            "assertMs": 1690
           },
           "verdict": "pass",
           "problems": []
@@ -2968,13 +2968,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "53563a7e2e09dbf53c18a7c022bc5cd161d7b820e99cfc7396a65b0695682b7d",
+            "sha256": "b69c286b10f5db3f8c004ca30718d4399d7d3fbc7da1c941ebde6ba8abe644b2",
             "width": 768,
             "height": 3433
           },
           "timing": {
-            "navigateMs": 863,
-            "assertMs": 839
+            "navigateMs": 1605,
+            "assertMs": 1479
           },
           "verdict": "pass",
           "problems": []
@@ -2999,13 +2999,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b8b50448317c504eb29c4fb948391935001c878134da75424738b70bf92d9d98",
+            "sha256": "60d5ead7e15169c89a009ff31179a49ff913a53da63080a53582e8759e1898a5",
             "width": 1440,
             "height": 2560
           },
           "timing": {
-            "navigateMs": 845,
-            "assertMs": 828
+            "navigateMs": 2044,
+            "assertMs": 1959
           },
           "verdict": "pass",
           "problems": []
@@ -3064,13 +3064,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "8814104194ed399f7a46237393154c21d0845ba27e27e607323b68054c56a31f",
+            "sha256": "5e250465ff8963e4d365b2915bd50aaa2bd66f31076914c433ead0d89aee5f1a",
             "width": 390,
             "height": 4893
           },
           "timing": {
-            "navigateMs": 927,
-            "assertMs": 674
+            "navigateMs": 2267,
+            "assertMs": 1081
           },
           "verdict": "pass",
           "problems": []
@@ -3102,13 +3102,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "fe49c432662939b5a6d2ac3a46041b00eb86b72551d45ca03c15f92f9e8fac4d",
+            "sha256": "e55f30ebe8c10dcd69bf92fd69da826aafb83a4839d4f580d49a28cb2ca0b3c6",
             "width": 768,
             "height": 4208
           },
           "timing": {
-            "navigateMs": 823,
-            "assertMs": 747
+            "navigateMs": 2079,
+            "assertMs": 1568
           },
           "verdict": "pass",
           "problems": []
@@ -3132,7 +3132,7 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 4561,
+            "chars": 4570,
             "nodes": 217,
             "headings": []
           },
@@ -3140,13 +3140,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c04007eea1278cede0ee2bf9fa2c284a8602cc55f97550d22d95beefb2e51a87",
+            "sha256": "75e2ca819de3388993182f86969c655eaff782db05aaf24c9bd3d18b2690f738",
             "width": 1440,
             "height": 3256
           },
           "timing": {
-            "navigateMs": 854,
-            "assertMs": 868
+            "navigateMs": 2828,
+            "assertMs": 1725
           },
           "verdict": "pass",
           "problems": []
@@ -3198,13 +3198,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "cd39e4b0f6da7aeba192a066d88ce4920a3ce2037c91deff8fdda64b7f32700b",
+            "sha256": "98cf2eb816430c63ae0f3b33adc2b1d446069c32e225add746946a5396372bce",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 652,
-            "assertMs": 467
+            "navigateMs": 1603,
+            "assertMs": 611
           },
           "verdict": "pass",
           "problems": []
@@ -3229,13 +3229,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "5fd6883e24dcbe49e903b0d8dd4392a7fe3530c5d56dfcc1806c53920ffd059b",
+            "sha256": "f565a284a8504f35d13a7a47685548be1c868fb6c179fe71caf9b2c7dab06de3",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 667,
-            "assertMs": 480
+            "navigateMs": 2018,
+            "assertMs": 616
           },
           "verdict": "pass",
           "problems": []
@@ -3260,13 +3260,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "fbb992713d66d40612921b495817fb2fdfe0f6929aa5bcc257cfaa1dbb9bcd62",
+            "sha256": "1286f67632f456ecf35e5d90c94be1f4414622b645022f91bc3de8e31cbe4457",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 621,
-            "assertMs": 507
+            "navigateMs": 1928,
+            "assertMs": 1315
           },
           "verdict": "pass",
           "problems": []
@@ -3323,13 +3323,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "6711cf3d24df30d4fde17c1613eeb620c206221e6d844723004647dba3567970",
+            "sha256": "9fef38a8507648b8004b1106ec18528870143e07e3dbc7f525b90f41ceb59dd7",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1298,
-            "assertMs": 488
+            "navigateMs": 1168,
+            "assertMs": 458
           },
           "verdict": "pass",
           "problems": []
@@ -3361,13 +3361,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "019382c87fb4a8e8120ef12bfeb1b9a0abb6d337f3c48dec5095458c3d4cf8c8",
+            "sha256": "36d00131aa5241760de7a8f17a516035520ddf9c17e2eefce1308a6df2941d2a",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 778,
-            "assertMs": 464
+            "navigateMs": 932,
+            "assertMs": 471
           },
           "verdict": "pass",
           "problems": []
@@ -3399,13 +3399,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "50b351fad7c6d5aa51205212be196d1790790330fad89f6c52188fde76a70526",
+            "sha256": "12002ce3e989a89624347bc1aecd2cec4df1e98282b7b879dba685607c9d22f9",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 770,
-            "assertMs": 472
+            "navigateMs": 1291,
+            "assertMs": 508
           },
           "verdict": "pass",
           "problems": []
@@ -3462,13 +3462,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c9ff9b51dfa6ce61cadaea18fc70f780c643433f87ea15f704e78ac23cb98847",
+            "sha256": "d62dd7ab4fa63135f95e7bbafa46c331b1e58403e361a6b173cb8ac292689b07",
             "width": 390,
             "height": 2330
           },
           "timing": {
-            "navigateMs": 791,
-            "assertMs": 548
+            "navigateMs": 2909,
+            "assertMs": 804
           },
           "verdict": "pass",
           "problems": []
@@ -3500,13 +3500,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "83b5a3a67405ae8f5277a25b0a5963218cccb65a4942dac5a357ecbc5762b7aa",
+            "sha256": "19b1b665c8c1d0ca8c9a7659d5c7b90362008135d2138501cf18ae0b6f23d76e",
             "width": 768,
             "height": 2095
           },
           "timing": {
-            "navigateMs": 806,
-            "assertMs": 519
+            "navigateMs": 2268,
+            "assertMs": 1138
           },
           "verdict": "pass",
           "problems": []
@@ -3538,13 +3538,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "3ffffaeaeb688c0863d0f441e8ef9e3f5867ff823f4a872ac9164aabc53421bb",
+            "sha256": "dd683e7f43ed7a7fdd086b325c56e1c3aace7bf756c7ac788f21eb1848cfd254",
             "width": 1440,
             "height": 2047
           },
           "timing": {
-            "navigateMs": 776,
-            "assertMs": 539
+            "navigateMs": 2265,
+            "assertMs": 1091
           },
           "verdict": "pass",
           "problems": []
@@ -3601,13 +3601,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "09bac47b29304d1eeb11ae334996078cb0c1ec75d02a7130f6840c66ab7d6f4e",
+            "sha256": "3f4bbae03d1934b87c5d21eae9e2862d198202a4ca0fb43eb7c5075e0185f67f",
             "width": 390,
             "height": 1615
           },
           "timing": {
-            "navigateMs": 642,
-            "assertMs": 493
+            "navigateMs": 1941,
+            "assertMs": 770
           },
           "verdict": "pass",
           "problems": []
@@ -3639,13 +3639,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "5fdd23ef1c8842180043ffefce952d0f27d8b673346f4ec4fe4d09daffe5a5ec",
+            "sha256": "b8c3063a226fa530bc38d903d85be3435cff96ad34c4282fa5d147a72342dd21",
             "width": 768,
             "height": 1393
           },
           "timing": {
-            "navigateMs": 590,
-            "assertMs": 481
+            "navigateMs": 1413,
+            "assertMs": 981
           },
           "verdict": "pass",
           "problems": []
@@ -3677,13 +3677,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d3c4d562d734b903edafeaa5721cced0e1a320de1473953b8aeba7b45f5468eb",
+            "sha256": "37f23bc0228eb68ae01952338a10fe94875083b6cc81b76a4387859a0db1f40a",
             "width": 1440,
             "height": 1370
           },
           "timing": {
-            "navigateMs": 602,
-            "assertMs": 532
+            "navigateMs": 2046,
+            "assertMs": 756
           },
           "verdict": "pass",
           "problems": []
@@ -3740,13 +3740,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b2efa77c2dfacefa9febcdc9515cb556e0f0ec03a396fd13805180392cc6e137",
+            "sha256": "d5c450b8991f65943a84c8c7ea52da3be53f4e3b77a08a386d48a24e3b4c0db4",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 635,
-            "assertMs": 621
+            "navigateMs": 2852,
+            "assertMs": 1561
           },
           "verdict": "pass",
           "problems": []
@@ -3778,13 +3778,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "0d140b3176042a816502af237ab881bebe3ebf1c882fb27ca7cb554aef43a8d7",
+            "sha256": "3e82b7f74d7be7b071c36e91feec4e88dc0f7444144d1cd9d64e478f3fd4985c",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 627,
-            "assertMs": 679
+            "navigateMs": 3433,
+            "assertMs": 2886
           },
           "verdict": "pass",
           "problems": []
@@ -3816,13 +3816,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "053ec72f5b8bd67a50b8bc2cef4f835c137a4ea37712fb85de235198bbf28783",
+            "sha256": "54feb1cbd4c28683a3952fec1da0a4c16c96ef66785536025393e226d1c3560d",
             "width": 1440,
             "height": 4758
           },
           "timing": {
-            "navigateMs": 637,
-            "assertMs": 849
+            "navigateMs": 4978,
+            "assertMs": 1621
           },
           "verdict": "pass",
           "problems": []
@@ -3881,13 +3881,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d90d18f4295a1cb9617f0adc2ccbd01c311404ac164f53306717f2ec8786a5b2",
+            "sha256": "2ad41d1af9c0fc7f83fa0d430c696ec7f07b687fe265db44bbbda4dad97af7e5",
             "width": 390,
             "height": 4944
           },
           "timing": {
-            "navigateMs": 2637,
-            "assertMs": 612
+            "navigateMs": 6433,
+            "assertMs": 1266
           },
           "verdict": "pass",
           "problems": []
@@ -3919,13 +3919,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "adb3aa1a472f1a37b2eec7ec93cd0538a43d26baca358de74614ac247ac0637f",
+            "sha256": "e4fecd31a31184bc13ccb3b657da46a10006c389a4c5e27ec87b55d8b7a33062",
             "width": 768,
             "height": 3039
           },
           "timing": {
-            "navigateMs": 2606,
-            "assertMs": 588
+            "navigateMs": 6839,
+            "assertMs": 999
           },
           "verdict": "pass",
           "problems": []
@@ -3957,13 +3957,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "9b6acacfc767e1a2bc17146ad693f571cbf8c6e423688c38ac339ae08eac5fba",
+            "sha256": "2e325b1f397dd628ee7abd7f49ff8445c4ade43ae1c5052f7b2537e9c0ff5c17",
             "width": 1440,
             "height": 2945
           },
           "timing": {
-            "navigateMs": 2635,
-            "assertMs": 846
+            "navigateMs": 8023,
+            "assertMs": 2095
           },
           "verdict": "pass",
           "problems": []
@@ -4021,13 +4021,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "39736c5ac41e624e3339e4ca57dd9d7132b8ea7770c184d1820b8ef7b68856ba",
+            "sha256": "28d7bcd10db6d847e25f1b4f4978733ef7210bf1167df0ed81fc85eceba81574",
             "width": 390,
             "height": 2048
           },
           "timing": {
-            "navigateMs": 2211,
-            "assertMs": 653
+            "navigateMs": 5514,
+            "assertMs": 567
           },
           "verdict": "pass",
           "problems": []
@@ -4058,13 +4058,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "31fafce8eb1e670d79b94901139631b80c81232e19908a293e16f9d619d9ed56",
+            "sha256": "3cec1ce10943c3fab292d5f5a9544d270a8d98be6c3b457d66c29dd0f329b97c",
             "width": 768,
             "height": 1440
           },
           "timing": {
-            "navigateMs": 2180,
-            "assertMs": 641
+            "navigateMs": 2886,
+            "assertMs": 671
           },
           "verdict": "pass",
           "problems": []
@@ -4095,13 +4095,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "bae9b61266536c425173574b801bf23052df5aa9e59dc51f4e86cb85e3b72d28",
+            "sha256": "efb46bc3055261c3aa6726df083c87836628eda18b855c5c72c7e6fb69443efe",
             "width": 1440,
             "height": 1374
           },
           "timing": {
-            "navigateMs": 2244,
-            "assertMs": 638
+            "navigateMs": 2883,
+            "assertMs": 597
           },
           "verdict": "pass",
           "problems": []
@@ -4160,13 +4160,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "bf5aa65e50a9160ddb45f18540cd45a62f1f605161287b957db23171ea9ca5ce",
+            "sha256": "bfc588fde72f87ee2dc1d1aa0af083a8b3e1480328487b3f833a4263ad25ad89",
             "width": 390,
             "height": 2290
           },
           "timing": {
-            "navigateMs": 2290,
-            "assertMs": 525
+            "navigateMs": 13421,
+            "assertMs": 788
           },
           "verdict": "pass",
           "problems": []
@@ -4198,13 +4198,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "6b73afcc0d98db33e25f9dba6496d4b81bc21f7ac431206b87bbc0c44d7b7b09",
+            "sha256": "dc453e32eb0a8a3bc8076d171c36e7397ef0f35a7f83d7b7c3113a4a73d4ef2a",
             "width": 768,
             "height": 2114
           },
           "timing": {
-            "navigateMs": 2209,
-            "assertMs": 563
+            "navigateMs": 4993,
+            "assertMs": 593
           },
           "verdict": "pass",
           "problems": []
@@ -4236,13 +4236,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "5f423fefcf8a8a7850f6c34ccd9703f4ae91cf0a05413c3ddb2bc1648d94d800",
+            "sha256": "5bdd5ff9db50990c75109e357f6f41f95fb30fb48b38be97b1fbab4a8991ab97",
             "width": 1440,
             "height": 2050
           },
           "timing": {
-            "navigateMs": 2119,
-            "assertMs": 686
+            "navigateMs": 3342,
+            "assertMs": 672
           },
           "verdict": "pass",
           "problems": []
@@ -4301,13 +4301,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "f2705c779e9ad6c96672b81d6362b4eda1148d4294ae222f8310faefb4957324",
+            "sha256": "f60a5aaaad8807f1f5328df23f2bdae13f06223a43d128d6ec5045caac40b262",
             "width": 390,
             "height": 4117
           },
           "timing": {
-            "navigateMs": 2614,
-            "assertMs": 768
+            "navigateMs": 20376,
+            "assertMs": 1669
           },
           "verdict": "pass",
           "problems": []
@@ -4339,13 +4339,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "297129b52bedd82c7ee422199af0baf1c5d32f50bf8859740a2cdd8427785c83",
+            "sha256": "8ea07776e26d626174eeed3bc2a7d3de23c326a7edb147086f6587a845b19817",
             "width": 768,
             "height": 3051
           },
           "timing": {
-            "navigateMs": 2137,
-            "assertMs": 667
+            "navigateMs": 7002,
+            "assertMs": 1039
           },
           "verdict": "pass",
           "problems": []
@@ -4377,13 +4377,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "8c3a57defd5dcf25b3cbf89f488e8612ee7046e3e8d1c387fabb724a01457514",
+            "sha256": "635f23e54e5ddf8f0491b335647a5e60102ddd9e17bcd8bf33eb9cbea1fa674f",
             "width": 1440,
             "height": 3007
           },
           "timing": {
-            "navigateMs": 2119,
-            "assertMs": 894
+            "navigateMs": 7118,
+            "assertMs": 1262
           },
           "verdict": "pass",
           "problems": []
@@ -4433,27 +4433,29 @@
             "selector": "body",
             "present": false,
             "chars": 96,
-            "nodes": 14,
+            "nodes": 16,
             "headings": ["This page couldn’t load"]
           },
           "hydration": 0,
           "consoleErrors": [
-            "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+            "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "closedConsole": [],
           "image": {
-            "sha256": "4ba4a074978472d2fbe9486c4899c3b1fd1451fa105c6d6ef82c37b06d22a520",
+            "sha256": "75c2b478be22c642f74403d9636ca5d4c1865a526680d6109ad938077702f687",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 2304,
-            "assertMs": 492
+            "navigateMs": 4414,
+            "assertMs": 602
           },
           "verdict": "fail",
           "problems": [
             "status 500, expected 200",
             "console error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "console error: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa",
             "headline absent: \"Invitation sent\""
           ]
         },
@@ -4475,27 +4477,29 @@
             "selector": "body",
             "present": false,
             "chars": 96,
-            "nodes": 14,
+            "nodes": 16,
             "headings": ["This page couldn’t load"]
           },
           "hydration": 0,
           "consoleErrors": [
-            "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+            "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "closedConsole": [],
           "image": {
-            "sha256": "2d142e40f71c3b61fc42baa3da0961de89cc99d8f8046c03c559541e17efd06a",
+            "sha256": "372eaba3c838c6835ada46996139dc06669ebee7f052113a395eeecbf8054005",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 2588,
-            "assertMs": 548
+            "navigateMs": 3177,
+            "assertMs": 970
           },
           "verdict": "fail",
           "problems": [
             "status 500, expected 200",
             "console error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "console error: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa",
             "headline absent: \"Invitation sent\""
           ]
         },
@@ -4517,27 +4521,29 @@
             "selector": "body",
             "present": false,
             "chars": 96,
-            "nodes": 14,
+            "nodes": 16,
             "headings": ["This page couldn’t load"]
           },
           "hydration": 0,
           "consoleErrors": [
-            "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+            "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "closedConsole": [],
           "image": {
-            "sha256": "a112811fb3324184a9b37e4b03125b6b604523f302e6f4fad81f838c59d8af37",
+            "sha256": "fe09d2dcef9ebffa8af6807c96995599cd5a4fac2e95d846a5354cb9bc5b09d2",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 2315,
-            "assertMs": 569
+            "navigateMs": 3050,
+            "assertMs": 816
           },
           "verdict": "fail",
           "problems": [
             "status 500, expected 200",
             "console error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+            "console error: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using templa",
             "headline absent: \"Invitation sent\""
           ]
         }
@@ -4584,21 +4590,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 628,
-            "nodes": 83,
+            "chars": 570,
+            "nodes": 82,
             "headings": ["My Assessments"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "35f765572a34734439718450da6fad039c3f509842075bbd012eacdfedb3a381",
+            "sha256": "4b98e490cf4818cfbd788d5d2ffd920d48e34085a03ff6c4d732387ca45c81cb",
             "width": 390,
-            "height": 915
+            "height": 900
           },
           "timing": {
-            "navigateMs": 649,
-            "assertMs": 560
+            "navigateMs": 3048,
+            "assertMs": 911
           },
           "verdict": "pass",
           "problems": []
@@ -4621,21 +4627,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 628,
-            "nodes": 83,
+            "chars": 570,
+            "nodes": 84,
             "headings": ["My Assessments"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b05c724e5d3544cb4d9b7fef8ad27348b306208a39f4ee56a5a23e1cdd3c150d",
+            "sha256": "8a1b5824d9c277514f385ef02677a7641eae22ceecac7d1c5998826e686b8d7a",
             "width": 768,
-            "height": 903
+            "height": 900
           },
           "timing": {
-            "navigateMs": 812,
-            "assertMs": 559
+            "navigateMs": 2406,
+            "assertMs": 1294
           },
           "verdict": "pass",
           "problems": []
@@ -4658,21 +4664,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 628,
-            "nodes": 83,
+            "chars": 570,
+            "nodes": 82,
             "headings": ["My Assessments"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "f5fce1aa9c13bd51932df71649818ea7c4facf7cb4f2483c92cd98cabec9437b",
+            "sha256": "ddb14f550336ec4676853560b5483afe63ce88cb75ec89c9fcc8eaff54c10f13",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 780,
-            "assertMs": 494
+            "navigateMs": 1994,
+            "assertMs": 1589
           },
           "verdict": "pass",
           "problems": []
@@ -4754,13 +4760,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "6b3e8c2bd58de3578c75d4a96fb7573c530ebbe98bb5321d8875972e39ce6832",
+            "sha256": "95dfe587517cb10015ff6ea4ead7199f8331117d44350e2adcec5b94bb14e341",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 775,
-            "assertMs": 658
+            "navigateMs": 6093,
+            "assertMs": 821
           },
           "verdict": "pass",
           "problems": []
@@ -4792,13 +4798,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "613c9e3fa55fea6cbf1c23cf228c5b2859bca2bddb8986b4e413d5bdb1ff71a8",
+            "sha256": "f485492a3a368f87f2eb8e5cbf24191ce81a07699d4788c24b755712e949385c",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 625,
-            "assertMs": 752
+            "navigateMs": 2896,
+            "assertMs": 934
           },
           "verdict": "pass",
           "problems": []
@@ -4830,13 +4836,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c36fe4df7b50dcbf528d51923436cd4aaf6babc7178f39412d4f5b3837fccca4",
+            "sha256": "c0a5e3e14653fa8a26fd41a34e34749faedde184a0f06d323db6405b788ae5d6",
             "width": 1440,
             "height": 5716
           },
           "timing": {
-            "navigateMs": 664,
-            "assertMs": 829
+            "navigateMs": 3226,
+            "assertMs": 1314
           },
           "verdict": "pass",
           "problems": []
@@ -4895,13 +4901,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "76bb41b965e45bdb81d9033dc44c92426d4fd7be3eb2e22edbbac32461e72e39",
+            "sha256": "5281d31e06ecb915d69523b756e35ee53404f05eb2815d0c8fb79adbcab5b737",
             "width": 390,
             "height": 2294
           },
           "timing": {
-            "navigateMs": 656,
-            "assertMs": 616
+            "navigateMs": 8234,
+            "assertMs": 861
           },
           "verdict": "pass",
           "problems": []
@@ -4933,13 +4939,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "6a38f17a6b97a9093a837f39df3f13df60b36912b1607fe1b2e70ef5a9b44716",
+            "sha256": "a135acca38fe63fc36c005ab6d003254620409fc0b85d7281eeb3ab5c71a007d",
             "width": 768,
             "height": 1946
           },
           "timing": {
-            "navigateMs": 707,
-            "assertMs": 601
+            "navigateMs": 2847,
+            "assertMs": 748
           },
           "verdict": "pass",
           "problems": []
@@ -4971,13 +4977,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "de96d0858ddc554de1e372a24bacf302a36a4d901ef0662bb18ab50c763f67b0",
+            "sha256": "1ad1c887b44074b6d143e8325745518ee4a829b1a2ab200f0a11308afce82ace",
             "width": 1440,
             "height": 1493
           },
           "timing": {
-            "navigateMs": 730,
-            "assertMs": 745
+            "navigateMs": 2239,
+            "assertMs": 860
           },
           "verdict": "pass",
           "problems": []
@@ -5036,13 +5042,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2c0a111bf0fe547f9f9f0a6a1f2ae3cea683cb4d5e5693006bccc65b04578613",
+            "sha256": "42d95ebd779e7407c1125e15e718368721e35efbfb012e411dd4d8eab9e7fd54",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 787,
-            "assertMs": 510
+            "navigateMs": 4927,
+            "assertMs": 596
           },
           "verdict": "pass",
           "problems": []
@@ -5074,13 +5080,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d8ebcedd340454f388802250a5e9cc5cca13b9cc928d3d6353647a9eee9534f3",
+            "sha256": "7446571d87e4c09bc7fc08c672dfee3fcdca97390f7d714fe23320736d47d851",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 792,
-            "assertMs": 504
+            "navigateMs": 2112,
+            "assertMs": 535
           },
           "verdict": "pass",
           "problems": []
@@ -5112,13 +5118,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b55e5a57ff1c5690517fb6e3cacd320dc24c81fa0d9fbb6cdab6998f38d02de1",
+            "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 787,
-            "assertMs": 597
+            "navigateMs": 1531,
+            "assertMs": 612
           },
           "verdict": "pass",
           "problems": []
@@ -5180,13 +5186,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2c0a111bf0fe547f9f9f0a6a1f2ae3cea683cb4d5e5693006bccc65b04578613",
+            "sha256": "42d95ebd779e7407c1125e15e718368721e35efbfb012e411dd4d8eab9e7fd54",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1127,
-            "assertMs": 553
+            "navigateMs": 7222,
+            "assertMs": 668
           },
           "verdict": "pass",
           "problems": []
@@ -5221,13 +5227,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d8ebcedd340454f388802250a5e9cc5cca13b9cc928d3d6353647a9eee9534f3",
+            "sha256": "7446571d87e4c09bc7fc08c672dfee3fcdca97390f7d714fe23320736d47d851",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1227,
-            "assertMs": 588
+            "navigateMs": 2746,
+            "assertMs": 636
           },
           "verdict": "pass",
           "problems": []
@@ -5262,13 +5268,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b55e5a57ff1c5690517fb6e3cacd320dc24c81fa0d9fbb6cdab6998f38d02de1",
+            "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1093,
-            "assertMs": 684
+            "navigateMs": 3769,
+            "assertMs": 1225
           },
           "verdict": "pass",
           "problems": []
@@ -5336,13 +5342,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2c0a111bf0fe547f9f9f0a6a1f2ae3cea683cb4d5e5693006bccc65b04578613",
+            "sha256": "42d95ebd779e7407c1125e15e718368721e35efbfb012e411dd4d8eab9e7fd54",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1150,
-            "assertMs": 607
+            "navigateMs": 11445,
+            "assertMs": 532
           },
           "verdict": "pass",
           "problems": []
@@ -5383,13 +5389,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d8ebcedd340454f388802250a5e9cc5cca13b9cc928d3d6353647a9eee9534f3",
+            "sha256": "7446571d87e4c09bc7fc08c672dfee3fcdca97390f7d714fe23320736d47d851",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1157,
-            "assertMs": 612
+            "navigateMs": 3304,
+            "assertMs": 528
           },
           "verdict": "pass",
           "problems": []
@@ -5430,13 +5436,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b55e5a57ff1c5690517fb6e3cacd320dc24c81fa0d9fbb6cdab6998f38d02de1",
+            "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1156,
-            "assertMs": 688
+            "navigateMs": 2777,
+            "assertMs": 542
           },
           "verdict": "pass",
           "problems": []
@@ -5498,13 +5504,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2c0a111bf0fe547f9f9f0a6a1f2ae3cea683cb4d5e5693006bccc65b04578613",
+            "sha256": "42d95ebd779e7407c1125e15e718368721e35efbfb012e411dd4d8eab9e7fd54",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1092,
-            "assertMs": 542
+            "navigateMs": 11578,
+            "assertMs": 580
           },
           "verdict": "pass",
           "problems": []
@@ -5539,13 +5545,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d8ebcedd340454f388802250a5e9cc5cca13b9cc928d3d6353647a9eee9534f3",
+            "sha256": "7446571d87e4c09bc7fc08c672dfee3fcdca97390f7d714fe23320736d47d851",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1022,
-            "assertMs": 588
+            "navigateMs": 2941,
+            "assertMs": 549
           },
           "verdict": "pass",
           "problems": []
@@ -5580,13 +5586,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b55e5a57ff1c5690517fb6e3cacd320dc24c81fa0d9fbb6cdab6998f38d02de1",
+            "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1017,
-            "assertMs": 578
+            "navigateMs": 2894,
+            "assertMs": 639
           },
           "verdict": "pass",
           "problems": []
@@ -5648,13 +5654,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2c0a111bf0fe547f9f9f0a6a1f2ae3cea683cb4d5e5693006bccc65b04578613",
+            "sha256": "42d95ebd779e7407c1125e15e718368721e35efbfb012e411dd4d8eab9e7fd54",
             "width": 390,
             "height": 900
           },
           "timing": {
-            "navigateMs": 993,
-            "assertMs": 495
+            "navigateMs": 5947,
+            "assertMs": 524
           },
           "verdict": "pass",
           "problems": []
@@ -5689,13 +5695,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d8ebcedd340454f388802250a5e9cc5cca13b9cc928d3d6353647a9eee9534f3",
+            "sha256": "7446571d87e4c09bc7fc08c672dfee3fcdca97390f7d714fe23320736d47d851",
             "width": 768,
             "height": 900
           },
           "timing": {
-            "navigateMs": 1060,
-            "assertMs": 531
+            "navigateMs": 2366,
+            "assertMs": 568
           },
           "verdict": "pass",
           "problems": []
@@ -5730,13 +5736,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b55e5a57ff1c5690517fb6e3cacd320dc24c81fa0d9fbb6cdab6998f38d02de1",
+            "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
             "width": 1440,
             "height": 900
           },
           "timing": {
-            "navigateMs": 971,
-            "assertMs": 515
+            "navigateMs": 3037,
+            "assertMs": 804
           },
           "verdict": "pass",
           "problems": []
@@ -5792,13 +5798,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "4876b996b628e5cbeac7f55e3481af6fb90414abf67e170c86b0127f09a07d39",
+            "sha256": "737a21d56e9bd2cbc32e434b25375e66c4eb75853430e7db0bd00821211e59a5",
             "width": 390,
             "height": 3280
           },
           "timing": {
-            "navigateMs": 651,
-            "assertMs": 554
+            "navigateMs": 6979,
+            "assertMs": 923
           },
           "verdict": "pass",
           "problems": []
@@ -5829,13 +5835,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "8a8412bbefcc3033f375ddb164d5a30812fef7f757a7b9ef34a1a9c3b6682549",
+            "sha256": "4823ad50072aff9885245b8094a136f1141702ad51507d57d3fce175a61262b9",
             "width": 768,
             "height": 2568
           },
           "timing": {
-            "navigateMs": 696,
-            "assertMs": 554
+            "navigateMs": 2084,
+            "assertMs": 755
           },
           "verdict": "pass",
           "problems": []
@@ -5866,13 +5872,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "100112a7f95cda813f4043ba39ec225c0e6851f252338f7df8ddb550d4fe7b93",
+            "sha256": "908d0704695a2e3bc5ea4c52006d09a0097b42b8083cb33f7895cc950aef3e67",
             "width": 1440,
             "height": 2524
           },
           "timing": {
-            "navigateMs": 629,
-            "assertMs": 624
+            "navigateMs": 1572,
+            "assertMs": 786
           },
           "verdict": "pass",
           "problems": []
@@ -5920,21 +5926,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 1709,
-            "nodes": 93,
+            "chars": 2869,
+            "nodes": 235,
             "headings": ["Audit log"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "9a028a9e43f4a1f7bf586e30de602d64ba2b984c62f859d013b99175512d69d1",
+            "sha256": "1e4d18a9d918ce2f50c21f67780d7e3d206d393dfdf9061f8ee02453e63b59a6",
             "width": 390,
-            "height": 1261
+            "height": 2204
           },
           "timing": {
-            "navigateMs": 1056,
-            "assertMs": 525
+            "navigateMs": 6731,
+            "assertMs": 864
           },
           "verdict": "pass",
           "problems": []
@@ -5957,21 +5963,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 1709,
-            "nodes": 93,
+            "chars": 2809,
+            "nodes": 235,
             "headings": ["Audit log"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "1a8fd52f1daf2e4e23f3308691a4ee632747e8e43c6e9a90a781168e7a33851b",
+            "sha256": "ad722394489ff4594dcb13e1c26cd79e7a334b9efcdcaf75c193094e5d001763",
             "width": 768,
-            "height": 940
+            "height": 1853
           },
           "timing": {
-            "navigateMs": 1050,
-            "assertMs": 628
+            "navigateMs": 2773,
+            "assertMs": 912
           },
           "verdict": "pass",
           "problems": []
@@ -5994,21 +6000,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 1709,
-            "nodes": 93,
+            "chars": 2809,
+            "nodes": 235,
             "headings": ["Audit log"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "eea2ce0ecf38df9df171b9d6715d55f73d06019545d6e5f31957f9e843702a20",
+            "sha256": "6c5e35af9aefbe2ad60db0659804cd1792bfa3d6e2be88b1856f9eb8f1a28b0b",
             "width": 1440,
-            "height": 940
+            "height": 1678
           },
           "timing": {
-            "navigateMs": 1342,
-            "assertMs": 675
+            "navigateMs": 2878,
+            "assertMs": 1064
           },
           "verdict": "pass",
           "problems": []
@@ -6057,21 +6063,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 2543,
-            "nodes": 156,
+            "chars": 2821,
+            "nodes": 171,
             "headings": ["Billing"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b5a9716a3f3889cba1e8f39e89e4413e2260b14ea5c66e0e8937343b4dc179b7",
+            "sha256": "bf06f5177c5f37b8da29ec4b4f79a351f2d74d90a79fb1cc7d77e94fd1049403",
             "width": 390,
-            "height": 2874
+            "height": 3043
           },
           "timing": {
-            "navigateMs": 1254,
-            "assertMs": 802
+            "navigateMs": 2054,
+            "assertMs": 570
           },
           "verdict": "pass",
           "problems": []
@@ -6095,21 +6101,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 2543,
-            "nodes": 156,
+            "chars": 2821,
+            "nodes": 171,
             "headings": ["Billing"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "b98c4c944c30d23f612dded154defeb36aaa77fa6060560db8f1229bde0f9a6f",
+            "sha256": "1ea58a45b7e1d88746bb4912a69f043625927974ed2d6ad1a6e473ed976574ae",
             "width": 768,
-            "height": 2188
+            "height": 2333
           },
           "timing": {
-            "navigateMs": 1128,
-            "assertMs": 680
+            "navigateMs": 1004,
+            "assertMs": 553
           },
           "verdict": "pass",
           "problems": []
@@ -6133,21 +6139,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 2543,
-            "nodes": 156,
+            "chars": 2821,
+            "nodes": 171,
             "headings": ["Billing"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "678d991995e62e81a2102d4cc00ed6d5a310df065808a4013b61021a67d3d5c5",
+            "sha256": "5993738aa1c7b2389ef0b87be7d1c2ff6d819963c1d49b3d8247a67690f8cf20",
             "width": 1440,
-            "height": 2108
+            "height": 2233
           },
           "timing": {
-            "navigateMs": 1038,
-            "assertMs": 860
+            "navigateMs": 998,
+            "assertMs": 595
           },
           "verdict": "pass",
           "problems": []
@@ -6204,13 +6210,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2b86d2cb86f394b4d3130b7499e367577a4b5bd1035cedfffc0b50feec165d71",
+            "sha256": "a1b375b222bb4b6d3e5ab774804e273412b2b2649a184a3ddd3025eb4b6686a3",
             "width": 390,
             "height": 5793
           },
           "timing": {
-            "navigateMs": 1140,
-            "assertMs": 1485
+            "navigateMs": 2278,
+            "assertMs": 657
           },
           "verdict": "pass",
           "problems": []
@@ -6242,13 +6248,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c4dd8540ce137834ada0524e3a415921c7ba6017aef1db505746977854d400fe",
+            "sha256": "9c3b986695d9a52d5abffad5312dac6ceecfa6aeb142641722985c34faad9139",
             "width": 768,
             "height": 4205
           },
           "timing": {
-            "navigateMs": 1061,
-            "assertMs": 1524
+            "navigateMs": 1006,
+            "assertMs": 661
           },
           "verdict": "pass",
           "problems": []
@@ -6280,13 +6286,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "f16c14920c771e9a0a1bd6683eb889cfab609410317bdb3fd56e707e48659a17",
+            "sha256": "25fe65f254b803d5394d0bb4b366ce157d6f97609ab3f37d6fd8f68268788d7b",
             "width": 1440,
             "height": 3360
           },
           "timing": {
-            "navigateMs": 1150,
-            "assertMs": 1057
+            "navigateMs": 1055,
+            "assertMs": 736
           },
           "verdict": "pass",
           "problems": []
@@ -6336,20 +6342,20 @@
             "selector": "main",
             "present": true,
             "chars": 1755,
-            "nodes": 86,
+            "nodes": 88,
             "headings": ["Broadcast"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "41a5c43bd2f76505c869a831a55b9f56c626076074241d6be1d11df9ffad2276",
+            "sha256": "5713975d5941c19be9ca52b342027cafe5f72b4a14ecfb1202c65eb33c5758a1",
             "width": 390,
             "height": 2379
           },
           "timing": {
-            "navigateMs": 1426,
-            "assertMs": 845
+            "navigateMs": 7093,
+            "assertMs": 870
           },
           "verdict": "pass",
           "problems": []
@@ -6381,13 +6387,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c90552c3d627dccea94835b23426498fb685cd9e675c58763f9326aa7e64a630",
+            "sha256": "8aa8d7c44a07e20bd0cee970ea9e7da495d1c15e9d1c2f167f2e628ee03c00a6",
             "width": 768,
             "height": 2036
           },
           "timing": {
-            "navigateMs": 1210,
-            "assertMs": 790
+            "navigateMs": 1459,
+            "assertMs": 591
           },
           "verdict": "pass",
           "problems": []
@@ -6419,13 +6425,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2744f57f46471e30c54bb373c145482af9847865c8e5c742eea76dc334281a46",
+            "sha256": "ead32482a4525d31e081a909c1664edb8665adc92aa070ba712ea200d580d61b",
             "width": 1440,
             "height": 1757
           },
           "timing": {
             "navigateMs": 1437,
-            "assertMs": 931
+            "assertMs": 612
           },
           "verdict": "pass",
           "problems": []
@@ -6461,27 +6467,34 @@
           "finalPath": "/admin/docs",
           "redirect": null,
           "headline": {
-            "candidates": ["Documentation", "By section"],
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
             "matched": "Documentation"
           },
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 14307,
-            "nodes": 802,
+            "chars": 14416,
+            "nodes": 807,
             "headings": ["Documentation"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "924f0a8b09c0a4f327de37bd4027e063c4390ea693a1550fab748eed63e33798",
+            "sha256": "c02efa9838dcbedb1a9b969457eb28c76ad70d6e7444249f440f3aa6fed94ff9",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 858,
-            "assertMs": 1242
+            "navigateMs": 2695,
+            "assertMs": 709
           },
           "verdict": "pass",
           "problems": []
@@ -6492,27 +6505,34 @@
           "finalPath": "/admin/docs",
           "redirect": null,
           "headline": {
-            "candidates": ["Documentation", "By section"],
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
             "matched": "Documentation"
           },
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 14307,
-            "nodes": 802,
+            "chars": 14416,
+            "nodes": 807,
             "headings": ["Documentation"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "88899dc855b593cae0d63bbab13bcde3c8364319072f1fa7fe36d0c4c42a8a09",
+            "sha256": "3b650d4e22992985089e0613286d1843bcc2695b9539b284ce855e18c490b63a",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 810,
-            "assertMs": 1267
+            "navigateMs": 1123,
+            "assertMs": 942
           },
           "verdict": "pass",
           "problems": []
@@ -6523,27 +6543,34 @@
           "finalPath": "/admin/docs",
           "redirect": null,
           "headline": {
-            "candidates": ["Documentation", "By section"],
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
             "matched": "Documentation"
           },
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 14307,
-            "nodes": 802,
+            "chars": 14416,
+            "nodes": 807,
             "headings": ["Documentation"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "e218c1ec28dece120f383743f19e4e4922f581a83fb3be788392e7c56fe7acaa",
+            "sha256": "4b5a153e16be8dff8f6c69dd218f7db4bea3fdfe6d959c0056727e2517322f9f",
             "width": 1440,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 997,
-            "assertMs": 1630
+            "navigateMs": 1213,
+            "assertMs": 1154
           },
           "verdict": "pass",
           "problems": []
@@ -6581,14 +6608,14 @@
           "finalPath": "/admin/docs/ENV-SPEC.md",
           "redirect": null,
           "headline": {
-            "candidates": ["Documentation", "In this section"],
+            "candidates": ["Documentation", "In this section", "Report a problem"],
             "matched": "In this section"
           },
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 28546,
-            "nodes": 588,
+            "chars": 28808,
+            "nodes": 594,
             "headings": [
               "Environment & ops spec",
               "Environment, tooling, team & ops spec — Quizhub prototype phase"
@@ -6598,13 +6625,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "e56f699cc92ecd2f09750d20420dc5e14a531b8651477d3f66f907bb692a7c7a",
+            "sha256": "1e15a246bbc14f8692a9b476d12e80d5d2e3fe5703580917945d112b5c4ed2f7",
             "width": 390,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 1166,
-            "assertMs": 1059
+            "navigateMs": 5081,
+            "assertMs": 931
           },
           "verdict": "pass",
           "problems": []
@@ -6615,14 +6642,14 @@
           "finalPath": "/admin/docs/ENV-SPEC.md",
           "redirect": null,
           "headline": {
-            "candidates": ["Documentation", "In this section"],
+            "candidates": ["Documentation", "In this section", "Report a problem"],
             "matched": "In this section"
           },
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 28546,
-            "nodes": 588,
+            "chars": 28808,
+            "nodes": 594,
             "headings": [
               "Environment & ops spec",
               "Environment, tooling, team & ops spec — Quizhub prototype phase"
@@ -6632,13 +6659,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "7aa5285804f21f4b94a2bf7ef0cce055f872dea8979134fbbda5b6161a43fa64",
+            "sha256": "ed24691e229b59dec9cf55ae72310fee4208f78d1ce39f8f3f4aa7fc1cd65ce6",
             "width": 768,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 940,
-            "assertMs": 1440
+            "navigateMs": 5432,
+            "assertMs": 1587
           },
           "verdict": "pass",
           "problems": []
@@ -6649,14 +6676,14 @@
           "finalPath": "/admin/docs/ENV-SPEC.md",
           "redirect": null,
           "headline": {
-            "candidates": ["Documentation", "In this section"],
+            "candidates": ["Documentation", "In this section", "Report a problem"],
             "matched": "In this section"
           },
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 28546,
-            "nodes": 588,
+            "chars": 28808,
+            "nodes": 594,
             "headings": [
               "Environment & ops spec",
               "Environment, tooling, team & ops spec — Quizhub prototype phase"
@@ -6666,13 +6693,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "35116e2bd60ec5f49e9b4542f4a1ad024fce63234eb6a6b97e105c5e9f610cc2",
+            "sha256": "a1576525aef5e2653e410a96d3f1ace09b517771e878d90686fbd208b1faf18f",
             "width": 1440,
             "height": 6000
           },
           "timing": {
-            "navigateMs": 1001,
-            "assertMs": 2632
+            "navigateMs": 2922,
+            "assertMs": 1164
           },
           "verdict": "pass",
           "problems": []
@@ -6689,20 +6716,135 @@
       "path": "/admin/docs/features",
       "params": {},
       "role": "admin",
+      "session": "admin@demo.alignsynch.test",
       "brandGate": {
         "kind": "admin",
         "at": "app/(mainlayout)/admin/docs/features/page.tsx:requireAdminProduct("
       },
       "expected": 200,
       "gateReason": null,
-      "status": null,
-      "widths": [],
-      "thumb": null,
-      "verdict": "skipped",
-      "captures": [],
-      "skip": {
-        "reason": "added in #893 after the v1.17.1 capture — the demo branch offered no admin session to capture it, so the next release cut recaptures this route"
-      }
+      "status": 200,
+      "widths": [390, 768, 1440],
+      "thumb": "thumbs/admin-docs-features.webp",
+      "sessionResumed": false,
+      "verdict": "pass",
+      "captures": [
+        {
+          "width": 390,
+          "status": 200,
+          "finalPath": "/admin/docs/features",
+          "redirect": null,
+          "headline": {
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
+            "matched": "Features"
+          },
+          "main": {
+            "selector": "main",
+            "present": true,
+            "chars": 62971,
+            "nodes": 3389,
+            "headings": ["Features"]
+          },
+          "hydration": 0,
+          "consoleErrors": [],
+          "closedConsole": [],
+          "image": {
+            "sha256": "09d335d72ca2e3e477193d77f0334acb34379e6f08dadf2b2315167148f95b74",
+            "width": 390,
+            "height": 6000
+          },
+          "timing": {
+            "navigateMs": 5166,
+            "assertMs": 752
+          },
+          "verdict": "pass",
+          "problems": []
+        },
+        {
+          "width": 768,
+          "status": 200,
+          "finalPath": "/admin/docs/features",
+          "redirect": null,
+          "headline": {
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
+            "matched": "Features"
+          },
+          "main": {
+            "selector": "main",
+            "present": true,
+            "chars": 62971,
+            "nodes": 3389,
+            "headings": ["Features"]
+          },
+          "hydration": 0,
+          "consoleErrors": [],
+          "closedConsole": [],
+          "image": {
+            "sha256": "5601b2346d4e5ba60a4a9bf8d48f2cc4b0b66fd2ca11978e4f8c46c6d02eb55e",
+            "width": 768,
+            "height": 6000
+          },
+          "timing": {
+            "navigateMs": 5228,
+            "assertMs": 1024
+          },
+          "verdict": "pass",
+          "problems": []
+        },
+        {
+          "width": 1440,
+          "status": 200,
+          "finalPath": "/admin/docs/features",
+          "redirect": null,
+          "headline": {
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
+            "matched": "Features"
+          },
+          "main": {
+            "selector": "main",
+            "present": true,
+            "chars": 62971,
+            "nodes": 3389,
+            "headings": ["Features"]
+          },
+          "hydration": 0,
+          "consoleErrors": [],
+          "closedConsole": [],
+          "image": {
+            "sha256": "20f6d01eb992cde3aeccb6fbcb90879740bab0fc039aca29631fceb5b0b48a5e",
+            "width": 1440,
+            "height": 6000
+          },
+          "timing": {
+            "navigateMs": 4608,
+            "assertMs": 1233
+          },
+          "verdict": "pass",
+          "problems": []
+        }
+      ],
+      "skip": null
     },
     {
       "kind": "route",
@@ -6713,20 +6855,135 @@
       "path": "/admin/docs/releases",
       "params": {},
       "role": "admin",
+      "session": "admin@demo.alignsynch.test",
       "brandGate": {
         "kind": "admin",
         "at": "app/(mainlayout)/admin/docs/releases/page.tsx:requireAdminProduct("
       },
       "expected": 200,
       "gateReason": null,
-      "status": null,
-      "widths": [],
-      "thumb": null,
-      "verdict": "skipped",
-      "captures": [],
-      "skip": {
-        "reason": "added in #893 after the v1.17.1 capture — the demo branch offered no admin session to capture it, so the next release cut recaptures this route"
-      }
+      "status": 200,
+      "widths": [390, 768, 1440],
+      "thumb": "thumbs/admin-docs-releases.webp",
+      "sessionResumed": false,
+      "verdict": "pass",
+      "captures": [
+        {
+          "width": 390,
+          "status": 200,
+          "finalPath": "/admin/docs/releases",
+          "redirect": null,
+          "headline": {
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
+            "matched": "Releases"
+          },
+          "main": {
+            "selector": "main",
+            "present": true,
+            "chars": 4771,
+            "nodes": 181,
+            "headings": ["Releases"]
+          },
+          "hydration": 0,
+          "consoleErrors": [],
+          "closedConsole": [],
+          "image": {
+            "sha256": "8254a47d23bcaa45e6f0b62addcbd946d812298f40c52810904a6856aa003c68",
+            "width": 390,
+            "height": 3786
+          },
+          "timing": {
+            "navigateMs": 3787,
+            "assertMs": 597
+          },
+          "verdict": "pass",
+          "problems": []
+        },
+        {
+          "width": 768,
+          "status": 200,
+          "finalPath": "/admin/docs/releases",
+          "redirect": null,
+          "headline": {
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
+            "matched": "Releases"
+          },
+          "main": {
+            "selector": "main",
+            "present": true,
+            "chars": 4771,
+            "nodes": 181,
+            "headings": ["Releases"]
+          },
+          "hydration": 0,
+          "consoleErrors": [],
+          "closedConsole": [],
+          "image": {
+            "sha256": "dbe134e0996a120547273d4e64e3166bc0138e08d454b8e7a380dbe5098fd7da",
+            "width": 768,
+            "height": 2963
+          },
+          "timing": {
+            "navigateMs": 1185,
+            "assertMs": 676
+          },
+          "verdict": "pass",
+          "problems": []
+        },
+        {
+          "width": 1440,
+          "status": 200,
+          "finalPath": "/admin/docs/releases",
+          "redirect": null,
+          "headline": {
+            "candidates": [
+              "Features",
+              "By area",
+              "Documentation",
+              "By section",
+              "Releases",
+              "The record"
+            ],
+            "matched": "Releases"
+          },
+          "main": {
+            "selector": "main",
+            "present": true,
+            "chars": 4771,
+            "nodes": 181,
+            "headings": ["Releases"]
+          },
+          "hydration": 0,
+          "consoleErrors": [],
+          "closedConsole": [],
+          "image": {
+            "sha256": "04fb9e6431a9aa485d4148d12adbe164f16fe160ce304bb61535f72d276a313f",
+            "width": 1440,
+            "height": 2773
+          },
+          "timing": {
+            "navigateMs": 1252,
+            "assertMs": 716
+          },
+          "verdict": "pass",
+          "problems": []
+        }
+      ],
+      "skip": null
     },
     {
       "kind": "route",
@@ -6769,7 +7026,7 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 3670,
+            "chars": 3671,
             "nodes": 270,
             "headings": ["The Gap across completed relationships"]
           },
@@ -6777,13 +7034,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "bdaa477fb709112f6a6aea1fae032d9effda2bbcfe21ba8f49b602805dc0eaf5",
+            "sha256": "3d731fac275c1d51c217c7b71b04a1c6d693904f6fe977c21b8c898da8bf134d",
             "width": 390,
             "height": 4098
           },
           "timing": {
-            "navigateMs": 2264,
-            "assertMs": 886
+            "navigateMs": 3050,
+            "assertMs": 733
           },
           "verdict": "pass",
           "problems": []
@@ -6807,7 +7064,7 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 3670,
+            "chars": 3671,
             "nodes": 270,
             "headings": ["The Gap across completed relationships"]
           },
@@ -6815,13 +7072,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d698aaf726ff4bd6c652a19e64bcbd4e79e7cf71118c7f09f987d329c0f5c6e4",
+            "sha256": "af31b2b6c00d25a56f186d29b472a44a9287b1855095ad4d2c8d0e67976b0bc3",
             "width": 768,
             "height": 2878
           },
           "timing": {
-            "navigateMs": 1193,
-            "assertMs": 896
+            "navigateMs": 1348,
+            "assertMs": 707
           },
           "verdict": "pass",
           "problems": []
@@ -6845,21 +7102,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 3670,
-            "nodes": 270,
+            "chars": 3671,
+            "nodes": 252,
             "headings": ["The Gap across completed relationships"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "27bcd406e50887edef44046d7694edae3fbd8e137150f04790e87e73a7a515e7",
+            "sha256": "78b0ed0cf1b760230553f7ed615f21f1522beaacbed750f8c76a686181dffd16",
             "width": 1440,
             "height": 2488
           },
           "timing": {
-            "navigateMs": 1244,
-            "assertMs": 976
+            "navigateMs": 1379,
+            "assertMs": 794
           },
           "verdict": "pass",
           "problems": []
@@ -6916,13 +7173,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c4369bae63f761e5dde6b9e40bca10e1dd18f480466a86bbebc27d8c78a01940",
+            "sha256": "6ad9f141872f5eba03794868bd5551064a254af35bbaeac1c06472556109d717",
             "width": 390,
             "height": 3203
           },
           "timing": {
-            "navigateMs": 2187,
-            "assertMs": 1261
+            "navigateMs": 6434,
+            "assertMs": 2486
           },
           "verdict": "pass",
           "problems": []
@@ -6947,20 +7204,20 @@
             "selector": "main",
             "present": true,
             "chars": 2704,
-            "nodes": 778,
+            "nodes": 706,
             "headings": ["Growth model"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "522a55874f5123457936ba14d2c9301ef464783cd503a8264db7394517402a90",
+            "sha256": "3616aca453f422ff5ea9a326159953ef82e436ff4bc83db824ac17a87cdb9a1d",
             "width": 768,
             "height": 2783
           },
           "timing": {
-            "navigateMs": 1668,
-            "assertMs": 997
+            "navigateMs": 2681,
+            "assertMs": 3014
           },
           "verdict": "pass",
           "problems": []
@@ -6985,20 +7242,20 @@
             "selector": "main",
             "present": true,
             "chars": 2887,
-            "nodes": 902,
+            "nodes": 830,
             "headings": ["Growth model"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "bce823e50b7b709519ba8edc0fdffb407c93ade79086af8174f9985a525a2771",
+            "sha256": "79f81feea68284e3c45356b8c76595a5b72e861e5b6156f53ef6df91ccda4fb9",
             "width": 1440,
             "height": 2583
           },
           "timing": {
-            "navigateMs": 1636,
-            "assertMs": 1102
+            "navigateMs": 2046,
+            "assertMs": 4272
           },
           "verdict": "pass",
           "problems": []
@@ -7055,13 +7312,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "7dc2fd53d309e6ff477939ddf4cb6d35f60f9af7f6ed3a338e9001908f9f0603",
+            "sha256": "1d2ca8215ef263a6f763146c2e4109c6b29e53745016251a3acfd5c1d887ddba",
             "width": 390,
             "height": 4208
           },
           "timing": {
-            "navigateMs": 1125,
-            "assertMs": 834
+            "navigateMs": 3550,
+            "assertMs": 814
           },
           "verdict": "pass",
           "problems": []
@@ -7093,13 +7350,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "02e148e1144eb8809082062cee0f796cf1e33baa7e174186abeffed860a5369f",
+            "sha256": "4d00371f6c4e7bfefa571be56d0dcde4bce1bfe3d6ce665ce2690fb5816f26c1",
             "width": 768,
             "height": 2913
           },
           "timing": {
-            "navigateMs": 1036,
-            "assertMs": 835
+            "navigateMs": 2781,
+            "assertMs": 812
           },
           "verdict": "pass",
           "problems": []
@@ -7131,13 +7388,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "def9c5fdcf8e60a9ba900dfb7523e6849dac0d239651a918e590cee6c07bd0e5",
+            "sha256": "ac6f425604dd2ef5851d85d47e0a3572174533fec8d1d6b8b35f3c5928297639",
             "width": 1440,
             "height": 2457
           },
           "timing": {
-            "navigateMs": 961,
-            "assertMs": 911
+            "navigateMs": 2323,
+            "assertMs": 785
           },
           "verdict": "pass",
           "problems": []
@@ -7194,13 +7451,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "f69c0a0bccfb210530119febc9e3099df54800929febd5f63cfcd60afb486629",
+            "sha256": "23185d0c251c9b51d93b35636401a05ab666d0c5d7ccb63cbb389e2fae2178fd",
             "width": 390,
             "height": 956
           },
           "timing": {
-            "navigateMs": 2004,
-            "assertMs": 486
+            "navigateMs": 4295,
+            "assertMs": 597
           },
           "verdict": "pass",
           "problems": []
@@ -7232,13 +7489,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "5a75792ab8b796c954ec3c0100edbe8d2cc7dc9d44d07b631a31da0a1bc02894",
+            "sha256": "4ea5a31851fe2c051ea80a0b6356717f8aac7347e8ad6878a74358960ff3f911",
             "width": 768,
             "height": 940
           },
           "timing": {
-            "navigateMs": 774,
-            "assertMs": 460
+            "navigateMs": 3720,
+            "assertMs": 809
           },
           "verdict": "pass",
           "problems": []
@@ -7270,13 +7527,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "d03fff6537d2b5e8be90c22d1a88d7c2bb5d25aa1114a53302443f935715edd7",
+            "sha256": "7011084d7624c97baac638c5829b3b5527db426cca70a65481490aec8680b197",
             "width": 1440,
             "height": 940
           },
           "timing": {
-            "navigateMs": 776,
-            "assertMs": 508
+            "navigateMs": 1465,
+            "assertMs": 732
           },
           "verdict": "pass",
           "problems": []
@@ -7324,21 +7581,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 1283,
-            "nodes": 125,
+            "chars": 1875,
+            "nodes": 188,
             "headings": ["Relationships"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "099d4a6172da74cd2f31e833cf39a4018158b09735c497dac810092d6645cb6d",
+            "sha256": "f27086b4bd3be5f08b92e2c1a411572a222b2eef0c43e71e3f50c03f4f9519d2",
             "width": 390,
-            "height": 1072
+            "height": 1459
           },
           "timing": {
-            "navigateMs": 1145,
-            "assertMs": 580
+            "navigateMs": 3810,
+            "assertMs": 514
           },
           "verdict": "pass",
           "problems": []
@@ -7361,21 +7618,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 1283,
-            "nodes": 125,
+            "chars": 1875,
+            "nodes": 188,
             "headings": ["Relationships"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "634e83e45c21662c14758e5e84b2914c2b6255abad05bde64aa36996f303bf8b",
+            "sha256": "44de2dfeb637e090b4638cbee498fd8f57975e1ac1c1227cfcdfc95f4b13c3d1",
             "width": 768,
-            "height": 989
+            "height": 1376
           },
           "timing": {
-            "navigateMs": 1168,
-            "assertMs": 568
+            "navigateMs": 1383,
+            "assertMs": 541
           },
           "verdict": "pass",
           "problems": []
@@ -7398,21 +7655,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 1283,
-            "nodes": 125,
+            "chars": 1875,
+            "nodes": 188,
             "headings": ["Relationships"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "3512b4bd7a1f6f1eff68131cdad2a851bfb394f4922915cb8cb0615176fd0f02",
+            "sha256": "5961f122eba6d3fcf7e23bbdef0fc06de1ce037011ad389fd273aae3f13edd3b",
             "width": 1440,
-            "height": 941
+            "height": 1296
           },
           "timing": {
-            "navigateMs": 1062,
-            "assertMs": 522
+            "navigateMs": 1443,
+            "assertMs": 644
           },
           "verdict": "pass",
           "problems": []
@@ -7442,7 +7699,7 @@
       "widths": [390, 768, 1440],
       "thumb": "thumbs/admin-instances-id.webp",
       "sessionResumed": false,
-      "verdict": "pass",
+      "verdict": "fail",
       "captures": [
         {
           "width": 390,
@@ -7463,24 +7720,28 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 3175,
-            "nodes": 137,
+            "chars": 3198,
+            "nodes": 138,
             "headings": ["Relationship operations"]
           },
           "hydration": 0,
-          "consoleErrors": [],
+          "consoleErrors": [
+            "%s contains an input of type %s with both value and defaultValue props. Input elements must be either controlled or uncontrolled (specify either the value prop, or the defaultValue prop, but not both). Decide between using a controlled or uncontrolled input element and remove one of these props. Mor"
+          ],
           "closedConsole": [],
           "image": {
-            "sha256": "5063394372dabc82e19c88e5d3cd2365ee2d488475b4a062580430c3293766e6",
+            "sha256": "3f2e40064700c3ea0fc7de0a22f7370cf0abf9f5d27256662e32d447abff8864",
             "width": 390,
             "height": 4099
           },
           "timing": {
-            "navigateMs": 2215,
-            "assertMs": 576
+            "navigateMs": 4413,
+            "assertMs": 592
           },
-          "verdict": "pass",
-          "problems": []
+          "verdict": "fail",
+          "problems": [
+            "console error: %s contains an input of type %s with both value and defaultValue props. Input elements must be either controlled or uncontrolled (specify either the value prop,"
+          ]
         },
         {
           "width": 768,
@@ -7501,24 +7762,28 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 3175,
-            "nodes": 137,
+            "chars": 3198,
+            "nodes": 138,
             "headings": ["Relationship operations"]
           },
           "hydration": 0,
-          "consoleErrors": [],
+          "consoleErrors": [
+            "%s contains an input of type %s with both value and defaultValue props. Input elements must be either controlled or uncontrolled (specify either the value prop, or the defaultValue prop, but not both). Decide between using a controlled or uncontrolled input element and remove one of these props. Mor"
+          ],
           "closedConsole": [],
           "image": {
-            "sha256": "cfcf7cc131f3a575ea15066f8180a6bd9ed0be0f81c4dd7052839728f57d5156",
+            "sha256": "728a68aa85aec26bfadb5ccc39e66406bf3c89b26aa500a4c416fe968b65e182",
             "width": 768,
             "height": 3190
           },
           "timing": {
-            "navigateMs": 2449,
-            "assertMs": 719
+            "navigateMs": 3454,
+            "assertMs": 675
           },
-          "verdict": "pass",
-          "problems": []
+          "verdict": "fail",
+          "problems": [
+            "console error: %s contains an input of type %s with both value and defaultValue props. Input elements must be either controlled or uncontrolled (specify either the value prop,"
+          ]
         },
         {
           "width": 1440,
@@ -7539,24 +7804,28 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 3175,
-            "nodes": 137,
+            "chars": 3198,
+            "nodes": 138,
             "headings": ["Relationship operations"]
           },
           "hydration": 0,
-          "consoleErrors": [],
+          "consoleErrors": [
+            "%s contains an input of type %s with both value and defaultValue props. Input elements must be either controlled or uncontrolled (specify either the value prop, or the defaultValue prop, but not both). Decide between using a controlled or uncontrolled input element and remove one of these props. Mor"
+          ],
           "closedConsole": [],
           "image": {
-            "sha256": "aa461dd70bb846275ad28676f76cc6e10c1cab1277ef66ebb6550399f05a74ad",
+            "sha256": "6438a9c7081a2874020a0af73561950a3baf3085a073edcccff3b37d6baddf58",
             "width": 1440,
             "height": 2671
           },
           "timing": {
-            "navigateMs": 2575,
-            "assertMs": 817
+            "navigateMs": 3008,
+            "assertMs": 728
           },
-          "verdict": "pass",
-          "problems": []
+          "verdict": "fail",
+          "problems": [
+            "console error: %s contains an input of type %s with both value and defaultValue props. Input elements must be either controlled or uncontrolled (specify either the value prop,"
+          ]
         }
       ],
       "skip": null
@@ -7612,13 +7881,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "ecefa58673d5675f54f50c86191bbd82255756a035ed11d5893e6a9438e0b410",
+            "sha256": "b0887358657e02fc156d15a197ddddae131bd1ea6f6f898e6b713c75ecdef022",
             "width": 390,
             "height": 4284
           },
           "timing": {
-            "navigateMs": 1027,
-            "assertMs": 609
+            "navigateMs": 5377,
+            "assertMs": 644
           },
           "verdict": "pass",
           "problems": []
@@ -7650,13 +7919,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c0e68c8b25941383ccfbd5b53f55dc317e06e9ebf102eb61c2f42580eac1c144",
+            "sha256": "f95b305784399a8a491329250d0c2e6553ed8e61f6a5c85012d8530ccb32572f",
             "width": 768,
             "height": 3037
           },
           "timing": {
-            "navigateMs": 958,
-            "assertMs": 620
+            "navigateMs": 1817,
+            "assertMs": 642
           },
           "verdict": "pass",
           "problems": []
@@ -7688,13 +7957,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "cdab0384d6954f3430e97cebd397a1a95876418b9213384a8900948c6984ff96",
+            "sha256": "a1b92854c9fab8fc2b1ea06f47748dc2364fea27b6bb780de47a98b4ac567851",
             "width": 1440,
             "height": 2825
           },
           "timing": {
-            "navigateMs": 1183,
-            "assertMs": 903
+            "navigateMs": 1679,
+            "assertMs": 745
           },
           "verdict": "pass",
           "problems": []
@@ -7751,13 +8020,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "9273ca60a8db082a3ea994a546ae4e5d743844ecae01e3222a15a73d4076b6b3",
+            "sha256": "0691c31649e1465390d88b4b5151f71add43bdcfd8da9fa452f485b48e7ac0b4",
             "width": 390,
             "height": 3363
           },
           "timing": {
-            "navigateMs": 2754,
-            "assertMs": 898
+            "navigateMs": 8495,
+            "assertMs": 682
           },
           "verdict": "pass",
           "problems": []
@@ -7789,13 +8058,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "52ba731e5e1f6abb7eaaf280512a0cadf786a9e60514dcba714f644320cd8190",
+            "sha256": "60e448da981bbfba008b235ccb6d87d6d98fc0d37a7ddb900ab880c0816a23e0",
             "width": 768,
             "height": 3218
           },
           "timing": {
-            "navigateMs": 1669,
-            "assertMs": 854
+            "navigateMs": 2485,
+            "assertMs": 776
           },
           "verdict": "pass",
           "problems": []
@@ -7827,13 +8096,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "e33bcc655f0250d0e7aa9f45c15418fc2660b73440eba57d1945852bdbdd1d8b",
+            "sha256": "d71f5998e893574d44157e9516d8a2f98138094109cd8fde93c2d7e5c5b85e78",
             "width": 1440,
             "height": 2189
           },
           "timing": {
-            "navigateMs": 1750,
-            "assertMs": 827
+            "navigateMs": 2355,
+            "assertMs": 742
           },
           "verdict": "pass",
           "problems": []
@@ -7881,21 +8150,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 2942,
-            "nodes": 336,
+            "chars": 3122,
+            "nodes": 356,
             "headings": ["Templates"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "c2b93d094c6f17f1d0e64a64be0a3f34e2ddb618063fb59c537a29661360e293",
+            "sha256": "affc269770c9ac15e5c7d33bed5003135f152906d0135ac9b5f60c1ed746281a",
             "width": 390,
-            "height": 4011
+            "height": 4197
           },
           "timing": {
-            "navigateMs": 1189,
-            "assertMs": 863
+            "navigateMs": 5163,
+            "assertMs": 595
           },
           "verdict": "pass",
           "problems": []
@@ -7918,21 +8187,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 2942,
-            "nodes": 336,
+            "chars": 3122,
+            "nodes": 356,
             "headings": ["Templates"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "ccfb7f9e6ced00df352f83362c1f1b3b83dabe628a033946aa901aac77e51314",
+            "sha256": "1fc46ba84e43f6fa99fb4772b2eb32ebc79b0d077acfbb4d97a28ae370c4b1ee",
             "width": 768,
-            "height": 3739
+            "height": 3925
           },
           "timing": {
-            "navigateMs": 995,
-            "assertMs": 728
+            "navigateMs": 1189,
+            "assertMs": 1104
           },
           "verdict": "pass",
           "problems": []
@@ -7955,21 +8224,21 @@
           "main": {
             "selector": "main",
             "present": true,
-            "chars": 2942,
-            "nodes": 336,
+            "chars": 3122,
+            "nodes": 356,
             "headings": ["Templates"]
           },
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "7fa2eb9db820b300b505d26b8f325e8f85a3c6ac8c8a977bb1f08e53380a4122",
+            "sha256": "ba4468b0b2c369871ec141e52a68cae8af2903115a2dfbae0bf30542e9f72a03",
             "width": 1440,
-            "height": 3111
+            "height": 3257
           },
           "timing": {
-            "navigateMs": 1064,
-            "assertMs": 1192
+            "navigateMs": 1375,
+            "assertMs": 973
           },
           "verdict": "pass",
           "problems": []
@@ -8034,13 +8303,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "fcd59cf4db45ace2849a1c69e8107576831f1f8bc7777fbce0813ae9664b646c",
+            "sha256": "494b671e0b057457ce94e6a3cbd148a19eb41c9d4612863703ba91f05c7a0bcf",
             "width": 390,
             "height": 1919
           },
           "timing": {
-            "navigateMs": 1355,
-            "assertMs": 650
+            "navigateMs": 5214,
+            "assertMs": 513
           },
           "verdict": "pass",
           "problems": []
@@ -8078,13 +8347,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "2d1db03b974b89c598b5391470b12a378ed47fc0bf04faf5e9a188679a5b6051",
+            "sha256": "f9b1cced44374be05b8a27418d2a0a301fbec2e9d5c9ed686ea176d036c2b1b5",
             "width": 768,
             "height": 1571
           },
           "timing": {
-            "navigateMs": 1332,
-            "assertMs": 714
+            "navigateMs": 1484,
+            "assertMs": 698
           },
           "verdict": "pass",
           "problems": []
@@ -8122,13 +8391,13 @@
           "consoleErrors": [],
           "closedConsole": [],
           "image": {
-            "sha256": "4a697ee24510205817046100cf4d494f168a7850d078271fbae7ef88fe7ddfef",
+            "sha256": "ba6d2a8324f29861123db3ca5725be6dcc031960b41f900f0125ebc4b6135dde",
             "width": 1440,
             "height": 1515
           },
           "timing": {
-            "navigateMs": 1124,
-            "assertMs": 579
+            "navigateMs": 2804,
+            "assertMs": 830
           },
           "verdict": "pass",
           "problems": []
@@ -8182,16 +8451,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "b68919af94ef10430617030ce294c60c23468ed5fb62515f955b1be3079d9761",
+            "sha256": "637ddecaa3caec7f461cdf53b823b59d0f30f2e92da5565e1a73796a151a41fe",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 1682,
-            "assertMs": 688
+            "navigateMs": 1693,
+            "assertMs": 583
           },
           "verdict": "pass",
           "problems": []
@@ -8220,16 +8490,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "2964770338b2c9e10c5755cc13ae7a965c178780c380c457c19bcc1ad50ece49",
+            "sha256": "12ec9689cf5b9ce0a3a2d58b6f53852ddd3f1b58ff55d4601095de6179e22e02",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1113,
-            "assertMs": 605
+            "navigateMs": 1883,
+            "assertMs": 595
           },
           "verdict": "pass",
           "problems": []
@@ -8258,16 +8529,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "556d9c8af416ea3b6826f349082f6780b77d574570d63d397150e6c1be3223d9",
+            "sha256": "f5fb6ba947bf08ada818c552e173ead70c194552abca596690c18be324ba8e91",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1222,
-            "assertMs": 696
+            "navigateMs": 2008,
+            "assertMs": 644
           },
           "verdict": "pass",
           "problems": []
@@ -8321,16 +8593,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "50110cc61ce8c8baa27d7cd47e329b94d965a377e01e31e09cfc0da278ffee60",
+            "sha256": "58fe4b3689d89c1e88528ec1dbdde75be2564a4335a971923389b94f9d6c81f0",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 1539,
-            "assertMs": 538
+            "navigateMs": 1666,
+            "assertMs": 541
           },
           "verdict": "pass",
           "problems": []
@@ -8359,16 +8632,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "25653e773f0b10ae9237b69b19047fb2939dc166238394b68787354c2ae9019c",
+            "sha256": "9c8dccf878135a18afe2b47c3aa2124032ff6de50f75bb54b2e21f6e673ee4a7",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1325,
-            "assertMs": 533
+            "navigateMs": 1270,
+            "assertMs": 592
           },
           "verdict": "pass",
           "problems": []
@@ -8397,16 +8671,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "b794c2e764dd90e1a1f64cc93efd0a6ab3e7559151040da1b059dd9d8f3677fb",
+            "sha256": "ff7e14402e5ee3645e6931c2fbe3b186a8b72d9304d8496021c5bc2c4a1ba9a6",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1538,
-            "assertMs": 857
+            "navigateMs": 1255,
+            "assertMs": 749
           },
           "verdict": "pass",
           "problems": []
@@ -8460,16 +8735,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "c513ce5f779f6e8cf950ed0696dd9761b83a3919a830b468e3479ff56fee4d2b",
+            "sha256": "11996010e4e29933a380f54a3c9bab04c85789dfb8d0528b60ee1f20fe380880",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 1454,
-            "assertMs": 665
+            "navigateMs": 1227,
+            "assertMs": 597
           },
           "verdict": "pass",
           "problems": []
@@ -8498,16 +8774,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "05d92c783bd026761f928f4727ab84cf6be9418d4d24643cef9ef2c1a4af56b9",
+            "sha256": "a71a3b8eb1fbdcf737e74bd8f167aaf917cea98f662198d7ff327d300e5b9f24",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1817,
-            "assertMs": 748
+            "navigateMs": 1221,
+            "assertMs": 725
           },
           "verdict": "pass",
           "problems": []
@@ -8536,16 +8813,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "fe66c1abe6652d27ee2558cf6a6060664b41636270f62f996ea0a97ca3e2c155",
+            "sha256": "7e878fc5fa9142c121b53037ba6799e57859893113c5d5249f31aeef9d4dac47",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1554,
-            "assertMs": 1097
+            "navigateMs": 1185,
+            "assertMs": 730
           },
           "verdict": "pass",
           "problems": []
@@ -8601,16 +8879,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "6a8908a7b5d7c2671c82a056599469a3d4d98d2be076369f3fd0c693a9fe7a2f",
+            "sha256": "eaed9be83feb4ec063db7558003c0dd7a843aea9769b3636146acfa894a351fe",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 1690,
-            "assertMs": 970
+            "navigateMs": 2237,
+            "assertMs": 658
           },
           "verdict": "pass",
           "problems": []
@@ -8639,16 +8918,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "b8ec34a64bfb5f92b2297a6a895a6f902de97f6b24a62b06bcf53a063e489802",
+            "sha256": "99e2e02d2e002e8a0750d79dd841765cf612612fd1959b15994070f2d0fc1940",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1928,
-            "assertMs": 859
+            "navigateMs": 1478,
+            "assertMs": 715
           },
           "verdict": "pass",
           "problems": []
@@ -8677,16 +8957,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "2f91856005a85bb439b93bdfcf552cda04ee92245ef26c498087142976a7a77d",
+            "sha256": "5d85cbc9d0029d75887e9e3899299d8170f87ca45fbc8cab4d50d5d771477922",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1535,
-            "assertMs": 790
+            "navigateMs": 2348,
+            "assertMs": 949
           },
           "verdict": "pass",
           "problems": []
@@ -8740,16 +9021,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "801ed50ae2ad3d4621741ee1ed12936616bc2e296ed3f5a999a0f2c9168b8bf9",
+            "sha256": "f7e4b0eba8e1dcb936407a30504cc56af8c59288dbdc614d1662272ac2f29f71",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 950,
-            "assertMs": 512
+            "navigateMs": 1950,
+            "assertMs": 631
           },
           "verdict": "pass",
           "problems": []
@@ -8778,16 +9060,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "4a5250b88321ebcaff73b013ea44a78d25868fe0d264d4691c45490cfa7203e6",
+            "sha256": "7e8af6a7a4ad23dadfaa30b3ecd02cfad294ee900850848ceb22a4744d0a2999",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 857,
-            "assertMs": 560
+            "navigateMs": 2016,
+            "assertMs": 597
           },
           "verdict": "pass",
           "problems": []
@@ -8816,16 +9099,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "a2752c92b6554bd97876159704b695b357369868fa75fc0f0805682cfe634ee0",
+            "sha256": "66189deb649e714784abcb8a0863b33d30844c144ffef004e4a78e1053eaa42a",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1105,
-            "assertMs": 573
+            "navigateMs": 2405,
+            "assertMs": 645
           },
           "verdict": "pass",
           "problems": []
@@ -8881,16 +9165,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "3640cc991a367d637c952a76c811709b25cc54d5f09765ad45673dbf499befc8",
+            "sha256": "51be13bcb1fccb5e5bec64fbb3b1f4b7a3c0779c4934e65591dce066d0f108c9",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 980,
-            "assertMs": 559
+            "navigateMs": 2355,
+            "assertMs": 625
           },
           "verdict": "pass",
           "problems": []
@@ -8919,16 +9204,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "8f556bb4aa9398a1dfb89176bbc7e211cb8eabb1bdb3abdbd87367e51bad7837",
+            "sha256": "b68298d598eaae05fd3ab9d1bf7c087927246e062499a3d23842e16851920538",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1075,
-            "assertMs": 523
+            "navigateMs": 2552,
+            "assertMs": 728
           },
           "verdict": "pass",
           "problems": []
@@ -8957,16 +9243,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "3574b60da365c68d8848eec2f1a116e2d3f3ce5467264469e92f2336d6c87f41",
+            "sha256": "02e53271b8a973ca427b72165a8ca17bfb2a81b238ad1416278fe36d13089970",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 842,
-            "assertMs": 537
+            "navigateMs": 3093,
+            "assertMs": 961
           },
           "verdict": "pass",
           "problems": []
@@ -9020,16 +9307,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "785cb02bb37336f46fa1f1161179c40de775d5f63d61dbd4166e188d642818e3",
+            "sha256": "bb1f7ace5583e91403f4e6e6307abbe25a98ee0aefa34d876d34e3591b4ae162",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 1454,
-            "assertMs": 647
+            "navigateMs": 1987,
+            "assertMs": 912
           },
           "verdict": "pass",
           "problems": []
@@ -9058,16 +9346,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "9f2b31856a1061363ac50234b3985424cfbb8901f936f7fbd2430fed4ce8467b",
+            "sha256": "f636c5caad3eb796c1619fefb89dc3dece0d937e788505bf92d87823a606b053",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1594,
-            "assertMs": 1050
+            "navigateMs": 1497,
+            "assertMs": 773
           },
           "verdict": "pass",
           "problems": []
@@ -9096,16 +9385,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "96f65a959bcdaab615dfe7d54fc6579744de977bc5c575a75971ea25e7dfa504",
+            "sha256": "758875e96e62c79c68878b6d7cd682e6b50f597bc4411aae8c61ece1ad3117a1",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1267,
-            "assertMs": 721
+            "navigateMs": 2252,
+            "assertMs": 803
           },
           "verdict": "pass",
           "problems": []
@@ -9159,16 +9449,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "eefefd10730b2d1beeb1c368db4ed40426acaae21d33af3ba16e65e8cdff18c0",
+            "sha256": "31d5d598a97beebbde2d9c12e9960db5e2e1a471e727c65bdefa4209f62f2ea1",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 645,
-            "assertMs": 514
+            "navigateMs": 1671,
+            "assertMs": 735
           },
           "verdict": "pass",
           "problems": []
@@ -9197,16 +9488,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "0922c30a7a7ef5126ea9ac528bd8bf9efe47ce8bff5be3227935cb6c29f2590d",
+            "sha256": "e015f309d17114d71aa54f9dad5e5e2250a79a25e8599dcfd0a9eb5d8fad6cfc",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 635,
-            "assertMs": 540
+            "navigateMs": 1617,
+            "assertMs": 560
           },
           "verdict": "pass",
           "problems": []
@@ -9235,16 +9527,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "a75ede601cb4cf19a76d5141c9e243828c7fba9cf2a5d60b8861cf282a861715",
+            "sha256": "d5ea8775f6a4eb6c09a30d6b8064b7004f8b7824446b149b1f7d5e607f5dda91",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 657,
-            "assertMs": 537
+            "navigateMs": 1303,
+            "assertMs": 617
           },
           "verdict": "pass",
           "problems": []
@@ -9298,16 +9591,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "4d5f16be4cd746db2a76f6a8b840ebf1a95aba712e27f2892e66b23a0acd9f62",
+            "sha256": "c3509e786cd18b40331f87a5ffc87707067b62077c3ab85babbe3b3b1feb393f",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 1334,
-            "assertMs": 722
+            "navigateMs": 2031,
+            "assertMs": 656
           },
           "verdict": "pass",
           "problems": []
@@ -9336,16 +9630,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "8e114650e89a7ec3382fd93f35043ddb69191bb1cd22a2707d514269b3794c27",
+            "sha256": "791517557a57780f1eb6f95c4274d7e37044579dbc9c07bcf8d698a6c44c2567",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1494,
-            "assertMs": 755
+            "navigateMs": 1402,
+            "assertMs": 608
           },
           "verdict": "pass",
           "problems": []
@@ -9374,16 +9669,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "435083f1124307e1deb78d296e4addc6f9c5052b2768b1faae70d1423ee0fe45",
+            "sha256": "b529b6f3819ebb51dd2a40ff615ce4fe49d821263b4c7c57f8f6a30b150bfb30",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1456,
-            "assertMs": 908
+            "navigateMs": 1799,
+            "assertMs": 606
           },
           "verdict": "pass",
           "problems": []
@@ -9437,16 +9733,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "901c7fd3c62aee0d6cac4ea6b9369c969332f7ff6ce49363d785c03dbb819755",
+            "sha256": "08d55d95cdc2c6778da53e31bbe35da2db8bcd6ca71855b6a879e874130970ab",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 1466,
-            "assertMs": 688
+            "navigateMs": 1802,
+            "assertMs": 612
           },
           "verdict": "pass",
           "problems": []
@@ -9475,16 +9772,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "5bf7b2d8adcec31ee2b35007a8483d8483817bb0b51d30cf408adcfd2168284b",
+            "sha256": "a0000e74082f333395e097394b00686e2e9154c0d83c69465f8890a8face08aa",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 1395,
-            "assertMs": 746
+            "navigateMs": 1152,
+            "assertMs": 761
           },
           "verdict": "pass",
           "problems": []
@@ -9513,16 +9811,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "7788a41f753b8b7ff64390d9257bbfcf8e6aa5c28d8980de4fa4f60f141b7259",
+            "sha256": "f229f996deb328ccbae7b2c728accda5eb8eaf099de3d9c3f4f8f442fea5a1d3",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 1356,
-            "assertMs": 785
+            "navigateMs": 2492,
+            "assertMs": 817
           },
           "verdict": "pass",
           "problems": []
@@ -9576,16 +9875,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "56ea5573d718fa60fa682ec0192b6304353b0479afe452b8ceb1ee6802943013",
+            "sha256": "943d10fb765cdd6cf4197572ba4c373e9be0df540bef28e9fd63ee1d777e50c4",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 815,
-            "assertMs": 515
+            "navigateMs": 1549,
+            "assertMs": 546
           },
           "verdict": "pass",
           "problems": []
@@ -9614,16 +9914,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "0755859d8f45908ac00575b1d12ee52b55095ad0cb7ad498afd083e216033429",
+            "sha256": "dd7a4504fb1a257c49804152d6589dfba5b52c4e45ffa92f3f26e748b23aa4f9",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 786,
-            "assertMs": 501
+            "navigateMs": 1303,
+            "assertMs": 593
           },
           "verdict": "pass",
           "problems": []
@@ -9652,16 +9953,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "ff750f46c76383b38748741564df1c5c245ed1bcaec5b008c06a1ce5e733aff5",
+            "sha256": "4b88f34a64d983487257781ab7835eaacd4149c73418febe3fa59635e15c3b93",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 797,
-            "assertMs": 536
+            "navigateMs": 1191,
+            "assertMs": 615
           },
           "verdict": "pass",
           "problems": []
@@ -9717,16 +10019,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "3843f95eed26c3aefad426fd8dbd088bd09306103b8bfd67382fb215fe3402dd",
+            "sha256": "b18abe08d13ee22bb601c2a426583a3aa4a3b825a549eb75e0f3b9f2b7fd1e81",
             "width": 390,
             "height": 988
           },
           "timing": {
-            "navigateMs": 825,
-            "assertMs": 521
+            "navigateMs": 1758,
+            "assertMs": 607
           },
           "verdict": "pass",
           "problems": []
@@ -9755,16 +10058,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "1ca9fb280685f3de41ab821a4382156c67e5a2a65f87396f7fbc983c1a1fdbcd",
+            "sha256": "ebbf9566701f2b4a882593c0e5be1eef64302514f2d05ca4fd6887796664e481",
             "width": 768,
             "height": 996
           },
           "timing": {
-            "navigateMs": 838,
-            "assertMs": 524
+            "navigateMs": 1995,
+            "assertMs": 722
           },
           "verdict": "pass",
           "problems": []
@@ -9793,16 +10097,17 @@
           "hydration": 0,
           "consoleErrors": [],
           "closedConsole": [
-            "Failed to load resource: the server responded with a status of 404 (Not Found)"
+            "Failed to load resource: the server responded with a status of 404 (Not Found)",
+            "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template)."
           ],
           "image": {
-            "sha256": "624e1287926d804429a983da541a6487ed02c3115c1edd59e933c48f6c409f87",
+            "sha256": "e479df5614d9c010ba8d65f32d1e119ded311ce97912c7ddfd1585ada02bec89",
             "width": 1440,
             "height": 1012
           },
           "timing": {
-            "navigateMs": 782,
-            "assertMs": 514
+            "navigateMs": 1561,
+            "assertMs": 826
           },
           "verdict": "pass",
           "problems": []
