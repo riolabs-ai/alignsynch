@@ -467,7 +467,9 @@ fi
 # rewrites no linter can autofix. It runs in **every lane beside `docs:check`**, not only in the
 # content lane: a formatting defect lands in a `docs/**` diff, which classifies as the docs lane,
 # and a step that only ran for `content/**` would be green over exactly the change it exists to
-# catch. ~1.4 s (106 files linted, 108 scanned).
+# catch. Measured on this host: 106 files linted in 4.8–9.6 s (markdownlint-cli2, a fresh process each
+# run and 8–19 MB of dependencies to resolve) plus 0.15 s for the codemod — the docs lane is the one
+# that pays it most, and it is still seconds, not the build.
 if has_script "md:check"; then
   run_step "md:check (markdownlint-cli2 + md-style: fences, escapes, alerts)" pnpm md:check || fail
 else
