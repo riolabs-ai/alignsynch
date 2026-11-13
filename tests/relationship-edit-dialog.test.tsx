@@ -126,7 +126,12 @@ describe("#923 · the edit form is asked for, not mounted", () => {
 
     expect(panel()).toBeNull();
     expect(document.querySelector('[role="dialog"]')).toBeNull();
-    expect(document.activeElement).toBe(door);
+    // Radix restores focus in `onCloseAutoFocus`, which runs after the exit transition has
+    // already unmounted the content — so the panel is gone one tick before focus lands. Reading
+    // `document.activeElement` synchronously here raced the restore: measured red on three CI
+    // runs with `<body>` as the active element while every other assertion in this test passed,
+    // and green 3/3 on the same trees locally. The claim is unchanged, only awaited.
+    await expect.poll(() => document.activeElement).toBe(door);
     expect(door.getAttribute("aria-expanded")).toBe("false");
   });
 });
