@@ -26,20 +26,16 @@
  * know its commit, and `deploy-check.mjs` reports `UNKNOWN` (exit 2) for it. Never substitute a
  * guess.
  */
+import { buildInfo } from "@/lib/build-info";
+
 export const dynamic = "force-dynamic";
 
 /** The build's own version and commit. Both are `next.config.mjs` values, inlined at build time. */
 export function GET(): Response {
-  return Response.json(
-    {
-      version: process.env.APP_VERSION ?? "",
-      commit: process.env.APP_COMMIT ?? "unknown",
+  return Response.json(buildInfo(), {
+    headers: {
+      "cache-control": "no-store, max-age=0",
+      "cdn-cache-control": "no-store",
     },
-    {
-      headers: {
-        "cache-control": "no-store, max-age=0",
-        "cdn-cache-control": "no-store",
-      },
-    },
-  );
+  });
 }

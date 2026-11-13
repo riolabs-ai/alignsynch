@@ -97,3 +97,86 @@ export function parseDocsManifest(raw: unknown): DocsManifest {
   const detail = first?.message ?? "the manifest is not the shape #892 documents";
   throw new DocsManifestUnreadable(at === "" ? detail : `${at}: ${detail}`);
 }
+
+/* ------------------------------------------------------------------ *
+ * `docs/changelog/releases.json` — the release record (#893)
+ * ------------------------------------------------------------------ */
+
+/**
+ * One release's two one-line judgements. `scripts/changelog-view.mjs` reads the same file (its
+ * index prints both, and its `--check` holds the row set equal to `CHANGELOG.md`'s entries); the
+ * schema here is what a *page* needs, so a row that lost its `theme` is a named failure rather than
+ * a blank line in a card.
+ */
+export const zReleaseRecordRow = z
+  .object({
+    version: z
+      .string()
+      .min(1)
+      .regex(/^[0-9]+\.[0-9]+\.[0-9]+/, "a version is dotted semver, as CHANGELOG.md spells it"),
+    theme: z.string().min(1),
+    headline: z.string().min(1),
+  })
+  .strict();
+
+export const zReleaseRecord = z
+  .object({
+    releases: z.array(zReleaseRecordRow).min(1),
+  })
+  .strict();
+
+export type ReleaseRecordRow = z.infer<typeof zReleaseRecordRow>;
+export type ReleaseRecord = z.infer<typeof zReleaseRecord>;
+
+/**
+ * The one failure a docs screen draws as a panel, whatever the source.
+ *
+ * `/admin/docs` and its two #893 screens read three files (`docs/docs.json`, `CHANGELOG.md`,
+ * `docs/changelog/releases.json`), and from the screen's point of view a missing file, invalid JSON
+ * and a shape drift are one fact: the rows cannot be built, so nothing may be listed. `reason` is
+ * the sentence the panel prints, never a stack.
+ */
+export class ReleaseRecordUnreadable extends Error {
+  readonly reason: string;
+
+  constructor(reason: string) {
+    super(reason);
+    this.name = "ReleaseRecordUnreadable";
+    this.reason = reason;
+  }
+}
+
+/**
+ * Validate the release record and hand back the parsed value.
+ *
+ * A duplicate version is refused as well as a missing field: two rows for one release would make
+ * `releaseRows` pick one silently, and the screen would show a judgement nobody chose.
+ */
+export function parseReleaseRecord(raw: unknown): ReleaseRecord {
+  const parsed = zReleaseRecord.safeParse(raw);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    const at = first?.path.join(".") ?? "";
+    const detail = first?.message ?? "the record is not the shape #893 documents";
+    throw new ReleaseRecordUnreadable(at === "" ? detail : `${at}: ${detail}`);
+  }
+  const seen = new Set<string>();
+  for (const row of parsed.data.releases) {
+    if (seen.has(row.version))
+      throw new ReleaseRecordUnreadable(`two rows for version ${row.version}`);
+    seen.add(row.version);
+  }
+  return parsed.data;
+}
+
+/**
+ * Why a docs source could not be built, or `null` when the error is none of this module's.
+ *
+ * Every screen in the feature wants the same three lines (catch, log, draw the reason); naming the
+ * classification once keeps a new screen from quietly swallowing a different error into a panel.
+ */
+export function docsSourceProblem(error: unknown): string | null {
+  if (error instanceof DocsManifestUnreadable) return error.reason;
+  if (error instanceof ReleaseRecordUnreadable) return error.reason;
+  return null;
+}
