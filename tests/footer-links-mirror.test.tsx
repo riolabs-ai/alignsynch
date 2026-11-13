@@ -136,7 +136,7 @@ describe("the AlignSynch footer column is the public header menu", () => {
   it("draws the five public rows of the header, in the header's order", () => {
     expect(menu.map((anchor) => anchor.href)).toEqual([
       "/",
-      "/relationship-types",
+      "/relationship-templates",
       "/#questions",
       "/pricing",
       "/help",

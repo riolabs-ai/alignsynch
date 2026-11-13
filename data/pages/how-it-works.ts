@@ -34,7 +34,7 @@ export const howItWorksPageCopy: PageCopy = zPageCopy.parse({
   // deep-linking a stranger into a login wall. It points at the public catalogue instead, which is
   // the page that actually sells a relationship type. The *words* are unchanged; only the
   // destination moved, from a door nobody could open to the one that is open.
-  cta: { label: "Start with a template", href: "/relationship-types" },
+  cta: { label: "Start with a template", href: "/relationship-templates" },
   secondaryCta: { label: "See my relationships", href: "/assessment/instances" },
   sections: [
     {

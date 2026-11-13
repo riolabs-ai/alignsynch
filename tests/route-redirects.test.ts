@@ -232,7 +232,7 @@ describe("the legacy redirects", () => {
       "/assessment/templates/spouses/create/account",
       "/templates/relationship/spouses/create/commit",
     ],
-    ["/templates", "/relationship-types"],
+    ["/templates", "/relationship-templates"],
     ["/templates/spouses", "/relationship-types/spouses"],
   ];
 
@@ -304,6 +304,9 @@ describe("the legacy redirects", () => {
     "/templates/relationship/[slug]/create/invite",
     "/relationship-types",
     "/relationship-types/[slug]",
+    // #905 — the catalogue's new endpoint is a page in the tree, not a redirect: nothing may
+    // claim a source here that would shadow it.
+    "/relationship-templates",
   ] as const;
 
   const NEW_HANDLERS = [

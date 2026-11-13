@@ -40,7 +40,7 @@ import { formatCurrency } from "@/content/core";
 import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { demoAnswersFor, isPurchasable, type RelationshipType } from "@/data/relationship-types";
 import {
-  RELATIONSHIP_TYPES_PATH,
+  TEMPLATE_CATALOGUE_PATH,
   createRelationshipPath,
   relationshipTypeDemoPath,
   relationshipTypePath,
@@ -118,12 +118,17 @@ export function startPathFor(typeId: string): string {
 /**
  * The catalogue page's own route — the one a "View all" points at.
  *
- * **Imported, not spelled (#794).** `lib/flow/paths.ts::RELATIONSHIP_TYPES_PATH` is the module
- * that authors every URL in this flow, and this one used to be a second copy of it. Both
- * destinations are now that module's, so a rename is one edit. `CATALOGUE_PATH` stays exported
- * because the home band and `lib/template-detail.ts` read it.
+ * **Imported, not spelled (#794).** `lib/flow/paths.ts` is the module that authors every URL in
+ * this flow, and this one used to be a second copy of it. `CATALOGUE_PATH` stays exported because
+ * the home band, the detail page's back link and `lib/alignment-home.ts` read it.
+ *
+ * **Since #905 it is the V2 catalogue's address, not the type namespace's.** The catalogue moved
+ * to `/relationship-templates` (the owner's decision: the endpoint changes, the record pages do
+ * not), so a card's "view all" and a detail page's "back" land on the page that now lists the
+ * taxonomy. `catalogueDetailPath()` below did not move with it — a type's own page is still under
+ * `/relationship-types/<id>`.
  */
-export const CATALOGUE_PATH = RELATIONSHIP_TYPES_PATH;
+export const CATALOGUE_PATH = TEMPLATE_CATALOGUE_PATH;
 
 /**
  * One type's public page — `/relationship-types/<id>`.

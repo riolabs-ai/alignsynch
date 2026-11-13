@@ -453,7 +453,24 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/relationship-types` — the public Relationship Types catalogue (#794).
+   * `/relationship-templates` — the public catalogue, V2 composition (#905).
+   *
+   * Budget 0, the same rule the #889 row below keeps: the hero's kicker and promise line, the two
+   * life cards, the menu rows, the catalogue band's frame and counselor note, the four steps, the
+   * membership facts and the closing band are all `data/pages/templates.ts`, so the next literal
+   * written in `components/templates/**` or in the page module is a red build. The templates
+   * themselves are `purchasableTypesByGroup()` over `data/relationship-types.ts` — records, not
+   * words — and the bands' geometry is `components/home/as2-*`'s, which the `/` row already owns.
+   */
+  "/relationship-templates": {
+    page: "app/(marketing)/relationship-templates/page.tsx",
+    dirs: ["components/templates"],
+    fixture: "data/pages/templates",
+    budget: 0,
+  },
+  /**
+   * `/relationship-types` — the retained #889 catalogue variation, and the namespace a type's own
+   * page lives in (#794, retained by #905).
    *
    * Budget 0 from the first commit, like every surface this tree adds: the hero, the three bands'
    * chrome, the five strings a card repeats and the counted catalogue sentence are all

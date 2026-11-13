@@ -5,7 +5,7 @@ import { quizCategories } from "@/content/categories";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { brand, brandIdOf, type BrandId } from "@/data/brand";
 import { brandMark } from "@/lib/brand-mark";
-import { RELATIONSHIP_TYPES_PATH } from "@/lib/flow/paths";
+import { TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
 import { leavesApp } from "@/lib/marketing-routes";
 import { type NavViewer, navViewer, sees } from "@/lib/nav";
 import { footerCopyFor } from "@/lib/shell-copy";
@@ -542,7 +542,7 @@ function AlignSynchLinkColumn({
       <ul className="space-y-3">
         <FooterLinkRow href="/" label={itemLabel(links, "home")} leaving={leaving} />
         <FooterLinkRow
-          href={RELATIONSHIP_TYPES_PATH}
+          href={TEMPLATE_CATALOGUE_PATH}
           label={itemLabel(links, "templates")}
           leaving={leaving}
         />

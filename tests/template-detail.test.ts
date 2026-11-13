@@ -41,7 +41,11 @@ import {
 import { alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { templatesDetailPageCopy } from "@/data/pages/templates-detail";
 import { templatesPageCopy } from "@/data/pages/templates";
-import { createRelationshipPath, relationshipTypeDemoPath } from "@/lib/flow/paths";
+import {
+  RELATIONSHIP_TYPES_PATH,
+  createRelationshipPath,
+  relationshipTypeDemoPath,
+} from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 import { CATALOGUE_PATH, START_PATH, startPathFor, templateCards } from "@/lib/template-catalogue";
 import { templateDetail, templateSlugs } from "@/lib/template-detail";
@@ -221,9 +225,9 @@ test("every catalogue card carries its own detail href, and the directory render
   assert.equal(cards.length, purchasableRelationshipTypes.length);
   for (const card of cards) {
     assert.equal(card.slug, card.id);
-    assert.equal(card.detail, `${CATALOGUE_PATH}/${card.id}`);
+    assert.equal(card.detail, `${RELATIONSHIP_TYPES_PATH}/${card.id}`);
     // #794 — the public catalogue moved out of the template noun: `/templates` is the template
-    // namespace now (and a 308 to `/relationship-types`), so a card's address is a *type*'s.
+    // namespace now (a 308 to the catalogue), so a card's address is a *type*'s.
     assert.equal(card.detail, `/relationship-types/${card.id}`);
     assert.ok(html.includes(`href="${card.detail}"`), `the directory does not link ${card.detail}`);
   }
