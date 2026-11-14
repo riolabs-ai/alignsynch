@@ -190,14 +190,14 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
       body: "Two things the money buys: you join a membership plan, and this relationship is activated. Nothing is charged today — the trial starts when the card is saved.",
       items: [
         { id: "legend", label: "Choose a plan" },
-        { id: "one", label: "One relationship" },
+        { id: "one", label: "Basic" },
         {
           id: "one-note",
           label:
             "One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
         },
         { id: "one-price", label: monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID) },
-        { id: "unlimited", label: "Unlimited relationships" },
+        { id: "unlimited", label: "Principal" },
         {
           id: "unlimited-note",
           label: "Every relationship you open, for as long as you keep the plan.",
@@ -230,8 +230,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
          */
         {
           id: "included",
-          label:
-            "You are on {plan}. Advanced Mode is included, so there is nothing to choose here.",
+          label: "You are on {plan}. There is nothing to choose here.",
         },
         {
           id: "included-plan-label",
