@@ -24,6 +24,7 @@
  * `bg-action-hover`, so no rule paints light text without also painting a coloured fill.
  */
 import { Chip } from "@/components/ui/badge";
+import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { mutedGradientFor, monogramOf } from "@/lib/category-gradient";
 import { TEMPLATE_TABS, type TemplateTab, templatesTabPath } from "@/lib/member/shelf";
@@ -121,9 +122,15 @@ export function TemplateShelf({ cards }: { cards: readonly TemplateShelfCard[] }
               {card.detail.label}
             </Link>
             {card.create === null ? null : (
-              <Link href={card.create.href} className={PRIMARY}>
+              /*
+               * The create door, opened **in place** (#979 B): `/dashboard/templates` declares the
+               * intercepted route, so this is the flow's dialog over the shelf rather than a
+               * navigation away from it. `FlowEntryLink` is the soft navigation and the remembered
+               * origin in one anchor — see `components/assessment-flow/flow-entry-link.tsx`.
+               */
+              <FlowEntryLink href={card.create.href} className={PRIMARY}>
                 {card.create.label}
-              </Link>
+              </FlowEntryLink>
             )}
           </div>
         </li>

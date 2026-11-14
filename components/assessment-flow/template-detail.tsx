@@ -66,6 +66,7 @@ import {
   templateStatusPath,
 } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { FlowEntryLink } from "./flow-entry-link";
 import { relationshipTypeOf } from "./template-card";
 
 const PRIMARY =
@@ -195,14 +196,17 @@ export function TemplateDetail({
             {archivedTemplate ? null : (
               <div className="space-y-2">
                 {/* The product's one primary action (#618): the create step for THIS template, not
-                    a link back to the library it was found in. */}
-                <a
+                    a link back to the library it was found in. It opens the flow **in place**
+                    (#979 B) — `/templates/relationship` declares the intercepted route, so this
+                    anchor is a soft navigation into the dialog over this detail page, and `Esc`
+                    closes back onto it with focus here. */}
+                <FlowEntryLink
                   className={PRIMARY}
                   data-template-detail-cta="create"
                   href={createRelationshipPath(template.id)}
                 >
                   {itemLabel(actions, "create")}
-                </a>
+                </FlowEntryLink>
                 <p className={DETAIL_MUTED}>{itemLabel(actions, "plans-note")}</p>
                 <a
                   className="text-sm font-medium text-action hover:underline"
