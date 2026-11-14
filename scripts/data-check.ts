@@ -629,10 +629,20 @@ for (const conversation of conversations) {
  * E7 — the route manifest matches the filesystem, both directions
  * ------------------------------------------------------------------ */
 
+/** A parallel-route slot (`@flow`) or an interception marker (`(.)`, `(..)`, `(...)`): no address. */
+const MOUNT_ONLY = /^(?:@|\(\.{1,3}\))/;
+
 function walkRoutes(dir: string, prefix = ""): string[] {
   const found: string[] = [];
   for (const entry of readdirSync(dir)) {
     if (entry.startsWith("_") || entry.endsWith(".test")) continue;
+    /**
+     * **A slot and an interception are mountings, not surfaces (#979 B).** `@flow` draws the create
+     * flow over `/dashboard/relationships` without adding an address, and `(...)templates/…` inside
+     * it re-renders the stage routes the browser is already on. Both have a `page.tsx` and neither
+     * owns a URL, so a manifest row for one would be a row for a screen that has its own.
+     */
+    if (entry.startsWith("@") || MOUNT_ONLY.test(entry)) continue;
     const full = join(dir, entry);
     if (!statSync(full).isDirectory()) continue;
     // Route groups `(mainlayout)` and `(auth)` do not appear in the URL.

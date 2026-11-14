@@ -25,11 +25,11 @@
  *
  * The quiz build's tiles are a count (`platform.activePlayers`, which the view formats
  * from `data/metrics.ts`) and the category total. The alignment build's two tiles are
- * **sentences**: two people, one set of questions, the distance between the answers is
- * the Gap. There is no number to put there and nothing on this page may invent one — a
- * smaller count, a `0` or a dash would each be a fabricated claim about a product whose
- * demo has three accounts. So `stats-alignsynch` carries no `{count}` placeholder, and
- * the view fills one only where a fixture asks for it.
+ * **noun plus line**: `Aspects` over "Define the Destination" and `Opinions` over
+ * "Your Map to Get There" (the owner's copy, 2026-11-13). There is no number to put there
+ * and nothing on this page may invent one — a smaller count, a `0` or a dash would each be
+ * a fabricated claim about a product whose demo has three accounts. So `stats-alignsynch`
+ * carries no `{count}` placeholder, and the view fills one only where a fixture asks for it.
  */
 import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
@@ -47,7 +47,7 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
        */
       {
         id: "hero-alignsynch",
-        body: "The same questions for both of you. Where your answers part is the Gap.",
+        body: "Knowledge is power and communication is your key to relationship success.",
       },
       {
         id: "sign-in",
@@ -207,15 +207,20 @@ export function loginCopy(record: Pick<Brand, "name">): PageCopy {
         ],
       },
       /**
-       * The alignment build's two tiles: statements, in the slots the quiz build fills
-       * with a count. No placeholder, no number, no dash — both parties answer the same
-       * questions, and the Gap is the distance between their answers.
+       * The alignment build's two tiles, in the slots the quiz build fills with a count.
+       * No placeholder, no number, no dash: each tile names one of the product's two nouns
+       * (`Aspects`, `Opinions`) over the line that says what that noun is for.
+       *
+       * The words are the owner's, verbatim (2026-11-13) — the nouns and their lines, spelled
+       * and capitalised as the mock spells them. The ids stay `sides` and `gap` because they
+       * are handles, not copy: no icon table knows them, so both tiles keep the neutral mark
+       * whatever the words say.
        */
       {
         id: "stats-alignsynch",
         items: [
-          { id: "sides", label: "One set of questions", value: "Two answers" },
-          { id: "gap", label: "The distance between them", value: "The Gap" },
+          { id: "sides", label: "Define the Destination", value: "Aspects" },
+          { id: "gap", label: "Your Map to Get There", value: "Opinions" },
         ],
       },
       /**

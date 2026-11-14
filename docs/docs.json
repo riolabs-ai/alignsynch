@@ -728,9 +728,19 @@
           "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
         },
         {
+          "path": "qa-979-flow-dialog/README.md",
+          "title": "The create flow as a dialog over the relationships page, #979",
+          "question": "Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?"
+        },
+        {
           "path": "qa-971-tiles/README.md",
           "title": "The welcome tiles on /register too, #971",
           "question": "Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?"
+        },
+        {
+          "path": "qa-welcome-copy/README.md",
+          "title": "The welcome panel's copy — the tagline and the Aspects/Opinions tiles",
+          "question": "Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?"
         },
         {
           "path": "qa-payment/README.md",
