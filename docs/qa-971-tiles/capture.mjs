@@ -80,7 +80,8 @@ ws.addEventListener("message", (event) => {
 
 const send = (method, params = {}) =>
   new Promise((resolve, reject) => {
-    const id = (nextId += 1);
+    nextId += 1;
+    const id = nextId;
     pending.set(id, { resolve, reject });
     ws.send(JSON.stringify({ id, method, params }));
   });
@@ -124,13 +125,18 @@ for (const route of ROUTES) {
     let probe = null;
     for (let i = 0; i < 120; i += 1) {
       await sleep(500);
-      const result = await send("Runtime.evaluate", { expression: PROBE(width), returnByValue: true });
+      const result = await send("Runtime.evaluate", {
+        expression: PROBE(width),
+        returnByValue: true,
+      });
       probe = result.result?.value ?? null;
       if (probe && probe.innerWidth === width && probe.heading) break;
     }
     if (!probe) throw new Error(`${route}@${width}: the page never rendered a heading`);
     if (probe.innerWidth !== width) {
-      throw new Error(`${route}: viewport override refused — innerWidth ${probe.innerWidth} != ${width}`);
+      throw new Error(
+        `${route}: viewport override refused — innerWidth ${probe.innerWidth} != ${width}`,
+      );
     }
 
     const shot = await send("Page.captureScreenshot", { format: "png" });
@@ -139,14 +145,18 @@ for (const route of ROUTES) {
 
     // The markup, with script payloads stripped: a DOM diff of the tiles is the proof for /login.
     const html = await send("Runtime.evaluate", {
-      expression:
-        `(() => { const c = document.body.cloneNode(true); for (const s of c.querySelectorAll("script,next-route-announcer,nextjs-portal")) s.remove(); return c.innerHTML; })()`,
+      expression: `(() => { const c = document.body.cloneNode(true); for (const s of c.querySelectorAll("script,next-route-announcer,nextjs-portal")) s.remove(); return c.innerHTML; })()`,
       returnByValue: true,
     });
-    writeFileSync(join(OUT, `971-${PHASE}-${route.replaceAll("/", "")}-${width}.html`), html.result.value);
+    writeFileSync(
+      join(OUT, `971-${PHASE}-${route.replaceAll("/", "")}-${width}.html`),
+      html.result.value,
+    );
 
     report.routes[route][width] = { ...probe, still: file };
-    console.log(`${PHASE} ${route} @${width}: heading=${probe.heading.tag} tiles=${probe.tiles.length} panel=${JSON.stringify(probe.panel)}`);
+    console.log(
+      `${PHASE} ${route} @${width}: heading=${probe.heading.tag} tiles=${probe.tiles.length} panel=${JSON.stringify(probe.panel)}`,
+    );
   }
 }
 

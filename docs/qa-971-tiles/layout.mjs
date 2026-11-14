@@ -55,7 +55,8 @@ ws.addEventListener("message", (event) => {
 });
 const send = (method, params = {}) =>
   new Promise((resolve, reject) => {
-    const id = (nextId += 1);
+    nextId += 1;
+    const id = nextId;
     pending.set(id, { resolve, reject });
     ws.send(JSON.stringify({ id, method, params }));
   });

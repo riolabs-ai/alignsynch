@@ -18,7 +18,13 @@ import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { loginPathFor } from "@/lib/auth/paths";
-import { markBoxClass, markGroundClass, MARK_ICONS, markTileClass, MarkGlyph } from "@/components/auth/mark-icon";
+import {
+  markBoxClass,
+  markGroundClass,
+  MARK_ICONS,
+  markTileClass,
+  MarkGlyph,
+} from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";

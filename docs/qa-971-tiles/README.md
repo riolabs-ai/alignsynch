@@ -22,12 +22,12 @@ and restyled a panel the card said not to touch.
 Every number here is from the run in this directory (`capture.mjs` over raw CDP, 1440 and 390, one
 dev server per tree — `origin/main` at `4796bac2` for **before**, this branch for **after**).
 
-| page · width | before | after | pixels changed |
-| --- | --- | --- | --- |
-| `/login` @1440 | h2 `Welcome to QuizHub`, 2 tiles at y 567 | identical | **0 of 1,440,000** — the PNG is byte-identical |
-| `/login` @390 | panel hidden, 2 tiles at 0×0 | identical | **0 of 390,000** — byte-identical |
-| `/register` @1440 | h1 `Join the Quiz Revolution`, **0 tiles** | h1 at y 326, **2 tiles** at y 511 | 168,682 of 1,440,000 (11.7 %), bbox `68,68 → 653,1000` |
-| `/register` @390 | panel hidden | panel hidden | **0 of 390,000** — the panel is desktop-only on both routes |
+| page · width      | before                                     | after                             | pixels changed                                              |
+| ----------------- | ------------------------------------------ | --------------------------------- | ----------------------------------------------------------- |
+| `/login` @1440    | h2 `Welcome to QuizHub`, 2 tiles at y 567  | identical                         | **0 of 1,440,000** — the PNG is byte-identical              |
+| `/login` @390     | panel hidden, 2 tiles at 0×0               | identical                         | **0 of 390,000** — byte-identical                           |
+| `/register` @1440 | h1 `Join the Quiz Revolution`, **0 tiles** | h1 at y 326, **2 tiles** at y 511 | 168,682 of 1,440,000 (11.7 %), bbox `68,68 → 653,1000`      |
+| `/register` @390  | panel hidden                               | panel hidden                      | **0 of 390,000** — the panel is desktop-only on both routes |
 
 Body markup, scripts stripped:
 
@@ -38,12 +38,12 @@ Body markup, scripts stripped:
 
 The register panel's column, measured at 1440 (`layout.mjs`):
 
-| row | y | bottom |
-| --- | --- | --- |
-| mark + `h1` + sentence | 206 | 479 |
-| **the two tiles** (216 × 124 each, x 136–584) | 511 | 635 |
-| two-step rail | 667 | 707 |
-| current-step label | 739 | 794 |
+| row                                           | y   | bottom |
+| --------------------------------------------- | --- | ------ |
+| mark + `h1` + sentence                        | 206 | 479    |
+| **the two tiles** (216 × 124 each, x 136–584) | 511 | 635    |
+| two-step rail                                 | 667 | 707    |
+| current-step label                            | 739 | 794    |
 
 No content row overlaps another, nothing leaves the 1,000 px panel, and the tiles sit **beneath**
 the page's own headline — which is what "keeps its `h1`, gains the icons" means.
