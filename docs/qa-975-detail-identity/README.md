@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md) · next [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md)
 
 <!-- docs-nav:end -->
 
@@ -112,6 +112,6 @@ the probe log. Nothing is created, and no relationship or account is written.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md) · next [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md)
 
 <!-- docs-nav:end -->

@@ -11,7 +11,8 @@
  * `inviteStateOf()`'s answer over the row's `claimed_at` / `expires_at` / `revoked_at` and the
  * instant the read carried (#266), so `unclaimed`, `expired`, `claimed` and `revoked` each get
  * their own sentence and the screen never says "waiting" about an invitation that has died. The
- * `status` band has exactly those four items plus the address, and `readFlowScreen()` withholds
+ * `status` band has exactly those four items, the absent-row sentence `none` (#976 — a relationship
+ * whose invitation was never written) and the address, and `readFlowScreen()` withholds
  * `invite.link` in every state but `unclaimed` — the screen cannot offer a link the claim path
  * would refuse.
  *

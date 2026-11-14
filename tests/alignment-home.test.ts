@@ -48,6 +48,7 @@ import {
 import { createRelationshipPath, relationshipTypeDemoPath } from "@/lib/flow/paths";
 import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
 import { CATALOGUE_PATH, START_PATH, startPathFor } from "@/lib/template-catalogue";
+import { visitorOf } from "@/lib/start-path";
 import { leafLiterals } from "@/scripts/copy-refs";
 
 const model = alignmentHome(
@@ -180,7 +181,7 @@ describe("the templates band: a capped shelf, one call to action", () => {
       // template the visitor picked as the sign-up destination — so the gate hands them back to
       // stage 1 of that template instead of the brand's landing page. Never a create form on its
       // own behind a session: that is the sign-in wall this page exists to remove.
-      expect(card.start).toBe(startPathFor(card.id));
+      expect(card.start).toBe(startPathFor(card.id, visitorOf("alignsynch")));
       expect(card.start.startsWith(`${START_PATH}?next=`)).toBe(true);
       expect(new URL(card.start, "http://x").searchParams.get("next")).toBe(
         createRelationshipPath(card.id),

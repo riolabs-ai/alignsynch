@@ -48,10 +48,18 @@ import {
   createRelationshipPath,
 } from "@/lib/flow/paths";
 import { CATALOGUE_PATH, START_PATH, startPathFor } from "@/lib/template-catalogue";
+import { visitorOf } from "@/lib/start-path";
 import { templatesPage } from "@/lib/templates-page";
 import { leafLiterals } from "@/scripts/copy-refs";
 
-const model = templatesPage(templatesPageCopy);
+/**
+ * Every case below is the page as a **visitor** reads it — the audience this surface was built for
+ * and the one whose hrefs must stay public (#317). The member's half is
+ * `tests/catalogue-start-session.test.ts` (#979), which is where the start action changes.
+ */
+const VISITOR = visitorOf("alignsynch");
+
+const model = templatesPage(templatesPageCopy, VISITOR);
 const html = renderToStaticMarkup(createElement(TemplatesPageView, { model }));
 
 /** The words a reader sees: tags dropped, entities decoded, whitespace collapsed. */
@@ -125,7 +133,7 @@ describe("the catalogue is the taxonomy, measured", () => {
   it("follows a changed fixture: one type fewer is a different page", () => {
     // Drop the **last** card, not the first: the first is the explainer's exemplar, and a fixture
     // without `staff-manager` is a page whose explainer cannot be built at all.
-    const fewer = templatesPage(templatesPageCopy, offered.slice(0, -1));
+    const fewer = templatesPage(templatesPageCopy, VISITOR, offered.slice(0, -1));
     expect(fewer.catalogue.total).toBe(offered.length - 1);
     expect(fewer.catalogue.count).not.toBe(model.catalogue.count);
     expect(fewer.hero.stats[0]).toBe("26 templates");
@@ -146,7 +154,7 @@ describe("the catalogue is the taxonomy, measured", () => {
           : section,
       ),
     };
-    expect(() => templatesPage(broken)).toThrow(/\{types\} and \{realms\}/);
+    expect(() => templatesPage(broken, VISITOR)).toThrow(/\{types\} and \{realms\}/);
   });
 });
 
@@ -265,7 +273,7 @@ describe("every action on the page is public", () => {
       // #867 — the action carries which template the visitor picked, as `/register`'s `next`
       // (the one parameter that route reads). A bare `/register` is the defect: the account is
       // created and the template is gone.
-      expect(card.start).toBe(startPathFor(card.id));
+      expect(card.start).toBe(startPathFor(card.id, VISITOR));
       expect(card.start.startsWith(`${START_PATH}?next=`)).toBe(true);
       expect(new URL(card.start, "http://x").searchParams.get("next")).toBe(
         createRelationshipPath(card.id),

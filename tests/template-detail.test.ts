@@ -24,7 +24,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { test } from "vitest";
+import { test, vi } from "vitest";
+
+/**
+ * The route module this file reads (`generateStaticParams`) resolves the request's session for the
+ * page's own action (#979), and `@/lib/auth/session` reaches Neon's SDK — whose entry imports
+ * `next/headers`, which a plain node process cannot resolve. The answer here is the signed-out one,
+ * which is the viewer every assertion in this file is written against (`VISITOR`). The member's
+ * half is `tests/catalogue-start-session.test.ts`.
+ */
+vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
 import { generateStaticParams } from "@/app/(marketing)/relationship-types/[slug]/page";
 import { TemplateDetail } from "@/components/templates/template-detail";
@@ -48,9 +57,17 @@ import {
 } from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 import { CATALOGUE_PATH, START_PATH, startPathFor, templateCards } from "@/lib/template-catalogue";
+import { visitorOf } from "@/lib/start-path";
 import { templateDetail, templateSlugs } from "@/lib/template-detail";
 import { templatesPage } from "@/lib/templates-page";
 import { pageItemOf } from "@/lib/page-copy";
+
+/**
+ * These cases are the page as a **visitor** reads it: the public surface, whose one action is the
+ * account that buys the relationship (#867). The member's half — the same action with the account
+ * step removed — is `tests/catalogue-start-session.test.ts` (#979).
+ */
+const VISITOR = visitorOf("alignsynch");
 
 /** The one plan the marketing surfaces price: Basic, whose monthly figure each card prints. */
 const basic = billingPlan("basic");
@@ -80,7 +97,7 @@ function typeAt(id: string): NonNullable<ReturnType<typeof relationshipType>> {
 
 /** One template's page, rendered — the model and the markup together. */
 function renderTemplate(slug: string) {
-  const model = templateDetail(templatesDetailPageCopy, slug);
+  const model = templateDetail(templatesDetailPageCopy, slug, VISITOR);
   assert.ok(model !== undefined, `no page model for "${slug}"`);
   const html = renderToStaticMarkup(createElement(TemplateDetail, { model }));
   return { model, html, text: textOf(html) };
@@ -122,7 +139,7 @@ test("prints the plan's price and the one start action, both from the fixture", 
   // chip the member shelf and `/assessment/templates` print, from the one plan fixture (#798).
   assert.equal(model.priceNote, PLAN_CHIP);
   assert.ok(html.includes(model.priceNote), "the price line is not in the markup");
-  assert.equal(model.start.href, startPathFor(type.id));
+  assert.equal(model.start.href, startPathFor(type.id, VISITOR));
   assert.equal(START_PATH, "/register");
   // #867 — the one action names the create step this visitor chose as the sign-up destination, so
   // the account round trip cannot drop the template. A bare `/register` is the defect.
@@ -187,14 +204,14 @@ test("a slug that names no purchasable type produces no page", () => {
   // Unknown, and the three dating rows the owner excluded — the same absence either way.
   for (const slug of ["not-a-template", "", ...EXCLUDED_TYPE_IDS]) {
     assert.equal(
-      templateDetail(templatesDetailPageCopy, slug),
+      templateDetail(templatesDetailPageCopy, slug, VISITOR),
       undefined,
       `"${slug}" produced a page model`,
     );
   }
   // A caller that hands in the full taxonomy is still refused a dating row.
   const dating = typeAt("dating");
-  assert.equal(templateDetail(templatesDetailPageCopy, dating.id, [dating]), undefined);
+  assert.equal(templateDetail(templatesDetailPageCopy, dating.id, VISITOR, [dating]), undefined);
 
   // The static params are exactly the purchasable set: no dating row, no type missed.
   assert.deepEqual(
@@ -218,8 +235,8 @@ test("generateStaticParams covers exactly the purchasable set", async () => {
 });
 
 test("every catalogue card carries its own detail href, and the directory renders it", () => {
-  const cards = templateCards(templatesPageCopy, purchasableRelationshipTypes);
-  const page = templatesPage(templatesPageCopy);
+  const cards = templateCards(templatesPageCopy, purchasableRelationshipTypes, VISITOR);
+  const page = templatesPage(templatesPageCopy, VISITOR);
   const html = renderToStaticMarkup(createElement(TemplatesPageView, { model: page }));
 
   assert.equal(cards.length, purchasableRelationshipTypes.length);
