@@ -398,13 +398,44 @@ export function RelationshipDetail({
   const type = relationshipTypeOf(relationship.template.slug);
   const groupLabel =
     type === undefined ? "" : itemLabel(identityCopy, REALM_GROUP[type.realm].toLowerCase());
-  const rolesLine =
-    type === undefined
-      ? undefined
-      : fillLabel(itemLabel(identityCopy, "roles"), {
-          initiator: type.roles.initiator,
-          counterparty: type.roles.counterparty,
-        });
+  /**
+   * #975 D9 — **the heading is the relationship's, not its template's.**
+   *
+   * `relationship.title` is the record the relationship was configured from, so every relationship
+   * made from one template is headed by that template's name: five rows, one `<h1>`, and nothing on
+   * the page says which of them the reader opened. `relationshipTitle` is the title the creator's
+   * stage 1 wrote (the flow derives `Avery B – Rowan` from the two seats, `lib/flow/names.ts`), and
+   * it is the same field the list and the card already print (`row.relationshipTitle ?? row.title`)
+   * — the detail page was the one surface that ignored it. The fallback keeps a pre-#841 row, whose
+   * session copy carries no title of its own, headed by the template rather than by nothing.
+   */
+  const heading = relationship.relationshipTitle ?? relationship.title;
+  /**
+   * #975 D9 — **the two seats, named, under the heading.**
+   *
+   * A relationship whose creator kept stage 1's default title reads the template's name, and two of
+   * those are indistinguishable however the heading is read — so the band's roles line names who
+   * holds each seat, in the artifact's own shape (`Daniel — payer`, §11 of
+   * `prototype-relationship-lifecycle-v9`). The nouns stay the catalogue type's where the slug names
+   * one (`Spouse A / Spouse B`), and fall back to the product's two words otherwise, which is the
+   * state every relationship made from a non-catalogue template is in.
+   *
+   * The Counterparty's name is the **seat's** first: `counterpartySeatName` is the account in the
+   * seat, `counterpartyName` is what the initiator typed on the invitation. A draft names nobody
+   * yet, which is why the noun is the fallback rather than an empty half.
+   */
+  const seatLabel = (name: string | null | undefined, noun: string): string =>
+    name === null || name === undefined || name === "" ? noun : `${name} — ${noun}`;
+  const rolesLine = fillLabel(itemLabel(identityCopy, "roles"), {
+    initiator: seatLabel(
+      relationship.initiatorName,
+      type?.roles.initiator ?? pageItemOf(copy, "role-initiator").label,
+    ),
+    counterparty: seatLabel(
+      relationship.counterpartyName ?? relationship.counterpartySeatName,
+      type?.roles.counterparty ?? pageItemOf(copy, "role-counterparty").label,
+    ),
+  });
 
   /* #795 — the facts card. The four the artifact draws (§5), in the same cell anatomy the template
      uses for its figures. */
@@ -445,7 +476,7 @@ export function RelationshipDetail({
         <DetailBand
           scope="relationship"
           type={type}
-          title={relationship.title}
+          title={heading}
           summary={relationship.summary}
           groupLabel={groupLabel}
           rolesLine={rolesLine}
@@ -931,10 +962,20 @@ export function RelationshipDetail({
             the only place these words live, and the id already exists on this route. */}
         {relationship.isInitiator ? null : (
           <div
-            data-relationship-read-only="counterparty"
+            data-relationship-read-only={relationship.viewerRole}
             className="space-y-2 rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200"
           >
-            <p>{itemLabel(viewCopy, "counterparty-read-only")}</p>
+            {/* #975 D2 — the sentence is chosen by the **seat**, the same value the chip above
+                prints, so one screen cannot state two roles. The band exists because the controls
+                are gone (`isInitiator` is false); it no longer claims a role from that fact. */}
+            <p>
+              {itemLabel(
+                viewCopy,
+                relationship.viewerRole === "counterparty"
+                  ? "counterparty-read-only"
+                  : "controls-belong-to-starter",
+              )}
+            </p>
             <a
               className="inline-flex h-11 items-center font-medium text-action underline underline-offset-4"
               href={RELATIONSHIPS_PATH}

@@ -1,0 +1,176 @@
+[
+  {
+    "name": "i01-relationships-list-initiator",
+    "note": "the list the detail is opened from, initiator seat",
+    "probe": {
+      "url": "/dashboard/relationships",
+      "title": "My Relationships · AlignSynch",
+      "doc": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "scrollHeight": 900
+      },
+      "main": {
+        "x": 250,
+        "y": 64,
+        "w": 1190,
+        "h": 676
+      },
+      "h1": {
+        "text": "My Relationships",
+        "x": 306,
+        "y": 120,
+        "w": 392,
+        "h": 36,
+        "fontSize": "30px",
+        "fontWeight": "700"
+      },
+      "bodyFont": "Inter, \"Inter Fallback\"",
+      "contentLefts": [274, 306],
+      "widestBlock": {
+        "tag": "div",
+        "x": 274,
+        "y": 88,
+        "w": 1126,
+        "h": 628
+      },
+      "overflowX": 0,
+      "overflowing": [],
+      "countBlocks": 2
+    },
+    "shot": "docs/qa-975-detail-identity/before/i01-relationships-list-initiator.png",
+    "sha": "db318a4433d9",
+    "shotHeight": 900,
+    "body": "WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.17.1 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. My Relationships Every relationship you are part of, on both sides of the invitation Start a relationship All statuses Newest Grid view List view All 1 Drafts 0 Published 0 Running 0 Complete 1 Expired 0 Relationship Complete Initiator Relationship Basics with · Rowan 5 Aspects Joined Started Oct 28, 2026 Open Assessment Complete Relationship View Actions"
+  },
+  {
+    "name": "i02-detail-initiator-1440",
+    "note": "the seeded relationship, initiator seat, 1440",
+    "probe": {
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
+      "h1": "Relationship Basics",
+      "bandLines": "Relationship Basics Five Aspects of a relationship — time, housework, money, conflict and affection — each answered from how it feels now to how you wish it to change.",
+      "seatChip": {
+        "seat": "initiator",
+        "text": "Initiator"
+      },
+      "readOnly": null,
+      "facts": "STATE Complete STARTED Oct 28, 2026 PUBLISHED Oct 28, 2026 INVITED Rowan Initiator",
+      "saysInitiator": 0,
+      "overflowX": 0
+    },
+    "shot": "docs/qa-975-detail-identity/before/i02-detail-initiator-1440.png",
+    "sha": "58591cf93dab",
+    "shotHeight": 1286
+  },
+  {
+    "name": "i03-detail-initiator-390",
+    "note": "the same relationship, initiator seat, 390",
+    "probe": {
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
+      "h1": "Relationship Basics",
+      "bandLines": "Relationship Basics Five Aspects of a relationship — time, housework, money, conflict and affection — each answered from how it feels now to how you wish it to change.",
+      "seatChip": {
+        "seat": "initiator",
+        "text": "Initiator"
+      },
+      "readOnly": null,
+      "facts": "STATE Complete STARTED Oct 28, 2026 PUBLISHED Oct 28, 2026 INVITED Rowan Initiator",
+      "saysInitiator": 0,
+      "overflowX": 0
+    },
+    "shot": "docs/qa-975-detail-identity/before/i03-detail-initiator-390.png",
+    "sha": "c4adc2efc0b0",
+    "shotHeight": 1870
+  },
+  {
+    "name": "i04-relationships-list-counterparty",
+    "note": "the same list, Counterparty seat",
+    "probe": {
+      "url": "/dashboard/relationships",
+      "title": "My Relationships · AlignSynch",
+      "doc": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "scrollHeight": 900
+      },
+      "main": {
+        "x": 250,
+        "y": 64,
+        "w": 1190,
+        "h": 632
+      },
+      "h1": {
+        "text": "My Relationships",
+        "x": 306,
+        "y": 120,
+        "w": 392,
+        "h": 36,
+        "fontSize": "30px",
+        "fontWeight": "700"
+      },
+      "bodyFont": "Inter, \"Inter Fallback\"",
+      "contentLefts": [274, 306],
+      "widestBlock": {
+        "tag": "div",
+        "x": 274,
+        "y": 88,
+        "w": 1126,
+        "h": 584
+      },
+      "overflowX": 0,
+      "overflowing": [],
+      "countBlocks": 2
+    },
+    "shot": "docs/qa-975-detail-identity/before/i04-relationships-list-counterparty.png",
+    "sha": "65aea68739a1",
+    "shotHeight": 900,
+    "body": "WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.17.1 Settings R Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. My Relationships Every relationship you are part of, on both sides of the invitation Start a relationship All statuses Newest Grid view List view All 1 Drafts 0 Published 0 Running 0 Complete 1 Expired 0 Relationship Complete Counterparty Relationship Basics with · Avery 5 Aspects Joined Started Oct 28, 2026 Open Assessment Open Relationship View Actions"
+  },
+  {
+    "name": "i05-detail-counterparty-1440",
+    "note": "the same relationship, Counterparty seat, 1440",
+    "probe": {
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
+      "h1": "Relationship Basics",
+      "bandLines": "Relationship Basics Five Aspects of a relationship — time, housework, money, conflict and affection — each answered from how it feels now to how you wish it to change.",
+      "seatChip": {
+        "seat": "counterparty",
+        "text": "Counterparty"
+      },
+      "readOnly": {
+        "seat": "counterparty",
+        "text": "You are the Counterparty on this relationship. Its Aspects, publishing and invitation belong to the person who started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent. All relationships"
+      },
+      "facts": "STATE Complete STARTED Oct 28, 2026 PUBLISHED Oct 28, 2026 INVITED Rowan Counterparty",
+      "saysInitiator": 1,
+      "overflowX": 0
+    },
+    "shot": "docs/qa-975-detail-identity/before/i05-detail-counterparty-1440.png",
+    "sha": "35294f89e42a",
+    "shotHeight": 1432
+  },
+  {
+    "name": "i06-detail-counterparty-390",
+    "note": "the same relationship, Counterparty seat, 390",
+    "probe": {
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
+      "h1": "Relationship Basics",
+      "bandLines": "Relationship Basics Five Aspects of a relationship — time, housework, money, conflict and affection — each answered from how it feels now to how you wish it to change.",
+      "seatChip": {
+        "seat": "counterparty",
+        "text": "Counterparty"
+      },
+      "readOnly": {
+        "seat": "counterparty",
+        "text": "You are the Counterparty on this relationship. Its Aspects, publishing and invitation belong to the person who started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent. All relationships"
+      },
+      "facts": "STATE Complete STARTED Oct 28, 2026 PUBLISHED Oct 28, 2026 INVITED Rowan Counterparty",
+      "saysInitiator": 1,
+      "overflowX": 0
+    },
+    "shot": "docs/qa-975-detail-identity/before/i06-detail-counterparty-390.png",
+    "sha": "a02c7d695d44",
+    "shotHeight": 2462
+  }
+]
