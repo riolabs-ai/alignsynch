@@ -3,7 +3,7 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: the same card with name, username and role fields and a confirm-password row)
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AuthHero } from "@/components/auth/auth-hero";
+import { AuthHeroTiles } from "@/components/auth/auth-hero-tiles";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { LeavingLink } from "@/components/layout/leaving-link";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength";
@@ -18,7 +18,7 @@ import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { loginPathFor } from "@/lib/auth/paths";
-import { markBoxClass, markGroundClass, MARK_ICONS, MarkGlyph } from "@/components/auth/mark-icon";
+import { markBoxClass, markGroundClass, MARK_ICONS, markTileClass, MarkGlyph } from "@/components/auth/mark-icon";
 import { fillLabel, itemLabel, itemValue, sectionOf } from "@/lib/page-copy";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -88,15 +88,16 @@ export function RegisterView({
    */
   markSrc: string;
   /**
-   * The two tiles the shared hero draws (#971). They are `/login`'s band
-   * (`data/pages/login.ts`, resolved by `heroTilesFor`) rather than a second copy of the same
-   * claim in this route's fixture: the owner's decision is **one** hero on both full-page routes,
-   * so a tile is reworded once. Resolved by the page and passed down for the reason every other
-   * section is — this is a client module and the fixture carries zod.
+   * The two tiles this page's hero draws (#971) — the pair `/login` draws, mounted beneath this
+   * page's own `h1`. They are `/login`'s band (`data/pages/login.ts`, resolved by `heroTilesFor`)
+   * rather than a second copy of the same claim in this route's fixture: the owner's decision is
+   * that the proposition appears on both pages, so a tile is reworded once. Resolved by the page
+   * and passed down for the reason every other section is — this is a client module and the
+   * fixture carries zod.
    *
-   * Required, not optional: an absent band would render the hero without its tiles, which is the
-   * defect this card fixes. The embedded mount carries it too and simply does not draw the panel,
-   * because a stage column is not a landing (#829).
+   * Required, not optional: an absent band would render this page without the tiles, which is the
+   * defect this card fixes. The embedded mount carries it too and simply draws no panel, because a
+   * stage column is not a landing (#829).
    */
   stats: PageCopySection;
   /**
@@ -244,42 +245,60 @@ export function RegisterView({
   return (
     <div className={layout === "embedded" ? "w-full" : "min-h-screen flex"}>
       {/* Left Side - Image/Illustration. Page layout only (#829): embedded is a stage column.
-          The panel is `components/auth/auth-hero.tsx` (#971) — the same mark, headline, sentence
-          and two tiles `/login` draws — and this route adds the one thing of its own: the
-          two-step rail, which is where the person is in the form, not part of the welcome. */}
+          The two tiles are `components/auth/auth-hero-tiles.tsx` (#971) — the same pair `/login`
+          draws — under this page's own `h1`. The headline, the mark and the step rail stay
+          sign-up's, which is why the panel is not the sign-in one. */}
       {layout === "embedded" ? null : (
-        <AuthHero
-          heading={copy.heading}
-          subtitle={copy.subtitle}
-          tiles={stats}
-          marks={marks}
-          markSrc={markSrc}
-        >
-          {/* Progress Indicator */}
-          <div className="flex items-center space-x-4 mt-8">
-            {STEPS.map((stepId, index) => (
-              <div key={stepId} className="flex items-center">
-                <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= index + 1 ? "bg-white text-action border-white" : "border-white/50 text-white/70"}`}
-                >
-                  {index + 1}
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div
-                    className={`w-12 h-0.5 mx-2 ${currentStep > index + 1 ? "bg-white" : "bg-white/30"}`}
-                  ></div>
-                )}
+        <div className="hidden lg:flex lg:w-1/2 bg-action relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="relative mx-auto z-10 flex flex-col justify-center items-center text-white p-12">
+            <div className="text-center mb-8">
+              <div
+                className={`${markTileClass(marks.hero, "w-24 h-24")} bg-white/20 rounded-3xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto`}
+              >
+                <MarkGlyph
+                  id={marks.hero}
+                  src={markSrc}
+                  className={`${markBoxClass(marks.hero, "w-12 h-12")} text-white`}
+                />
               </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <div className="text-lg font-semibold mb-2">
-              {itemLabel(stepsCopy, STEPS[currentStep - 1])}
+              <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
+              <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
             </div>
-            <div className="text-white/80">{itemValue(stepsCopy, STEPS[currentStep - 1])}</div>
+
+            <AuthHeroTiles tiles={stats} className="mb-8" />
+
+            {/* Progress Indicator */}
+            <div className="flex items-center space-x-4 mb-8">
+              {STEPS.map((stepId, index) => (
+                <div key={stepId} className="flex items-center">
+                  <div
+                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-semibold transition-all ${currentStep >= index + 1 ? "bg-white text-action border-white" : "border-white/50 text-white/70"}`}
+                  >
+                    {index + 1}
+                  </div>
+                  {index < STEPS.length - 1 && (
+                    <div
+                      className={`w-12 h-0.5 mx-2 ${currentStep > index + 1 ? "bg-white" : "bg-white/30"}`}
+                    ></div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center">
+              <div className="text-lg font-semibold mb-2">
+                {itemLabel(stepsCopy, STEPS[currentStep - 1])}
+              </div>
+              <div className="text-white/80">{itemValue(stepsCopy, STEPS[currentStep - 1])}</div>
+            </div>
+
+            {/* Decorative Elements */}
+            <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute bottom-20 left-20 w-24 h-24 bg-white/10 rounded-full blur-xl animate-pulse delay-1000"></div>
+            <div className="absolute top-1/2 left-10 w-16 h-16 bg-white/10 rounded-full blur-lg animate-pulse delay-500"></div>
           </div>
-        </AuthHero>
+        </div>
       )}
 
       {/* Right Side - Registration Form */}

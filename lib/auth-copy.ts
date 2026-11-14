@@ -130,7 +130,7 @@ export function loginCopyFor(copy: PageCopy, brandId: BrandId): PageCopy {
  * The band lives in `data/pages/login.ts` — `stats` on the quiz build, `stats-alignsynch` on the
  * alignment one — and `loginCopyFor` already normalises whichever it read to the id `stats`. This
  * is that lookup as a callable, for the one other surface that draws the same band: `/register`,
- * whose hero is the sign-in panel since #971 (`components/auth/auth-hero.tsx`).
+ * which mounts the pair under its own headline since #971 (`components/auth/auth-hero-tiles.tsx`).
  *
  * It takes the copy as an **argument** rather than importing the fixture, for the reason this
  * module's header gives: the views are handed resolved copy as a prop and never read a fixture

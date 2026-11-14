@@ -36,12 +36,14 @@ export const metadata: Metadata = {
  * here because the view is a client module: the table is `lib/auth/marks.ts` (ids, no zod, no
  * components), but the choice belongs to the server half.
  *
- * **The hero is the sign-in panel, and its tiles are `/login`'s band (#971).** The owner's
- * decision (2026-11-13) is one welcome hero on both full-page auth routes and a compact stage
- * inside the create flow, so `/register` mounts the panel `login-view.tsx` used to own alone
- * (`components/auth/auth-hero.tsx`) with the same two tiles — `heroTilesFor(loginPageCopy,
- * brandId)` reads the brand's band, which is why `data/pages/register.ts` is untouched: the
- * claims about the product have one home, and a tile is reworded once.
+ * **The tiles are `/login`'s band, under this page's own headline (#971).** The owner's decision
+ * (2026-11-13) is that the two welcome tiles appear on both full-page auth routes while each page
+ * keeps its own sentence, and that the create flow's Account stage stays compact. So `/register`
+ * keeps the panel it has always drawn — its `h1`, its mark, its step rail — and mounts the pair
+ * `login-view.tsx` used to own alone (`components/auth/auth-hero-tiles.tsx`) beneath it.
+ * `heroTilesFor(loginPageCopy, brandId)` reads the brand's band, which is why
+ * `data/pages/register.ts` is untouched: the claims about the product have one home, and a tile is
+ * reworded once.
  */
 export default async function AuthPage({
   searchParams,

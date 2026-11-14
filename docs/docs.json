@@ -723,6 +723,11 @@
           "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
         },
         {
+          "path": "qa-971-tiles/README.md",
+          "title": "The welcome tiles on /register too, #971",
+          "question": "Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?"
+        },
+        {
           "path": "qa-payment/README.md",
           "title": "Payment capture & completion",
           "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"

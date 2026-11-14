@@ -3,7 +3,7 @@
 // template-ancestor: components/ui/card.tsx   (variation: the sign-in card — email, password, one submit and the Google path under it)
 
 import { AppVersion } from "@/components/layout/app-version";
-import { AuthHero } from "@/components/auth/auth-hero";
+import { AuthHeroTiles } from "@/components/auth/auth-hero-tiles";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
@@ -332,17 +332,36 @@ export function LoginView({
   return (
     <div className={layout === "embedded" ? "w-full" : "min-h-screen flex"}>
       {/* Left Side - Image. Page layout only (#824): embedded is a stage column, not a page.
-          The panel itself is `components/auth/auth-hero.tsx` (#971), which `/register` mounts
-          too — one hero on both full-page routes, and none inside the flow's stage column. */}
-      {layout === "embedded" ? null : (
-        <AuthHero
-          heading={copy.heading}
-          subtitle={copy.subtitle}
-          tiles={stats}
-          marks={marks}
-          markSrc={markSrc}
-        />
-      )}
+          The two tiles are `components/auth/auth-hero-tiles.tsx` (#971), which `/register` mounts
+          too; the panel around them is sign-in's own. */}
+      <div
+        className={
+          layout === "embedded"
+            ? "hidden"
+            : "hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden"
+        }
+      >
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
+          <div className="mb-8 max-w-md mx-auto">
+            <div
+              className={`${markTileClass(marks.hero, "w-20 h-20")} bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm`}
+            >
+              <MarkGlyph
+                id={marks.hero}
+                src={markSrc}
+                className={`${markBoxClass(marks.hero, "w-10 h-10")} text-white`}
+              />
+            </div>
+            <h2 className="text-4xl font-bold mb-4">{copy.heading}</h2>
+            <p className="text-xl text-white/90 leading-relaxed">{copy.subtitle}</p>
+          </div>
+          <AuthHeroTiles tiles={stats} />
+        </div>
+        {/* Decorative Elements */}
+        <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-20 left-20 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+      </div>
 
       {/* Right Side - Login Form */}
       <div
