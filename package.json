@@ -27,6 +27,7 @@
     "qa:links": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-links.ts",
     "qa:atlas": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-atlas.mjs",
     "qa:atlas:check": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-atlas-check.mjs",
+    "qa:atlas:prune": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-atlas.mjs --prune",
     "brand:icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",
