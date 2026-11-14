@@ -33,9 +33,10 @@ import { MARK_ICONS, RegisterView } from "@/components/auth/register-view";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { quizHubBrand } from "@/data/brand";
 import { registerCopy } from "@/data/pages/register";
+import { loginCopy } from "@/data/pages/login";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
-import { registerCopyFor } from "@/lib/auth-copy";
+import { heroTilesFor, registerCopyFor } from "@/lib/auth-copy";
 
 const BRANDS = [
   ["quizhub", quizHubBrand as Brand],
@@ -52,6 +53,8 @@ const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
   destination: AFTER_SIGN_IN_BY_BRAND[id],
   marks: AUTH_MARKS_BY_BRAND[id],
   markSrc: AUTH_MARK_SRC_BY_BRAND[id],
+  /** The shared hero's tiles (#971) — the band `/login` owns, passed exactly as the page does. */
+  stats: heroTilesFor(loginCopy(record), id),
 });
 
 describe("the sign-up form on both brands", () => {
