@@ -53,8 +53,18 @@
  *   --archive-url=<url>  the uploaded Release asset's URL, printed with the archive it names; omit
  *                        when the release cannot take an asset, and the document says so instead
  *
+ * ## The guard: a capture measures this tree or it does not run (#983)
+ *
+ * `QA_ATLAS_BASE` names a port, and a dev server on a contested port belongs to whoever started it.
+ * The first v1.17.1 run answered as another card's server on 3411 and produced a document whose
+ * every number, screenshot and failure was real — and all about a different commit. So before a
+ * browser opens, `/api/version`'s pair is compared to the tree: its `commit` must equal
+ * `git rev-parse HEAD` and its `version` must equal the version this atlas documents, or the run
+ * refuses (exit 2) naming both commits. What it agreed with is then written into `manifest.json` as
+ * `captureCommit`, which is the question a reader of the document actually has.
+ *
  * Exit codes: 0 captured (failures are printed and recorded), 1 the run could not complete,
- * 2 refused (no server, no database, production branch).
+ * 2 refused (no server, a server that is not this tree, no database, production branch).
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -79,6 +89,7 @@ import {
   SCHEMA,
   atlasLabel,
   boundaryLists,
+  captureRefusal,
   coverageOf,
   currentVersion,
   deriveRows,
@@ -162,6 +173,20 @@ function slugOf(route) {
     .replace(/^-|-$/g, "")
     .toLowerCase();
   return cleaned === "" ? "root" : cleaned;
+}
+
+/**
+ * The commit this tree is standing on — the value the server must agree with before a capture runs.
+ *
+ * `git rev-parse HEAD` answers here and `git branch --show-current` does not: a worktree on a branch
+ * and a detached worktree both report the commit that was compiled, and the branch name is not part
+ * of the question. A tree with no git (an exported copy) answers nothing, and the capture refuses —
+ * see `captureRefusal()`, which owns the wording.
+ */
+function treeCommit() {
+  const result = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" });
+  if (result.status !== 0) return "";
+  return String(result.stdout ?? "").trim();
 }
 
 /* ------------------------------------------------------------------ *
@@ -729,6 +754,9 @@ function markdownFor(manifest, coverage, findings, changed) {
   lines.push(
     `Brand \`${manifest.brand}\` · generated ${manifest.generatedAt} · ` +
       `node \`${manifest.runtime.node}\` · \`${manifest.runtime.chrome}\` · ` +
+      (typeof manifest.captureCommit === "string" && manifest.captureCommit !== ""
+        ? `captured at \`${manifest.captureCommit.slice(0, 8)}\` (the server's \`/api/version\` agreed) · `
+        : "") +
       `the machine-readable form is [\`manifest.json\`](manifest.json).`,
     "",
   );
@@ -898,11 +926,13 @@ async function main() {
   }
 
   // A missing server is the most common way this run wastes ten minutes, so it is checked first.
+  // The *second* check is the one #983 is about: a port that answers is not necessarily **this**
+  // tree's server, and a capture that measures another card's build is confidently wrong.
+  let served;
   try {
     const response = await fetch(`${BASE}/api/version`);
     if (!response.ok) throw new Error(String(response.status));
-    const version = await response.json();
-    console.log(`· server answers ${JSON.stringify(version)}`);
+    served = await response.json();
   } catch {
     console.error(
       `qa-atlas: nothing answering at ${BASE}/api/version — start the server first ` +
@@ -910,6 +940,16 @@ async function main() {
     );
     return 2;
   }
+
+  const tree = treeCommit();
+  const refusal = captureRefusal({ base: BASE, server: served, tree, version: VERSION });
+  if (refusal !== null) {
+    console.error(`qa-atlas: ${refusal}`);
+    return 2;
+  }
+  console.log(
+    `· server answers ${JSON.stringify(served)} — that is this tree (${tree.slice(0, 8)})`,
+  );
 
   const db = await branchIdentifiers();
   if (db === null) {
@@ -1208,6 +1248,12 @@ async function main() {
     version: VERSION,
     brand: BRAND,
     base: BASE,
+    /**
+     * The commit the browser measured. The guard above proved `/api/version` agrees with this tree
+     * before a single capture ran, so this is the fact that makes the document answerable: a reader
+     * asks "was this measured against the tree it claims?" and the manifest answers (#983).
+     */
+    captureCommit: tree,
     generatedAt: new Date().toISOString(),
     runtime: {
       node: process.version,

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [A relationship with no initiator member, #958](../958-no-initiator-member/README.md) · next [Brand lockup](../brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [The Sent screen with no invitation row, #976](../976-sent-none/README.md) · next [Brand lockup](../brand-lockup/README.md)
 
 <!-- docs-nav:end -->
 
@@ -91,6 +91,6 @@ to settle, and reads where the target landed (`measurements.json`).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [A relationship with no initiator member, #958](../958-no-initiator-member/README.md) · next [Brand lockup](../brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [The Sent screen with no invitation row, #976](../976-sent-none/README.md) · next [Brand lockup](../brand-lockup/README.md)
 
 <!-- docs-nav:end -->

@@ -31,6 +31,14 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
+/**
+ * The page under test resolves the request's session for its own action (#979), and
+ * `@/lib/auth/session` reaches Neon's SDK — whose entry imports `next/headers`, which a plain node
+ * process cannot resolve. The answer here is the signed-out one, the viewer this file's assertions
+ * are written against (`VISITOR`); the member's half is `tests/catalogue-start-session.test.ts`.
+ */
+vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
+
 import DemoPage, { generateMetadata } from "@/app/(marketing)/relationship-types/[slug]/demo/page";
 import { formatCurrency } from "@/content/core";
 import { GAP_KINDS, gapKindsIn, gapKindsOf } from "@/content/gaps";
@@ -49,6 +57,11 @@ import {
   relationshipTypePath,
 } from "@/lib/flow/paths";
 import { START_PATH, startPathFor } from "@/lib/template-catalogue";
+import { visitorOf } from "@/lib/start-path";
+
+/** Every case here is the worked example as a **visitor** reads it; the member's half is
+ *  `tests/catalogue-start-session.test.ts` (#979). */
+const VISITOR = visitorOf("alignsynch");
 
 /** The two types with an authored sheet — the demo's whole reachable set today. */
 const DEMO_IDS = Object.keys(demoAnswersByType) as readonly string[];
@@ -64,7 +77,7 @@ describe("the worked example is one type's report, through the live projection",
 
   it("draws one row per Aspect, titled by the type, with the two demo seats", () => {
     for (const id of DEMO_IDS) {
-      const demo = assessmentDemo(id);
+      const demo = assessmentDemo(id, VISITOR);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
       const type = purchasableRelationshipType(id);
       if (type === undefined) throw new Error(`no type for "${id}"`);
@@ -84,7 +97,7 @@ describe("the worked example is one type's report, through the live projection",
 
   it("computes every Gap from the two sheets instead of storing one", () => {
     for (const id of DEMO_IDS) {
-      const demo = assessmentDemo(id);
+      const demo = assessmentDemo(id, VISITOR);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
       const type = purchasableRelationshipType(id);
       if (type === undefined) throw new Error(`no type for "${id}"`);
@@ -102,12 +115,12 @@ describe("the worked example is one type's report, through the live projection",
 
   it("points the Start CTA at the public gate, carrying this type's create step", () => {
     for (const id of DEMO_IDS) {
-      const demo = assessmentDemo(id);
+      const demo = assessmentDemo(id, VISITOR);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
       // The example is a `(marketing)` page, so `/register` is the honest action — the account is
       // created **first**, and since #867 the gate is told which template the reader chose, so the
       // sign-up lands on that template's stage 1 rather than on the brand's landing page.
-      expect(demo.startPath).toBe(startPathFor(id));
+      expect(demo.startPath).toBe(startPathFor(id, VISITOR));
       expect(demo.startPath.startsWith(`${START_PATH}?next=`)).toBe(true);
       expect(new URL(demo.startPath, "http://x").searchParams.get("next")).toBe(
         createRelationshipPath(id),
@@ -122,7 +135,7 @@ describe("the worked example is one type's report, through the live projection",
 
 describe("a type with no example is a 404, not a fabricated report", () => {
   it("answers undefined for an unknown id", () => {
-    expect(assessmentDemo("no-such-type")).toBeUndefined();
+    expect(assessmentDemo("no-such-type", VISITOR)).toBeUndefined();
   });
 
   it("answers undefined for a type whose sheet is still unwritten", () => {
@@ -130,7 +143,7 @@ describe("a type with no example is a 404, not a fabricated report", () => {
       (type) => demoAnswersFor(type.id) === undefined,
     );
     if (withoutDemo === undefined) throw new Error("every purchasable type carries a sheet now");
-    expect(assessmentDemo(withoutDemo.id)).toBeUndefined();
+    expect(assessmentDemo(withoutDemo.id, VISITOR)).toBeUndefined();
   });
 
   it("turns that into notFound() on the page", async () => {
@@ -146,7 +159,7 @@ describe("a type with no example is a 404, not a fabricated report", () => {
 describe("the page draws the label and the report", () => {
   it("renders the type's finished report under an Example label", async () => {
     const type = "staff-manager";
-    const demo = assessmentDemo(type);
+    const demo = assessmentDemo(type, VISITOR);
     if (demo === undefined) throw new Error(`no demo for "${type}"`);
 
     const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ slug: type }) }));
@@ -164,7 +177,7 @@ describe("the page draws the label and the report", () => {
 
   it("sits one segment below the type's own public page, and links no app-shell route", async () => {
     const type = "staff-manager";
-    const demo = assessmentDemo(type);
+    const demo = assessmentDemo(type, VISITOR);
     if (demo === undefined) throw new Error(`no demo for "${type}"`);
 
     const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ slug: type }) }));
@@ -180,7 +193,7 @@ describe("the page draws the label and the report", () => {
   });
 
   it("titles the tab and the description from the report", async () => {
-    const demo = assessmentDemo("co-founders");
+    const demo = assessmentDemo("co-founders", VISITOR);
     if (demo === undefined) throw new Error("no demo for co-founders");
     await expect(
       generateMetadata({ params: Promise.resolve({ slug: "co-founders" }) }),

@@ -32,7 +32,8 @@ vi.mock("next/navigation", () => ({
 import { RegisterView } from "@/components/auth/register-view";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { registerCopy } from "@/data/pages/register";
-import { registerCopyFor } from "@/lib/auth-copy";
+import { loginCopy } from "@/data/pages/login";
+import { heroTilesFor, registerCopyFor } from "@/lib/auth-copy";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 
@@ -77,6 +78,8 @@ const advance = () => {
         destination: AFTER_SIGN_IN_BY_BRAND.alignsynch,
         marks: AUTH_MARKS_BY_BRAND.alignsynch,
         markSrc: AUTH_MARK_SRC_BY_BRAND.alignsynch,
+        // The shared hero's band (#971) — required, so every mount of this view names it.
+        stats: heroTilesFor(loginCopy(alignSynchBrand), "alignsynch"),
       }),
     );
   });

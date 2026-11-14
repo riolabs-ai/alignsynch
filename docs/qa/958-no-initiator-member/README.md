@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../957-assessment-one-click/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../957-assessment-one-click/README.md) · next [The welcome tiles on /register too, #971](../971-tiles/README.md)
 
 <!-- docs-nav:end -->
 
@@ -144,6 +144,6 @@ The database reads behind the table at the top (`initiator_user_id`, seats, `rel
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../957-assessment-one-click/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › A relationship with no initiator member, #958 · prev [One-click create on /assessment, #957](../957-assessment-one-click/README.md) · next [The welcome tiles on /register too, #971](../971-tiles/README.md)
 
 <!-- docs-nav:end -->

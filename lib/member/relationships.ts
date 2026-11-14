@@ -213,6 +213,18 @@ export interface MemberRelationshipRow {
    * relationship whose initiator has no party row; the card falls back to its own word.
    */
   readonly initiatorName: string | null;
+  /**
+   * #975 D9 — the Counterparty's name **as a seat**, not as an invitation.
+   *
+   * `counterpartyName` above is what the initiator typed into the invitation; this is the name on
+   * the `party` row that actually holds the Counterparty seat. A screen that names the pair needs
+   * the second one for every relationship whose seats are bound without an invitation row — the
+   * demo branch's four, and any relationship carried over from the pre-#825 create path.
+   *
+   * Optional because a fixture written before this field exists the same way `relationshipTitle`
+   * does; `readMyRelationship` always fills it.
+   */
+  readonly counterpartySeatName?: string | null;
   /** What the band says, derived at the instant the read was given. */
   readonly view: PublishView;
   /**
@@ -245,6 +257,8 @@ interface RelationshipQueryRow {
   readonly aspect_count: number;
   readonly counterparty_name: string | null;
   readonly initiator_name: string | null;
+  /** #975 — the Counterparty's **seat** name, from `party`; present when `counterparty_name` is not. */
+  readonly counterparty_seat_name: string | null;
   readonly claimed: boolean | null;
   readonly revoked: boolean | null;
   readonly expires_at: Date | string | null;
@@ -305,9 +319,31 @@ const INITIATOR_NAME = `(
      LIMIT 1
   ) AS initiator_name`;
 
+/**
+ * The name of the account holding the **Counterparty seat** — the second half of the pair.
+ *
+ * `INITIATOR_NAME` above reads one seat; a screen that names "whose relationship is this" (#975
+ * D9) needs both, and the two are not interchangeable with `counterparty_name`: that column is
+ * `session_invite.counterparty_name`, the words the *initiator typed* when they invited somebody,
+ * which exists only once an invitation row does. The seat is the binding the session actually
+ * carries, so it is the name of the person who answers as the Counterparty — present on a
+ * relationship the seed wrote, whose seats are bound while `session_invite` is empty.
+ *
+ * `NULL` when nobody holds the seat: a draft the flow has not sent yet, or a relationship whose
+ * invitation was never claimed.
+ */
+const COUNTERPARTY_SEAT_NAME = `(
+    SELECT p.name
+      FROM session vs
+      JOIN party p ON p.session_record_id = vs.record_id
+     WHERE vs.relationship_id = rel.id AND p.role = 'counterparty'
+     ORDER BY vs.round DESC
+     LIMIT 1
+  ) AS counterparty_seat_name`;
+
 const RELATIONSHIP_COLUMNS = `
   rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
-  rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME},
+  rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME}, ${COUNTERPARTY_SEAT_NAME},
   t.id AS template_id, t.slug AS template_slug, t.title, t.summary,
   -- #841 — the relationship's own title, written at create from stage 1, beside the template's.
   -- The list used to head every card with the template's title, so two relationships made from one
@@ -465,6 +501,7 @@ function relationshipOf(
     invite,
     counterpartyName: row.counterparty_name,
     initiatorName: row.initiator_name,
+    counterpartySeatName: row.counterparty_seat_name ?? null,
     view: publishViewOf({ status, invite, now }),
     membership: membershipOf({
       status,

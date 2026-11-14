@@ -8,7 +8,7 @@
  * `DATABASE_URL`, and this must too). The capture needs a server and the demo branch's rows; the
  * *claim* that every registered route was captured is what a gate can check, every push.
  *
- * Five rules, each failing by the name of the thing that is wrong:
+ * Seven rules, each failing by the name of the thing that is wrong:
  *
  *   coverage   every route `data/pages/budget.ts` registers has a row in the current version's
  *              `manifest.json`, and the manifest carries no route the registry does not know — an
@@ -21,6 +21,14 @@
  *   thumb      every captured row's thumbnail exists, and nothing points outside the atlas
  *   weight     the whole atlas directory stays inside the committed budget (5 MB)
  *   skip       a skipped route carries a reason. "Skipped" is a fact with a cause, never a blank
+ *   extent     the `coverage` block is complete and describes the rows it ships with — six integer
+ *              fields, `captured + skipped === routes`, and the three registry counts equal to what
+ *              `data/pages/budget.ts` derives today. A capture that stopped after the public pass
+ *              used to be committable as a whole one, because nothing read the block (#983)
+ *   commit     `captureCommit` names the commit the run captured — the manifest's own answer to "was
+ *              this measured against the tree it claims?". The capture refuses to start when
+ *              `/api/version` disagrees with the tree (`captureRefusal()`); this is the half a
+ *              database-free check can prove, and the line it prints says which commit was measured
  *
  * Exit 0 prints one line in the shape the release note quotes:
  *
@@ -36,7 +44,13 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { repoRoot } from "./load-env.mjs";
-import { atlasLabel, coverageOf, currentVersion, deriveRows } from "./qa-atlas-registry.mjs";
+import {
+  atlasLabel,
+  coverageOf,
+  coverageProblems,
+  currentVersion,
+  deriveRows,
+} from "./qa-atlas-registry.mjs";
 
 /** The committed weight ceiling for one atlas directory. */
 const BUDGET_BYTES = 5 * 1024 * 1024;
@@ -100,8 +114,45 @@ function main() {
       );
     }
 
+    if (!Array.isArray(manifest.routes)) {
+      problems.push("manifest.json: routes is not a list — there is no row set to check");
+      report(problems, coverage, version, { manifest: { ...manifest, routes: [] }, bytes: 0 });
+      return 1;
+    }
+
     const byRoute = new Map(manifest.routes.map((row) => [row.route, row]));
     const derived = new Map(rows.map((row) => [row.route, row]));
+
+    /**
+     * 6. the commit the run captured, and 7. the extent it claims.
+     *
+     * Both are facts the document states about itself, and both were write-only until #983: the
+     * `coverage` block was never compared to the rows beside it, so a capture that stopped after
+     * the public pass committed as a complete one, and nothing in the manifest said which commit
+     * the browser had actually measured. The capture refuses to start on a version mismatch
+     * (`captureRefusal()`); this is the half of that guard a database-free gate can hold.
+     */
+    const captured =
+      typeof manifest.captureCommit === "string" ? manifest.captureCommit.trim() : "";
+    if (captured === "") {
+      problems.push(
+        "manifest.json: captureCommit is missing — the atlas must name the commit it measured, or " +
+          "a reader cannot tell which tree these screenshots describe",
+      );
+    } else if (!/^[0-9a-f]{40}$/.test(captured)) {
+      problems.push(
+        `manifest.json: captureCommit "${captured}" is not a 40-character git sha — a commit that ` +
+          "cannot be resolved names no build",
+      );
+    }
+
+    problems.push(
+      ...coverageProblems({
+        coverage: manifest.coverage,
+        rows: manifest.routes,
+        expected: coverage,
+      }),
+    );
 
     // 1. coverage, both directions
     for (const row of rows) {
@@ -222,12 +273,16 @@ function report(problems, coverage, version, state) {
     return 1;
   }
 
+  const measured =
+    typeof state.manifest.captureCommit === "string" ? state.manifest.captureCommit : "";
   process.stdout.write(
     `  ${coverage.keys} registry surfaces · ${routes} routes · ${captured} captured · ` +
       `${failing} failing · 0 missing · ` +
       `${state.manifest.routes.filter((row) => row.verdict === "skipped").length} skipped · ` +
-      `${(state.bytes / 1024 / 1024).toFixed(2)} MB — every registered route has a row, every ` +
-      `row reports what it measured, every thumbnail resolves\n`,
+      `${(state.bytes / 1024 / 1024).toFixed(2)} MB · captured at ` +
+      `${measured === "" ? "(unrecorded)" : measured.slice(0, 8)} — every registered route has a ` +
+      "row, every row reports what it measured, every thumbnail resolves, the coverage block " +
+      "describes the rows it ships with and the manifest names the commit it measured\n",
   );
   return 0;
 }

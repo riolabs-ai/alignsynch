@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**147 documents in 9 sections.** Every page carries the same nav block, generated
+**151 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
-- [Records & QA](#records-qa) — 30 documents
+- [Records & QA](#records-qa) — 34 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
@@ -155,6 +155,9 @@ What was measured, on which tree, and what it looked like.
 - [`qa/542-phase2/README.md`](qa/542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa/957-assessment-one-click/README.md`](qa/957-assessment-one-click/README.md) — **One-click create on /assessment, #957** — Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?
 - [`qa/958-no-initiator-member/README.md`](qa/958-no-initiator-member/README.md) — **A relationship with no initiator member, #958** — Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?
+- [`qa/971-tiles/README.md`](qa/971-tiles/README.md) — **The welcome tiles on /register too, #971** — Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?
+- [`qa/975-detail-identity/README.md`](qa/975-detail-identity/README.md) — **The relationship detail's identity, #975** — Does the detail page say whose relationship it is and which one — its own title and both names, one role per screen?
+- [`qa/976-sent-none/README.md`](qa/976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
 - [`qa/as2-home/README.md`](qa/as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
 - [`qa/brand-lockup/README.md`](qa/brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa/comments-mockup/README.md`](qa/comments-mockup/README.md) — **Comments mockup, both placements** — Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?
@@ -181,7 +184,8 @@ What was measured, on which tree, and what it looked like.
 - [`qa/v1x-ui-cohort/README.md`](qa/v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
 - [`qa-atlas/v1.17.0/index.md`](qa-atlas/v1.17.0/index.md) — **QA atlas — v1.17.0** — What did every registered surface render in v1.17.0, and did it read the record it claims?
-- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — v1.17.1** — What did every registered surface render in v1.17.1, and what changed since v1.17.0?
+- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — the 1.17.1 tree (never released)** — What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?
+- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?
 
 ## Code wiki
 
@@ -228,7 +232,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-15-0.md`](changelog/v1-15-0.md) — **v1.15.0** — Which release made the create flow five stages, with the account at stage 4 and the invitation at stage 5?
 - [`changelog/v1-16-0.md`](changelog/v1-16-0.md) — **v1.16.0** — Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?
 - [`changelog/v1-17-0.md`](changelog/v1-17-0.md) — **v1.17.0** — Which release made stage 5 a three-step payment walk, and what does it defer?
-- [`changelog/v1-17-1.md`](changelog/v1-17-1.md) — **v1.17.1** — Which patch paid v1.17.0's written promise that the edit panel would stop posting the Aspects?
+- [`changelog/v1-18-0.md`](changelog/v1-18-0.md) — **v1.18.0** — Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?
 - [`changelog/v1-2-0.md`](changelog/v1-2-0.md) — **v1.2.0** — The release where five surfaces read the database.
 - [`changelog/v1-3-0.md`](changelog/v1-3-0.md) — **v1.3.0** — The release where the flow closed.
 - [`changelog/v1-4-0.md`](changelog/v1-4-0.md) — **v1.4.0** — The release where the console arrived and templates became products.

@@ -19,6 +19,14 @@
  *                        detail page's price line and the two shelves read (#798: one price model)
  *   card facts           name, roles, realm, Aspect count, and the search blob, from the record
  *
+ * ## The one thing that is not derived from a fixture: the viewer (#979)
+ *
+ * The page's actions are a function of the request's session as well as of the taxonomy: a card's
+ * "use this template" is the create flow's stage 1 for a member and `/register?next=<that stage>`
+ * for a visitor, and the membership band's authored CTA is resolved the same way. The rule lives in
+ * `lib/start-path.ts`; this module only carries the `StartViewer` the page resolved, which is why
+ * the model stays free of React, Next and the session module.
+ *
  * The one number the approved artifact prints that this module deliberately does **not** copy is
  * the example's "1 of 6": the Aspect the artifact illustrates is the **third** of six in
  * `data/relationship-types.ts`, so the ordinal is derived and renders "3 of 6". The data wins, and
@@ -55,6 +63,7 @@ import {
 } from "@/lib/page-copy";
 import { realmArt, twoPartyMark, type RealmArt } from "@/lib/relationship-art";
 import { cataloguePriceNote, templateCard, type TemplateCard } from "@/lib/template-catalogue";
+import { startHrefFor, type StartViewer } from "@/lib/start-path";
 
 /**
  * The catalogue's in-page anchor, and the explainer's.
@@ -257,9 +266,9 @@ function exampleAspect(types: readonly RelationshipType[]): {
 }
 
 /** One record's card for this surface: the shared projection plus its details label and search. */
-function catalogueCard(copy: PageCopy, type: RelationshipType): CatalogueCard {
+function catalogueCard(copy: PageCopy, type: RelationshipType, viewer: StartViewer): CatalogueCard {
   return {
-    ...templateCard(copy, type),
+    ...templateCard(copy, type, viewer),
     detailsLabel: pageItemOf(copy, CARD_IDS.details).label,
     search: [
       type.name,
@@ -305,6 +314,7 @@ function stepsOf(copy: PageCopy, sectionId: string, ids: readonly string[]): Tem
  */
 export function templatesPage(
   copy: PageCopy,
+  viewer: StartViewer,
   relationshipTypes: readonly RelationshipType[] = purchasableRelationshipTypes,
   realms: readonly string[] = REALMS,
 ): TemplatesPageModel {
@@ -326,7 +336,7 @@ export function templatesPage(
         `templatesPage: "${type.id}" is not purchasable — a catalogue card for a type the shop will not sell is a price nobody can pay`,
       );
     }
-    return catalogueCard(copy, type);
+    return catalogueCard(copy, type, viewer);
   });
   const groups = realmGroups(cards, realms);
   const example = exampleAspect(relationshipTypes);
@@ -392,7 +402,14 @@ export function templatesPage(
         },
       ],
       ...(testMode.length === 0 ? {} : { testMode }),
-      ...(membership.cta === undefined ? {} : { link: membership.cta }),
+      ...(membership.cta === undefined
+        ? {}
+        : {
+            link: {
+              label: membership.cta.label,
+              href: startHrefFor(membership.cta.href, viewer),
+            },
+          }),
     },
     catalogue: {
       eyebrow: itemLabel(catalogueSection, "eyebrow-catalogue"),

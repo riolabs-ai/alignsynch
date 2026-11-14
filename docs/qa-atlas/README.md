@@ -59,6 +59,14 @@ Flags for iterating: `--only=<route>`, `--width=<n>`, `--role=<public|member|adm
 when nothing answers on `/api/version` — reading and signing in against the wrong branch is the one
 mistake this script will not make quietly.
 
+**And it refuses to measure a build that is not this tree.** `QA_ATLAS_BASE` names a port, and a dev
+server on a contested port belongs to whoever started it, which is how the first v1.17.1 run produced
+a document whose every number and screenshot was real — and about another card's commit. So before a
+browser opens, `/api/version`'s `commit` must equal `git rev-parse HEAD` and its `version` must equal
+the version being documented; a disagreement exits 2 and names both commits. What it agreed with is
+written into `manifest.json` as `captureCommit`, and printed in the document beside the capture date
+(#983).
+
 ## The check
 
 ```bash
@@ -78,6 +86,10 @@ every lane. It fails, by route name, when:
 - a failing row carries no measured reason;
 - a row's thumbnail is missing;
 - a skipped row carries no reason;
+- the `coverage` block is incomplete or disagrees with the rows beside it — a capture that stopped
+  halfway used to commit as a whole one, because nothing read the block (#983);
+- the manifest does not name the commit it captured (`captureCommit`) — "was this measured against
+  the tree it claims?" is the question the document exists to answer;
 - the atlas directory is over the 5 MB budget;
 - the manifest documents a different version than `package.json` carries.
 

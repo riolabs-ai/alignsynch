@@ -31,7 +31,6 @@
 import {
   type BillingInterval,
   BILLING_INTERVALS,
-  type BillingPlanCtaHref,
   type BillingPlanId,
   type BillingPlanRow,
   billingPlanRows,
@@ -73,8 +72,16 @@ export interface PricingPlanView {
   readonly description: string;
   readonly features: readonly string[];
   readonly limitations: readonly string[];
-  /** The button's words and its destination kind, from the fixture. */
-  readonly cta: { readonly label: string; readonly href: BillingPlanCtaHref };
+  /**
+   * The button's words, and its destination.
+   *
+   * `href` is a plain string rather than the fixture's `BillingPlanCtaHref` union because the page
+   * resolves it for the viewer before the grid is built (#979): a member who is already signed in
+   * is sent to their own destination instead of `/register`, which is not a value the fixture can
+   * author. `"checkout"` is still the one sentinel — the card starts a checkout for it and navigates
+   * for anything else.
+   */
+  readonly cta: { readonly label: string; readonly href: string };
   readonly popular: boolean;
   /** The account is on this tier: the card says so and offers nothing to buy. */
   readonly current: boolean;
@@ -88,6 +95,12 @@ export interface PricingCatalogueInput {
   readonly source: PlanRowSource;
   /** The tier the viewer is entitled to. `null` for a signed-out visitor. */
   readonly entitledPlanId: BillingPlanId | null;
+  /**
+   * Where a tier's authored `/register` CTA goes for **this** viewer (#979) — `/register` for a
+   * visitor, the brand's own account home for a member. Required, so a caller cannot build the grid
+   * on the fixture's own destination and offer an existing member a sign-up form.
+   */
+  readonly startHref: string;
 }
 
 /**
@@ -97,7 +110,7 @@ export interface PricingCatalogueInput {
  * rows it hands in, which is how the retired-row case is proved without Postgres.
  */
 export function pricingPlans(input: PricingCatalogueInput): PricingPlanView[] {
-  const { rows, source, entitledPlanId } = input;
+  const { rows, source, entitledPlanId, startHref } = input;
 
   const rowFor = (id: BillingPlanId, interval: BillingInterval): BillingPlanRow | undefined =>
     rows.find((row) => row.id === id && row.interval === interval);
@@ -127,7 +140,12 @@ export function pricingPlans(input: PricingCatalogueInput): PricingPlanView[] {
       description: plan.description,
       features: plan.features,
       limitations: plan.limitations,
-      cta: plan.cta,
+      /**
+       * The authored CTA, with its destination resolved for this viewer (#979). `"checkout"` is the
+       * card's own sentinel and keeps its meaning; anything else is a route, and the fixture's
+       * `/register` becomes the account home a member already has.
+       */
+      cta: plan.cta.href === "checkout" ? plan.cta : { label: plan.cta.label, href: startHref },
       popular: plan.popular,
       current: entitledPlanId !== null && entitledPlanId === plan.id,
       intervals: {

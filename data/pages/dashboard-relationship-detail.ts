@@ -133,6 +133,21 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "You are the Counterparty on this relationship. Its Aspects, publishing and invitation belong to the person who started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent.",
         },
+        {
+          /**
+           * #975 D2 — the same read-only fact, for the seat that is **not** the Counterparty's.
+           *
+           * The band above states a *role* and a *permission*, and only the permission is what the
+           * band is drawn on (`isInitiator` is false). When the seat says Initiator and the
+           * relationship's account column names somebody else, the two halves of that sentence
+           * disagree — the seat chip one block up already said "Initiator" — so this row states the
+           * permission and names no role. `relationship.viewerRole` picks which of the two is drawn,
+           * and that is the same value the chip prints, so the screen cannot call one person both.
+           */
+          id: "controls-belong-to-starter",
+          label:
+            "The Aspects, publishing and invitation on this relationship belong to the account that started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent.",
+        },
       ],
     },
     {
@@ -320,6 +335,35 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
             "The mode and the Setting are chosen when you publish. Until then this relationship has no session to carry them.",
         },
         { id: "aspects", label: "Aspects" },
+        /**
+         * #975 D12 — **the dialog names the Aspects and hands back the one editor.**
+         *
+         * #935 answered the owner's "keep the drag and drop, remove the stacked forms" by taking
+         * the Aspect fields out of this panel, which left the dialog silent about a section the page
+         * behind it edits — the inverse gap. The answer is not a second editor in the modal (that is
+         * the duplicated surface #935 deleted, drawn over the list it duplicates): it is a read-only
+         * statement of what the Aspects are, the questions' own words and one door to the section
+         * that owns them. `{count}` is filled from the rows the relationship carries, so the band
+         * cannot disagree with the list it points at about how many there are.
+         */
+        {
+          id: "aspects-note",
+          label:
+            "The {count} Aspects are edited on this page, in the Aspects section — this form leaves them exactly as they are.",
+        },
+        /**
+         * The same note on a published relationship, where `aspectsEditable` is false: the questions
+         * are not merely somewhere else, they are fixed, and a sentence that said "edited" would
+         * offer a power the server refuses.
+         */
+        {
+          id: "aspects-note-locked",
+          label:
+            "Once the relationship is published the {count} Aspects are fixed, and the page shows them as they were answered.",
+        },
+        /** The door to the one editor — and, when the list is frozen, to the one place it is shown. */
+        { id: "aspects-open", label: "Edit the Aspects" },
+        { id: "aspects-view", label: "See the Aspects" },
         { id: "prompt", label: "What is asked" },
         { id: "left", label: "Left Value (1)" },
         { id: "right", label: "Right Value (5)" },
