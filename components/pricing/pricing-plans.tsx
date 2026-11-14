@@ -1,8 +1,7 @@
 "use client";
 
-// template-ancestor: components/ui/card.tsx   (variation: the plan grid — one card per plan, an interval switch, a feature list and a checkout button)
+// template-ancestor: components/ui/card.tsx   (variation: the plan grid — one card per plan, an interval switch, a feature list and a plan action)
 
-import { PlanCheckoutButton } from "@/components/pricing/plan-checkout-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +19,7 @@ import type { PageCopySection } from "@/content/pages";
 import type { BillingInterval } from "@/data/billing-plans";
 import { metric } from "@/data/metrics";
 import type { PricingPlanView } from "@/lib/billing/catalogue";
+import { pricingStartPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Check } from "lucide-react";
 import Link from "next/link";
@@ -119,10 +119,14 @@ LimitationsList.displayName = "LimitationsList";
  * The card's footer: one of four things, in this order.
  *
  *   current      the account is on this tier — a marker, and nothing to buy
- *   checkout     a live row at this interval — the button that posts to `/api/billing/checkout`
+ *   carry        a live row at this interval — the plan's own action, which opens the template
+ *                catalogue **carrying this tier and interval** (#1043). It starts no checkout:
+ *                the money decision lives inside stage 5's walk, behind its plan panel
  *   unavailable  a checkout tier with no live row — a line, not a disabled button (a disabled
  *                button still reads as a control that would work under other circumstances)
- *   link         `/register` or the support mailbox — an ordinary destination
+ *   general      `/relationship-templates` — an ordinary destination that carries no plan, and
+ *                clears one a previous visit left (the free tier's action, and any other
+ *                non-checkout href the fixture authors)
  */
 const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: PageCopySection }>(
   ({ plan, cycle, copy }) => {
@@ -146,22 +150,33 @@ const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: P
           </p>
         );
       }
+      /**
+       * **A plan card carries its choice; it does not charge (#1043).** The button used to POST
+       * `/api/billing/checkout` and follow the answer, which is how a membership could start with no
+       * relationship behind it and how a person ended up choosing a plan twice. It is now one link to
+       * `pricingStartPath()`, which records the tier and interval on the browser and answers `303` to
+       * the template catalogue — the flow's only door since #1042. The two `data-` attributes are the
+       * render's own statement of what the action carries, which is what the inventory check reads.
+       */
       return (
-        <PlanCheckoutButton
-          planId={plan.id}
-          interval={cycle}
-          label={plan.cta.label}
-          busyLabel={itemLabel(copy, "checkout-busy")}
-          errorLabel={itemLabel(copy, "checkout-error")}
-          className={buttonClassName}
-          variant={variant}
-        />
+        <Button asChild className={buttonClassName} variant={variant}>
+          <Link
+            href={pricingStartPath({ planId: plan.id, interval: cycle })}
+            data-plan-carry={plan.id}
+            data-plan-carry-interval={cycle}
+          >
+            {plan.cta.label}
+          </Link>
+        </Button>
       );
     }
 
     return (
       <Button asChild className={buttonClassName} variant={variant}>
-        <Link href={plan.cta.href}>{plan.cta.label}</Link>
+        {/* The general action: no plan behind it, and the route it names clears any carried one. */}
+        <Link href={plan.cta.href} data-plan-general={plan.id}>
+          {plan.cta.label}
+        </Link>
       </Button>
     );
   },

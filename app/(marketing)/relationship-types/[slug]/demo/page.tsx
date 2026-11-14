@@ -42,11 +42,8 @@
  * the tab — unlike the dashboard's cards, which must open this page in a new tab.
  */
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
-import { brand, brandIdOf } from "@/data/brand";
 import { assessmentDemo } from "@/lib/assessment-demo";
-import { currentUserIfConfigured } from "@/lib/auth/session";
 import { PRICING_PATH, relationshipTypePath } from "@/lib/flow/paths";
-import { startViewer, visitorOf } from "@/lib/start-path";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -57,7 +54,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const demo = assessmentDemo(slug, visitorOf(brandIdOf(brand)));
+  const demo = assessmentDemo(slug);
   if (demo === undefined) return { title: "Example Not Found" };
   return {
     title: `${demo.report.title} — example report`,
@@ -71,8 +68,7 @@ export default async function RelationshipTypeDemoPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const signedIn = (await currentUserIfConfigured()) !== null;
-  const demo = assessmentDemo(slug, startViewer(brandIdOf(brand), signedIn));
+  const demo = assessmentDemo(slug);
   if (demo === undefined) notFound();
 
   return (

@@ -65,6 +65,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PageCopy } from "@/content/pages";
 import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import type { CarriedPlan } from "@/lib/flow/plan-intent";
 import { relationshipPath, sendInvitationPath } from "@/lib/flow/paths";
 import { PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { PlanChoices, type PlanId } from "./plan-choices";
@@ -102,6 +103,7 @@ export function InviteWalk({
   onPaid,
   checkout,
   planIncluded,
+  carriedPlan,
   initialStep,
 }: {
   copy: PageCopy;
@@ -125,6 +127,16 @@ export function InviteWalk({
    * tier to join a plan they hold. Absent means "not measured", and the panel is the choice.
    */
   planIncluded?: { readonly name: string; readonly entitled: boolean };
+  /**
+   * The plan the reader chose on `/pricing`, carried through the catalogue, the template, stage 1 and
+   * the account round-trip (#1043). The row is drawn **already selected** and the checkout this panel
+   * starts uses the interval that came with it, so nobody is asked for a choice they have made.
+   *
+   * Absent is the ordinary state and it means "nothing was carried": the rows open unselected and
+   * choosing one is still the act (#1031). A carried plan is a **preselection, never a payment** —
+   * the membership still starts from this panel, and the send's paid gate is untouched.
+   */
+  carriedPlan?: CarriedPlan;
   /** Where the walk starts. Only a test passes this: the stage always starts at the plan. */
   initialStep?: PayFlowStep;
 }) {
@@ -134,7 +146,12 @@ export function InviteWalk({
   const router = useRouter();
 
   const [step, setStep] = useState<PayFlowStep>(initialStep ?? (paid ? "thanks" : "plan"));
-  const [plan, setPlan] = useState<PlanId | null>(null);
+  /**
+   * **The carried plan opens the panel already chosen** (#1043), and it is state rather than a prop
+   * read because Back has to restore it: returning from the card step must land on the panel the
+   * reader arrived at, not on one whose rows are all unselected again.
+   */
+  const [plan, setPlan] = useState<PlanId | null>(carriedPlan?.row ?? null);
   const [starting, setStarting] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -155,6 +172,15 @@ export function InviteWalk({
    * the card step is the only place it can go from there.
    */
   const planEntitled = planIncluded?.entitled === true;
+
+  /**
+   * The plan this panel actually shows as chosen (#1043) — `undefined` when nothing was carried, and
+   * when the account's own plan makes the rows a summary instead (an entitled reader has no choice to
+   * carry, and a marker saying otherwise would be a claim about a panel that draws no rows). It is
+   * also the attribute below, so the rendered page states what it carried rather than leaving a
+   * reader to infer it from a checked radio.
+   */
+  const carriedShown = planEntitled ? undefined : carriedPlan;
 
   /**
    * The walk's step change moves the *reader* as well as the panel: focus lands on the new step's
@@ -208,7 +234,13 @@ export function InviteWalk({
     const planId = PLAN_BILLING_TIER[picked];
     setStarting(true);
     try {
-      const answer = await checkout.onStart({ planId, interval: "month" });
+      /**
+       * **The interval is the one the reader chose on `/pricing`** (#1043), carried with the tier.
+       * It defaults to `month` only when nothing was carried, which is the walk's own history: one
+       * monthly membership, both parties. A yearly choice must not be quietly re-billed monthly, so
+       * the carried interval is handed to the server as it arrived.
+       */
+      const answer = await checkout.onStart({ planId, interval: carriedPlan?.interval ?? "month" });
       if (!answer.ok) {
         setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
         return;
@@ -251,16 +283,21 @@ export function InviteWalk({
   }
 
   /**
-   * Back to the plan panel, with the checkout forgotten and **the choice cleared**. Clearing it is
-   * what makes the return honest: a native radio fires no `change` when it is already checked, so a
-   * panel that kept its selection would be a step nobody could leave twice.
+   * Back to the plan panel, with the checkout forgotten and **the choice cleared** — or restored,
+   * when a plan was carried (#1043).
+   *
+   * Clearing is what makes the ordinary return honest: a native radio fires no `change` when it is
+   * already checked, so a panel that kept a *clicked* selection would be a step nobody could leave
+   * twice. A **carried** plan is the opposite case — it arrived checked, and the panel's own continue
+   * control is what opens the card step — so returning to it must draw the state the reader arrived
+   * at, or Back would silently throw away the choice they made on `/pricing`.
    */
   function backToPlan(): void {
     setRefusal(null);
     setClientSecret(null);
     setPublishableKey(null);
     setCheckoutSessionId(null);
-    setPlan(null);
+    setPlan(carriedPlan?.row ?? null);
     setStep("plan");
   }
 
@@ -401,6 +438,26 @@ export function InviteWalk({
           {itemLabel(flow, "continue")}
         </button>
       ) : null}
+
+      {/*
+        **A carried plan is a choice already made, so its panel needs the control that opens the card
+        step** (#1043). The row arrived checked — and a native radio fires no `change` when it is
+        already checked — so without this button the panel would be a step nobody could leave without
+        changing their mind first. It carries the *same* `data-pay-action` as the entitled account's
+        control because it is the same act: open the card step with the row this panel shows. Choosing
+        the other row still starts the checkout directly, exactly as it does when nothing was carried.
+      */}
+      {planEntitled || carriedPlan === undefined ? null : (
+        <button
+          type="button"
+          data-pay-action="continue"
+          data-panel-first="true"
+          className={PRIMARY}
+          onClick={() => choosePlan(carriedPlan.row)}
+        >
+          {itemLabel(flow, "continue")}
+        </button>
+      )}
     </>
   );
 
@@ -516,6 +573,12 @@ export function InviteWalk({
       data-create-plans="true"
       data-pay-step={step}
       data-pay-relationship={relationshipId}
+      /*
+        The plan `/pricing` carried into this walk (#1043), or nothing. The plan panel draws it as a
+        checked row; this attribute is what makes the carry readable from the render itself.
+      */
+      data-plan-carried={carriedShown?.planId}
+      data-plan-carried-interval={carriedShown?.interval}
       /*
         The gate's state, where the act now is. Stage 5's send is one click past the thank-you, and
         the thank-you is only reachable once the membership is live, so `locked` is "the walk has not

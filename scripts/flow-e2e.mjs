@@ -12,6 +12,9 @@
  *   2. invite      the invitation link is on the screen — drawn whether or not this deployment
  *                  has a mailer, because a send that did not happen must never make the link
  *                  unshareable (#220)
+ *   2a. carried    the plan chosen on `/pricing` is recorded by that page's one action and arrives
+ *                  at stage 5 already selected — through four stages and an account round trip —
+ *                  and a browser that chose nothing opens the panel unselected (#1043)
  *   2b. self-claim the Initiator's own browser cannot claim its own invitation: the page
  *                  names them as the party they already are, the claim is refused with
  *                  `already-a-party`, and the token stays live (#202)
@@ -66,6 +69,7 @@
  */
 import { writeFileSync } from "node:fs";
 import { Client } from "pg";
+import { PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { sendInvitationPath } from "@/lib/flow/paths";
 
 /**
@@ -283,6 +287,17 @@ function createStem(templateSlug = TEMPLATE_SLUG) {
 }
 
 /**
+ * The plan **row** a billing tier is drawn by — `PLAN_BILLING_TIER` read backwards (#1043).
+ *
+ * The walk's panel is keyed by the fixture's handles (`one`, `unlimited`) and `/pricing` names a
+ * billing tier (`basic`, `principal`); the map is the only crossing, so the harness reads it rather
+ * than typing a row beside the tier it is asserting.
+ */
+function planRowOf(tier) {
+  return Object.entries(PLAN_BILLING_TIER).find(([, mapped]) => mapped === tier)?.[0] ?? null;
+}
+
+/**
  * The instance id in a create redirect, in **either** shape it has (#704).
  *
  * `…/assessment/instances/<id>` is the committed relationship (where a post that names no
@@ -328,9 +343,34 @@ async function createThroughStages(
     setting = "soft",
     aspects,
     templateSlug = TEMPLATE_SLUG,
+    /**
+     * The plan this browser chose on `/pricing` before it started (#1043) — the carry the whole
+     * card is about. When it is given, the run takes the pricing action first and then asserts that
+     * stage 5 opens with that row selected; when it is not, the run asserts the **opposite**, because
+     * "a door that carries nothing carries nothing" is the other half of the same rule.
+     */
+    carriedPlan,
   },
 ) {
   const stem = createStem(templateSlug);
+
+  /* stage 0 — the plan, when this run chose one on /pricing (#1043) -- */
+  // The action every `/pricing` CTA takes: it records the pair on this browser and answers 303 to
+  // the public catalogue, where the template is picked and the wizard starts. Reading the cookie
+  // out of the jar — rather than trusting the redirect alone — is what proves the carry landed
+  // before the four stages that have to survive it.
+  if (carriedPlan !== undefined) {
+    const carried = await jar.get(
+      `/pricing/start?plan=${encodeURIComponent(carriedPlan.planId)}&interval=${encodeURIComponent(carriedPlan.interval)}`,
+    );
+    check(
+      "the pricing action records the chosen plan and opens the template catalogue (#1043)",
+      carried.status === 303 &&
+        new URL(carried.location ?? "/", BASE_URL).pathname === "/relationship-templates" &&
+        jar.cookies.has("flow_plan_intent"),
+      `${carried.status} ${carried.location} · cookie ${jar.cookies.has("flow_plan_intent") ? "set" : "absent"}`,
+    );
+  }
 
   /* stage 1 — Who ---------------------------------------------------- */
   /* #825 — each seat is first + last now, so the post carries four halves rather than two names. */
@@ -413,6 +453,71 @@ async function createThroughStages(
     `${committed.status} ${location}`,
   );
 
+  /* stage 5 — the plan, carried or not (#1043) ------------------------ */
+  // The screen stage 4 just handed this browser. The carry had to survive four page navigations and
+  // the account write to arrive here, so this is the assertion the card exists for — and when the
+  // run carried nothing, the same screen is where the **absence** is proved: a panel that preselects
+  // a tier nobody chose is the defect the card removed.
+  if (instanceId !== null) {
+    const stageFive = await jar.get(location);
+    const carried = carriedPlan === undefined ? null : planRowOf(carriedPlan.planId);
+    // The panel's radios, read as tags rather than as one regex over the page: React prints `checked`
+    // wherever it sorts it (`name` `checked` `value` on this tree), so a regex fixed on attribute
+    // order asserts the renderer's ordering rather than the selection.
+    const planInputs = [...stageFive.html.matchAll(/<input[^>]*name="plan"[^>]*>/g)].map(
+      (m) => m[0],
+    );
+    if (carriedPlan === undefined) {
+      check(
+        "stage 5 opens with no plan selected when the browser carried none (#1043)",
+        stageFive.status === 200 &&
+          !stageFive.html.includes("data-plan-carried") &&
+          !planInputs.some((tag) => /\bchecked\b/.test(tag)),
+        `status ${stageFive.status} · ${planInputs.filter((t) => /\bchecked\b/.test(t)).length} of ${planInputs.length} radio(s) checked`,
+      );
+    } else {
+      const carriedTag = planInputs.find((tag) => tag.includes(`value="${carried}"`)) ?? "";
+      check(
+        `stage 5 opens with the plan chosen on /pricing already selected (${carriedPlan.planId} · ${carriedPlan.interval}) (#1043)`,
+        stageFive.status === 200 &&
+          stageFive.html.includes(`data-plan-carried="${carriedPlan.planId}"`) &&
+          stageFive.html.includes(`data-plan-carried-interval="${carriedPlan.interval}"`) &&
+          carried !== null &&
+          /\bchecked\b/.test(carriedTag) &&
+          planInputs.filter((tag) => /\bchecked\b/.test(tag)).length === 1,
+        `status ${stageFive.status} · row ${carried ?? "unmapped"} · ${
+          carriedTag === ""
+            ? "no input for that row"
+            : /\bchecked\b/.test(carriedTag)
+              ? "checked"
+              : "not checked"
+        }`,
+      );
+    }
+    /**
+     * **A reload keeps it** (#1043): the carry is a cookie, not render state, so the second GET of
+     * the same stage — which is exactly what a refresh is — must draw the same selection. The first
+     * read above cannot prove that on its own: a value a server had already computed once could be
+     * cached for the rest of the walk and still disappear on the next request.
+     */
+    const reloaded = await jar.get(location);
+    const reloadedInputs = [...reloaded.html.matchAll(/<input[^>]*name="plan"[^>]*>/g)].map(
+      (m) => m[0],
+    );
+    const reloadedChecked = reloadedInputs.filter((tag) => /\bchecked\b/.test(tag));
+    check(
+      carriedPlan === undefined
+        ? "a reload of stage 5 still opens with no plan selected (#1043)"
+        : `a reload of stage 5 still opens with ${carriedPlan.planId} selected (#1043)`,
+      reloaded.status === 200 &&
+        (carriedPlan === undefined
+          ? !reloaded.html.includes("data-plan-carried") && reloadedChecked.length === 0
+          : reloaded.html.includes(`data-plan-carried="${carriedPlan.planId}"`) &&
+            reloaded.html.includes(`data-plan-carried-interval="${carriedPlan.interval}"`) &&
+            reloadedChecked.length === 1),
+      `status ${reloaded.status} · ${reloadedChecked.length} of ${reloadedInputs.length} radio(s) checked`,
+    );
+  }
   // #865 — the relationship the stage just wrote, registered here because it is **not** deleted by
   // `DELETE FROM record` and used to survive every run on the shared branch. Read back rather than
   // assumed: the id is minted by the app (`cryptoRandomId()`), so a guess is exactly the kind of
@@ -645,10 +750,12 @@ async function main() {
   const counterparty = new Jar("counterparty");
   const stranger = new Jar("stranger");
 
-  /* 0a. the catalogue's action survives the account gate (#867) -------- */
-  // The one moment in the product where intent already exists: a stranger has chosen a template
-  // and has no account. Before this card the action was a bare `/register`, so the account was
-  // created and the person arrived on the brand's landing page with the choice gone.
+  /* 0a. the catalogue's one action is the flow's stage 1 (#1042) -------- */
+  // The moment in the product where intent already exists: a stranger has chosen a template and
+  // has no account. Before #1042 the action was `/register?next=<that stage>` — the account first,
+  // the wizard after — so a visitor never reached the flow from it. Stage 1 needs no account
+  // (#690) and the account is stage 4 of that same wizard (#825), so the card's own href is the
+  // flow's first screen for both viewers.
   const visitor = new Jar("visitor");
   const catalogue = await visitor.get("/relationship-types");
   dumpPage("catalogue", catalogue.html);
@@ -659,56 +766,90 @@ async function main() {
   );
 
   // The action's own href, read off the page — never a path typed here.
-  const startHref = catalogue.html.match(/href="(\/register\?next=[^"]+)"/)?.[1] ?? "";
-  const chosenStem =
-    (startHref === "" ? null : new URL(startHref, BASE_URL).searchParams.get("next")) ?? "";
+  const startHref =
+    catalogue.html.match(/href="(\/templates\/relationship\/[a-z-]+\/create)"/)?.[1] ?? "";
+  const chosenSlug = startHref.split("/")[3] ?? "";
   check(
-    "a card's use action carries the template it sells into the sign-up gate",
-    /^\/templates\/relationship\/[a-z-]+\/create$/.test(chosenStem),
-    startHref === "" ? "no `/register?next=` action on the page" : `href = "${startHref}"`,
+    "a card's use action is the create flow's stage 1, carrying the template it sells",
+    /^\/templates\/relationship\/[a-z-]+\/create$/.test(startHref),
+    startHref === ""
+      ? "no `/templates/relationship/<slug>/create` action on the page"
+      : `href = "${startHref}"`,
   );
-  const chosenSlug = chosenStem.split("/")[3] ?? "";
   const words = chosenSlug === "" ? null : await templateWords(chosenSlug);
 
-  // The gate promises no wall: the destination is a screen whether or not an account exists
-  // (#690 — stage 1 never asked for one).
-  const stageOneFirst = await visitor.get(chosenStem);
+  // No gate to pass: the destination is a screen whether or not an account exists (#690 — stage 1
+  // never asked for one), which is what makes the account a stage inside the wizard.
+  const stageOneFirst = await visitor.get(startHref);
+  dumpPage("stage-1-signed-out", stageOneFirst.html);
   check(
-    "the destination renders for the signed-out visitor too",
+    "and that address renders for the signed-out visitor, with no gate in front of it",
     stageOneFirst.status === 200 && stageOneFirst.html.includes('data-wizard-rail="1"'),
     `status ${stageOneFirst.status}`,
   );
-
-  // The gate remembers it. `?next=` is the one parameter `/register` reads, and it puts what it
-  // will navigate to on the page (`signInDestination`) rather than the brand's default.
-  const gate = await visitor.get(startHref);
-  const gatePayload = gate.html.replaceAll('\\"', '"');
   check(
-    "the account gate keeps that destination instead of the brand's landing page",
-    gate.status === 200 && gatePayload.includes(`"destination":"${chosenStem}"`),
-    `status ${gate.status}`,
-  );
-
-  // What the form does when it succeeds: the app's own sign-up endpoint, into the same jar.
-  await signUpCreator(visitor, { name: "Nadia Visitor" });
-
-  // …and then the view's `router.push(destination)` — the same address, now signed in.
-  const arrived = await visitor.get(chosenStem);
-  dumpPage("stage-1-after-signup", arrived.html);
-  check(
-    "signing up lands on stage 1 of the template the visitor chose",
-    arrived.status === 200 &&
-      arrived.html.includes('data-wizard-rail="1"') &&
-      arrived.html.includes('data-step-state="current"'),
-    `status ${arrived.status}`,
-  );
-  check(
-    "and that stage names the template, not an empty flow",
-    words !== null && arrived.html.includes(textOf(words.title)),
+    "as stage 1 of the template the card sells, not an empty flow",
+    stageOneFirst.status === 200 &&
+      stageOneFirst.html.includes('data-step-state="current"') &&
+      words !== null &&
+      stageOneFirst.html.includes(textOf(words.title)),
     words === null ? `no template row for "${chosenSlug}"` : `title = "${words.title}"`,
   );
+
+  // …and the same stage still draws for the same template once a session exists. The draft is a
+  // `sameSite: "lax"` cookie, so the account round trip cannot drop it (#1042). The **carried plan**
+  // is the same class of cookie (#1043), so the pricing action is taken here — signed out, before
+  // the account exists — and its presence is asserted again after the sign-up, which is the
+  // "sign-in preserves the carry" half of the acceptance.
+  const carriedBefore = await visitor.get("/pricing/start?plan=basic&interval=month");
+  check(
+    "a signed-out visitor's plan is carried onto the browser before any account exists (#1043)",
+    carriedBefore.status === 303 &&
+      new URL(carriedBefore.location ?? "/", BASE_URL).pathname === "/relationship-templates" &&
+      visitor.cookies.has("flow_plan_intent"),
+    `${carriedBefore.status} ${carriedBefore.location}`,
+  );
+  await signUpCreator(visitor, { name: "Nadia Visitor" });
+  check(
+    "and the sign-up that follows keeps it — the round trip drops no flow cookie (#1043)",
+    visitor.cookies.has("flow_plan_intent"),
+    `flow_plan_intent ${visitor.cookies.has("flow_plan_intent") ? "present" : "lost"} after sign-up`,
+  );
+  const arrived = await visitor.get(startHref);
+  dumpPage("stage-1-after-signup", arrived.html);
+  check(
+    "and the same stage draws for that visitor once signed in",
+    arrived.status === 200 &&
+      arrived.html.includes('data-step-state="current"') &&
+      words !== null &&
+      arrived.html.includes(textOf(words.title)),
+    `status ${arrived.status}`,
+  );
   note(
-    `#867 — intent carried: ${startHref} → sign-up → ${chosenStem} (stage 1 of "${words?.title ?? chosenSlug}")`,
+    `#1042 — one door: ${startHref} → stage 1 of "${words?.title ?? chosenSlug}", signed out and signed in`,
+  );
+
+  /* 0b. the generic action starts the platform's blank template (#1042) --- */
+  // "Create a relationship" is the create intent with no template behind it, and the create flow
+  // needs a template record (the draft cookie is keyed by it, stage 3 seeds its Aspects from it).
+  // So the generic action starts the platform's blank — the glossary's third line, the user's to
+  // name — and it has to render for a visitor like any other stage 1. A `draft` blank would 404
+  // here for a signed-out reader, which is the state this check exists to catch.
+  const genericCatalogue = await visitor.get("/relationship-templates");
+  const blankHref =
+    genericCatalogue.html.match(
+      /href="(\/templates\/relationship\/blank-template\/create)"/,
+    )?.[1] ?? "";
+  const blankStart = blankHref === "" ? null : await visitor.get(blankHref);
+  check(
+    "the generic create action opens the blank template's stage 1 for a signed-out visitor",
+    blankStart !== null &&
+      blankStart.status === 200 &&
+      blankStart.html.includes('data-wizard-rail="1"') &&
+      blankStart.html.includes('value="assessment-blank-template"'),
+    blankHref === ""
+      ? "no blank start on /relationship-templates"
+      : `${blankHref} → status ${blankStart?.status ?? "not fetched"}`,
   );
 
   /* 0. an account — stage 4 writes the draft for one (#844) ----------- */
@@ -718,6 +859,8 @@ async function main() {
   await signUpCreator(initiator, { name: "Avery E2E" });
 
   /* 1. create — five stages: Details, Settings, Aspects, Account, Invite (#825) --- */
+  // This creator **chose a plan on /pricing first** (#1043), so the run also proves the carry
+  // survives the four stages and the account write between the choice and stage 5.
   const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorFirst: "Avery",
@@ -728,6 +871,7 @@ async function main() {
     title: "Avery and Rowan E2E",
     mode: "basic",
     aspects: templateAspects,
+    carriedPlan: { planId: "principal", interval: "year" },
   });
   if (firstCreate.instanceId === null) throw new Error("no instance id in the create redirect");
   const instanceId = firstCreate.instanceId;

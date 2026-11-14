@@ -30,7 +30,9 @@ data/billing-plans.ts           the four tiers — one authored list
 db/migrations/0009_billing.sql  billing_plan, billing_subscription, billing_event
 app/api/billing/checkout/route.ts POST only: a card's purchase, through the port
 app/api/billing/webhook/route.ts  POST only: verify, map, apply once
-components/pricing/plan-checkout-button.tsx  the button that follows the route's answer
+components/pricing/pricing-plans.tsx    the plan grid: one action per sellable tier, carrying it
+lib/flow/plan-intent.ts         the carried plan — /pricing's choice, read back at stage 5
+app/(marketing)/pricing/start/route.ts  the action every pricing CTA takes: record the plan, 303
 scripts/billing-smoke.mjs       the live proof, keyless (`pnpm billing:smoke`)
 scripts/stripe-smoke.mjs        the live proof, test mode (`pnpm billing:stripe:smoke`)
 ```
@@ -118,13 +120,23 @@ belong to the request: which rows `billing_plan` holds, and which plan the viewe
   prints the not-available line instead of a button at that interval, so a retired `basic/year`
   still sells `basic/month`. A `source: "fixture"` render sells nothing at all, because a tree with
   no database cannot write a subscription.
-- **A click.** `POST /api/billing/checkout` takes `{ planId, interval }`, resolves the account from
-  the session (`currentUserIfConfigured()` — never the body), and calls `startCheckout()` on
-  whichever adapter `BILLING_PROVIDER` selects. It answers `{ url, provider, completed }` (200),
-  `{ signInUrl }` (401), a `BillingRefusal` sentence (400, or 503 when the adapter has no
-  credentials) or `billing-unavailable` (502). The mock completes inline and the browser reloads
-  `/pricing`; the hosted adapter sends it to its own page. `tests/pricing-catalogue.test.ts` drives
-  the projection and the body parser with no Postgres and no browser.
+- **A click carries the plan; it does not charge it (#1043).** A sellable card's action is a link to
+  `/pricing/start?plan=<tier>&interval=<interval>`, whose handler
+  (`app/(marketing)/pricing/start/route.ts`) records that pair on the browser and answers `303` to
+  the template catalogue. A general action — the free card, the closing banner — goes to the same
+  route with no pair and **clears** whatever an earlier visit left, so a door that carries nothing
+  cannot inherit a choice. The choice rides the catalogue, a template's page, stage 1 and the
+  account round-trip, and `components/assessment-flow/invite-walk.tsx` opens stage 5 with that row
+  selected (it is `data-plan-carried` on the walk, and the row's radio is checked).
+- **The checkout is inside stage 5, and it is unchanged.** Choosing (or confirming) a plan there
+  calls `startMembershipAction()`, which posts `{ planId, interval }` through the same port and the
+  same adapters: the mock completes inline and the walk moves to its thank-you, and the hosted
+  adapter hands back the client secret the provider's frame mounts with. It answers a refusal as a
+  sentence in the step, and `sendDraftInvitation()` still refuses an unpaid send — a carried plan is
+  a preselection, never a payment. `POST /api/billing/checkout` remains for the live harnesses
+  (`flow:e2e`, `payment:e2e`, `billing:smoke`); no page posts to it any more.
+  `tests/pricing-catalogue.test.ts` drives the projection and the body parser with no Postgres, and
+  `tests/pricing-plan-carry.test.tsx` drives the carry, the route and the walk without a browser.
 - **Current plan.** The page reads the entitlement on the server and marks the entitled card; a
   query string decides nothing, so a refresh after a checkout shows the plan that was bought.
 - **Test mode is labelled.** `billingTestMode()` is true when the hosted adapter is selected (it
@@ -164,11 +176,22 @@ subscription event mappable without a customer→account table.
 `POST /api/billing/webhook` is the only verb, and the path is fixed: it is what the owner pastes into
 the provider's dashboard, so a different path is a silent 404 reported as a failed delivery. The
 endpoint must be registered as a **Snapshot** destination (the payload carries the whole object) and
-subscribed to three events:
+subscribed to six events:
 
-- `checkout.session.completed`
-- `customer.subscription.updated`
-- `customer.subscription.deleted`
+- `checkout.session.completed` — the purchase, and the only event that creates a row
+- `customer.subscription.updated` / `customer.subscription.deleted` — the subscription's own state
+- `invoice.paid` — the renewal; the `expired → active|published` recovery `lib/relationship/status.ts`
+  names (`#1055`)
+- `invoice.payment_failed` — the refused renewal: the account's live relationships lapse and template
+  #7 fires (`#1055`)
+- `customer.subscription.trial_will_end` — the warning before the first charge, template #6 (`#1055`)
+
+That list is `STRIPE_WEBHOOK_EVENTS`, and **the dashboard is the other half of it**: nothing in a
+build can read what an endpoint is subscribed to, so `pnpm billing:webhooks --check` compares the
+account to the record in `tests/fixtures/stripe-webhook-endpoints.json` and
+`tests/billing-webhook-events.test.ts` holds the record equal to the constant. Three of the six were
+missing until `#1055`, and every check stayed green while the state machine and two written templates
+waited for events that were never delivered — which is why the drift is now a test and not a habit.
 
 Anything else is acknowledged with a 200 and recorded nowhere — a 4xx on an unsubscribed type makes
 the provider retry it for days. Status codes: 200 applied/duplicate/ignored/foreign, 400 bad
@@ -228,8 +251,8 @@ The release candidate runs `BILLING_PROVIDER=stripe` on Preview and Production w
 completed checkout in production creates a **test-mode** subscription and no money moves. Any surface
 that could be read as "you are being billed" needs the smallest honest marker — one line, test mode,
 no charge. That surface is `components/pricing/**`: card 3 of #289 has the band print the
-`test-mode` line from `data/pages/pricing.ts` whenever `billingTestMode()` is true, and the button
-next to it is a real checkout on a test key.
+`test-mode` line from `data/pages/pricing.ts` whenever `billingTestMode()` is true, and the plan it
+sells is charged on a test key inside stage 5's walk (#1043).
 
 ## Deliberately absent
 

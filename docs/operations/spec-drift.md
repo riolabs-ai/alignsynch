@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Spec drift · prev [Resend inbound](resend-inbound.md)
+[Docs hub](../README.md) › **Operations** › Spec drift · prev [Resend inbound](resend-inbound.md) · next [Stripe go-live](stripe-go-live.md)
 
 <!-- docs-nav:end -->
 
@@ -193,6 +193,6 @@ by `docs/specs/README.md`.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › Spec drift · prev [Resend inbound](resend-inbound.md)
+[Docs hub](../README.md) › **Operations** › Spec drift · prev [Resend inbound](resend-inbound.md) · next [Stripe go-live](stripe-go-live.md)
 
 <!-- docs-nav:end -->

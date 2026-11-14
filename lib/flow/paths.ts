@@ -351,6 +351,32 @@ export function createRelationshipPath(templateSlug: string): string {
 }
 
 /**
+ * The platform's **blank** template — the record a generic create action starts from (#1042).
+ *
+ * One slug, named once, because two different facts address it: the fixture that authors the
+ * generic CTA's destination (`data/pages/templates.ts::final-cta`) and the test that pins that
+ * destination to a route this build actually renders. The record itself is `data/assessments.ts`'s
+ * `assessment-blank-template` — the glossary's third line, "the user's to name", `published`
+ * since #1042 so it can be copied like any other start.
+ *
+ * It is deliberately **not** a `TemplateRecordId`: this is the URL's fact, and the form still posts
+ * the record's id (see `relationshipTemplatePath()`'s note on the two handles).
+ */
+export const BLANK_TEMPLATE_SLUG = "blank-template";
+
+/**
+ * The **blank start**: stage 1 of the create flow for a relationship nobody chose a template for.
+ *
+ * "Create a relationship" on a catalogue, a template list or an offer band has no template behind
+ * it — that is what makes it generic — so it starts on this record: the person names the
+ * relationship at Details and rewords the placeholder Aspects at stage 3. Before #1042 the generic
+ * action was a bare `/register`, which put a sign-up form where the wizard belongs.
+ */
+export function blankRelationshipPath(): string {
+  return createRelationshipPath(BLANK_TEMPLATE_SLUG);
+}
+
+/**
  * `/templates/relationship/[slug]/create/mode` — stage 2 of the create flow (#688).
  *
  * A child of the create path rather than a query parameter (`?step=mode`) because the flow is
@@ -459,16 +485,45 @@ export function sentPath(instanceRecordId: string): string {
 export const SENT_RETURN_VALUE = "sent";
 
 /**
- * `/pricing` — where a plan is chosen (#618).
+ * `/pricing` — the page a plan is chosen on (#618).
  *
- * The create screen's two refusals (`relationship-limit`, `mode-not-entitled`) name a plan and, until
- * this constant, drew no door. They point *here* and not at a checkout URL: a checkout is started
- * from a plan card (`components/pricing/plan-checkout-button.tsx`) which posts the tier it sells, and
- * a refusal that built a checkout session would be a second copy of that decision — a link that can
- * only work for one tier, on a page that does not know which tier the person needs. The route is
- * already in `content/routes.ts`, so E7's both-directions check is satisfied without an edit there.
+ * The create screen's two refusals (`relationship-limit`, `mode-not-entitled`) name a plan and drew
+ * no door until this constant. They point *here* and not at a checkout URL: a checkout is started
+ * **inside stage 5**, from a plan row, and a refusal that built a checkout session would be a second
+ * copy of that decision — a link that can only work for one tier, on a page that does not know which
+ * tier the person needs. The route is already in `content/routes.ts`, so E7's both-directions check
+ * is satisfied without an edit there.
+ *
+ * Since #1043 the page sells nothing itself: every action on it opens the template catalogue, and a
+ * plan-specific one carries the tier and interval through {@link pricingStartPath}.
  */
 export const PRICING_PATH = "/pricing";
+
+/**
+ * `/pricing/start` — the one action every `/pricing` CTA takes (#1043).
+ *
+ * It is a **route handler, not a page**: it writes (or clears) the carried plan on the browser and
+ * answers `303` to the public Templates listing (`app/(marketing)/pricing/start/route.ts`). Two
+ * policies, one address, so a door cannot carry a plan by accident:
+ *
+ *   `pricingStartPath({ planId, interval })`   a plan card — carry this choice
+ *   `pricingStartPath()`                       the general CTA — carry **nothing**, and clear
+ *                                              whatever an earlier visit left behind
+ *
+ * The choice travels in the query rather than in the page's own state because the card that draws it
+ * is a client component and the catalogue it opens is prerendered; the handler is what turns one
+ * into the other. Nothing here is a payment: stage 5's own checkout is still the only charge, and a
+ * crafted pair resolves to the general policy (see `lib/flow/plan-intent.ts`).
+ */
+export function pricingStartPath(choice?: {
+  readonly planId: string;
+  readonly interval: string;
+}): string {
+  const route = `${PRICING_PATH}/start`;
+  if (choice === undefined) return route;
+  const query = new URLSearchParams({ plan: choice.planId, interval: choice.interval });
+  return `${route}?${query.toString()}`;
+}
 
 /** The submit endpoint: a form post, so a frozen answer is a status code and not a banner. */
 export function answersPath(instanceRecordId: string): string {

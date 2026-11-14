@@ -4,11 +4,10 @@
  * The sibling of `lib/templates-page.ts` (the directory) and `lib/template-catalogue.ts` (the
  * card): **words** from `data/pages/templates-detail.ts` and **a record** from
  * `data/relationship-types.ts`, and this module is the join.
- * It is a pure projection — no React, no Next, no filesystem, no clock — and its one request-shaped
- * input is the `StartViewer`: the page resolves the session and this module asks `lib/start-path.ts`
- * where that viewer's start action goes (#979 — a member is sent into the flow, never to `/register`).
- * Everything else is a function of the fixtures, so the page module can still prerender and a node
- * test can drive the model without a router.
+ * It is a pure projection — no React, no Next, no filesystem, no clock — and it takes no session:
+ * since #1042 the page's one action is the create flow's stage 1 for **every** viewer, so there is
+ * no viewer-shaped input to resolve. Everything else is a function of the fixtures, so the page
+ * module can still prerender and a node test can drive the model without a router.
  *
  * What the page shows, and why each part is the record's rather than the view's:
  *
@@ -24,8 +23,8 @@
  *     template does not carry a price of its own and the shop does not sell a relationship at a
  *     per-relationship rate (#798, and the owner's letter on #796), so there is no `type.price`
  *     read on this page at all;
- *   - one primary action, `startPathFor()` — the create flow's stage 1 for a member, and
- *     `/register?next=…/create` for a visitor (#867, #979) — and the worked
+ *   - one primary action, `startPathFor()` — the create flow's stage 1, carrying this type's
+ *     template, for a visitor and a member alike (#867, #1042) — and the worked
  *     example **only** where
  *     `demoAnswersFor()` holds a sheet — a link to a page that answers 404 is worse than none;
  *   - a way back to the directory.
@@ -47,7 +46,6 @@ import {
   cataloguePriceNote,
   startPathFor,
 } from "@/lib/template-catalogue";
-import type { StartViewer } from "@/lib/start-path";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 
 /** A link, as this page draws one: the fixture's words over a route the model resolved. */
@@ -132,7 +130,6 @@ export function templateSlugs(
 export function templateDetail(
   copy: PageCopy,
   slug: string,
-  viewer: StartViewer,
   types: readonly RelationshipType[] = purchasableRelationshipTypes,
 ): TemplateDetailModel | undefined {
   const type = types.find((candidate) => candidate.id === slug);
@@ -171,7 +168,7 @@ export function templateDetail(
       })),
     },
     priceNote: cataloguePriceNote(pageItemOf(copy, DETAIL_IDS.price).label),
-    start: { label: pageItemOf(copy, DETAIL_IDS.use).label, href: startPathFor(type.id, viewer) },
+    start: { label: pageItemOf(copy, DETAIL_IDS.use).label, href: startPathFor(type.id) },
     ...(demoAnswersFor(type.id) === undefined
       ? {}
       : {

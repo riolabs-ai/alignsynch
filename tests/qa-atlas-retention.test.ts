@@ -204,7 +204,7 @@ describe("the failure names the cut and the command that removes it", () => {
   });
 
   it("reads the committed cuts newest-first, by semver", () => {
-    expect(atlasCuts(ATLAS).map((entry) => entry.label)).toEqual(["v1.20.0", "v1.19.0", "v1.18.0"]);
+    expect(atlasCuts(ATLAS).map((entry) => entry.label)).toEqual(["v1.20.1", "v1.20.0", "v1.19.0"]);
   });
 });
 
@@ -439,7 +439,7 @@ describe("a capture registers its own cut in docs/docs.json", () => {
     expect(row.title).toBe("QA atlas — v1.21.0");
     // The newest existing cut's own shape, which is what a reader of the hub compares it against.
     expect(row.question).toBe(
-      "What did every registered surface render in v1.21.0, and what changed since the 1.20.0 capture?",
+      "What did every registered surface render in v1.21.0, and what changed since the 1.20.1 capture?",
     );
     expect(rowsOf(manifest)).toHaveLength(before + 1);
     const listed = rowsOf(manifest).filter((doc) => doc.path === row.path);
@@ -455,7 +455,7 @@ describe("a capture registers its own cut in docs/docs.json", () => {
       candidate.docs.some((doc) => doc.path === "qa-atlas/README.md"),
     );
     if (section === undefined) throw new Error("the committed manifest lists no qa-atlas section");
-    const newest = section.docs.findIndex((doc) => doc.path === "qa-atlas/v1.20.0/index.md");
+    const newest = section.docs.findIndex((doc) => doc.path === "qa-atlas/v1.20.1/index.md");
     expect(newest).toBeGreaterThan(-1);
 
     registerAtlasCut(manifest, "1.21.0");

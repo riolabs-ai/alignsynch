@@ -1,6 +1,6 @@
 {
   "name": "quizhub",
-  "version": "1.20.0",
+  "version": "1.20.1",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "engines": {
@@ -62,6 +62,7 @@
     "demo:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo-verify.mjs",
     "billing:smoke": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/billing-smoke.mjs",
     "billing:stripe:smoke": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/stripe-smoke.mjs",
+    "billing:webhooks": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/stripe-webhook-events.mjs",
     "billing:on-switch": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/billing-adapter-graph.mjs",
     "demo:reset": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo-reset.mjs",
     "flow:e2e": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flow-e2e.mjs",

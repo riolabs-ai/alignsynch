@@ -6,6 +6,52 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.20.1] - 2026-11-14
+
+Seven fixes and no new surface: the billing receiver now subscribes the events its own state machine
+and email band were waiting for, the price table points at the AlignSynch test account, four doors
+open onto the thing they name, and the parity render no longer inherits the developer's shell
+environment. The ledger below the fixes is provenance — the three commits in this window that are not
+fixes, named so the entry accounts for every commit the tag covers.
+
+### Fixed
+
+- `fix(gate)` — the parity render no longer inherits the developer shell's environment (#1066) ([#1067](https://github.com/riolabs-ai/alignsynch/pull/1067))
+- `fix(pricing)` — carry the chosen plan from /pricing to stage 5 (#1043) ([#1061](https://github.com/riolabs-ai/alignsynch/pull/1061))
+- `fix(onboarding)` — #1042 — one wizard door for every create-intent action ([#1050](https://github.com/riolabs-ai/alignsynch/pull/1050))
+- `fix(health)` — the stale-record remedy names a command that runs (#696) ([#1045](https://github.com/riolabs-ai/alignsynch/pull/1045))
+- `fix(marketing)` — #1040 the canonical Templates door renders the v1 shop listing on AlignSynch ([#1048](https://github.com/riolabs-ai/alignsynch/pull/1048))
+- `fix(billing)` — subscribe the three live-money events and fire the two written notices (#1055) ([#1060](https://github.com/riolabs-ai/alignsynch/pull/1060))
+- `fix(billing)` — point the price table at the AlignSynch test account (#846) ([#1051](https://github.com/riolabs-ai/alignsynch/pull/1051))
+
+### Commits
+
+- `test(md-normalise)` — snapshot docs/operations/stripe-go-live.md (#1057) ([#1059](https://github.com/riolabs-ai/alignsynch/pull/1059))
+- `docs(billing)` — land the Stripe account dossier and the go-live pre-flight (#1054) ([#1056](https://github.com/riolabs-ai/alignsynch/pull/1056))
+- `chore(health)` — re-record platform health at v1.20.0 ([#1052](https://github.com/riolabs-ai/alignsynch/pull/1052))
+
+### Known limits
+
+- **Stripe is in test mode, and no card is charged.** The card step runs on test keys — `/pricing`
+  says so in as many words, _"Test mode: the card checkout runs on test keys, so no card is
+  charged"_ — so the price table this release points at the AlignSynch test account and the six
+  events it subscribes move no money. Going live is `#847`, and it is not in this release.
+- **The trial-ending and lapsed notices are wired and unit-proven, not observed.** `#1055`
+  subscribes six billing events and fires the two written notices; the wiring is proven by
+  `tests/billing-webhook-events.test.ts` against the endpoint's own event list. The events a
+  renewal produces come from a live clock, and no renewal has been observed on this tree — so read
+  this as "the notices exist and are tested", never as "a renewal has been seen to notify anyone".
+- **`demo.alignsynch.com` serves an older build until it is redeployed.** It answered
+  `{"version":"1.17.0","commit":"41d3efd2"}` while this release was prepared, against
+  `alignsynch.com` answering `1.20.0` at `5310f69b`. The demo host is not a deployment of this tag
+  and does not carry these six fixes yet.
+- **The atlas captures the routes, not the walk's hardest screens.** It has no auth modal, no
+  stage-form embed step and nothing for sign-in, sign-up or the Stripe card flow — the surfaces most
+  of these six fixes live in — so the v1.20.1 sweep documents that every registered route renders,
+  not that these six paths were walked. `docs/qa-atlas/README.md` states the criterion it does meet.
+- **No dependency majors.** `jsdom` 31 (`#1025`) and `swiper` 14 (`#1027`) are open and are not in
+  this version; no dependency moved in this window.
+
 ## [1.20.0] - 2026-11-14
 
 ### Added

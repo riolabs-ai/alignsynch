@@ -268,35 +268,32 @@ describe("the catalogue is complete without JavaScript", () => {
 });
 
 describe("every action on the page is public", () => {
-  it("starts a relationship with the chosen template, and still claims no query of its own", () => {
+  it("starts a relationship with the chosen template, and claims no query of its own", () => {
     for (const card of cards) {
-      // #867 — the action carries which template the visitor picked, as `/register`'s `next`
-      // (the one parameter that route reads). A bare `/register` is the defect: the account is
-      // created and the template is gone.
-      expect(card.start).toBe(startPathFor(card.id, VISITOR));
-      expect(card.start.startsWith(`${START_PATH}?next=`)).toBe(true);
-      expect(new URL(card.start, "http://x").searchParams.get("next")).toBe(
-        createRelationshipPath(card.id),
-      );
+      // #1042 — the action is the create flow's stage 1 for this card's template, the same address
+      // for every viewer. It used to be `/register?next=<that stage>` (#867), which made the
+      // account the first screen of a create intent; the account is stage 4 of that wizard now.
+      expect(card.start).toBe(startPathFor(card.id));
+      expect(card.start).toBe(createRelationshipPath(card.id));
+      expect(new URL(card.start, "http://x").search).toBe("");
     }
     expect(START_PATH).toBe("/register");
-    // #889 — intent preservation is a separate requirement, and this is now the separate work:
-    // the intent lives in `next`, which the route honours. A bespoke `?template=` is still a
-    // promise the route cannot keep, because nothing reads it.
+    // #889 — a bespoke `?template=` is still a promise the route cannot keep: nothing reads it.
     for (const href of hrefs) expect(href).not.toContain("?template=");
   });
 
   /**
-   * The other half of "the route honours it": the destination has to be a screen this build
-   * ships. `signInDestination` validates same-site and shipped-via-flags, not the route manifest,
-   * so an unshipped create step would be honoured into a 404 — this pins that the pattern the
-   * action names is still registered in `content/routes.ts`.
+   * The destination has to be a screen this build ships — a stage-1 address is only public if the
+   * route exists and renders for a signed-out visitor, which `content/routes.ts` is what the
+   * manifest checks. An unshipped create step would be a link into a 404.
    */
-  it("sends the visitor to a create step this build actually ships", () => {
+  it("sends every card to a create step this build actually ships", () => {
+    // The stage-1 route is in the manifest (E7 checks it in both directions), and every card's
+    // address is one instance of that pattern.
     expect(ROUTE_PATTERNS).toContain("/templates/relationship/[slug]/create");
     for (const card of cards) {
-      const next = new URL(card.start, "http://x").searchParams.get("next");
-      expect(next).toBe(`/templates/relationship/${card.id}/create`);
+      expect(card.start).toMatch(/^\/templates\/relationship\/[a-z-]+\/create$/);
+      expect(card.start).toBe(`/templates/relationship/${card.id}/create`);
     }
   });
 
@@ -311,32 +308,37 @@ describe("every action on the page is public", () => {
 
   /**
    * The rule, as a scan of the served markup: a signed-out visitor who follows any link must not
-   * meet a login wall. The page's destinations are `/register`, `/pricing`, each type's own page,
-   * two demo sheets, the front page's `#questions` band, and its own anchors.
+   * meet a login wall. The page's destinations are stage 1 of a template (the flow's own first
+   * screen, which renders without a session), `/pricing`, each type's own page, two demo sheets,
+   * the front page's `#questions` band, and its own anchors.
+   *
+   * **A `/templates/relationship/<slug>/create` href is public; the `/templates/` *library* is
+   * not.** Since #1042 the create intent goes straight to the wizard, so `/^\/templates/` cannot be
+   * a blanket forbidden prefix any more — it is narrowed to the library and its own screens, and
+   * the allowed create shape is asserted positively.
    */
-  it("links no dashboard route and no create form", () => {
+  it("links no dashboard route, no library screen and no other create form", () => {
     expect(hrefs.length).toBeGreaterThan(0);
     const forbidden = [
       /^\/dashboard/,
       /^\/assessment\//,
       /^\/settings/,
       /^\/admin/,
-      // #794 — the template *library* is a signed-in screen; this page is public.
-      /^\/templates/,
+      // #794 — the template *library* and a template's own page are signed-in screens.
+      /^\/templates\/relationship$/, // the library
+      /^\/templates\/relationship\/[a-z-]+$/, // one template's page
+      /^\/templates\/relationship\/new$/, // authoring a template
+      /^\/templates\/(?!relationship\/[a-z-]+\/create$)/, // anything else under /templates/
     ];
     for (const href of hrefs) {
       for (const pattern of forbidden) {
         expect(pattern.test(href), `the page links ${href}`).toBe(false);
       }
     }
-    // #867 — the register action is the only href that carries a query, and the query is the
-    // chosen template's create step rather than one of this page's own destinations. It is still a
-    // public destination: the account is created on `/register` **first**, and `next` is what that
-    // route resolves to afterwards (`signInDestination`), so no href here is behind a session.
     for (const href of hrefs) {
       const path = href.split("?")[0];
       expect(
-        href.startsWith(`${START_PATH}?next=`) ||
+        /^\/templates\/relationship\/[a-z-]+\/create$/.test(path) ||
           path === "/pricing" ||
           path === "/#questions" ||
           path === "#catalogue" ||
@@ -345,15 +347,11 @@ describe("every action on the page is public", () => {
           /^\/relationship-types\/[a-z-]+(\/demo)?$/.test(path),
         href,
       ).toBe(true);
+      // The create door carries no query at all — the template is in the path (#1042).
+      if (/^\/templates\//.test(path)) expect(href).toBe(path);
     }
-    // The intent is honoured, not merely advertised: every card's `next` survives the sign-in
-    // validator as itself, so `/register` sends the visitor to that template's stage 1.
+    // Every card's action is actually on the page.
     for (const card of cards) expect(hrefs).toContain(card.start);
-    for (const href of hrefs.filter((one) => one.startsWith(`${START_PATH}?next=`))) {
-      const destination = new URL(href, "http://x").searchParams.get("next");
-      expect(destination).not.toBeNull();
-      expect(signInDestination(destination, OVERVIEW_PATH)).toBe(destination);
-    }
     // No asset path is ever an `href` (the mark and the icons are `src`, resolved by the registry).
     for (const href of hrefs) expect(href.endsWith(".svg")).toBe(false);
   });
