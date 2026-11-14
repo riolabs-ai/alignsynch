@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**141 documents in 9 sections.** Every page carries the same nav block, generated
+**142 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
-- [Records & QA](#records-qa) — 23 documents
+- [Records & QA](#records-qa) — 24 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 22 documents
@@ -172,6 +172,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa/swiper-12/README.md`](qa/swiper-12/README.md) — **swiper 12** — Do the carousels survive swiper 11.2.7 → 12.2.0?
 - [`qa/v1x-ui-cohort/README.md`](qa/v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
+- [`qa-atlas/DEFERRED.md`](qa-atlas/DEFERRED.md) — **Deferred sweeps** — Which release shipped without a QA atlas sweep, and what could the atlas not cover?
 - [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — the 1.17.1 tree (never released)** — What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?
 - [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?
 - [`qa-atlas/v1.19.0/index.md`](qa-atlas/v1.19.0/index.md) — **QA atlas — v1.19.0** — What did every registered surface render in v1.19.0, and what changed since the 1.18.0 capture?
