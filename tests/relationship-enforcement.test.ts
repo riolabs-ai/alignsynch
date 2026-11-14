@@ -25,6 +25,7 @@ import {
   trialHolderOf,
   type Sql,
 } from "@/lib/relationship/enforcement";
+import { reactivationStatusOf } from "@/lib/relationship/membership";
 
 type Row = Record<string, unknown>;
 
@@ -135,7 +136,13 @@ describe("syncRelationshipsWithSubscription", () => {
       NOW,
     );
 
-    expect(consequence).toEqual({ entitled: true, reactivated: 1, lapsed: 0 });
+    expect(consequence).toEqual({
+      entitled: true,
+      reactivated: 1,
+      lapsed: 0,
+      reactivatedIds: ["rel-1"],
+      lapsedIds: [],
+    });
     const update = calls.find((call) => REACTIVATE.test(call.text));
     // The seat decides whether the relationship comes back as `active` or as `published`: a link
     // nobody has claimed must work again, and a bound pair must not read as an unclaimed invitation.
@@ -156,7 +163,13 @@ describe("syncRelationshipsWithSubscription", () => {
       NOW,
     );
 
-    expect(consequence).toEqual({ entitled: false, reactivated: 0, lapsed: 2 });
+    expect(consequence).toEqual({
+      entitled: false,
+      reactivated: 0,
+      lapsed: 2,
+      reactivatedIds: [],
+      lapsedIds: ["rel-1", "rel-2"],
+    });
     const update = calls.find((call) => LAPSE_UPDATE.test(call.text));
     expect(update?.values?.[1]).toBe(PERIOD_END.toISOString());
     expect(update?.values?.[2]).toBe("subscription-canceled");
@@ -173,6 +186,50 @@ describe("syncRelationshipsWithSubscription", () => {
       NOW,
     );
     expect(consequence.entitled).toBe(true);
+  });
+
+  it("reactivates to the status `reactivationStatusOf()` decides (#1055)", async () => {
+    // The function is the rule and the statement's `CASE` is its one implementation, so the expected
+    // words are read out of the function rather than typed twice: a change to the seat rule that did
+    // not reach the SQL would otherwise leave a green suite about a transition nobody performs.
+    const bound = reactivationStatusOf(true);
+    const unclaimed = reactivationStatusOf(false);
+    const { sql, calls } = fakeSql([{ match: REACTIVATE, rows: [] }]);
+
+    await syncRelationshipsWithSubscription(
+      sql,
+      { userId: "auth-1", status: "active", currentPeriodEnd: PERIOD_END },
+      NOW,
+    );
+
+    const update = calls.find((call) => REACTIVATE.test(call.text));
+    expect(update?.text).toContain(`THEN '${bound}'`);
+    expect(update?.text).toContain(`ELSE '${unclaimed}'`);
+  });
+
+  it("lapses a `past_due` account when the event says so — invoice.payment_failed (#1055)", async () => {
+    // The one write that does not ask the entitlement. A refused renewal leaves the subscription
+    // `past_due`, which entitles on purpose, so the status alone would reopen the pair the event
+    // just closed; `"lapse"` takes the same statement the cancellation path takes and names the
+    // reason the money did not arrive.
+    const { sql, calls } = fakeSql([{ match: LAPSE_UPDATE, rows: [{ id: "rel-1" }] }]);
+
+    const consequence = await syncRelationshipsWithSubscription(
+      sql,
+      { userId: "auth-1", status: "past_due", currentPeriodEnd: PERIOD_END },
+      NOW,
+      { direction: "lapse" },
+    );
+
+    expect(consequence).toEqual({
+      entitled: false,
+      reactivated: 0,
+      lapsed: 1,
+      reactivatedIds: [],
+      lapsedIds: ["rel-1"],
+    });
+    const update = calls.find((call) => LAPSE_UPDATE.test(call.text));
+    expect(update?.values?.[2]).toBe("payment-failed");
   });
 });
 

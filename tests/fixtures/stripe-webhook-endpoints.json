@@ -1,0 +1,35 @@
+{
+  "account": "acct_1If98uIxC4rz96cc",
+  "recordedAt": "2026-11-14",
+  "source": "GET /v1/webhook_endpoints (test mode), reduced to id/url/livemode/status/events",
+  "endpoints": [
+    {
+      "id": "we_1UblH7IxC4rz96ccjeMoYQdd",
+      "url": "https://alignsynch.com/api/billing/webhook",
+      "livemode": false,
+      "status": "enabled",
+      "enabledEvents": [
+        "checkout.session.completed",
+        "customer.subscription.deleted",
+        "customer.subscription.trial_will_end",
+        "customer.subscription.updated",
+        "invoice.paid",
+        "invoice.payment_failed"
+      ]
+    },
+    {
+      "id": "we_1UblH7IxC4rz96ccOGBbqsDW",
+      "url": "https://demo.alignsynch.com/api/billing/webhook",
+      "livemode": false,
+      "status": "enabled",
+      "enabledEvents": [
+        "checkout.session.completed",
+        "customer.subscription.deleted",
+        "customer.subscription.trial_will_end",
+        "customer.subscription.updated",
+        "invoice.paid",
+        "invoice.payment_failed"
+      ]
+    }
+  ]
+}

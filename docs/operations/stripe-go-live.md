@@ -111,15 +111,21 @@ Nine legacy WooCommerce products and their Prices sit in the same account, inert
 
 ## 5. Webhooks
 
-| host                  | endpoint                                               | events                                                                                         | secret      |
-| --------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------- |
-| `alignsynch.com`      | `we_1UblH7IxC4rz96ccjeMoYQdd` → `/api/billing/webhook` | `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` | `b1de0a74…` |
-| `demo.alignsynch.com` | `we_1UblH7IxC4rz96ccOGBbqsDW` → `/api/billing/webhook` | same three                                                                                     | `3ac2d2c5…` |
+| host                  | endpoint                                               | events                                                                                                                                                                           | secret      |
+| --------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `alignsynch.com`      | `we_1UblH7IxC4rz96ccjeMoYQdd` → `/api/billing/webhook` | `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.trial_will_end` | `b1de0a74…` |
+| `demo.alignsynch.com` | `we_1UblH7IxC4rz96ccOGBbqsDW` → `/api/billing/webhook` | same six                                                                                                                                                                         | `3ac2d2c5…` |
+- **Six since #1055**, measured 2026-11-14: both endpoints went 3 → 6 events. The three added are
+  `invoice.paid`, `invoice.payment_failed` and `customer.subscription.trial_will_end` — the ones §7
+  names as assumed and never delivered. `pnpm billing:webhooks --check` compares the account to the
+  committed record (`tests/fixtures/stripe-webhook-endpoints.json`), and
+  `tests/billing-webhook-events.test.ts` holds that record equal to `STRIPE_WEBHOOK_EVENTS`, so the
+  dashboard and the code cannot drift again without a failing test.
 - The receiver verifies the raw body against `Stripe-Signature` (tolerance enforced), records an event row
   keyed by Stripe event id **once**, and applies an event only when `metadata.host` matches its own
   `BILLING_HOST`. A foreign delivery answers `200 {"applied":false,"kind":"foreign"}` — acknowledged, never
   applied, so the sibling host's events are not silently swallowed either.
-- An event type outside the three is acknowledged and **logged** (`billing: ignored stripe event …`) rather
+- An event type outside the six is acknowledged and **logged** (`billing: ignored stripe event …`) rather
   than 200-ing silently.
 - Replay: `~/.hermes/profiles/alignsynch/bin/withstripe.sh stripe events resend <evt_id>`; idempotency makes
   a double resend harmless.
@@ -148,22 +154,24 @@ Not sent — each a go-live blocker the moment money is real:
 
 ## 7. The event contract vs the product's own surfaces
 
-**Measured gap. The state machine and the email band both assume events nobody subscribes to.**
+**Closed by #1055 (2026-11-14).** The gap below is kept as measured, because it is the reason the
+drift guard exists; the "subscribed?" column now says what the delivery does, not what it did.
 
-| the product says                        | where it says it                           | subscribed?                                                                   |
-| --------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------- |
-| `invoice.paid` moves `expired → active` | `lib/relationship/status.ts:184`           | **no** — logged as `not subscribed` and dropped                               |
-| a lapsed membership is announced        | `lib/email/templates/membership-lapsed.ts` | **no event reaches it**                                                       |
-| the trial is ending                     | `lib/email/templates/trial-ending.ts`      | **no** — `customer.subscription.trial_will_end` is not handled                |
-| a renewal failed                        | nothing                                    | **no** — `invoice.payment_failed` is not handled, so there is no dunning path |
+| the product says                        | where it says it                           | subscribed?                                                                                |
+| --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `invoice.paid` moves `expired → active` | `lib/relationship/status.ts:184`           | **yes** — mapped, and the reactivation statement runs in the same transaction as the write |
+| a lapsed membership is announced        | `lib/email/templates/membership-lapsed.ts` | **yes** — `invoice.payment_failed` lapses the pair and both seats get template #7          |
+| the trial is ending                     | `lib/email/templates/trial-ending.ts`      | **yes** — `customer.subscription.trial_will_end`, quoting the payload's own `trial_end`    |
+| a renewal failed                        | `lib/billing/notices.ts`                   | **yes** — the pair goes read-only and the member is told; no retry ladder, no grace window |
 
-Consequence, stated plainly: a relationship that lapsed and is then recovered by a **renewal** charge has no
-path back to `active`; a trial that ends charges a card with no warning to the member; a failed renewal is a
-silent lapse. Test mode hides all three, because nothing in test mode has to renew.
+Before #1055: three events were subscribed and everything else was logged as `not subscribed` and
+dropped, so a relationship recovered by a renewal had no path back to `active`, a trial that ended
+charged a card with no warning, and a failed renewal was a silent lapse — invisible in test mode,
+because nothing in test mode has to renew.
 
-`BLOCKED-ON` a decision, not a value: either subscribe `invoice.paid` + `invoice.payment_failed` +
-`customer.subscription.trial_will_end` and wire the two existing templates, or prove that every lapse ends in
-`customer.subscription.deleted` (so a renewal can never be the recovery path) and delete the two templates.
+What the fix does **not** add, and deliberately: a dunning ladder, a retry schedule or a grace
+period. A failed charge is one lapse with one notice; a later `invoice.paid` reopens the pair. Policy
+beyond that is a product decision nobody has made.
 
 ## 8. User surface
 
@@ -246,7 +254,7 @@ done
 | #   | check                                                                                  | pass                                                |
 | --- | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | B1  | live Prices exist for all four pairs, with the same lookup keys                        | 4 × live ids in `data/billing-prices.ts`'s live map |
-| B2  | the live endpoint exists and is enabled on `alignsynch.com`                            | `we_…`, 3 events, `livemode: true`                  |
+| B2  | the live endpoint exists and is enabled on `alignsynch.com`                            | `we_…`, **6** events, `livemode: true`              |
 | B3  | the live secret, endpoint secret and publishable key are in Vercel **Production only** | Preview keeps test keys, or refuses to boot         |
 | B4  | live mode on a preview deployment refuses, by name                                     | the `#847` guard message                            |
 | B5  | `STRIPE_MODE` is explicit in every scope                                               | grep the env, not the code                          |
@@ -270,10 +278,11 @@ pricing page stops claiming a checkout. Say in the release note that live chargi
 
 ## Revision log
 
-| date       | applies to          | change                                                                                                                                                                                                                                                                                                          |
-| ---------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-14 | 1.20.0 / `497385f5` | first draft. Test-mode move to `acct_1If98uIxC4rz96cc` executed; §7's event gap and §8's dead invoices button measured, not assumed                                                                                                                                                                             |
-| 2026-11-14 | 1.20.0 / `497385f5` | landed from `#1054` as this page. §11 A1 and A2 re-run on the landing tree: `--which` prints TEST present / LIVE missing, and the four test Prices answer `livemode: false` at 895 / 8592 / 1695 / 16272 with the §4 lookup keys. `withstripe.sh` named by its operator path, because it is not in the checkout |
+| date       | applies to          | change                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-14 | 1.20.0 / `497385f5` | first draft. Test-mode move to `acct_1If98uIxC4rz96cc` executed; §7's event gap and §8's dead invoices button measured, not assumed                                                                                                                                                                                                                                                                                                      |
+| 2026-11-14 | 1.20.0 / `497385f5` | landed from `#1054` as this page. §11 A1 and A2 re-run on the landing tree: `--which` prints TEST present / LIVE missing, and the four test Prices answer `livemode: false` at 895 / 8592 / 1695 / 16272 with the §4 lookup keys. `withstripe.sh` named by its operator path, because it is not in the checkout                                                                                                                          |
+| 2026-11-14 | 1.20.0 / `5a47649c` | `#1055` closed §7. Both test endpoints went **3 → 6** events (`invoice.paid`, `invoice.payment_failed`, `customer.subscription.trial_will_end`) via `pnpm billing:webhooks --apply`; the account is recorded in `tests/fixtures/stripe-webhook-endpoints.json` and held equal to `STRIPE_WEBHOOK_EVENTS` by a test. §5's table and §7's decision record updated; `B2` now reads 6 events because that is what a live endpoint must carry |
 
 <!-- docs-nav:begin -->
 
