@@ -18,9 +18,12 @@
  *
  * **The expected output** is `data/verify/demo-expectations.json`: the row counts the seed
  * produces, and nine rendered answers — five public pages, the three gated routes' `307 → /login`
- * boundary, and one signed-in read of `/assessment/instances` that must name a real relationship.
+ * boundary, and one signed-in read of `/assessments` that must name a real relationship.
  * It is deliberately small. A 40-route sweep nobody reads is worse than nine lines that catch a
- * 500, a missing price, or a list that renders "could not be read".
+ * 500, a missing price, or a list that drew its failure marker (`data-assessments-unreadable`)
+ * instead of its rows (`data-assessments-list`) — a **marker**, because the failure and empty
+ * states' copy is serialized into the RSC payload of a healthy render too, so a `mustNotContain`
+ * on that copy fails on a page that is fine.
  *
  * The file is **authored, not generated**: a person writes the routes and the strings each page
  * must (and must not) carry. `--update` rewrites only the observed half — row counts, statuses and

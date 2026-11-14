@@ -679,13 +679,13 @@
         },
         {
           "path": "qa-atlas/v1.17.1/index.md",
-          "title": "QA atlas — v1.17.1",
-          "question": "What did every registered surface render in v1.17.1, and what changed since v1.17.0?"
+          "title": "QA atlas — the 1.17.1 tree (never released)",
+          "question": "What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?"
         },
         {
           "path": "qa-atlas/v1.18.0/index.md",
           "title": "QA atlas — v1.18.0",
-          "question": "What did every registered surface render in v1.18.0, and what changed since v1.17.1?"
+          "question": "What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?"
         },
         {
           "path": "QA-DOGFOOD-P4.md",
@@ -721,6 +721,11 @@
           "path": "qa-976-sent-none/README.md",
           "title": "The Sent screen with no invitation row, #976",
           "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
+        },
+        {
+          "path": "qa-971-tiles/README.md",
+          "title": "The welcome tiles on /register too, #971",
+          "question": "Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?"
         },
         {
           "path": "qa-payment/README.md",

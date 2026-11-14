@@ -32,9 +32,10 @@ import { RegisterView } from "@/components/auth/register-view";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { quizHubBrand } from "@/data/brand";
 import { registerCopy } from "@/data/pages/register";
+import { loginCopy } from "@/data/pages/login";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
-import { registerCopyFor } from "@/lib/auth-copy";
+import { heroTilesFor, registerCopyFor } from "@/lib/auth-copy";
 
 declare global {
   // React reads this to know it is inside `act()`; without it every update is unmocked.
@@ -52,6 +53,12 @@ const viewProps = (id: (typeof BRANDS)[number][0], record: Brand) => ({
   destination: AFTER_SIGN_IN_BY_BRAND[id],
   marks: AUTH_MARKS_BY_BRAND[id],
   markSrc: AUTH_MARK_SRC_BY_BRAND[id],
+  /**
+   * The hero's tiles (#971), from the band `/login` owns — the same one
+   * `app/(auth)/register/page.tsx` passes. A hero mounted without them is the defect this prop
+   * exists to make impossible, so the prop is required and every mount has to say what it draws.
+   */
+  stats: heroTilesFor(loginCopy(record), id),
 });
 
 let container: HTMLDivElement;
