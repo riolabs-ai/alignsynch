@@ -25,7 +25,7 @@
  * `<distDir>/cache/.tsbuildinfo` — through the relative `.next/cache` path, which is
  * the form `next build` accepts — so `pnpm typecheck` fills the program the build's
  * type check then resumes from: the app is type-checked once, not twice (measured:
- * 63.9 s → 16.1 s wall for the build's check, docs/GATE.md). Inside the gate that
+ * 63.9 s → 16.1 s wall for the build's check, docs/operations/gate.md). Inside the gate that
  * path is the shared store because `scripts/verify.sh` links `.next/cache` at the
  * held slot first; outside it, it is the tree's own `.next/cache` — still correct,
  * just not shared. The private `~/.cache/quizhub/tsc/<key>/` buildinfo stays as the
@@ -159,7 +159,7 @@ function layout() {
      * directory produces a buildinfo `next build` rejects (851,686 bytes, full
      * re-check); the same program written through `.next/cache` is accepted
      * (738,846 bytes, 29.3 s instead of 63.9 s for the build's check). Measured —
-     * docs/GATE.md.
+     * docs/operations/gate.md.
      *
      * It is a **cache path, not a saved check**: the build still runs its own type
      * check and still fails on a new error (proved with a planted error, same doc).
