@@ -532,6 +532,28 @@ else
   skip_step "qa:atlas:check" "no qa:atlas:check script in package.json"
 fi
 
+# The recorded demo walk (#898). `docs/qa-demo-flow/transcript.json` + its 55 committed PNGs are
+# what `/how-it-works` replays, so a transcript that has drifted from the screenshots it names is a
+# page describing a walk nobody took — and nothing above can see it: the JSON parses, `typecheck`
+# never reads it and `data:check` has no invariant over it. **Static on purpose** — no browser, no
+# connection, nothing from `lib/db/**` — because `pnpm demo:flow` (and its `--check`) drive a live
+# demo instance through a real Chrome and seed the demo branch, which CI has not got. That makes the
+# transcript regenerable by a maintainer and not by CI; what a gate *can* hold is that the committed
+# transcript still describes its own screenshots, which is exactly what `--verify` asserts: the
+# schema the file declares about itself (`$doc.fields`), 1..n contiguous steps grouped in the order
+# `paths[]` carries, every `shot` present as a PNG whose IHDR matches its recorded `w`×`h` (the check
+# behind the missing/re-cropped image), and `paths[]`/`summary`/`findings` agreeing with the arrays
+# they count. It pins **no text**, so a re-record that moves routes or typed values stays green, and
+# it needs no other step to notice a driver that starts writing a field the schema does not declare.
+# In every lane for the sixth time and the same reason as the steps above: the transcript is
+# `docs/`, the driver is `scripts/`, the entry is `package.json` — three lanes, one check, and a
+# docs-only diff is exactly the one that can edit a transcript. ~0.2 s.
+if has_script "demo:flow:verify"; then
+  run_step "demo:flow:verify (the replay transcript still describes its own screenshots)" pnpm demo:flow:verify || fail
+else
+  skip_step "demo:flow:verify" "no demo:flow:verify script in package.json"
+fi
+
 # The rail's document (`data/nav-menu.json`, #861) is the Admin sidebar: the groups, their rows,
 # their order, their rung and their visibility. The schema is `content/nav.ts`; this step is the
 # other half — every href resolves in `content/routes.ts`, every icon is a `NavIconName`, every
