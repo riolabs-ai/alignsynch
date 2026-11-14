@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**142 documents in 9 sections.** Every page carries the same nav block, generated
+**143 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -41,7 +41,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
-- [Specs & design briefs](#specs-design-briefs) — 43 documents
+- [Specs & design briefs](#specs-design-briefs) — 44 documents
 - [Records & QA](#records-qa) — 24 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -143,6 +143,7 @@ What the product promises, written down before it was built.
 - [`specs/ui-divergence.md`](specs/ui-divergence.md) — **Divergence table** — Where does each surface deliberately differ from its ancestor?
 - [`specs/ui-mapping.md`](specs/ui-mapping.md) — **Quiz-surface map** — Which quiz surface is this AlignSynch file a variation of?
 - [`specs/ui-ux-audit.md`](specs/ui-ux-audit.md) — **UI/UX audit** — What does the build follow, vary, or quietly diverge from in the purchased template?
+- [`specs/ux-defect-inventory.md`](specs/ux-defect-inventory.md) — **UX defect inventory (#975)** — Which UX defects were measured in the flow, the modal and the dashboard — and which commit shipped each one?
 - [`specs/ux-input.md`](specs/ux-input.md) — **Answer input** — How does a person answer — scale, labels, semantics?
 - [`specs/ux-reference-patterns.md`](specs/ux-reference-patterns.md) — **Reference UX patterns** — What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?
 - [`specs/ux-report.md`](specs/ux-report.md) — **The Gap report** — How are the eight kinds per Aspect rendered?
