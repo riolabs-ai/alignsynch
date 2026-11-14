@@ -21,14 +21,21 @@
  *      each tier must resolve a Price at both intervals, which is the lookup the adapter itself
  *      refuses without.
  *   3. **The walk posts the tier, not its own id** — the assertion that fails on `origin/main`.
- *      Mounted in a DOM, because the posted value only exists after two clicks (choose a row,
- *      continue) that no static render can make.
+ *      Mounted in a DOM, because the posted value only exists after a click no static render can
+ *      make: **choosing the row is the act** since #1031, one press that both advances the step and
+ *      starts the checkout.
  *   4. **No silent default.** The card step reached with nothing chosen used to post `?? "basic"`,
  *      which is a price nobody read. It must draw the refusal band and call no checkout at all:
  *      `plan === null` is a state the walk cannot price, so it must not guess.
  *
- * The three panels this file touches are stage 5's own; the other panels, both landings and Back
- * keep their assertions in `tests/payment-flow.test.ts` and `tests/stage5-send-gate.test.tsx`.
+ * **#1031's own acceptance lives here too**, because it is a client-side reveal no HTTP harness can
+ * see: the row's click must leave the card step on screen with `[data-checkout-frame]` drawn and
+ * **no second control pressed**, a refusal must replace the frame inside the step, and Back must
+ * return to a panel whose rows are unselected again — a native radio fires no `change` when it is
+ * already checked, so a panel that kept its choice would be a step nobody could leave twice.
+ *
+ * The other panels, both landings and Back keep their assertions in `tests/payment-flow.test.ts` and
+ * `tests/stage5-send-gate.test.tsx`.
  */
 import { createElement } from "react";
 import { act } from "react";
@@ -49,6 +56,7 @@ import { InviteWalk, type PayFlowStep } from "@/components/assessment-flow/invit
 import { BILLING_INTERVALS, BILLING_PLAN_IDS } from "@/data/billing-plans";
 import { BILLING_PRICE_IDS, billingPriceIdFor } from "@/data/billing-prices";
 import { assessmentCreatePageCopy, PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
+import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 declare global {
@@ -58,19 +66,23 @@ declare global {
 }
 
 const FLOW = sectionOf(assessmentCreatePageCopy, "payment-flow");
+const PLANS = sectionOf(assessmentCreatePageCopy, "plans");
 
 /** Every payload the walk has handed the checkout, in order. The walk posts; this records. */
 let posted: { planId?: string; interval?: string }[] = [];
 
 /**
- * The server's two actions, stubbed. `onStart` answers **a refusal** on purpose: the walk then
- * stays on the card step instead of mounting the provider's frame, so the assertion is about the
- * payload the walk built rather than about a frame that needs a browser key.
+ * What the server answers next. `onStart` answers **a refusal** by default on purpose: the walk then
+ * draws its sentence inside the card step instead of mounting the provider's frame, so an assertion
+ * about the payload the walk built never needs a Stripe key. A test that wants the frame, or the
+ * inline purchase that ends the walk, sets this first.
  */
+let answer: MembershipOutcome = { ok: false, code: "test-stop", message: "stopped by the test" };
+
 const checkout = {
   onStart: async (payload: { planId?: string; interval?: string }) => {
     posted.push(payload);
-    return { ok: false as const, code: "test-stop", message: "stopped by the test" };
+    return answer;
   },
   onConfirm: async () => ({ ok: false as const, code: "test-stop" }),
 };
@@ -78,8 +90,14 @@ const checkout = {
 let root: Root | null = null;
 let container: HTMLDivElement | null = null;
 
-/** Mount the walk at one panel. `initialStep` is the only way to render a panel without clicking. */
-async function mount(initialStep?: PayFlowStep): Promise<HTMLDivElement> {
+/**
+ * Mount the walk. `initialStep` is the only way to render a panel without clicking; `entitled`
+ * draws the #870 summary instead of the radio group, which is the one state whose card step is
+ * reached without a row to choose.
+ */
+async function mount(
+  options: { initialStep?: PayFlowStep; entitled?: boolean } = {},
+): Promise<HTMLDivElement> {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -92,7 +110,10 @@ async function mount(initialStep?: PayFlowStep): Promise<HTMLDivElement> {
         paid: false,
         onPaid: () => undefined,
         checkout,
-        ...(initialStep === undefined ? {} : { initialStep }),
+        ...(options.initialStep === undefined ? {} : { initialStep: options.initialStep }),
+        ...(options.entitled === true
+          ? { planIncluded: { name: "Principal", entitled: true } }
+          : {}),
       }),
     );
   });
@@ -108,9 +129,21 @@ async function press(where: HTMLDivElement, selector: string): Promise<void> {
   });
 }
 
+/**
+ * Every `data-pay-action` the mounted walk draws, in document order — the *set* of controls rather
+ * than a search for one name. The plan panel draws none but the draft, and the card step draws only
+ * its two ways out, so a resurrected start button fails this list by name.
+ */
+function payActions(where: HTMLElement): string[] {
+  return [...where.querySelectorAll("[data-pay-action]")].map(
+    (control) => control.getAttribute("data-pay-action") ?? "",
+  );
+}
+
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   posted = [];
+  answer = { ok: false, code: "test-stop", message: "stopped by the test" };
 });
 
 afterEach(async () => {
@@ -165,9 +198,9 @@ describe("stage 5 posts a billing tier — the defect the live error named", () 
     for (const plan of PLAN_IDS) {
       posted = [];
       const where = await mount();
+      // **One press, and it is the choice.** Since #1031 the row is the act: the selection advances
+      // the step and starts the checkout, so there is no second control to press.
       await press(where, `input[name="plan"][value="${plan}"]`);
-      await press(where, '[data-pay-action="card"]');
-      await press(where, '[data-pay-action="subscribe"]');
 
       expect(posted).toHaveLength(1);
       const payload = posted[0];
@@ -189,28 +222,110 @@ describe("stage 5 posts a billing tier — the defect the live error named", () 
     }
   });
 
-  it("posts the second row's tier too — the mapping is not a one-row coincidence", async () => {
+  it("names the row that was bought, by the tier's own name and price", async () => {
+    // An inline purchase ends the walk on the thank-you, which recaps the plan it bought.
+    answer = { ok: true, completed: true };
     const where = await mount();
     await press(where, 'input[name="plan"][value="unlimited"]');
-    // The buys-list recaps the chosen row by the plan's own name, which is the tier the catalogue
-    // sells (`Principal`), while the id behind the row stays the walk's (`unlimited`).
-    expect(where.innerHTML).toContain("Principal ·");
-    await press(where, '[data-pay-action="card"]');
-    await press(where, '[data-pay-action="subscribe"]');
+
     expect(posted[0]?.planId).toBe("principal");
+    expect(where.querySelector('[data-pay-step="thanks"]')).not.toBeNull();
+    // #1036's guard, moved: the plan panel is left the moment a row is chosen, so the recap that
+    // names the tier is the thank-you's own line — `Principal` and the price the row prints, never
+    // the walk's own id (`unlimited`) that keys the row.
+    expect(where.textContent).toContain(
+      `${itemLabel(PLANS, "unlimited")} · ${itemLabel(PLANS, "unlimited-price")}${itemLabel(PLANS, "per")}`,
+    );
   });
 
   it("never charges a tier nobody chose — the silent `basic` default is gone", async () => {
-    // The card step with no row chosen. `?? "basic"` made this a purchase of a price nobody read;
-    // there is no tier to name now, so the walk draws the refusal band and calls no checkout.
-    const where = await mount("card");
-    await press(where, '[data-pay-action="subscribe"]');
+    // The one state that reaches the card step with no tier: a measured, already-paying account
+    // (#870) whose panel is a summary, so there is no row to select and its own control is the act.
+    // `?? "basic"` made this a purchase of a price nobody read; there is no tier to name here, so
+    // the walk draws the refusal in the step and calls no checkout at all.
+    const where = await mount({ entitled: true });
+    await press(where, '[data-pay-action="continue"]');
 
     expect(posted).toHaveLength(0);
+    expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
     const band = where.querySelector('[data-pay-refusal="true"]');
     expect(band?.textContent).toBe(itemLabel(FLOW, "card-refused"));
     // The way out is still drawn: Back to the plan, and the draft at every step.
     expect(where.querySelector('[data-pay-action="plan"]')).not.toBeNull();
     expect(where.querySelector('[data-pay-action="draft"]')).not.toBeNull();
+  });
+});
+
+describe("the card step mounts its frame on reveal (#1031)", () => {
+  it("draws the frame the moment a row is chosen, with nothing to press in between", async () => {
+    // A session is minted, which is the state the provider's frame mounts in.
+    answer = {
+      ok: true,
+      clientSecret: "cs_test_reveal",
+      publishableKey: "pk_test_reveal",
+      checkoutSessionId: "cs_1",
+    };
+    const where = await mount();
+
+    // Nothing on the plan panel starts a checkout: the row itself is the act.
+    expect(payActions(where)).toEqual(["draft"]);
+    expect(where.querySelector("[data-checkout-frame]")).toBeNull();
+
+    // **One press**, and the frame's mount point is already drawn on the revealed step.
+    await press(where, 'input[name="plan"][value="one"]');
+
+    expect(posted).toHaveLength(1);
+    expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
+    const frame = where.querySelector('[data-checkout-frame="embedded"]');
+    expect(frame).not.toBeNull();
+    // The reveal is the step's focus target — how a keyboard follows it into the frame.
+    expect(frame?.getAttribute("data-panel-first")).toBe("true");
+    // …and the controls left are the two ways out: no start button survived the reveal.
+    expect(payActions(where)).toEqual(["plan", "draft"]);
+  });
+
+  it("opens the step in its `opening` state — a status, not a refusal", async () => {
+    // The card step before a session has been minted: the mount point is drawn and says so.
+    const where = await mount({ initialStep: "card" });
+    expect(where.querySelector('[data-checkout-frame="opening"]')).not.toBeNull();
+    expect(where.querySelector('[data-checkout-pending="true"]')?.getAttribute("role")).toBe(
+      "status",
+    );
+    // No refusal band: nothing has failed yet, and the walk has nothing to refuse.
+    expect(where.querySelector('[data-pay-refusal="true"]')).toBeNull();
+    // The two ways out are reachable from the step's first frame.
+    expect(where.querySelector('[data-pay-action="plan"]')).not.toBeNull();
+    expect(where.querySelector('[data-pay-action="draft"]')).not.toBeNull();
+  });
+
+  it("draws a refused start inside the step, in place of the frame", async () => {
+    // The default stub refuses, which is a server that will not open a session.
+    const where = await mount();
+    await press(where, 'input[name="plan"][value="one"]');
+
+    // The sentence, not a dialog over a still-clickable control: the frame is gone and there is no
+    // press left that would fail identically.
+    expect(where.querySelector('[data-pay-refusal="true"]')?.textContent).toContain(
+      "stopped by the test",
+    );
+    expect(where.querySelector("[data-checkout-frame]")).toBeNull();
+    // …and the step still offers Back and the draft, and nothing that would start a checkout again.
+    expect(payActions(where)).toEqual(["plan", "draft"]);
+  });
+
+  it("returns to an unselected plan panel on Back, so choosing again is the act again", async () => {
+    const where = await mount();
+    await press(where, 'input[name="plan"][value="one"]');
+    await press(where, '[data-pay-action="plan"]');
+
+    expect(where.querySelector('[data-pay-step="plan"]')).not.toBeNull();
+    // A native radio fires no `change` when it is already checked: keeping the choice would leave a
+    // panel whose rows could not take anybody forward a second time.
+    expect(where.querySelector('input[name="plan"]:checked')).toBeNull();
+    expect(where.querySelector("[data-checkout-frame]")).toBeNull();
+
+    await press(where, 'input[name="plan"][value="one"]');
+    expect(posted).toHaveLength(2);
+    expect(where.querySelector('[data-pay-step="card"]')).not.toBeNull();
   });
 });

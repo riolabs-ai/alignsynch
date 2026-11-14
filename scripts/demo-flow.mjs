@@ -1114,17 +1114,24 @@ async function fillCardFrame({ email }) {
 /**
  * Walk stage 5's left column.
  *
- * The panel is three steps in one column and the send beside it is gated by the stage (#911): before
- * a card is on file the column is `data-send-gate="locked"` and the confirm control is disabled. So
+ * The walk is four steps in one column and the send beside it is gated by the stage (#911): before a
+ * membership is live the column is `data-send-gate="locked"` and there is no send control at all. So
  * a path that means to **send** has to complete the walk first, and a path that means to show the
  * unpaid state stops at the card step on purpose.
+ *
+ * **Choosing the plan row is the act** (#1031): the reveal and the checkout are one gesture, so this
+ * presses the row (or, for a measured account, the summary's one control) and then waits for the
+ * frame — there is no `Enter the card` press between the two any more.
  */
 async function payWalk(send, { pathLabel, complete, plan }) {
   await waitFor(send, payStep("plan"), { timeout: 25000, label: "the walk's plan panel" });
 
   // A measured, already-paying account is drawn a summary instead of a radio group (#870).
   const included = await evaluate(send, `!!document.querySelector("[data-pay-plan-included]")`);
-  if (included !== true) {
+  if (included === true) {
+    // No row to choose, so the summary's own control is the act.
+    await click(send, '[data-pay-action="continue"]', { navigate: false, timeout: 25000 });
+  } else {
     const chosen = await evaluate(
       send,
       `(() => {
@@ -1139,14 +1146,23 @@ async function payWalk(send, { pathLabel, complete, plan }) {
       await record(send, {
         action: "fill",
         values: { plan: chosen },
-        expect: "the plan panel offers the membership plans and one is chosen",
+        expect:
+          "the plan panel offers the membership plans, and choosing one is the act — the walk reveals the card step and starts the checkout with no further press (#1031)",
         name: `${pathLabel}-pay-plan`,
       });
     }
   }
 
-  await click(send, '[data-pay-action="card"]', { navigate: false, timeout: 25000 });
+  // **No start control to click.** Choosing the row already advanced the walk and opened the
+  // session, so this waits for the reveal rather than pressing anything: the press that used to
+  // load the card fields is the control #1031 deleted, and clicking it would be a step that no
+  // longer exists.
   await waitFor(send, payStep("card"), { timeout: 25000, label: "the walk's card panel" });
+  await waitFor(
+    send,
+    `!!document.querySelector('[data-checkout-frame="embedded"]') || !!document.querySelector('[data-pay-refusal]') || !!document.querySelector('[data-pay-plan-included]')`,
+    { timeout: 40000, label: "the card panel's frame" },
+  );
 
   // The gate is the stage, so it is asserted here — before anything is put on file.
   const gateBefore = await evaluate(send, SEND_GATE);
@@ -1157,13 +1173,6 @@ async function payWalk(send, { pathLabel, complete, plan }) {
     actual: `data-send-gate=${String(gateBefore)}`,
     name: `${pathLabel}-send-gate-locked`,
   });
-
-  await click(send, '[data-pay-action="capture"]', { navigate: false, timeout: 40000 });
-  await waitFor(
-    send,
-    `!!document.querySelector('[data-capture-frame="embedded"]') || !!document.querySelector("[data-pay-hosted]") || !!document.querySelector("[data-pay-refusal]")`,
-    { timeout: 40000, label: "the card panel's frame" },
-  );
 
   if (!complete) {
     // The card step, left unresolved — which is the state the `unpaid` path exists to show.
