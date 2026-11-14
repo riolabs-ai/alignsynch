@@ -831,7 +831,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "live",
     templates: ["quizhub"],
     capability:
-      "Plan comparison read from billing_plan with a checkout per sellable tier, the viewer's own plan marked, an FAQ and a closing CTA.",
+      "Plan comparison read from billing_plan: every sellable tier's action opens the template catalogue carrying that tier and interval, the viewer's own plan marked, an FAQ and a closing CTA. Nothing on this page starts a checkout (#1043) — the plan is chosen here and sold inside the create flow's last stage.",
   },
   {
     kind: "route",
@@ -1285,7 +1285,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "live",
     templates: ["quizhub"],
     capability:
-      "The plan cards — prices and sellability from billing_plan, a checkout button per sellable tier — the FAQ and the closing CTA.",
+      "The plan cards — prices and sellability from billing_plan, one action per sellable tier that carries that tier and interval into the template catalogue, and the general CTAs that carry nothing — the FAQ and the closing CTA.",
   },
   {
     kind: "domain",

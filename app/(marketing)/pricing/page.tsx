@@ -1,14 +1,13 @@
 import { PricingCta } from "@/components/pricing/pricing-cta";
 import { PricingFaq } from "@/components/pricing/pricing-faq";
 import { PricingPlans } from "@/components/pricing/pricing-plans";
-import { brand, brandIdOf } from "@/data/brand";
 import type { BillingPlanId } from "@/data/billing-plans";
 import { pricingPageCopy } from "@/data/pages/pricing";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { billingTestMode, entitlementForAccount } from "@/lib/billing";
 import { pricingPlans, readPricingPlanRows } from "@/lib/billing/catalogue";
+import { pricingStartPath } from "@/lib/flow/paths";
 import { sectionOf } from "@/lib/page-copy";
-import { REGISTER_PATH, startHrefFor, startViewer } from "@/lib/start-path";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -28,24 +27,24 @@ export const metadata: Metadata = {
  */
 export const dynamic = "force-dynamic";
 
-/** The viewer's tier, or `null` — nobody signed in, or a billing read that failed. */
-async function viewerPlanFacts(): Promise<{
-  entitledPlanId: BillingPlanId | null;
-  signedIn: boolean;
-}> {
+/**
+ * The viewer's tier, or `null` — nobody signed in, or a billing read that failed.
+ *
+ * Identity is no longer a *destination* for this page (#1043): every action here opens the template
+ * catalogue for a visitor and a member alike, so the session is read for one fact only — which card
+ * is the account's own.
+ */
+async function viewerPlanFacts(): Promise<BillingPlanId | null> {
   const viewer = await currentUserIfConfigured();
-  if (viewer === null) return { entitledPlanId: null, signedIn: false };
+  if (viewer === null) return null;
   try {
-    return {
-      entitledPlanId: (await entitlementForAccount(viewer.userId)).planId,
-      signedIn: true,
-    };
+    return (await entitlementForAccount(viewer.userId)).planId;
   } catch (error) {
     console.error(
       "pricing: the viewer's entitlement could not be read — showing no current plan",
       error instanceof Error ? error.message : String(error),
     );
-    return { entitledPlanId: null, signedIn: true };
+    return null;
   }
 }
 
@@ -62,19 +61,23 @@ async function viewerPlanFacts(): Promise<{
  * request, and neither is a reason to mount the app around a page a signed-out visitor reads.
  */
 export default async function PricingPage() {
-  const [planRows, facts] = await Promise.all([readPricingPlanRows(), viewerPlanFacts()]);
+  const [planRows, entitledPlanId] = await Promise.all([readPricingPlanRows(), viewerPlanFacts()]);
   /**
-   * The viewer, and the one destination that depends on them (#979). A tier's authored CTA is
-   * `/register`; a member with a live session already has the account that button creates, so the
-   * grid is built with the resolved destination instead. `"checkout"` — the sentinel
-   * `PlanCheckoutButton` starts a payment for — passes through untouched.
+   * **Every action on this page opens the flow's own door (#1043).** Until this card a plan card
+   * started a checkout on the spot — a membership with no relationship behind it — and the closing
+   * banner sent a visitor to `/register`, which is an account with no wizard behind it. Both are the
+   * double-ask the card removes: the plan is *chosen* here and *sold* inside stage 5, so
+   *   - a plan card's action carries the tier and the interval through `pricingStartPath()`, and
+   *   - a general action carries nothing (the free tier's card, the closing banner), which is also
+   *     how a choice left by an earlier visit is cleared.
+   * Both land on the public Templates listing, where the template is picked and the wizard starts.
+   * `faq` links are navigation and are untouched.
    */
-  const viewer = startViewer(brandIdOf(brand), facts.signedIn);
   const plans = pricingPlans({
     rows: planRows.rows,
     source: planRows.source,
-    entitledPlanId: facts.entitledPlanId,
-    startHref: startHrefFor(REGISTER_PATH, viewer),
+    entitledPlanId,
+    startHref: pricingStartPath(),
   });
 
   return (
@@ -85,10 +88,7 @@ export default async function PricingPage() {
         testMode={billingTestMode()}
       />
       <PricingFaq copy={sectionOf(pricingPageCopy, "faq")} />
-      <PricingCta
-        copy={sectionOf(pricingPageCopy, "cta")}
-        startHref={startHrefFor(REGISTER_PATH, viewer)}
-      />
+      <PricingCta copy={sectionOf(pricingPageCopy, "cta")} startHref={pricingStartPath()} />
     </div>
   );
 }
