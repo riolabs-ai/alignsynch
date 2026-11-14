@@ -3,7 +3,7 @@
 // template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the invite stage's left column is a three-step walk — join a plan, save a card, thank you — so the money decision happens in this stage instead of on a pricing page, and the stage's send waits for it)
 
 /**
- * `InviteWalk` — the payment walk on stage 5 (#771, three steps since #911).
+ * `InviteWalk` — the membership purchase on stage 5 (#771, three steps since #911).
  *
  * **Three steps, and the artifact draws them in this order.** The approved reference is
  * `docs/review/artifacts/prototype-relationship-lifecycle-v9.html`, whose Invite screen puts the pay
@@ -12,21 +12,24 @@
  *   plan    Join a membership plan. The two things the money buys are named here — the plan joined
  *           and the relationship activated — because a price without its purpose is what makes a
  *           checkout feel like a toll.
- *   card    Stripe's card fields, mounted **in this panel** from
- *           `components/billing/stripe-frame.tsx`. Since #912 this walk is that module's **only**
- *           caller — the dashboard's capture dialog is deleted, so the modal is the one way to pay
- *           and there is no second capture surface and no second set of card fields.
+ *   card    Stripe's checkout fields, mounted **in this panel** from
+ *           `components/billing/stripe-frame.tsx`. The session behind them is the membership
+ *           subscription (#1010 R2): one monthly plan, both parties, seven days free. Since #912
+ *           this walk is that module's **only** caller — the dashboard's capture dialog is deleted,
+ *           so there is no second card surface and no second set of card fields.
  *   thanks  A thank-you with **no button**. The walk ends here, and the step's one sentence says
  *           where the reader goes next: the send control beside it, or the draft.
  *
- * **Nothing here charges.** Saving a card puts a method on file and starts the 7-day trial; the fee
- * is taken later, by the product's own completion path. That is why the card step says so twice and
- * why the draft path can be taken at any point with nothing charged.
+ * **This is the purchase.** `startMembership()` opens a subscription Checkout with a seven-day
+ * trial and mounts it; the frame's completion calls `confirmMembership()`, which asks the provider
+ * what was bought rather than believing the browser. There is no "save a card for later" act: a
+ * card reaches an account by buying the membership, and sealing a relationship later costs nothing
+ * (#1010 R2).
  *
- * **The walk reports up, it does not own the gate.** `onPaid` tells the stage the card is on file;
- * the stage is what enables the send and what posts it, so a walk that is drawn but not finished can
- * never make the send fire (#911's "doomed if"). The server refuses an unpaid send on its own, in
- * `sendDraftInvitation()` — the UI gate is the courtesy, not the enforcement.
+ * **The walk reports up, it does not own the gate.** `onPaid` tells the stage the membership is
+ * live; the stage is what enables the send and what posts it, so a walk that is drawn but not
+ * finished can never make the send fire (#911's "doomed if"). The server refuses an unpaid send on
+ * its own, in `sendDraftInvitation()` — the UI gate is the courtesy, not the enforcement.
  *
  * **It moves focus like a step, not like a page.** `Next` puts focus on the new step's first
  * control, and the thank-you's heading takes focus so a screen reader is told the walk is over. The
@@ -39,7 +42,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { PageCopy } from "@/content/pages";
-import type { CaptureOutcome } from "@/lib/member/outcomes";
+import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { PlanChoices, type PlanId } from "./plan-choices";
 import { StripeFrame } from "@/components/billing/stripe-frame";
@@ -59,16 +62,10 @@ const PRIMARY =
 const GHOST =
   "inline-flex h-11 items-center justify-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800";
 
-/** One answer from the server, either presentation. Never throws: a refusal is a drawn state. */
-export type CaptureHandlers = {
-  readonly onCapture: (payload: {
-    relationshipId?: string;
-    presentation?: string;
-  }) => Promise<CaptureOutcome>;
-  readonly onResolve: (payload: {
-    relationshipId?: string;
-    captureSessionId?: string;
-  }) => Promise<CaptureOutcome>;
+/** One answer from the server, either step. Never throws: a refusal is a drawn state. */
+export type CheckoutHandlers = {
+  readonly onStart: (payload: { planId?: string; interval?: string }) => Promise<MembershipOutcome>;
+  readonly onConfirm: (payload: { checkoutSessionId?: string }) => Promise<MembershipOutcome>;
 };
 
 export function InviteWalk({
@@ -76,19 +73,19 @@ export function InviteWalk({
   relationshipId,
   paid,
   onPaid,
-  capture,
+  checkout,
   planIncluded,
   initialStep,
 }: {
   copy: PageCopy;
-  /** The relationship stage 4 wrote. The card is put on **it**, so the send's gate is one fact. */
+  /** The relationship stage 4 wrote. The membership covers it, so the send's gate is one fact. */
   relationshipId: string;
-  /** The card is already on file — the returning state (`paymentArmed`), or the walk just finished. */
+  /** The membership is already live — the returning state, or the walk just finished. */
   paid: boolean;
-  /** The card was saved. The stage owns the gate; this only reports. */
+  /** The membership was bought. The stage owns the gate; this only reports. */
   onPaid: () => void;
-  /** The server's capture actions. Absent in a render-only test, where nothing can be pressed. */
-  capture?: CaptureHandlers;
+  /** The server's membership actions. Absent in a render-only test, where nothing can be pressed. */
+  checkout?: CheckoutHandlers;
   /**
    * What the account already pays for (#870), when the page measured it. An entitled account gets a
    * **summary** of its tier instead of the radio group — the walk must not ask somebody on a paid
@@ -107,8 +104,7 @@ export function InviteWalk({
   const [refusal, setRefusal] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
-  const [captureSessionId, setCaptureSessionId] = useState<string | null>(null);
-  const [hostedUrl, setHostedUrl] = useState<string | null>(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
 
   const plansRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -145,53 +141,50 @@ export function InviteWalk({
   }
 
   /**
-   * Start a capture. Three answers, and every one of them is drawn:
+   * Buy the membership. Two answers, and every one of them is drawn:
    *
-   *   embedded  the frame mounts in this panel (the Stripe adapter with keys)
-   *   inline    the adapter saved the card inside the request (the mock, and any offline one), so
-   *             there is nothing to mount and the walk is done
-   *   hosted    the adapter answered a page — the walk says so and links to it rather than
-   *             pretending it captured something
+   *   embedded   the frame mounts in this panel (the hosted adapter with keys), and the frame's
+   *              completion confirms it by the session it was minted with
+   *   inline     the offline adapter wrote the row inside the request, so the walk is done
+   *   refusal    a sentence: no key on this deployment, a tier with no Price, not signed in
    */
-  async function startCard(): Promise<void> {
+  async function startMembership(): Promise<void> {
     setRefusal(null);
-    setHostedUrl(null);
-    if (capture === undefined) {
+    if (checkout === undefined) {
       setRefusal(itemLabel(flow, "card-refused"));
       return;
     }
     setStarting(true);
     try {
-      const answer = await capture.onCapture({ relationshipId, presentation: "embedded" });
+      const answer = await checkout.onStart({ planId: plan ?? "basic", interval: "month" });
       if (!answer.ok) {
         setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
+        return;
+      }
+      if (answer.completed === true) {
+        onPaid();
+        setStep("thanks");
         return;
       }
       if (answer.clientSecret !== undefined && answer.clientSecret !== null) {
         setClientSecret(answer.clientSecret);
         setPublishableKey(answer.publishableKey ?? null);
-        setCaptureSessionId(answer.captureSessionId ?? null);
+        setCheckoutSessionId(answer.checkoutSessionId ?? null);
         return;
       }
-      if (answer.captured === true) {
-        onPaid();
-        setStep("thanks");
-        return;
-      }
-      setHostedUrl(answer.url ?? null);
-      if (answer.url === null || answer.url === "") setRefusal(itemLabel(flow, "card-refused"));
+      setRefusal(itemLabel(flow, "card-refused"));
     } finally {
       setStarting(false);
     }
   }
 
-  /** The frame reported the card was saved: resolve it by the session the server minted. */
-  async function completeCard(): Promise<void> {
-    if (capture === undefined || captureSessionId === null) {
+  /** The frame reported the purchase: confirm it against the provider, by the session it minted. */
+  async function confirmMembership(): Promise<void> {
+    if (checkout === undefined || checkoutSessionId === null) {
       setRefusal(itemLabel(flow, "card-refused"));
       return;
     }
-    const answer = await capture.onResolve({ relationshipId, captureSessionId });
+    const answer = await checkout.onConfirm({ checkoutSessionId });
     if (!answer.ok) {
       setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
       return;
@@ -263,7 +256,7 @@ export function InviteWalk({
       {clientSecret !== null && publishableKey !== null ? (
         <div
           className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700"
-          data-capture-frame="embedded"
+          data-checkout-frame="embedded"
         >
           <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
             <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
@@ -277,7 +270,7 @@ export function InviteWalk({
             clientSecret={clientSecret}
             publishableKey={publishableKey}
             placeholder={itemLabel(flow, "card-frame")}
-            onComplete={() => void completeCard()}
+            onComplete={() => void confirmMembership()}
             onError={() => setRefusal(itemLabel(flow, "card-refused"))}
           />
           <p className="px-3 pb-2 text-xs text-gray-600 dark:text-gray-300">
@@ -287,26 +280,14 @@ export function InviteWalk({
       ) : (
         <button
           type="button"
-          data-pay-action="capture"
+          data-pay-action="subscribe"
           data-panel-first="true"
           className={PRIMARY}
           disabled={starting}
-          onClick={() => void startCard()}
+          onClick={() => void startMembership()}
         >
           {starting ? itemLabel(flow, "card-starting") : itemLabel(flow, "card-start")}
         </button>
-      )}
-
-      {hostedUrl === null ? null : (
-        <div className="space-y-1" data-pay-hosted="true">
-          <p className={SMALL}>{itemLabel(flow, "card-hosted")}</p>
-          <a
-            href={hostedUrl}
-            className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
-          >
-            {itemLabel(flow, "card-hosted-link")}
-          </a>
-        </div>
       )}
 
       {refusal === null ? null : (
@@ -321,7 +302,8 @@ export function InviteWalk({
         className={GHOST}
         onClick={() => {
           setRefusal(null);
-          setHostedUrl(null);
+          setClientSecret(null);
+          setCheckoutSessionId(null);
           setStep("plan");
         }}
       >
@@ -361,6 +343,7 @@ export function InviteWalk({
       aria-labelledby="create-pay-heading"
       data-create-plans="true"
       data-pay-step={step}
+      data-pay-relationship={relationshipId}
       className={`${CARD} pay-flow-panel`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">

@@ -375,19 +375,124 @@ cmd_check_limits() { # <file>
     "$file" "$count" "$((count - retracted))" "$retracted"
 }
 
+# --- checkout hygiene ----------------------------------------------------------
+# A cut is a sequence of writes against one checkout — an entry, a bump, a commit, a tag, a push —
+# and every one of them assumes the checkout it started on. Measured 2026-11-14, that assumption is
+# not free: the primary checkout was found **detached** at `7a531b43` (`chore(release): 1.16.0`)
+# with `origin/main` three commits ahead. From that tree `git push` moved nothing,
+# `release_boundary.py` read "0 commits since the tag" and labelled the next cut a patch, and
+# `package.json` carried 1.16.0 while production served 1.18.0. The reflog's newest pair was
+# `checkout: moving from main to HEAD` and `main: Reset to origin/main` — a cut that detached a
+# working tree and never put the branch back.
+#
+# Two guarantees, and this section is both of them:
+#
+#   * a cut that cannot be cut from is refused by name, before a byte is written
+#     (`require_cut_checkout` below) — detached, dirty, or a commit that does not contain origin/main;
+#   * the checkout is put back on the branch it started on, by a trap that runs on success, on
+#     failure and on SIGINT/TERM/HUP. That is what covers the case no `git switch` at the end of a
+#     successful path can: an interrupted run, or a step inside the run that detaches.
+#
+# The trap restores the *branch*, never the files. A release script that discards uncommitted work
+# is a worse bug than the one it is fixing, so leftover paths are named and left alone.
+
+GUARD_START_BRANCH=""
+GUARD_START_SHA=""
+GUARD_ARMED=0
+
+guard_current_branch() { git symbolic-ref --quiet --short HEAD 2>/dev/null || printf 'HEAD'; }
+
+# At most five indented paths, in one process. `printf … | head -5` is the repo's documented
+# SIGPIPE trap: under `pipefail` head's early exit closes the pipe, the upstream printf dies of
+# SIGPIPE, and the pipeline's 141 becomes the script's exit status — so a tree with six dirty
+# paths would refuse with half a message and a code nobody can read. `sed` reads its whole input.
+show_paths() { sed -e 's/^/  /' -e '6,$d'; }
+
+guard_arm() { # capture the starting state, and make every way out of this run restore it
+  [ "$GUARD_ARMED" -eq 1 ] && return 0
+  GUARD_START_BRANCH="$(guard_current_branch)"
+  GUARD_START_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
+  GUARD_ARMED=1
+  trap 'guard_restore $?' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  trap 'exit 129' HUP
+}
+
+guard_restore() { # <exit code> — the state the caller gets back, and the line that proves it
+  local rc="${1:-0}" branch now dirty start
+  [ "$GUARD_ARMED" -eq 1 ] || return 0
+  GUARD_ARMED=0 # one shot: a trap that can re-enter is how a restore loop happens
+
+  branch="$(guard_current_branch)"
+  if [ "$branch" != "$GUARD_START_BRANCH" ] && [ "$GUARD_START_BRANCH" != "HEAD" ]; then
+    if git switch --quiet "$GUARD_START_BRANCH" 2>/dev/null; then
+      printf 'release: the checkout was left on %s — put back on %s\n' \
+        "$branch" "$GUARD_START_BRANCH"
+    else
+      printf 'release: WARNING the checkout was left on %s and could not be put back on %s — run: git switch %s\n' \
+        "$branch" "$GUARD_START_BRANCH" "$GUARD_START_BRANCH" >&2
+    fi
+    branch="$(guard_current_branch)"
+  fi
+
+  now="$(git rev-parse --short HEAD 2>/dev/null || true)"
+  dirty="$(git status --porcelain 2>/dev/null || true)"
+
+  if [ "$branch" = "HEAD" ]; then
+    printf 'release: the checkout is detached at %s — it was found that way, and a cut will not start from it\n' \
+      "$now" >&2
+  elif [ -n "$dirty" ]; then
+    printf 'release: %s is left with uncommitted changes — this script never discards work:\n' \
+      "$branch" >&2
+    printf '%s\n' "$dirty" | show_paths >&2
+    printf '  commit or `git stash` them before the next cut\n' >&2
+  elif [ "$GUARD_START_SHA" != "$(git rev-parse HEAD 2>/dev/null || true)" ]; then
+    start="$(git rev-parse --short "$GUARD_START_SHA" 2>/dev/null || printf '%s' "$GUARD_START_SHA")"
+    printf 'release: the checkout is on %s at %s, clean — the cut advanced it from %s\n' \
+      "$branch" "$now" "$start"
+  else
+    printf 'release: the checkout is on %s at %s, clean — as it was found\n' "$branch" "$now"
+  fi
+  return "$rc"
+}
+
+require_cut_checkout() { # the three states a cut cannot start from, each refused by name
+  git rev-parse --git-dir >/dev/null 2>&1 ||
+    die "not a git repository — a cut is made in a checkout of the repo"
+
+  local branch dirty
+  branch="$(guard_current_branch)"
+  if [ "$branch" = "HEAD" ]; then
+    die "HEAD is detached at $(git rev-parse --short HEAD) — a cut is made from a branch, never from a floating commit. Run 'git switch main && git pull --ff-only', then cut again"
+  fi
+  [ "$branch" = "main" ] ||
+    die "a release is cut from main, not from '$branch' — run 'git switch main && git pull --ff-only', then cut again"
+
+  dirty="$(git status --porcelain)"
+  if [ -n "$dirty" ]; then
+    printf 'release: the tree is dirty — a release is cut from a clean tree, never from work in progress:\n' >&2
+    printf '%s\n' "$dirty" | show_paths >&2
+    die "commit or 'git stash' those paths, then cut again"
+  fi
+}
+
 preflight() { # <version> — everything a cut must be true before a single byte is written
   local version="$1"
   is_version "$version" ||
     usage_die "'$version' is not a semantic version (x.y.z, optionally -prerelease or +build)"
 
-  git rev-parse --git-dir >/dev/null 2>&1 || die "not a git repository"
-  [ -z "$(git status --porcelain)" ] ||
-    die "the tree is dirty — a release is cut from a clean tree, never from work in progress"
-  [ "$(git symbolic-ref --short HEAD 2>/dev/null || echo detached)" = "main" ] ||
-    die "a release is cut from main, not from '$(git symbolic-ref --short HEAD 2>/dev/null || echo detached)'"
+  require_cut_checkout
 
   step "fetch (origin main, tags)"
   git fetch --quiet origin main --tags || die "git fetch origin main --tags failed"
+  # The commit being released must *contain* origin/main. A tag whose tree does not carry what main
+  # carries is a release nobody can reproduce from the branch — and it is the range the CHANGELOG
+  # gate then compares against, so the entry would describe a history that is not main's. This is
+  # the wider invariant and it is checked first, so a diverged checkout hears about the divergence
+  # rather than about the symlink to it.
+  git merge-base --is-ancestor origin/main HEAD ||
+    die "$(git rev-parse --short HEAD) does not contain origin/main ($(git rev-parse --short origin/main)) — a release commit carries main. Run 'git switch main && git pull --ff-only', then cut again"
   [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] ||
     die "HEAD is not origin/main — a release ships a commit that exists on the remote; pull --ff-only first"
 
@@ -437,6 +542,7 @@ tag_and_publish() { # <version> — annotated tag at HEAD, push it, publish the 
 
 cmd_tag_only() { # <version> — the version and entry are already merged on main
   local version="$1"
+  guard_arm
   preflight "$version"
   [ "$(pkg_version)" = "$version" ] ||
     die "package.json is at $(pkg_version), not $version — prepare and merge the bump, then re-run --tag-only"
@@ -451,6 +557,7 @@ cmd_tag_only() { # <version> — the version and entry are already merged on mai
 
 cmd_release() { # <version> <limits-file>
   local version="$1" limits="$2" from="" newest existing newfile
+  guard_arm
   preflight "$version"
   [ -n "$limits" ] ||
     usage_die "a generated entry needs --limits <file>: the Known limits block ships verbatim in public release notes"

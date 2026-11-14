@@ -7,14 +7,15 @@
 <!-- docs-nav:end -->
 
 11 modules — the initiator's side of the product. Where `lib/flow` serves a session to whoever holds
-the link, `lib/member` serves an **account**: its relationships, its templates, its payment method and
-its invoices.
+the link, `lib/member` serves an **account**: its relationships, its templates and its membership.
 
 ## Responsibilities
 
 - Create a relationship from a template the account owns, edit its Aspects, and publish it.
-- Price and take the fee — the trial, the retry ladder, the completion charge.
-- Run the scheduled jobs that email a reminder, retry a decline, or expire an unpaid obligation.
+- Read the membership a relationship runs on — the trial, the period end, and whether either party
+  may still write — and complete a relationship without taking money (#1010).
+- Refuse a write from either party when the membership behind the relationship has lapsed, and say
+  so in one sentence the screen and the refusal both read.
 - Give the member's own pages the data they need: the relationship list, this month's outcomes, the
   template shelf.
 
@@ -25,13 +26,10 @@ its invoices.
   `admin_action` row in the same transaction as the change. Publishing copies the template's Aspects,
   opens the session round, writes the Initiator's party row and the invitation, and moves the
   relationship to `published` — **and bills nothing**.
-- [`payment.ts`](../../../lib/member/payment.ts) — `capturePaymentMethod`, `completeRelationship`,
-  `relationshipFeeCents`, and the refusal vocabulary. The fee belongs to **completion**, not creation.
-- [`payment-job-run.ts`](../../../lib/member/payment-job-run.ts) — carries out what
-  [`lib/flow/payment-jobs.ts`](lib-flow.md) decides. Every write is guarded, so two runs in one
-  minute do the work once.
-- [`payment-notice.ts`](../../../lib/member/payment-notice.ts) — the real notifier. A reminder is sent
-  _then_ stamped; a send that cannot happen leaves the nag owed (`pending-delivery`).
+- [`payment.ts`](../../../lib/member/payment.ts) — `completeRelationship` and the completion gate. It
+  is **the whole money story for a relationship since #1010**: nothing. The membership bought at stage
+  5 covers it, so completion reads the seal, writes the status and opens the Gap, and the module
+  imports no billing code at all.
 - [`relationship-edit.ts`](../../../lib/member/relationship-edit.ts) — the edit surface's preview and
   write, so the invalidation a change costs is stated before it is saved.
 - [`publish-basis.ts`](../../../lib/member/publish-basis.ts) — `MemberRefused` and the sentences a
