@@ -126,7 +126,12 @@ export function RelationshipsList({
   const countOf = (value: StatusFilter) => statusCount(rows, value);
 
   const startAction = (
-    <Button type="button" onClick={() => setCreateOpen((open) => !open)} aria-expanded={createOpen}>
+    <Button
+      type="button"
+      data-relationships-start-toggle="true"
+      onClick={() => setCreateOpen((open) => !open)}
+      aria-expanded={createOpen}
+    >
       <Plus className="h-4 w-4" />
       <span>{startLabel}</span>
     </Button>
