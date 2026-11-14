@@ -182,8 +182,27 @@ describe("one band, one h1, and the crumb each page asks for", () => {
     const relationship = relationshipHtml();
     expect(template).toContain('data-record-band="template"');
     expect(relationship).toContain('data-record-band="relationship"');
-    // Byte-equal apart from the hooks: one component, one record, one paint.
-    expect(bandPaint(relationship)).toBe(bandPaint(template));
+    /*
+     * Byte-equal apart from the hooks: one component, one record, one paint.
+     *
+     * The relationship below names **nobody** in its seats — a draft nobody has joined yet — which
+     * is the case where the two pages hand the identical values. #975 D9 gave the relationship's
+     * roles line the people holding its seats (`Avery — Staff / Manager`), and `tests/
+     * relationship-detail-identity.test.tsx` proves that line and the heading that carries it; this
+     * case keeps proving the claim it was written for, that there is one band and not two that
+     * look alike.
+     */
+    const seatless = relationshipHtml(
+      relationshipView({ initiatorName: null, counterpartyName: null }),
+    );
+    expect(bandPaint(seatless)).toBe(bandPaint(template));
+  });
+
+  it("differs from the template's band in the roles line alone once a seat is named", () => {
+    // #975 D9 — the one value that differs, and nothing else in the band moves with it.
+    const named = bandPaint(relationshipHtml());
+    const seatless = bandPaint(relationshipHtml(relationshipView({ initiatorName: null })));
+    expect(named.replace("Avery — ", "")).toBe(seatless);
   });
 
   it("prints the group, the realm and the type, then the title, the roles and the summary", () => {
