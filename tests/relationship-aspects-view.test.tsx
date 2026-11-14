@@ -90,7 +90,7 @@ function viewOf(input: {
     template: { ...template, items: input.items },
     aspectsEditable: isInitiator && draft,
     publishable: isInitiator && draft,
-    hasPaymentMethod: true,
+    hasMembership: true,
     completion: null,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
