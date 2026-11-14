@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
-  "recordedAt": "2026-11-14T00:21:07.294Z",
+  "recordedAt": "2026-11-14T08:18:08.211Z",
   "recorder": "pnpm health:record",
   "dbVerify": {
     "command": "pnpm db:verify",
-    "ranAt": "2026-11-14T00:19:56.515Z",
+    "ranAt": "2026-11-14T08:16:57.156Z",
     "database": "demo branch (NEON_BRANCH=demo, neondb) · host ep-crimson-truth-b4ppwxrp.c-6.us-east-2.aws.neon.tech",
     "exitCode": 0,
     "result": "pass",
-    "summary": "✓ db:verify — 4 session(s) checked, 4 template(s) resolved, 28 template version(s) parsed with every relationship bound to one (0 copy(ies) authored at create, checked as structure), 28 published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 511 source file(s) (a scored session is immutable), 1 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded session(s) complete, 4 seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), 2 party binding(s) resolve to an account, 2 seeded binding(s) intact, 1 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (0 live subscription(s)), 4 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 2 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 5 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 11 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
+    "summary": "✓ db:verify — 4 session(s) checked, 4 template(s) resolved, 28 template version(s) parsed with every relationship bound to one (0 copy(ies) authored at create, checked as structure), 28 published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no `instance` table or column, 0 orphan session(s) (every session has a relationship), 0 UPDATE path(s) against session/opinion across 542 source file(s) (a scored session is immutable), 1 relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with 4 seeded setting(s) matching the fixture, 4 of 4 seeded session(s) complete, 4 seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), 2 party binding(s) resolve to an account, 2 seeded binding(s) intact, 0 unlock mark(s) on complete instances only, 6 billing plan row(s) matching data/billing-plans.ts (0 live subscription(s)), 4 console column(s) nullable with no default, 0 submitted seat(s) with every Aspect answered, 2 mail event(s) recorded (0 address(es) suppressed), 0 contact message(s) in the inbox with 0 reply attempt(s), 0 broadcast send(s) recorded (0 address(es) mailed), 3 profile row(s) with a live account behind them (no orphan after a deletion), 0 open deletion job(s) none older than 24 h, 11 review artifact(s) with 0 TODO item(s) and 0 feedback issue(s) none in a closed/open mismatch, no drift",
     "violations": []
   },
   "gate": {
-    "lane": "content",
-    "seconds": 188.7,
-    "measuredAt": "2026-11-14T00:15:11.839Z",
+    "lane": "code",
+    "seconds": 146.6,
+    "measuredAt": "2026-11-14T08:13:22.975Z",
     "command": "env -i HOME… PATH… CI=1 HEALTH_RECORD_REFRESH=1 bash scripts/verify.sh",
     "yield": {
-      "window": "2026-11-13",
-      "measuredAt": "2026-11-14T00:18:20.512Z",
-      "command": "python3 docs/gate-baseline.py --window 2026-11-13",
-      "successes": 106,
-      "runs": 115,
-      "percent": 92.2,
-      "runP50Seconds": 177,
-      "runP95Seconds": 224
+      "window": "2026-11-14",
+      "measuredAt": "2026-11-14T08:15:49.542Z",
+      "command": "python3 docs/gate-baseline.py --window 2026-11-14",
+      "successes": 75,
+      "runs": 79,
+      "percent": 94.9,
+      "runP50Seconds": 167,
+      "runP95Seconds": 211
     }
   },
   "production": {
     "state": "answering",
-    "version": "1.18.0",
-    "commit": "4796bac235cb1d141318167ce1c97d759905dbe3",
+    "version": "1.19.0",
+    "commit": "a2b5dca06cd204b0ebc7d3bc546226b5bc4715ea",
     "status": 200,
-    "measuredAt": "2026-11-14T00:15:11.838Z",
+    "measuredAt": "2026-11-14T08:13:22.975Z",
     "source": "GET https://alignsynch.com/api/version",
     "behindMain": 0
   },
   "tree": {
-    "packageVersion": "1.18.0",
-    "latestTag": "v1.18.0",
-    "headSha": "c9c5ecb329fb6d29e004fcc5abad8a436bcba7e1",
-    "mainSha": "4796bac235cb1d141318167ce1c97d759905dbe3",
-    "measuredAt": "2026-11-14T00:15:09.234Z"
+    "packageVersion": "1.19.0",
+    "latestTag": "v1.19.0",
+    "headSha": "a2b5dca06cd204b0ebc7d3bc546226b5bc4715ea",
+    "mainSha": "a2b5dca06cd204b0ebc7d3bc546226b5bc4715ea",
+    "measuredAt": "2026-11-14T08:13:22.496Z"
   }
 }

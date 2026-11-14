@@ -11,8 +11,8 @@
  * throughout: the two rows that describe one pair were never compared.
  *
  * The rule is `seededRelationshipProblems()` in `scripts/db-verify.mjs`, exported so these cases can
- * drive it with literals — the gate is database-free (`docs/GATE.md`), and a check that needs a
- * branch is a check that runs after the merge. The status itself is the product's own
+ * drive it with literals — the gate is database-free (`docs/operations/gate.md`), and a check
+ * that needs a branch is a check that runs after the merge. The status itself is the product's own
  * `instanceStatusOf()`, so a rule change that moved `complete` fails here rather than turning the
  * demo silently green.
  */

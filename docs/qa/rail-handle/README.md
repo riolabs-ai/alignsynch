@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Rail collapse handle · prev [QA links](../qa-links.md) · next [recharts 3](../recharts-3/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Rail collapse handle · prev [QA links](../qa-links.md) · next [Relationship detail — the edit form is asked for](../rel-detail-edit/README.md)
 
 <!-- docs-nav:end -->
 
@@ -107,6 +107,6 @@ above, and `measurements.json` is its output, verbatim.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Rail collapse handle · prev [QA links](../qa-links.md) · next [recharts 3](../recharts-3/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Rail collapse handle · prev [QA links](../qa-links.md) · next [Relationship detail — the edit form is asked for](../rel-detail-edit/README.md)
 
 <!-- docs-nav:end -->
