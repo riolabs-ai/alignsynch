@@ -393,6 +393,10 @@ gate_slot_acquire() {
 gate_slot_release() { # idempotent: explicit release at the end of the section, trap on failure
   local held
   [ -n "$GATE_FD" ] || return 0
+  # A gate that stopped anywhere after the typecheck link must not leave the tree's
+  # `.next/cache` pointing at the shared store: a dev server would then open the
+  # store a later gate build holds. Idempotent — nothing is linked on the normal path.
+  node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
   eval "exec ${GATE_FD}>&-" 2>/dev/null || true
   held=$(( $(date +%s) - GATE_HOLD_0 ))
   printf '  gate slot: released slot %s/%s (held %ss, waited %ss)\n' \
@@ -581,7 +585,20 @@ gate_slot_acquire || fail
 if [ "$LANE" = "docs" ]; then
   run_step "whitespace (git diff --check)" check_whitespace || fail
 else
-  run_step "typecheck (next typegen && tsc --noEmit, shared buildinfo)" pnpm typecheck || fail
+  # The typecheck writes the **build's own** buildinfo, so `next build` later in this
+  # section resumes from the program this step already checked instead of repeating
+  # it: one pass, two verdicts, nothing skipped. That only works while `.next/cache`
+  # is linked at this slot (scripts/build-cache.mjs names the path), so the link is
+  # taken here and handed straight back — narrower than the build's own window, and
+  # restored on failure by the trap as well. Measured: 63.9 s → 16.1 s wall for the
+  # build's check, docs/GATE.md.
+  export QUIZHUB_BUILD_SLOT="$GATE_SLOT"
+  node scripts/build-cache.mjs link
+  if ! run_step "typecheck (next typegen && tsc --noEmit, shared with build)" pnpm typecheck; then
+    node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
+    fail
+  fi
+  node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
 fi
 
 # Biome formats markdown too, so this is the docs lane's real gate as well as
