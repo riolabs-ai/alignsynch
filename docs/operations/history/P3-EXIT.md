@@ -29,7 +29,7 @@ Every row is a command that was run against this commit; nothing here is inferre
 
 The `data:check` PASS line for this commit:
 
-```
+```text
 PASS  62 quizzes, 271 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts,
       5 conversations, 6 notifications, 2 promotions, 17 quiz results, 14 comments,
       5 reviews, 99 media entries, 21 page-copy routes, 2 battle modes,

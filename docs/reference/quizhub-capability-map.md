@@ -176,7 +176,6 @@ alignment console (which nothing 404s on the quiz build), and the legal and auth
 | **mock**    | **0**  |
 | **none**    | **7**  |
 
-
 ### 1.3 The totals, and what they say
 
 Every route in `content/routes.ts` appears in exactly one of the two tables above: 22 + 28 = 50.
@@ -501,7 +500,7 @@ a row, or a number where the empty state belongs.
 
 ### The relationships
 
-```
+```text
 record 1─n item 1─n response_option
 record (quiz) 1─n quiz_attempt 1─n quiz_answer
 record 1─n comment             (quiz-scoped; a question-scoped comment also names an item)

@@ -24,7 +24,7 @@ descriptor dump:
 
 `member` (`initiator@demo.alignsynch.test`) — 6 rows, `member-rail-1440.png`:
 
-```
+```text
 WORKSPACE   Dashboard /dashboard · My Relationships /dashboard/relationships ·
             My Templates /dashboard/templates · Library /dashboard/library
 SUPPORT     How It Works /dashboard/help · Support /dashboard/support
@@ -32,7 +32,7 @@ SUPPORT     How It Works /dashboard/help · Support /dashboard/support
 
 `support` (the same account, `user_profile.role` flipped to `support`) — 7 rows:
 
-```
+```text
 WORKSPACE   Dashboard · My Relationships · My Templates · Library
 SUPPORT     How It Works · Support
 ADMIN       Inbox /admin/inbox
@@ -40,7 +40,7 @@ ADMIN       Inbox /admin/inbox
 
 `admin` (`admin@demo.alignsynch.test`) — 14 rows, `admin-rail-1440.png`:
 
-```
+```text
 WORKSPACE   Dashboard · My Relationships · My Templates · Library
 SUPPORT     How It Works · Support
 ADMIN       Console /admin/console · Relationships /admin/instances · Gap Analysis /admin/gaps ·
@@ -51,7 +51,7 @@ ADMIN       Console /admin/console · Relationships /admin/instances · Gap Anal
 The Admin group **leads with `/admin/console`**, and the only `/admin` hrefs anywhere in the document
 are that group's eight:
 
-```
+```text
 admin   → /admin/console /admin/instances /admin/gaps /admin/inbox /admin/health
           /admin/billing /admin/broadcast /admin/audit
 member  → (none)
@@ -90,7 +90,7 @@ removed the previous `localStorage` toggle from this tree).
 
 Measured by submitting the rail form and re-requesting `/dashboard` with the jar:
 
-```
+```text
 POST /dashboard (the rail form)  → Set-Cookie: shell.rail=collapsed; Path=/; Max-Age=31536000; HttpOnly; SameSite=lax
 GET  /dashboard  (same cookie)   → <aside … md:w-16 lg:w-16>   toggle reads "Expand"
 POST /dashboard (the rail form)  → Set-Cookie: shell.rail=expanded

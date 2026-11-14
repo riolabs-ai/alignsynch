@@ -120,7 +120,7 @@ npx vitest run tests/member-relationship-cards.test.ts
 ## What a draft with no session says instead
 
 A relationship with no session cannot open the modal at all — stage 5 is keyed by the session — and
-#958's answer is **not** a greyed-out `Invite Members` with its reason in a `title`. The card prints
+\#958's answer is **not** a greyed-out `Invite Members` with its reason in a `title`. The card prints
 the reason in words and offers the door that fixes it (the template's own create flow, the only
 writer of a session). No such row can be created since #913 deleted the list's create band; the
 branch exists for a tree that still holds one.

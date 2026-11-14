@@ -472,6 +472,11 @@
           "question": "What do the contact pages look like?"
         },
         {
+          "path": "qa/docs-pretty/README.md",
+          "title": "The docs before and after formatting, #937",
+          "question": "Does an /admin/docs article render the tables and alerts it is written in, at 1440 and at 390?"
+        },
+        {
           "path": "qa/flow-stages/README.md",
           "title": "Six flow stages",
           "question": "Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?"

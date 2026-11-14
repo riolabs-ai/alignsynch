@@ -21,7 +21,7 @@ unmeasured it says so.
 
 `lib/flow/state.ts::instanceStatusOf()` decides a session's status from counts alone:
 
-```
+```text
 voided            outranks everything (#503)
 awaiting_counterparty
 answering         everyoneAnswered && everyoneAccepted ? "complete" : "answering"

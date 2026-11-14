@@ -10,7 +10,7 @@ The full gate is **138–176 s**, and `next build` is roughly half of it. Paying
 to a component is what makes an hour of UI work feel like a day — so the gate is not the loop. It
 is the **boundary**.
 
-```
+```text
 inner loop   ~30 s warm / ~90 s cold   pnpm check:fast   + look at the page
 boundary     ~2.5–3 min                bash scripts/verify.sh   + one push + one CI run + one merge
 ```

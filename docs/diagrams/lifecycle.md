@@ -55,7 +55,7 @@ is on file — the delay on the money is seven days, the delay on the _report_ i
 ([payment](payment.md)).
 
 `undefined` from `paymentArmedOf()` is "not measured", not "unpaid": a relationship created before
-#619 has no `relationship_payment` row and must not be flipped back into a payment state.
+\#619 has no `relationship_payment` row and must not be flipped back into a payment state.
 
 ## The branches that exist
 

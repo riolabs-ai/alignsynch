@@ -31,7 +31,7 @@ card print `row.relationshipTitle ?? row.title`; the detail page printed `relati
 so it was the one surface a creator's own title never reached. The same defect `demo-flow` had been
 recording since #841:
 
-```
+```text
 before  ✘ 14 create-draft — the relationship detail heads the draft with the title the creator gave it
           FINDING: create-draft: the relationship detail is headed by the template's name, not the draft's own title
 after   ✔ 14 create-draft — the relationship detail heads the draft with the title the creator gave it
@@ -43,7 +43,7 @@ is all four demo rows). It now names the seats, in the shape the approved artifa
 use (`§11` of `prototype-relationship-lifecycle-v9`: `Daniel — payer`, `Rowan — counterparty`), with
 the catalogue type's nouns where the slug has them and the product's two words otherwise:
 
-```
+```text
 before  Relationship Basics                ← heading, then nothing
 after   Relationship Basics
         Avery — Initiator / Rowan — Counterparty
@@ -61,7 +61,7 @@ The seat chip prints `viewerRole` — the viewer's own `party` row. The read-onl
 values disagree (`relationship.initiator_user_id` names another account, or `NULL` before #958, while
 the viewer holds the Initiator seat) the screen said both:
 
-```
+```text
 #975 measured   [Initiator]  chip
                 You are the Counterparty on this relationship.  ← the same viewer, 300 px lower
 ```

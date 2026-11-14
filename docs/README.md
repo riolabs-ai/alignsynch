@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**150 documents in 9 sections.** Every page carries the same nav block, generated
+**151 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
-- [Records & QA](#records-qa) — 33 documents
+- [Records & QA](#records-qa) — 34 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
@@ -162,6 +162,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa/brand-lockup/README.md`](qa/brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa/comments-mockup/README.md`](qa/comments-mockup/README.md) — **Comments mockup, both placements** — Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?
 - [`qa/contact-land/README.md`](qa/contact-land/README.md) — **Contact landing** — What do the contact pages look like?
+- [`qa/docs-pretty/README.md`](qa/docs-pretty/README.md) — **The docs before and after formatting, #937** — Does an /admin/docs article render the tables and alerts it is written in, at 1440 and at 390?
 - [`qa/flow-stages/README.md`](qa/flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa/flow-validation/2026-11-07.md`](qa/flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
 - [`qa/help-two-column/README.md`](qa/help-two-column/README.md) — **Help two-column** — Did `/help` get its two-column layout?

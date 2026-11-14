@@ -10,7 +10,7 @@
 row does not exist. The invitation was never written — a legitimate state, not a bad id — and the
 copy fixture had no words for it:
 
-```
+```text
 PageCopy: section "status" has no item "none"
   at itemOf    lib/page-copy.ts:31:11
   at itemLabel lib/page-copy.ts:40:10
@@ -22,7 +22,7 @@ carried only the four derived states (`unclaimed`, `claimed`, `expired`, `revoke
 correct — a copy lookup that silently returns a placeholder is a screen that says the wrong
 sentence forever — so the fix is the missing fixture item, not the throw:
 
-```
+```text
 Not sent — no invitation was created for this relationship yet
 ```
 

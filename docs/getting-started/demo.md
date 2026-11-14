@@ -132,7 +132,7 @@ source before the restore, and the recipe for repairing it is: restore the base 
 tables and `neon_auth.user`/`session`/`account`, keep `project_config` and `jwks`.
 
 The reset is the **only** bound on the demo. There is no session expiry and no TTL, by decision on
-#185: a visitor's state does not decay, and the next nightly reset is what ends every session.
+\#185: a visitor's state does not decay, and the next nightly reset is what ends every session.
 
 ## What it prints
 
@@ -141,7 +141,7 @@ itself declares, compared against the branch; then a verdict. The middle column 
 part 2 checks: it reads **zeros**, because the schema-only source carries no rows. A non-zero there
 means the source is holding data, which is the case the source refusal exists to make impossible.
 
-```
+```text
 ▶ before                    ▶ after the reset           ▶ after the reseed
   record                   8   record                  0   record                 8
   item                    40   item                    0   item                  40

@@ -38,7 +38,7 @@ identical rows. The spec's dashboard mockup even shows the answer in its My Temp
 section ("Manager / Staff - My Analysts" — a name, not a template title). External practice
 agrees it is a real, recurring want: Miro's help tells users to rename the board created
 from a template "so your team can find it easily later"
-(https://help.miro.com/hc/en-us/articles/360017572134-Templates — the Arclet guide
+(<https://help.miro.com/hc/en-us/articles/360017572134-Templates> — the Arclet guide
 summarizes the same step). The name also rides into the invitation subject ("{initiator}
 wants to compare notes with you on {template}") and the unlock notice, where "Sofia
 check-in" beats "Relationship Basics" a second time.
@@ -46,8 +46,8 @@ check-in" beats "Relationship Basics" a second time.
 But the field only earns its place because it is **pre-filled and optional**. Research on
 field cost is consistent in direction: Expedia removed one optional field (Company) and
 gained ~$12M/year; Imagescape cut 11 fields to 4 for a 120% conversion lift; phone-number
-fields alone cost ~5% (Unbounce, via https://www.storylane.io/blog/demo-requests and
-https://www.marquiz.io/blog/conversion-optimization-case-studies). A blank, _required_ name
+fields alone cost ~5% (Unbounce, via <https://www.storylane.io/blog/demo-requests> and
+<https://www.marquiz.io/blog/conversion-optimization-case-studies>). A blank, _required_ name
 box would be exactly the Expedia field — friction with no computation behind it. A
 pre-filled one costs nothing at completion time and pays off at list time. Storage is
 `record.title` — no schema change.
@@ -98,7 +98,7 @@ name per party — a prior "one more field" cut, and the right one; nothing here
    setting + first/last names + email + Coach block). Rejected: three of the four
    "definition" fields are derived data, the Coach block is out of scope (SPEC-DRIFT §8),
    and the form-length evidence (3–5 fields ≈ 40–50% completion vs 13+ ≈ 8–15%,
-   https://seolevelup.com/how-to-fix-a-website-that-gets-traffic-but-no-leads/) applies
+   <https://seolevelup.com/how-to-fix-a-website-that-gets-traffic-but-no-leads/>) applies
    harder here than in lead-gen: this form is the front door to the whole product.
 2. **A required, blank relationship-name field.** Rejected: reintroduces the Expedia
    failure with zero payoff for the majority user who has one relationship.
@@ -186,19 +186,19 @@ name per party — a prior "one more field" cut, and the right one; nothing here
   all derivable from the template choice, which is the mockup showing them to be derived
   data.
 - Unbounce form research, via Storylane's demo-request study
-  (https://www.storylane.io/blog/demo-requests): Expedia deleted one optional field —
+  (<https://www.storylane.io/blog/demo-requests>): Expedia deleted one optional field —
   "Company" — worth ~$12M/year; Imagescape 11 → 4 fields, +120% conversions; phone fields
   ≈ 5% conversion dip. Direction of the evidence: every extra field costs completion, and
   confusion costs more than typing.
-- Marquiz case-study roundup (https://www.marquiz.io/blog/conversion-optimization-case-studies):
+- Marquiz case-study roundup (<https://www.marquiz.io/blog/conversion-optimization-case-studies>):
   the Expedia field's failure mode was users typing their _bank_ into it — an optional
   field nobody needs is not neutral, it is actively misleading. This is the Realm
   argument: metadata that feeds no computation gets filled wrong.
 - SEOLevelup field-count table
-  (https://seolevelup.com/how-to-fix-a-website-that-gets-traffic-but-no-leads/): 3–5 fields
+  (<https://seolevelup.com/how-to-fix-a-website-that-gets-traffic-but-no-leads/>): 3–5 fields
   ≈ 40–50% completion, 13+ ≈ 8–15% — the five-field create form sits in the healthy band.
-- Miro help (https://help.miro.com/hc/en-us/articles/360017572134-Templates) and Arclet's
-  guide (https://arclet.io/guides/miro/use-templates): "Rename the board… so your team can
+- Miro help (<https://help.miro.com/hc/en-us/articles/360017572134-Templates>) and Arclet's
+  guide (<https://arclet.io/guides/miro/use-templates>): "Rename the board… so your team can
   find it easily later" — the product-standard evidence that a name distinct from the
   template title pays off as soon as a person has two of anything.
 

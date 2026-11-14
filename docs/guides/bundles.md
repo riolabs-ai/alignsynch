@@ -122,7 +122,7 @@ A tenant needs more than records: the configuration around them, the people a de
 in as, the media those records render, and a statement of which build the file belongs to.
 That is a platform package — one `.zip`, and two JSON documents inside it.
 
-```
+```text
 a.alignsynch.zip
   bundle.json      the canonical platform bundle (bundleVersion 2, kind "platform")
   manifest.json    what the container holds, and what it deliberately does not

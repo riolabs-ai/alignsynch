@@ -680,3 +680,90 @@ html:has(.templates-anchors) {
 .pay-flow-panel {
   animation: pay-flow-in 220ms ease both;
 }
+
+/*
+ * GITHUB ALERTS in the docs reader (#937) — `components/admin/docs/doc-article.tsx` renders
+ * `> [!NOTE]` through `remark-github-blockquote-alert`, which emits
+ * `<div class="markdown-alert markdown-alert-<type>">` with a `.markdown-alert-title` first child.
+ * The plugin ships its own `alert.css`, and it is not imported: that file hard-codes GitHub's
+ * palette (`#0969da`, `#8250df`, …) and reads `prefers-color-scheme` rather than this app's theme,
+ * so on a dark surface it would paint GitHub's light-theme accent. These rules use the token layer
+ * instead, the same way `.markdown-alert`'s consumers on GitHub draw from theirs.
+ *
+ * The accent hues are the status hues the brand rule allows (blue / amber / green / red / slate in
+ * `scripts/lint-brand-classes.mjs`) — "warning" means the same thing under both brands, so an alert
+ * is the one surface that is deliberately not on the action palette: a note must not look like a
+ * button.
+ *
+ * **Unlayered, and that is not a style choice.** `@layer components` is purged by Tailwind's content
+ * scan: `.markdown-alert-note` is emitted by a remark plugin at request time and appears in no
+ * source file, so a layered rule is dropped from the bundle and the alert renders as plain text with
+ * a bare "NOTE" label — measured in this card's own screenshot pass before the block moved here.
+ * The rule below outranks the layer for the same reason `.pay-flow-panel` and the lockup media
+ * query above live outside it.
+ */
+.markdown-alert {
+  margin-bottom: 1rem;
+  /* Tokens are HSL triplets (`--border: 30 16% 84%`), so every read wraps them in `hsl()`. */
+  border-left: 4px solid hsl(var(--border));
+  border-radius: 0 0.375rem 0.375rem 0;
+  background: color-mix(in srgb, hsl(var(--muted)) 45%, transparent);
+  padding: 0.5rem 1rem;
+}
+
+.markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: #3b82f6;
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: #1d4ed8;
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: #22c55e;
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: #15803d;
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: hsl(var(--action));
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  /* The one type that is not a status hue: "important" is emphasis, so it wears the brand's own
+     action colour rather than a violet the palette bans. */
+  color: hsl(var(--action));
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: #f59e0b;
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: #b45309;
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: #ef4444;
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: #b91c1c;
+}

@@ -355,7 +355,7 @@ commit in `<previous tag>..<tag>`. The entry is normally generated from those co
 between the two is drift in a published document. A **curated** entry does not name commits: prose
 written by a human, as `1.4.0`'s was, drops the whole range the moment the tag exists:
 
-```
+```text
 ✗ entry [1.4.0] drops 55 of 55 commit(s) since v1.3.0
 ```
 

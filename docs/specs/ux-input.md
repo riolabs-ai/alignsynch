@@ -87,31 +87,31 @@ below; guard with a min-width and test at 320 px.
 
 ## Sources
 
-- **WAI-ARIA APG, Rating Radio Group example** — https://www.w3.org/WAI/ARIA/apg/patterns/radio/examples/radio-rating/
+- **WAI-ARIA APG, Rating Radio Group example** — <https://www.w3.org/WAI/ARIA/apg/patterns/radio/examples/radio-rating/>
   The five-star rating example is a radio group; recommended pattern for ≤ 7 discrete choices.
-- **WAI-ARIA APG, Slider pattern (and its Rating Slider example)** — https://www.w3.org/WAI/ARIA/apg/patterns/slider/ and
-  https://www.w3.org/WAI/ARIA/apg/patterns/slider/examples/slider-rating/
+- **WAI-ARIA APG, Slider pattern (and its Rating Slider example)** — <https://www.w3.org/WAI/ARIA/apg/patterns/slider/> and
+  <https://www.w3.org/WAI/ARIA/apg/patterns/slider/examples/slider-rating/>
   States: "For inputs with seven or fewer choices, another pattern that could be used is radio
   group"; and warns touch-based AT often cannot operate sliders (gestures must synthesize key events).
-- **NN/g, "Slider Design: Rules of Thumb"** — https://www.nngroup.com/articles/gui-slider-controls/
+- **NN/g, "Slider Design: Rules of Thumb"** — <https://www.nngroup.com/articles/gui-slider-controls/>
   "Selecting a precise value using a slider is a difficult task requiring good motor skills… If
   picking an exact value is important… choose an alternate UI element."
-- **GOV.UK Design System, Radios** — https://design-system.service.gov.uk/components/radios/
+- **GOV.UK Design System, Radios** — <https://design-system.service.gov.uk/components/radios/>
   One option from a list → radios; group in `<fieldset>` with `<legend>`; do not pre-select (users
   then miss unanswered questions / submit wrong answers).
-- **WCAG 2.2** — https://www.w3.org/TR/WCAG22/ SC 2.5.8 Target Size (Minimum, 24×24), 2.1.1
+- **WCAG 2.2** — <https://www.w3.org/TR/WCAG22/> SC 2.5.8 Target Size (Minimum, 24×24), 2.1.1
   Keyboard, 2.5.1 Pointer Gestures (path-based gestures need single-pointer alternative), 1.3.1
   Info and Relationships, 1.4.11 Non-text Contrast, 4.1.2 Name Role Value.
 - **Roster, Lucianetti & Albaum (2015), "Exploring slider vs. categorical response formats in
-  web-based surveys", Journal of Research Practice 11(1)** — https://jrp.icaap.org/index.php/jrp/article/view/509.html
+  web-based surveys", Journal of Research Practice 11(1)** — <https://jrp.icaap.org/index.php/jrp/article/view/509.html>
   Five-point slider vs five-point radios: no significant difference in means/completion — i.e. the
   slider buys nothing and costs accessibility.
 - **Boise State evidence review, "Evidence-Based Survey Design: The Use of Continuous Rating
-  Scales in Surveys"** — https://scholarworks.boisestate.edu/cgi/viewcontent.cgi?article=1097&context=ipt_facpubs
+  Scales in Surveys"** — <https://scholarworks.boisestate.edu/cgi/viewcontent.cgi?article=1097&context=ipt_facpubs>
   Summarizes Couper et al. 2006 (2× missing data on sliders), Cook et al. 2001 (+71 s), Funke
   et al. 2011 (break-off, mobile); "Many studies recommended against using sliders."
 - **GESIS guideline (Niessen 2023), questionnaire mode transition** —
-  https://www.gesis.org/fileadmin/admin/Dateikatalog/pdf/guidelines/questionnaire_design_mode_transition_niessen_2023.pdf
+  <https://www.gesis.org/fileadmin/admin/Dateikatalog/pdf/guidelines/questionnaire_design_mode_transition_niessen_2023.pdf>
   "the use of slider scales is not advisable because they lead to higher item non-response and
   break-off rates, especially in lower-educated participants and among mobile device users."
 

@@ -102,19 +102,19 @@ since Soft/Full change the verdict on the same numbers.
 ## Sources
 
 - **Stephen Few, "Bullet Graph Design Specification" (Perceptual Edge)** —
-  https://www.perceptualedge.com/articles/misc/Bullet_Graph_Design_Spec.pdf
+  <https://www.perceptualedge.com/articles/misc/Bullet_Graph_Design_Spec.pdf>
   Single measure + comparative measure tick + ≤5 (ideally 3) qualitative ranges; "rich display
   of data in a small space"; comparative measure as a perpendicular short line.
-- **Stephen Few, "Why Most Dashboards Fail"** — https://www.perceptualedge.com/articles/misc/WhyMostDashboardsFail.pdf
+- **Stephen Few, "Why Most Dashboards Fail"** — <https://www.perceptualedge.com/articles/misc/WhyMostDashboardsFail.pdf>
   Condense; include only what is needed; one accent colour so attention lands on what is urgent.
 - **NN/g, "Comparison Tables for Products, Services, and Features"** —
-  https://www.nngroup.com/articles/comparison-tables/ — tables are for comparing across
+  <https://www.nngroup.com/articles/comparison-tables/> — tables are for comparing across
   attributes; keep the compared items stable and columns consistent (supports the stable-row-order
   decision and the row-table choice).
-- **GOV.UK Design System, Tables** — https://design-system.service.gov.uk/components/table/
+- **GOV.UK Design System, Tables** — <https://design-system.service.gov.uk/components/table/>
   "Use the table component to make information easier to compare and scan" for numerical data;
   numeric data right-aligned, tabular numbers.
-- **WCAG 2.2, SC 1.4.1 Use of Color** — https://www.w3.org/TR/WCAG22/#use-of-color
+- **WCAG 2.2, SC 1.4.1 Use of Color** — <https://www.w3.org/TR/WCAG22/#use-of-color>
   "Color is not used as the only visual means of conveying information" — the spec's four flag
   colours are the only channel in the mockup.
 - **Spec p. 65 (mockup 09-gap-analysis-terms.png)** — gap severity → flag colour mapping, the

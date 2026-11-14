@@ -48,7 +48,7 @@ no template, and deliberately kept — `components/chat` and `/chat` sit under _
 note that says why. Deleting it would delete the messaging story for whichever expression wants it next.
 
 **Adoption cost is recorded, not guessed.** The judgement half of the registry (`data/ui-registry.ts`,
-#173) carries three facts per surface, and the gate checks the one that is checkable against the tree:
+\#173) carries three facts per surface, and the gate checks the one that is checkable against the tree:
 
 - `status` — `mock`, `fixture`, `db` or `live`: how far the surface is from real data. `db` must reach
   `lib/db/`, `live` must reach an `/api` write, `fixture` must reach `data/`, and `mock` must reach

@@ -10,7 +10,7 @@ Every route `data/pages/budget.ts` registers, captured in a real browser at 390 
 
 ## Coverage
 
-```
+```text
 77 registry surfaces · 74 routes · 68 captured and passing · 3 failing · 3 skipped
 3 non-route surfaces (not-found, shell, tour) — covered by the pages that mount them, listed below.
 ```

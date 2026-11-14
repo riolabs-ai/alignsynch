@@ -6,6 +6,7 @@
 
 <!-- docs-nav:end -->
 
+> [!NOTE]
 > **Retired (#478).** The `/v1` tree is deleted: 95 items were classified in
 > [`V1-RETIREMENT.md`](V1-RETIREMENT.md) and every one of them has reached its destination. The
 > console moved to `/admin/console` (behind `requireAdmin`), the worked example moved to

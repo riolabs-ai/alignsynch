@@ -63,7 +63,7 @@ A lane is a diff, and a diff needs a base ref. CI had none: `actions/checkout` f
 commit by default, so `origin/main` did not exist in the clone, `GATE_REF` never resolved,
 and **every** run — docs or code — logged the conservative fallback:
 
-```
+```text
  lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no origin/main to diff against — full gate (conservative))
 ```
 
@@ -85,7 +85,7 @@ comparison — every run paid it, because the base ref was never there.
 The fallback is still the floor, not a shortcut. A `push` to `main` proves it: `HEAD` _is_
 `origin/main` there, so the diff is empty and the post-merge run logs
 
-```
+```text
  lane=code (app/**, components/**, lib/**, hooks/** (and anything unclassified) — no changed files vs origin/main — full gate)
 ```
 
@@ -113,7 +113,7 @@ paged, with no `--limit` — then fetches `…/actions/runs/<id>/jobs` for every
 `2026-11-04` is the last complete UTC day at measure time; `--since/--until` takes a longer one,
 and no argument means yesterday. Verbatim output:
 
-```
+```text
 window: ci.yml runs created=2026-11-04T00:00:00Z..2026-11-05T00:00:00Z
 runs: 50   head SHAs: 50
 first-run conclusions: {'success': 50}
@@ -150,7 +150,7 @@ gh api -X GET repos/riolabs-ai/alignsynch/actions/workflows/ci.yml/runs \
   }'
 ```
 
-```
+```text
 n=50  p50=154s  p95=176s  max=178s
 ```
 
@@ -379,7 +379,7 @@ cold, and `build` 40.5 s → 51–74 s.
 `main` **is** protected and the check **is** required — but not by classic branch protection.
 The endpoint everyone reaches for answers 404, which reads as "nothing configured":
 
-```
+```text
 gh api repos/riolabs-ai/alignsynch/branches/main/protection   -> 404 Not Found
 ```
 

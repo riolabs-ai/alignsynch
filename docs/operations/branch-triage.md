@@ -434,8 +434,8 @@ b4d380be wip(brand): icons regenerated from the cropped AS mark, preserved from 
 $ git ls-remote --heads origin | wc -l     # before
 13
 $ git ls-remote --heads origin             # after
-43c0a6455fe6dee954d6f21e17c8bff9571153a1	refs/heads/demo
-4f5365da100254529b0a444a3c959310ce57455c	refs/heads/main
+43c0a6455fe6dee954d6f21e17c8bff9571153a1 refs/heads/demo
+4f5365da100254529b0a444a3c959310ce57455c refs/heads/main
 ```
 
 Local worktrees were left in place; `git worktree list` still names the old branches, whose local

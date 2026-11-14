@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [Contact landing](../contact-land/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
+[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [The docs before and after formatting, #937](../docs-pretty/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
 
 <!-- docs-nav:end -->
 
@@ -16,7 +16,7 @@ tree `bash scripts/verify.sh` passed on (`lane=code`, 16/16 steps green, 296.7 s
 `data/pages/lifecycle.ts` holds them once; every stage fixture references that section, and the
 rail renders it:
 
-```
+```text
 1 Details · 2 Settings · 3 Aspects · 4 Invite · 5 Connect · 6 Align
 Stage {n} of 6
 ```
@@ -78,6 +78,6 @@ not touch, and the stage column itself fits — so it is recorded here rather th
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [Contact landing](../contact-land/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
+[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [The docs before and after formatting, #937](../docs-pretty/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
 
 <!-- docs-nav:end -->

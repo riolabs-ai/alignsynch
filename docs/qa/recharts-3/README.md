@@ -25,7 +25,7 @@ there: both pages call `requireQuizProduct()` (#300) and `tests/parity/boundary.
 asserts that they answer `404` on the alignment build. Measured on an
 `alignsynch` production build:
 
-```
+```text
 /daily-challenge                 404
 /my-quizzes/1/statistics         404
 ```

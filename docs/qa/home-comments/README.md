@@ -81,7 +81,7 @@ where they were measured; the wrapper carries none of it.
 
 The anchor itself, read off the live DOM at 1440:
 
-```
+```text
 {"href":"/","ariaLabel":null,"className":"flex shrink-0 items-center","tabIndex":0,"text":""}
 ```
 
@@ -103,7 +103,7 @@ identity panel, not a nav affordance, and the owner's note named the header. Wra
 separate decision and no part of this change.
 
 The footer's **Quick Links** column is a different story and is not what the lengths above measure:
-#883 (merged after these stills were taken) mirrors that column to the header menu, so the merged
+\#883 (merged after these stills were taken) mirrors that column to the header menu, so the merged
 home document is taller by those two rows. The brand block, the `h-24` row this section is about,
 does not move.
 

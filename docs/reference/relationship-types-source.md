@@ -12,7 +12,7 @@ is `data/relationship-types.ts`, which corrects the three source typos, adds the
 `purchasable` field, and carries the Aspects this product ships. The table below is
 issue #385 §0, unedited.
 
-```
+```text
 RelationshipName                                   RelationshipShortName                                                 RelationshipRealm  RelationshipDescriptor  InitiatorRole                  CounterpartyRole
 Staff-Manager                                      Staff-Manager                                                         Office             [placeholder tbd]     Staff                          Manager
 Coworker-Colleague                                 Coworkers                                                             Office             [placeholder tbd]     Coworker                       Colleague

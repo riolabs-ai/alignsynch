@@ -146,7 +146,7 @@ the concept "this token belongs to one browser, once" has no quiz analogue.
 
 84 lines, pure, and it **cannot return `aligned`**:
 
-```
+```text
 awaiting_counterparty → invited     the Counterparty has no seat yet
 answering             → connected   both seats exist, the sheet is not finished
 complete              → sharing     both submitted; the report is open to both
@@ -188,7 +188,7 @@ change.
 
 `tailwind.config.ts` L102–110 overrides them:
 
-```
+```text
 sm: "576px", md: "768px", lg: "992px", xl: "1280px", xxl: "1400px",
 "3xl": "1600px", "4xl": "1800px",
 ```
@@ -216,7 +216,7 @@ correct** in the shell; the defects in Part 4 are all inside page bodies.
 
 `components/header/ChatDrawer.tsx` L32, verbatim:
 
-```
+```text
 fixed top-0 right-0 z-50 h-full w-full sm:w-96 bg-background shadow-xl transition-transform duration-300 ease-in-out
 ```
 
@@ -228,7 +228,7 @@ same shape as `top-0` + `h-full`. Copy the tree.)
 
 ### Card grids — `explore-quiz-list.tsx` L168, verbatim
 
-```
+```text
 grid gap-6 sm:grid-cols-2 md:grid-cols-1 min-[900px]:grid-cols-2 xxl:grid-cols-3
 ```
 

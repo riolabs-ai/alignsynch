@@ -517,6 +517,23 @@ else
   skip_step "docs:check" "no docs:check script in package.json"
 fi
 
+# Markdown style (#937). `docs/` is 142 pages and nothing enforced their shape: Biome formats them
+# (wrapping, table padding) but a fence with no language tag, an issue number at the start of a line
+# GitHub renders as an `<h1>`, or a `#620`-style heading that swallowed a sentence all stayed green.
+# `pnpm md:check` is `markdownlint-cli2` (the rules in `.markdownlint-cli2.jsonc`, none of them a
+# line-length rule — paragraphs are never re-wrapped) plus `scripts/md-style.mjs --check`, the two
+# rewrites no linter can autofix. It runs in **every lane beside `docs:check`**, not only in the
+# content lane: a formatting defect lands in a `docs/**` diff, which classifies as the docs lane,
+# and a step that only ran for `content/**` would be green over exactly the change it exists to
+# catch. Measured on this host: 106 files linted in 4.8–9.6 s (markdownlint-cli2, a fresh process each
+# run and 8–19 MB of dependencies to resolve) plus 0.15 s for the codemod — the docs lane is the one
+# that pays it most, and it is still seconds, not the build.
+if has_script "md:check"; then
+  run_step "md:check (markdownlint-cli2 + md-style: fences, escapes, alerts)" pnpm md:check || fail
+else
+  skip_step "md:check" "no md:check script in package.json"
+fi
+
 # The release atlas (#945): every route `data/pages/budget.ts` registers has a row in the current
 # version's `docs/qa-atlas/<version>/manifest.json`, every claimed status agrees with the boundary
 # table (`tests/parity/boundary.ts`), every thumbnail the manifest points at exists, and the atlas

@@ -122,7 +122,7 @@ replaces was the `ed3377c4` snapshot, which is why it read 21 quizzes and 28 cas
 number is verbatim from the run, the `ℹ`/`WARN`/`PASS` lines are gathered into one block for reading.
 Every P2 work unit moves these counts, so re-run against your `main` instead of copying them):
 
-```
+```text
 PASS  62 quizzes, 185 questions, 9 news, 6 tips, 8 kb, 45 categories, 5 contacts, 5 conversations,
       6 notifications, 2 promotions, 17 quiz results, 14 comments, 5 reviews, 99 media entries,
       19 page-copy routes, 2 battle modes, 6 daily-challenge badges, 10 players, 50 leaderboard rows,
