@@ -441,6 +441,46 @@ $ git ls-remote --heads origin             # after
 Local worktrees were left in place; `git worktree list` still names the old branches, whose local
 copies are the pruner's business. Deleting a remote ref cannot remove a local branch or a checkout.
 
+## The worktree half — `pnpm worktrees:prune`
+
+Deleting a remote ref is one job; reclaiming the **working directories** is the other, and until
+`scripts/worktree-prune.mjs` existed nothing did it. Every card gets `.worktrees/t_<id>` and no card
+gives one back, so the registered list only grows — 151 on 2026-11-08, 73 on 2026-11-14 — and a
+`git worktree list` naming shipped work is not a signal anyone can use. A worktree left on `main`
+also pins the branch.
+
+A worktree is removed only when **all three** hold: the card that owns the path is `done` or
+`archived`, the branch is on `origin/main`, and the tree is clean (`git status --short`, untracked
+included). Everything else is kept and the run prints the failing condition per path, which is the
+part that makes the sweep reviewable:
+
+```console
+$ pnpm worktrees:prune                                     # a dry run; --apply removes
+  registered         73
+  to remove (26)
+  .worktrees/t_110c7cf5   card t_110c7cf5 (done) · patch on origin/main as 1e471674 · tree clean
+  kept (47)
+  .worktrees/t_116434a4   tree is dirty (14 changed paths, untracked included)
+  .worktrees/t_94abd31f   branch alignsynch/t_94abd31f-build-flow-699-… is not on origin/main and no squashed patch was found
+  .worktrees/t_156a1bb1   card t_156a1bb1 is running — unfinished cards are the crash-recovery path
+  .worktrees/t_3eb17cf8   excluded by path — preserved on purpose, never swept
+```
+
+**Condition 2 needs two witnesses, because this repo squash-merges.** `git merge-base --is-ancestor`
+is the first, and on its own it sees almost nothing here: as the section above records, a
+squash-merged branch is _never_ an ancestor of `main`. So when ancestry fails, the branch's aggregate
+patch is compared by `git patch-id` against the commits of `origin/main` since its fork point,
+restricted to the paths it touched — a match names the squash that landed the work, and the run
+prints it. Both witnesses fail closed: a conflict resolved at squash time, a commit pushed after the
+merge, work that landed across several commits all leave the worktree **kept**. A false keep costs a
+directory; a false remove costs work.
+
+Never touched, whatever the flags say: `.worktrees/t_3eb17cf8` (the archived v1.20.0 prep, whose
+uncommitted atlas capture _is_ the artifact), the primary checkout, the worktree the command is
+running in, a detached HEAD, anything registered outside `<repo>/.worktrees/`, and a locked
+registration. It deletes **no branch, local or remote** — `git worktree remove` deregisters a
+directory and leaves `refs/heads` alone.
+
 <!-- docs-nav:begin -->
 
 [Docs hub](../README.md) › **Operations** › Branch triage · next [Two brands, one tree](brand-release.md)

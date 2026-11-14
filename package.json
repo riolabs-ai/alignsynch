@@ -38,6 +38,7 @@
     "ui:census": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/ui-census.js",
     "vocabulary:census": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/vocabulary.js",
     "columns:check": "node scripts/column-refs.ts --check",
+    "worktrees:prune": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/worktree-prune.mjs",
     "release": "bash scripts/release.sh",
     "release:check": "bash scripts/release.sh --check",
     "changelog": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs",
