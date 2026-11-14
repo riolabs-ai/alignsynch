@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**155 documents in 9 sections.** Every page carries the same nav block, generated
+**156 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -45,7 +45,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Records & QA](#records-qa) — 38 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 21 documents
+- [Release notes](#release-notes) — 22 documents
 
 ## Start here
 
@@ -237,6 +237,7 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-16-0.md`](changelog/v1-16-0.md) — **v1.16.0** — Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?
 - [`changelog/v1-17-0.md`](changelog/v1-17-0.md) — **v1.17.0** — Which release made stage 5 a three-step payment walk, and what does it defer?
 - [`changelog/v1-18-0.md`](changelog/v1-18-0.md) — **v1.18.0** — Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?
+- [`changelog/v1-19-0.md`](changelog/v1-19-0.md) — **v1.19.0** — The release where the create flow became one dialog shell that behaves like a route.
 - [`changelog/v1-2-0.md`](changelog/v1-2-0.md) — **v1.2.0** — The release where five surfaces read the database.
 - [`changelog/v1-3-0.md`](changelog/v1-3-0.md) — **v1.3.0** — The release where the flow closed.
 - [`changelog/v1-4-0.md`](changelog/v1-4-0.md) — **v1.4.0** — The release where the console arrived and templates became products.

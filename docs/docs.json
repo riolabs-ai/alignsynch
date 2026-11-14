@@ -793,6 +793,11 @@
           "question": "Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?"
         },
         {
+          "path": "changelog/v1-19-0.md",
+          "title": "v1.19.0",
+          "question": "The release where the create flow became one dialog shell that behaves like a route."
+        },
+        {
           "path": "changelog/v1-2-0.md",
           "title": "v1.2.0",
           "question": "The release where five surfaces read the database."
