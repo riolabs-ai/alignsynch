@@ -1,9 +1,9 @@
 "use client";
 
-// template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the Mode single-choice — a fieldset of label-wrapped radio rows — carrying a price and a note instead of an explanation, and writing nothing: the plan is a soft prompt at this stage, never a checkout)
+// template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the Mode single-choice — a fieldset of label-wrapped radio rows — carrying a price and a note instead of an explanation, and writing nothing itself: the selection is reported upward, and it is the walk's panel that turns the report into the card step and the session behind it)
 
 /**
- * `PlanChoices` — the two plans on stage 4, as one single-choice group (#690).
+ * `PlanChoices` — the two plans, as one single-choice group (#690).
  *
  * **The rows are native radios, and that is the point.** Stage 2's Mode and Setting are a
  * `<fieldset>` of `<label>`-wrapped `<input type="radio">`, and the plans are the same single
@@ -18,11 +18,12 @@
  * The reviewed card's price is beside the name, right-aligned, so the two numbers are comparable
  * without reading the notes.
  *
- * **It chooses nothing on the server, deliberately.** This is the *soft* half of the payment
- * decision: the choice is remembered by the input and posted nowhere, the create runs with or
- * without it, and nothing is charged. The hard gate is at publish, and the door that captures a
- * method is the pricing page's — a checkout started here would be a second copy of
- * `components/pricing/plan-checkout-button.tsx`, which is the one place a tier is bought.
+ * **It writes nothing; the walk decides what the choice opens.** The rows report the selection
+ * upward and keep no state of their own, so this component can be drawn by any panel that has a
+ * decision to offer. On stage 5's walk (#1031) the report *is* the act — choosing a row advances the
+ * step and starts the membership session behind the frame that mounts on it — while a panel that
+ * only wants to remember a preference can take the same report and post nothing. Nothing is charged
+ * here either way: the charge surface is the walk's own provider frame.
  *
  * **Every word is the fixture's.** Labels, notes, prices and the `/mo` suffix all come from
  * `data/pages/assessment-create.ts` through `sectionOf`/`itemLabel` (E23 counts what a component
@@ -60,11 +61,10 @@ export function PlanChoices({
   /**
    * The chosen tier, reported as it is chosen.
    *
-   * **Without this the walk's own Next is disabled forever.** The radios are uncontrolled by design
-   * (above), but the panel that draws them gates its continue control on a `plan` it holds in state
-   * — and the only place it set that state was the continue control's own click handler, which is
-   * `disabled` until the state exists. A choice the parent cannot hear is a dead Next, so the choice
-   * is reported here as well as remaining readable from the DOM at continue time.
+   * **On the walk this is the act** (#1031): the panel advances the step and starts the membership
+   * session from this report, so there is no second control between reading a price and the card
+   * fields. The radios stay uncontrolled by design, which is why the choice is reported here rather
+   * than read back out of the DOM.
    */
   onSelect?: (plan: PlanId) => void;
 }) {

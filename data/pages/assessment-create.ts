@@ -274,7 +274,6 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "card-charged",
           label: "Nothing is charged today. The 7-day trial starts when the card is saved.",
         },
-        { id: "card-start", label: "Enter the card" },
         { id: "card-starting", label: "Opening the card fields…" },
         { id: "card-secure", label: "Secure payment · Stripe" },
         { id: "card-test-mode", label: "test mode" },
