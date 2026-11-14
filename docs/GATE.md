@@ -278,6 +278,71 @@ store is a single-writer RocksDB: a second concurrent opener fails rather than m
 comes from the gate slot the run is holding (`QUIZHUB_GATE_SLOTS`, legacy `QUIZHUB_BUILD_SLOTS`
 honoured), so the cache grows with the slot count, not with the number of worktrees.
 
+### The three type-check passes, measured 2026-11-13
+
+A code-lane diff was type-checked twice and type-generated in front of both: `pnpm typecheck`
+(`next typegen && tsc --noEmit`) and the check `next build` runs itself
+(`next/dist/lib/typescript/runTypeCheck.js`, one `Running TypeScript ...` line). The question was
+whether one of the two can go. Measured on one head (`fab204aa`, node 24.22.0, pnpm 12.16.1,
+worktree `t_885ce160`) while this host ran the fleet's other gates, so the load average is recorded
+beside each row and **user CPU is the figure to compare** — wall clock moves with the neighbours:
+
+| Pass                                                                 | user CPU | sys    | wall    | load |
+| -------------------------------------------------------------------- | -------- | ------ | ------- | ---- |
+| `next typegen` alone, cold `.next/types`                             | 1.3 s    | 0.2 s  | 2.1 s   | 18.4 |
+| `tsc --noEmit` alone, cold buildinfo                                 | 74.2 s   | 1.9 s  | 65.4 s  | 14.7 |
+| `tsc --noEmit` alone, "warm" buildinfo in `~/.cache/quizhub/tsc/`    | 81.2 s   | 2.1 s  | 151.6 s | 19.5 |
+| `next build`, type check **on**, cold Turbopack cache                | 201.6 s  | 10.3 s | 131.8 s | 14.7 |
+| `next build`, `typescript.ignoreBuildErrors` (throwaway config only) | 127.4 s  | 8.3 s  | 53.1 s  | 20.0 |
+
+Five readings:
+
+- **`next typegen` is not a compile pass.** It writes the route types under `.next/types` in ~2 s and
+  `tsc` needs them, so it is not a candidate for removal.
+- **Both checks are total.** Three errors were planted at once — in `lib/utils.ts` (imported by the
+  whole app), in a file nothing imports, and in a `*.test.ts` file that `runTypeCheck`'s own
+  test-file diagnostic filter might have been expected to swallow. `pnpm typecheck` exited 2 and
+  `next build` exited 1 with `Failed to type check.`, and **both named all three**, each with its own
+  `error TS2322`. The probes were reverted (`git status` clean) and nothing was committed.
+- **The build's own check costs ~74 s of user CPU** (201.6 s against 127.4 s with the check off), the
+  same order as the standalone pass — the duplication is real, not a rounding error.
+- **Neither pass can be dropped without buying the time with something this repo refuses.** Dropping
+  `pnpm typecheck` takes the only type verdict away from the `content` and `config` lanes, which skip
+  the build; dropping the build's check needs `typescript.ignoreBuildErrors: true` committed in
+  `next.config.mjs`. And they are not identical: the build filters `.next/dev/types` out of its
+  program while `tsconfig.json` includes them, so the standalone pass is the superset — the one that
+  would have to stay.
+- **The private `tsc` buildinfo buys nothing.** A warm `~/.cache/quizhub/tsc/<key>/` run measured
+  81.2 s user against 74.2 s cold. `next typegen` rewrites the route types ahead of every `pnpm
+  typecheck`, so the program the previous run recorded no longer matches. That is a real finding
+  about the old cache, and it is why the next paragraph matters.
+
+**So the build was made to resume from the pass the gate already runs, instead of repeating it.** The
+standalone `tsc` now writes its buildinfo where `next build` reads its own — `<distDir>/cache/.tsbuildinfo`
+— which `scripts/build-cache.mjs` names as `layout().buildTypeCheckArg`, and `scripts/verify.sh` links
+`.next/cache` at the held slot around the typecheck so that path lands in the shared store. Nothing is
+skipped: the build still runs its own check, on its own file list, and still fails on anything new.
+Measured on a warm Turbopack cache and one unchanged tree:
+
+| `next build` …                                              | user CPU | wall   |
+| ----------------------------------------------------------- | -------- | ------ |
+| with no buildinfo at all                                    | 92.6 s   | 64.0 s |
+| right after `pnpm typecheck` wrote the build's buildinfo    | 32.3 s   | 16.1 s |
+| the same, through `pnpm typecheck` (the gate's own command) | 33.4 s   | 20.5 s |
+| with a new `TS2322` planted after that buildinfo was warm   | 75.0 s   | 69.5 s |
+
+The last row is the one that matters: a warm buildinfo written by the typecheck **does not hide a new
+error** — the build failed, named `lib/utils.ts(9,14): error TS2322` and printed `Failed to type
+check.` The savings come from the incremental program, not from a skipped check.
+
+One trap worth recording, because it cost an afternoon: the buildinfo records its file list relative
+to **the path it was written at**, so `--tsBuildInfoFile` must be the relative
+`.next/cache/.tsbuildinfo` resolved from the repo root. Handing `tsc` the resolved cache directory
+writes the same program to a 851,686-byte file that `next build` rejects — 76.3 s, a full re-check,
+with no error and nothing in the log to say why. Through `.next/cache` the file is 738,846 bytes and
+the build accepts it. If a future change to `next` moves that path, the symptom is the build quietly
+going back to its old self, never a wrong verdict.
+
 ### Budget
 
 **CI < 4 min holds** (p95 176 s to the last job; the 1440 s `updated_at` p95 is explained above).
