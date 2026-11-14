@@ -6,6 +6,54 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.19.0] - 2026-11-14
+
+### Added
+
+- `feat(billing)` — #1010 R2 — stage 5 buys the membership: a real subscription, a 7-day trial, Prices, and no charge at completion ([#1012](https://github.com/riolabs-ai/alignsynch/pull/1012))
+- `feat(flow)` — #979 B — every wizard-route entry opens the flow in place; marketing keeps navigating ([#1007](https://github.com/riolabs-ai/alignsynch/pull/1007))
+- `feat(flow)` — #979 B — the shell behaves like a route: Back, deep links, focus trap, Esc, full-bleed at 390 ([#1009](https://github.com/riolabs-ai/alignsynch/pull/1009))
+- `feat(ui)` — #898 /how-it-works replays the recorded demo walk ([#996](https://github.com/riolabs-ai/alignsynch/pull/996))
+- `feat(flow)` — #979 B one dialog shell hosting the five stages, mounted from the dashboard Create control ([#1004](https://github.com/riolabs-ai/alignsynch/pull/1004))
+
+### Fixed
+
+- `fix(qa)` — qa:atlas:prune drops the rows it deletes, and the capture registers its own cut ([#1016](https://github.com/riolabs-ai/alignsynch/pull/1016))
+- `fix(release)` — a cut leaves the checkout on the branch it started on ([#1013](https://github.com/riolabs-ai/alignsynch/pull/1013))
+- `fix(relationship)` — #975 D2/D9 the detail page says whose relationship it is ([#986](https://github.com/riolabs-ai/alignsynch/pull/986))
+- `fix(auth)` — #971 /register pays the two welcome tiles /login draws ([#995](https://github.com/riolabs-ai/alignsynch/pull/995))
+- `fix(auth)` — #979 a member is sent into the flow, and the shell's menu is the session's ([#992](https://github.com/riolabs-ai/alignsynch/pull/992))
+- `fix(dashboard)` — #975 D12 the Edit relationship dialog names the Aspects and hands back the page's editor ([#991](https://github.com/riolabs-ai/alignsynch/pull/991))
+- `fix(copy)` — #976 the Sent screen has words for a relationship with no invitation row ([#988](https://github.com/riolabs-ai/alignsynch/pull/988))
+- `fix(seed)` — #975 the seeded relationship now says what its own session says, and carries the invitation that put the counterparty in their seat ([#985](https://github.com/riolabs-ai/alignsynch/pull/985))
+- `fix(admin)` — the reissue address is one controlled input (#980) ([#989](https://github.com/riolabs-ai/alignsynch/pull/989))
+
+### Maintenance
+
+- `chore(qa)` — the v1.19.0 atlas
+- `chore(copy)` — "instance" is "session", and E41 keeps it that way ([#1015](https://github.com/riolabs-ai/alignsynch/pull/1015))
+- `docs(oss)` — reorganise docs/ into a by-question tree and regenerate the hub (#922c) ([#965](https://github.com/riolabs-ai/alignsynch/pull/965))
+- `perf(gate)` — the build's type check resumes from the typecheck the gate already runs ([#1005](https://github.com/riolabs-ai/alignsynch/pull/1005))
+- `copy(auth)` — the welcome panel takes the owner's tagline and the Aspects/Opinions tiles ([#1001](https://github.com/riolabs-ai/alignsynch/pull/1001))
+- `chore(qa)` — the demo transcript cannot go stale — demo:flow:verify as a gate step (#898) ([#1003](https://github.com/riolabs-ai/alignsynch/pull/1003))
+- `chore(qa)` — the atlas holds current + 2 past cuts, and the check enforces it ([#1002](https://github.com/riolabs-ai/alignsynch/pull/1002))
+- `docs(oss)` — the README states the four OSS questions before the feature tour (#922) ([#993](https://github.com/riolabs-ai/alignsynch/pull/993))
+- `test(demo)` — demo:verify expectations match the shipped routes and read a marker, not copy ([#946](https://github.com/riolabs-ai/alignsynch/pull/946))
+- `docs(qa)` — the v1.17.1 atlas is a capture of an unreleased tree — say so ([#997](https://github.com/riolabs-ai/alignsynch/pull/997))
+- `chore(health)` — re-record platform health at v1.18.0 ([#994](https://github.com/riolabs-ai/alignsynch/pull/994))
+- `chore(qa)` — publish the refreshed v1.17.1 atlas (77/74/71) and make a capture refuse a version mismatch (#983) ([#990](https://github.com/riolabs-ai/alignsynch/pull/990))
+
+### Known limits
+
+- **`demo.alignsynch.com` serves v1.17.0, not this release.** Measured while cutting 1.19.0: the hostname answers `200` and its `/api/version` reports `1.17.0` at `41d3efd2`. The demo dataset is reachable through `pnpm demo:verify` and the review rig; the public demo address is a stale deployment, deferred by owner decision (#833).
+- **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
+- **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
+- **The dialog shell has not been audited screen by screen.** This version mounts it at every wizard entry and at the dashboard's Create control, and makes it behave like a route — Back, deep links, focus trap, Esc, full-bleed at 390. It does not claim an audit of the modal rule across the rest of the app; #913 was closed by the narrower fix it produced.
+- **Two v1.19.0 milestone items are not in this release.** #921 (comments on aspect opinions, assessments and relationships) is still at its mockup-first stage, and #854 (the AS2 visual language across the public routes) has not started. Both stay open in the milestone, and neither is half-landed here.
+- **The docs reorganisation left stale provenance pointers outside `docs/`.** #965 moved the pages into a tree grouped by question; five comments in code still name the directories it moved (#1006). Every page resolves, so this is a docs-only follow-up rather than a broken link.
+- **`/how-it-works` replays a recording, not the live app.** The page plays the committed walk under `docs/qa/demo-flow/` (#996), and `pnpm demo:flow:verify` fails when the transcript stops matching those screenshots — but re-recording needs a live demo instance and a browser, which no gate run has. A UI change after this release is replayed as the version that was recorded.
+- **The QA atlas is a capture of the tagged commit, and its checks are static.** `pnpm qa:atlas:check` proves every registered route has a row and a thumbnail, and that each row states what the boundary table derives — it does not re-screenshot. The images in the release's atlas directory describe the tree at the tag, not the commits after it.
+
 ## [1.18.0] - 2026-11-13
 
 ### Added
@@ -1550,3 +1598,4 @@ The admin console, and relationship templates become products.
 [1.8.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.7.0...v1.8.0
 [1.14.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.13.0...v1.14.0
 [1.16.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.15.0...v1.16.0
+[1.19.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.18.0...v1.19.0

@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.19.0",
+      "theme": "the flow stops being a page — one dialog shell at every wizard entry, behaving like a route — and the docs tree is grouped by the question it answers",
+      "headline": "feat(flow) · #979 B — every wizard-route entry opens the flow in place; marketing keeps navigating (#1007)"
+    },
+    {
       "version": "1.18.0",
       "theme": "the patch that became a minor",
       "headline": "`feat(qa)` — #945 the release atlas — capture and verify every surface, backfilled for v1.17.0 (#968)"
