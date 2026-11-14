@@ -238,8 +238,8 @@ async function publishTemplateVersion(client, template, reason) {
  *
  * It is not a secret and does not need to be. Every invitation the seed writes is **claimed** —
  * it names a seat somebody already took — so the token cannot spend anything, and the branch is
- * the disposable demo (`docs/DEMO.md`), not production. The seed prints the link for the two
- * parties the demo accounts own, which is what makes the invitation surface walkable.
+ * the disposable demo (`docs/getting-started/demo.md`), not production. The seed prints the link for
+ * the two parties the demo accounts own, which is what makes the invitation surface walkable.
  */
 function demoInviteToken(instanceId) {
   return createHash("sha256").update(`algnsynch demo invitation:${instanceId}`).digest("base64url");

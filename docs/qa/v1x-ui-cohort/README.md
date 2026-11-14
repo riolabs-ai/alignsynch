@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › v1.x UI cohort · prev [AS2 templates catalogue visual QA](../templates-redesign/README.md) · next [QA atlas](../../qa-atlas/README.md)
+[Docs hub](../../README.md) › **Records & QA** › v1.x UI cohort · prev [swiper 12](../swiper-12/README.md) · next [QA atlas](../../qa-atlas/README.md)
 
 <!-- docs-nav:end -->
 
@@ -82,6 +82,6 @@ faintest thing in the chart.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › v1.x UI cohort · prev [AS2 templates catalogue visual QA](../templates-redesign/README.md) · next [QA atlas](../../qa-atlas/README.md)
+[Docs hub](../../README.md) › **Records & QA** › v1.x UI cohort · prev [swiper 12](../swiper-12/README.md) · next [QA atlas](../../qa-atlas/README.md)
 
 <!-- docs-nav:end -->

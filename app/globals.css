@@ -39,7 +39,7 @@
  *                    sizes this app draws (a 6px corner on a 40px button was the last soft
  *                    edge in an otherwise square frame). Checked at 390 first — a 1px
  *                    reduction cannot overflow anything, and it does not: `scrollWidth`
- *                    equals `innerWidth` on every route in `docs/qa-v1x-ui-cohort`.
+ *                    equals `innerWidth` on every route in `docs/qa/v1x-ui-cohort`.
  *   body font-size   0.875rem -> 0.8125rem (14px -> 13px). Unclassed prose is the only thing
  *                    that moves: `text-*` utilities are rem-based and the root stays 16px.
  *   --container-marketing  72rem (1152px), the one marketing measure. `.marketing-container`
@@ -232,7 +232,7 @@
 
        #539 item 4 takes it one more step: 14px -> 13px (`0.8125rem`). Same argument one
        notch tighter — the narrowest breakpoint was checked first (390: every route in
-       `docs/qa-v1x-ui-cohort` reports `scrollWidth === innerWidth`, so nothing new wraps
+       `docs/qa/v1x-ui-cohort` reports `scrollWidth === innerWidth`, so nothing new wraps
        or overruns), and `text-*` callers are untouched because the root stays 16px. */
     font-size: 0.8125rem;
     line-height: 1.5;
