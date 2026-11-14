@@ -1,0 +1,638 @@
+{
+  "base": "http://localhost:3001",
+  "startedAt": "2026-11-14T03:05:21.263Z",
+  "beforeClick": {
+    "path": "/dashboard/relationships",
+    "dialog": false,
+    "mount": false,
+    "title": null,
+    "rail": null,
+    "headings": ["My Relationships"],
+    "activeTag": "BUTTON",
+    "activeText": "Brother–Sister",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": false,
+    "triggerPresent": true,
+    "fallbackPresent": true,
+    "panel": null,
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "visible",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1052
+  },
+  "opened": {
+    "path": "/templates/relationship/brother-sister/create",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Details",
+    "rail": "Stage 1 of 5",
+    "headings": ["My Relationships", "Relationship Details"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "stageOne": {
+    "path": "/templates/relationship/brother-sister/create",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Details",
+    "rail": "Stage 1 of 5",
+    "headings": ["My Relationships", "Relationship Details"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "draftTitle": "Avery and Rowan, on trust",
+  "stageTwo": {
+    "path": "/templates/relationship/brother-sister/create/mode",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Settings",
+    "rail": "Stage 2 of 5",
+    "headings": ["My Relationships", "Relationship Settings"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "stageTwoChoices": [
+    {
+      "group": "mode",
+      "value": "basic"
+    },
+    {
+      "group": "alignmentSetting",
+      "value": "soft"
+    }
+  ],
+  "stageThree": {
+    "path": "/templates/relationship/brother-sister/create/aspects",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Aspects",
+    "rail": "Stage 3 of 5",
+    "headings": ["My Relationships", "Relationship Aspects"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "backWalk": [
+    {
+      "step": 1,
+      "target": "/templates/relationship/brother-sister/create/mode",
+      "path": "/templates/relationship/brother-sister/create/mode",
+      "dialog": true,
+      "mount": true,
+      "title": "Relationship Settings",
+      "rail": "Stage 2 of 5",
+      "headings": ["My Relationships", "Relationship Settings"],
+      "activeTag": "BUTTON",
+      "activeText": "",
+      "activeIsTrigger": false,
+      "activeIsFallback": false,
+      "focusInsidePanel": true,
+      "triggerPresent": false,
+      "fallbackPresent": true,
+      "panel": {
+        "x": 280,
+        "y": 24,
+        "width": 880,
+        "height": 952
+      },
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "bodyOverflow": "hidden",
+      "scrollX": 0,
+      "scrollY": 0,
+      "docScrollWidth": 1440,
+      "docScrollHeight": 1000
+    },
+    {
+      "step": 2,
+      "target": "/templates/relationship/brother-sister/create",
+      "path": "/templates/relationship/brother-sister/create",
+      "dialog": true,
+      "mount": true,
+      "title": "Relationship Details",
+      "rail": "Stage 1 of 5",
+      "headings": ["My Relationships", "Relationship Details"],
+      "activeTag": "BUTTON",
+      "activeText": "",
+      "activeIsTrigger": false,
+      "activeIsFallback": false,
+      "focusInsidePanel": true,
+      "triggerPresent": false,
+      "fallbackPresent": true,
+      "panel": {
+        "x": 280,
+        "y": 24,
+        "width": 880,
+        "height": 952
+      },
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "bodyOverflow": "hidden",
+      "scrollX": 0,
+      "scrollY": 0,
+      "docScrollWidth": 1440,
+      "docScrollHeight": 1000
+    },
+    {
+      "step": 3,
+      "target": "/dashboard/relationships",
+      "path": "/dashboard/relationships",
+      "dialog": false,
+      "mount": false,
+      "title": null,
+      "rail": null,
+      "headings": ["My Relationships"],
+      "activeTag": "BODY",
+      "activeText": "((e, i, s, u, m, a, l, h)=>{\n    let d =",
+      "activeIsTrigger": false,
+      "activeIsFallback": false,
+      "focusInsidePanel": false,
+      "triggerPresent": false,
+      "fallbackPresent": true,
+      "panel": null,
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "bodyOverflow": "visible",
+      "scrollX": 0,
+      "scrollY": 0,
+      "docScrollWidth": 1440,
+      "docScrollHeight": 1000
+    }
+  ],
+  "refresh": {
+    "path": "/templates/relationship/brother-sister/create/aspects",
+    "dialog": true,
+    "mount": false,
+    "title": "Relationship Aspects",
+    "rail": "Stage 3 of 5",
+    "headings": ["Relationship Aspects"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": false,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "reopenedStageOne": {
+    "path": "/templates/relationship/brother-sister/create",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Details",
+    "rail": "Stage 1 of 5",
+    "headings": ["My Relationships", "Relationship Details"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "draftAfterReopen": "Avery and Rowan, on trust",
+  "keyboardStageThree": {
+    "path": "/templates/relationship/brother-sister/create/aspects",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Aspects",
+    "rail": "Stage 3 of 5",
+    "headings": ["My Relationships", "Relationship Aspects"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "keyboard": {
+    "onMount": {
+      "path": "/templates/relationship/brother-sister/create/aspects",
+      "dialog": true,
+      "mount": true,
+      "title": "Relationship Aspects",
+      "rail": "Stage 3 of 5",
+      "headings": ["My Relationships", "Relationship Aspects"],
+      "activeTag": "BUTTON",
+      "activeText": "",
+      "activeIsTrigger": false,
+      "activeIsFallback": false,
+      "focusInsidePanel": true,
+      "triggerPresent": false,
+      "fallbackPresent": true,
+      "panel": {
+        "x": 280,
+        "y": 24,
+        "width": 880,
+        "height": 952
+      },
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "bodyOverflow": "hidden",
+      "scrollX": 0,
+      "scrollY": 0,
+      "docScrollWidth": 1440,
+      "docScrollHeight": 1000
+    },
+    "tabWalk": [
+      {
+        "tag": "BUTTON",
+        "label": "Reorder How does how often you",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "How does how often you are in ",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Edit",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Remove How does how often you ",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Reorder How much do old roles ",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "How much do old roles still de",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Edit",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Remove How much do old roles s",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Reorder When one of you needs ",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "When one of you needs somethin",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Edit",
+        "insidePanel": true
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Remove When one of you needs s",
+        "insidePanel": true
+      }
+    ],
+    "tabWalkAllInside": true,
+    "focusAimedOutside": {
+      "attempted": true,
+      "landedInsidePanel": true,
+      "activeTag": "BUTTON"
+    },
+    "scrollLock": {
+      "bodyOverflow": "hidden",
+      "before": 0,
+      "after": 0,
+      "moved": false
+    },
+    "beforeEscape": {
+      "path": "/templates/relationship/brother-sister/create/aspects",
+      "dialog": true,
+      "mount": true,
+      "title": "Relationship Aspects",
+      "rail": "Stage 3 of 5",
+      "headings": ["My Relationships", "Relationship Aspects"],
+      "activeTag": "BUTTON",
+      "activeText": "",
+      "activeIsTrigger": false,
+      "activeIsFallback": false,
+      "focusInsidePanel": true,
+      "triggerPresent": false,
+      "fallbackPresent": true,
+      "panel": {
+        "x": 280,
+        "y": 24,
+        "width": 880,
+        "height": 952
+      },
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "bodyOverflow": "hidden",
+      "scrollX": 0,
+      "scrollY": 0,
+      "docScrollWidth": 1440,
+      "docScrollHeight": 1000
+    },
+    "entriesSinceOrigin": 2,
+    "escape": [
+      {
+        "attempt": 1,
+        "dialog": false,
+        "path": "/dashboard/relationships",
+        "focusInsidePanel": false,
+        "activeTag": "BUTTON",
+        "activeText": "Start a relationship",
+        "activeIsTrigger": false,
+        "activeIsFallback": true
+      }
+    ],
+    "afterEscape": {
+      "path": "/dashboard/relationships",
+      "dialog": false,
+      "mount": false,
+      "title": null,
+      "rail": null,
+      "headings": ["My Relationships"],
+      "activeTag": "BUTTON",
+      "activeText": "Start a relationship",
+      "activeIsTrigger": false,
+      "activeIsFallback": true,
+      "focusInsidePanel": false,
+      "triggerPresent": false,
+      "fallbackPresent": true,
+      "panel": null,
+      "innerWidth": 1440,
+      "innerHeight": 1000,
+      "bodyOverflow": "visible",
+      "scrollX": 0,
+      "scrollY": 0,
+      "docScrollWidth": 1440,
+      "docScrollHeight": 1000
+    }
+  },
+  "draftAfterEscape": {
+    "titleField": "Avery and Rowan, on trust",
+    "counterpartyFirst": "Rowan",
+    "expectedTitle": "Avery and Rowan, on trust",
+    "path": "/templates/relationship/brother-sister/create",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Details",
+    "rail": "Stage 1 of 5",
+    "headings": ["My Relationships", "Relationship Details"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 280,
+      "y": 24,
+      "width": 880,
+      "height": 952
+    },
+    "innerWidth": 1440,
+    "innerHeight": 1000,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 1440,
+    "docScrollHeight": 1000
+  },
+  "narrow": {
+    "path": "/templates/relationship/brother-sister/create",
+    "dialog": true,
+    "mount": true,
+    "title": "Relationship Details",
+    "rail": "Stage 1 of 5",
+    "headings": ["My Relationships", "Relationship Details"],
+    "activeTag": "BUTTON",
+    "activeText": "",
+    "activeIsTrigger": false,
+    "activeIsFallback": false,
+    "focusInsidePanel": true,
+    "triggerPresent": false,
+    "fallbackPresent": true,
+    "panel": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844
+    },
+    "innerWidth": 390,
+    "innerHeight": 844,
+    "bodyOverflow": "hidden",
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 564,
+    "docScrollHeight": 861,
+    "overflow": {
+      "panel": {
+        "width": 390,
+        "height": 844,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullBleed": true,
+      "elementsWiderThanPanel": [],
+      "scrollerClientWidth": 1,
+      "scrollerScrollWidth": 148,
+      "documentScrollWidth": 564,
+      "pageScrollLocked": "hidden",
+      "widestInDocument": [
+        {
+          "tag": "DIV",
+          "cls": "fixed top-0 right-0 z-50 h-full w-full sm:w-96 bg-",
+          "right": 780,
+          "width": 390,
+          "insidePanel": false
+        },
+        {
+          "tag": "DIV",
+          "cls": "flex items-center justify-between p-4 border-b",
+          "right": 780,
+          "width": 390,
+          "insidePanel": false
+        },
+        {
+          "tag": "H2",
+          "cls": "text-lg font-semibold",
+          "right": 560,
+          "width": 154,
+          "insidePanel": false
+        },
+        {
+          "tag": "DIV",
+          "cls": "flex items-center gap-2",
+          "right": 764,
+          "width": 40,
+          "insidePanel": false
+        },
+        {
+          "tag": "BUTTON",
+          "cls": "inline-flex items-center duration-300 justify-cent",
+          "right": 764,
+          "width": 40,
+          "insidePanel": false
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "right": 752,
+          "width": 16,
+          "insidePanel": false
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "right": 748,
+          "width": 8,
+          "insidePanel": false
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "right": 748,
+          "width": 8,
+          "insidePanel": false
+        }
+      ]
+    }
+  },
+  "narrowPageOnly": {
+    "path": "/dashboard/relationships",
+    "dialog": false,
+    "documentScrollWidth": 390,
+    "innerWidth": 390
+  },
+  "stills": [
+    "docs/qa-979-flow-parity/1-stage3-in-dialog-1440.png",
+    "docs/qa-979-flow-parity/2-stage3-as-a-page-1440.png",
+    "docs/qa-979-flow-parity/3-dialog-390-full-bleed.png"
+  ],
+  "pageErrors": [],
+  "finishedAt": "2026-11-14T03:05:52.786Z"
+}

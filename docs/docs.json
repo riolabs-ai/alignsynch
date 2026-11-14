@@ -457,6 +457,11 @@
           "question": "Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?"
         },
         {
+          "path": "qa/979-flow-parity/README.md",
+          "title": "The flow's dialog behaves like a route, #979",
+          "question": "Does Back walk a stage, does reloading a stage's address render that stage as a page, do the four keyboard behaviours hold, and is the panel full-bleed at 390?"
+        },
+        {
           "path": "qa/as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"

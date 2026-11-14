@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../976-sent-none/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../976-sent-none/README.md) · next [The flow's dialog behaves like a route, #979](../979-flow-parity/README.md)
 
 <!-- docs-nav:end -->
 
@@ -58,6 +58,6 @@ control fails as `never became true: <what>` rather than as a photograph of the 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../976-sent-none/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../976-sent-none/README.md) · next [The flow's dialog behaves like a route, #979](../979-flow-parity/README.md)
 
 <!-- docs-nav:end -->
