@@ -2,11 +2,11 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.1 · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [QA atlas — v1.18.0](../v1.18.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — the 1.17.1 tree (never released) · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [QA atlas — v1.18.0](../v1.18.0/index.md)
 
 <!-- docs-nav:end -->
 
-Every route `data/pages/budget.ts` registers, captured in a real browser at 390 / 768 / 1440 CSS pixels and asserted four ways: status against the brand boundary, a clean console (no React `#418`, and no error on any surface the product ships), a heading string from the route's own copy fixture present in the DOM, and a `main` subtree with real content. A route the boundary closes renders the app's own not-found instead, and its console output is recorded as a finding rather than counted as a failure of that route.
+Every route `data/pages/budget.ts` registers, captured in a real browser at 390 / 768 / 1440 CSS pixels and asserted four ways: status against the brand boundary, a clean console (no React `#418`, and no error on any surface the product ships), a heading string from the route's own copy fixture present in the DOM, and a `main` subtree with real content. The label was never a release: the `1.17.1` version bump merged, no `v1.17.1` tag or GitHub release was ever published, and `v1.18.0` superseded it. A route the boundary closes renders the app's own not-found instead, and its console output is recorded as a finding rather than counted as a failure of that route.
 
 ## Coverage
 
@@ -196,6 +196,6 @@ Full-size PNGs (213 files, 57395596 bytes before compression) are not committed 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.1 · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [QA atlas — v1.18.0](../v1.18.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — the 1.17.1 tree (never released) · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [QA atlas — v1.18.0](../v1.18.0/index.md)
 
 <!-- docs-nav:end -->
