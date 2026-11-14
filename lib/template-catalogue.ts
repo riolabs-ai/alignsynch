@@ -41,11 +41,10 @@ import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { demoAnswersFor, isPurchasable, type RelationshipType } from "@/data/relationship-types";
 import {
   TEMPLATE_CATALOGUE_PATH,
-  createRelationshipPath,
   relationshipTypeDemoPath,
   relationshipTypePath,
 } from "@/lib/flow/paths";
-import { registerPathFor } from "@/lib/auth/paths";
+import { REGISTER_PATH, startPathFor, type StartViewer } from "@/lib/start-path";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
 
 /**
@@ -88,22 +87,23 @@ export function cataloguePriceNote(label: string): string {
  * survives for the callers that need the address itself (the sign-in checks that compare against
  * it) and so the route is spelled once.
  */
-export const START_PATH = "/register";
+export const START_PATH = REGISTER_PATH;
 
 /**
- * **Where a catalogue action starts, with the template the visitor chose** (#867).
+ * **Where a catalogue action starts, with the template the visitor chose** (#867), **for the viewer
+ * who is looking at it** (#979).
  *
- * A signed-out visitor's click is the one moment in the product where intent is already expressed,
- * and `/register` on its own throws it away: the account is created, the view pushes the brand's
- * default landing page (`AFTER_SIGN_IN_BY_BRAND`), and the template has to be found again from a
- * list. So the action names the create flow's stage 1 for **this** type as the sign-up destination,
- * which `/register` already honours (`?next=`, read by `signInDestination`).
+ * The action's two halves are `lib/start-path.ts`'s: a visitor is sent to the account that buys the
+ * relationship (`/register?next=<this type's create step>`, the parameter `/register` already
+ * honours through `signInDestination`), and a **member is sent straight into the flow** — the same
+ * screen, with the account step they do not need removed.
  *
- * The two halves are joined here rather than in a component, because the same action is drawn on
- * three surfaces — the catalogue card, the type's own page and its worked example — and a surface
- * that forgot the query would silently reintroduce the bug on one shelf. `createRelationshipPath()`
- * is `lib/flow/paths.ts`'s, so the address is authored in one module and the sign-up wrapper in
- * another; neither is spelled here.
+ * The two halves are joined there rather than in a component because the same action is drawn on
+ * four surfaces — the catalogue card, the type's own page, its worked example and the front page's
+ * shelf — and a surface that forgot the viewer would silently reinstate the defect: a member with a
+ * live session asked to create the account they already had, on the front door of the only paid
+ * flow. `createRelationshipPath()` is `lib/flow/paths.ts`'s, so the address is authored in one
+ * module and the session rule in another; neither is spelled here.
  *
  * It is **not** a promise the route cannot keep: `/templates/relationship/<id>/create` renders for
  * a signed-out visitor too (#690 — stage 1 never asked for an account), so the destination is a
@@ -111,9 +111,8 @@ export const START_PATH = "/register";
  * (`signInDestination`) falls back to the brand's page rather than honouring a path this build
  * does not render.
  */
-export function startPathFor(typeId: string): string {
-  return registerPathFor(createRelationshipPath(typeId));
-}
+export { startPathFor };
+export type { StartViewer };
 
 /**
  * The catalogue page's own route — the one a "View all" points at.
@@ -159,7 +158,7 @@ export interface TemplateCard {
   readonly priceNote: string;
   /** The worked example, **only** where the fixture holds a demo sheet for this type. */
   readonly example?: string;
-  /** Where a reader starts this relationship: `/register`. */
+  /** Where this viewer starts this relationship: the flow for a member, `/register` for a visitor. */
   readonly start: string;
   /** The template's public page: `/templates/<slug>`. The card's title links here. */
   readonly detail: string;
@@ -190,7 +189,11 @@ const CARD_IDS = {
  * `data/pages/home-alignsynch.ts` on the front page), so each surface owns its own wording for
  * the same action and the two cannot drift into two spellings of one button.
  */
-export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCard {
+export function templateCard(
+  copy: PageCopy,
+  type: RelationshipType,
+  viewer: StartViewer,
+): TemplateCard {
   return {
     id: type.id,
     slug: type.id,
@@ -205,7 +208,7 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
     ...(demoAnswersFor(type.id) === undefined
       ? {}
       : { example: relationshipTypeDemoPath(type.id) }),
-    start: startPathFor(type.id),
+    start: startPathFor(type.id, viewer),
     detail: catalogueDetailPath(type.id),
     useLabel: pageItemOf(copy, CARD_IDS.use).label,
     exampleLabel: pageItemOf(copy, CARD_IDS.example).label,
@@ -219,14 +222,18 @@ export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCa
  * decides what it sells; this function refuses a non-purchasable row rather than drawing a card
  * the shop will not honour.
  */
-export function templateCards(copy: PageCopy, types: readonly RelationshipType[]): TemplateCard[] {
+export function templateCards(
+  copy: PageCopy,
+  types: readonly RelationshipType[],
+  viewer: StartViewer,
+): TemplateCard[] {
   return types.map((type) => {
     if (!isPurchasable(type)) {
       throw new Error(
         `templateCard: "${type.id}" is not purchasable — a catalogue card for a type the shop will not sell is a price nobody can pay`,
       );
     }
-    return templateCard(copy, type);
+    return templateCard(copy, type, viewer);
   });
 }
 

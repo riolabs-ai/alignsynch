@@ -2,6 +2,8 @@ import { TemplatesCatalogueView } from "@/components/templates/templates-catalog
 import { TemplatesPageView } from "@/components/templates/templates-page";
 import { brand, brandIdOf } from "@/data/brand";
 import { templatesPageCopy } from "@/data/pages/templates";
+import { currentUserIfConfigured } from "@/lib/auth/session";
+import { startViewer, type StartViewer } from "@/lib/start-path";
 import { templatesCatalogue } from "@/lib/templates-catalogue";
 import { templatesPage } from "@/lib/templates-page";
 import type { Metadata } from "next";
@@ -45,20 +47,28 @@ export const metadata: Metadata = {
 };
 
 /** The V2 catalogue: the drawn package's six bands, this page's model (`lib/templates-catalogue.ts`). */
-function AlignSynchCatalogue() {
-  return <TemplatesCatalogueView model={templatesCatalogue(brand, templatesPageCopy)} />;
+function AlignSynchCatalogue({ viewer }: { viewer: StartViewer }) {
+  return <TemplatesCatalogueView model={templatesCatalogue(brand, templatesPageCopy, viewer)} />;
 }
 
 /** The #889 composition, unchanged — what the quiz build already rendered at this address' family. */
-function QuizHubCatalogue() {
-  return <TemplatesPageView model={templatesPage(templatesPageCopy)} />;
+function QuizHubCatalogue({ viewer }: { viewer: StartViewer }) {
+  return <TemplatesPageView model={templatesPage(templatesPageCopy, viewer)} />;
 }
 
-export default function RelationshipTemplatesPage() {
+export default async function RelationshipTemplatesPage() {
+  /**
+   * The viewer, resolved once (#979). Both branches draw authored actions whose `href` is
+   * `/register` — the membership band's and the closing band's — and a member with a live session
+   * must be sent to their own destination instead of the sign-up page. A visitor's markup is
+   * unchanged, which is also what keeps `pnpm parity`'s quiz hashes still.
+   */
+  const signedIn = (await currentUserIfConfigured()) !== null;
+  const viewer = startViewer(brandIdOf(brand), signedIn);
   switch (brandIdOf(brand)) {
     case "quizhub":
-      return <QuizHubCatalogue />;
+      return <QuizHubCatalogue viewer={viewer} />;
     case "alignsynch":
-      return <AlignSynchCatalogue />;
+      return <AlignSynchCatalogue viewer={viewer} />;
   }
 }

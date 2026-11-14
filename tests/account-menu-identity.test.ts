@@ -220,9 +220,12 @@ describe("the account menu's My Profile row, rendered", () => {
     expect(hrefsOf(html).filter((href) => href.startsWith("/profile/"))).not.toContain(
       "/profile/alexjohnson",
     );
-    // The rest of the selection is still there: the row is hidden, the menu is not.
-    expect(html).toContain("/dashboard/user");
-    expect(html).toContain("/settings");
+    // #979 — the menu is the session's, so a visitor gets the two doors that create one and
+    // nothing that would open behind a session they do not have. (Before #979 the product rows and
+    // a Log out button rendered here too; `tests/account-menu-session.test.tsx` is that claim.)
+    expect(hrefsOf(html)).toContain("/login");
+    expect(hrefsOf(html)).toContain("/register");
+    expect(hrefsOf(html)).not.toContain("/dashboard/user");
   });
 
   it("draws the admin's own handle on the alignment brand when the viewer carries quiz-surfaces", () => {

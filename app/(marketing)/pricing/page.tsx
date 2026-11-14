@@ -1,12 +1,14 @@
 import { PricingCta } from "@/components/pricing/pricing-cta";
 import { PricingFaq } from "@/components/pricing/pricing-faq";
 import { PricingPlans } from "@/components/pricing/pricing-plans";
+import { brand, brandIdOf } from "@/data/brand";
 import type { BillingPlanId } from "@/data/billing-plans";
 import { pricingPageCopy } from "@/data/pages/pricing";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { billingTestMode, entitlementForAccount } from "@/lib/billing";
 import { pricingPlans, readPricingPlanRows } from "@/lib/billing/catalogue";
 import { sectionOf } from "@/lib/page-copy";
+import { REGISTER_PATH, startHrefFor, startViewer } from "@/lib/start-path";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -27,17 +29,23 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /** The viewer's tier, or `null` — nobody signed in, or a billing read that failed. */
-async function entitledPlanIdForViewer(): Promise<BillingPlanId | null> {
+async function viewerPlanFacts(): Promise<{
+  entitledPlanId: BillingPlanId | null;
+  signedIn: boolean;
+}> {
   const viewer = await currentUserIfConfigured();
-  if (viewer === null) return null;
+  if (viewer === null) return { entitledPlanId: null, signedIn: false };
   try {
-    return (await entitlementForAccount(viewer.userId)).planId;
+    return {
+      entitledPlanId: (await entitlementForAccount(viewer.userId)).planId,
+      signedIn: true,
+    };
   } catch (error) {
     console.error(
       "pricing: the viewer's entitlement could not be read — showing no current plan",
       error instanceof Error ? error.message : String(error),
     );
-    return null;
+    return { entitledPlanId: null, signedIn: true };
   }
 }
 
@@ -54,14 +62,19 @@ async function entitledPlanIdForViewer(): Promise<BillingPlanId | null> {
  * request, and neither is a reason to mount the app around a page a signed-out visitor reads.
  */
 export default async function PricingPage() {
-  const [planRows, entitledPlanId] = await Promise.all([
-    readPricingPlanRows(),
-    entitledPlanIdForViewer(),
-  ]);
+  const [planRows, facts] = await Promise.all([readPricingPlanRows(), viewerPlanFacts()]);
+  /**
+   * The viewer, and the one destination that depends on them (#979). A tier's authored CTA is
+   * `/register`; a member with a live session already has the account that button creates, so the
+   * grid is built with the resolved destination instead. `"checkout"` — the sentinel
+   * `PlanCheckoutButton` starts a payment for — passes through untouched.
+   */
+  const viewer = startViewer(brandIdOf(brand), facts.signedIn);
   const plans = pricingPlans({
     rows: planRows.rows,
     source: planRows.source,
-    entitledPlanId,
+    entitledPlanId: facts.entitledPlanId,
+    startHref: startHrefFor(REGISTER_PATH, viewer),
   });
 
   return (
@@ -72,7 +85,10 @@ export default async function PricingPage() {
         testMode={billingTestMode()}
       />
       <PricingFaq copy={sectionOf(pricingPageCopy, "faq")} />
-      <PricingCta copy={sectionOf(pricingPageCopy, "cta")} />
+      <PricingCta
+        copy={sectionOf(pricingPageCopy, "cta")}
+        startHref={startHrefFor(REGISTER_PATH, viewer)}
+      />
     </div>
   );
 }
