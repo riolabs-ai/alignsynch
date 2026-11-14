@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [QA atlas — v1.17.1](qa-atlas/v1.17.1/index.md) · next [Six flow stages](qa-flow-stages/README.md)
+[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [QA atlas — v1.18.0](qa-atlas/v1.18.0/index.md) · next [Six flow stages](qa-flow-stages/README.md)
 
 <!-- docs-nav:end -->
 
@@ -198,6 +198,6 @@ Three routes render the wrong page (no `notFound()`) instead of a 404 for an unk
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [QA atlas — v1.17.1](qa-atlas/v1.17.1/index.md) · next [Six flow stages](qa-flow-stages/README.md)
+[Docs hub](README.md) › **Records & QA** › P4 dogfood pass · prev [QA atlas — v1.18.0](qa-atlas/v1.18.0/index.md) · next [Six flow stages](qa-flow-stages/README.md)
 
 <!-- docs-nav:end -->

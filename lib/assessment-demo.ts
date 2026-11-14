@@ -35,7 +35,7 @@ import {
   type RelationshipType,
 } from "@/data/relationship-types";
 import { assessmentReport, type AssessmentReport } from "@/lib/assessment-report";
-import { startPathFor } from "@/lib/template-catalogue";
+import { startPathFor, type StartViewer } from "@/lib/start-path";
 
 /** The two seats the demo names, in the order the report draws them. */
 const DEMO_INITIATOR = "You";
@@ -153,7 +153,7 @@ export interface AssessmentDemo {
  * type that is not for sale, or a type whose sheet has not been authored yet. The route turns
  * that into a 404 rather than a fabricated report — absence is the honest answer there.
  */
-export function assessmentDemo(typeId: string): AssessmentDemo | undefined {
+export function assessmentDemo(typeId: string, viewer: StartViewer): AssessmentDemo | undefined {
   const type = purchasableRelationshipType(typeId);
   if (type === undefined) return undefined;
   if (demoAnswersFor(type.id) === undefined) return undefined;
@@ -164,6 +164,6 @@ export function assessmentDemo(typeId: string): AssessmentDemo | undefined {
   return {
     type,
     report: assessmentReport(instance, template),
-    startPath: startPathFor(type.id),
+    startPath: startPathFor(type.id, viewer),
   };
 }

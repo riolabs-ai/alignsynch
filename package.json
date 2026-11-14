@@ -1,6 +1,6 @@
 {
   "name": "quizhub",
-  "version": "1.17.1",
+  "version": "1.18.0",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "engines": {
@@ -36,8 +36,8 @@
     "columns:check": "node scripts/column-refs.ts --check",
     "release": "bash scripts/release.sh",
     "release:check": "bash scripts/release.sh --check",
-    "changelog": "node scripts/changelog-view.mjs",
-    "changelog:check": "node scripts/changelog-view.mjs --check",
+    "changelog": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs",
+    "changelog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs --check",
     "docs:nav": "node scripts/docs-nav.mjs --write",
     "docs:check": "node scripts/docs-check.mjs",
     "release:note": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/release-notify.mjs",

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [One-click create on /assessment, #957](../qa-957-assessment-one-click/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
+[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
 
 <!-- docs-nav:end -->
 
@@ -183,6 +183,6 @@ The dialog's copy is asserted against `data/pages/dashboard-relationship-detail.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [One-click create on /assessment, #957](../qa-957-assessment-one-click/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
+[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
 
 <!-- docs-nav:end -->

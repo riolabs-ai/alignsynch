@@ -36,6 +36,15 @@
  * server reads an omitted list as *leave the stored rows exactly as they are* (#943). The earlier
  * shape — posting `state.aspects`, the rows the page read — was a snapshot, and a snapshot taken
  * before a drag undoes the drag when it is saved.
+ *
+ * **`note` is the one thing this panel says about a section it does not write — #975 D12.** The
+ * member's dialog mounts `RelationshipAspectsNote` here: it names the Aspects, says the form leaves
+ * them alone and draws one door to the section that owns the editor, because #935 left the dialog
+ * silent about the section the page behind it edits. It is a *slot*, not a field: the caller passes
+ * the node, so this file types none of its words (E23 budget 0 on both mounts) and the console's
+ * staff mount — which has no Aspects section to point at — passes nothing and draws nothing. It sits
+ * directly under the title and the summary because it is a statement about the record's words, and
+ * a reader who opened "Edit" to change a question has to meet it before the fields they *can* save.
  */
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +58,7 @@ import { refusalSentence, type EditOutcome, type EditPreviewOutcome } from "@/li
 import type { EditInvalidation } from "@/lib/relationship/edit";
 import type { RelationshipEditState } from "@/lib/relationship/edit-view";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 
 /** The payload both calls take — one shape, so the preview and the save cannot disagree. */
 export interface RelationshipEditPayload {
@@ -67,6 +76,7 @@ export interface RelationshipEditPayload {
 export function RelationshipEditPanel({
   copy,
   state,
+  note,
   instanceRecordId,
   variant = "page",
   onPreview,
@@ -74,6 +84,12 @@ export function RelationshipEditPanel({
 }: {
   copy: PageCopy;
   state: RelationshipEditState;
+  /**
+   * #975 D12 — **the one statement about a section this form does not write.** The member's dialog
+   * passes `RelationshipAspectsNote`; the console passes nothing. A node, not a field, because the
+   * words belong to the caller's fixture and this panel is rendered under two of them.
+   */
+  note?: ReactNode;
   /**
    * The console's id, when this is the staff mount. The console's URL names a *session* record and
    * the member's names the relationship; the panel passes whichever its page was given rather than
@@ -224,6 +240,10 @@ export function RelationshipEditPanel({
             onChange={(event) => setSummary(event.target.value)}
           />
         </div>
+
+        {/* #975 D12 — the caller's note about a section this form does not write. Absent on the
+            console's mount, where there is no Aspects section to point at. */}
+        {note ?? null}
 
         {/* The two settings, printed with the reason they are not controls. */}
         <dl className={rail ? "grid gap-2 text-sm" : "grid gap-2 text-sm sm:grid-cols-2"}>

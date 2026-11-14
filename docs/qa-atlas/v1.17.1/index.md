@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.1 · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.1 · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [QA atlas — v1.18.0](../v1.18.0/index.md)
 
 <!-- docs-nav:end -->
 
@@ -11,7 +11,7 @@ Every route `data/pages/budget.ts` registers, captured in a real browser at 390 
 ## Coverage
 
 ```
-75 registry surfaces · 72 routes · 68 captured and passing · 1 failing · 3 skipped
+75 registry surfaces · 74 routes · 68 captured and passing · 1 failing · 5 skipped
 3 non-route surfaces (not-found, shell, tour) — covered by the pages that mount them, listed below.
 ```
 
@@ -22,6 +22,10 @@ Brand `alignsynch` · generated 2026-11-13T20:04:13.668Z · node `v24.22.0` · `
 Against v1.17.0:
 
 - `/admin/instances/[id]` — verdict fail → pass
+- `/admin/docs/features`, `/admin/docs/releases` — registered after this capture (#893), so this atlas
+  records both as skipped with that reason; the next cut captures them like every other console route.
+  The capture attempt on this tree answered non-200 for `/admin/audit` too — the demo branch offered no
+  admin session that day — which is why they are not captured here rather than a statement about them.
 
 ## Findings
 
@@ -192,6 +196,6 @@ Full-size PNGs (207 files, 53322721 bytes before compression) are not committed 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.1 · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.17.1 · prev [QA atlas — v1.17.0](../v1.17.0/index.md) · next [QA atlas — v1.18.0](../v1.18.0/index.md)
 
 <!-- docs-nav:end -->

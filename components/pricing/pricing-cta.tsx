@@ -18,7 +18,7 @@ import Link from "next/link";
  */
 const PERKS = ["perk-free", "perk-billing"] as const;
 
-export function PricingCta({ copy }: { copy: PageCopySection }) {
+export function PricingCta({ copy, startHref }: { copy: PageCopySection; startHref: string }) {
   return (
     <section className="py-20">
       <div className="marketing-container">
@@ -49,7 +49,7 @@ export function PricingCta({ copy }: { copy: PageCopySection }) {
                   background and the only text colour on the element (measured 6.06:1).
                 */}
                 <Link
-                  href="/register"
+                  href={startHref}
                   className={cn(
                     buttonVariants({ size: "lg", variant: "outline" }),
                     "border-0 bg-white text-action hover:bg-white/90 hover:text-action",
