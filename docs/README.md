@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**152 documents in 9 sections.** Every page carries the same nav block, generated
+**153 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
-- [Records & QA](#records-qa) — 34 documents
+- [Records & QA](#records-qa) — 35 documents
 
 ## Start here
 
@@ -216,6 +216,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-975-detail-identity/README.md`](qa-975-detail-identity/README.md) — **The relationship detail's identity, #975** — Does the detail page say whose relationship it is and which one — its own title and both names, one role per screen?
 - [`qa-976-sent-none/README.md`](qa-976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
 - [`qa-979-flow-dialog/README.md`](qa-979-flow-dialog/README.md) — **The create flow as a dialog over the relationships page, #979** — Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?
+- [`qa-979-flow-entries/README.md`](qa-979-flow-entries/README.md) — **Every in-product Create door opens the flow in place, #979** — Do all seven wizard-route entry points open the same flow over the page they were pressed on, at 1440 and 390, while a marketing entry and an empty state still navigate?
 - [`qa-971-tiles/README.md`](qa-971-tiles/README.md) — **The welcome tiles on /register too, #971** — Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?
 - [`qa-welcome-copy/README.md`](qa-welcome-copy/README.md) — **The welcome panel's copy — the tagline and the Aspects/Opinions tiles** — Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?

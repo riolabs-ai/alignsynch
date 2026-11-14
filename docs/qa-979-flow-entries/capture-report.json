@@ -1,0 +1,573 @@
+{
+  "base": "http://localhost:3479",
+  "slug": "relationship-basics",
+  "capturedAt": "2026-11-14T03:10:44.599Z",
+  "samples": [
+    {
+      "id": "dashboard-templates-1440",
+      "viewport": "1440x1000",
+      "origin": "/dashboard/templates",
+      "trigger": {
+        "text": "Create Relationship",
+        "href": "/templates/relationship/brothers/create"
+      },
+      "opened": {
+        "url": "/templates/relationship/brothers/create",
+        "innerWidth": 1440,
+        "dialog": {
+          "x": 281,
+          "y": 25,
+          "width": 878,
+          "height": 986
+        },
+        "panel": {
+          "x": 280,
+          "y": 24,
+          "width": 880,
+          "height": 952
+        },
+        "stageHeading": "Relationship Details",
+        "pageHeadings": ["Templates", "Relationship Details"],
+        "fields": [
+          "templateRecordId",
+          "title",
+          "initiatorFirst",
+          "initiatorLast",
+          "counterpartyFirst",
+          "counterpartyLast",
+          "email"
+        ],
+        "rail": "Relationship Details"
+      },
+      "dialogStill": "docs/qa-979-flow-entries/dashboard-templates-1440-dialog.png",
+      "filled": {
+        "title": "Avery R – Sam R",
+        "initiatorFirst": "Avery",
+        "counterpartyLast": "Rivera"
+      },
+      "filledStill": "docs/qa-979-flow-entries/dashboard-templates-1440-stage1-filled.png",
+      "advanced": {
+        "url": "/templates/relationship/brothers/create/mode",
+        "dialogMounted": true,
+        "stageHeading": "Relationship Settings",
+        "pageStillMounted": true
+      },
+      "closed": {
+        "url": "/templates/relationship/brothers/create/mode",
+        "focusIsTrigger": false,
+        "activeText": "Relationship SettingsDetailsSettingsAspe",
+        "activeTag": "div",
+        "activeIsFlowEntry": false,
+        "historyAfter": 50,
+        "closedByEsc": false,
+        "historyBefore": 50,
+        "pathTrace": [
+          "0:/templates/relationship/brothers/create/mode:open:h50",
+          "1:/templates/relationship/brothers/create/mode:open:h50",
+          "2:/templates/relationship/brothers/create/mode:open:h50",
+          "3:/templates/relationship/brothers/create/mode:open:h50",
+          "4:/templates/relationship/brothers/create/mode:open:h50",
+          "5:/templates/relationship/brothers/create/mode:open:h50",
+          "6:/templates/relationship/brothers/create/mode:open:h50",
+          "7:/templates/relationship/brothers/create/mode:open:h50",
+          "8:/templates/relationship/brothers/create/mode:open:h50",
+          "9:/templates/relationship/brothers/create/mode:open:h50",
+          "10:/templates/relationship/brothers/create/mode:open:h50",
+          "11:/templates/relationship/brothers/create/mode:open:h50",
+          "12:/templates/relationship/brothers/create/mode:open:h50",
+          "13:/templates/relationship/brothers/create/mode:open:h50",
+          "14:/templates/relationship/brothers/create/mode:open:h50",
+          "15:/templates/relationship/brothers/create/mode:open:h50"
+        ],
+        "backDiagnostic": {
+          "url": "/templates/relationship/brothers/create",
+          "dialogOpen": true
+        }
+      },
+      "closedStill": "docs/qa-979-flow-entries/dashboard-templates-1440-after-esc.png",
+      "pageErrors": [],
+      "logs": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "[HMR] connected"
+      ],
+      "netLog": []
+    },
+    {
+      "id": "templates-library-1440",
+      "viewport": "1440x1000",
+      "origin": "/templates/relationship",
+      "trigger": {
+        "text": "Create Relationship",
+        "href": "/templates/relationship/business-partners/create"
+      },
+      "opened": {
+        "url": "/templates/relationship/business-partners/create",
+        "innerWidth": 1440,
+        "dialog": {
+          "x": 281,
+          "y": 25,
+          "width": 878,
+          "height": 986
+        },
+        "panel": {
+          "x": 280,
+          "y": 24,
+          "width": 880,
+          "height": 952
+        },
+        "stageHeading": "Relationship Details",
+        "pageHeadings": ["Relationship Templates", "Relationship Details"],
+        "fields": [
+          "templateRecordId",
+          "title",
+          "initiatorFirst",
+          "initiatorLast",
+          "counterpartyFirst",
+          "counterpartyLast",
+          "email"
+        ],
+        "rail": "Relationship Details"
+      },
+      "dialogStill": "docs/qa-979-flow-entries/templates-library-1440-dialog.png",
+      "filled": {
+        "title": "Avery R – Sam R",
+        "initiatorFirst": "Avery",
+        "counterpartyLast": "Rivera"
+      },
+      "filledStill": "docs/qa-979-flow-entries/templates-library-1440-stage1-filled.png",
+      "advanced": {
+        "url": "/templates/relationship/business-partners/create/mode",
+        "dialogMounted": true,
+        "stageHeading": "Relationship Settings",
+        "pageStillMounted": true
+      },
+      "closed": {
+        "url": "/templates/relationship/business-partners/create/mode",
+        "focusIsTrigger": false,
+        "activeText": "Relationship SettingsDetailsSettingsAspe",
+        "activeTag": "div",
+        "activeIsFlowEntry": false,
+        "historyAfter": 50,
+        "closedByEsc": false,
+        "historyBefore": 50,
+        "pathTrace": [
+          "0:/templates/relationship/business-partners/create/mode:open:h50",
+          "1:/templates/relationship/business-partners/create/mode:open:h50",
+          "2:/templates/relationship/business-partners/create/mode:open:h50",
+          "3:/templates/relationship/business-partners/create/mode:open:h50",
+          "4:/templates/relationship/business-partners/create/mode:open:h50",
+          "5:/templates/relationship/business-partners/create/mode:open:h50",
+          "6:/templates/relationship/business-partners/create/mode:open:h50",
+          "7:/templates/relationship/business-partners/create/mode:open:h50",
+          "8:/templates/relationship/business-partners/create/mode:open:h50",
+          "9:/templates/relationship/business-partners/create/mode:open:h50",
+          "10:/templates/relationship/business-partners/create/mode:open:h50",
+          "11:/templates/relationship/business-partners/create/mode:open:h50",
+          "12:/templates/relationship/business-partners/create/mode:open:h50",
+          "13:/templates/relationship/business-partners/create/mode:open:h50",
+          "14:/templates/relationship/business-partners/create/mode:open:h50",
+          "15:/templates/relationship/business-partners/create/mode:open:h50"
+        ],
+        "backDiagnostic": {
+          "url": "/templates/relationship/business-partners/create",
+          "dialogOpen": true
+        }
+      },
+      "closedStill": "docs/qa-979-flow-entries/templates-library-1440-after-esc.png",
+      "pageErrors": [],
+      "logs": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "[HMR] connected"
+      ],
+      "netLog": []
+    },
+    {
+      "id": "template-detail-1440",
+      "viewport": "1440x1000",
+      "origin": "/templates/relationship/relationship-basics",
+      "trigger": {
+        "text": "Create Relationship",
+        "href": "/templates/relationship/assessment-relationship-basics/create"
+      },
+      "opened": {
+        "url": "/templates/relationship/assessment-relationship-basics/create",
+        "innerWidth": 1440,
+        "dialog": {
+          "x": 281,
+          "y": 25,
+          "width": 878,
+          "height": 1006
+        },
+        "panel": {
+          "x": 280,
+          "y": 24,
+          "width": 880,
+          "height": 952
+        },
+        "stageHeading": "Relationship Details",
+        "pageHeadings": ["Relationship Basics", "Relationship Details"],
+        "fields": [
+          "templateRecordId",
+          "title",
+          "initiatorFirst",
+          "initiatorLast",
+          "counterpartyFirst",
+          "counterpartyLast",
+          "email"
+        ],
+        "rail": "Relationship Details"
+      },
+      "dialogStill": "docs/qa-979-flow-entries/template-detail-1440-dialog.png",
+      "filled": {
+        "title": "Avery R – Sam R",
+        "initiatorFirst": "Avery",
+        "counterpartyLast": "Rivera"
+      },
+      "filledStill": "docs/qa-979-flow-entries/template-detail-1440-stage1-filled.png",
+      "advanced": {
+        "url": "/templates/relationship/relationship-basics/create/mode",
+        "dialogMounted": true,
+        "stageHeading": "Relationship Settings",
+        "pageStillMounted": true
+      },
+      "closed": {
+        "url": "/templates/relationship/relationship-basics/create/mode",
+        "focusIsTrigger": false,
+        "activeText": "Relationship SettingsDetailsSettingsAspe",
+        "activeTag": "div",
+        "activeIsFlowEntry": false,
+        "historyAfter": 50,
+        "closedByEsc": false,
+        "historyBefore": 50,
+        "pathTrace": [
+          "0:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "1:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "2:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "3:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "4:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "5:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "6:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "7:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "8:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "9:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "10:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "11:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "12:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "13:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "14:/templates/relationship/relationship-basics/create/mode:open:h50",
+          "15:/templates/relationship/relationship-basics/create/mode:open:h50"
+        ],
+        "backDiagnostic": {
+          "url": "/templates/relationship/assessment-relationship-basics/create",
+          "dialogOpen": true
+        }
+      },
+      "closedStill": "docs/qa-979-flow-entries/template-detail-1440-after-esc.png",
+      "pageErrors": [],
+      "logs": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "[HMR] connected"
+      ],
+      "netLog": []
+    },
+    {
+      "id": "relationships-chooser-1440",
+      "viewport": "1440x1000",
+      "origin": "/dashboard/relationships",
+      "trigger": {
+        "text": "Start the relationship",
+        "href": null
+      },
+      "opened": {
+        "url": "/templates/relationship/brother-sister/create",
+        "innerWidth": 1440,
+        "dialog": {
+          "x": 281,
+          "y": 25,
+          "width": 878,
+          "height": 986
+        },
+        "panel": {
+          "x": 280,
+          "y": 24,
+          "width": 880,
+          "height": 952
+        },
+        "stageHeading": "Relationship Details",
+        "pageHeadings": ["My Relationships", "Relationship Details"],
+        "fields": [
+          "templateRecordId",
+          "title",
+          "initiatorFirst",
+          "initiatorLast",
+          "counterpartyFirst",
+          "counterpartyLast",
+          "email"
+        ],
+        "rail": "Relationship Details"
+      },
+      "dialogStill": "docs/qa-979-flow-entries/relationships-chooser-1440-dialog.png",
+      "filled": {
+        "title": "Avery R – Sam R",
+        "initiatorFirst": "Avery",
+        "counterpartyLast": "Rivera"
+      },
+      "filledStill": "docs/qa-979-flow-entries/relationships-chooser-1440-stage1-filled.png",
+      "advanced": {
+        "url": "/templates/relationship/brother-sister/create/mode",
+        "dialogMounted": true,
+        "stageHeading": "Relationship Settings",
+        "pageStillMounted": true
+      },
+      "closed": {
+        "url": "/templates/relationship/brother-sister/create/mode",
+        "focusIsTrigger": false,
+        "activeText": "Relationship SettingsDetailsSettingsAspe",
+        "activeTag": "div",
+        "activeIsFlowEntry": false,
+        "historyAfter": 50,
+        "closedByEsc": false,
+        "historyBefore": 50,
+        "pathTrace": [
+          "0:/templates/relationship/brother-sister/create/mode:open:h50",
+          "1:/templates/relationship/brother-sister/create/mode:open:h50",
+          "2:/templates/relationship/brother-sister/create/mode:open:h50",
+          "3:/templates/relationship/brother-sister/create/mode:open:h50",
+          "4:/templates/relationship/brother-sister/create/mode:open:h50",
+          "5:/templates/relationship/brother-sister/create/mode:open:h50",
+          "6:/templates/relationship/brother-sister/create/mode:open:h50",
+          "7:/templates/relationship/brother-sister/create/mode:open:h50",
+          "8:/templates/relationship/brother-sister/create/mode:open:h50",
+          "9:/templates/relationship/brother-sister/create/mode:open:h50",
+          "10:/templates/relationship/brother-sister/create/mode:open:h50",
+          "11:/templates/relationship/brother-sister/create/mode:open:h50",
+          "12:/templates/relationship/brother-sister/create/mode:open:h50",
+          "13:/templates/relationship/brother-sister/create/mode:open:h50",
+          "14:/templates/relationship/brother-sister/create/mode:open:h50",
+          "15:/templates/relationship/brother-sister/create/mode:open:h50"
+        ],
+        "backDiagnostic": {
+          "url": "/templates/relationship/brother-sister/create",
+          "dialogOpen": true
+        }
+      },
+      "closedStill": "docs/qa-979-flow-entries/relationships-chooser-1440-after-esc.png",
+      "pageErrors": [],
+      "logs": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "[HMR] connected"
+      ],
+      "netLog": []
+    },
+    {
+      "id": "assessment-390",
+      "viewport": "390x844",
+      "origin": "/assessment",
+      "trigger": {
+        "text": "Create Relationship",
+        "href": "/templates/relationship/business-partners/create"
+      },
+      "opened": {
+        "url": "/templates/relationship/business-partners/create",
+        "innerWidth": 390,
+        "dialog": {
+          "x": 0,
+          "y": 60,
+          "width": 390,
+          "height": 1426
+        },
+        "panel": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "stageHeading": "Relationship Details",
+        "pageHeadings": ["Assessments", "Relationship Details"],
+        "fields": [
+          "templateRecordId",
+          "title",
+          "initiatorFirst",
+          "initiatorLast",
+          "counterpartyFirst",
+          "counterpartyLast",
+          "email"
+        ],
+        "rail": "Relationship Details"
+      },
+      "dialogStill": "docs/qa-979-flow-entries/assessment-390-dialog.png",
+      "filled": {
+        "title": "Avery R – Sam R",
+        "initiatorFirst": "Avery",
+        "counterpartyLast": "Rivera"
+      },
+      "filledStill": "docs/qa-979-flow-entries/assessment-390-stage1-filled.png",
+      "advanced": {
+        "url": "/templates/relationship/business-partners/create/mode",
+        "dialogMounted": true,
+        "stageHeading": "Relationship Settings",
+        "pageStillMounted": true
+      },
+      "closed": {
+        "url": "/templates/relationship/business-partners/create/mode",
+        "focusIsTrigger": false,
+        "activeText": "Relationship SettingsDetailsSettingsAspe",
+        "activeTag": "div",
+        "activeIsFlowEntry": false,
+        "historyAfter": 50,
+        "closedByEsc": false,
+        "historyBefore": 50,
+        "pathTrace": [
+          "0:/templates/relationship/business-partners/create/mode:open:h50",
+          "1:/templates/relationship/business-partners/create/mode:open:h50",
+          "2:/templates/relationship/business-partners/create/mode:open:h50",
+          "3:/templates/relationship/business-partners/create/mode:open:h50",
+          "4:/templates/relationship/business-partners/create/mode:open:h50",
+          "5:/templates/relationship/business-partners/create/mode:open:h50",
+          "6:/templates/relationship/business-partners/create/mode:open:h50",
+          "7:/templates/relationship/business-partners/create/mode:open:h50",
+          "8:/templates/relationship/business-partners/create/mode:open:h50",
+          "9:/templates/relationship/business-partners/create/mode:open:h50",
+          "10:/templates/relationship/business-partners/create/mode:open:h50",
+          "11:/templates/relationship/business-partners/create/mode:open:h50",
+          "12:/templates/relationship/business-partners/create/mode:open:h50",
+          "13:/templates/relationship/business-partners/create/mode:open:h50",
+          "14:/templates/relationship/business-partners/create/mode:open:h50",
+          "15:/templates/relationship/business-partners/create/mode:open:h50"
+        ],
+        "backDiagnostic": {
+          "url": "/templates/relationship/business-partners/create",
+          "dialogOpen": true
+        }
+      },
+      "closedStill": "docs/qa-979-flow-entries/assessment-390-after-esc.png",
+      "pageErrors": [],
+      "logs": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "[HMR] connected"
+      ],
+      "netLog": []
+    },
+    {
+      "id": "dashboard-templates-390",
+      "viewport": "390x844",
+      "origin": "/dashboard/templates",
+      "trigger": {
+        "text": "Create Relationship",
+        "href": "/templates/relationship/brothers/create"
+      },
+      "opened": {
+        "url": "/templates/relationship/brothers/create",
+        "innerWidth": 390,
+        "dialog": {
+          "x": 0,
+          "y": 60,
+          "width": 390,
+          "height": 1402
+        },
+        "panel": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "stageHeading": "Relationship Details",
+        "pageHeadings": ["Templates", "Relationship Details"],
+        "fields": [
+          "templateRecordId",
+          "title",
+          "initiatorFirst",
+          "initiatorLast",
+          "counterpartyFirst",
+          "counterpartyLast",
+          "email"
+        ],
+        "rail": "Relationship Details"
+      },
+      "dialogStill": "docs/qa-979-flow-entries/dashboard-templates-390-dialog.png",
+      "filled": {
+        "title": "Avery R – Sam R",
+        "initiatorFirst": "Avery",
+        "counterpartyLast": "Rivera"
+      },
+      "filledStill": "docs/qa-979-flow-entries/dashboard-templates-390-stage1-filled.png",
+      "advanced": {
+        "url": "/templates/relationship/brothers/create/mode",
+        "dialogMounted": true,
+        "stageHeading": "Relationship Settings",
+        "pageStillMounted": true
+      },
+      "closed": {
+        "url": "/templates/relationship/brothers/create/mode",
+        "focusIsTrigger": false,
+        "activeText": "Relationship SettingsDetailsSettingsAspe",
+        "activeTag": "div",
+        "activeIsFlowEntry": false,
+        "historyAfter": 50,
+        "closedByEsc": false,
+        "historyBefore": 50,
+        "pathTrace": [
+          "0:/templates/relationship/brothers/create/mode:open:h50",
+          "1:/templates/relationship/brothers/create/mode:open:h50",
+          "2:/templates/relationship/brothers/create/mode:open:h50",
+          "3:/templates/relationship/brothers/create/mode:open:h50",
+          "4:/templates/relationship/brothers/create/mode:open:h50",
+          "5:/templates/relationship/brothers/create/mode:open:h50",
+          "6:/templates/relationship/brothers/create/mode:open:h50",
+          "7:/templates/relationship/brothers/create/mode:open:h50",
+          "8:/templates/relationship/brothers/create/mode:open:h50",
+          "9:/templates/relationship/brothers/create/mode:open:h50",
+          "10:/templates/relationship/brothers/create/mode:open:h50",
+          "11:/templates/relationship/brothers/create/mode:open:h50",
+          "12:/templates/relationship/brothers/create/mode:open:h50",
+          "13:/templates/relationship/brothers/create/mode:open:h50",
+          "14:/templates/relationship/brothers/create/mode:open:h50",
+          "15:/templates/relationship/brothers/create/mode:open:h50"
+        ],
+        "backDiagnostic": {
+          "url": "/templates/relationship/brothers/create",
+          "dialogOpen": true
+        }
+      },
+      "closedStill": "docs/qa-979-flow-entries/dashboard-templates-390-after-esc.png",
+      "pageErrors": [],
+      "logs": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "[HMR] connected"
+      ],
+      "netLog": []
+    }
+  ],
+  "unchanged": [
+    {
+      "id": "marketing-relationship-types-1440",
+      "viewport": "1440x1000",
+      "before": "docs/qa-979-flow-entries/marketing-relationship-types-1440-page.png",
+      "found": {
+        "text": "Create Relationship",
+        "href": "/templates/relationship/staff-manager/create"
+      },
+      "after": {
+        "url": "/templates/relationship/staff-manager/create",
+        "query": "",
+        "dialogMounted": false
+      },
+      "still": "docs/qa-979-flow-entries/marketing-relationship-types-1440-page.png"
+    },
+    {
+      "id": "assessments-empty-390",
+      "viewport": "390x844",
+      "before": "docs/qa-979-flow-entries/assessments-empty-390-page.png",
+      "found": {
+        "text": "Start a relationship",
+        "href": "/assessment"
+      },
+      "after": {
+        "url": "/assessment",
+        "query": "",
+        "dialogMounted": false
+      },
+      "still": "docs/qa-979-flow-entries/assessments-empty-390-page.png"
+    }
+  ]
+}

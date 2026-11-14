@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md) · next [The welcome tiles on /register too, #971](../qa-971-tiles/README.md)
+[Docs hub](../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md) · next [Every in-product Create door opens the flow in place, #979](../qa-979-flow-entries/README.md)
 
 <!-- docs-nav:end -->
 
@@ -58,6 +58,6 @@ control fails as `never became true: <what>` rather than as a photograph of the 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md) · next [The welcome tiles on /register too, #971](../qa-971-tiles/README.md)
+[Docs hub](../README.md) › **Records & QA** › The create flow as a dialog over the relationships page, #979 · prev [The Sent screen with no invitation row, #976](../qa-976-sent-none/README.md) · next [Every in-product Create door opens the flow in place, #979](../qa-979-flow-entries/README.md)
 
 <!-- docs-nav:end -->
