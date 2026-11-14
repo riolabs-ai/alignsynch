@@ -522,6 +522,11 @@
           "question": "How is every registered surface captured, asserted and checked, and what is committed?"
         },
         {
+          "path": "qa-atlas/DEFERRED.md",
+          "title": "Deferred sweeps",
+          "question": "Which release shipped without a QA atlas sweep, and what could the atlas not cover?"
+        },
+        {
           "path": "qa-atlas/v1.17.1/index.md",
           "title": "QA atlas — the 1.17.1 tree (never released)",
           "question": "What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?"

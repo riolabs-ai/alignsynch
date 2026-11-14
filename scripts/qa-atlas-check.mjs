@@ -8,7 +8,7 @@
  * `DATABASE_URL`, and this must too). The capture needs a server and the demo branch's rows; the
  * *claim* that every registered route was captured is what a gate can check, every push.
  *
- * Eight rules, each failing by the name of the thing that is wrong:
+ * Nine rules, each failing by the name of the thing that is wrong:
  *
  *   coverage   every route `data/pages/budget.ts` registers has a row in the current version's
  *              `manifest.json`, and the manifest carries no route the registry does not know — an
@@ -33,10 +33,26 @@
  *              past ones, one past while a kept cut is over 4 MB (`qa-atlas-retention.mjs`). The
  *              failure names the cuts to remove and the command that removes them, so "the atlas
  *              tree is growing" is a finding with an action and not an observation
+ *   deferral   a version with **no** manifest may ship anyway **if, and only if,** the tree declares
+ *              it in `docs/qa-atlas/DEFERRED.md`: a row naming this version, dated, carrying a
+ *              release commit that exists, and saying which surfaces the atlas cannot yet cover
+ *              (`qa-atlas-deferral.mjs`). The rule changed because a sweep that cannot see the
+ *              release's own subject — no auth modal, no stage-form embed steps, nothing for
+ *              sign-in, sign-up or the Stripe flow — must not block the cut that changes them. What
+ *              a deferral may never buy is **silence**: the pass prints
+ *              `⚑ v<version> deferred · <reason>`, so every gate run says out loud that this
+ *              release has no sweep. A stale row does not cover a newer version; a reasonless one
+ *              fails by name; a version that is both captured and deferred is a contradiction and
+ *              fails too. The rule for a version that *has* a manifest is untouched
  *
  * Exit 0 prints one line in the shape the release note quotes:
  *
  *   75 registry surfaces · 72 routes · 72 captured · 0 missing · 0 skipped
+ *
+ * …or, on a declared deferral, the deferral first and the census beside it:
+ *
+ *   ⚑ v1.20.0 deferred · <reason>
+ *   77 registry surfaces · 74 routes · 74 deferred · 0 captured · 3 skipped
  *
  * Usage:
  *
@@ -48,6 +64,14 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { repoRoot } from "./load-env.mjs";
+import {
+  RECORD as DEFERRAL_RECORD,
+  bareVersion,
+  commitResolves,
+  deferralFor,
+  deferralProblems,
+  parseDeferrals,
+} from "./qa-atlas-deferral.mjs";
 import {
   atlasLabel,
   coverageOf,
@@ -87,6 +111,21 @@ function bytesUnder(dir) {
   return total;
 }
 
+/**
+ * `docs/qa-atlas/DEFERRED.md`, read into rows.
+ *
+ * A tree with no record file defers nothing — the absence is the switch being off, and the file's
+ * own registration in `docs/docs.json` is what stops it disappearing quietly (a listed page with no
+ * file is a `docs:check` failure by name). A file that exists must parse: `parseDeferrals()`
+ * returns the structural problems, and they are pushed into the run's problem list whether or not
+ * this version needs a deferral.
+ */
+function loadDeferrals(root) {
+  const file = join(root, DEFERRAL_RECORD);
+  if (!existsSync(file)) return { rows: [], problems: [] };
+  return parseDeferrals(readFileSync(file, "utf8"));
+}
+
 function main() {
   const version = String(flag("version") ?? currentVersion());
   const label = atlasLabel(version);
@@ -102,19 +141,60 @@ function main() {
    */
   const cuts = atlasCuts(join(ROOT, "docs", "qa-atlas"));
   problems.push(...retentionProblems({ cuts }));
+  const deferrals = loadDeferrals(ROOT);
+  problems.push(...deferrals.problems);
 
   // `deriveRows` with `db: null` is the same derivation the generator uses, minus the row ids: the
   // route set, the area, the gate and the expectation are all facts about the tree.
   return deriveRows({ brand: "alignsynch", db: null }).then(({ rows }) => {
     const coverage = coverageOf(rows);
+    const deferral = deferralFor(deferrals.rows, version);
 
     if (!existsSync(manifestFile)) {
+      /**
+       * 9. the deferral (#owner decision 2026-11-14). A version may ship without a sweep **if the
+       * tree says so**: a row in `docs/qa-atlas/DEFERRED.md` naming this version, dated, carrying a
+       * release commit that exists, and saying which surfaces the atlas cannot yet cover. Strict on
+       * purpose — the danger of a new pass branch is that it becomes a quiet one, so a stale,
+       * reasonless or unresolvable row fails by name exactly as a missing manifest does.
+       */
+      if (deferral === undefined) {
+        problems.push(
+          `docs/qa-atlas/${label}/manifest.json is missing — the tree is v${version} and no atlas ` +
+            "documents it (run `pnpm qa:atlas` against the release cut)",
+        );
+        /**
+         * A row for a *different* release is the likeliest reason a reader believes this version is
+         * deferred, so the failure names it. Without this the check says "no atlas" on a file the
+         * reader can see a deferral in, and the next thing they do is widen the rule.
+         */
+        const others = [
+          ...new Set(
+            deferrals.rows
+              .map((row) => bareVersion(row.version))
+              .filter((rowVersion) => rowVersion !== null && rowVersion !== bareVersion(version)),
+          ),
+        ];
+        if (others.length > 0) {
+          problems.push(
+            `${DEFERRAL_RECORD} carries a deferral for ${others
+              .map((other) => `v${other}`)
+              .join(", ")}, not for v${bareVersion(version)} — a row for another release cannot ` +
+              "vouch for this one; add a row for this version, or capture it",
+          );
+        }
+        report(problems, coverage, version, null, cuts);
+        return 1;
+      }
+
       problems.push(
-        `docs/qa-atlas/${label}/manifest.json is missing — the tree is v${version} and no atlas ` +
-          "documents it (run `pnpm qa:atlas` against the release cut)",
+        ...deferralProblems({
+          row: deferral,
+          version,
+          resolves: (sha) => commitResolves(ROOT, sha),
+        }),
       );
-      report(problems, coverage, version, null, cuts);
-      return 1;
+      return report(problems, coverage, version, { deferral }, cuts);
     }
 
     const manifest = JSON.parse(readFileSync(manifestFile, "utf8"));
@@ -125,6 +205,19 @@ function main() {
       problems.push(
         `manifest.json: documents v${manifest.version}, the tree is v${version} — an atlas for ` +
           "another release cannot vouch for this one",
+      );
+    }
+
+    /**
+     * A version cannot be both captured and deferred. The contradiction is worth a rule rather than
+     * a shrug: a row left behind after the sweep landed keeps saying the release shipped unmeasured,
+     * which is a published claim about the product that is no longer true.
+     */
+    if (deferral !== undefined) {
+      problems.push(
+        `${DEFERRAL_RECORD}:${deferral.line}: defers v${bareVersion(version)} while ` +
+          `docs/qa-atlas/${label}/manifest.json captures it — a release with a sweep is not ` +
+          "deferred; drop the row so the record stops claiming a gap that has closed",
       );
     }
 
@@ -270,14 +363,12 @@ function main() {
 
 function report(problems, coverage, version, state, cuts = []) {
   const routes = coverage.routes;
-  const captured =
-    state === null
-      ? 0
-      : state.manifest.routes.filter((row) => row.kind === "route" && row.verdict !== "skipped")
-          .length;
-  const failing =
-    state === null ? 0 : state.manifest.routes.filter((row) => row.verdict === "fail").length;
-  const missing = state === null ? routes : 0;
+  const manifest = state === null ? null : (state.manifest ?? null);
+  const deferral = state === null ? null : (state.deferral ?? null);
+  const rows = manifest === null ? [] : manifest.routes;
+  const captured = rows.filter((row) => row.kind === "route" && row.verdict !== "skipped").length;
+  const failing = rows.filter((row) => row.verdict === "fail").length;
+  const missing = manifest === null ? routes : 0;
   const skipped = coverage.skipped.length;
 
   /**
@@ -294,26 +385,56 @@ function report(problems, coverage, version, state, cuts = []) {
         `${plan.current.label} current + ${Math.min(plan.past, Math.max(0, cuts.length - 1))} past ` +
         `(window ${1 + plan.past}${plan.bulky ? `, narrowed from ${PAST_CUTS} — a kept cut is over ${mb(plan.threshold)}` : ""})\n`;
 
+  const deferralLine =
+    deferral === null
+      ? ""
+      : `⚑ v${bareVersion(version)} deferred · ${deferral.reason.trim().replace(/\s+/g, " ")} — ` +
+        `no atlas captures this release, and ${DEFERRAL_RECORD} is the record of it\n`;
+
   if (problems.length > 0) {
     process.stderr.write(
       `✗ qa:atlas:check — ${problems.length} problem${problems.length === 1 ? "" : "s"} for v${version}:\n`,
     );
     for (const problem of problems) process.stderr.write(`  ✗ ${problem}\n`);
+    process.stdout.write(deferralLine);
     process.stdout.write(
-      `  ${coverage.keys} registry surfaces · ${routes} routes · ${captured} captured · ` +
-        `${failing} failing · ${missing > 0 ? `${missing} missing` : `${problems.length} problem`} · ` +
-        `${skipped} skipped\n`,
+      manifest !== null
+        ? `  ${coverage.keys} registry surfaces · ${routes} routes · ${captured} captured · ` +
+            `${failing} failing · ${missing > 0 ? `${missing} missing` : `${problems.length} problem`} · ` +
+            `${skipped} skipped\n`
+        : deferral !== null
+          ? `  ${coverage.keys} registry surfaces · ${routes} routes · ${routes} deferred · ` +
+            `0 captured · ${skipped} skipped\n`
+          : `  ${coverage.keys} registry surfaces · ${routes} routes · ${captured} captured · ` +
+            `${failing} failing · ${missing > 0 ? `${missing} missing` : `${problems.length} problem`} · ` +
+            `${skipped} skipped\n`,
     );
     process.stdout.write(windowLine);
     return 1;
   }
 
-  const measured =
-    typeof state.manifest.captureCommit === "string" ? state.manifest.captureCommit : "";
+  /**
+   * A declared deferral is a **pass that says so**: the deferral line goes first, and the census
+   * counts the routes it did not capture as `deferred` rather than pretending they were measured.
+   * This is the whole point of the rule — the release may ship unmeasured, the gate may not go quiet
+   * about it.
+   */
+  if (deferral !== null) {
+    process.stdout.write(deferralLine);
+    process.stdout.write(
+      `  ${coverage.keys} registry surfaces · ${routes} routes · ${routes} deferred · 0 captured · ` +
+        `${skipped} skipped · ${deferral.date.trim()} · commit ` +
+        `${deferral.commit.trim().slice(0, 8)}\n`,
+    );
+    process.stdout.write(windowLine);
+    return 0;
+  }
+
+  const measured = typeof manifest.captureCommit === "string" ? manifest.captureCommit : "";
   process.stdout.write(
     `  ${coverage.keys} registry surfaces · ${routes} routes · ${captured} captured · ` +
       `${failing} failing · 0 missing · ` +
-      `${state.manifest.routes.filter((row) => row.verdict === "skipped").length} skipped · ` +
+      `${rows.filter((row) => row.verdict === "skipped").length} skipped · ` +
       `${(state.bytes / 1024 / 1024).toFixed(2)} MB · captured at ` +
       `${measured === "" ? "(unrecorded)" : measured.slice(0, 8)} — every registered route has a ` +
       "row, every row reports what it measured, every thumbnail resolves, the coverage block " +
