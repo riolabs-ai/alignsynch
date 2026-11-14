@@ -728,6 +728,11 @@
           "question": "Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?"
         },
         {
+          "path": "qa-welcome-copy/README.md",
+          "title": "The welcome panel's copy — the tagline and the Aspects/Opinions tiles",
+          "question": "Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?"
+        },
+        {
           "path": "qa-payment/README.md",
           "title": "Payment capture & completion",
           "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
