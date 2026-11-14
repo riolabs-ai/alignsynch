@@ -18,8 +18,8 @@
   <img src="https://img.shields.io/badge/shadcn%2Fui-Radix-156898?style=flat" alt="shadcn/ui on Radix" />
   <img src="https://img.shields.io/badge/Postgres-Neon-156898?style=flat&logo=neon&logoColor=white" alt="Postgres on Neon" />
   <img src="https://img.shields.io/badge/Auth-Neon_Managed_(Better_Auth)-156898?style=flat" alt="Auth: Neon Managed Auth, hosted Better Auth" />
-  <img src="https://img.shields.io/badge/version-1.6.0-156898?style=flat" alt="Version 1.6.0" />
-  <img src="https://img.shields.io/badge/licence-private-363d49?style=flat" alt="Licence: private" />
+  <img src="https://img.shields.io/github/v/tag/riolabs-ai/alignsynch?style=flat&amp;color=156898&amp;label=version" alt="Version: the latest released tag" />
+  <img src="https://img.shields.io/github/license/riolabs-ai/alignsynch?style=flat&amp;color=363d49" alt="Licence: MIT" />
 </p>
 
 # Two answers. One Gap.
@@ -47,6 +47,43 @@ Every image on this page is a committed file under
 it is filed under, on the demo branch, at `1440×900` and `390×844`. The registry beside them carries the
 route, the viewport, the date and the commit for each row, and a test fails when the page and the files
 disagree. Nothing here is a mockup.
+
+## Start here
+
+**What it is.** AlignSynch is a two-party relationship alignment platform: two people answer the same
+questions in private, and where the answers part is the Gap the report draws. One Next.js core ships
+two expressions from one tree — the AlignSynch product and the QuizHub template it was cut from —
+chosen at build time by `BRAND`. Neon Postgres carries the single database-backed route
+(`/assessment/[slug]`, six tables, no ORM) and Neon Managed Auth owns identity; every other product
+surface reads the content-first fixtures in `data/`. The architecture is in
+[docs/README.md](docs/README.md); the agent-facing contract is [AGENTS.md](AGENTS.md).
+
+**Status.** `1.18.0` on `main`, [MIT](LICENSE). Every change is gated by `bash scripts/verify.sh` —
+the same script CI runs, with the depth of the steps following the diff.
+
+**Run it.** Node 24, or it does not start: `.nvmrc` pins `24` and `engines` pins `24.x`. `/usr/bin/node`
+is 18.19.1 on the machines this tree was built on and shadows a newer runtime on `PATH`, so a Node 24
+`bin` directory goes first.
+
+```bash
+export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"   # node 24.22.0 + pnpm 12.16.1
+pnpm install --frozen-lockfile                              # the install CI runs
+pnpm dev                                                    # next dev --turbo, port 3000
+bash scripts/verify.sh                                      # the gate; run it before you push
+```
+
+`pnpm dev` and `pnpm build` must never run at once — both write `.next/`. The longer form, with the
+database and `localhost`-origin notes, is [Quickstart](#quickstart) below.
+
+**Where to go next.**
+
+| File                               | What it is for                                                  |
+| ---------------------------------- | --------------------------------------------------------------- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | running the gate, the lanes it prints, and how a PR is opened   |
+| [SECURITY.md](SECURITY.md)         | reporting a vulnerability privately — never a public issue      |
+| [LICENSE](LICENSE)                 | MIT: what you may do with this code                             |
+| [docs/README.md](docs/README.md)   | the hub: every document, grouped by the question it answers     |
+| [AGENTS.md](AGENTS.md)             | the command table, conventions and pitfalls an agent works from |
 
 ## How it works
 
@@ -435,7 +472,7 @@ are literals is a stand-in however finished it looks.
 
 ## Status
 
-**Beta.** `package.json` is `1.6.0` (tag `v1.6.0`), the AlignSynch build is deployed at
+**Beta.** `package.json` is `1.18.0` (tag `v1.18.0`), the AlignSynch build is deployed at
 <https://alignsynch-amber.vercel.app/>, and the gate is green on `main`.
 
 What works end to end: registration, sign-in and sessions through Neon Managed Auth; account settings and
