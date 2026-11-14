@@ -494,8 +494,30 @@ async function createThroughStages(
         }`,
       );
     }
+    /**
+     * **A reload keeps it** (#1043): the carry is a cookie, not render state, so the second GET of
+     * the same stage — which is exactly what a refresh is — must draw the same selection. The first
+     * read above cannot prove that on its own: a value a server had already computed once could be
+     * cached for the rest of the walk and still disappear on the next request.
+     */
+    const reloaded = await jar.get(location);
+    const reloadedInputs = [...reloaded.html.matchAll(/<input[^>]*name="plan"[^>]*>/g)].map(
+      (m) => m[0],
+    );
+    const reloadedChecked = reloadedInputs.filter((tag) => /\bchecked\b/.test(tag));
+    check(
+      carriedPlan === undefined
+        ? "a reload of stage 5 still opens with no plan selected (#1043)"
+        : `a reload of stage 5 still opens with ${carriedPlan.planId} selected (#1043)`,
+      reloaded.status === 200 &&
+        (carriedPlan === undefined
+          ? !reloaded.html.includes("data-plan-carried") && reloadedChecked.length === 0
+          : reloaded.html.includes(`data-plan-carried="${carriedPlan.planId}"`) &&
+            reloaded.html.includes(`data-plan-carried-interval="${carriedPlan.interval}"`) &&
+            reloadedChecked.length === 1),
+      `status ${reloaded.status} · ${reloadedChecked.length} of ${reloadedInputs.length} radio(s) checked`,
+    );
   }
-
   // #865 — the relationship the stage just wrote, registered here because it is **not** deleted by
   // `DELETE FROM record` and used to survive every run on the shared branch. Read back rather than
   // assumed: the id is minted by the app (`cryptoRandomId()`), so a guess is exactly the kind of
