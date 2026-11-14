@@ -608,7 +608,7 @@ else
   # is linked at this slot (scripts/build-cache.mjs names the path), so the link is
   # taken here and handed straight back — narrower than the build's own window, and
   # restored on failure by the trap as well. Measured: 63.9 s → 16.1 s wall for the
-  # build's check, docs/GATE.md.
+  # build's check, docs/operations/gate.md.
   export QUIZHUB_BUILD_SLOT="$GATE_SLOT"
   node scripts/build-cache.mjs link
   if ! run_step "typecheck (next typegen && tsc --noEmit, shared with build)" pnpm typecheck; then
