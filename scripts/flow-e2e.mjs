@@ -92,6 +92,13 @@ const TEMPLATE_ID = "assessment-relationship-basics";
 const TEMPLATE_SLUG = "relationship-basics";
 const TIME = "aspect-time-together";
 const MONEY = "aspect-money";
+/**
+ * The tier stage 5's plan row buys (`data/pages/assessment-create.ts::PLAN_BILLING_TIER.one`).
+ *
+ * The harness asks the provider for exactly this tier at the monthly interval, which is what the
+ * card step's own first row asks for — see `membershipStandIn` and section 6e.
+ */
+const MEMBERSHIP_PLAN_ID = "basic";
 
 const failures = [];
 const notes = [];
@@ -485,51 +492,44 @@ async function relationshipState(instanceRecordId) {
 }
 
 /**
- * The card entry a person makes in stage 5's walk, written as the row a completed capture writes.
+ * The membership stage 5's card step buys, written as the row a completed checkout writes.
  *
- * **#911 gated the send on the walk** — a plan joined and a card on file — so a harness that POSTs
- * `/send` with no method is refused `no-payment-method`. That refusal is the gate working, and this
- * script used to fail on it in two places while the product was correct: it POSTed the send the way
- * the pre-#911 screen allowed. Stripe's fields belong to the provider's own page, so the card entry
- * cannot be typed here; the harness writes `relationship_payment` — the row `paymentArmedOf()`
- * reads — and says so in its own line. Every other act in the walk is driven through the app.
+ * **#1010 R2 moved this gate, and this stand-in has to move with it.** The send waits on the
+ * Initiator's live `billing_subscription` now — `lib/flow/store.ts::sendDraftInvitation()` refuses
+ * with `no-payment-method` on `!membershipLive`, and the same row decides the screen's
+ * `subscriptionLive` and its `paymentArmed` (`membership.writable`). It used to wait on a captured
+ * card in `relationship_payment`, which nothing writes any more: a harness that still wrote that
+ * row answered a gate the product had stopped asking, and every assertion downstream of the send
+ * failed against a correct refusal.
+ *
+ * Stripe's fields belong to the provider's own page, so the card entry cannot be typed here: the
+ * harness opens the row the gate reads, in the shape `grantPublishTrial()` writes (`mock`,
+ * `livemode = false`, a future period end), idempotently, and says so in its own line. Every other
+ * act in the walk is driven through the app.
  */
-async function captureMethodStandIn(state, label) {
-  if (state === null || state?.id === undefined) {
-    console.log(`· ${label}: no relationship to put a method on`);
+async function membershipStandIn(state, label) {
+  if (state === null || state?.id === undefined || state.initiator_user_id === null) {
+    console.log(`· ${label}: no relationship to open a membership for`);
     return false;
   }
   await db.query(
-    `INSERT INTO relationship_payment
-       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
-        charge_due_at)
-     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
-     ON CONFLICT (relationship_id) DO UPDATE
-       SET method_captured_at = EXCLUDED.method_captured_at,
-           charge_due_at = EXCLUDED.charge_due_at`,
-    [state.id, state.initiator_user_id],
+    `INSERT INTO billing_subscription
+       (user_id, plan_id, interval, provider, provider_subscription_id, status, livemode,
+        current_period_end)
+     SELECT $1, $2, 'month', 'mock', $3, 'active', false, now() + interval '30 days'
+      WHERE NOT EXISTS (
+              SELECT 1
+                FROM billing_subscription
+               WHERE user_id = $1
+                 AND status = ANY(ARRAY['active', 'trialing', 'past_due'])
+            )
+     ON CONFLICT DO NOTHING`,
+    [state.initiator_user_id, MEMBERSHIP_PLAN_ID, `e2e-harness-${state.id}`],
   );
-  console.log(`· ${label}: method stand-in written (the card entry is the browser's act)`);
+  console.log(
+    `· ${label}: membership stand-in written (billing_subscription active — the card entry is the browser's act)`,
+  );
   return true;
-}
-
-/**
- * The method stand-in taken back off the obligation — the state "no card on file".
- *
- * Stage 5's send needs the card (#911) and the fee gate needs its absence, and both are the product's
- * rules: a published relationship whose payer has not finished the walk is exactly what the gate
- * shuts. The **row stays** and only its capture is cleared, because `paymentArmedOf()` answers
- * `undefined` — "not measured" — for a missing obligation and only `false` closes the gate
- * (`lib/flow/payment.ts:157`). Section 6e puts the capture back through the provider's own endpoint.
- */
-async function clearMethodStandIn(instanceRecordId, label) {
-  await db.query(
-    `UPDATE relationship_payment
-        SET method_captured_at = NULL, charge_due_at = NULL
-      WHERE relationship_id = (SELECT relationship_id FROM session WHERE record_id = $1)`,
-    [instanceRecordId],
-  );
-  console.log(`· ${label}: method stand-in cleared (the "no card on file" state)`);
 }
 
 /**
@@ -807,7 +807,7 @@ async function main() {
   );
 
   /* 1e. the walk's card step, then Send and Continue publishes it ----- */
-  await captureMethodStandIn(await relationshipState(instanceId), "stage 5 · draft");
+  await membershipStandIn(await relationshipState(instanceId), "stage 5 · draft");
   const sent = await initiator.post(sendInvitationPath(instanceId), {});
   check("Send and Continue answers 303", sent.status === 303, `${sent.status} ${sent.location}`);
   // #1014 — the send lands on the **relationship**, not the session and not the Sent screen: the flow
@@ -1418,24 +1418,19 @@ async function main() {
     `${counterpartyAccept.status} ${counterpartyAccept.location}`,
   );
 
-  /* 6d. the fee gate — the method is taken away, and the report shuts ----- */
-  // Since #911 the send needs a card, so a published relationship always has one when it is created
-  // through the walk. The gate this section proves is the one *after* that: a method that is not on
-  // file. Removing the stand-in row is how the harness reaches it, and 6e puts it back through the
-  // provider's own capture.
-  await clearMethodStandIn(instanceId, "6d · the fee gate");
-  const reportViaAccept = await counterparty.get(counterpartyAccept.location ?? instancePath);
-  dumpPage("report", reportViaAccept.html);
-  check(
-    // #619, read from `lib/flow/screen.ts`: the fee is the last gate. Both sheets sealed and no
-    // method on file is `awaiting_payment`, and the report is built only for a `complete` session —
-    // so the acceptance lands on the *shut* report, by design. This assertion used to demand the
-    // Gap and had been failing since the fee gate shipped; the paid half is `pnpm payment:e2e`'s.
-    "the report the acceptance redirects to is the gate, not the Gap — the fee is the last gate (#619)",
-    reportViaAccept.status === 200 && reportViaAccept.html.includes('data-report-gated="true"'),
-    `status ${reportViaAccept.status}`,
-  );
-
+  /* 6d. both seats accepted — the row, and the ladder position -------- */
+  // **The fee gate that used to live here is retired (#1010 R2), and this section is what is left
+  // of it.** Three assertions were deleted rather than repaired, because the state they described
+  // no longer exists: they took the captured card back off the obligation and asserted the report
+  // stayed shut and no Gap was drawn until it was paid. Since #1010 the publish gate *is* the
+  // membership — `sendDraftInvitation()` refuses on `!membershipLive`, `lib/flow/screen.ts` derives
+  // `paymentArmed` from `membership.writable`, and the per-relationship capture that gated
+  // completion has been deleted (`dashboard/relationships/actions.ts`: "**#1010 deletes the fee**:
+  // the membership bought at stage 5 already covers every relationship"). So a published
+  // relationship always has a live membership, and "sealed and unpaid" is not a state a walk can
+  // reach — asserting it would mean inventing an unpaid relationship the product can no longer make.
+  // "No Gap while the fee is unpaid" therefore has no successor, and nothing was invented to keep
+  // the count at nine.
   const acceptanceAfter = await db.query(
     "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
     [instanceId],
@@ -1460,55 +1455,33 @@ async function main() {
     afterAcceptance.html.includes('data-stage-badge="sharing"'),
   );
 
-  // The blind rule outlives both sheets: with no method on file the report is shut, so neither
-  // party's scores may be drawn. That is the **hard gate at publish opinions** the payment posture
-  // names, and the method was taken away above for exactly this state.
-  const unpaidScreen = await initiator.get(instancePath);
-  check(
-    "no Gap is drawn while the fee is unpaid — the blind rule holds after both acceptances",
-    alignmentGaps(unpaidScreen.html, TIME).length === 0,
-    `${alignmentGaps(unpaidScreen.html, TIME).length} gap row(s) rendered before payment`,
-  );
-  check(
-    "and the counterparty's screen draws none either",
-    alignmentGaps((await counterparty.get(instancePath)).html, TIME).length === 0,
-  );
-
-  /* 6e. the payer's act — capture the method, and the Gap opens ---------- */
-  // #619: the report is built only for a `complete` session, and a session with no method on file
-  // is `awaiting_payment`. `POST /api/billing/payment` captures a method through the adapter and
-  // charges nothing, which is the act the payer's screen performs — so the script can drive the
-  // whole workflow, not just its gated half.
-  const paidState = await relationshipState(instanceId);
-  const captured = await initiator.postJson("/api/billing/payment", {
-    relationshipId: paidState?.id,
+  /* 6e. the membership the card step starts, and the Gap --------------- */
+  // **Repointed, not repaired (#912, #1010 R2).** This used to POST `/api/billing/payment`, the
+  // dashboard capture dialog's per-relationship charge. #912 deleted that dialog and its route —
+  // `app/api/billing/` carries `checkout` and `webhook` and nothing else — so the POST answered
+  // `404 null` against a correct tree. The surface that exists is the walk's own checkout
+  // (`POST /api/billing/checkout`, the route `/pricing`'s buttons and `startMembershipAction()`
+  // both go through `lib/billing`'s composition root), so that is what is driven here: the tier and
+  // interval stage 5's first plan row asks for, answered by whichever adapter the deployment
+  // configured.
+  const checkout = await initiator.postJson("/api/billing/checkout", {
+    planId: MEMBERSHIP_PLAN_ID,
+    interval: "month",
   });
-  // The request is the contract, and it was broken until the adapter carried a `currency` on both
-  // presentations: this used to answer `400 invalid-request — Missing required param: currency`,
-  // i.e. no payer could ever put a method on file. With the Stripe adapter the session is *hosted*,
-  // so finishing it needs a card typed into the provider's own page — the harness proves the
-  // capture is accepted (`captured`, or a URL to send the browser to) and stops there.
+  // The hosted adapter answers `{ url }` and the browser leaves the site for it; the mock adapter
+  // completes inline (`completed: true`) and writes the row inside the request. Either is the
+  // provider accepting the purchase; a 400, a 401, a 404 or a 503 is not.
   check(
-    "the payment capture is accepted by the provider (no refusal, no 400)",
-    captured.status === 200 &&
-      (captured.body?.captured === true || typeof captured.body?.url === "string"),
-    `${captured.status} ${JSON.stringify(captured.body)}`,
+    "the checkout the card step starts is accepted by the provider (no refusal, no 400)",
+    checkout.status === 200 &&
+      (checkout.body?.completed === true || typeof checkout.body?.url === "string"),
+    `${checkout.status} ${JSON.stringify(checkout.body)}`,
   );
 
-  // The card entry itself belongs to a browser, so the row a completed capture writes is written
-  // here instead — `relationship_payment` (`0036`), which is what `paymentArmedOf()` reads. The Gap
-  // assertions below are made against that row, and cleanup removes the relationship it belongs to.
-  await db.query(
-    `INSERT INTO relationship_payment
-       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
-        charge_due_at)
-     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
-     ON CONFLICT (relationship_id) DO UPDATE
-       SET method_captured_at = EXCLUDED.method_captured_at,
-           charge_due_at = EXCLUDED.charge_due_at`,
-    [paidState?.id, paidState?.initiator_user_id],
-  );
-
+  // **The Gap needs no payment row.** Since #1010 R2 `lib/flow/screen.ts` derives `paymentArmed`
+  // from `membership.writable`, not from `relationship_payment.method_captured_at`: the membership
+  // stage 5 bought is what opens the report, and that row was written by `membershipStandIn` before
+  // the send. The assertions below read the screen, which is the only place the rule lives.
   const paidScreen = await initiator.get(instancePath);
   const gapAttribute = alignmentGaps(paidScreen.html, TIME);
   check(
@@ -1652,9 +1625,9 @@ async function main() {
   const advPath = `/assessment/instances/${advInstanceId}`;
 
   // The draft is published the same way the first relationship's is: stage 5's send, after the
-  // walk's card step (the method stand-in — see `captureMethodStandIn`). The invitation row the
-  // create wrote holds the token the counterparty's link is built from.
-  await captureMethodStandIn(await relationshipState(advInstanceId), "stage 5 · advanced");
+  // walk's card step bought the membership (`membershipStandIn`). The invitation row the create
+  // wrote holds the token the counterparty's link is built from.
+  await membershipStandIn(await relationshipState(advInstanceId), "stage 5 · advanced");
   const advSent = await advInitiator.post(sendInvitationPath(advInstanceId), {});
   const advPublished = await relationshipState(advInstanceId);
   check(
@@ -1765,26 +1738,19 @@ async function main() {
     `${advAccept1.status} / ${advAccept2.status}`,
   );
 
-  // Same #619 gate as the free path: the eight kinds are drawn only once a method is on file.
-  const advState = await relationshipState(advInstanceId);
-  const advCaptured = await advInitiator.postJson("/api/billing/payment", {
-    relationshipId: advState?.id,
+  // The same membership the free path's stage 5 bought, and the same published surface: the
+  // Advanced relationship's Gap is open because its own walk's card step opened a membership, not
+  // because a per-relationship capture was written (`membershipStandIn`, #1010 R2). The checkout is
+  // driven through the route that exists — `POST /api/billing/payment` is gone with #912.
+  const advCheckout = await advInitiator.postJson("/api/billing/checkout", {
+    planId: MEMBERSHIP_PLAN_ID,
+    interval: "month",
   });
   check(
-    "the Advanced payer's capture is accepted too",
-    advCaptured.status === 200 &&
-      (advCaptured.body?.captured === true || typeof advCaptured.body?.url === "string"),
-    `${advCaptured.status} ${JSON.stringify(advCaptured.body)}`,
-  );
-  await db.query(
-    `INSERT INTO relationship_payment
-       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
-        charge_due_at)
-     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
-     ON CONFLICT (relationship_id) DO UPDATE
-       SET method_captured_at = EXCLUDED.method_captured_at,
-           charge_due_at = EXCLUDED.charge_due_at`,
-    [advState?.id, advState?.initiator_user_id],
+    "the Advanced payer's checkout is accepted too",
+    advCheckout.status === 200 &&
+      (advCheckout.body?.completed === true || typeof advCheckout.body?.url === "string"),
+    `${advCheckout.status} ${JSON.stringify(advCheckout.body)}`,
   );
 
   const advReport = await advInitiator.get(advPath);
@@ -2144,6 +2110,12 @@ async function cleanup() {
         accounts,
       ]);
       await db.query("DELETE FROM user_profile WHERE user_id = ANY($1::text[])", [accounts]);
+      // #1010 R2 — the membership `membershipStandIn` opened for this run's creators. It belongs to
+      // the account, not the relationship, so it survives the relationship sweep above and would be
+      // a stray row on the shared branch (and block a later run's stand-in on the live-user index).
+      await db.query("DELETE FROM billing_subscription WHERE user_id = ANY($1::text[])", [
+        accounts,
+      ]);
       const users = await authUserTable();
       if (users !== null) {
         await db.query(`DELETE FROM neon_auth."${users}" WHERE id::text = ANY($1::text[])`, [
