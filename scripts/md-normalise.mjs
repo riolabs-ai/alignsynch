@@ -20,9 +20,16 @@
  * and says in its PR which pages it moved. It is not a gate step of its own — it rides in `pnpm
  * test`, so the cost is one read of `docs/`.
  *
- * WHAT IS DELIBERATELY NOT NORMALISED AWAY: link targets, image paths, code fence *contents* and
- * the generated nav block, so a rewrite that points a link somewhere else or edits pasted evidence
- * is still visible in a diff (a link that changed is `docs:check`'s failure, not this file's).
+ * WHAT IS DELIBERATELY NOT NORMALISED AWAY: link targets, image paths and code fence *contents*, so
+ * a rewrite that points a link somewhere else or edits pasted evidence is still visible in a diff (a
+ * link that changed is `docs:check`'s failure, not this file's).
+ *
+ * THE GENERATED REGIONS ARE DROPPED. `docs-nav.mjs` writes the hub link, the section and the
+ * prev/next chain into every page, and the hub's own index (`docs/README.md`), and their *words* are
+ * a function of which pages exist — so adding one page legitimately rewrites the chain in its two
+ * neighbours and adds a row to the hub, moving their word sequence without a word of prose changing.
+ * Those regions are stripped here because `docs:check` already fails when one is missing, stale or
+ * wrong; this file measures the prose the author wrote.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -34,7 +41,14 @@ export const FIXTURE = "tests/fixtures/md-normalised.json";
 
 /** Markdown → the word sequence a reader would hear, one word per match. */
 export function normalise(text) {
-  const withoutFences = text.replace(/^[ \t]*(`{3,}|~{3,})[^\n]*\n[\s\S]*?^[ \t]*\1[^\n]*$/gm, " ");
+  const withoutNav = text.replace(
+    /<!--\s*docs-(?:nav|hub):begin\s*-->[\s\S]*?<!--\s*docs-(?:nav|hub):end\s*-->/g,
+    " ",
+  );
+  const withoutFences = withoutNav.replace(
+    /^[ \t]*(`{3,}|~{3,})[^\n]*\n[\s\S]*?^[ \t]*\1[^\n]*$/gm,
+    " ",
+  );
   const withoutMarkup = withoutFences
     // Alert syntax (`> [!NOTE]`) carries no words of its own beyond the label, which is kept.
     .replace(/^[ \t]*>[ \t]*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*$/gm, " ")

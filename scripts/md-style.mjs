@@ -46,8 +46,10 @@ const CONFIG = ".markdownlint-cli2.jsonc";
 const DOCS = "docs";
 
 /**
- * The ignores `markdownlint-cli2` is configured with, as directory/file prefixes. Reading them
- * from the one committed config keeps the two tools looking at the same set of files.
+ * The ignores `markdownlint-cli2` is configured with, as directory prefixes and whole-file entries.
+ * Reading them from the one committed config keeps the two tools looking at the same set of files —
+ * including the file-level entries (`docs/glossary.md`, `docs/ui-registry.md`), which are byte
+ * compared by their own `--check` and must not be rewritten here either.
  */
 export function ignorePrefixes(root = ROOT) {
   const raw = readFileSync(join(root, CONFIG), "utf8");
@@ -57,9 +59,9 @@ export function ignorePrefixes(root = ROOT) {
     .replace(/^\s*\/\/.*$/gm, "")
     .replace(/(?<!:)\/\/.*$/gm, "");
   const config = JSON.parse(stripped);
-  return (config.ignores ?? [])
-    .filter((pattern) => pattern.endsWith("/**"))
-    .map((pattern) => pattern.slice(0, -3));
+  return (config.ignores ?? []).map((pattern) =>
+    pattern.endsWith("/**") ? pattern.slice(0, -3) : pattern.replace(/\/$/, ""),
+  );
 }
 
 /** Every markdown file under `docs/`, in a stable order, minus the generated and frozen ones. */

@@ -711,7 +711,10 @@ function markdownFor(manifest, coverage, findings, changed) {
     "",
   );
   lines.push("## Coverage", "");
-  lines.push("```");
+  // TAGGED, because a bare fence here is MD040 the moment the file is linted (#937): the generated
+  // index is a page `pnpm md:check` reads, so the generator has to emit what the linter requires —
+  // hand-tagging the committed copies only moved the failure to the next `--render`.
+  lines.push("```text");
   lines.push(
     `${coverage.keys} registry surfaces · ${coverage.routes} routes · ${passed.length} captured and passing · ` +
       `${failed.length} failing · ${skipped.length} skipped`,

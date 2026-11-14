@@ -59,5 +59,9 @@ describe("docs/ markdown after the format pass", () => {
     expect(normalise("> [!NOTE]\n> **Retired.** It is gone.")).toBe(
       normalise("> **Retired.** It is gone."),
     );
+    // The generated nav/hub regions are the page list, not the page: adding a row to the chain in
+    // the two neighbours of a new page moves no prose (#937's screenshots README did exactly this).
+    const nav = "<!-- docs-nav:begin -->\nHub › next [X](../x.md)\n<!-- docs-nav:end -->\n";
+    expect(normalise(`${nav}The words that matter.`)).toBe(normalise("The words that matter."));
   });
 });

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [Contact landing](../contact-land/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
+[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [The docs before and after formatting, #937](../docs-pretty/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
 
 <!-- docs-nav:end -->
 
@@ -78,6 +78,6 @@ not touch, and the stage column itself fits — so it is recorded here rather th
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [Contact landing](../contact-land/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
+[Docs hub](../../README.md) › **Records & QA** › Six flow stages · prev [The docs before and after formatting, #937](../docs-pretty/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
 
 <!-- docs-nav:end -->

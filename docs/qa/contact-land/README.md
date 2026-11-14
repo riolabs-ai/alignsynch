@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../comments-mockup/README.md) · next [Six flow stages](../flow-stages/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../comments-mockup/README.md) · next [The docs before and after formatting, #937](../docs-pretty/README.md)
 
 <!-- docs-nav:end -->
 
@@ -38,6 +38,6 @@ the header disc is neutral.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../comments-mockup/README.md) · next [Six flow stages](../flow-stages/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Contact landing · prev [Comments mockup, both placements](../comments-mockup/README.md) · next [The docs before and after formatting, #937](../docs-pretty/README.md)
 
 <!-- docs-nav:end -->
