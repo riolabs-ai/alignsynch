@@ -29,7 +29,7 @@
  *      that matters is that the gate exits non-zero, not that a helper returns a string.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -59,6 +59,21 @@ const HEAD = spawnSync("git", ["-C", ROOT, "rev-parse", "HEAD"], {
 
 /** Shaped like a sha, resolving to nothing. */
 const ABSENT = "0".repeat(40);
+
+/**
+ * A version **no committed atlas documents**, so the "the tree has no sweep" fixtures stay fixtures.
+ *
+ * It is the next minor after this tree's own release, derived rather than written down: the suite
+ * originally named `1.20.0`, which was unmeasured when it landed and was captured by the cut that
+ * bumped to it — at which point six cases asserted a release was unmeasured after its sweep was
+ * committed, and the gate went red on a test whose subject the release had just settled.
+ */
+const UNRELEASED = (() => {
+  const [major, minor] = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"))
+    .version.split(".")
+    .map(Number);
+  return `${major}.${minor + 1}.0`;
+})();
 
 const TABLE = ["| version | date | commit | reason |", "| --- | --- | --- | --- |"];
 
@@ -274,11 +289,11 @@ describe("the check — a version that has a manifest is unchanged", () => {
 describe("the check — a version with neither manifest nor deferral still fails", () => {
   it("fails with today's message, and no deferral machinery in it", () => {
     const dir = sandbox([]);
-    const result = runCheck(dir, "1.20.0");
+    const result = runCheck(dir, UNRELEASED);
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(
-      "docs/qa-atlas/v1.20.0/manifest.json is missing — the tree is v1.20.0 and no atlas " +
+      `docs/qa-atlas/v${UNRELEASED}/manifest.json is missing — the tree is v${UNRELEASED} and no atlas ` +
         "documents it (run `pnpm qa:atlas` against the release cut)",
     );
     expect(result.stderr).not.toContain("DEFERRED.md");
@@ -286,7 +301,7 @@ describe("the check — a version with neither manifest nor deferral still fails
   }, 120_000);
 
   it("fails the same way when the record file is absent entirely", () => {
-    const result = runCheck(sandbox(null), "1.20.0");
+    const result = runCheck(sandbox(null), UNRELEASED);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("manifest.json is missing");
   }, 120_000);
@@ -294,37 +309,37 @@ describe("the check — a version with neither manifest nor deferral still fails
 
 describe("the check — a declared deferral", () => {
   it("passes, and the summary names the deferral and its reason", () => {
-    const result = runCheck(sandbox([["1.20.0", "2026-11-14", HEAD, REASON]]), "1.20.0");
+    const result = runCheck(sandbox([[UNRELEASED, "2026-11-14", HEAD, REASON]]), UNRELEASED);
     const out = result.stdout;
 
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
-    expect(out).toContain(`⚑ v1.20.0 deferred · ${REASON}`);
+    expect(out).toContain(`⚑ v${UNRELEASED} deferred · ${REASON}`);
     expect(out).toContain(`${RECORD} is the record of it`);
     expect(out).toContain("deferred · 0 captured");
     expect(out).toContain(HEAD.slice(0, 8));
   }, 120_000);
 
   it("fails when the row names a different version, and names the row it found", () => {
-    const result = runCheck(sandbox([["1.19.0", "2026-11-01", HEAD, REASON]]), "1.20.0");
+    const result = runCheck(sandbox([["1.19.0", "2026-11-01", HEAD, REASON]]), UNRELEASED);
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("docs/qa-atlas/v1.20.0/manifest.json is missing");
+    expect(result.stderr).toContain(`docs/qa-atlas/v${UNRELEASED}/manifest.json is missing`);
     expect(result.stderr).toContain(
-      `${RECORD} carries a deferral for v1.19.0, not for v1.20.0 — a row for another release ` +
+      `${RECORD} carries a deferral for v1.19.0, not for v${UNRELEASED} — a row for another release ` +
         "cannot vouch for this one; add a row for this version, or capture it",
     );
   }, 120_000);
 
   it("fails when the reason is empty", () => {
-    const result = runCheck(sandbox([["1.20.0", "2026-11-14", HEAD, ""]]), "1.20.0");
+    const result = runCheck(sandbox([[UNRELEASED, "2026-11-14", HEAD, ""]]), UNRELEASED);
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("reason is empty");
   }, 120_000);
 
   it("fails when the commit does not exist", () => {
-    const result = runCheck(sandbox([["1.20.0", "2026-11-14", ABSENT, REASON]]), "1.20.0");
+    const result = runCheck(sandbox([[UNRELEASED, "2026-11-14", ABSENT, REASON]]), UNRELEASED);
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("does not exist in this repository");
