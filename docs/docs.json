@@ -437,6 +437,11 @@
           "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
         },
         {
+          "path": "qa/976-sent-none/README.md",
+          "title": "The Sent screen with no invitation row, #976",
+          "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
+        },
+        {
           "path": "qa/as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"

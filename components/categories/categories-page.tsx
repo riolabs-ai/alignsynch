@@ -27,6 +27,7 @@ export function CategoriesPage({
   copy,
   shellCopy,
   hiddenNav,
+  startHref,
 }: {
   copy: PageCopy;
   shellCopy: PageCopy;
@@ -36,6 +37,13 @@ export function CategoriesPage({
    * `lib/flags.ts` throws in a browser and the footer has no default to fall back to.
    */
   hiddenNav: readonly string[];
+  /**
+   * Where the closing band's one action goes for this viewer (#979): `/register` for a visitor, the
+   * brand's account home for a signed-in member. Resolved by the route, because the session is a
+   * server fact and this page is a client module — the alternative was a member being offered the
+   * sign-up form under a band that already knew who they were.
+   */
+  startHref: string;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const empty = sectionOf(copy, "empty");
@@ -98,7 +106,7 @@ export function CategoriesPage({
       </div>
 
       {/* Call to Action Section */}
-      <CategoriesCTA copy={sectionOf(copy, "cta")} />
+      <CategoriesCTA copy={sectionOf(copy, "cta")} startHref={startHref} />
 
       {/* How It Works Section */}
       <CategoriesHowItWorks copy={sectionOf(copy, "how-it-works")} />
