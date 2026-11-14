@@ -7,17 +7,17 @@
 # half of the same render; the full HTML is only ever written to tests/parity/artifacts/.
 #
 # route | brand | sha256
-/ | quizhub | 3aa76964e2ad4130045f866c1dbe278dfa37b48a3b7ca5fbb0f6dd71881731c3
-/ | alignsynch | 8399feb512e75ebe400f24e4872c3f332d20e72e43cdb574d8e53a015759f765
+/ | quizhub | a41557ea2a84befe055a691438d28a19004e23253a4e148497085faee95597ad
+/ | alignsynch | adcca9889c743029f400b0c4ce391eb732be4b03234887994538f1cb48b1a0f7
 /leaderboard | quizhub | d0dec4651affefdb76e9acd2edf4aa8e98fc05530ae910527a800f408885d9bc
 /leaderboard | alignsynch | 066a46fef64798dad6458eb7f5fd10d14807f019e1affcc25ecd7b79a5194b32
-/news | quizhub | c7fba41587c6653519833f2dc73b5f24901906e8c738c3f99287fa720b2e0113
-/news | alignsynch | d0f7bb7d9855e3fdb1f2367000df86da88495b257cd14b7f68f9a29ce53bd19b
-/news/[slug] | quizhub | eec8c8f74b84516a079a62c105a560bb9c34f49039726d7295a2b559dde14fdd
-/news/[slug] | alignsynch | 25eabf4444b81687fdc3d708b8372462d5d56280cc21da1396e7e97388f03197
-/quiz/[id] | quizhub | 4c49d8c056ad7c755f1242a186dd1bb22154b57134ac60ce2dfdab391de40f44
+/news | quizhub | 468b254e16027482c388b23b49fd6b64b0049b184807efed80c806c7662bea01
+/news | alignsynch | 546feabeb5f24af8b8f66b4a3270a7b742a64e26d83e27101bf6d71f21b02ade
+/news/[slug] | quizhub | c9f4d04a0cbcd9dec0becd2756096fb69afe59c922f0ebc94dc6a2ec66626de0
+/news/[slug] | alignsynch | 8f3e494391e6d05d26be3e9bd296d823198738403c3e7cd21a2675f8d89e4790
+/quiz/[id] | quizhub | e1462b299c9abc1dd4a491972367b1aac333187b78c6fbae315112b90a391d6f
 /quiz/[id] | alignsynch | 5f540b18f7e8b10a95d5a597cdbcad605987e5f78e4d8b67b5d90ce4c78a71ac
-/assessment/avery-rowan | quizhub | 5df8d91524687a7602f543c89986eb0ec073a950d7dccff354a00e4af1df1e87
-/assessment/avery-rowan | alignsynch | a78734c061bdf56e425ba5b559d05ecedc7ac1a1802d4689dbdd841d135ef90d
-/profile/[username] | quizhub | 638a6400b8b25650f2898b3e0a833a15cfb3058518edd581ffd8bff24a92d339
-/profile/[username] | alignsynch | 85a6ed107145c496cf7049bafd5410606ef67a7c0467b86be9d7c95f0491f5ea
+/assessment/avery-rowan | quizhub | aa42f6f6fa6685811a0b543e80f764521252cc32fa17b460d844cbdc558ea200
+/assessment/avery-rowan | alignsynch | 626e4d88716c6323922baf40d6bb2b9731539f20b234a6857d830c2ecd933be7
+/profile/[username] | quizhub | e479ac4430c5300a8665623da5083cc1191bfe08d49ff36ca66a9d234da11ad0
+/profile/[username] | alignsynch | d729fca4c79787ac6d8aef985a3700dd9d974814db973cd86bab57061d7823b9
