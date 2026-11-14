@@ -31,7 +31,12 @@ import type { Assessment, PartyRole } from "@/content/assessment";
 import type { ItemRow, PartyRow } from "@/lib/db/rows";
 import { INVITE_STATES } from "@/lib/flow/invite-state";
 import { instancePath, reinvitePath } from "@/lib/flow/paths";
-import { projectScreen, type FlowInstanceRows, type FlowInvite } from "@/lib/flow/screen";
+import {
+  projectScreen,
+  type FlowInstanceRows,
+  type FlowInvite,
+  type FlowScreen,
+} from "@/lib/flow/screen";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const template: Assessment = (() => {
@@ -190,6 +195,86 @@ describe("a relationship with no invitation row (#976)", () => {
     // The sentence is the row's own — it never borrows `unclaimed`, because "the link has not been
     // claimed" and "there is no link" are different facts.
     expect(itemLabel(status, "none")).not.toBe(itemLabel(status, "unclaimed"));
+  });
+});
+
+/**
+ * **A state this build has no sentence for renders, it does not 500 (#998).**
+ *
+ * `invite.state` is derived by the read, so its id is not a literal E23 can resolve against the
+ * fixture: the next status `inviteStateOf()` grows — or a second route that reuses this band with
+ * another vocabulary — met `itemLabel`'s throw inside a server render, at request time, while
+ * `typecheck`, `lint`, `data:check` and `next build` all stayed green. #988 closed the one instance
+ * of that (the absent row, `none`); this pins the class: the band carries a neutral fallback row,
+ * the band's own sentence renders, and the screen keeps its timeline and its next-step list.
+ */
+describe("a state the band has no sentence for (#998)", () => {
+  /** The screen's invitation, carrying a state outside this build's vocabulary. */
+  function unknownStateScreen(): FlowScreen {
+    const screen = projectScreen({
+      rows: rows(),
+      template,
+      viewerRole: "initiator",
+      invite: inviteIn("unclaimed"),
+    });
+    if (screen.invite === null) throw new Error("the fixture's screen carries no invitation");
+    return { ...screen, invite: { ...screen.invite, state: "voided" } } as unknown as FlowScreen;
+  }
+
+  function renderUnknown(): string {
+    return renderToStaticMarkup(
+      createElement(SentState, {
+        copy: assessmentSentPageCopy,
+        screen: unknownStateScreen(),
+        resendAction: reinvitePath(INSTANCE_ID),
+        openHref: instancePath(INSTANCE_ID),
+        signedIn: true,
+      }),
+    );
+  }
+
+  it("draws the band's fallback sentence instead of throwing", () => {
+    // The render itself is the assertion: before the fallback row, this call threw
+    // `PageCopy: section "status" has no item "voided"` — the 500 the issue names.
+    const html = renderUnknown();
+    expect(statusSentence(html)).toBe(`voided|${itemLabel(status, "unknown")}`);
+    expect(html).toContain("data-sent-status-fallback");
+  });
+
+  it("still draws the timeline and what happens next", () => {
+    const html = renderUnknown();
+    expect(html.match(/data-moment="/g) ?? []).toHaveLength(3);
+    expect(html).toContain('data-sent-timeline="voided"');
+    expect(html).toContain('id="sent-next-heading"');
+    expect(html).toContain(itemLabel(sectionOf(assessmentSentPageCopy, "next"), "1"));
+  });
+
+  it("marks only the fallback — every state the build knows keeps its own row", () => {
+    for (const state of ["unclaimed", "claimed", "expired", "revoked", "none"] as const) {
+      expect(htmlWith(state)).not.toContain("data-sent-status-fallback");
+    }
+  });
+
+  it("draws no sentence for a refusal code the band does not carry, rather than throwing", () => {
+    const screen = projectScreen({
+      rows: rows(),
+      template,
+      viewerRole: "initiator",
+      invite: inviteIn("unclaimed"),
+    });
+    const html = renderToStaticMarkup(
+      createElement(SentState, {
+        copy: assessmentSentPageCopy,
+        screen,
+        // `?resend=` names a code from a later build: the band has no row for it, so nothing is
+        // drawn — the same answer the route's own filter gives a value it does not know.
+        resendRefusal: "a-code-from-a-later-build",
+        resendAction: reinvitePath(INSTANCE_ID),
+        openHref: instancePath(INSTANCE_ID),
+        signedIn: true,
+      }),
+    );
+    expect(html).not.toContain("data-sent-refusal");
   });
 });
 
