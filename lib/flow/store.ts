@@ -111,7 +111,11 @@ import { invitationLink } from "@/lib/flow/email";
 import { aspectListProblem, aspectWriteProblem, aspectsToWrite } from "@/lib/flow/aspects";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
-import { readMembershipForRelationship, type Sql } from "@/lib/relationship/enforcement";
+import {
+  readMembershipForRelationship,
+  readSubscriptionLive,
+  type Sql,
+} from "@/lib/relationship/enforcement";
 import type { Membership } from "@/lib/relationship/membership";
 import { canTransition, isRelationshipStatus } from "@/lib/relationship/status";
 import { relationshipRoleOf } from "@/lib/flow/membership";
@@ -1278,6 +1282,12 @@ export type SendResult =
   | {
       readonly ok: true;
       readonly instanceRecordId: string;
+      /**
+       * The relationship the send published (#1014). Carried so the route that answers the walk can
+       * land the reader on **the relationship**, which is where both of stage 5's acts end — the
+       * session id the post carries names the wrong screen.
+       */
+      readonly relationshipId: string;
       readonly inviteToken: string;
       readonly email: string;
       readonly initiatorName: string;
@@ -1285,7 +1295,17 @@ export type SendResult =
       readonly templateTitle: string;
       readonly expiresAt: Date;
     }
-  | { readonly ok: false; readonly code: SendRefusal; readonly reason: string };
+  | {
+      readonly ok: false;
+      readonly code: SendRefusal;
+      readonly reason: string;
+      /**
+       * The relationship the refusal is about, when the read found one. `already-published` is the
+       * one code a person can reach by pressing send twice, and its honest answer is not a sentence
+       * but the screen the first press produced.
+       */
+      readonly relationshipId?: string;
+    };
 
 export async function sendDraftInvitation(input: {
   readonly instanceRecordId: string;
@@ -1372,6 +1392,7 @@ export async function sendDraftInvitation(input: {
       ok: false,
       code: "already-published",
       reason: `relationship "${relationshipId ?? "none"}" is ${status ?? "unreadable"}: its invitation is not a draft waiting to go out`,
+      ...(relationshipId === undefined ? {} : { relationshipId }),
     };
   }
 
@@ -1427,6 +1448,7 @@ export async function sendDraftInvitation(input: {
       ok: false,
       code: "already-published",
       reason: `relationship "${relationshipId}" moved out of draft before this send wrote it`,
+      relationshipId,
     };
   }
 
@@ -1452,6 +1474,7 @@ export async function sendDraftInvitation(input: {
   return {
     ok: true,
     instanceRecordId: input.instanceRecordId,
+    relationshipId,
     inviteToken: reissued.inviteToken,
     email: reissued.email,
     initiatorName: reissued.initiatorName,
@@ -2748,6 +2771,19 @@ export async function readFlowScreen(input: {
     now,
   );
   const paymentArmed = membership?.membership.writable;
+  /**
+   * #1014 — **the walk's gate is a subscription, not `writable`.**
+   *
+   * `paymentArmed` above is `membership.writable`, and a `draft` reads `true` there on purpose (it
+   * is not sold, so there is nothing to lapse). Stage 5 renders on a freshly created draft, so asking
+   * `paymentArmed` whether the walk had been paid for answered "yes" for every new relationship: the
+   * walk opened on its thank-you, skipped the plan and the card, and `sendDraftInvitation()` then
+   * refused the send with `no-payment-method`. This is the fact the send enforces, read the same way.
+   */
+  const subscriptionLive =
+    membership === undefined || membership.initiatorUserId === null
+      ? undefined
+      : await readSubscriptionLive(poolSql, membership.initiatorUserId);
   const status = instanceStatusOf({ ...progressOf(answersOnly), paymentArmed });
   const roles = visibleRoles(viewerRole, status);
   const opinions = await query<OpinionRow>(
@@ -2799,6 +2835,7 @@ export async function readFlowScreen(input: {
     viewerRole,
     membership: membership?.membership ?? null,
     paymentArmed,
+    subscriptionLive,
     invite:
       invite === null
         ? null

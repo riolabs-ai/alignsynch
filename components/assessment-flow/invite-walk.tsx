@@ -17,38 +17,49 @@
  *           subscription (#1010 R2): one monthly plan, both parties, seven days free. Since #912
  *           this walk is that module's **only** caller — the dashboard's capture dialog is deleted,
  *           so there is no second card surface and no second set of card fields.
- *   thanks  A thank-you with **no button**. The walk ends here, and the step's one sentence says
- *           where the reader goes next: the send control beside it, or the draft.
+ *   thanks  A thank-you, and **one button** that opens the last step. It says what the money bought
+ *           and hands over; it no longer narrates a control that lives somewhere else (#1014).
+ *   action  **The act, inside the walk.** The send — through the same endpoint stage 5 has always
+ *           posted to — and, under every panel including this one, **keep the draft**, which is a
+ *           navigation: stage 4 already wrote the row as a `draft`, so it cannot make a second one.
+ *           Both **land on the relationship** in the member dashboard, at
+ *           `/dashboard/relationships/<id>`, in the state the act produced.
  *
- * **This is the purchase.** `startMembership()` opens a subscription Checkout with a seven-day
- * trial and mounts it; the frame's completion calls `confirmMembership()`, which asks the provider
- * what was bought rather than believing the browser. There is no "save a card for later" act: a
- * card reaches an account by buying the membership, and sealing a relationship later costs nothing
- * (#1010 R2).
+ * **Both endings REPLACE the walk's history entry.** The shell's dismissal is a history pop since
+ * #1009, so an entry left behind is a dialog Back walks into: the two controls therefore navigate
+ * with `replace` (the draft a `next/link replace`, the send a `router.replace` on the answer), and
+ * `Back` from the landed relationship goes to whatever the flow was opened from.
  *
  * **The walk reports up, it does not own the gate.** `onPaid` tells the stage the membership is
- * live; the stage is what enables the send and what posts it, so a walk that is drawn but not
- * finished can never make the send fire (#911's "doomed if"). The server refuses an unpaid send on
- * its own, in `sendDraftInvitation()` — the UI gate is the courtesy, not the enforcement.
+ * live; the action panel is reachable only from the thank-you, which is reachable only after the
+ * purchase, so a walk that is drawn but not finished can never make the send fire (#911's "doomed
+ * if"). The server refuses an unpaid send on its own, in `sendDraftInvitation()` — the UI gate is
+ * the courtesy, not the enforcement.
  *
  * **It moves focus like a step, not like a page.** `Next` puts focus on the new step's first
- * control, and the thank-you's heading takes focus so a screen reader is told the walk is over. The
- * first render is deliberately silent: a stage that grabs focus on load steals it from the dialog's
- * own close control.
+ * control — `data-panel-first` — so a screen reader follows the walk. The first render is
+ * deliberately silent: a stage that grabs focus on load steals it from the dialog's own close
+ * control.
  *
- * Every reader-visible word is `data/pages/assessment-create.ts` (`plans`, `payment-flow`) through
- * `sectionOf`/`itemLabel`/`fillLabel` — E23 counts what a component writes, and this one writes no
- * sentence.
+ * Every reader-visible word is `data/pages/assessment-create.ts` (`plans`, `payment-flow`, `invite`)
+ * through `sectionOf`/`itemLabel`/`fillLabel` — E23 counts what a component writes, and this one
+ * writes no sentence.
  */
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { PageCopy } from "@/content/pages";
 import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { relationshipPath, sendInvitationPath } from "@/lib/flow/paths";
 import { PlanChoices, type PlanId } from "./plan-choices";
 import { StripeFrame } from "@/components/billing/stripe-frame";
 
-/** The walk, in the order the artifact draws it. `plan` is first, `thanks` is the end. */
-export const PAY_FLOW_STEPS = ["plan", "card", "thanks"] as const;
+/**
+ * The walk, in the order the artifact draws it and the card numbered it: `plan` first, `action` is
+ * the act, and the **landing** is not a step — it is the address both controls leave for.
+ */
+export const PAY_FLOW_STEPS = ["plan", "card", "thanks", "action"] as const;
 
 export type PayFlowStep = (typeof PAY_FLOW_STEPS)[number];
 
@@ -70,6 +81,7 @@ export type CheckoutHandlers = {
 
 export function InviteWalk({
   copy,
+  instanceRecordId,
   relationshipId,
   paid,
   onPaid,
@@ -78,6 +90,12 @@ export function InviteWalk({
   initialStep,
 }: {
   copy: PageCopy;
+  /**
+   * The **session** the send addresses — `?instance=` on this stage, and the id
+   * `POST /assessment/instances/<id>/send` takes. It is not the relationship: the send posts to the
+   * session's own address and the walk lands on the relationship's.
+   */
+  instanceRecordId: string;
   /** The relationship stage 4 wrote. The membership covers it, so the send's gate is one fact. */
   relationshipId: string;
   /** The membership is already live — the returning state, or the walk just finished. */
@@ -97,6 +115,8 @@ export function InviteWalk({
 }) {
   const plans = sectionOf(copy, "plans");
   const flow = sectionOf(copy, "payment-flow");
+  const invite = sectionOf(copy, "invite");
+  const router = useRouter();
 
   const [step, setStep] = useState<PayFlowStep>(initialStep ?? (paid ? "thanks" : "plan"));
   const [plan, setPlan] = useState<PlanId | null>(null);
@@ -105,6 +125,9 @@ export function InviteWalk({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
   const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
+  /** The send's two states: it is in flight, and what came back when it did not land. */
+  const [sending, setSending] = useState(false);
+  const [sendRefusal, setSendRefusal] = useState<string | null>(null);
 
   const plansRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -193,6 +216,77 @@ export function InviteWalk({
     setStep("thanks");
   }
 
+  /**
+   * **Send, through the path stage 5 already owns.** The POST goes to
+   * `POST /assessment/instances/<id>/send` — the same handler, the same `sendDraftInvitation()`, the
+   * same email and the same invite cookie the stage's form used. What changed is who follows the
+   * answer: the walk does, so the landing can `replace` the walk's own history entry instead of
+   * leaving it behind (the shell's dismissal is a history pop since #1009 — an entry left behind is
+   * a dialog `Back` walks into).
+   *
+   * The answer is a 303 either way, exactly as the form's was: the endpoint's own destination for a
+   * send that went out is the relationship, and its destination for one it refused is the refusal
+   * band. Following the redirect and reading where it landed is how the two are told apart without
+   * a second response shape on the endpoint.
+   */
+  async function sendInvitation(): Promise<void> {
+    setSendRefusal(null);
+    setSending(true);
+    try {
+      const response = await fetch(sendInvitationPath(instanceRecordId), {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        // The endpoint reads no body, and it must not be given one: the identity is the session and
+        // the party cookie, never a field.
+        body: "",
+        credentials: "same-origin",
+        redirect: "follow",
+      });
+      const destination = new URL(response.url, window.location.origin);
+      // A destination off this origin is not this product — that is a real document navigation.
+      if (destination.origin !== window.location.origin) {
+        window.location.assign(destination.toString());
+        return;
+      }
+      router.replace(`${destination.pathname}${destination.search}`);
+    } catch {
+      // The request never reached the app: nothing was sent, and the draft is still the person's.
+      setSendRefusal(itemLabel(invite, "send-refused"));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const actionPanel = (
+    <>
+      <p className={MUTED}>{itemLabel(invite, "cta-body")}</p>
+      <p className={SMALL} data-send-explain="open">
+        {itemLabel(invite, "active")}
+      </p>
+
+      <button
+        type="button"
+        data-pay-action="send"
+        /* The endpoint it POSTs to, so a render says which write this control makes. */
+        data-send-endpoint={sendInvitationPath(instanceRecordId)}
+        /* The stage's marker since #825, kept: this *is* the send, wherever it is drawn. */
+        data-create-send="true"
+        data-panel-first="true"
+        className={PRIMARY}
+        disabled={sending}
+        onClick={() => void sendInvitation()}
+      >
+        {itemLabel(invite, "submit")}
+      </button>
+
+      {sendRefusal === null ? null : (
+        <p data-pay-refusal="true" role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {sendRefusal}
+        </p>
+      )}
+    </>
+  );
+
   const planPanel = (
     <>
       <p className={MUTED}>{sectionBody(plans)}</p>
@@ -252,6 +346,11 @@ export function InviteWalk({
     <>
       <p className={MUTED}>{itemLabel(flow, "card-body")}</p>
       <p className={SMALL}>{itemLabel(flow, "card-charged")}</p>
+      {/* Why the card is being asked for, in the words the send used to carry in the right column
+          (#1014): the send is the act this step unlocks, and the draft is always the other choice. */}
+      <p className={SMALL} data-send-explain="locked">
+        {itemLabel(invite, "locked")}
+      </p>
 
       {clientSecret !== null && publishableKey !== null ? (
         <div
@@ -315,11 +414,21 @@ export function InviteWalk({
   const thanksPanel = (
     <>
       <p className={MUTED}>{itemLabel(flow, "thanks-body")}</p>
-      {/* No button: the walk ends here, and this is the sentence that says where to go. */}
-      <p className={SMALL} data-pay-thanks-next="true">
-        {itemLabel(flow, "thanks-next")}
-      </p>
       <p className={SMALL}>{planLabel(plan)}</p>
+      {/*
+        One control, and it opens the act. The step used to be a thank-you with no button whose one
+        sentence pointed the reader at a control *beside* the walk (#1014) — the control is in the
+        walk now, so the sentence is gone and this is the way to it.
+      */}
+      <button
+        type="button"
+        data-pay-action="action"
+        data-panel-first="true"
+        className={PRIMARY}
+        onClick={() => setStep("action")}
+      >
+        {itemLabel(flow, "continue")}
+      </button>
     </>
   );
 
@@ -327,6 +436,7 @@ export function InviteWalk({
     plan: planPanel,
     card: cardPanel,
     thanks: thanksPanel,
+    action: actionPanel,
   };
 
   const headings: Record<PayFlowStep, string> = {
@@ -336,6 +446,9 @@ export function InviteWalk({
     plan: plans.heading ?? flow.heading ?? "",
     card: itemLabel(flow, "card-heading"),
     thanks: itemLabel(flow, "thanks-heading"),
+    // The act's own heading, which is the stage's heading too: this is the step where the
+    // relationship either goes out or does not.
+    action: itemLabel(invite, "cta-heading"),
   };
 
   return (
@@ -344,15 +457,16 @@ export function InviteWalk({
       data-create-plans="true"
       data-pay-step={step}
       data-pay-relationship={relationshipId}
+      /*
+        The gate's state, where the act now is. Stage 5's send is one click past the thank-you, and
+        the thank-you is only reachable once the membership is live, so `locked` is "the walk has not
+        been paid for yet" and there is no send control to press.
+      */
+      data-send-gate={paid ? "open" : "locked"}
       className={`${CARD} pay-flow-panel`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2
-          id="create-pay-heading"
-          className={HEADING}
-          tabIndex={step === "thanks" ? -1 : undefined}
-          {...(step === "thanks" ? { "data-panel-first": "true" } : {})}
-        >
+        <h2 id="create-pay-heading" className={HEADING}>
           {headings[step]}
         </h2>
         {step === "thanks" ? null : (
@@ -362,6 +476,25 @@ export function InviteWalk({
         )}
       </div>
       <div ref={panelRef}>{panels[step]}</div>
+
+      {/*
+        **Keeping the draft is the other choice at every step**, which is why this control sits
+        outside the panels rather than inside the last one: an unpaid reader whose mind is made up
+        must not have to pay to get to it. It is a navigation and never a write — stage 4 wrote the
+        row as a `draft` and the send is the only thing that ever publishes it — so pressing it twice
+        is the same one draft, and `replace` consumes the walk's history entry exactly as the send's
+        landing does (the shell's dismissal is a pop since #1009).
+      */}
+      <Link
+        href={relationshipPath(relationshipId)}
+        replace
+        data-pay-action="draft"
+        /* The stage's marker since #825, kept: this *is* the keep-as-draft control. */
+        data-create-keep-draft="true"
+        className={GHOST}
+      >
+        {itemLabel(invite, "draft")}
+      </Link>
     </section>
   );
 }

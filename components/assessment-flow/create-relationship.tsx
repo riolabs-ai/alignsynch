@@ -224,13 +224,6 @@ function NoticeBand({
  */
 const COMMIT_FORM_ID = "create-commit-form";
 
-/**
- * The send form's id (#825). Same reason as `COMMIT_FORM_ID`: the stage foot's one advancing
- * control sits outside the form it submits, so it names the form by id. Technical, not a word a
- * reader sees, so it is a constant here rather than a fixture row.
- */
-const SEND_FORM_ID = "create-invite-form";
-
 /** One option of a single-select group: the value stored, the word, and what it does. */
 interface ChoiceOption {
   readonly value: string;
@@ -742,8 +735,6 @@ export function CreateRelationship({
             backHref={backHref}
             cancelHref={shell.closeHref}
             cancelLabel={cancelLabel}
-            advanceClasses={ADVANCE_CLASSES}
-            sendFormId={SEND_FORM_ID}
           />
         )}
       </div>

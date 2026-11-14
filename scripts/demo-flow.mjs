@@ -700,8 +700,11 @@ async function accountFormDrawn(send) {
   );
 }
 
-/** The send control: the stage foot submits the send form from outside it (#825). */
-const SEND_SELECTOR = 'button[form="create-invite-form"]';
+/**
+ * The send control: it lives **inside** the walk's last panel since #1014, not in the stage foot.
+ * One act, one control — the foot carries `[Back][Cancel]` on stage 5 and no advance.
+ */
+const SEND_SELECTOR = '[data-pay-action="send"]';
 
 /** The commit control: the same shape on stage 4. */
 const COMMIT_SELECTOR = 'button[form="create-commit-form"]';
@@ -1303,31 +1306,53 @@ async function walkCreatePublished(send) {
     });
   }
 
+  // **The act is the walk's own last step (#1014).** The thank-you carries one control that opens
+  // it, and the send lives inside the panel it opens: there is no send form beside the walk and no
+  // second send in the foot.
+  const actionDoor = await evaluate(send, `!!document.querySelector('[data-pay-action="action"]')`);
+  if (actionDoor !== true) {
+    finding("stage 5's thank-you draws no control into the act", {
+      expected: '[data-pay-action="action"] on the thank-you panel',
+      actual: "absent",
+    });
+    return;
+  }
+  await click(send, '[data-pay-action="action"]', { timeout: 30000 });
+  await waitFor(send, payStep("action"), { timeout: 20000, label: "the walk's action panel" });
+
   const sendButton = await evaluate(
     send,
     `!!document.querySelector(${JSON.stringify(SEND_SELECTOR)})`,
   );
   if (sendButton !== true) {
-    finding("stage 5 draws no Send control", {
+    finding("the walk's action panel draws no Send control", {
       expected: SEND_SELECTOR,
       actual: "absent",
     });
     return;
   }
   await click(send, SEND_SELECTOR, { timeout: 40000 });
-  await sleep(1200);
+  await waitFor(send, `location.pathname.startsWith("/dashboard/relationships/")`, {
+    timeout: 30000,
+    label: "/dashboard/relationships/<id> after the send",
+  });
 
-  // Send lands on the **Sent** screen — the #704 shape for a signed-in creator — not on the
-  // relationship detail. That screen is a state of its own and is captured as one.
-  const sentText = await text(send);
-  const sentRoute = normaliseRoute(await url(send));
+  // Send lands on **the relationship it published** (#1014), not on the Sent screen: the flow ends
+  // where every later cycle of the relationship lives.
+  const landedText = await text(send);
+  const landedUrl = await url(send);
+  const landedRoute = normaliseRoute(landedUrl);
+  const landedStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
   const invitation = await inviteUrlOnScreen(send);
   await record(send, {
     action: "click",
-    expect: "Send and Continue lands on the Sent screen, which draws the invitation link itself",
-    ok:
-      /Invitation sent|invitation sent/i.test(sentText) === true && typeof invitation === "string",
-    actual: `${sentRoute} · invite link ${typeof invitation === "string" ? "drawn" : "absent"}`,
+    expect:
+      "Send and Continue lands on the relationship it published, drawn as published, with the invitation link on the screen",
+    ok: landedStatus === "published" && typeof invitation === "string",
+    actual: `${landedRoute} · status ${landedStatus} · invite link ${typeof invitation === "string" ? "drawn" : "absent"} · ${landedText.slice(0, 200)}`,
     name: "invitation-sent",
   });
 
@@ -1343,51 +1368,13 @@ async function walkCreatePublished(send) {
     }
   }
 
-  // "Where to go next" carries the one door to the relationship the send created.
-  const nextHref = await evaluate(
-    send,
-    `(() => {
-      const anchor = Array.from(document.querySelectorAll('a[href^="/assessment/instances/"], a[href^="/dashboard/relationships/"]'))
-        .find((el) => !el.getAttribute("href").endsWith("/sent"));
-      if (anchor === undefined) return null;
-      anchor.click();
-      return anchor.getAttribute("href");
-    })()`,
-  );
-  await sleep(1500);
-
-  const terminalText = await text(send);
-  const terminalRoute = normaliseRoute(await url(send));
-  const doorOpened =
-    /^\/(assessment\/instances|dashboard\/relationships)\//.test(
-      new URL(await url(send)).pathname,
-    ) && terminalText.trim().length > 40;
-  await record(send, {
-    action: "click",
-    expect: "the Sent screen's door opens the record the send created",
-    ok: doorOpened,
-    actual: `${terminalRoute} · ${terminalText.slice(0, 220)}`,
-    name: "sent-door-opened",
-  });
-
-  // The card's terminal: the relationship detail, in its published state.
-  const publishedId = relationships[relationships.length - 1] ?? null;
-  void nextHref;
-  const detailPath =
-    typeof publishedId === "string"
-      ? `/dashboard/relationships/${publishedId}`
-      : `/dashboard/relationships`;
-  await navigate(send, detailPath);
   // The detail is a client surface that mounts after hydration; the row marks are what say it has.
   await waitFor(send, `!!document.querySelector('[data-record-band="relationship"]')`, {
     timeout: 20000,
     label: "the relationship detail to mount",
   }).catch(() => undefined);
   const detailText = await text(send);
-  const detailStatus = await evaluate(
-    send,
-    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
-  );
+  const detailStatus = landedStatus;
   await record(send, {
     action: "assert",
     expect: "the relationship detail reports the relationship as published",
@@ -1396,8 +1383,26 @@ async function walkCreatePublished(send) {
     name: "published-relationship-detail",
   });
 
-  // The pairing is the other half of the card's sentence, and it is asked separately: a detail page
-  // that says "published" while naming neither person is a state, not a pairing.
+  // **Back leaves the flow; it does not walk into a dead walk (#1009, #1014).** Both endings
+  // `replace` the walk's history entry, so one Back from the landed relationship goes to whatever the
+  // flow was opened from. A `push` here used to leave the invite walk (and the shell's own dismissal,
+  // which is a history pop) one Back away from a screen with nothing behind it.
+  await evaluate(send, `history.back()`);
+  await sleep(1500);
+  const backRoute = normaliseRoute(await url(send));
+  const walkRedrawn = await evaluate(
+    send,
+    `!!document.querySelector('[data-create-plans="true"]')`,
+  );
+  const backPath = new URL(await url(send)).pathname;
+  await record(send, {
+    action: "assert",
+    expect: "Back from the landed relationship leaves the flow instead of reopening the walk",
+    ok: walkRedrawn === false && !/^\/dashboard\/relationships\/[^/]+$/.test(backPath),
+    actual: `${backRoute} · walk redrawn: ${String(walkRedrawn)}`,
+    name: "back-leaves-the-flow",
+  });
+
   const named = detailText.includes("Jordan") && detailText.includes("Sam");
   await record(send, {
     action: "assert",
@@ -1463,29 +1468,43 @@ async function walkCreateDraft(send) {
     return;
   }
   await click(send, `[data-create-keep-draft]`, { timeout: 30000 });
-  await waitFor(send, `location.pathname === "/dashboard/relationships"`, {
+  // #1014 — the draft control lands on the **relationship itself**, not the list; the list is one
+  // Back away, and the row is still the way into the draft from there.
+  await waitFor(send, `location.pathname.startsWith("/dashboard/relationships/")`, {
     timeout: 30000,
-    label: "/dashboard/relationships",
+    label: "/dashboard/relationships/<id>",
   });
-  const listed = await text(send);
-  const shows = listed.includes(PERSONA.draft.title);
+  const landed = await text(send);
+  const landedStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
+  const shows = landed.includes(PERSONA.draft.title) && landedStatus === "draft";
   await record(send, {
     action: "click",
-    expect:
-      "Continue as Draft lands on /dashboard/relationships with the draft listed by its own title",
+    expect: "Continue as Draft lands on the draft's own relationship screen, showing it as a draft",
     ok: shows,
-    actual: listed.slice(0, 500),
-    name: "draft-listed",
+    actual: `status ${landedStatus} · ${landed.slice(0, 500)}`,
+    name: "draft-landed",
   });
 
   if (!shows) {
-    finding("create-draft: the draft is not listed on /dashboard/relationships", {
-      expected: `a row titled "${PERSONA.draft.title}"`,
-      actual: listed.slice(0, 600),
+    finding("create-draft: the draft control does not land on the draft", {
+      expected: `the relationship screen showing "${PERSONA.draft.title}" as a draft`,
+      actual: `status ${landedStatus} · ${landed.slice(0, 600)}`,
       shot: transcript.steps[transcript.steps.length - 1].shot,
     });
     return;
   }
+
+  // The other half of the promise: the draft is listed, and a row opens it.
+  await navigate(send, "/dashboard/relationships");
+  await waitFor(
+    send,
+    `Array.from(document.querySelectorAll('a[href^="/dashboard/relationships/"]')).length > 0`,
+    { timeout: 30000, label: "the relationships list" },
+  );
+  const listed = await text(send);
 
   const draftLink = await evaluate(
     send,
