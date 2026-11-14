@@ -22,6 +22,7 @@
     "scripts/zip-bridge.ts",
     "scripts/brand-word.ts",
     "scripts/ui-census.ts",
+    "scripts/vocabulary.ts",
     "scripts/data-check*",
     "scripts/rule-codes.ts",
     "scripts/client-graph.ts",

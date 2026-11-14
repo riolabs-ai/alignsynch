@@ -32,6 +32,7 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 import { formatCurrency } from "../../content/core";
 import { billingPlan } from "../billing-plans";
+import type { PaidPlanId } from "../billing-prices";
 import { lifecycleStageSection } from "./lifecycle";
 
 /**
@@ -51,6 +52,34 @@ import { lifecycleStageSection } from "./lifecycle";
  */
 const ONE_RELATIONSHIP_PLAN_ID = "basic";
 const UNLIMITED_PLAN_ID = "principal";
+
+/**
+ * **The tier each plan row sells — the crossing between stage 5's row ids and the catalogue.**
+ *
+ * The `plans` section below is keyed by the row ids the prototype prints (`one`, `unlimited`,
+ * `one-note`, `one-price`), and each row's figure is read from the tier named here
+ * (`monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID)`). That pair is what a checkout must be asked for, and
+ * it is declared once, here, beside the prices it produces — a second map anywhere else is how the
+ * two vocabularies drifted apart in the first place.
+ *
+ * **Why it needs saying out loud.** Both vocabularies are `string`, so nothing in the type system
+ * saw the walk posting a row id as a tier: stage 5 sent `"one"`, the adapter answered *"one" is not
+ * a plan this product sells*, the card frame never mounted, and — with `#1019`'s send behind that
+ * gate — no new relationship could be completed. `tests/plan-billing-tier.test.tsx` binds this map
+ * to `BILLING_PLAN_IDS` **and** to a Price at both intervals, so the next rename on either side
+ * fails a check instead of a checkout.
+ *
+ * `satisfies Record<string, PaidPlanId>` keeps a tier that is not sold (`free`) out of the map at
+ * compile time; the reverse direction — a row this map prices that the panel does not draw — is
+ * the key comparison the test makes, since no type can see a map entry nothing reads.
+ */
+export const PLAN_BILLING_TIER = {
+  one: ONE_RELATIONSHIP_PLAN_ID,
+  unlimited: UNLIMITED_PLAN_ID,
+} as const satisfies Record<string, PaidPlanId>;
+
+/** The plan rows the money panel draws: the keys of the map above. */
+export type PlanRowId = keyof typeof PLAN_BILLING_TIER;
 
 function monthlyPriceOf(id: typeof ONE_RELATIONSHIP_PLAN_ID | typeof UNLIMITED_PLAN_ID): string {
   const plan = billingPlan(id);
@@ -161,14 +190,14 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
       body: "Two things the money buys: you join a membership plan, and this relationship is activated. Nothing is charged today — the trial starts when the card is saved.",
       items: [
         { id: "legend", label: "Choose a plan" },
-        { id: "one", label: "One relationship" },
+        { id: "one", label: "Basic" },
         {
           id: "one-note",
           label:
             "One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
         },
         { id: "one-price", label: monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID) },
-        { id: "unlimited", label: "Unlimited relationships" },
+        { id: "unlimited", label: "Principal" },
         {
           id: "unlimited-note",
           label: "Every relationship you open, for as long as you keep the plan.",
@@ -201,8 +230,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
          */
         {
           id: "included",
-          label:
-            "You are on {plan}. Advanced Mode is included, so there is nothing to choose here.",
+          label: "You are on {plan}. There is nothing to choose here.",
         },
         {
           id: "included-plan-label",
@@ -246,7 +274,6 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "card-charged",
           label: "Nothing is charged today. The 7-day trial starts when the card is saved.",
         },
-        { id: "card-start", label: "Enter the card" },
         { id: "card-starting", label: "Opening the card fields…" },
         { id: "card-secure", label: "Secure payment · Stripe" },
         { id: "card-test-mode", label: "test mode" },
@@ -264,11 +291,6 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "thanks-body",
           label:
             "The plan is active and the card is on file. Nothing has been charged today — the trial starts when the card is saved.",
-        },
-        {
-          id: "thanks-next",
-          label:
-            "Send the invitation with the control beside this walk when you are ready, or keep the draft and send it later.",
         },
       ],
     },
@@ -350,6 +372,21 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label: "The plan is active and the card is on file. The invitation can go now.",
         },
         { id: "draft", label: "Continue as Draft" },
+        {
+          /**
+           * #1014 — the send's transport refusal, drawn in the walk's own panel. It is the one
+           * sentence this card adds: every other word on the action step already existed (the
+           * stage's heading, its body, its two labels, its unlocked line). It says the three true
+           * things — nothing was sent, nothing was charged, and the draft is still theirs — because
+           * a send that failed to reach the app must not read as a send that failed to happen.
+           *
+           * The `?resend=` band owns the codes the *endpoint* refuses with (no membership, not the
+           * Initiator, already published); this is the one the network itself can produce.
+           */
+          id: "send-refused",
+          label:
+            "The invitation did not go out — the request could not reach the app. Nothing was sent and nothing was charged. Try again, or keep the draft.",
+        },
         { id: "note-heading", label: "What you can do later" },
         {
           id: "reassure",

@@ -26,10 +26,20 @@ import { describe, expect, it } from "vitest";
 
 import { FIXTURE, digest, normalise } from "../scripts/md-normalise.mjs";
 import { markdownFiles } from "../scripts/md-style.mjs";
+import { indexedPaths } from "../scripts/git-index.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const committed: Record<string, string> = JSON.parse(readFileSync(join(ROOT, FIXTURE), "utf8"));
-const files = markdownFiles(ROOT) as string[];
+
+/**
+ * The walk is the filesystem; the snapshot is of the pages that ship. `.gitignore:73-77` keeps five
+ * `AUDIENCE-AND-POSITIONING.md` copies out of the index on purpose (#1020), so a snapshot of the
+ * committed prose must not be asked to account for a file that is on this disk and in no commit —
+ * without this, `pnpm test` is red on a tree that is clean at `origin/main`. When git cannot answer
+ * for the root (no git binary), every walked page is kept.
+ */
+const index = indexedPaths(ROOT, "docs");
+const files = (markdownFiles(ROOT) as string[]).filter((file) => index === null || index.has(file));
 
 describe("docs/ markdown after the format pass", () => {
   it("covers the whole in-scope tree, and only the tree it formatted", () => {

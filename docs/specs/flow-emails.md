@@ -188,6 +188,16 @@ The evidence, and what each piece is used for here:
 8. Gate stays green and dependency-free: `bash scripts/verify.sh` passes with no new package and
    no database access; `pnpm data:check` still validates the new copy items (E23/E10).
 
+## 8. Where the bodies live
+
+Every template's prose is written in `content/email-bodies.md` — one `##` heading per template id,
+one fenced `text` block each — and `lib/email/body.ts` is the only reader of it. `pnpm email:bodies`
+generates the committed `lib/email/bodies.generated.ts` from that file, `pnpm email:bodies:check`
+fails when the two disagree (a gate step in every lane), and the marker the band used to print where
+prose was unwritten is gone: a template that cannot say something writes the plainest true sentence it
+can, and the file carries a visible `<!-- TODO(owner): … -->` for the fact it is missing. Three
+templates keep their body in code and the file says why.
+
 ## Related
 
 - [TWO-PARTY-FLOW.md](two-party-flow.md) — the flow every one of these emails belongs to.

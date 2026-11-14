@@ -22,8 +22,8 @@
  *
  * ## No browser dependency
  *
- * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa-as2-home/capture.mjs` and
- * the rest of `docs/qa-*` use — Node 24 has a global `WebSocket`, so this is a hand-rolled session
+ * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa/as2-home/capture.mjs` and
+ * the rest of `docs/qa/**` use — Node 24 has a global `WebSocket`, so this is a hand-rolled session
  * with no Playwright and no Puppeteer in `package.json`, and there never will be one from this file.
  *
  * Two CDP details the stills convention already paid for:
@@ -700,8 +700,11 @@ async function accountFormDrawn(send) {
   );
 }
 
-/** The send control: the stage foot submits the send form from outside it (#825). */
-const SEND_SELECTOR = 'button[form="create-invite-form"]';
+/**
+ * The send control: it lives **inside** the walk's last panel since #1014, not in the stage foot.
+ * One act, one control — the foot carries `[Back][Cancel]` on stage 5 and no advance.
+ */
+const SEND_SELECTOR = '[data-pay-action="send"]';
 
 /** The commit control: the same shape on stage 4. */
 const COMMIT_SELECTOR = 'button[form="create-commit-form"]';
@@ -1111,17 +1114,24 @@ async function fillCardFrame({ email }) {
 /**
  * Walk stage 5's left column.
  *
- * The panel is three steps in one column and the send beside it is gated by the stage (#911): before
- * a card is on file the column is `data-send-gate="locked"` and the confirm control is disabled. So
+ * The walk is four steps in one column and the send beside it is gated by the stage (#911): before a
+ * membership is live the column is `data-send-gate="locked"` and there is no send control at all. So
  * a path that means to **send** has to complete the walk first, and a path that means to show the
  * unpaid state stops at the card step on purpose.
+ *
+ * **Choosing the plan row is the act** (#1031): the reveal and the checkout are one gesture, so this
+ * presses the row (or, for a measured account, the summary's one control) and then waits for the
+ * frame — there is no `Enter the card` press between the two any more.
  */
 async function payWalk(send, { pathLabel, complete, plan }) {
   await waitFor(send, payStep("plan"), { timeout: 25000, label: "the walk's plan panel" });
 
   // A measured, already-paying account is drawn a summary instead of a radio group (#870).
   const included = await evaluate(send, `!!document.querySelector("[data-pay-plan-included]")`);
-  if (included !== true) {
+  if (included === true) {
+    // No row to choose, so the summary's own control is the act.
+    await click(send, '[data-pay-action="continue"]', { navigate: false, timeout: 25000 });
+  } else {
     const chosen = await evaluate(
       send,
       `(() => {
@@ -1136,14 +1146,23 @@ async function payWalk(send, { pathLabel, complete, plan }) {
       await record(send, {
         action: "fill",
         values: { plan: chosen },
-        expect: "the plan panel offers the membership plans and one is chosen",
+        expect:
+          "the plan panel offers the membership plans, and choosing one is the act — the walk reveals the card step and starts the checkout with no further press (#1031)",
         name: `${pathLabel}-pay-plan`,
       });
     }
   }
 
-  await click(send, '[data-pay-action="card"]', { navigate: false, timeout: 25000 });
+  // **No start control to click.** Choosing the row already advanced the walk and opened the
+  // session, so this waits for the reveal rather than pressing anything: the press that used to
+  // load the card fields is the control #1031 deleted, and clicking it would be a step that no
+  // longer exists.
   await waitFor(send, payStep("card"), { timeout: 25000, label: "the walk's card panel" });
+  await waitFor(
+    send,
+    `!!document.querySelector('[data-checkout-frame="embedded"]') || !!document.querySelector('[data-pay-refusal]') || !!document.querySelector('[data-pay-plan-included]')`,
+    { timeout: 40000, label: "the card panel's frame" },
+  );
 
   // The gate is the stage, so it is asserted here — before anything is put on file.
   const gateBefore = await evaluate(send, SEND_GATE);
@@ -1154,13 +1173,6 @@ async function payWalk(send, { pathLabel, complete, plan }) {
     actual: `data-send-gate=${String(gateBefore)}`,
     name: `${pathLabel}-send-gate-locked`,
   });
-
-  await click(send, '[data-pay-action="capture"]', { navigate: false, timeout: 40000 });
-  await waitFor(
-    send,
-    `!!document.querySelector('[data-capture-frame="embedded"]') || !!document.querySelector("[data-pay-hosted]") || !!document.querySelector("[data-pay-refusal]")`,
-    { timeout: 40000, label: "the card panel's frame" },
-  );
 
   if (!complete) {
     // The card step, left unresolved — which is the state the `unpaid` path exists to show.
@@ -1303,31 +1315,53 @@ async function walkCreatePublished(send) {
     });
   }
 
+  // **The act is the walk's own last step (#1014).** The thank-you carries one control that opens
+  // it, and the send lives inside the panel it opens: there is no send form beside the walk and no
+  // second send in the foot.
+  const actionDoor = await evaluate(send, `!!document.querySelector('[data-pay-action="action"]')`);
+  if (actionDoor !== true) {
+    finding("stage 5's thank-you draws no control into the act", {
+      expected: '[data-pay-action="action"] on the thank-you panel',
+      actual: "absent",
+    });
+    return;
+  }
+  await click(send, '[data-pay-action="action"]', { timeout: 30000 });
+  await waitFor(send, payStep("action"), { timeout: 20000, label: "the walk's action panel" });
+
   const sendButton = await evaluate(
     send,
     `!!document.querySelector(${JSON.stringify(SEND_SELECTOR)})`,
   );
   if (sendButton !== true) {
-    finding("stage 5 draws no Send control", {
+    finding("the walk's action panel draws no Send control", {
       expected: SEND_SELECTOR,
       actual: "absent",
     });
     return;
   }
   await click(send, SEND_SELECTOR, { timeout: 40000 });
-  await sleep(1200);
+  await waitFor(send, `location.pathname.startsWith("/dashboard/relationships/")`, {
+    timeout: 30000,
+    label: "/dashboard/relationships/<id> after the send",
+  });
 
-  // Send lands on the **Sent** screen — the #704 shape for a signed-in creator — not on the
-  // relationship detail. That screen is a state of its own and is captured as one.
-  const sentText = await text(send);
-  const sentRoute = normaliseRoute(await url(send));
+  // Send lands on **the relationship it published** (#1014), not on the Sent screen: the flow ends
+  // where every later cycle of the relationship lives.
+  const landedText = await text(send);
+  const landedUrl = await url(send);
+  const landedRoute = normaliseRoute(landedUrl);
+  const landedStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
   const invitation = await inviteUrlOnScreen(send);
   await record(send, {
     action: "click",
-    expect: "Send and Continue lands on the Sent screen, which draws the invitation link itself",
-    ok:
-      /Invitation sent|invitation sent/i.test(sentText) === true && typeof invitation === "string",
-    actual: `${sentRoute} · invite link ${typeof invitation === "string" ? "drawn" : "absent"}`,
+    expect:
+      "Send and Continue lands on the relationship it published, drawn as published, with the invitation link on the screen",
+    ok: landedStatus === "published" && typeof invitation === "string",
+    actual: `${landedRoute} · status ${landedStatus} · invite link ${typeof invitation === "string" ? "drawn" : "absent"} · ${landedText.slice(0, 200)}`,
     name: "invitation-sent",
   });
 
@@ -1343,51 +1377,13 @@ async function walkCreatePublished(send) {
     }
   }
 
-  // "Where to go next" carries the one door to the relationship the send created.
-  const nextHref = await evaluate(
-    send,
-    `(() => {
-      const anchor = Array.from(document.querySelectorAll('a[href^="/assessment/instances/"], a[href^="/dashboard/relationships/"]'))
-        .find((el) => !el.getAttribute("href").endsWith("/sent"));
-      if (anchor === undefined) return null;
-      anchor.click();
-      return anchor.getAttribute("href");
-    })()`,
-  );
-  await sleep(1500);
-
-  const terminalText = await text(send);
-  const terminalRoute = normaliseRoute(await url(send));
-  const doorOpened =
-    /^\/(assessment\/instances|dashboard\/relationships)\//.test(
-      new URL(await url(send)).pathname,
-    ) && terminalText.trim().length > 40;
-  await record(send, {
-    action: "click",
-    expect: "the Sent screen's door opens the record the send created",
-    ok: doorOpened,
-    actual: `${terminalRoute} · ${terminalText.slice(0, 220)}`,
-    name: "sent-door-opened",
-  });
-
-  // The card's terminal: the relationship detail, in its published state.
-  const publishedId = relationships[relationships.length - 1] ?? null;
-  void nextHref;
-  const detailPath =
-    typeof publishedId === "string"
-      ? `/dashboard/relationships/${publishedId}`
-      : `/dashboard/relationships`;
-  await navigate(send, detailPath);
   // The detail is a client surface that mounts after hydration; the row marks are what say it has.
   await waitFor(send, `!!document.querySelector('[data-record-band="relationship"]')`, {
     timeout: 20000,
     label: "the relationship detail to mount",
   }).catch(() => undefined);
   const detailText = await text(send);
-  const detailStatus = await evaluate(
-    send,
-    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
-  );
+  const detailStatus = landedStatus;
   await record(send, {
     action: "assert",
     expect: "the relationship detail reports the relationship as published",
@@ -1396,8 +1392,26 @@ async function walkCreatePublished(send) {
     name: "published-relationship-detail",
   });
 
-  // The pairing is the other half of the card's sentence, and it is asked separately: a detail page
-  // that says "published" while naming neither person is a state, not a pairing.
+  // **Back leaves the flow; it does not walk into a dead walk (#1009, #1014).** Both endings
+  // `replace` the walk's history entry, so one Back from the landed relationship goes to whatever the
+  // flow was opened from. A `push` here used to leave the invite walk (and the shell's own dismissal,
+  // which is a history pop) one Back away from a screen with nothing behind it.
+  await evaluate(send, `history.back()`);
+  await sleep(1500);
+  const backRoute = normaliseRoute(await url(send));
+  const walkRedrawn = await evaluate(
+    send,
+    `!!document.querySelector('[data-create-plans="true"]')`,
+  );
+  const backPath = new URL(await url(send)).pathname;
+  await record(send, {
+    action: "assert",
+    expect: "Back from the landed relationship leaves the flow instead of reopening the walk",
+    ok: walkRedrawn === false && !/^\/dashboard\/relationships\/[^/]+$/.test(backPath),
+    actual: `${backRoute} · walk redrawn: ${String(walkRedrawn)}`,
+    name: "back-leaves-the-flow",
+  });
+
   const named = detailText.includes("Jordan") && detailText.includes("Sam");
   await record(send, {
     action: "assert",
@@ -1463,29 +1477,43 @@ async function walkCreateDraft(send) {
     return;
   }
   await click(send, `[data-create-keep-draft]`, { timeout: 30000 });
-  await waitFor(send, `location.pathname === "/dashboard/relationships"`, {
+  // #1014 — the draft control lands on the **relationship itself**, not the list; the list is one
+  // Back away, and the row is still the way into the draft from there.
+  await waitFor(send, `location.pathname.startsWith("/dashboard/relationships/")`, {
     timeout: 30000,
-    label: "/dashboard/relationships",
+    label: "/dashboard/relationships/<id>",
   });
-  const listed = await text(send);
-  const shows = listed.includes(PERSONA.draft.title);
+  const landed = await text(send);
+  const landedStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
+  const shows = landed.includes(PERSONA.draft.title) && landedStatus === "draft";
   await record(send, {
     action: "click",
-    expect:
-      "Continue as Draft lands on /dashboard/relationships with the draft listed by its own title",
+    expect: "Continue as Draft lands on the draft's own relationship screen, showing it as a draft",
     ok: shows,
-    actual: listed.slice(0, 500),
-    name: "draft-listed",
+    actual: `status ${landedStatus} · ${landed.slice(0, 500)}`,
+    name: "draft-landed",
   });
 
   if (!shows) {
-    finding("create-draft: the draft is not listed on /dashboard/relationships", {
-      expected: `a row titled "${PERSONA.draft.title}"`,
-      actual: listed.slice(0, 600),
+    finding("create-draft: the draft control does not land on the draft", {
+      expected: `the relationship screen showing "${PERSONA.draft.title}" as a draft`,
+      actual: `status ${landedStatus} · ${landed.slice(0, 600)}`,
       shot: transcript.steps[transcript.steps.length - 1].shot,
     });
     return;
   }
+
+  // The other half of the promise: the draft is listed, and a row opens it.
+  await navigate(send, "/dashboard/relationships");
+  await waitFor(
+    send,
+    `Array.from(document.querySelectorAll('a[href^="/dashboard/relationships/"]')).length > 0`,
+    { timeout: 30000, label: "the relationships list" },
+  );
+  const listed = await text(send);
 
   const draftLink = await evaluate(
     send,

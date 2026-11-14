@@ -10,9 +10,11 @@
  *   2. **`Esc` is wired to the shell's dismissal.** Radix answers the key with `onOpenChange(false)`;
  *      the frame must route that to `onDismiss` rather than to a `closeHref` navigation, or a
  *      dismissal inside the dialog would leave the origin page.
- *   3. **The dismissal focuses the trigger and closes onto the origin page.** `closeFlowToOrigin` is
- *      that behaviour, and it is the same function `Esc`, the X and the overlay all reach: focus
- *      lands on the control that opened the flow *before* the push that unmounts the dialog.
+ *   3. **The dismissal hands the origin back.** `takeFlowOrigin` is the one read of "the page the
+ *      trigger was pressed on, and the control that pressed it", and it is the same function `Esc`,
+ *      the X and the overlay all reach. It deliberately does **not** focus: while the panel stands,
+ *      its focus trap pulls an outside focus back in, so the trigger is focused by the shell in the
+ *      render where the panel has left (`tests/flow-dialog-keyboard.test.tsx`, which measures it).
  *   4. **Advancing is a soft navigation.** The stage's form is a native POST; inside the dialog it is
  *      intercepted, sent with `fetch`, and the answer's address is handed to `router.push` — so the
  *      dashboard underneath survives the advance.
@@ -28,12 +30,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RelationshipFlowShell } from "@/components/assessment-flow/relationship-flow-shell";
 import { StageShell } from "@/components/assessment-flow/stage-shell";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
-import {
-  clearFlowOrigin,
-  closeFlowToOrigin,
-  flowOriginPath,
-  rememberFlowOrigin,
-} from "@/lib/flow/dialog-origin";
+import { clearFlowOrigin, rememberFlowOrigin, takeFlowOrigin } from "@/lib/flow/dialog-origin";
 import { RELATIONSHIPS_PATH, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 
 declare global {
@@ -156,31 +153,40 @@ describe("the dialog over the page it was opened from", () => {
 });
 
 describe("closing the flow", () => {
-  it("gives focus back to the trigger, and goes back to the page it was opened from", () => {
+  it("hands back the page it was opened from and how to focus the control that opened it", () => {
     rememberFlowOrigin(RELATIONSHIPS_PATH, trigger);
-    expect(document.activeElement).not.toBe(trigger);
 
-    closeFlowToOrigin(push);
+    const origin = takeFlowOrigin();
 
-    // The card's acceptance, as a fact: focus is on the control that opened the flow.
-    expect(document.activeElement).toBe(trigger);
-    expect(push).toHaveBeenCalledWith(RELATIONSHIPS_PATH);
+    // The two facts the shell needs to close and to give focus back, and nothing else: this module
+    // does not navigate and does not focus (see the docstring — the trap would undo the focus).
+    expect(origin.path).toBe(RELATIONSHIPS_PATH);
+    expect(origin.focus()).toBe(trigger);
     // And the origin is spent — the next entry states its own page.
-    expect(flowOriginPath()).toBe(RELATIONSHIPS_PATH);
+    expect(takeFlowOrigin().path).toBe(RELATIONSHIPS_PATH);
+    expect(takeFlowOrigin().focus()).toBeNull();
   });
 
   it("falls back to the relationship list when the flow was reached without a trigger", () => {
     clearFlowOrigin();
-    closeFlowToOrigin(push);
-    expect(push).toHaveBeenCalledWith(RELATIONSHIPS_PATH);
+    const origin = takeFlowOrigin();
+    expect(origin.path).toBe(RELATIONSHIPS_PATH);
+    expect(origin.focus()).toBeNull();
   });
 
-  it("does not focus a trigger that has left the document", () => {
-    rememberFlowOrigin("/dashboard/relationships", trigger);
+  it("falls back to the nominated control once the trigger has left the document", () => {
+    const toggle = document.createElement("button");
+    toggle.setAttribute("data-relationships-start-toggle", "true");
+    document.body.append(toggle);
+    rememberFlowOrigin("/dashboard/relationships", trigger, "[data-relationships-start-toggle]");
+
+    // The trigger re-rendered away — the measured case — so the resolution moves to the fallback,
+    // and it re-resolves on each call rather than hoarding the element.
     trigger.remove();
-    closeFlowToOrigin(push);
-    expect(document.activeElement).not.toBe(trigger);
-    expect(push).toHaveBeenCalledWith("/dashboard/relationships");
+    const origin = takeFlowOrigin();
+    expect(origin.focus()).toBe(toggle);
+    toggle.remove();
+    expect(takeFlowOrigin().focus()).toBeNull();
   });
 });
 

@@ -17,9 +17,17 @@
  * **Nothing is invented.** No score, no Gap value, no count of answers, no promise about what the
  * other party will do. The three facts are who joined, which assessment, and that both seats now
  * exist; the behaviour sentence (answers stay blind until both answer and accept) is the product's
- * own rule, stated the same way the invitation states it.
+ * own rule, stated the same way the invitation states it. The opening line is this template's
+ * section in `content/email-bodies.md`.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const JOINED_BODY = {
+  id: "counterparty-joined",
+  placeholders: ["joiner", "inviter", "template", "link"],
+} as const satisfies EmailBodySpec;
 
 export interface JoinedFacts {
   /** The party who claimed the invitation. */
@@ -41,10 +49,12 @@ export function joinedDocument(facts: JoinedFacts): EmailDocument {
     subject: joinedSubject(facts),
     preheader: `${facts.joiner} claimed the invitation to ${facts.template}.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what happens now, in the product's own voice.`,
-      },
+      ...bodyBlocks(JOINED_BODY, {
+        joiner: facts.joiner,
+        inviter: facts.inviter,
+        template: facts.template,
+        link: facts.link,
+      }),
       {
         kind: "paragraph",
         text: `Hi ${facts.inviter}, ${facts.joiner} claimed the invitation to ${facts.template}, so both seats exist and both of you can answer.`,

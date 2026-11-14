@@ -46,6 +46,7 @@
  */
 import { Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -157,6 +158,15 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
    * A draft with no session has no modal to open, so it keeps the screen as its destination.
    */
   const publishHref = isDraft && row.isInitiator && payHref !== null ? payHref : relationshipHref;
+  /** The row's primary action's words — one resolution, whichever door draws it (#979 B). */
+  const publishLabel =
+    isDraft && row.isInitiator
+      ? itemLabel(card, "publish-to-counterparty")
+      : row.isInitiator
+        ? row.sessionRecordId === null
+          ? itemLabel(card, "publish-assessment")
+          : itemLabel(card, "complete-relationship")
+        : itemLabel(card, "open-relationship");
 
   return (
     <li
@@ -226,13 +236,15 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
             className="text-xs text-gray-600 dark:text-gray-300"
           >
             {itemLabel(card, "invite-members-why")}{" "}
-            <Link
+            {/* A flow door like the two below (#979 B): the draft with no session has to go
+                through stage 1 again, and that happens in the dialog over this list. */}
+            <FlowEntryLink
               href={restartHref}
               className="font-medium text-action underline underline-offset-4"
               data-invite-blocked-door="restart"
             >
               {itemLabel(card, "invite-members-why-door")}
-            </Link>
+            </FlowEntryLink>
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
@@ -257,28 +269,35 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
             that cannot act is the thing the owner named as the failure mode.
           */}
           {isDraft && row.isInitiator && payHref !== null ? (
-            <Link
+            /* Stage 5 in the flow's dialog over this list (#979 B) — not a navigation. */
+            <FlowEntryLink
               href={payHref}
               className={ACTION}
               data-invite-members="true"
               data-pay-modal="true"
             >
               {itemLabel(card, "invite-members")}
-            </Link>
+            </FlowEntryLink>
           ) : null}
-          <Link
-            href={publishHref}
-            className={ACTION_PRIMARY}
-            {...(isDraft && row.isInitiator ? { "data-publish-to-counterparty": "true" } : {})}
-          >
-            {isDraft && row.isInitiator
-              ? itemLabel(card, "publish-to-counterparty")
-              : row.isInitiator
-                ? row.sessionRecordId === null
-                  ? itemLabel(card, "publish-assessment")
-                  : itemLabel(card, "complete-relationship")
-                : itemLabel(card, "open-relationship")}
-          </Link>
+          {/*
+            `Publish to Counterparty` on a draft is the pay modal's own send, so it opens stage 5 in
+            the dialog too (#979 B); every other row's primary is a relationship screen, which is a
+            navigation and stays one — so the two are different components, not one with a branch
+            inside it. The label is resolved once, above.
+          */}
+          {isDraft && row.isInitiator && payHref !== null ? (
+            <FlowEntryLink
+              href={publishHref}
+              className={ACTION_PRIMARY}
+              data-publish-to-counterparty="true"
+            >
+              {publishLabel}
+            </FlowEntryLink>
+          ) : (
+            <Link href={publishHref} className={ACTION_PRIMARY}>
+              {publishLabel}
+            </Link>
+          )}
         </div>
       </div>
 

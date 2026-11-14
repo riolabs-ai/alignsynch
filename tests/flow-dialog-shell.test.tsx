@@ -208,15 +208,15 @@ describe("advancing inside the dialog is a soft navigation", () => {
   });
 
   it("is the trigger that closes the dialog, not a discard prompt the spec does not draw", () => {
-    // The dismissal is one function for `Esc`, the X and the overlay, and focus comes before the
-    // navigation that unmounts the dialog.
+    // The dismissal is one function for `Esc`, the X and the overlay, and it is
+    // `lib/flow/dialog-origin.ts`'s. It hands back where to go and what to focus — it does not focus
+    // itself, because the modal's trap pulls an outside focus straight back in while the panel
+    // stands; `tests/flow-dialog-keyboard.test.tsx` measures the return after the panel leaves.
     const origin = source("lib/flow/dialog-origin.ts");
-    expect(origin).toContain("export function closeFlowToOrigin");
-    expect(origin.indexOf("flowOriginTrigger()?.focus()")).toBeLessThan(
-      origin.indexOf("push(path)"),
-    );
+    expect(origin).toContain("export function takeFlowOrigin");
+    expect(origin).not.toContain(".focus()");
     expect(source("components/assessment-flow/relationship-flow-shell.tsx")).toContain(
-      "closeFlowToOrigin((path) => router.push(path))",
+      "takeFlowOrigin()",
     );
     // A draft is written by the Account stage and a dismissal has never discarded one: no confirm
     // stands between `Esc` and the page the flow was opened from.

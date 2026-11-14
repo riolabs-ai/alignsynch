@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [A relationship with no initiator member, #958](../958-no-initiator-member/README.md) · next [The relationship detail's identity, #975](../975-detail-identity/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [The qa/ capture shelf](../RETENTION.md) · next [The relationship detail's identity, #975](../975-detail-identity/README.md)
 
 <!-- docs-nav:end -->
 
@@ -82,6 +82,6 @@ python3 docs/qa-971-tiles/diff.py                          # pixels + body marku
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [A relationship with no initiator member, #958](../958-no-initiator-member/README.md) · next [The relationship detail's identity, #975](../975-detail-identity/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [The qa/ capture shelf](../RETENTION.md) · next [The relationship detail's identity, #975](../975-detail-identity/README.md)
 
 <!-- docs-nav:end -->

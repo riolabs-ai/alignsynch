@@ -16,6 +16,16 @@
  * `invite.link` in every state but `unclaimed` — the screen cannot offer a link the claim path
  * would refuse.
  *
+ * **A state this build has no sentence for renders, it does not 500 (#998).** The state is a value
+ * the read produced, so its id is not a literal `data:check` can resolve against the fixture: the
+ * next status `inviteStateOf()` grows would meet `itemOf`'s throw inside a server render, at
+ * request time, while every gate stayed green. The lookups keyed on a runtime value therefore go
+ * through `itemLabelOr`, and the band carries one neutral fallback row (`unknown`) for a status it
+ * does not describe — the timeline and the next-step list still draw. The two `?query=` keys
+ * (`resendRefusal`, `inviteNotice`) are runtime values of the same kind and read the same way: a
+ * code the band does not carry draws no sentence at all, which is what the route's own filter
+ * already does for a value it does not know.
+ *
  * **The timeline is the variation.** A decision screen (`accept-session.tsx`) draws two seats
  * because the question is "who is in"; this one draws the invitation's three moments, because the
  * question is "where is the link". Each moment's wording is chosen by the fact that decided it —
@@ -42,10 +52,10 @@
  */
 import Link from "next/link";
 import { formatDate } from "@/content/core";
-import type { PageCopy } from "@/content/pages";
+import type { PageCopy, PageCopySection } from "@/content/pages";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { SENT_RETURN_VALUE } from "@/lib/flow/paths";
-import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { fillLabel, itemLabel, itemLabelOr, sectionBody, sectionOf } from "@/lib/page-copy";
 import { InviteLink } from "./invite-link";
 import { ReinviteForm } from "./reinvite-form";
 import { StageColumn } from "./stage-column";
@@ -104,17 +114,30 @@ export function SentState({
   /**
    * The one state sentence. A screen with no invitation row at all says so rather than borrowing
    * `unclaimed` — "the link has not been claimed" and "there is no link" are different facts.
+   *
+   * The lookup is the optional reader, not `itemLabel` (#998): `stateId` is a value the read
+   * produced, so a status this build has no sentence for renders the band's fallback row instead
+   * of throwing inside a server render. That fallback id is spelled as a literal so E23 resolves it
+   * against this route's fixture at build time — deleting the row is a red `data:check`, never the
+   * throw the row exists to prevent.
    */
   const stateId = invite === null ? "none" : invite.state;
-  const stateSentence = fillLabel(itemLabel(status, stateId), values);
+  const stateRow = itemLabelOr(status, stateId);
+  const stateSentence = fillLabel(stateRow ?? itemLabel(status, "unknown"), values);
 
+  /** A band row named by a runtime value, filled when the band carries it and absent when it does not. */
+  const filledRuntimeRow = (section: PageCopySection, id: string): string | undefined => {
+    const label = itemLabelOr(section, id);
+    return label === undefined ? undefined : fillLabel(label, values);
+  };
+
+  // `?resend=` and `?invite=` are runtime values too: the page narrows them to this build's
+  // vocabulary, and a code the band does not carry draws no sentence rather than a 500 (#998).
   const resendSentence =
-    resendRefusal === undefined
-      ? undefined
-      : fillLabel(itemLabel(inviteBand, resendRefusal), values);
+    resendRefusal === undefined ? undefined : filledRuntimeRow(inviteBand, resendRefusal);
 
   const noticeSentence =
-    inviteNotice === undefined ? undefined : fillLabel(itemLabel(inviteBand, inviteNotice), values);
+    inviteNotice === undefined ? undefined : filledRuntimeRow(inviteBand, inviteNotice);
 
   /**
    * One moment's wording and mark. The three cases are read off the invitation's own state:
@@ -204,6 +227,7 @@ export function SentState({
         {/* The outcome, as one sentence over one fact: the state the row derives. */}
         <section
           data-sent-status={stateId}
+          data-sent-status-fallback={stateRow === undefined ? "" : undefined}
           className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
         >
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{stateSentence}</p>

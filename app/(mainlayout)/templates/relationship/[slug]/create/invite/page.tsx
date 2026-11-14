@@ -26,8 +26,8 @@ import { notFound, redirect } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import type { FlowMount } from "@/components/assessment-flow/relationship-flow-shell";
 import {
-  capturePaymentMethodAction,
-  resolveCaptureAction,
+  confirmMembershipAction,
+  startMembershipAction,
 } from "@/app/(mainlayout)/dashboard/relationships/actions";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
@@ -141,18 +141,27 @@ export default async function TemplateCreateInvitePage({
    * them together — but it cannot read a session, an entitlement or a row, so the three facts it
    * needs arrive as props:
    *
-   *   `capture`      the two server actions a card needs (started, then resolved by the session the
-   *                  provider minted). Passed in because a `"use client"` module that imported them
-   *                  would reach `lib/db/**` — E34's failure mode.
-   *   `initialPaid`  whether a card is already on file (`paymentArmed`). A person who paid and came
-   *                  back lands on the thank-you with the send enabled instead of being asked twice.
+   *   `capture`      the two server actions the membership needs (start the checkout, then confirm
+   *                  it by the session the provider minted). Passed in because a `"use client"`
+   *                  module that imported them would reach `lib/db/**` — E34's failure mode.
+   *   `initialPaid`  whether a membership is already live for this account. A person who paid and
+   *                  came back lands on the thank-you with the send enabled instead of being asked
+   *                  twice.
    *   `planIncluded` what the account's plan already covers, so an entitled account gets a summary
    *                  rather than a radio group selling a tier it holds.
    *
-   * **Nothing here charges, and this is the only card form.** The card is Stripe's, mounted inside
-   * the walk from `components/billing/stripe-frame.tsx` — since #912 the walk is that module's only
-   * caller, because the dashboard's capture dialog is deleted. This page hands over actions; it never
-   * draws a field.
+   * **`initialPaid` is `screen.subscriptionLive`, not `screen.paymentArmed` (#1014).** The latter is
+   * `membership.writable`, and a `draft` reads writable on purpose — nothing has been sold, so there
+   * is nothing to lapse. Stage 5 renders on exactly such a draft, so `paymentArmed` answered "paid"
+   * for every new relationship: the walk opened on its thank-you, skipped the plan and the card, and
+   * `sendDraftInvitation()` refused the send with `no-payment-method`. `subscriptionLive` is read
+   * from the same `billing_subscription` row that refusal names, so the courtesy and the rule agree.
+   *
+   * **This is the membership purchase (#1010 R2), and the only card form.** The card is Stripe's,
+   * mounted inside the walk from `components/billing/stripe-frame.tsx`, and it mounts the
+   * *subscription* checkout — one monthly membership covering both parties, seven days free. There
+   * is no "add a payment method" act on this stage or anywhere else: a card reaches an account by
+   * buying the membership. This page hands over actions; it never draws a field.
    */
   const accountPlan =
     entitlement === null
@@ -183,11 +192,11 @@ export default async function TemplateCreateInvitePage({
       problemLink={refusal?.link ?? null}
       notice={planNotice?.sentence ?? null}
       noticeLink={planNotice?.link ?? null}
-      capture={{
-        onCapture: capturePaymentMethodAction,
-        onResolve: resolveCaptureAction,
+      checkout={{
+        onStart: startMembershipAction,
+        onConfirm: confirmMembershipAction,
       }}
-      initialPaid={screen.paymentArmed === true}
+      initialPaid={screen.subscriptionLive === true}
       {...(accountPlan === undefined ? {} : { planIncluded: accountPlan })}
     />
   );

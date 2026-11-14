@@ -18,19 +18,24 @@ superseded v5; each was approved in its turn and the decisions it carried are re
 
 ## The five stages
 
-| #   | Stage        | The screen asks                                                                                                      | Ends by                                                                                          |
-| --- | ------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why                              | `Continue to Stage 2` (Settings)                                                                 |
-| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                  | `Continue to Stage 3` (Aspects)                                                                  |
-| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one | `Continue to Stage 4` (Account)                                                                  |
-| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                    | `Continue to Stage 5` (Invite)                                                                   |
-| 5   | **Invite**   | The pay walk — choose a membership plan, then the card — the invitation it unlocks, and the option to keep the draft | `send email to counterparty now` → the confirmation, once the card is on file; or keep the draft |
+| #   | Stage        | The screen asks                                                                                                                | Ends by                                                                                                                                              |
+| --- | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why                                        | `Continue to Stage 2` (Settings)                                                                                                                     |
+| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                            | `Continue to Stage 3` (Aspects)                                                                                                                      |
+| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one           | `Continue to Stage 4` (Account)                                                                                                                      |
+| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                              | `Continue to Stage 5` (Invite)                                                                                                                       |
+| 5   | **Invite**   | The walk — a membership plan, then the card, then a thank-you — and the act it unlocks: send the invitation, or keep the draft | `send email to counterparty now` → **`/dashboard/relationships/<id>`**, the relationship published; or keep the draft → the same page, still a draft |
 
 **The foot is one shape on stages 1–5** (#760): `[Back][Cancel]` as a single left group and the act
 that advances the flow flush right. `Cancel` leaves the flow — it goes where the shell's close goes,
 to the template library — while `Back` is the stage before. Below 560px the row cannot hold three
 controls, so the advancing act takes a full-width row of its own above the pair. The advance names
 the stage it goes to, never what that stage asks.
+
+**Stage 5 is the one exception, and it is the foot's shape all the same** (#1014): its advancing act
+is the walk's own last step, so the foot draws `[Back][Cancel]` and no advance. Putting a send in the
+foot as well would be a second control for the act the walk already offers, and "one act, one control"
+outranks the row's symmetry.
 
 **There is no `Ongoing` stage.** "Ongoing" is not a screen: once the flow completes, the reader is
 taken to the **relationship detail page** in the member dashboard, which is where every later cycle
@@ -62,6 +67,34 @@ The flow opens as **one overlay over the stage routes**: a dialog centred and ca
 a full-height sheet at 390. A stage URL still renders standalone — a deep link, a refresh or an
 invitation link must never 404. **Account is stage 4 _inside_ the overlay**; there is no longer a
 gate step after Invite, and no page whose only job is to demand an account.
+
+### Where the flow is entered — three classes, one rule
+
+The inventory behind #979 counted **36 entry controls** (`21 full page · 7 wizard route · 6 in-flow
+stage · 2 external · 0 modal`). One rule decides what each one does, and it is a property of the
+**destination**, never of the surface's tidiness:
+
+| the control's destination                                                                          | what pressing it does                                                       | why                                                                                                       |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **a stage of the flow** (`/templates/relationship/<slug>/create{,/mode,/aspects,/commit,/invite}`) | opens the flow **in place**, in the dialog, over the page it was pressed on | the user keeps their context; that is the whole point of the shell                                        |
+| **any other page** — a marketing surface, an auth page, a catalogue, a relationship                | **navigates**, exactly as before                                            | a dialog over a crawlable page breaks its first paint and its back button, and there is no stage to mount |
+| **a third party** (Google, the payment provider)                                                   | unchanged: it leaves the product and returns                                | it is not ours to mount                                                                                   |
+
+A wizard-route entry is therefore a `FlowEntryLink` (`components/assessment-flow/flow-entry-link.tsx`)
+and nothing else: a `next/link` **soft navigation** — which is what lets the intercepted route draw
+the stage over the page — that remembers the page and the control it was pressed on, so `Esc`, the X
+and the overlay close back onto them with focus restored.
+
+**The slot is declared per host segment, never on the product shell.** `@flow` sits beside the page
+in each segment that carries a door — `/assessment`, `/templates/relationship` (and its `[slug]`),
+`/dashboard/templates`, `/dashboard/relationships` — and intercepts all five stages there. Declared
+once at `(mainlayout)/layout.tsx` it would also intercept one stage navigating to the next (stage 3's
+"Continue" is a link) and draw a modal over the flow itself.
+
+**Marketing keeps navigating.** `/relationship-types`, `/relationship-types/<slug>[/demo]`,
+`/relationship-templates` and `/pricing` live in `app/(marketing)/**`; their controls resolve through
+`lib/start-path.ts` to `/register?next=<stage>` for a visitor and the stage for a member, and they are
+**not** converted. A dialog there would put an app shell on a crawlable page for a count.
 
 ### The invitation is the response path, and it enters at Account
 
@@ -210,41 +243,58 @@ The relationship's shape — one template, two seats, the aspect count, the part
 drawn in this stage's right column, because those facts are all known before the account is chosen
 and repeating them on Invite is one card too many.
 
-## Stage 5, Invite — the payment walk, and the send it unlocks
+## Stage 5, Invite — the walk, the act inside it, and the relationship it lands on
 
-Stage 5 is one decision drawn in two columns, and the gate between them is the stage (#911). The
-**left column is a three-step walk** (`components/assessment-flow/invite-walk.tsx`), in this order:
+Stage 5 is one decision, drawn as **one four-step walk** in one column
+(`components/assessment-flow/invite-walk.tsx`), in this order:
 
-| Step | The panel                                                                                                                                   | Ends by |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 1    | **Plan** — the membership plans, and the two things the money buys: _join membership plan_ and _activate relationship_                      | `Next`  |
-| 2    | **Card** — the card, captured by `components/billing/stripe-frame.tsx`, the app's one implementation of a card                              | `Next`  |
-| 3    | **Thank you** — one message and **no button**. The walk ends here, and its sentence says where the reader goes next: the send, or the draft | nothing |
+| Step | The panel                                                                                                                                          | Ends by |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| 1    | **Plan** — the membership plans, and the two things the money buys: _join membership plan_ and _activate relationship_                             | `Next`  |
+| 2    | **Card** — the card, bought through `components/billing/stripe-frame.tsx`, the app's one implementation of a card, plus the reason it is asked for | `Next`  |
+| 3    | **Thank you** — one message and **one button** that opens the last step                                                                            | the act |
+| 4    | **Action** — the send, and under every step of the walk, the draft: **the act is in the walk**                                                     | —       |
 
-**The right column is the send, and the walk gates it.** Before the card is on file the column is
-inactive — `data-send-gate="locked"`, a dashed border, a muted heading — and the confirm control is
-`disabled` **beside the sentence that says what unlocks it**, never a bare greyed button. Once the
-card is on file the column takes the action border and the confirm control enables, reading
-**`send email to counterparty now`**. The lock is enforced twice: the disabled attribute is the
-courtesy, and `sendDraftInvitation()` refuses a relationship with no captured method
+**The act is inside the walk, and it is one control per act (#1014).** Step 4 draws
+**`send email to counterparty now`** — the same write stage 5 has always made, `POST
+/assessment/instances/<id>/send`, which publishes the relationship, mails the one invitation and
+writes the Initiator's own copy of the link — and every step of the walk draws **the draft**, which
+is a navigation rather than a write: stage 4 already wrote the row as a `draft`, and nothing but the
+send ever publishes it, so the control cannot make a second one. There is no send card beside the
+walk and no second send in the foot: the walk carries the act, and the column beside it carries the
+two sentences that make keeping a draft safe to choose.
+
+**Both endings land on the relationship** — **`/dashboard/relationships/<id>`**, the new
+relationship's own member-dashboard view, showing it in the state the act produced: `Published` with
+a live invitation, or `Draft`. Not the session screen, and not the post-send confirmation, which
+stays as an unnumbered screen for the send's own outcome and is no longer where the flow ends.
+
+**Both endings `replace` the walk's history entry.** Since #1009 the shell's dismissal is a history
+pop, so an entry the flow leaves behind is a dialog `Back` walks into. The draft control is a
+`next/link` with `replace`; the send reads the endpoint's own 303 and replaces. `Back` from the
+landed relationship therefore goes to whatever the flow was opened from, never back into the walk.
+
+**The walk gates the send, and the gate is drawn.** Before the membership is live the walk is on its
+first step with `data-send-gate="locked"` and **no send control exists at any step** — there is
+nothing to press. The lock is enforced twice: that absence is the courtesy, and
+`sendDraftInvitation()` refuses a relationship whose Initiator holds no live membership
 (`no-payment-method`) in the write, so a crafted POST cannot publish an unpaid draft.
 
-**Saving a card charges nothing.** The method goes on file and the trial starts; the fee is taken by
-the product's own completion path, never by the walk. The card step says so in as many words.
+**The gate reads a subscription, never `membership.writable` (#1014).** `writable` answers "may either
+party write?", and it is `true` for a `draft` on purpose — nothing has been sold, so there is nothing
+to lapse. Stage 5 renders on exactly such a draft, so a gate built on `writable` opened the walk on its
+thank-you for every brand-new relationship, skipped the plan and the card, and left the send to be
+refused with `no-payment-method`: the screen said "the plan is active" about an account holding no
+subscription. The walk therefore reads `screen.subscriptionLive`, read from the same
+`billing_subscription` row the refusal names, and `screen.paymentArmed` keeps its own meaning for the
+Gap.
 
-**Keeping the draft is always the other choice.** An ordinary link beside the walk, present in both
-states at every step: no plan, no card, nothing charged, the relationship stays `draft` and the
-dashboard lists it. That link is what makes the locked state a decision instead of a dead end.
+**The purchase charges nothing today.** The membership is a subscription with a seven-day trial: the
+card is the plan's, and the walk's card step says so in as many words.
 
 **The words are the product**: _join membership plan_, _activate relationship_, _send email to
 counterparty now_. `purchase`, `buy` and `save payment method` appear nowhere in the stage — the
 thing being paid for is a membership plan and an activated relationship, and not a checkout.
-
-The confirmation that follows is **unnumbered**: it is proof the invitation left, not a sixth stage.
-It carries the resend control, the copy-link control, the waiting status (`Invited — waiting for
-<name> to accept`) and the "what happens next" explainer. Those affordances are the ones the retired
-Connect stage used to hold; the dashboard's relationship detail owns the same two controls for every
-later visit.
 
 ## How this is enforced
 

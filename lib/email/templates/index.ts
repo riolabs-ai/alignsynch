@@ -31,42 +31,56 @@
  */
 import type { EmailClass, EmailDocument, RenderedEmail } from "@/lib/email/band";
 import { renderEmail } from "@/lib/email/band";
+import type { EmailBodySpec } from "@/lib/email/body";
 import { releaseNoteDocument, type ChangelogSection } from "@/lib/email/release-note";
 import {
+  INVITATION_BODY,
   invitationDocument,
   invitationSubject,
   type InvitationFacts,
 } from "@/lib/email/templates/invitation";
-import { reminderDocument, type ReminderFacts } from "@/lib/email/templates/invitation-reminder";
 import {
+  REMINDER_BODY,
+  reminderDocument,
+  type ReminderFacts,
+} from "@/lib/email/templates/invitation-reminder";
+import {
+  JOINED_BODY,
   joinedDocument,
   joinedSubject,
   type JoinedFacts,
 } from "@/lib/email/templates/counterparty-joined";
-import { reportReadyDocument, type ReportReadyFacts } from "@/lib/email/templates/report-ready";
-import { trialEndingDocument, type TrialEndingFacts } from "@/lib/email/templates/trial-ending";
 import {
+  REPORT_READY_BODY,
+  reportReadyDocument,
+  type ReportReadyFacts,
+} from "@/lib/email/templates/report-ready";
+import {
+  TRIAL_ENDING_BODY,
+  trialEndingDocument,
+  type TrialEndingFacts,
+} from "@/lib/email/templates/trial-ending";
+import {
+  MEMBERSHIP_LAPSED_BODY,
   membershipLapsedDocument,
   type MembershipLapsedFacts,
 } from "@/lib/email/templates/membership-lapsed";
 import {
+  SUPPORT_REPLY_BODY,
   supportReplyDocument,
   supportReplySubject,
   type SupportReplyFacts,
 } from "@/lib/email/templates/support-reply";
 import {
+  SIGNUP_CONFIRMATION_BODY,
   signupConfirmationDocument,
   type SignupConfirmationFacts,
 } from "@/lib/email/templates/signup-confirmation";
 import {
+  PURCHASE_CONFIRMATION_BODY,
   purchaseConfirmationDocument,
   type PurchaseConfirmationFacts,
 } from "@/lib/email/templates/purchase-confirmation";
-import {
-  paymentReminderDocument,
-  paymentReminderSubject,
-  type PaymentReminderFacts,
-} from "@/lib/email/templates/payment-reminder";
 import {
   relationshipExpiredDocument,
   relationshipExpiredSubject,
@@ -81,6 +95,14 @@ export interface EmailTemplate<Facts> {
   readonly numeral: number;
   /** `marketing` may carry an unsubscribe line; `transactional` may not. */
   readonly emailClass: EmailClass;
+  /**
+   * Where this template's body comes from: its section in `content/email-bodies.md`, and the
+   * `{{…}}` facts it may say. **Omitted** means the body is already written in code and is not the
+   * owner's to edit there — `scripts/gen-email-bodies.mjs` reports a section for a template that
+   * omits it and a template that omits it with no section, so the omission is a listed decision
+   * rather than a gap nobody noticed.
+   */
+  readonly body?: EmailBodySpec;
   readonly subject: (facts: Facts) => string;
   readonly document: (facts: Facts) => EmailDocument;
 }
@@ -99,6 +121,7 @@ export const invitationTemplate: EmailTemplate<InvitationFacts> = {
   id: "counterparty-invitation",
   numeral: 2,
   emailClass: "transactional",
+  body: INVITATION_BODY,
   subject: invitationSubject,
   document: invitationDocument,
 };
@@ -111,6 +134,7 @@ export const reminderTemplate: EmailTemplate<ReminderFacts> = {
   id: "invitation-reminder",
   numeral: 3,
   emailClass: "transactional",
+  body: REMINDER_BODY,
   subject: (facts) => reminderDocument(facts).subject,
   document: reminderDocument,
 };
@@ -120,6 +144,7 @@ export const joinedTemplate: EmailTemplate<JoinedFacts> = {
   id: "counterparty-joined",
   numeral: 4,
   emailClass: "transactional",
+  body: JOINED_BODY,
   subject: joinedSubject,
   document: joinedDocument,
 };
@@ -129,6 +154,7 @@ export const reportReadyTemplate: EmailTemplate<ReportReadyFacts> = {
   id: "gap-report-ready",
   numeral: 5,
   emailClass: "transactional",
+  body: REPORT_READY_BODY,
   subject: (facts) => reportReadyDocument(facts).subject,
   document: reportReadyDocument,
 };
@@ -142,6 +168,7 @@ export const trialEndingTemplate: EmailTemplate<TrialEndingFacts> = {
   id: "trial-ending",
   numeral: 6,
   emailClass: "transactional",
+  body: TRIAL_ENDING_BODY,
   subject: (facts) => trialEndingDocument(facts).subject,
   document: trialEndingDocument,
 };
@@ -151,6 +178,7 @@ export const membershipLapsedTemplate: EmailTemplate<MembershipLapsedFacts> = {
   id: "membership-lapsed",
   numeral: 7,
   emailClass: "transactional",
+  body: MEMBERSHIP_LAPSED_BODY,
   subject: (facts) => membershipLapsedDocument(facts).subject,
   document: membershipLapsedDocument,
 };
@@ -160,6 +188,7 @@ export const supportReplyTemplate: EmailTemplate<SupportReplyFacts> = {
   id: "support-reply",
   numeral: 8,
   emailClass: "transactional",
+  body: SUPPORT_REPLY_BODY,
   subject: supportReplySubject,
   document: supportReplyDocument,
 };
@@ -173,6 +202,7 @@ export const signupConfirmationTemplate: EmailTemplate<SignupConfirmationFacts> 
   id: "signup-confirmation",
   numeral: 9,
   emailClass: "marketing",
+  body: SIGNUP_CONFIRMATION_BODY,
   subject: (facts) => signupConfirmationDocument(facts).subject,
   document: signupConfirmationDocument,
 };
@@ -182,32 +212,24 @@ export const purchaseConfirmationTemplate: EmailTemplate<PurchaseConfirmationFac
   id: "purchase-confirmation",
   numeral: 10,
   emailClass: "transactional",
+  body: PURCHASE_CONFIRMATION_BODY,
   subject: (facts) => purchaseConfirmationDocument(facts).subject,
   document: purchaseConfirmationDocument,
 };
 
 /**
- * #11 — the day-3 / day-10 fee reminder. The **payer** is the only recipient (the fee is theirs to
- * pay, and the counterparty is told no billing detail at any point), and the message is the thing
- * `reminder_day3_at` / `reminder_day10_at` are the record *of*: `lib/member/payment-notice.ts`
- * sends it and `lib/member/payment-job-run.ts` stamps only after the transport says `sent`.
- */
-export const paymentReminderTemplate: EmailTemplate<PaymentReminderFacts> = {
-  id: "payment-reminder",
-  numeral: 11,
-  emailClass: "transactional",
-  subject: paymentReminderSubject,
-  document: paymentReminderDocument,
-};
-
-/**
- * #12 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
- * no figure and no fee: `expire` is the one job whose notice cannot be the fact (the state is
- * already terminal and stored), so this template is a courtesy rather than a stamp's evidence.
- */
+ /**
+  * #11 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
+  * no figure and no fee: `expire` is a job whose notice cannot be the fact (the state is already
+  * terminal and stored), so this template is a courtesy rather than a stamp's evidence.
+  *
+  * It was #12 until #1010 deleted the day-3 / day-10 fee reminder that sat before it: a reminder to
+  * pay a fee no longer taken is a letter nobody should receive, so the register is now eleven
+  * templates and this one keeps the sequence contiguous.
+  */
 export const relationshipExpiredTemplate: EmailTemplate<RelationshipExpiredFacts> = {
   id: "relationship-expired",
-  numeral: 12,
+  numeral: 11,
   emailClass: "transactional",
   subject: relationshipExpiredSubject,
   document: relationshipExpiredDocument,
@@ -229,7 +251,6 @@ export type RegisteredEmailTemplate =
   | EmailTemplate<SupportReplyFacts>
   | EmailTemplate<SignupConfirmationFacts>
   | EmailTemplate<PurchaseConfirmationFacts>
-  | EmailTemplate<PaymentReminderFacts>
   | EmailTemplate<RelationshipExpiredFacts>;
 
 export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
@@ -243,7 +264,6 @@ export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   supportReplyTemplate,
   signupConfirmationTemplate,
   purchaseConfirmationTemplate,
-  paymentReminderTemplate,
   relationshipExpiredTemplate,
 ];
 

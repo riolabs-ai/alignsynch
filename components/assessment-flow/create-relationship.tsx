@@ -77,7 +77,7 @@ import {
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
-import type { CaptureHandlers } from "./invite-walk";
+import type { CheckoutHandlers } from "./invite-walk";
 import { RelationshipFlowShell, type FlowMount } from "./relationship-flow-shell";
 import { StageAccount } from "./stage-account";
 import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
@@ -224,13 +224,6 @@ function NoticeBand({
  */
 const COMMIT_FORM_ID = "create-commit-form";
 
-/**
- * The send form's id (#825). Same reason as `COMMIT_FORM_ID`: the stage foot's one advancing
- * control sits outside the form it submits, so it names the form by id. Technical, not a word a
- * reader sees, so it is a constant here rather than a fixture row.
- */
-const SEND_FORM_ID = "create-invite-form";
-
 /** One option of a single-select group: the value stored, the word, and what it does. */
 interface ChoiceOption {
   readonly value: string;
@@ -255,7 +248,7 @@ export function CreateRelationship({
   instanceRecordId,
   relationshipId,
   publishAction,
-  capture,
+  checkout,
   initialPaid,
   planIncluded,
   copyBlocked,
@@ -328,7 +321,7 @@ export function CreateRelationship({
    * all three are the page's to know (a session, an entitlement, a row) and none of them can be read
    * inside a client component.
    */
-  capture?: CaptureHandlers;
+  checkout?: CheckoutHandlers;
   /** A card is already on file for this relationship: the walk opens on the thank-you. */
   initialPaid?: boolean;
   /** What the account's plan already covers (#870), measured by the page. */
@@ -736,14 +729,12 @@ export function CreateRelationship({
             draft={draft}
             instanceRecordId={instanceRecordId ?? ""}
             relationshipId={relationshipId ?? ""}
-            {...(capture === undefined ? {} : { capture })}
+            {...(checkout === undefined ? {} : { checkout })}
             {...(initialPaid === undefined ? {} : { initialPaid })}
             {...(planIncluded === undefined ? {} : { planIncluded })}
             backHref={backHref}
             cancelHref={shell.closeHref}
             cancelLabel={cancelLabel}
-            advanceClasses={ADVANCE_CLASSES}
-            sendFormId={SEND_FORM_ID}
           />
         )}
       </div>

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [Brand lockup](../brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [The flow's dialog behaves like a route, #979](../979-flow-parity/README.md) · next [The docs before and after formatting, #937](../docs-pretty/README.md)
 
 <!-- docs-nav:end -->
 
@@ -91,6 +91,6 @@ to settle, and reads where the target landed (`measurements.json`).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [Brand lockup](../brand-lockup/README.md)
+[Docs hub](../../README.md) › **Records & QA** › AS2 home visual QA · prev [The flow's dialog behaves like a route, #979](../979-flow-parity/README.md) · next [The docs before and after formatting, #937](../docs-pretty/README.md)
 
 <!-- docs-nav:end -->

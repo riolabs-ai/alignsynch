@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { PageCopy } from "@/content/pages";
-import { rememberFlowOrigin } from "@/lib/flow/dialog-origin";
+import { rememberFlowOrigin, FLOW_ORIGIN_FALLBACK_SELECTOR } from "@/lib/flow/dialog-origin";
 import { createRelationshipPath } from "@/lib/flow/paths";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
@@ -114,8 +114,14 @@ export function RelationshipStart({
                    * the control that is standing on it, and closing returns to exactly this page
                    * with focus back on this button. Nothing is written to storage — a reload is
                    * not a re-entry.
+                   *
+                   * The third argument is the fallback: this button is inside the chooser, and the
+                   * intercepted render closes the chooser, so it can be gone by the time the flow is
+                   * dismissed. The Start control in the page header carries
+                   * `data-relationships-start-toggle` and is always mounted; focus goes there when
+                   * this button is no longer in the document.
                    */
-                  rememberFlowOrigin(pathname, event.currentTarget);
+                  rememberFlowOrigin(pathname, event.currentTarget, FLOW_ORIGIN_FALLBACK_SELECTOR);
                   router.push(createRelationshipPath(slug));
                 }}
               >

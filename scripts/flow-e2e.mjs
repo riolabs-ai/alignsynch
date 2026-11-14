@@ -742,43 +742,46 @@ async function main() {
     JSON.stringify(drafted),
   );
 
-  /* 1b. stage 5 Invite draws both acts -------------------------------- */
+  /* 1b. stage 5 Invite draws the walk, and no act until it is paid for -------- */
   const inviteStage = await initiator.get(firstCreate.location);
   check(
-    "stage 5 Invite draws the send form and the keep-as-draft way out",
+    "stage 5 Invite draws the walk and the keep-as-draft way out",
     inviteStage.status === 200 &&
-      inviteStage.html.includes('data-create-send="true"') &&
+      inviteStage.html.includes('data-pay-step="plan"') &&
+      inviteStage.html.includes('data-send-gate="locked"') &&
       inviteStage.html.includes('data-create-keep-draft="true"'),
     `status ${inviteStage.status}`,
   );
+  check(
+    "and no send control exists before the membership is live (#1014)",
+    !inviteStage.html.includes('data-create-send="true"'),
+    "a send control was drawn on an unpaid stage",
+  );
 
   /* 1c. no payment, no send: keeping the draft ------------------------ */
-  // `Continue as Draft` is a link to the dashboard, not a server act — so the proof is that the
-  // relationship is *still* an unpublished draft and that the dashboard lists it. That is the
-  // "save it and come back" path the payment posture promises.
-  // #841 — follow the control's own href rather than a remembered path. The link used to go to
-  // `/dashboard`, the fixture-driven home, where the draft it had just saved could not appear; the
-  // list that renders rows is `/dashboard/relationships`.
+  // `Continue as Draft` is a link, not a server act — so the proof is that the relationship is
+  // *still* an unpublished draft and that the control lands on the draft itself (#1014). The list
+  // the relationship appears in is one Back away, which the next block checks.
   const keepDraftTag = inviteStage.html.match(/<a[^>]*data-create-keep-draft[^>]*>/)?.[0] ?? "";
   const keepDraftHref = keepDraftTag.match(/href="([^"]+)"/)?.[1] ?? "";
   check(
-    "Continue as Draft links at the relationships list, not the dashboard home",
-    keepDraftHref === "/dashboard/relationships",
+    "Continue as Draft links at the relationship itself, not the list and not the dashboard home",
+    keepDraftHref.startsWith("/dashboard/relationships/"),
     `href = "${keepDraftHref}"`,
   );
   const dashboard = await initiator.get(
     keepDraftHref === "" ? "/dashboard/relationships" : keepDraftHref,
   );
-  dumpPage("relationships-list", dashboard.html);
+  dumpPage("relationship-draft", dashboard.html);
   check(
-    "keeping the draft lands the creator on that list",
+    "keeping the draft lands the creator on that relationship",
     dashboard.status === 200,
     `status ${dashboard.status}`,
   );
   check(
-    "and the draft is listed there by the title stages 1–3 chose",
+    "and the relationship is drawn there by the title stages 1–3 chose",
     dashboard.html.includes("Avery and Rowan E2E"),
-    "title not found in the list render",
+    "title not found in the relationship render",
   );
   const stillDraft = await relationshipState(instanceId);
   check(
@@ -807,6 +810,21 @@ async function main() {
   await captureMethodStandIn(await relationshipState(instanceId), "stage 5 · draft");
   const sent = await initiator.post(sendInvitationPath(instanceId), {});
   check("Send and Continue answers 303", sent.status === 303, `${sent.status} ${sent.location}`);
+  // #1014 — the send lands on the **relationship**, not the session and not the Sent screen: the flow
+  // ends where every later cycle of the relationship lives.
+  const sendLocation = String(sent.location ?? "");
+  const sendTarget = new URL(sendLocation, "http://localhost");
+  check(
+    "and it lands on the relationship it published, carrying the mailer's own outcome",
+    /^\/dashboard\/relationships\/[^/]+$/.test(sendTarget.pathname) &&
+      sendTarget.searchParams.has("invite"),
+    `location = "${sendLocation}"`,
+  );
+  check(
+    "and it does not land on the session screen or the retired Sent confirmation",
+    !/^\/assessment\/instances\//.test(sendTarget.pathname) && !/\/sent$/.test(sendTarget.pathname),
+    `location = "${sendLocation}"`,
+  );
   const published = await relationshipState(instanceId);
   check(
     "and it moves the draft to published, with the publish instant written",
@@ -1905,10 +1923,10 @@ async function main() {
       : await author.get(authoredCreate.location);
   dumpPage("stage5-authored", authoredInvite.html);
   check(
-    "and stage 5 draws the payment walk, the send and the keep-as-draft act (#870)",
+    "and stage 5 draws the walk and the keep-as-draft act (#870, #1014)",
     authoredInvite.status === 200 &&
       authoredInvite.html.includes("data-pay-step=") &&
-      authoredInvite.html.includes('data-create-send="true"') &&
+      authoredInvite.html.includes('data-send-gate="locked"') &&
       authoredInvite.html.includes('data-create-keep-draft="true"'),
     `status ${authoredInvite.status}`,
   );

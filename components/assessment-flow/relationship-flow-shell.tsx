@@ -43,11 +43,25 @@
  * pushes that address, and the stage renders its own refusal band. One code path, both outcomes.
  *
  * **Closing returns to where the flow was opened, with focus.** `Esc`, the X and a click on the
- * overlay all dismiss; each closes onto `flowOriginPath()` — the page the trigger was pressed on,
- * remembered by the trigger itself — and focuses that control before the dialog leaves the document,
- * so the return is a keyboard-visible fact rather than a scroll to the top. The draft is untouched:
- * the Account stage writes it, a dismissal has never discarded anything, and no "discard?" prompt is
- * invented for a screen the spec does not draw.
+ * overlay all dismiss; each closes onto `takeFlowOrigin()`'s path — the page the trigger was pressed
+ * on, remembered by the trigger itself — and hands focus back to that control **after** the panel has
+ * left the document. Three things about that are measured rather than assumed:
+ *
+ *   - **The close is a pop, not a push.** A `router.push` back to the page under an active
+ *     interception is a no-op in Next's router — the address and the panel both stay where they
+ *     were. Each stage advance is a history entry, so the dismissal pops exactly the entries the
+ *     flow pushed (`flowEntriesSinceOrigin()`), landing on the origin page in one step from any
+ *     stage, and leaving no trail for the browser's Back to walk into.
+ *   - **The focus comes after the panel leaves.** While it stands, its focus trap pulls an outside
+ *     focus straight back in, so a focus aimed at the trigger is undone and the navigation then
+ *     drops focus on `<body>` (`tests/flow-dialog-keyboard.test.tsx`).
+ *   - **The trigger may not still exist.** The intercepted render re-renders the page underneath,
+ *     and the chooser that holds the Create control comes back closed — so the origin carries a
+ *     fallback selector for an always-mounted control, and focus goes to whichever of the two is
+ *     still in the document.
+ *
+ * The draft is untouched: the Account stage writes it, a dismissal has never discarded anything, and
+ * no "discard?" prompt is invented for a screen the spec does not draw.
  *
  * **A dialog does not outlive its address.** If the flow navigates somewhere that is not a stage of
  * this flow — the send's own confirmation, the plans page, the template library via `Cancel` — the
@@ -57,9 +71,9 @@
  */
 import { usePathname, useRouter } from "next/navigation";
 import type { FormEvent, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PageCopy } from "@/content/pages";
-import { closeFlowToOrigin } from "@/lib/flow/dialog-origin";
+import { takeFlowOrigin } from "@/lib/flow/dialog-origin";
 import { StageColumn } from "./stage-column";
 import { StageRail } from "./stage-rail";
 import { StageShell } from "./stage-shell";
@@ -152,15 +166,63 @@ function FlowDialogMount({ title, closeLabel, closeHref, body }: FrameProps & { 
   const router = useRouter();
   const pathname = usePathname();
   const [busy, setBusy] = useState(false);
+  /** How to give focus back to the control that opened the flow, once the panel has left. */
+  const returnFocusTo = useRef<(() => HTMLElement | null) | null>(null);
+
+  /**
+   * **Focus goes back to the control that opened the flow when the dialog leaves.**
+   *
+   * Two measurements make this the shape it is. First, the return cannot happen while the panel
+   * stands: it is modal, its focus trap owns the document, and a focus aimed at a control outside it
+   * is pulled straight back in — so a focus given during the dismissal is undone, and the navigation
+   * then drops focus on `<body>`. Second, the close **unmounts this component**: the slot's subpage
+   * is the stage's intercepted route, so the pop discards it and the slot renders its default — the
+   * panel never renders again with a different `pathname`. So the return belongs in this effect's
+   * cleanup, which is the last moment the dialog has anything to say about the document.
+   *
+   * One retry, and only if the first focus did not survive: closing lands in more than one commit —
+   * the slot closes, then the page underneath re-renders — and that second render can re-create the
+   * control. The target is re-resolved rather than remembered as an element for that reason.
+   */
+  useEffect(() => {
+    return () => {
+      const resolve = returnFocusTo.current;
+      if (resolve === null) return;
+      returnFocusTo.current = null;
+
+      const first = resolve();
+      first?.focus();
+      if (typeof requestAnimationFrame !== "function") return;
+      requestAnimationFrame(() => {
+        if (document.activeElement === first) return;
+        resolve()?.focus();
+      });
+    };
+  }, []);
 
   // The address stopped being a stage of this flow — the page underneath is the screen now.
   if (!isFlowStagePath(pathname)) return null;
 
   /** Leave the flow: back to the page it was opened from, with focus on the control that opened it. */
   const dismiss = () => {
-    // One code path for `Esc`, the X and the overlay, and it is `lib/flow/dialog-origin.ts`'s:
-    // focus the trigger, forget the origin, push the page underneath.
-    closeFlowToOrigin((path) => router.push(path));
+    // One code path for `Esc`, the X and the overlay. Where to go, how far back, and what to focus
+    // are `lib/flow/dialog-origin.ts`'s; the focus itself is the effect above, after the panel leaves.
+    const origin = takeFlowOrigin();
+    returnFocusTo.current = origin.focus;
+    /*
+     * **Closing is a pop, not a push.** The dialog is an intercepted route standing over a page the
+     * address no longer names, and in Next's router a `push` back to that page is a no-op while an
+     * interception is active — measured, the address and the panel both stayed exactly where they
+     * were. Going *back* is what ends an interception: each stage advance was a history entry, so
+     * popping every entry the flow pushed lands on the page it was opened from, and the flow's own
+     * trail does not survive the dismissal (so the browser's Back does not walk back into it).
+     */
+    if (origin.entries !== null && origin.entries > 0) {
+      window.history.go(-origin.entries);
+      return;
+    }
+    // No Navigation API: one back press is the best a browser will tell us, and it is still a pop.
+    router.back();
   };
 
   /**

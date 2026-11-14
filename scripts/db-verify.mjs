@@ -695,7 +695,7 @@ export function seededRelationshipProblems(rows) {
  * Only the fixture's own instances are checked, for V21's reason: an instance a person created in
  * the app is theirs to be mid-flow, while a seeded one is a finished demo session by construction.
  * An authored instance the database does not hold is skipped — an emptied demo branch is a green
- * state (`docs/DEMO.md`), not drift.
+ * state (`docs/getting-started/demo.md`), not drift.
  */
 export async function seededRelationshipCoherenceProblems(client, authoredInstances) {
   const authored = authoredInstances.map((instance) => ({ id: instance.id, slug: instance.slug }));

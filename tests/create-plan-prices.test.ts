@@ -27,6 +27,12 @@ function planPrice(id: "basic" | "principal"): string {
   return formatCurrency(plan.monthlyCents);
 }
 
+function planName(id: "basic" | "principal"): string {
+  const plan = billingPlan(id);
+  if (plan === undefined) throw new Error(`data/billing-plans.ts has no "${id}" plan`);
+  return plan.name;
+}
+
 describe("the create flow's plan prices", () => {
   it("prints the plan fixture's monthly figures, not a second copy of them", () => {
     const plans = sectionOf(assessmentCreatePageCopy, "plans");
@@ -58,5 +64,19 @@ describe("the create flow's plan prices", () => {
     expect(itemLabel(plans, "one")).not.toBe("");
     expect(itemLabel(plans, "unlimited")).not.toBe("");
     expect(itemLabel(plans, "per")).toBe("/mo");
+  });
+
+  it("names each row with the tier the catalogue sells, so one plan has one vocabulary", () => {
+    // The rows read `Basic` and `Principal` — the names in `data/billing-plans.ts` and in
+    // `db/migrations/0018_billing_plan_rows.sql` — while the ids stay the walk's own handles
+    // (`one`, `unlimited`, which key `one-note` / `one-price`). A row named something the shop
+    // does not sell is the copy half of the defect that once posted a row id as a billing tier.
+    const plans = sectionOf(assessmentCreatePageCopy, "plans");
+    expect(itemLabel(plans, "one")).toBe(planName("basic"));
+    expect(itemLabel(plans, "unlimited")).toBe(planName("principal"));
+    // And the already-entitled row states the plan without explaining it through the Mode: what
+    // the account holds is the plan, and `{plan}` supplies its name.
+    expect(itemLabel(plans, "included")).toContain("{plan}");
+    expect(itemLabel(plans, "included")).not.toMatch(/Mode/);
   });
 });
