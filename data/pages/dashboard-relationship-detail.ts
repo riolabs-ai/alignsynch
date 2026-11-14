@@ -248,35 +248,32 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * #690 — the hard gate at publish.
+       * #690 / #1010 R2 — the hard gate at publish.
        *
-       * The plans at stage 4 are a soft prompt: a relationship is created and invited with no
-       * method. This band is the other half — publishing needs one on file, so the screen draws
-       * **no publish control at all** and names the page where a plan is actually bought. A
-       * disabled button would be worse than nothing: it would say "you cannot publish yet" and
-       * leave the person to guess what would change that.
+       * Publishing needs a live **membership** — bought at stage 5, one subscription covering both
+       * parties — so the screen draws **no publish control at all** while there is none, and names
+       * the place one is bought. A disabled button would be worse than nothing: it would say "you
+       * cannot publish yet" and leave the person to guess what would change that.
+       *
+       * There is no "add a payment method" door anywhere in this band, and no sentence offering one:
+       * a card reaches an account by buying the membership, which is what the door is.
        */
       id: "publish-gate",
-      heading: "A payment method is needed to publish",
+      heading: "A membership is needed to publish",
       /**
-       * The artifact's own publish-lock sentence (`s11.publishBlocked`), verbatim (#748). It is the
-       * honest description of this build's gate: the Gap and the parity views *are* what the method
-       * unlocks, and both seats can still answer without one.
-       *
-       * The artifact's second line — "the fee is taken 7 days after the method was captured" — is
-       * deliberately **not** here: this build charges at completion (`completeRelationshipAction`),
-       * not seven days after the capture, and the completion band already says "The fee is taken
-       * once, when you complete the relationship". Copy that promised a delay the code does not
-       * implement would be a false statement about when money moves.
+       * The artifact's own publish-lock sentence (`s11.publishBlocked`), re-worded for #1010: what
+       * the membership unlocks is the Gap and the parity views, and both seats can still answer
+       * without it. The old line named a payment method, which this build no longer captures
+       * separately from the membership.
        */
-      body: "Publish is locked until a payment method is on file — the Gap analysis and the parity views stay closed until then. Both seats can still answer.",
+      body: "Publish is locked until this account's membership is running — the Gap analysis and the parity views stay closed until then. Both seats can still answer.",
       items: [
-        { id: "publish-help", label: "Publishing waits until a method is on file." },
+        { id: "publish-help", label: "Publishing waits until the membership is running." },
         { id: "plans", label: "See plans and prices" },
         /**
-         * #912 — **the door the band actually needs.** `/pricing` sells a subscription; it does not
-         * put a card on file, so a band that named the plans could not resolve the refusal it drew.
-         * This is the pay modal's own label — the owner's words — and the band draws it as the
+         * #912 — **the door the band actually needs.** `/pricing` sells the membership without the
+         * relationship in hand, so a band that named only the plans could not resolve the refusal it
+         * drew. This is the pay modal's own label — the owner's words — and the band draws it as the
          * primary door whenever the relationship has a session for stage 5 to read.
          */
         { id: "invite-members", label: "Invite Members" },
@@ -470,54 +467,30 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * #739 — the payer's two acts.
+       * #739 — the Initiator's act: complete and open the Gap.
        *
-       * The band this sells nothing in: the fee is the relationship's, taken once, and the page
-       * says what it is and by when before anyone clicks. `method-missing` is the refusal the
-       * server answers `payment-method-required` for, and `pay` is the link that comes back with
-       * it — the sentence and the way out are the same fixture row pair, so a dead end cannot
-       * render without its door.
+       * **The band sells nothing (#1010 R2).** The membership bought at stage 5 covers this
+       * relationship, so sealing it is free: there is no amount, no deadline, no method and no door
+       * to a card here. The only fact the band draws is the seal, because the seal is the one thing
+       * the transition is gated on — and `not-sealed` says exactly that, without promising a charge
+       * that no longer happens.
        */
       id: "completion",
       heading: "Complete and open the Gap",
-      body: "The fee is taken once, when you complete the relationship — not per round and not at the invitation. Completing it charges the card on file and opens the Gap to both of you; putting a card on file charges nothing and unlocks nothing.",
+      body: "Completing this relationship is free — your membership already covers it. Nothing is charged here. Once both of you have answered every Aspect and accepted the other's answers, completing opens the Gap to both of you.",
       items: [
-        { id: "amount", label: "The fee is {amount}, charged once for this relationship." },
-        { id: "deadline", label: "It has to be paid by {instant}, or the relationship expires." },
-        {
-          id: "method-missing",
-          label:
-            "No payment method is on file yet. Adding one charges nothing — the fee is taken when you complete.",
-        },
-        { id: "method-on-file", label: "A payment method is on file. Nothing has been charged." },
+        { id: "sealed", label: "Both sheets are sealed. Complete when you are ready." },
         {
           id: "not-sealed",
           label:
-            "The fee is only taken once both of you have answered every Aspect and accepted the other's answers.",
+            "Completion waits for both of you: every Aspect answered by each, and both answers accepted.",
         },
-        /**
-         * #912 — **the label now names where it goes.** This was "Add a payment method", which read
-         * as a capture happening on this screen; the screen no longer captures anything. The button
-         * is a link into the pay modal, so it says so. `capture-unavailable` is the arm that cannot
-         * be reached from this band (`gate` is null without a session, and no session means no
-         * `payHref`), drawn so an impossible state still has words rather than a control that does
-         * nothing.
-         */
-        { id: "capture", label: "Open the payment step" },
-        { id: "capture-unavailable", label: "Put a payment method on file from the invitation." },
         { id: "complete", label: "Complete and open the Gap" },
         { id: "completing", label: "Completing…" },
         {
           id: "completed",
-          label: "Complete — {amount} was charged and the Gap is open to both of you ({status}).",
+          label: "Complete ({status}) — the Gap is open to both of you.",
         },
-        { id: "charged", label: "{amount} was charged {instant}. The Gap is open to both of you." },
-        {
-          id: "expired",
-          label:
-            "This relationship expired before the fee was paid. A new relationship is the way to try again — a payment cannot reopen it.",
-        },
-        { id: "pay", label: "Add a payment method to continue" },
       ],
     },
     {
@@ -569,21 +542,8 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label: "The invitation link is still live — there is nothing to reissue.",
         },
         { id: "checkout-required", label: "A checkout has to complete first." },
-        /* #739 — the completion band's own dead ends, one sentence each. */
-        {
-          id: "payment-method-required",
-          label:
-            "Completing needs a payment method on file first. Nothing was charged — add one and complete again.",
-        },
-        {
-          id: "charge-declined",
-          label:
-            "The card was declined and the retry ladder for this relationship is spent. Adding a new method does not restart it; support can reopen the obligation.",
-        },
-        {
-          id: "already-charged",
-          label: "This fee has already been paid — the relationship is complete.",
-        },
+        /* #1010 R2 — the completion band's own dead end. There is no fee, so there is no
+         * payment-method-required, no charge-declined and no already-charged sentence left. */
         {
           id: "not-the-payer",
           label:

@@ -1313,34 +1313,42 @@ export async function sendDraftInvitation(input: {
   let status: string | undefined;
   let relationshipId: string | undefined;
   /**
-   * The captured method, read from **`relationship_payment`** — the row that owns the fact.
+   * The membership behind the relationship, read from **`billing_subscription`** — the row the
+   * webhook writes (#1010 R2).
    *
-   * `null` means "no card on file", which the send waits for; `relationship_payment` is keyed by
-   * `relationship_id`, so the join cannot fan out. A relationship with no payment row yet is the
-   * normal state before a method is captured, and the `LEFT JOIN` is what makes that absence read
-   * as `null` rather than as a missing row (#948 — the column was selected from `relationship`,
-   * which does not have it, so every send answered `42703`).
+   * #619's send waited for a **captured card** in `relationship_payment.method_captured_at`. #1010
+   * deletes that path: a card now reaches an account by buying the membership at stage 5, so the
+   * fact the send waits for is the Initiator's live subscription. Reading the old column here would
+   * refuse every send for ever, because nothing writes it any more.
+   *
+   * The live statuses are the ones `entitlements.ts` treats as paid: `active`, `trialing` and
+   * `past_due` (a payment retry in flight still serves the product).
    */
-  let methodCaptured: Date | null = null;
+  let subscriptionStatus: string | null = null;
   try {
     const found = await client.query<{
       relationship_id: string | null;
       status: string | null;
-      method_captured_at: Date | null;
+      subscription_status: string | null;
     }>(
-      `SELECT ai.relationship_id, r.status, p.method_captured_at
+      `SELECT ai.relationship_id, r.status,
+              (SELECT bs.status FROM billing_subscription bs
+                WHERE bs.user_id = r.initiator_user_id
+                  AND bs.status = ANY(ARRAY['active', 'trialing', 'past_due'])
+                ORDER BY bs.updated_at DESC LIMIT 1) AS subscription_status
          FROM session ai
          LEFT JOIN relationship r ON r.id = ai.relationship_id
-         LEFT JOIN relationship_payment p ON p.relationship_id = r.id
         WHERE ai.record_id = $1`,
       [input.instanceRecordId],
     );
     relationshipId = found.rows[0]?.relationship_id ?? undefined;
     status = found.rows[0]?.status ?? undefined;
-    methodCaptured = found.rows[0]?.method_captured_at ?? null;
+    subscriptionStatus = found.rows[0]?.subscription_status ?? null;
   } finally {
     client.release();
   }
+  /** Is the membership paying for this relationship live? `false` is what the send waits on. */
+  const membershipLive = subscriptionStatus !== null;
 
   // Who is asking, by the same two readings everything else uses: this browser's party cookies,
   // then the signed-in account. A role out of Postgres, never a field in the post.
@@ -1382,18 +1390,23 @@ export async function sendDraftInvitation(input: {
   }
 
   /**
-   * #911 — **the send waits for the walk.** The invitation publishes the relationship and mails the
-   * other seat; the money side of the stage is a plan joined and a card on file, and the UI disables
-   * the control until both are done. That is the courtesy. This is the rule: a POST that skips the
-   * walk is refused here, where the write would happen, so "the send fired without payment" is not a
-   * state a crafted request can reach. Keeping the draft is untouched — it sends nothing, so it is
-   * never asked for a card.
+   * #911 / #1010 R2 — **the send waits for the membership.**
+   *
+   * The invitation publishes the relationship and mails the other seat. Since #1010 the money side
+   * of the stage is the **subscription** bought at stage 5 (one plan, both parties, seven days
+   * free), and the UI disables the control until it is live. That is the courtesy; this is the
+   * rule: a POST that skips the walk is refused here, where the write would happen, so "the send
+   * fired without a membership" is not a state a crafted request can reach. Keeping the draft is
+   * untouched — it sends nothing, so it is never asked for anything.
+   *
+   * The refusal code stays `no-payment-method` because it is the code the screen already maps;
+   * the sentence it carries names the membership, which is what the person can actually act on.
    */
-  if (methodCaptured === null) {
+  if (!membershipLive) {
     return {
       ok: false,
       code: "no-payment-method",
-      reason: `relationship "${relationshipId ?? "none"}" has no card on file: stage 5's send waits for the plan and the card`,
+      reason: `relationship "${relationshipId ?? "none"}" has no live membership: stage 5's send waits for the subscription bought on that stage`,
     };
   }
 

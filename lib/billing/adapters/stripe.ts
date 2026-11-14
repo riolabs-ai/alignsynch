@@ -38,12 +38,8 @@
  * reads the subscription once.
  */
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import {
-  type BillingInterval,
-  BILLING_INTERVALS,
-  billingPlan,
-  planPriceCents,
-} from "@/data/billing-plans";
+import { type BillingInterval, BILLING_INTERVALS, billingPlan } from "@/data/billing-plans";
+import { billingPriceIdFor, TRIAL_PERIOD_DAYS } from "@/data/billing-prices";
 import { checkoutRefusal, entitlementOf } from "@/lib/billing/entitlements";
 import {
   billingHostFromEnv,
@@ -53,14 +49,9 @@ import {
 } from "@/lib/billing/host";
 import { BillingRefusal, type BillingPort } from "@/lib/billing/port";
 import type {
-  ChargeOutcome,
   CheckoutRequest,
   CheckoutSession,
   Entitlement,
-  MethodCaptureRequest,
-  MethodCaptureSession,
-  RelationshipChargeRequest,
-  ResolvedMethod,
   Subscription,
   SubscriptionStatus,
   WebhookOutcome,
@@ -282,14 +273,6 @@ interface StripeCheckoutSessionObject {
   readonly livemode?: boolean | null;
 }
 
-/** A PaymentIntent, as far as this adapter reads it (#619's charge). */
-interface StripePaymentIntentObject {
-  readonly id: string;
-  readonly status?: string | null;
-  readonly amount?: number | null;
-  readonly livemode?: boolean | null;
-}
-
 interface StripeSubscriptionItem {
   readonly current_period_end?: number | null;
   readonly price?: {
@@ -409,10 +392,26 @@ export class StripeBillingAdapter implements BillingPort {
   /**
    * Create a Checkout Session and return where to send the browser.
    *
-   * The line item is inline `price_data`, not a pre-created Price object: the amount a checkout
-   * charges is `data/billing-plans.ts`'s, and a dashboard Price would be a second copy of it — the
-   * drift `billing_plan` exists to prevent. Nothing in the session is provider-owned configuration
-   * beyond the API call itself.
+   * **This is the membership purchase (#1010 R2).** Stage 5's Initiator buys the membership here —
+   * one subscription that covers both parties and renews monthly — so the line item names a
+   * **Price** created in the provider's test account (`data/billing-prices.ts`), never inline
+   * `price_data`: an amount authored in the request would be a second copy of
+   * `data/billing-plans.ts`'s, and a subscription needs a Price object to renew against.
+   *
+   * **The seven-day trial is sent, not drawn.** `subscription_data[trial_period_days]=7` is the
+   * badge the UI prints; `trial_settings[end_behavior][missing_payment_method]=cancel` is what
+   * happens when no card is added inside those days, because a trial that ended `pause`d would
+   * activate a subscription nobody pays for. `payment_method_collection=always` is sent
+   * explicitly rather than left to the provider's default: a trial that collects no card has
+   * nothing to charge on day eight.
+   *
+   * **Two presentations, one session** (#748's split, now for the purchase rather than the
+   * capture). The default sends the browser to the provider's own page and answers a `url`.
+   * `presentation: "embedded"` asks for `ui_mode: embedded_page` instead: the provider draws its
+   * form in a frame **inside our page** — stage 5's card step, which already mounts
+   * `components/billing/stripe-frame.tsx` — so there is no `success_url` to leave for, only a
+   * `return_url` for the one case that must navigate (an SCA challenge). That session answers a
+   * `client_secret`, which is what `initEmbeddedCheckout()` needs.
    *
    * Our own vocabulary rides along in metadata, on both the session and the subscription it
    * creates. That is what makes every later `customer.subscription.*` delivery mappable without a
@@ -442,24 +441,49 @@ export class StripeBillingAdapter implements BillingPort {
         `"${request.interval}" is not a billing interval (${BILLING_INTERVALS.join(", ")})`,
       );
     }
-    if (request.successUrl === "" || request.cancelUrl === "") {
+
+    // A (tier, interval) with no Price is a checkout that cannot charge: refused with the pair
+    // named, never served by an inline amount that would disagree with the fixture.
+    const priceId = billingPriceIdFor(plan.id, interval);
+    if (priceId === undefined) {
+      throw new BillingRefusal(
+        "not-for-sale",
+        `${plan.id}/${interval} has no Price in this build — add one to data/billing-prices.ts before selling it`,
+      );
+    }
+
+    const embedded = request.presentation === "embedded";
+    const publishableKey = this.credentials.publishableKey;
+    if (embedded) {
+      if (publishableKey === null || publishableKey === "") {
+        throw new BillingRefusal(
+          "not-configured",
+          "STRIPE_TEST_PUBLISHABLE_KEY is not set — the in-page checkout has no key to load the " +
+            "provider's frame with. The hosted checkout does not need it; this one does",
+        );
+      }
+      if (request.successUrl === "") {
+        throw new BillingRefusal(
+          "invalid-request",
+          "an embedded checkout needs a return URL for the one case that must navigate (an SCA challenge)",
+        );
+      }
+    } else if (request.successUrl === "" || request.cancelUrl === "") {
       throw new BillingRefusal(
         "invalid-request",
         "a checkout needs a success URL and a cancel URL to send the browser back to",
       );
     }
 
-    const intervalLabel = interval === "year" ? "yearly" : "monthly";
     const form = new URLSearchParams({
       mode: "subscription",
-      success_url: request.successUrl,
-      cancel_url: request.cancelUrl,
       client_reference_id: request.userId,
+      "line_items[0][price]": priceId,
       "line_items[0][quantity]": "1",
-      "line_items[0][price_data][currency]": STRIPE_CURRENCY,
-      "line_items[0][price_data][unit_amount]": String(planPriceCents(plan, interval)),
-      "line_items[0][price_data][recurring][interval]": interval,
-      "line_items[0][price_data][product_data][name]": `${plan.name} — ${intervalLabel}`,
+      // Sent, never defaulted: a subscription that renews needs a card the trial collected.
+      payment_method_collection: "always",
+      "subscription_data[trial_period_days]": String(TRIAL_PERIOD_DAYS),
+      "trial_settings[end_behavior][missing_payment_method]": "cancel",
       "metadata[user_id]": request.userId,
       "metadata[plan_id]": plan.id,
       "metadata[interval]": interval,
@@ -469,102 +493,14 @@ export class StripeBillingAdapter implements BillingPort {
       "subscription_data[metadata][interval]": interval,
       "subscription_data[metadata][host]": this.host,
     });
-    if (request.email !== undefined && request.email !== "") {
-      form.set("customer_email", request.email);
-    }
-
-    const session = await this.post<StripeCheckoutSessionObject>("/checkout/sessions", form);
-    if (typeof session.url !== "string" || session.url === "") {
-      throw new Error(
-        `stripe returned a checkout session (${session.id}) with no URL to redirect to`,
-      );
-    }
-
-    return {
-      id: session.id,
-      url: session.url,
-      provider: "stripe",
-      // The subscription does not exist yet: it appears when the customer completes the hosted
-      // page and this adapter's webhook applies the event. No surface may depend on this flag.
-      completed: false,
-    };
-  }
-
-  /**
-   * Capture a payment method, charging nothing (#619), hosted or embedded (#748).
-   *
-   * `mode: "setup"` is the point: the session saves a card to a customer and takes no money, which
-   * is exactly #619's "a method on file, the fee later".
-   *
-   * **Two presentations, one session.** The default (`hosted`, and what every caller before #748
-   * asked for) sends the browser to the provider's own page: `success_url` / `cancel_url`, and
-   * `{CHECKOUT_SESSION_ID}` comes back in the return URL so `resolveMethodCapture()` can read the
-   * ids back — nothing the return URL *claims* is trusted. `presentation: "embedded"` asks for
-   * `ui_mode: embedded` instead: the provider draws the same form in a frame **inside our page**,
-   * so there is no `success_url` to leave for, only a `return_url` for the one case that must
-   * navigate (an SCA challenge). The session then answers a `client_secret`, which is what the
-   * browser's `initEmbeddedCheckout()` needs — and a session that completed in the frame is
-   * resolved through exactly the same `resolveMethodCapture()` the hosted path uses, keyed by `id`.
-   *
-   * The publishable key is required for embedded and refused by name when it is absent: the
-   * browser's loader cannot initialise a frame without it, and a capture that "started" and then
-   * rendered nothing is worse than a sentence naming the variable to set. It is not needed by the
-   * hosted path, which is why it stayed unread until now.
-   *
-   * `metadata.host` rides on the session **and** on the setup intent, for the same reason every
-   * subscription event carries it: the two hosts share one test sandbox, so a capture that did not
-   * say whose it was could be resolved by either deployment.
-   */
-  async startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession> {
-    if (request.successUrl === "" || request.cancelUrl === "") {
-      throw new BillingRefusal(
-        "invalid-request",
-        "a capture needs a success URL and a cancel URL to send the browser back to",
-      );
-    }
-    const embedded = request.presentation === "embedded";
-    const publishableKey = this.credentials.publishableKey;
-    if (embedded && (publishableKey === null || publishableKey === "")) {
-      throw new BillingRefusal(
-        "not-configured",
-        "STRIPE_TEST_PUBLISHABLE_KEY is not set — the in-page capture has no key to load the " +
-          "provider's frame with. The hosted capture does not need it; this one does",
-      );
-    }
-
-    const separator = request.successUrl.includes("?") ? "&" : "?";
-    const form = new URLSearchParams({
-      mode: "setup",
-      client_reference_id: request.userId,
-      "metadata[user_id]": request.userId,
-      "metadata[relationship_id]": request.relationshipId,
-      "metadata[host]": this.host,
-      "setup_intent_data[metadata][host]": this.host,
-      "setup_intent_data[metadata][relationship_id]": request.relationshipId,
-    });
     if (embedded) {
-      // `ui_mode: embedded_page` + `return_url` is the provider's embedded Checkout: the form is
-      // drawn in a frame on our own screen, and `if_required` means a normal save never navigates
-      // while an SCA challenge still can — the one case a frame cannot show.
-      //
-      // The value was `embedded` until the provider renamed it; a request carrying the old word is
-      // refused at the API with "The ui_mode value `embedded` is no longer supported. Use
-      // `embedded_page` instead." (measured 2026-11-08 against the test keys). The approved
-      // artifact's frame caption still reads `ui_mode: embedded` — that is the artifact's copy and
-      // this adapter does not edit copy — but the request has to carry the word the API accepts.
       form.set("ui_mode", "embedded_page");
       form.set("return_url", request.successUrl);
       form.set("redirect_on_completion", "if_required");
     } else {
-      form.set("success_url", `${request.successUrl}${separator}capture={CHECKOUT_SESSION_ID}`);
+      form.set("success_url", request.successUrl);
       form.set("cancel_url", request.cancelUrl);
     }
-    // **Both** presentations need it, not just the embedded one. A `setup` session charges nothing,
-    // but the provider's Checkout still draws an amount line and refuses the request without a
-    // currency: the hosted capture answered `400 invalid-request — the payment provider refused the
-    // POST /checkout/sessions: Missing required param: currency` until this line was moved out of
-    // the embedded branch. `STRIPE_CURRENCY` is this adapter's one authored answer.
-    form.set("currency", STRIPE_CURRENCY);
     if (request.email !== undefined && request.email !== "") {
       form.set("customer_email", request.email);
     }
@@ -575,8 +511,8 @@ export class StripeBillingAdapter implements BillingPort {
       if (typeof session.client_secret !== "string" || session.client_secret === "") {
         throw new BillingRefusal(
           "not-configured",
-          `the provider returned an embedded capture session (${session.id}) with no client secret — ` +
-            "nothing could mount the frame, and no method was saved",
+          `the provider returned an embedded checkout session (${session.id}) with no client secret — ` +
+            "nothing could mount the frame, and no membership was started",
         );
       }
       return {
@@ -591,124 +527,89 @@ export class StripeBillingAdapter implements BillingPort {
     }
 
     if (typeof session.url !== "string" || session.url === "") {
-      throw new Error(`stripe returned a setup session (${session.id}) with no URL to redirect to`);
+      throw new Error(
+        `stripe returned a checkout session (${session.id}) with no URL to redirect to`,
+      );
     }
-    return { id: session.id, url: session.url, provider: "stripe", completed: false };
-  }
 
-  /**
-   * Read a captured method back from the provider (#619).
-   *
-   * Three refusals, each a different fact: the session is not complete (the browser came back from
-   * an abandoned page), the session claims another deployment (a shared sandbox — `metadata.host`
-   * is what `handleWebhook` already filters on), or the session carries no customer/payment method
-   * (the provider saved nothing and the capture did not happen). A resolved method is the provider's
-   * own objects, never a value the return URL supplied.
-   */
-  async resolveMethodCapture(sessionId: string): Promise<ResolvedMethod> {
-    if (sessionId.trim() === "") {
-      throw new BillingRefusal("invalid-request", "a capture session id is required");
-    }
-    const session = await this.get<StripeCheckoutSessionObject>(
-      `/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=setup_intent.payment_method`,
-    );
-    if (session.status !== "complete") {
-      throw new BillingRefusal(
-        "invalid-request",
-        `capture session "${session.id}" is ${session.status ?? "in an unknown state"}: no method was saved`,
-      );
-    }
-    const metadata = session.metadata ?? {};
-    if (metadata.host !== this.host) {
-      throw new BillingRefusal(
-        "invalid-request",
-        `capture session "${session.id}" belongs to "${metadata.host ?? "no host"}", not to this deployment ("${this.host}")`,
-      );
-    }
-    const customerId =
-      typeof session.customer === "string" ? session.customer : (session.customer?.id ?? "");
-    const setupIntent =
-      typeof session.setup_intent === "object" && session.setup_intent !== null
-        ? session.setup_intent
-        : null;
-    const paymentMethodId =
-      typeof setupIntent?.payment_method === "string"
-        ? setupIntent.payment_method
-        : (setupIntent?.payment_method?.id ?? "");
-    if (customerId === "" || paymentMethodId === "") {
-      throw new BillingRefusal(
-        "invalid-request",
-        `capture session "${session.id}" completed without a customer and a payment method`,
-      );
-    }
     return {
-      relationshipId: metadata.relationship_id ?? null,
-      userId: metadata.user_id ?? null,
-      customerId,
-      paymentMethodId,
-      // The object's own flag; an absent one is test mode, never money.
-      livemode: session.livemode === true,
+      id: session.id,
+      url: session.url,
+      provider: "stripe",
+      // The subscription does not exist yet: it appears when the customer completes the provider's
+      // page and this adapter's webhook applies the event. No surface may depend on this flag.
+      completed: false,
     };
   }
 
   /**
-   * Charge the method on file — the relationship's fee (#619).
+   * Read a completed membership checkout back from the provider, and write the row (#1010 R2).
    *
-   * Off-session and confirmed in one call: the payer is not on the page, and the product's promise
-   * is that the fee is taken when both sheets are sealed. `idempotencyKey` is the caller's
-   * (`relationship-<id>`), so a retried completion cannot take the fee twice — the provider's own
-   * guarantee, beside the database's `charged_at IS NULL`.
+   * The embedded frame's `onComplete` is the browser's word, and a browser is not a source of
+   * truth. So stage 5 hands the session id here, this reads the provider's own session, refuses
+   * one that belongs to another account or another deployment, and maps the subscription it
+   * created through the same `mapSubscription()` every webhook uses — then writes it through
+   * `applyBillingEventOnce()`, keyed by the session, so a double click cannot write twice and the
+   * webhook that lands afterwards is an `ON CONFLICT DO UPDATE` on the same row.
    *
-   * A **4xx is a decline** and is returned, not thrown: a card that says no is the outcome the
-   * retry ladder exists for. A 5xx or transport failure still throws, because that is not the
-   * payer's card failing and the ladder must not count it as an attempt.
+   * `null` means "not complete yet" — the caller may ask again. A session that is complete but
+   * names another account is a refusal, not a `null`.
    */
-  async chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome> {
-    if (request.amountCents <= 0) {
+  async confirmCheckout(userId: string, sessionId: string): Promise<Subscription | null> {
+    if (sessionId.trim() === "") {
+      throw new BillingRefusal("invalid-request", "a checkout session id is required");
+    }
+    const session = await this.get<StripeCheckoutSessionObject>(
+      `/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=subscription`,
+    );
+    if (session.status !== "complete") return null;
+
+    const owner = (session.client_reference_id ?? session.metadata?.user_id ?? "").trim();
+    if (owner !== userId) {
       throw new BillingRefusal(
         "invalid-request",
-        `a relationship fee is a positive amount of cents; this charge asked for ${request.amountCents}`,
+        `checkout session "${session.id}" belongs to another account`,
       );
     }
-    if (request.customerId === "" || request.paymentMethodId === "") {
-      return {
-        ok: false,
-        code: "no-method",
-        message: "no customer and payment method are on file for this relationship",
-      };
+    if ((session.metadata?.host ?? "") !== this.host) {
+      throw new BillingRefusal(
+        "invalid-request",
+        `checkout session "${session.id}" belongs to "${session.metadata?.host ?? "no host"}", not to this deployment ("${this.host}")`,
+      );
     }
-    const form = new URLSearchParams({
-      amount: String(request.amountCents),
-      currency: STRIPE_CURRENCY,
-      customer: request.customerId,
-      payment_method: request.paymentMethodId,
-      off_session: "true",
-      confirm: "true",
-      description: request.description,
-      "metadata[user_id]": request.userId,
-      "metadata[relationship_id]": request.relationshipId,
-      "metadata[host]": this.host,
-    });
 
-    let intent: StripePaymentIntentObject;
-    try {
-      intent = await this.post<StripePaymentIntentObject>("/payment_intents", form, {
-        "idempotency-key": request.idempotencyKey,
-      });
-    } catch (error) {
-      if (error instanceof BillingRefusal) {
-        return { ok: false, code: "declined", message: error.message };
-      }
-      throw error;
+    const subscriptionId = idOf(session.subscription);
+    if (subscriptionId === null) {
+      throw new BillingRefusal(
+        "invalid-request",
+        `checkout session "${session.id}" carries no subscription`,
+      );
     }
-    if (intent.status !== "succeeded") {
-      return {
-        ok: false,
-        code: "declined",
-        message: `payment intent "${intent.id}" came back ${intent.status ?? "without a status"}`,
-      };
+    const object =
+      typeof session.subscription === "object" && session.subscription !== null
+        ? (session.subscription as StripeSubscriptionObject)
+        : await this.get<StripeSubscriptionObject>(`/subscriptions/${subscriptionId}`);
+    const mapped = this.mapSubscription(object, {
+      userId: owner,
+      planId: session.metadata?.plan_id ?? null,
+      interval: intervalOf(session.metadata?.interval),
+    });
+    if (typeof mapped === "string") {
+      throw new BillingRefusal("invalid-request", mapped);
     }
-    return { ok: true, chargeId: intent.id, amountCents: intent.amount ?? request.amountCents };
+
+    const result = await applyBillingEventOnce(
+      {
+        provider: "stripe",
+        // The session is the idempotency subject: one session, one row write, however many times
+        // the frame reports completion.
+        eventId: `checkout-confirm/${session.id}`,
+        type: "checkout.session.confirmed",
+        payloadDigest: createHash("sha256").update(session.id, "utf8").digest("hex"),
+      },
+      (client) => writeSubscription(client, mapped),
+    );
+    return result.subscription;
   }
 
   /**

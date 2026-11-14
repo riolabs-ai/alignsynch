@@ -71,7 +71,6 @@ import type { AlignmentSetting, Assessment, AssessmentMode, PartyRole } from "@/
 import type { BillingInterval, BillingPlanId } from "@/data/billing-plans";
 import { readActiveSubscription } from "@/lib/db/billing";
 import { queryRows } from "@/lib/db/client";
-import { readRelationshipPayment } from "@/lib/db/relationship-payment";
 import {
   assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
@@ -559,13 +558,13 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
    */
   readonly publishable: boolean;
   /**
-   * Is a payment method on file for this relationship? #690's hard gate.
+   * Is the membership paying for this relationship live? #690's hard gate, re-based by #1010 R2.
    *
-   * Read from `relationship_payment.method_captured_at` — the same obligation the completion fee
-   * is charged against — and `false` when the row does not exist. The soft prompt belongs to the
-   * create (stage 4's plans); this is the half that is not optional.
+   * Derived from the initiator's subscription (`membership.writable`) — the same fact the claim and
+   * the answer submit refuse on — and `false` when the account has no live subscription. There is
+   * no card to look for any more: the membership bought at stage 5 is what unlocks publishing.
    */
-  readonly hasPaymentMethod: boolean;
+  readonly hasMembership: boolean;
   /**
    * #739 — **the completion gate, as facts.** The payer's two acts live on this screen: put a
    * method on file, and complete and open the Gap. This is what the band draws from — the sheets'
@@ -706,19 +705,17 @@ export async function readMyRelationship(
   const base = relationshipOf(row, now, subscription, userId);
   const trial = trialStateOf(subscription, now);
   /*
-   * #690 — **the hard gate at publish, as a fact.**
+   * #690 / #1010 R2 — **the hard gate at publish, as a fact.**
    *
-   * The plans on stage 4 are a soft prompt: a relationship is created and invited with no method.
-   * Publishing is the other half, and it needs a card on file — so the screen has to know whether
-   * one is, and the answer lives on the payment obligation this relationship already carries
-   * (`relationship_payment.method_captured_at`, written by `recordMethodCaptured()`). A
-   * relationship with no row at all reads `false` here rather than "not measured": the question
-   * this field answers is asked of the screen, and a screen that cannot show the fact must not
-   * draw the control.
+   * Publishing is gated on the account's **membership**, not on a card: #1010 deletes the
+   * per-relationship capture, and a card now reaches an account only by buying the subscription at
+   * stage 5. So the question this field answers is "is the membership paying for this relationship
+   * live?", which is `membership.writable` — derived from the initiator's subscription at the
+   * instant this read was handed, by the same function the claim and the answer submit refuse with.
+   * A relationship with no subscription (a brand-new draft, or one whose trial is over) reads
+   * `false` here, and the screen draws no publish control rather than one the write would refuse.
    */
-  const payment = await readRelationshipPayment(row.id);
-  const hasPaymentMethod =
-    payment?.method_captured_at !== null && payment?.method_captured_at !== undefined;
+  const hasMembership = base.membership.writable;
   /*
    * #739 — the completion gate, read beside the method fact.
    *
@@ -731,7 +728,7 @@ export async function readMyRelationship(
   const completion =
     base.sessionRecordId === null
       ? null
-      : ((await readCompletionGate(base.sessionRecordId, now)) ?? null);
+      : ((await readCompletionGate(base.sessionRecordId)) ?? null);
   // #533 phase 3 — derived at the instant the page was handed, never written here (a render may
   // not write). The same function the claim and the answer submit refuse with, so the band and the
   // refusal can never disagree about whether this relationship may be written to.
@@ -763,9 +760,9 @@ export async function readMyRelationship(
      */
     aspectsEditable: base.isInitiator && aspectsEditable(base.status),
     publishable: base.isInitiator && publishable(base.status),
-    // #690 — a method on file, or nothing to click at publish. `publishable` stays the status
-    // question the transaction re-asks; this is the second half the screen must not guess.
-    hasPaymentMethod,
+    // #690 / #1010 R2 — a live membership, or nothing to click at publish. `publishable` stays
+    // the status question the transaction re-asks; this is the second half the screen must not guess.
+    hasMembership,
     completion,
     offersRepublish: base.isInitiator && republishable(base.view) && membership.state !== "lapsed",
     trialWithoutLiveInvite: base.isInitiator && trialRunningWithoutLiveInvite(trial, base.view),

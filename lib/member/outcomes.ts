@@ -76,43 +76,37 @@ export type PublishOutcome =
     };
 
 /**
- * #619 — the payer completed: the fee was taken, the relationship is `complete` and the Gap is open
- * to both parties.
+ * #739 / #1010 R2 — completing the relationship, from its own screen.
  *
- * `payment-required` is not a failure: it carries the url the browser must visit to put a method on
- * file, exactly as `PublishOutcome`'s checkout arm does — nothing was charged and the sheets stay
- * sealed until the payer comes back.
+ * Sealing charges nothing: the membership was bought at stage 5, so a completion carries the status
+ * it moved to and the instant it did — no amount, no charge and no url to visit.
  */
 export type CompleteOutcome =
   | {
       readonly ok: true;
       readonly actionId: string;
       readonly status: string;
-      readonly chargedAt: string;
-      readonly amountCents: number;
+      readonly completedAt: string;
     }
-  | { readonly ok: false; readonly code: string; readonly message?: string; readonly url?: string };
+  | { readonly ok: false; readonly code: string; readonly message?: string };
 
 /**
- * #739 — putting a method on file, from the relationship screen.
+ * Buying the membership at stage 5 (#1010 R2) — two answers, one per step of the walk.
  *
- * Three shapes, one arm each fact:
- *
- *   inline    `url` and `clientSecret` are both `null` and `captured` is `true`: the adapter
- *             completed inside this request (the mock, and any offline one). Nothing else happens.
- *   hosted    `url` is the page the browser must visit, exactly as `PublishOutcome`'s checkout arm.
- *   embedded  `clientSecret` is the secret the screen mounts the provider's frame with (#748) —
- *             nothing navigates — and `captureSessionId` is what the frame's completion hands back
- *             so the method can be resolved by the same function the hosted return path uses.
+ *   start    `clientSecret` + `publishableKey` mount the provider's frame in the card step, and
+ *            `checkoutSessionId` is what the frame's completion hands back. `completed` is `true`
+ *            for the offline adapter, which wrote the row inside the request.
+ *   confirm  `planName` names the tier the provider says was bought. `null`-ish means the provider
+ *            has not finished yet; the walk asks again rather than claiming a membership.
  */
-export type CaptureOutcome =
+export type MembershipOutcome =
   | {
       readonly ok: true;
-      readonly url: string | null;
-      readonly captured?: boolean;
       readonly clientSecret?: string | null;
       readonly publishableKey?: string | null;
-      readonly captureSessionId?: string | null;
+      readonly checkoutSessionId?: string | null;
+      readonly completed?: boolean;
+      readonly planName?: string;
     }
   | { readonly ok: false; readonly code: string; readonly message?: string };
 

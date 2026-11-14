@@ -1,31 +1,29 @@
 // @vitest-environment jsdom
 /**
- * The payer's two acts, and the refusals that are sentences rather than dead ends (#739).
+ * **Completing a relationship charges nothing, and the tree cannot grow a charge back (#1010 R2).**
  *
- * The card's diagnosis was that the whole payment workflow was green on the server and reachable
- * from nothing: `capturePaymentMethodAction` and `completeRelationshipAction` had no caller outside
- * their own module, and `relationship-cards.tsx` shipped two controls disabled for good. This file
- * is the half a screenshot cannot cover — that the screen **presses** the actions, and that every
- * outcome they can answer is drawn:
+ * #619 took a fee at completion, against a card captured earlier; #1010 retires that model. The
+ * money is the membership bought at stage 5 — one monthly subscription, seven days free — and it
+ * already covers every relationship the account runs. So sealing a relationship is a state change
+ * and a Gap:
  *
- *   the two acts      a sealed relationship with no method draws the completion, and a door into the
- *                     pay modal — the only surface that takes a card (#912)
- *   payment-required  the refusal carries a url, and the url is a link the person can click —
- *                     the difference between a dead end and a detour
- *   a decline         the provider's own sentence, never a generic failure
- *   not-the-payer     the fee belongs to the initiator, so a Counterparty's screen draws no band
- *   no capture        the screen draws no dialog, no frame and no add-method control: one surface
- *                     captures a card and it is not this one (#912)
- *   completed         the fee's amount and the status the write answered with
+ *   the band          draws the seal and the button, and **nothing about money** — no amount, no
+ *                     deadline, no method state, and no door to a card surface
+ *   pressing it      answers the status and the instant, never a charge id or an amount
+ *   the tree         `chargeOnFile`, `startMethodCapture` and `resolveMethodCapture` are gone —
+ *                     asserted on the source, because a deleted path cannot be reached by a later
+ *                     card, and a rename is not a deletion
+ *   the library      `lib/member/payment.ts` imports no billing module at all, so a completion
+ *                     cannot reach a provider even by accident
  *
- * A DOM rather than static markup because the outcome only exists after a click: the component's
- * state machine is the subject. `tests/relationship-publish-gate.test.tsx` holds the publish-time
- * half of this screen (and the absence assertions), and `tests/flow-payment.test.ts` holds the
- * derivation; this file starts where those stop — at the button.
+ * A DOM rather than static markup for the band, because the outcome only exists after a click: the
+ * component's state machine is the subject. `tests/relationship-publish-gate.test.tsx` holds the
+ * publish-time half of this screen.
  */
-import { act } from "react";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { refreshSpy } = vi.hoisted(() => ({ refreshSpy: vi.fn() }));
@@ -38,7 +36,7 @@ import { assessments } from "@/data/assessments";
 import { dashboardRelationshipDetailPageCopy } from "@/data/pages/dashboard-relationship-detail";
 import type { CompletionGate } from "@/lib/member/payment";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
-import type { CaptureOutcome, CompleteOutcome } from "@/lib/member/outcomes";
+import type { CompleteOutcome } from "@/lib/member/outcomes";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 declare global {
@@ -50,21 +48,13 @@ const template = assessments[0];
 if (template === undefined) throw new Error("data/assessments.ts carries no template to draw");
 
 const COMPLETION = sectionOf(dashboardRelationshipDetailPageCopy, "completion");
-const CAPTURE_LABEL = itemLabel(COMPLETION, "capture");
 const COMPLETE_LABEL = itemLabel(COMPLETION, "complete");
+
+const ROOT = join(__dirname, "..");
 
 /** A gate in the state each case needs; `null` is a relationship with no session at all. */
 function gateOf(overrides: Partial<CompletionGate> = {}): CompletionGate {
-  return {
-    sealed: true,
-    phase: "none",
-    hasMethod: false,
-    awaitingPayment: true,
-    amountCents: 1900,
-    deadlineAt: "2026-11-16T00:00:00.000Z",
-    chargedAt: null,
-    ...overrides,
-  };
+  return { sealed: true, ...overrides };
 }
 
 function viewOf(input: {
@@ -94,7 +84,7 @@ function viewOf(input: {
     template,
     aspectsEditable: false,
     publishable: false,
-    hasPaymentMethod: input.gate?.hasMethod === true,
+    hasMembership: true,
     completion: input.gate,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
@@ -126,15 +116,16 @@ afterEach(() => {
 });
 
 /** Mount the real component with the one callback a case needs. */
-interface Press {
-  readonly complete?: (payload: {
+function mount(
+  view: MemberRelationshipView,
+  complete: (payload: {
     relationshipId?: string;
-    planId?: string;
     reason?: string;
-  }) => Promise<CompleteOutcome>;
-}
-
-function mount(view: MemberRelationshipView, press: Press = {}): void {
+  }) => Promise<CompleteOutcome> = async () => ({
+    ok: false as const,
+    code: "failed",
+  }),
+): void {
   act(() => {
     root.render(
       createElement(RelationshipDetail, {
@@ -143,21 +134,12 @@ function mount(view: MemberRelationshipView, press: Press = {}): void {
         onSaveAspects: async () => ({ ok: false as const, code: "failed" }),
         onPublish: async () => ({ ok: false as const, code: "failed" }),
         onRepublish: async () => ({ ok: false as const, code: "failed" }),
-        onComplete: press.complete ?? (async () => ({ ok: false as const, code: "failed" })),
+        onComplete: complete,
         onFork: async () => ({ ok: false as const, code: "failed" }),
         templatesHref: "/templates/relationship?view=mine",
       }),
     );
   });
-}
-
-/**
- * #912 — **the payment door is a link, not a capture.** The band used to draw a button that opened
- * `PaymentCaptureDialog`; that component is deleted, so the control this file is about is the anchor
- * the band draws instead. `null` means the band drew no door at all.
- */
-function payDoor(): HTMLAnchorElement | null {
-  return container.querySelector<HTMLAnchorElement>("[data-capture-method]");
 }
 
 /** The button whose label is `label` — the person clicks a word, not an attribute. */
@@ -175,63 +157,33 @@ async function press(element: HTMLButtonElement): Promise<void> {
   });
 }
 
-describe("the payer's band", () => {
-  it("offers both acts when the sheets are sealed and no method is on file", () => {
+describe("the completion band, which sells nothing", () => {
+  it("offers the completion when both sheets are sealed, and draws no money fact", () => {
     mount(viewOf({ gate: gateOf() }));
     const band = container.querySelector("[data-completion-gate]");
-    expect(band?.getAttribute("data-completion-gate")).toBe("none");
-    expect(band?.getAttribute("data-completion-sealed")).toBe("true");
-    expect(payDoor()).not.toBeNull();
+    expect(band?.getAttribute("data-completion-gate")).toBe("sealed");
+    expect(container.querySelector("[data-completion-sealed]")).not.toBeNull();
     expect(button(COMPLETE_LABEL)).toBeDefined();
-    expect(container.querySelector('[data-completion-method="missing"]')).not.toBeNull();
-    expect(
-      container.querySelector("[data-completion-amount]")?.getAttribute("data-completion-amount"),
-    ).toBe("1900");
+    /*
+     * #1010 R2 — the assertions that matter most are absences. The band used to draw an amount, a
+     * deadline, a method state and a door into a capture; none of those exists any more, and a
+     * later card that re-added one would fail here rather than in a screenshot review.
+     */
+    expect(container.querySelector("[data-completion-amount]")).toBeNull();
+    expect(container.querySelector("[data-completion-method]")).toBeNull();
+    expect(container.querySelector("[data-capture-method]")).toBeNull();
+    expect(container.querySelector("[data-completion-charged]")).toBeNull();
+    expect(container.querySelector("[data-completion-expired]")).toBeNull();
+    expect(container.textContent).not.toMatch(/\$\d/);
   });
 
   it("withholds the completion until both sheets are sealed, and says what it is waiting for", () => {
-    mount(viewOf({ gate: gateOf({ sealed: false, awaitingPayment: false, deadlineAt: null }) }));
+    mount(viewOf({ gate: gateOf({ sealed: false }) }));
     expect(container.querySelector("[data-completion-seal]")).not.toBeNull();
     expect(container.querySelector("[data-complete-relationship]")).toBeNull();
-    expect(payDoor()).not.toBeNull();
   });
 
-  it("draws only the completion once a method is on file", () => {
-    mount(
-      viewOf({ gate: gateOf({ phase: "method-on-file", hasMethod: true, awaitingPayment: true }) }),
-    );
-    expect(container.querySelector("[data-capture-method]")).toBeNull();
-    expect(
-      container.querySelector("[data-completion-method]")?.getAttribute("data-completion-method"),
-    ).toBe("on-file");
-    expect(button(COMPLETE_LABEL)).toBeDefined();
-  });
-
-  it("says the fee landed, and stops offering the acts, when the phase is charged", () => {
-    mount(
-      viewOf({
-        gate: gateOf({
-          phase: "charged",
-          hasMethod: true,
-          awaitingPayment: false,
-          chargedAt: "2026-11-09T10:00:00.000Z",
-          amountCents: 1900,
-        }),
-      }),
-    );
-    expect(container.querySelector("[data-completion-charged]")).not.toBeNull();
-    expect(container.querySelector("[data-capture-method]")).toBeNull();
-    expect(container.querySelector("[data-complete-relationship]")).toBeNull();
-  });
-
-  it("answers an expired obligation with a sentence, not a button", () => {
-    mount(viewOf({ gate: gateOf({ phase: "expired", awaitingPayment: true }) }));
-    expect(container.querySelector("[data-completion-expired]")).not.toBeNull();
-    expect(container.querySelector("[data-capture-method]")).toBeNull();
-    expect(container.querySelector("[data-complete-relationship]")).toBeNull();
-  });
-
-  it("draws nothing at all for the Counterparty — the fee is not theirs", () => {
+  it("draws nothing at all for the Counterparty — completion is the initiator's click", () => {
     mount(viewOf({ gate: gateOf(), isInitiator: false }));
     expect(container.querySelector("[data-completion-gate]")).toBeNull();
     expect(container.querySelector("[data-completion-refusal]")).toBeNull();
@@ -241,147 +193,96 @@ describe("the payer's band", () => {
     mount(viewOf({ gate: gateOf(), closed: true }));
     expect(container.querySelector("[data-completion-gate]")).toBeNull();
   });
-});
 
-describe("the payment door on the payer's band", () => {
-  it("is a link into the pay modal, carrying both handles the stage resolves (#912)", () => {
-    mount(viewOf({ gate: gateOf() }));
-    const door = payDoor();
-    expect(door).not.toBeNull();
-    expect(door?.textContent?.trim()).toBe(CAPTURE_LABEL);
-    /*
-     * The modal's own address, built by `createInviteForPath()`: the relationship's **copy** in the
-     * path (`#794` — a slug, not the storage id) and its session in `?instance=`. Asserting the
-     * whole string is the point: a link that dropped the query would land on stage 1 with the
-     * relationship forgotten, and a link that put `templateId` in the path would ship a storage
-     * handle in a URL.
-     */
-    expect(door?.getAttribute("href")).toBe(
-      `/templates/relationship/${template.slug}/create/invite?instance=session-completion`,
-    );
-  });
-
-  it("draws no capture on the screen at all — no dialog, no frame, no add-method control", () => {
-    mount(viewOf({ gate: gateOf() }));
-    expect(container.querySelector("[data-capture-dialog]")).toBeNull();
-    expect(container.querySelector("[data-add-method]")).toBeNull();
-    expect(container.querySelector("[data-capture-frame]")).toBeNull();
-    expect(container.querySelector("[data-capture-plan]")).toBeNull();
-  });
-
-  it("draws no door when the relationship has no session for the modal to read", () => {
-    /*
-     * A draft written by the list's own create band has no session, so stage 5 answers it by
-     * redirecting to stage 1 — a door that bounces is worse than a sentence. The band cannot render
-     * for such a row (`completion` is null without a session), which is why this asserts the absence
-     * of the control rather than of the link.
-     */
+  it("draws nothing when the relationship has no session", () => {
     mount(viewOf({ gate: null }));
-    expect(container.querySelector("[data-completion-gate]")).toBeNull();
-    expect(payDoor()).toBeNull();
-  });
-});
-
-describe("a relationship the fee already moved", () => {
-  it("keeps the receipt once the relationship is complete — a paid, closed row still says so", () => {
-    mount(
-      viewOf({
-        gate: gateOf({
-          hasMethod: true,
-          phase: "charged",
-          awaitingPayment: false,
-          chargedAt: "2026-11-09T10:00:00.000Z",
-        }),
-        closed: true,
-      }),
-    );
-    // `closed` is what hides the band, so a receipt that renders only while the relationship is
-    // open would be invisible exactly when it is true: the payer would be told nothing about money
-    // that moved. The band survives the completion and the two acts do not.
-    const band = container.querySelector("[data-completion-gate]");
-    expect(band?.getAttribute("data-completion-gate")).toBe("charged");
-    expect(container.querySelector("[data-completion-charged]")?.textContent).toContain("$19.00");
-    expect(container.querySelector("[data-capture-method]")).toBeNull();
-    expect(container.querySelector("[data-complete-relationship]")).toBeNull();
-  });
-
-  it("draws nothing on a closed relationship whose fee never landed", () => {
-    mount(viewOf({ gate: gateOf({ phase: "expired" }), closed: true }));
-    expect(container.querySelector("[data-completion-gate]")).toBeNull();
-  });
-
-  it("draws nothing of the payer's on the Counterparty's screen, charged or not", () => {
-    mount(
-      viewOf({
-        gate: gateOf({ hasMethod: true, phase: "charged", chargedAt: "2026-11-09T10:00:00.000Z" }),
-        isInitiator: false,
-        closed: true,
-      }),
-    );
     expect(container.querySelector("[data-completion-gate]")).toBeNull();
   });
 });
 
 describe("pressing complete", () => {
-  it("charges through the action and reports the amount and the status it answered", async () => {
+  it("reports the status and the instant, and no amount, because nothing was charged", async () => {
     const complete = vi.fn(async () => ({
       ok: true as const,
       actionId: "action-1",
       status: "complete",
-      chargedAt: "2026-11-09T10:00:00.000Z",
-      amountCents: 1900,
+      completedAt: "2026-11-09T10:00:00.000Z",
     }));
-    mount(viewOf({ gate: gateOf({ hasMethod: true, phase: "method-on-file" }) }), { complete });
+    mount(viewOf({ gate: gateOf() }), complete);
     await press(button(COMPLETE_LABEL));
     expect(complete).toHaveBeenCalledWith({ relationshipId: "relationship-completion" });
     const done = container.querySelector("[data-completion-done]");
     expect(done?.getAttribute("data-completion-done")).toBe("complete");
-    expect(done?.textContent).toContain("$19.00");
+    expect(done?.textContent).not.toMatch(/\$\d/);
     expect(refreshSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("turns payment-method-required into a sentence **and** a working link", async () => {
-    mount(viewOf({ gate: gateOf({ hasMethod: true, phase: "method-on-file" }) }), {
-      complete: async () => ({
-        ok: false,
-        code: "payment-method-required",
-        url: "https://checkout.example.test/cs_test_2",
-      }),
-    });
-    await press(button(COMPLETE_LABEL));
-    const refusal = container.querySelector("[data-completion-refusal]");
-    expect(refusal?.getAttribute("data-completion-refusal")).toBe("payment-method-required");
-    // The server's own words when it sent any; the fixture's sentence when it did not.
-    expect(refusal?.textContent?.length ?? 0).toBeGreaterThan(20);
-    expect(container.querySelector("[data-completion-link]")?.getAttribute("href")).toBe(
-      "https://checkout.example.test/cs_test_2",
-    );
-    // Nothing was charged, so the screen must not pretend the relationship moved.
-    expect(container.querySelector("[data-completion-done]")).toBeNull();
-  });
-
-  it("prints the provider's sentence for a decline", async () => {
-    mount(viewOf({ gate: gateOf({ hasMethod: true, phase: "method-on-file" }) }), {
-      complete: async () => ({
-        ok: false,
-        code: "charge-declined",
-        message: "the fee was declined (card_declined): Your card was declined.",
-      }),
-    });
-    await press(button(COMPLETE_LABEL));
-    const refusal = container.querySelector("[data-completion-refusal]");
-    expect(refusal?.getAttribute("data-completion-refusal")).toBe("charge-declined");
-    expect(refusal?.textContent).toContain("card_declined");
-    expect(container.querySelector("[data-completion-link]")).toBeNull();
-  });
-
-  it("says whose fee it is when the payer is not this account", async () => {
-    mount(viewOf({ gate: gateOf({ hasMethod: true, phase: "method-on-file" }) }), {
-      complete: async () => ({ ok: false, code: "not-the-payer" }),
-    });
+  it("prints the server's sentence for the one refusal this band can answer", async () => {
+    mount(viewOf({ gate: gateOf() }), async () => ({ ok: false, code: "not-the-payer" }));
     await press(button(COMPLETE_LABEL));
     expect(container.querySelector("[data-completion-refusal]")?.textContent).toBe(
       itemLabel(sectionOf(dashboardRelationshipDetailPageCopy, "refusals"), "not-the-payer"),
     );
+    // Nothing happened, so the screen must not pretend the relationship moved.
+    expect(container.querySelector("[data-completion-done]")).toBeNull();
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * The proof: the money path is gone, not renamed
+ * ------------------------------------------------------------------ */
+
+/** Every source file the app ships, as text — the sweep a rename cannot pass. */
+function sourceText(path: string): string {
+  const absolute = join(ROOT, path);
+  return existsSync(absolute) ? readFileSync(absolute, "utf8") : "";
+}
+
+describe("completing a relationship cannot charge", () => {
+  const PAYMENT = sourceText("lib/member/payment.ts");
+
+  it("reads and writes no provider nouns anywhere in the completion library", () => {
+    /*
+     * The module that owns completion must not be able to reach a provider at all — not through an
+     * import, not through an amount, not through an idempotency key. This is a source sweep on
+     * purpose: a mocked network call proves today's behaviour, while an absent import proves that
+     * tomorrow's edit has to add one back deliberately, in review, with this test failing.
+     */
+    expect(PAYMENT).not.toContain("@/lib/billing");
+    expect(PAYMENT).not.toMatch(/paymentIntents|payment_intents|off_session|stripe/i);
+    expect(PAYMENT).not.toMatch(/chargeOnFile|startMethodCapture|resolveMethodCapture/);
+    expect(PAYMENT).not.toMatch(/amountCents|idempotencyKey/);
+  });
+
+  it("leaves no charge, capture or setup session in the billing port or its adapters", () => {
+    for (const path of [
+      "lib/billing/port.ts",
+      "lib/billing/index.ts",
+      "lib/billing/types.ts",
+      "lib/billing/adapters/stripe.ts",
+      "lib/billing/adapters/mock.ts",
+    ]) {
+      const text = sourceText(path);
+      expect(text, path).not.toMatch(/chargeOnFile|startMethodCapture|resolveMethodCapture/);
+      expect(text, path).not.toMatch(/mode: "setup"/);
+    }
+  });
+
+  it("has deleted the routes and the job that existed only to charge", () => {
+    for (const path of [
+      "app/api/billing/payment/route.ts",
+      "app/api/billing/payment/return/route.ts",
+      "app/api/billing/payment-jobs/route.ts",
+      "lib/member/payment-job-run.ts",
+      "lib/member/payment-notice.ts",
+      "lib/email/templates/payment-reminder.ts",
+    ]) {
+      expect(existsSync(join(ROOT, path)), path).toBe(false);
+    }
+  });
+
+  it("keeps no cron that would call the deleted job", () => {
+    const vercel = sourceText("vercel.json");
+    expect(vercel).not.toContain("payment-jobs");
   });
 });

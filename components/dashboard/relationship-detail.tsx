@@ -68,7 +68,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { aspectStatesOf, buildTemplateRecord } from "@/lib/admin/template-draft";
-import { formatCurrency, formatDate } from "@/content/core";
+import { formatDate } from "@/content/core";
 import {
   refusalSentence,
   type AspectsOutcome,
@@ -222,12 +222,13 @@ export function RelationshipDetail({
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
   /**
-   * #690 — **the hard gate at publish.** A relationship may be published from its status, but not
-   * without a payment method on file: the plans on stage 4 are the soft prompt and this is the half
-   * that is not optional. When the method is missing the publish band is not drawn at all — no
-   * disabled button, no form whose submit would be refused — and a band that says what to do is.
+   * #690 / #1010 R2 — **the hard gate at publish.** A relationship may be published from its
+   * status, but not without a **live membership**: the plan on stage 4 is the soft prompt and this
+   * is the half that is not optional. When the membership is missing the publish band is not drawn
+   * at all — no disabled button, no form whose submit would be refused — and a band that says what
+   * to do is. A card is not a separate act any more: buying the membership is what puts one on file.
    */
-  const methodMissing = publishableNow && !relationship.hasPaymentMethod;
+  const membershipMissing = publishableNow && !relationship.hasMembership;
   const offersRepublish = relationship.offersRepublish;
   const trialAlone = relationship.trialWithoutLiveInvite;
 
@@ -343,7 +344,7 @@ export function RelationshipDetail({
    * #739 — **complete and open the Gap.** One click: the fee is taken against the method on file
    * and both parties can read the report.
    *
-   * `payment-method-required` is not a dead end and not an error: it carries the capture's url, so
+   * `payment-membership-required` is not a dead end and not an error: it carries the capture's url, so
    * the screen prints the sentence and a working link rather than a button the person cannot get
    * past. A decline is a sentence too — the retry ladder is already running on the server.
    */
@@ -555,7 +556,7 @@ export function RelationshipDetail({
               )}
             </DetailPanel>
           ) : null}
-          {methodMissing ? (
+          {membershipMissing ? (
             /*
              * #690 — the hard gate. Publishing needs a method on file, and the create flow only ever
              * *asked* for one: a person who skipped the plans on stage 4 lands here, with no publish
@@ -577,7 +578,7 @@ export function RelationshipDetail({
              */
             <DetailPanel
               title={publishGateCopy.heading}
-              hooks={{ "data-publish-gate": "method-required" }}
+              hooks={{ "data-publish-gate": "membership-required" }}
             >
               <p className={DETAIL_MUTED}>{sectionBody(publishGateCopy)}</p>
               {payHref === null ? (
@@ -610,7 +611,7 @@ export function RelationshipDetail({
             </DetailPanel>
           ) : null}
 
-          {publishableNow && relationship.hasPaymentMethod ? (
+          {publishableNow && relationship.hasMembership ? (
             <DetailPanel title={publishCopy.heading}>
               <p className={DETAIL_MUTED}>{sectionBody(publishCopy)}</p>
               {/*
@@ -742,153 +743,65 @@ export function RelationshipDetail({
             </DetailPanel>
           ) : null}
 
-          {relationship.isInitiator &&
-          gate !== null &&
-          (!relationship.closed || gate.phase === "charged") ? (
+          {relationship.isInitiator && gate !== null && !relationship.closed ? (
             /*
-             * #739 — the payer's two acts, and the only place either is reachable.
+             * #739 — **the completion band, and since #1010 there is nothing to pay on it.**
              *
-             * Initiator only: `isInitiator` is the payer (`initiator_user_id`), and the server action
-             * re-asks under a row lock (`not-the-payer`), so this band is a courtesy and not the rule.
-             * Nothing is drawn for a relationship with no session (`completion === null`) or a closed
-             * one — both would be an affordance the transaction refuses. The exception is a closed
-             * relationship whose fee was taken: the payer keeps the receipt sentence ("the $8.95 was
-             * charged on …"), because the alternative is a screen that says nothing at all about money
-             * that moved.
+             * The membership bought at stage 5 covers this relationship, so sealing it is one click
+             * on a free act: the band draws the seal's state and the button, and nothing about
+             * money — no amount, no deadline, no method, and no door to a card. `gate` is the read's
+             * own answer (`readCompletionGate()`), and the write re-reads the row under a lock, so
+             * this is a courtesy and not the rule.
              *
-             * The four outcomes that are not success each draw a sentence: `payment-method-required`
-             * carries a url the person can click, a decline names the ladder that is already running,
-             * `already-charged` says the fee landed, and `not-the-payer` says whose fee it is.
+             * Initiator only: completion belongs to the account that owns the relationship, and the
+             * server action re-asks under the row lock (`not-the-payer`).
              */
             <DetailPanel
               title={completionCopy.heading}
-              hooks={{
-                "data-completion-gate": gate.phase,
-                "data-completion-sealed": gate.sealed ? "true" : "false",
-              }}
+              hooks={{ "data-completion-gate": gate.sealed ? "sealed" : "open" }}
             >
               <p className={DETAIL_MUTED}>{sectionBody(completionCopy)}</p>
               <div className="space-y-3">
-                <p
-                  data-completion-amount={gate.amountCents}
-                  className="text-sm text-muted-foreground"
-                >
-                  {fillLabel(itemLabel(completionCopy, "amount"), {
-                    amount: formatCurrency(gate.amountCents),
-                  })}
-                </p>
-                {gate.deadlineAt === null ? null : (
-                  <p className="text-sm text-muted-foreground">
-                    {fillLabel(itemLabel(completionCopy, "deadline"), {
-                      instant: formatDate(gate.deadlineAt),
-                    })}
-                  </p>
-                )}
-                {gate.phase === "charged" ? (
-                  <p
-                    data-completion-charged={gate.chargedAt ?? "true"}
-                    className="text-sm font-medium"
-                  >
-                    {fillLabel(itemLabel(completionCopy, "charged"), {
-                      amount: formatCurrency(gate.amountCents),
-                      instant:
-                        gate.chargedAt === null
-                          ? pageItemOf(copy, "none").label
-                          : formatDate(gate.chargedAt),
-                    })}
-                  </p>
-                ) : gate.phase === "expired" ? (
-                  <p data-completion-expired="true" className="text-sm">
-                    {itemLabel(completionCopy, "expired")}
+                {gate.sealed ? (
+                  <p data-completion-sealed="true" className="text-sm font-medium">
+                    {itemLabel(completionCopy, "sealed")}
                   </p>
                 ) : (
-                  <>
-                    <p
-                      data-completion-method={gate.hasMethod ? "on-file" : "missing"}
-                      className="text-sm"
+                  <p data-completion-seal="open" className="text-sm text-muted-foreground">
+                    {itemLabel(completionCopy, "not-sealed")}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  {gate.sealed ? (
+                    <Button
+                      type="button"
+                      onClick={complete}
+                      disabled={pending}
+                      data-complete-relationship="true"
                     >
-                      {gate.hasMethod
-                        ? itemLabel(completionCopy, "method-on-file")
-                        : itemLabel(completionCopy, "method-missing")}
-                    </p>
-                    {gate.sealed ? null : (
-                      <p data-completion-seal="open" className="text-sm text-muted-foreground">
-                        {itemLabel(completionCopy, "not-sealed")}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-3">
-                      {/*
-                        #912 — **the payer's route into the one capture.** #748 made this a button
-                        that opened a dialog on this band; the dialog is deleted, because a card
-                        taken in place is a second way to pay. What is left is a link to the pay
-                        modal, which is the same plan card and the same Stripe frame the dialog drew,
-                        on the surface that owns them.
-
-                        `payHref` is `null` only for a relationship with no session, and this band
-                        cannot render for one (`gate` is `null` without a session), so the null arm
-                        is unreachable here — it is drawn as the honest sentence rather than as a
-                        link to nowhere.
-                      */}
-                      {gate.hasMethod ? null : payHref === null ? (
-                        <p data-capture-unavailable="true" className="text-sm">
-                          {itemLabel(completionCopy, "capture-unavailable")}
-                        </p>
-                      ) : (
-                        <a
-                          href={payHref}
-                          data-capture-method="true"
-                          data-invite-members="true"
-                          className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-                        >
-                          {itemLabel(completionCopy, "capture")}
-                        </a>
-                      )}
-                      {gate.sealed ? (
-                        <Button
-                          type="button"
-                          onClick={complete}
-                          disabled={pending}
-                          data-complete-relationship="true"
-                        >
-                          {pending
-                            ? itemLabel(completionCopy, "completing")
-                            : itemLabel(completionCopy, "complete")}
-                        </Button>
-                      ) : null}
-                    </div>
-                    {completeOutcome?.ok === true ? (
-                      <p
-                        data-completion-done={completeOutcome.status}
-                        className="text-sm font-medium"
-                      >
-                        {fillLabel(itemLabel(completionCopy, "completed"), {
-                          amount: formatCurrency(completeOutcome.amountCents),
-                          status: completeOutcome.status,
-                        })}
-                      </p>
-                    ) : null}
-                    {completeRefusal === null ? null : (
-                      <p
-                        data-completion-refusal={
-                          completeOutcome?.ok === false ? completeOutcome.code : ""
-                        }
-                        className="text-sm"
-                      >
-                        {completeRefusal}
-                      </p>
-                    )}
-                    {completeOutcome?.ok === false && completeOutcome.url !== undefined ? (
-                      <p className="text-sm">
-                        <a
-                          className="text-action underline underline-offset-4"
-                          href={completeOutcome.url}
-                          data-completion-link="capture"
-                        >
-                          {itemLabel(completionCopy, "pay")}
-                        </a>
-                      </p>
-                    ) : null}
-                  </>
+                      {pending
+                        ? itemLabel(completionCopy, "completing")
+                        : itemLabel(completionCopy, "complete")}
+                    </Button>
+                  ) : null}
+                </div>
+                {completeOutcome?.ok === true ? (
+                  <p data-completion-done={completeOutcome.status} className="text-sm font-medium">
+                    {fillLabel(itemLabel(completionCopy, "completed"), {
+                      instant: completeOutcome.completedAt,
+                      status: completeOutcome.status,
+                    })}
+                  </p>
+                ) : null}
+                {completeRefusal === null ? null : (
+                  <p
+                    data-completion-refusal={
+                      completeOutcome?.ok === false ? completeOutcome.code : ""
+                    }
+                    className="text-sm"
+                  >
+                    {completeRefusal}
+                  </p>
                 )}
               </div>
             </DetailPanel>
