@@ -35,7 +35,7 @@ import {
   type RelationshipType,
 } from "@/data/relationship-types";
 import { assessmentReport, type AssessmentReport } from "@/lib/assessment-report";
-import { startPathFor, type StartViewer } from "@/lib/start-path";
+import { startPathFor } from "@/lib/start-path";
 
 /** The two seats the demo names, in the order the report draws them. */
 const DEMO_INITIATOR = "You";
@@ -133,17 +133,16 @@ export interface AssessmentDemo {
   readonly type: RelationshipType;
   readonly report: AssessmentReport;
   /**
-   * Where a reader starts this relationship: `/register?next=<this type's create path>` (#867).
+   * Where a reader starts this relationship: the create flow's stage 1 for this type (#867, #1042).
    *
-   * The **public** action still — the account is created first, then the visitor lands on stage 1
-   * of the very template the example they just read belongs to. It used to be a bare `/register`,
-   * which dropped that: the account was made and the person arrived on the brand's landing page
-   * with the choice gone.
+   * The **public** action, and since #1042 it is the same address for everybody — a visitor types
+   * Details here and meets the account at stage 4, inside the wizard, where their draft is waiting.
+   * It used to be `/register?next=<that stage>`, which made the account the first screen of the
+   * one intent the product sells; #1042 measured that as the defect and this is the fix.
    *
-   * It is still not the in-app create address on its own. A public page that links
-   * `/templates/relationship/<id>/create` hands a signed-out visitor a screen he has no account
-   * for yet; the create step is what `/register`'s `next` resolves **to**, after the account
-   * exists, so the destination is the same one and the order is the product's.
+   * It is still not a link into somebody else's console: stage 1 renders for a signed-out visitor
+   * (#690 — it never required an account), and the template the example belongs to travels in the
+   * address, so the reader who just read the report continues from that template.
    */
   readonly startPath: string;
 }
@@ -153,7 +152,7 @@ export interface AssessmentDemo {
  * type that is not for sale, or a type whose sheet has not been authored yet. The route turns
  * that into a 404 rather than a fabricated report — absence is the honest answer there.
  */
-export function assessmentDemo(typeId: string, viewer: StartViewer): AssessmentDemo | undefined {
+export function assessmentDemo(typeId: string): AssessmentDemo | undefined {
   const type = purchasableRelationshipType(typeId);
   if (type === undefined) return undefined;
   if (demoAnswersFor(type.id) === undefined) return undefined;
@@ -164,6 +163,6 @@ export function assessmentDemo(typeId: string, viewer: StartViewer): AssessmentD
   return {
     type,
     report: assessmentReport(instance, template),
-    startPath: startPathFor(type.id, viewer),
+    startPath: startPathFor(type.id),
   };
 }

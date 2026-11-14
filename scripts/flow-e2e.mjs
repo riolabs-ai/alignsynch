@@ -645,10 +645,12 @@ async function main() {
   const counterparty = new Jar("counterparty");
   const stranger = new Jar("stranger");
 
-  /* 0a. the catalogue's action survives the account gate (#867) -------- */
-  // The one moment in the product where intent already exists: a stranger has chosen a template
-  // and has no account. Before this card the action was a bare `/register`, so the account was
-  // created and the person arrived on the brand's landing page with the choice gone.
+  /* 0a. the catalogue's one action is the flow's stage 1 (#1042) -------- */
+  // The moment in the product where intent already exists: a stranger has chosen a template and
+  // has no account. Before #1042 the action was `/register?next=<that stage>` — the account first,
+  // the wizard after — so a visitor never reached the flow from it. Stage 1 needs no account
+  // (#690) and the account is stage 4 of that same wizard (#825), so the card's own href is the
+  // flow's first screen for both viewers.
   const visitor = new Jar("visitor");
   const catalogue = await visitor.get("/relationship-types");
   dumpPage("catalogue", catalogue.html);
@@ -659,56 +661,74 @@ async function main() {
   );
 
   // The action's own href, read off the page — never a path typed here.
-  const startHref = catalogue.html.match(/href="(\/register\?next=[^"]+)"/)?.[1] ?? "";
-  const chosenStem =
-    (startHref === "" ? null : new URL(startHref, BASE_URL).searchParams.get("next")) ?? "";
+  const startHref =
+    catalogue.html.match(/href="(\/templates\/relationship\/[a-z-]+\/create)"/)?.[1] ?? "";
+  const chosenSlug = startHref.split("/")[3] ?? "";
   check(
-    "a card's use action carries the template it sells into the sign-up gate",
-    /^\/templates\/relationship\/[a-z-]+\/create$/.test(chosenStem),
-    startHref === "" ? "no `/register?next=` action on the page" : `href = "${startHref}"`,
+    "a card's use action is the create flow's stage 1, carrying the template it sells",
+    /^\/templates\/relationship\/[a-z-]+\/create$/.test(startHref),
+    startHref === ""
+      ? "no `/templates/relationship/<slug>/create` action on the page"
+      : `href = "${startHref}"`,
   );
-  const chosenSlug = chosenStem.split("/")[3] ?? "";
   const words = chosenSlug === "" ? null : await templateWords(chosenSlug);
 
-  // The gate promises no wall: the destination is a screen whether or not an account exists
-  // (#690 — stage 1 never asked for one).
-  const stageOneFirst = await visitor.get(chosenStem);
+  // No gate to pass: the destination is a screen whether or not an account exists (#690 — stage 1
+  // never asked for one), which is what makes the account a stage inside the wizard.
+  const stageOneFirst = await visitor.get(startHref);
+  dumpPage("stage-1-signed-out", stageOneFirst.html);
   check(
-    "the destination renders for the signed-out visitor too",
+    "and that address renders for the signed-out visitor, with no gate in front of it",
     stageOneFirst.status === 200 && stageOneFirst.html.includes('data-wizard-rail="1"'),
     `status ${stageOneFirst.status}`,
   );
-
-  // The gate remembers it. `?next=` is the one parameter `/register` reads, and it puts what it
-  // will navigate to on the page (`signInDestination`) rather than the brand's default.
-  const gate = await visitor.get(startHref);
-  const gatePayload = gate.html.replaceAll('\\"', '"');
   check(
-    "the account gate keeps that destination instead of the brand's landing page",
-    gate.status === 200 && gatePayload.includes(`"destination":"${chosenStem}"`),
-    `status ${gate.status}`,
-  );
-
-  // What the form does when it succeeds: the app's own sign-up endpoint, into the same jar.
-  await signUpCreator(visitor, { name: "Nadia Visitor" });
-
-  // …and then the view's `router.push(destination)` — the same address, now signed in.
-  const arrived = await visitor.get(chosenStem);
-  dumpPage("stage-1-after-signup", arrived.html);
-  check(
-    "signing up lands on stage 1 of the template the visitor chose",
-    arrived.status === 200 &&
-      arrived.html.includes('data-wizard-rail="1"') &&
-      arrived.html.includes('data-step-state="current"'),
-    `status ${arrived.status}`,
-  );
-  check(
-    "and that stage names the template, not an empty flow",
-    words !== null && arrived.html.includes(textOf(words.title)),
+    "as stage 1 of the template the card sells, not an empty flow",
+    stageOneFirst.status === 200 &&
+      stageOneFirst.html.includes('data-step-state="current"') &&
+      words !== null &&
+      stageOneFirst.html.includes(textOf(words.title)),
     words === null ? `no template row for "${chosenSlug}"` : `title = "${words.title}"`,
   );
+
+  // …and the same stage still draws for the same template once a session exists. The draft is a
+  // `sameSite: "lax"` cookie, so the account round trip cannot drop it (#1042).
+  await signUpCreator(visitor, { name: "Nadia Visitor" });
+  const arrived = await visitor.get(startHref);
+  dumpPage("stage-1-after-signup", arrived.html);
+  check(
+    "and the same stage draws for that visitor once signed in",
+    arrived.status === 200 &&
+      arrived.html.includes('data-step-state="current"') &&
+      words !== null &&
+      arrived.html.includes(textOf(words.title)),
+    `status ${arrived.status}`,
+  );
   note(
-    `#867 — intent carried: ${startHref} → sign-up → ${chosenStem} (stage 1 of "${words?.title ?? chosenSlug}")`,
+    `#1042 — one door: ${startHref} → stage 1 of "${words?.title ?? chosenSlug}", signed out and signed in`,
+  );
+
+  /* 0b. the generic action starts the platform's blank template (#1042) --- */
+  // "Create a relationship" is the create intent with no template behind it, and the create flow
+  // needs a template record (the draft cookie is keyed by it, stage 3 seeds its Aspects from it).
+  // So the generic action starts the platform's blank — the glossary's third line, the user's to
+  // name — and it has to render for a visitor like any other stage 1. A `draft` blank would 404
+  // here for a signed-out reader, which is the state this check exists to catch.
+  const genericCatalogue = await visitor.get("/relationship-templates");
+  const blankHref =
+    genericCatalogue.html.match(
+      /href="(\/templates\/relationship\/blank-template\/create)"/,
+    )?.[1] ?? "";
+  const blankStart = blankHref === "" ? null : await visitor.get(blankHref);
+  check(
+    "the generic create action opens the blank template's stage 1 for a signed-out visitor",
+    blankStart !== null &&
+      blankStart.status === 200 &&
+      blankStart.html.includes('data-wizard-rail="1"') &&
+      blankStart.html.includes('value="assessment-blank-template"'),
+    blankHref === ""
+      ? "no blank start on /relationship-templates"
+      : `${blankHref} → status ${blankStart?.status ?? "not fetched"}`,
   );
 
   /* 0. an account — stage 4 writes the draft for one (#844) ----------- */

@@ -1,49 +1,53 @@
 /**
- * Where a "start" action goes — for the person looking at it (#979).
+ * Where a "start" action goes — for the person looking at it (#979, #1042).
  *
  * Every public surface that sells a relationship ends in the same action: choose a template and
- * begin. Until this module the action was a **constant** — `/register` with the chosen template as
- * `?next=` (#867) — and the constant was right for exactly half the audience. A member with a live
- * session clicked a catalogue card and was asked to create the account they already had, on the
- * front door of the product's only paid flow. The destination is a function of the session, so it
- * is derived here rather than typed on each surface.
+ * begin. Two issues have shaped that action, and the second reversed the first:
  *
- * Two rules, and they are the whole contract:
+ *   - **#979** found that every start action was a **constant** — `/register`, or `/register` with
+ *     the chosen stage as `?next=` (#867) — and that a member with a live session was asked to
+ *     create the account they already had. The fix made the destination a function of the session.
+ *   - **#1042** found the other half: a **visitor** was still sent to the sign-up form, so the
+ *     wizard was not where anybody landed, a draft could not survive the account round-trip, and
+ *     one intent had three doors (visitor → `/register`, returning signed-out user → `/login`,
+ *     member → the flow). Since #690 stage 1 renders for a signed-out visitor like any other page
+ *     — the create endpoint has always accepted a signed-out post — so the account never needed to
+ *     come first. `docs/specs/flow-stages.md` puts it at stage 4, *inside* the wizard, where the
+ *     app's own sign-in form is mounted and the draft cookie is already on the browser.
  *
- *   - **a visitor** keeps the address the surface authored: `/register` (the account) or
- *     `/register?next=<the flow's stage 1>` (the account, remembering the template);
- *   - **a member** is sent to the same intent with the account step removed: the flow's stage 1
- *     when the action named one, and the brand's own signed-in landing when the action was a bare
- *     account link (`AFTER_SIGN_IN_BY_BRAND`, never a second copy of that table).
+ * So there is one door, and it is the flow's stage 1:
  *
- * `startHrefFor()` is the resolver for hrefs that arrive as **data** — the fixture CTAs in
- * `data/pages/*.ts` and `data/billing-plans.ts`, which are authored once and rendered on several
- * surfaces — and `startPathFor()` is the catalogue's own action, which always knows the template.
- * Both take the same {@link StartViewer}, so a surface cannot be session-aware on one control and
- * stuck on another.
+ *   - **`startPathFor()`** — the catalogue's own action, which always knows the template — is that
+ *     stage, for a visitor and a member alike. Identity is no longer a parameter of this address:
+ *     a door that changes with the session is three doors to test and three ways to be wrong.
+ *   - **`startHrefFor()`** — for hrefs that arrive as **data** (the fixture CTAs in
+ *     `data/pages/*.ts`, `data/billing-plans.ts`) — still resolves the *account-only* case, because
+ *     that intent is real and `/login` and `/register` remain for it: a bare `/register` is a
+ *     member's account home and a visitor's sign-up page, while `/register?next=<a screen>` names a
+ *     screen and now lands on it for both viewers.
  *
  * **Free of React, Next and the session module.** The `StartViewer` is plain data the server
- * resolves once per request (`currentUserIfConfigured()` / `shellSession()`) and passes down, so a
- * client band can resolve its own href without an auth import (`data:check` E34 keeps `lib/db/**`
- * and `pg` out of the browser graph; this module reaches neither) and a node test can drive every
- * branch without a cookie store.
+ * resolves once per request (`currentUserIfConfigured()` / `shellSession()`), so a client band can
+ * resolve its own href without an auth import (`data:check` E34 keeps `lib/db/**` and `pg` out of
+ * the browser graph; this module reaches neither) and a node test can drive every branch without a
+ * cookie store.
  */
 import type { BrandId } from "@/data/brand";
-import { AFTER_SIGN_IN_BY_BRAND, registerPathFor, safeNextPath } from "@/lib/auth/paths";
+import { AFTER_SIGN_IN_BY_BRAND, safeNextPath } from "@/lib/auth/paths";
 import { createRelationshipPath } from "@/lib/flow/paths";
 
 /** The sign-up route, spelled once. `/register` is a page in `content/routes.ts`, not a copy. */
 export const REGISTER_PATH = "/register";
 
 /**
- * The two facts a start action is a function of: whether this request has a session, and which
- * brand's destinations a member is sent to.
+ * The two facts an **account** action is a function of: whether this request has a session, and
+ * which brand's destinations a member is sent to.
  *
- * `brandId` is on the viewer rather than passed beside it because the bare-`/register` branch needs
- * exactly that pair and nothing else — the brand decides where "already have an account" lands
- * (`/dashboard` on AlignSynch, `/dashboard/user` on QuizHub), and a surface that forgot to pass it
- * would resolve to another brand's account home. Required, never defaulted: a default here is how
- * one surface silently rejoins the class of defect this module exists to close.
+ * `brandId` is on the viewer rather than passed beside it because the bare-`/register` branch
+ * needs exactly that pair and nothing else — the brand decides where "already have an account"
+ * lands (`/dashboard` on AlignSynch, `/dashboard/user` on QuizHub), and a surface that forgot to
+ * pass it would resolve to another brand's account home. Required, never defaulted: a default
+ * here is how one surface silently rejoins the class of defect this module exists to close.
  */
 export interface StartViewer {
   readonly signedIn: boolean;
@@ -58,7 +62,7 @@ export function visitorOf(brandId: BrandId): StartViewer {
 /**
  * The viewer of a request, from the session it resolved.
  *
- * `signedIn` is the whole answer a start action needs — a page resolves the session once
+ * `signedIn` is the whole answer an account action needs — a page resolves the session once
  * (`currentUserIfConfigured()` answered `null` is the signed-out state, not a failure) and hands
  * the boolean down. Taking a boolean rather than an account keeps `lib/auth/**`'s session modules
  * out of this graph, which is what lets a client band import the resolver (`data:check` E34).
@@ -73,36 +77,50 @@ export function memberLandingPath(viewer: StartViewer): string {
 }
 
 /**
- * The catalogue's start action: a member begins the flow, a visitor creates the account first.
+ * The catalogue's start action: the create flow's **stage 1**, with the template carried (#1042).
  *
- * The two halves are the same intent at two depths, which is why the member's half is the flow's
- * stage 1 with no wrapper: `/templates/relationship/<id>/create` renders for a signed-out visitor
- * too (#690), so a visitor's `?next=` names a screen rather than a promise.
+ * It takes only the template's id now. Until #1042 it also took a {@link StartViewer} and sent a
+ * visitor to `/register?next=<this stage>` — the account first, the wizard after — which is the
+ * detour the owner reproduced on Staff–Manager (`/register?next=%2Ftemplates%2Frelationship%2Fstaff-manager%2Fcreate`)
+ * and on the blank entry (`/login?next=%2Ftemplates%2Frelationship%2Fcreate`). Stage 1 renders for
+ * a signed-out visitor (#690), so there was never a screen the account was needed to reach; the
+ * account is stage 4, and it happens here, on the draft.
+ *
+ * A caller that still holds a viewer hands it to {@link startHrefFor} when its href arrives as
+ * data. This function is the one destination no session can change.
  */
-export function startPathFor(typeId: string, viewer: StartViewer): string {
-  const flow = createRelationshipPath(typeId);
-  return viewer.signedIn ? flow : registerPathFor(flow);
+export function startPathFor(typeId: string): string {
+  return createRelationshipPath(typeId);
 }
 
 /**
- * Any authored start href, resolved for this viewer.
+ * Any authored start href, resolved for this viewer — the *account* half of the same intent.
  *
  * Surfaces read their action's words **and** destination from a fixture (`data/pages/templates.ts`,
  * `data/pages/home-alignsynch.ts`, `data/billing-plans.ts`), so the destination cannot be a value a
  * component derives — but it is still a value that must not offer an account to somebody who has
  * one. This is the one place that translates the authored href:
  *
- *   `/register`                 → the brand's account home for a member
- *   `/register?next=<path>`     → `<path>` for a member, so the template they chose survives
+ *   `/register`                 → the brand's account home for a member, `/register` for a visitor
+ *   `/register?next=<path>`     → `<path>`, for **both** viewers (#1042)
  *   anything else               → unchanged, for both viewers
+ *
+ * **A bare `/register` still means account-only intent**, and it is the authored form for it: the
+ * shell's Sign Up row and `/pricing`'s "Start your 7 days" are not create actions, and rewriting
+ * them into a wizard would invent an intent the fixture did not author. A create-intent CTA
+ * authors its destination instead — the flow's own stage 1, blank or template-backed
+ * (`data/pages/templates.ts::final-cta`) — and this function passes it through untouched because
+ * it is not a sign-up address.
  *
  * An authored href that is not the sign-up route passes through untouched — `checkout` is the one
  * other value in the plan fixture, and a resolver that rewrote it would be making a billing
  * decision it has no business making.
  */
 export function startHrefFor(href: string, viewer: StartViewer): string {
-  if (!viewer.signedIn) return href;
-  if (href === REGISTER_PATH) return memberLandingPath(viewer);
+  if (!href.startsWith(REGISTER_PATH)) return href;
+  if (href === REGISTER_PATH) {
+    return viewer.signedIn ? memberLandingPath(viewer) : REGISTER_PATH;
+  }
   if (!href.startsWith(`${REGISTER_PATH}?`)) return href;
 
   const next = new URLSearchParams(href.slice(REGISTER_PATH.length + 1)).get("next");
