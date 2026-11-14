@@ -33,6 +33,7 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
+import type { FlowMount } from "@/components/assessment-flow/relationship-flow-shell";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { createRefusal } from "@/lib/flow/create-copy";
@@ -61,9 +62,17 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 export default async function TemplateCreateModePage({
   params,
   searchParams,
+  mount = "page",
 }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<ModeParams>;
+  /**
+   * **Where the shell mounts this stage (#979 B).** A stage's own route says nothing and gets the
+   * `page` mounting — the deep link, the refresh, the invitation link. The intercepted route under
+   * `dashboard/relationships/@flow/**` passes `dialog`, and the same render is drawn over the page
+   * the flow was started from. Nothing else in this file depends on it.
+   */
+  mount?: FlowMount;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -94,6 +103,7 @@ export default async function TemplateCreateModePage({
     <CreateRelationship
       copy={assessmentCreatePageCopy}
       stage={2}
+      mount={mount}
       template={
         detail === undefined
           ? null

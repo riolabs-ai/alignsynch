@@ -48,6 +48,7 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
+import type { FlowMount } from "@/components/assessment-flow/relationship-flow-shell";
 import { ADVANCE_CLASSES } from "@/components/assessment-flow/stage-foot";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
@@ -91,9 +92,17 @@ async function savedDraft(templateRecordId: string): Promise<CreateDraft> {
 export default async function TemplateCreatePage({
   params,
   searchParams,
+  mount = "page",
 }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<CreateParams>;
+  /**
+   * **Where the shell mounts this stage (#979 B).** A stage's own route says nothing and gets the
+   * `page` mounting — the deep link, the refresh, the invitation link. The intercepted route under
+   * `dashboard/relationships/@flow/**` passes `dialog`, and the same render is drawn over the page
+   * the flow was started from. Nothing else in this file depends on it.
+   */
+  mount?: FlowMount;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -173,6 +182,7 @@ export default async function TemplateCreatePage({
     <CreateRelationship
       copy={assessmentCreatePageCopy}
       stage={1}
+      mount={mount}
       template={
         detail === undefined
           ? null
