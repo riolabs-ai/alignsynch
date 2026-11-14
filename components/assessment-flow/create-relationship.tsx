@@ -77,14 +77,12 @@ import {
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
-import { type CaptureHandlers } from "./invite-walk";
+import type { CaptureHandlers } from "./invite-walk";
+import { RelationshipFlowShell, type FlowMount } from "./relationship-flow-shell";
 import { StageAccount } from "./stage-account";
 import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
-import { StageColumn } from "./stage-column";
 import { StageInvite } from "./stage-invite";
 import { StageOneFields } from "./stage-one-fields";
-import { StageRail } from "./stage-rail";
-import { StageShell } from "./stage-shell";
 
 /** Which of the create flow's five steps this render is (#688, #689, #690, #825). */
 export type CreateStage = 1 | 2 | 3 | 4 | 5;
@@ -243,6 +241,7 @@ interface ChoiceOption {
 export function CreateRelationship({
   copy,
   stage,
+  mount = "page",
   template,
   draft,
   aspects,
@@ -264,6 +263,13 @@ export function CreateRelationship({
   copy: PageCopy;
   /** 1 = Details, 2 = Settings, 3 = Aspects, 4 = Account, 5 = Invite. Both read it. */
   stage: CreateStage;
+  /**
+   * **Where this stage is mounted (#979 B).** `page` is the stage's own route — the deep link, the
+   * refresh, the invitation link — and is what a stage page passes by saying nothing. `dialog` is
+   * the same render inside `RelationshipFlowShell`'s dialog, over the page the flow was started
+   * from. The component does not branch on it: it hands it to the shell, which owns the difference.
+   */
+  mount?: FlowMount;
   /** The template to copy, or `null` when the refusal means there is none to read. */
   template: CreateTemplate | null;
   /** Stages 1 and 2's saved answers — empty on a first visit, filled from the draft on a return. */
@@ -431,147 +437,155 @@ export function CreateRelationship({
   if (template === null) {
     const empty = sectionOf(copy, "refused");
     return (
-      <StageShell title={empty.heading} {...shell}>
-        <StageColumn>
-          <div className="space-y-6">
-            <p>
-              <Link
-                href={backHref}
-                className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
-              >
-                {itemLabel(empty, "back")}
-              </Link>
-            </p>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-                {empty.heading}
-              </h1>
-              <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-                {sectionBody(empty)}
-              </p>
-            </div>
-            <ProblemBand
-              heading={problems.heading}
-              sentence={problem}
-              link={problemLink}
-              back={backDoor}
-            />
-            {/* The authored template's one-click publish (#870). Drawn under the band, because it
-                is the fix for the sentence above it — and it is the *existing* status transition,
-                mounted one more place, not a second way to publish anything. */}
-            {publishAction === undefined ? null : <div className="mt-3">{publishAction}</div>}
-          </div>
-        </StageColumn>
-      </StageShell>
-    );
-  }
-
-  return (
-    <StageShell title={heading} {...shell}>
-      <StageColumn>
+      <RelationshipFlowShell
+        mount={mount}
+        copy={copy}
+        title={empty.heading}
+        closeLabel={shell.closeLabel}
+        closeHref={shell.closeHref}
+      >
         <div className="space-y-6">
-          {/*
-           * **One back affordance per screen, and it lives in the foot** (#760). Stages 2–4 used
-           * to draw a bare `Back` link at the top of the column while stage 1 drew its own in the
-           * form's action row — three shapes for one act, and none of them the pair the artifact
-           * draws. The foot below is now the only place it appears, on all four stages.
-           */}
-
-          {/*
-           * Where the person is in the five stages (#687, #825): Details, Settings, Aspects,
-           * Account and Invite. There is no conditional cell and nothing to mark unavailable —
-           * `Align` left the band when it became the dashboard's surface, so the rail is a plain
-           * five and the count says "of 5".
-           */}
-          <StageRail copy={copy} current={stage} />
-
-          <div>
-            <h1
-              id="create-stage-heading"
-              className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+          <p>
+            <Link
+              href={backHref}
+              className="inline-flex h-11 items-center text-sm font-medium text-action hover:underline"
             >
-              {heading}
+              {itemLabel(empty, "back")}
+            </Link>
+          </p>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+              {empty.heading}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-              {stage === 1
-                ? copy.subtitle
-                : stage === 2
-                  ? sectionBody(mode)
-                  : stage === 3
-                    ? sectionBody(aspectsSection)
-                    : stage === 4
-                      ? sectionBody(accountSection)
-                      : sectionBody(inviteSection)}
+              {sectionBody(empty)}
             </p>
           </div>
-
           <ProblemBand
             heading={problems.heading}
             sentence={problem}
             link={problemLink}
             back={backDoor}
           />
-          {/* The fix for an authored template that is not published yet (#870). It sits on stage 1
+          {/* The authored template's one-click publish (#870). Drawn under the band, because it
+              is the fix for the sentence above it — and it is the *existing* status transition,
+              mounted one more place, not a second way to publish anything. */}
+          {publishAction === undefined ? null : <div className="mt-3">{publishAction}</div>}
+        </div>
+      </RelationshipFlowShell>
+    );
+  }
+
+  return (
+    <RelationshipFlowShell
+      mount={mount}
+      stage={stage}
+      copy={copy}
+      title={heading}
+      closeLabel={shell.closeLabel}
+      closeHref={shell.closeHref}
+    >
+      <div className="space-y-6">
+        {/*
+         * **One back affordance per screen, and it lives in the foot** (#760). Stages 2–4 used
+         * to draw a bare `Back` link at the top of the column while stage 1 drew its own in the
+         * form's action row — three shapes for one act, and none of them the pair the artifact
+         * draws. The foot below is now the only place it appears, on all four stages.
+         */}
+
+        {/*
+         * Where the person is in the five stages (#687, #825) is the shell's: Details, Settings,
+         * Aspects, Account and Invite, drawn above this body by `RelationshipFlowShell` so the
+         * dialog and the page cannot number the same screen differently (#979 B).
+         */}
+
+        <div>
+          <h1
+            id="create-stage-heading"
+            className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100"
+          >
+            {heading}
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+            {stage === 1
+              ? copy.subtitle
+              : stage === 2
+                ? sectionBody(mode)
+                : stage === 3
+                  ? sectionBody(aspectsSection)
+                  : stage === 4
+                    ? sectionBody(accountSection)
+                    : sectionBody(inviteSection)}
+          </p>
+        </div>
+
+        <ProblemBand
+          heading={problems.heading}
+          sentence={problem}
+          link={problemLink}
+          back={backDoor}
+        />
+        {/* The fix for an authored template that is not published yet (#870). It sits on stage 1
               because a template that cannot be copied is a door problem, not a form problem — and
               the store's own refusal at commit stays as the last line of defence. */}
-          {publishAction === undefined ? null : <div>{publishAction}</div>}
+        {publishAction === undefined ? null : <div>{publishAction}</div>}
 
-          <NoticeBand sentence={notice ?? null} link={noticeLink ?? null} />
+        <NoticeBand sentence={notice ?? null} link={noticeLink ?? null} />
 
-          {stage === 1 ? (
-            <>
-              {/* What is being copied — its name, its words and its size, all from the record. */}
-              <section
-                aria-labelledby="create-template-heading"
-                className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+        {stage === 1 ? (
+          <>
+            {/* What is being copied — its name, its words and its size, all from the record. */}
+            <section
+              aria-labelledby="create-template-heading"
+              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+            >
+              <h2
+                id="create-template-heading"
+                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
               >
-                <h2
-                  id="create-template-heading"
-                  className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                >
-                  {band.heading}
-                </h2>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
-                <div className="mt-3 rounded-md border border-gray-200 px-3 py-2.5 dark:border-gray-700">
-                  <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                    {template.title}
-                  </p>
-                  <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
-                    {template.summary}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
-                  </p>
-                </div>
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                  {itemLabel(band, "seats")}
+                {band.heading}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{sectionBody(band)}</p>
+              <div className="mt-3 rounded-md border border-gray-200 px-3 py-2.5 dark:border-gray-700">
+                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  {template.title}
                 </p>
-              </section>
+                <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
+                  {template.summary}
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {fillLabel(itemLabel(band, "aspects"), { count: template.aspectCount })}
+                </p>
+              </div>
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                {itemLabel(band, "seats")}
+              </p>
+            </section>
 
-              {/*
-               * #870 — a template that cannot be copied draws no form. The refusal above names the
-               * reason and its door, the publish action sits under it when the author can fix it,
-               * and this foot is the way out. Collecting six facts here would be four stages of
-               * typing for a create the store is guaranteed to refuse.
-               */}
-              {copyBlocked === true ? (
-                <StageFoot
-                  backHref={backHref}
-                  backLabel={itemLabel(who, "back")}
-                  cancelHref={shell.closeHref}
-                  cancelLabel={cancelLabel}
-                />
-              ) : (
-                <form
-                  action={SAVE_WHO_PATH}
-                  method="post"
-                  aria-labelledby="create-stage-heading"
-                  className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-                >
-                  {/* The template is the route's own fact; the form carries it so the POST names it. */}
-                  <input type="hidden" name="templateRecordId" value={template.recordId} />
+            {/*
+             * #870 — a template that cannot be copied draws no form. The refusal above names the
+             * reason and its door, the publish action sits under it when the author can fix it,
+             * and this foot is the way out. Collecting six facts here would be four stages of
+             * typing for a create the store is guaranteed to refuse.
+             */}
+            {copyBlocked === true ? (
+              <StageFoot
+                backHref={backHref}
+                backLabel={itemLabel(who, "back")}
+                cancelHref={shell.closeHref}
+                cancelLabel={cancelLabel}
+              />
+            ) : (
+              <form
+                action={SAVE_WHO_PATH}
+                method="post"
+                aria-labelledby="create-stage-heading"
+                className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+              >
+                {/* The template is the route's own fact; the form carries it so the POST names it. */}
+                <input type="hidden" name="templateRecordId" value={template.recordId} />
 
-                  {/*
+                {/*
                 The seven fields, and the one derivation in the flow (#825): the title follows the
                 four name inputs until somebody types in it. That is a keystroke-level behaviour, so
                 the controls live in a client component (`StageOneFields`) while the form, the
@@ -582,162 +596,158 @@ export function CreateRelationship({
                 marks — a sixth field, a moved one or a bare required label is red rather than a
                 reviewer's memory.
               */}
-                  <StageOneFields
-                    copy={{
-                      titleLabel: itemLabel(who, "title-label"),
-                      titleHelp: itemLabel(who, "title-help"),
-                      initiatorFirstLabel: itemLabel(who, "initiator-first-label"),
-                      initiatorLastLabel: itemLabel(who, "initiator-last-label"),
-                      initiatorLastPlaceholder: itemLabel(who, "initiator-last-placeholder"),
-                      initiatorHelp: itemLabel(who, "initiator-help"),
-                      counterpartyFirstLabel: itemLabel(who, "counterparty-first-label"),
-                      counterpartyFirstPlaceholder: itemLabel(
-                        who,
-                        "counterparty-first-placeholder",
-                      ),
-                      counterpartyLastLabel: itemLabel(who, "counterparty-last-label"),
-                      counterpartyLastPlaceholder: itemLabel(who, "counterparty-last-placeholder"),
-                      counterpartyHelp: itemLabel(who, "counterparty-help"),
-                      emailLabel: itemLabel(who, "email-label"),
-                      emailPlaceholder: itemLabel(who, "email-placeholder"),
-                      descriptionLabel: itemLabel(who, "description-label"),
-                      descriptionPlaceholder: itemLabel(who, "description-placeholder"),
-                      descriptionHelp: itemLabel(who, "description-help"),
-                      requiredNote: itemLabel(who, "required-note"),
-                    }}
-                    values={{
-                      initiatorFirst: draft.initiatorFirst,
-                      initiatorLast: draft.initiatorLast,
-                      counterpartyFirst: draft.counterpartyFirst,
-                      counterpartyLast: draft.counterpartyLast,
-                      title: draft.title,
-                      email: draft.email,
-                      description: draft.description,
-                    }}
-                    descriptionDefault={template.summary}
-                  />
+                <StageOneFields
+                  copy={{
+                    titleLabel: itemLabel(who, "title-label"),
+                    titleHelp: itemLabel(who, "title-help"),
+                    initiatorFirstLabel: itemLabel(who, "initiator-first-label"),
+                    initiatorLastLabel: itemLabel(who, "initiator-last-label"),
+                    initiatorLastPlaceholder: itemLabel(who, "initiator-last-placeholder"),
+                    initiatorHelp: itemLabel(who, "initiator-help"),
+                    counterpartyFirstLabel: itemLabel(who, "counterparty-first-label"),
+                    counterpartyFirstPlaceholder: itemLabel(who, "counterparty-first-placeholder"),
+                    counterpartyLastLabel: itemLabel(who, "counterparty-last-label"),
+                    counterpartyLastPlaceholder: itemLabel(who, "counterparty-last-placeholder"),
+                    counterpartyHelp: itemLabel(who, "counterparty-help"),
+                    emailLabel: itemLabel(who, "email-label"),
+                    emailPlaceholder: itemLabel(who, "email-placeholder"),
+                    descriptionLabel: itemLabel(who, "description-label"),
+                    descriptionPlaceholder: itemLabel(who, "description-placeholder"),
+                    descriptionHelp: itemLabel(who, "description-help"),
+                    requiredNote: itemLabel(who, "required-note"),
+                  }}
+                  values={{
+                    initiatorFirst: draft.initiatorFirst,
+                    initiatorLast: draft.initiatorLast,
+                    counterpartyFirst: draft.counterpartyFirst,
+                    counterpartyLast: draft.counterpartyLast,
+                    title: draft.title,
+                    email: draft.email,
+                    description: draft.description,
+                  }}
+                  descriptionDefault={template.summary}
+                />
 
-                  {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
-                  <StageFoot
-                    backHref={backHref}
-                    backLabel={itemLabel(who, "back")}
-                    cancelHref={shell.closeHref}
-                    cancelLabel={cancelLabel}
-                    advance={
-                      <button type="submit" className={ADVANCE_CLASSES}>
-                        {itemLabel(who, "submit")}
-                      </button>
-                    }
-                  />
-                </form>
-              )}
-            </>
-          ) : stage === 2 ? (
-            /*
-             * **Settings is a client component (#975 D7).** The two groups and the form live in
-             * `StageChoiceForm`, because a press that cannot advance has to *answer* — with the
-             * fixture's own `Opinions Mode is required.` at the field it is about — and a server
-             * render cannot answer a click. This component still owns every word: the legends, the
-             * option helps and the two required sentences are resolved here from
-             * `data/pages/assessment-create.ts` and handed down, so the screen's voice stays in one
-             * fixture and the refusal cannot drift from the label it names.
-             */
-            <StageChoiceForm
-              action={SAVE_MODE_PATH}
-              heading={mode.heading ?? ""}
-              body={sectionBody(mode)}
-              templateRecordId={template.recordId}
-              groups={choiceGroups}
-              selected={{ mode: draft.mode, alignmentSetting: draft.alignmentSetting }}
-              foot={
-                // The stage foot (#760): `[Back][Cancel]` left, the advance flush right.
+                {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
                 <StageFoot
                   backHref={backHref}
-                  backLabel={itemLabel(mode, "back")}
+                  backLabel={itemLabel(who, "back")}
                   cancelHref={shell.closeHref}
                   cancelLabel={cancelLabel}
                   advance={
                     <button type="submit" className={ADVANCE_CLASSES}>
-                      {itemLabel(mode, "submit")}
+                      {itemLabel(who, "submit")}
                     </button>
                   }
                 />
-              }
-            />
-          ) : stage === 3 ? (
-            <div className="space-y-5">
-              {/*
+              </form>
+            )}
+          </>
+        ) : stage === 2 ? (
+          /*
+           * **Settings is a client component (#975 D7).** The two groups and the form live in
+           * `StageChoiceForm`, because a press that cannot advance has to *answer* — with the
+           * fixture's own `Opinions Mode is required.` at the field it is about — and a server
+           * render cannot answer a click. This component still owns every word: the legends, the
+           * option helps and the two required sentences are resolved here from
+           * `data/pages/assessment-create.ts` and handed down, so the screen's voice stays in one
+           * fixture and the refusal cannot drift from the label it names.
+           */
+          <StageChoiceForm
+            action={SAVE_MODE_PATH}
+            heading={mode.heading ?? ""}
+            body={sectionBody(mode)}
+            templateRecordId={template.recordId}
+            groups={choiceGroups}
+            selected={{ mode: draft.mode, alignmentSetting: draft.alignmentSetting }}
+            foot={
+              // The stage foot (#760): `[Back][Cancel]` left, the advance flush right.
+              <StageFoot
+                backHref={backHref}
+                backLabel={itemLabel(mode, "back")}
+                cancelHref={shell.closeHref}
+                cancelLabel={cancelLabel}
+                advance={
+                  <button type="submit" className={ADVANCE_CLASSES}>
+                    {itemLabel(mode, "submit")}
+                  </button>
+                }
+              />
+            }
+          />
+        ) : stage === 3 ? (
+          <div className="space-y-5">
+            {/*
               The list itself (#689). It is the one client component in this stage: a row opens in
               place, saves itself and collapses again, and the order is dragged — none of which a
               page navigation can do. It writes the list into the same draft cookie the two stages
               above wrote, so a reload renders what the person left behind.
             */}
-              <AspectList
-                copy={copy}
-                templateRecordId={template.recordId}
-                aspects={aspects ?? []}
-                addRemove
-              />
+            <AspectList
+              copy={copy}
+              templateRecordId={template.recordId}
+              aspects={aspects ?? []}
+              addRemove
+            />
 
-              {/*
+            {/*
               Stage 3 hands over; it does not create (#690). Until stage 4 existed the create sat
               on this control, which made the Aspects the last word on a relationship. The approved
               flow puts the review, the plans and the conversion after the list, so this is a plain
               link to the last stage — a GET, because going to a screen must never write.
             */}
-              {/* The stage foot (#760): `[Back][Cancel]` left, the hand-over flush right. */}
-              <StageFoot
-                backHref={backHref}
-                backLabel={itemLabel(aspectsSection, "back")}
-                cancelHref={shell.closeHref}
-                cancelLabel={cancelLabel}
-                advance={
-                  <Link
-                    href={createCommitPath(template.slug)}
-                    data-create-next="account"
-                    className={ADVANCE_CLASSES}
-                  >
-                    {itemLabel(aspectsSection, "submit")}
-                  </Link>
-                }
-              />
-            </div>
-          ) : stage === 4 ? (
-            <StageAccount
-              copy={copy}
-              draft={draft}
-              template={{
-                recordId: template.recordId,
-                title: template.title,
-                aspectCount: template.aspectCount,
-              }}
-              account={account ?? null}
-              {...(accountAdvanceHref === undefined ? {} : { advanceHref: accountAdvanceHref })}
+            {/* The stage foot (#760): `[Back][Cancel]` left, the hand-over flush right. */}
+            <StageFoot
               backHref={backHref}
+              backLabel={itemLabel(aspectsSection, "back")}
               cancelHref={shell.closeHref}
               cancelLabel={cancelLabel}
-              advanceClasses={ADVANCE_CLASSES}
-              commitFormId={COMMIT_FORM_ID}
+              advance={
+                <Link
+                  href={createCommitPath(template.slug)}
+                  data-create-next="account"
+                  className={ADVANCE_CLASSES}
+                >
+                  {itemLabel(aspectsSection, "submit")}
+                </Link>
+              }
             />
-          ) : (
-            <StageInvite
-              copy={copy}
-              draft={draft}
-              instanceRecordId={instanceRecordId ?? ""}
-              relationshipId={relationshipId ?? ""}
-              {...(capture === undefined ? {} : { capture })}
-              {...(initialPaid === undefined ? {} : { initialPaid })}
-              {...(planIncluded === undefined ? {} : { planIncluded })}
-              backHref={backHref}
-              cancelHref={shell.closeHref}
-              cancelLabel={cancelLabel}
-              advanceClasses={ADVANCE_CLASSES}
-              sendFormId={SEND_FORM_ID}
-            />
-          )}
-        </div>
-      </StageColumn>
-    </StageShell>
+          </div>
+        ) : stage === 4 ? (
+          <StageAccount
+            copy={copy}
+            draft={draft}
+            template={{
+              recordId: template.recordId,
+              title: template.title,
+              aspectCount: template.aspectCount,
+            }}
+            account={account ?? null}
+            {...(accountAdvanceHref === undefined ? {} : { advanceHref: accountAdvanceHref })}
+            backHref={backHref}
+            cancelHref={shell.closeHref}
+            cancelLabel={cancelLabel}
+            advanceClasses={ADVANCE_CLASSES}
+            commitFormId={COMMIT_FORM_ID}
+          />
+        ) : (
+          <StageInvite
+            copy={copy}
+            draft={draft}
+            instanceRecordId={instanceRecordId ?? ""}
+            relationshipId={relationshipId ?? ""}
+            {...(capture === undefined ? {} : { capture })}
+            {...(initialPaid === undefined ? {} : { initialPaid })}
+            {...(planIncluded === undefined ? {} : { planIncluded })}
+            backHref={backHref}
+            cancelHref={shell.closeHref}
+            cancelLabel={cancelLabel}
+            advanceClasses={ADVANCE_CLASSES}
+            sendFormId={SEND_FORM_ID}
+          />
+        )}
+      </div>
+    </RelationshipFlowShell>
   );
 }
 
