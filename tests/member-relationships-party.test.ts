@@ -78,6 +78,8 @@ function relationshipRowFor(viewer: string): Record<string, unknown> {
     session_record_id: isCounterparty || isInitiator ? SESSION_RECORD : null,
     aspect_count: template.items.length,
     counterparty_name: "Walt",
+    /* #975 — the Counterparty's seat name, which exists when the invitation's does not. */
+    counterparty_seat_name: isCounterparty || isInitiator ? "Walt" : null,
     claimed: false,
     revoked: false,
     expires_at: null,
@@ -194,5 +196,23 @@ describe("readMyRelationship opens for the Counterparty, read-only", () => {
 
   it("still answers `undefined` for an account that is neither seat", async () => {
     await expect(readMyRelationship(STRANGER, RELATIONSHIP_ID)).resolves.toBeUndefined();
+  });
+
+  it("carries both seats' names, read from `party`, so the screen can name the pair (#975 D9)", async () => {
+    const view = await readMyRelationship(INITIATOR, RELATIONSHIP_ID);
+
+    expect(view?.initiatorName).toBe("Jaden");
+    expect(view?.counterpartySeatName).toBe("Walt");
+
+    /*
+     * The seat is a different fact from the invitation: `counterparty_name` is what the initiator
+     * typed, `counterparty_seat_name` is the account in the seat. The statement asks for both, from
+     * the same round, or a relationship whose invitation row is missing names only half its pair —
+     * which is every relationship on the demo branch.
+     */
+    const [statement] = statements;
+    expect(statement?.sql).toContain("AS counterparty_seat_name");
+    expect(statement?.sql).toContain("p.role = 'counterparty'");
+    expect(statement?.sql).toContain("AS initiator_name");
   });
 });

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — v1.17.1](../v1.17.1/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — the 1.17.1 tree (never released)](../v1.17.1/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
 
 <!-- docs-nav:end -->
 
@@ -15,19 +15,12 @@ Every route `data/pages/budget.ts` registers, captured in a real browser at 390 
 3 non-route surfaces (not-found, shell, tour) — covered by the pages that mount them, listed below.
 ```
 
-Brand `alignsynch` · generated 2026-11-13T22:09:42.909Z · node `v24.22.0` · `/usr/bin/google-chrome` · the machine-readable form is [`manifest.json`](manifest.json).
+Brand `alignsynch` · generated 2026-11-13T22:09:42.909Z · node `v24.22.0` · `/usr/bin/google-chrome` · captured at `73a78ceb` (the server's `/api/version` agreed) · the machine-readable form is [`manifest.json`](manifest.json).
 
 ## Changed this release
 
 Against v1.17.1:
 
-- `/admin/docs/features` — verdict skipped → pass
-- `/admin/docs/features` — status null → 200
-- `/admin/docs/features` — widths → 390/768/1440
-- `/admin/docs/releases` — verdict skipped → pass
-- `/admin/docs/releases` — status null → 200
-- `/admin/docs/releases` — widths → 390/768/1440
-- `/admin/instances/[id]` — verdict pass → fail
 - `/categories` — verdict pass → fail
 
 ## Findings
@@ -203,6 +196,6 @@ Full-size PNGs (213 files, 57651251 bytes before compression) are not committed 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — v1.17.1](../v1.17.1/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — the 1.17.1 tree (never released)](../v1.17.1/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
 
 <!-- docs-nav:end -->

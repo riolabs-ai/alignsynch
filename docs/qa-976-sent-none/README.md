@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [The relationship detail's identity, #975](../qa-975-detail-identity/README.md) · next [The welcome tiles on /register too, #971](../qa-971-tiles/README.md)
 
 <!-- docs-nav:end -->
 
@@ -67,6 +67,6 @@ node docs/qa-976-sent-none/capture.mjs --phase after --base http://localhost:343
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [A relationship with no initiator member, #958](../qa-958-no-initiator-member/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [The relationship detail's identity, #975](../qa-975-detail-identity/README.md) · next [The welcome tiles on /register too, #971](../qa-971-tiles/README.md)
 
 <!-- docs-nav:end -->

@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**148 documents in 9 sections.** Every page carries the same nav block, generated
+**150 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
-- [Records & QA](#records-qa) — 30 documents
+- [Records & QA](#records-qa) — 32 documents
 
 ## Start here
 
@@ -205,15 +205,17 @@ What was measured, on which tree, and what the migration changed.
 - [`V1-RETIREMENT.md`](V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
 - [`qa-atlas/v1.17.0/index.md`](qa-atlas/v1.17.0/index.md) — **QA atlas — v1.17.0** — What did every registered surface render in v1.17.0, and did it read the record it claims?
-- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — v1.17.1** — What did every registered surface render in v1.17.1, and what changed since v1.17.0?
-- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since v1.17.1?
+- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — the 1.17.1 tree (never released)** — What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?
+- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
 - [`qa-surface-sweep-913/README.md`](qa-surface-sweep-913/README.md) — **Surface sweep, #913** — Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?
 - [`qa-957-assessment-one-click/README.md`](qa-957-assessment-one-click/README.md) — **One-click create on /assessment, #957** — Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?
 - [`qa-958-no-initiator-member/README.md`](qa-958-no-initiator-member/README.md) — **A relationship with no initiator member, #958** — Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?
+- [`qa-975-detail-identity/README.md`](qa-975-detail-identity/README.md) — **The relationship detail's identity, #975** — Does the detail page say whose relationship it is and which one — its own title and both names, one role per screen?
 - [`qa-976-sent-none/README.md`](qa-976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
+- [`qa-971-tiles/README.md`](qa-971-tiles/README.md) — **The welcome tiles on /register too, #971** — Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa-rail-handle/README.md`](qa-rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?

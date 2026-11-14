@@ -133,6 +133,21 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "You are the Counterparty on this relationship. Its Aspects, publishing and invitation belong to the person who started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent.",
         },
+        {
+          /**
+           * #975 D2 — the same read-only fact, for the seat that is **not** the Counterparty's.
+           *
+           * The band above states a *role* and a *permission*, and only the permission is what the
+           * band is drawn on (`isInitiator` is false). When the seat says Initiator and the
+           * relationship's account column names somebody else, the two halves of that sentence
+           * disagree — the seat chip one block up already said "Initiator" — so this row states the
+           * permission and names no role. `relationship.viewerRole` picks which of the two is drawn,
+           * and that is the same value the chip prints, so the screen cannot call one person both.
+           */
+          id: "controls-belong-to-starter",
+          label:
+            "The Aspects, publishing and invitation on this relationship belong to the account that started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent.",
+        },
       ],
     },
     {
