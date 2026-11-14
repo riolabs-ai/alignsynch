@@ -299,8 +299,10 @@ describe("the realm filter", () => {
     const all = await renderCatalogue();
     const home = await renderCatalogue({ realm: "Home" });
 
-    // The fixture: 27 types and the platform's starter, which names no type.
-    expect(total).toBe(28);
+    // The fixture: 27 types, the platform's starter (which names no type), and the platform's
+    // **blank** — published since #1042, because the generic create action starts from it, so it is
+    // a template the library offers like any other.
+    expect(total).toBe(29);
 
     expect(all).toContain(`data-template-count="${total}"`);
     expect(wordsOf(all)).toContain(`Showing ${total} of ${total} templates`);

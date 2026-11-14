@@ -24,13 +24,12 @@
  * that used to link `/assessment/templates/<id>/create` handed a signed-out visitor a screen he
  * had no account for yet; a marketing card must not do that.
  *
- * **The card carries which template, though (#867).** Bare `/register` threw the visitor's choice
- * away: the account was created and the person landed on the brand's landing page, with the
- * template gone. So the action is `startPathFor()` — `/register?next=<that type's create step>` —
- * the parameter `/register` already honours (`signInDestination`, `lib/auth/next-path.ts`), which
- * survives the sign-up round trip and puts stage 1 of the chosen template back in front of the
- * person who chose it. The create address is still never linked directly from a public page: it is
- * what `next` resolves to *after* the account exists.
+ * **The card carries which template, and that is the whole address (#1042).** Bare `/register`
+ * threw the visitor's choice away: the account was created and the person landed on the brand's
+ * landing page, with the template gone. #867 patched that with `/register?next=<create step>`; since
+ * #1042 the action is `startPathFor()` — the create flow's **stage 1**, with the template in the
+ * path — because stage 1 renders for a signed-out visitor (#690) and the account is stage 4 of that
+ * same wizard. One door, one address, both viewers.
  *
  * Free of React and Next so a node test can render the model, the same reason `lib/alignment-home.ts`
  * gives: the components that draw these cards hold no words and no hrefs of their own.
@@ -90,26 +89,24 @@ export function cataloguePriceNote(label: string): string {
 export const START_PATH = REGISTER_PATH;
 
 /**
- * **Where a catalogue action starts, with the template the visitor chose** (#867), **for the viewer
- * who is looking at it** (#979).
+ * **Where a catalogue action starts, with the template the visitor chose** (#867), for **every**
+ * viewer (#1042).
  *
- * The action's two halves are `lib/start-path.ts`'s: a visitor is sent to the account that buys the
- * relationship (`/register?next=<this type's create step>`, the parameter `/register` already
- * honours through `signInDestination`), and a **member is sent straight into the flow** — the same
- * screen, with the account step they do not need removed.
+ * The action is `lib/start-path.ts`'s: the flow's stage 1, carrying the chosen template. Until
+ * #1042 this re-export also carried the viewer, because a visitor was first sent to the account
+ * that buys the relationship (`/register?next=<this type's create step>`) and a member straight
+ * into the flow. That split made one intent three doors; stage 1 renders for a signed-out visitor
+ * (#690 — it has never required an account, and the account is stage 4 of the same wizard), so
+ * both viewers are now handed the same screen.
  *
- * The two halves are joined there rather than in a component because the same action is drawn on
+ * The address is joined there rather than in a component because the same action is drawn on
  * four surfaces — the catalogue card, the type's own page, its worked example and the front page's
- * shelf — and a surface that forgot the viewer would silently reinstate the defect: a member with a
- * live session asked to create the account they already had, on the front door of the only paid
- * flow. `createRelationshipPath()` is `lib/flow/paths.ts`'s, so the address is authored in one
- * module and the session rule in another; neither is spelled here.
+ * shelf — and a surface that authored its own destination is how the three-door split happened.
+ * `createRelationshipPath()` is `lib/flow/paths.ts`'s; neither is spelled here.
  *
  * It is **not** a promise the route cannot keep: `/templates/relationship/<id>/create` renders for
- * a signed-out visitor too (#690 — stage 1 never asked for an account), so the destination is a
- * screen whether or not the sign-up completes, and the shipped-on-this-build validation
- * (`signInDestination`) falls back to the brand's page rather than honouring a path this build
- * does not render.
+ * a signed-out visitor (#690), so the destination is a screen whether or not the person has an
+ * account yet, and the draft they type there survives the sign-in at stage 4.
  */
 export { startPathFor };
 export type { StartViewer };
@@ -158,7 +155,7 @@ export interface TemplateCard {
   readonly priceNote: string;
   /** The worked example, **only** where the fixture holds a demo sheet for this type. */
   readonly example?: string;
-  /** Where this viewer starts this relationship: the flow for a member, `/register` for a visitor. */
+  /** Where this relationship starts: the flow's stage 1, with this template (#1042). */
   readonly start: string;
   /** The template's public page: `/templates/<slug>`. The card's title links here. */
   readonly detail: string;
@@ -189,11 +186,7 @@ const CARD_IDS = {
  * `data/pages/home-alignsynch.ts` on the front page), so each surface owns its own wording for
  * the same action and the two cannot drift into two spellings of one button.
  */
-export function templateCard(
-  copy: PageCopy,
-  type: RelationshipType,
-  viewer: StartViewer,
-): TemplateCard {
+export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCard {
   return {
     id: type.id,
     slug: type.id,
@@ -208,7 +201,7 @@ export function templateCard(
     ...(demoAnswersFor(type.id) === undefined
       ? {}
       : { example: relationshipTypeDemoPath(type.id) }),
-    start: startPathFor(type.id, viewer),
+    start: startPathFor(type.id),
     detail: catalogueDetailPath(type.id),
     useLabel: pageItemOf(copy, CARD_IDS.use).label,
     exampleLabel: pageItemOf(copy, CARD_IDS.example).label,
@@ -222,18 +215,14 @@ export function templateCard(
  * decides what it sells; this function refuses a non-purchasable row rather than drawing a card
  * the shop will not honour.
  */
-export function templateCards(
-  copy: PageCopy,
-  types: readonly RelationshipType[],
-  viewer: StartViewer,
-): TemplateCard[] {
+export function templateCards(copy: PageCopy, types: readonly RelationshipType[]): TemplateCard[] {
   return types.map((type) => {
     if (!isPurchasable(type)) {
       throw new Error(
         `templateCard: "${type.id}" is not purchasable — a catalogue card for a type the shop will not sell is a price nobody can pay`,
       );
     }
-    return templateCard(copy, type, viewer);
+    return templateCard(copy, type);
   });
 }
 

@@ -2,7 +2,7 @@
   "format": "alignsynch-bundle",
   "bundleVersion": 1,
   "kind": "dataset",
-  "appVersion": "1.2.0",
+  "appVersion": "1.19.0",
   "payload": {
     "templates": [
       {
@@ -207,7 +207,7 @@
         "id": "assessment-blank-template",
         "slug": "blank-template",
         "type": "assessment",
-        "status": "draft",
+        "status": "published",
         "date": "2026-10-27T10:00:00.000Z",
         "title": "Untitled Relationship",
         "summary": "Relationship Type: ________ — left blank, because this template is the user's to name; the glossary it fills lists Business, Personal and a third line. Five unnamed Aspects, each with a prompt and two Values to overwrite before this is copied into a Relationship.",

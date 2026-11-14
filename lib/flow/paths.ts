@@ -351,6 +351,32 @@ export function createRelationshipPath(templateSlug: string): string {
 }
 
 /**
+ * The platform's **blank** template — the record a generic create action starts from (#1042).
+ *
+ * One slug, named once, because two different facts address it: the fixture that authors the
+ * generic CTA's destination (`data/pages/templates.ts::final-cta`) and the test that pins that
+ * destination to a route this build actually renders. The record itself is `data/assessments.ts`'s
+ * `assessment-blank-template` — the glossary's third line, "the user's to name", `published`
+ * since #1042 so it can be copied like any other start.
+ *
+ * It is deliberately **not** a `TemplateRecordId`: this is the URL's fact, and the form still posts
+ * the record's id (see `relationshipTemplatePath()`'s note on the two handles).
+ */
+export const BLANK_TEMPLATE_SLUG = "blank-template";
+
+/**
+ * The **blank start**: stage 1 of the create flow for a relationship nobody chose a template for.
+ *
+ * "Create a relationship" on a catalogue, a template list or an offer band has no template behind
+ * it — that is what makes it generic — so it starts on this record: the person names the
+ * relationship at Details and rewords the placeholder Aspects at stage 3. Before #1042 the generic
+ * action was a bare `/register`, which put a sign-up form where the wizard belongs.
+ */
+export function blankRelationshipPath(): string {
+  return createRelationshipPath(BLANK_TEMPLATE_SLUG);
+}
+
+/**
  * `/templates/relationship/[slug]/create/mode` — stage 2 of the create flow (#688).
  *
  * A child of the create path rather than a query parameter (`?step=mode`) because the flow is

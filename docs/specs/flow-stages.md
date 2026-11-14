@@ -92,9 +92,26 @@ once at `(mainlayout)/layout.tsx` it would also intercept one stage navigating t
 "Continue" is a link) and draw a modal over the flow itself.
 
 **Marketing keeps navigating.** `/relationship-types`, `/relationship-types/<slug>[/demo]`,
-`/relationship-templates` and `/pricing` live in `app/(marketing)/**`; their controls resolve through
-`lib/start-path.ts` to `/register?next=<stage>` for a visitor and the stage for a member, and they are
-**not** converted. A dialog there would put an app shell on a crawlable page for a count.
+`/relationship-templates` and `/pricing` live in `app/(marketing)/**`; their create controls resolve
+through `lib/start-path.ts` to **stage 1 of the wizard, for every viewer**, and they are **not**
+converted into the flow's dialog. A dialog there would put an app shell on a crawlable page for a
+count.
+
+**One intent, one door (#1042).** Every action whose intent is to create a relationship opens stage 1
+— for a visitor, a returning signed-out user and a member alike — and the account is settled at
+**stage 4**, inside the wizard where the draft already is:
+
+| the action's fixture                                                   | where it goes                                                                                                            |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| a template's own action (`template-use`, a catalogue card)             | `/templates/relationship/<slug>/create` — the chosen template travels in the path                                        |
+| a **generic** create action ("Create a relationship")                  | `/templates/relationship/blank-template/create` — the platform's blank template; the person names it at Details          |
+| an **account-only** action (`/register`: Sign Up, "Start your 7 days") | `/register` for a visitor, the brand's account home for a member — a membership or account intent is not a create intent |
+
+`/register?next=<stage>` was the old form of the first row (#867): the account first, the stage
+after sign-up. It landed a signed-out visitor on a sign-up form for a flow whose own first screen
+needs no session, so the draft could not survive the round trip and one intent had three doors. The
+`next=` unwrapping still exists in `lib/start-path.ts` for an authored link that carries one, and it
+now resolves to the same screen for both viewers.
 
 ### The invitation is the response path, and it enters at Account
 

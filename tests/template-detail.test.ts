@@ -97,7 +97,7 @@ function typeAt(id: string): NonNullable<ReturnType<typeof relationshipType>> {
 
 /** One template's page, rendered — the model and the markup together. */
 function renderTemplate(slug: string) {
-  const model = templateDetail(templatesDetailPageCopy, slug, VISITOR);
+  const model = templateDetail(templatesDetailPageCopy, slug);
   assert.ok(model !== undefined, `no page model for "${slug}"`);
   const html = renderToStaticMarkup(createElement(TemplateDetail, { model }));
   return { model, html, text: textOf(html) };
@@ -139,17 +139,15 @@ test("prints the plan's price and the one start action, both from the fixture", 
   // chip the member shelf and `/assessment/templates` print, from the one plan fixture (#798).
   assert.equal(model.priceNote, PLAN_CHIP);
   assert.ok(html.includes(model.priceNote), "the price line is not in the markup");
-  assert.equal(model.start.href, startPathFor(type.id, VISITOR));
+  assert.equal(model.start.href, startPathFor(type.id));
   assert.equal(START_PATH, "/register");
-  // #867 — the one action names the create step this visitor chose as the sign-up destination, so
-  // the account round trip cannot drop the template. A bare `/register` is the defect.
-  assert.equal(
-    new URL(model.start.href, "http://x").searchParams.get("next"),
-    createRelationshipPath(type.id),
-  );
+  // #1042 — the one action is the create flow's stage 1, carrying the template: one door for a
+  // visitor and a member alike, and no `next=` indirection through the sign-up form.
+  assert.equal(model.start.href, createRelationshipPath(type.id));
+  assert.equal(new URL(model.start.href, "http://x").search, "");
   assert.ok(
     html.includes(`href="${model.start.href}"`),
-    "the start action does not link to the register gate for this template",
+    "the start action does not link to this template's create step",
   );
   assert.ok(html.includes(`href="${CATALOGUE_PATH}"`), "there is no way back to the directory");
   assert.equal(model.back.href, CATALOGUE_PATH);
@@ -204,14 +202,14 @@ test("a slug that names no purchasable type produces no page", () => {
   // Unknown, and the three dating rows the owner excluded — the same absence either way.
   for (const slug of ["not-a-template", "", ...EXCLUDED_TYPE_IDS]) {
     assert.equal(
-      templateDetail(templatesDetailPageCopy, slug, VISITOR),
+      templateDetail(templatesDetailPageCopy, slug),
       undefined,
       `"${slug}" produced a page model`,
     );
   }
   // A caller that hands in the full taxonomy is still refused a dating row.
   const dating = typeAt("dating");
-  assert.equal(templateDetail(templatesDetailPageCopy, dating.id, VISITOR, [dating]), undefined);
+  assert.equal(templateDetail(templatesDetailPageCopy, dating.id, [dating]), undefined);
 
   // The static params are exactly the purchasable set: no dating row, no type missed.
   assert.deepEqual(
@@ -235,7 +233,7 @@ test("generateStaticParams covers exactly the purchasable set", async () => {
 });
 
 test("every catalogue card carries its own detail href, and the directory renders it", () => {
-  const cards = templateCards(templatesPageCopy, purchasableRelationshipTypes, VISITOR);
+  const cards = templateCards(templatesPageCopy, purchasableRelationshipTypes);
   const page = templatesPage(templatesPageCopy, VISITOR);
   const html = renderToStaticMarkup(createElement(TemplatesPageView, { model: page }));
 

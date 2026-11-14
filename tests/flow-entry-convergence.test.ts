@@ -174,7 +174,7 @@ describe("the in-product doors are the soft navigation, and only they are", () =
 });
 
 describe("the marketing surfaces keep navigating", () => {
-  it("uses no flow door under (marketing), and still sends a visitor to /register", () => {
+  it("uses no flow door under (marketing), and sends every viewer to stage 1", () => {
     const marketing = sourceFiles("app/(marketing)");
     expect(marketing.length).toBeGreaterThan(5);
     for (const { path, text } of marketing) {
@@ -182,10 +182,11 @@ describe("the marketing surfaces keep navigating", () => {
         "FlowEntryLink",
       );
     }
-    // The catalogue's own door is still resolved per viewer by `lib/start-path.ts` (a member goes
-    // into the flow, a visitor to `/register?next=`), untouched by this card.
+    // A marketing action still **navigates** — it is a link, not the intercepted dialog — but since
+    // #1042 its destination is the flow's stage 1 for every viewer rather than the sign-up form.
     expect(source("app/(marketing)/relationship-types/page.tsx")).toContain("startViewer(");
-    expect(source("lib/start-path.ts")).toContain("registerPathFor(flow)");
+    expect(source("lib/start-path.ts")).toContain("createRelationshipPath(typeId)");
+    expect(source("lib/start-path.ts")).not.toContain("registerPathFor");
   });
 
   it("mounts the door in no shared chrome: no nav item and no footer link converts", () => {
