@@ -12,6 +12,9 @@
  *   2. invite      the invitation link is on the screen — drawn whether or not this deployment
  *                  has a mailer, because a send that did not happen must never make the link
  *                  unshareable (#220)
+ *   2a. carried    the plan chosen on `/pricing` is recorded by that page's one action and arrives
+ *                  at stage 5 already selected — through four stages and an account round trip —
+ *                  and a browser that chose nothing opens the panel unselected (#1043)
  *   2b. self-claim the Initiator's own browser cannot claim its own invitation: the page
  *                  names them as the party they already are, the claim is refused with
  *                  `already-a-party`, and the token stays live (#202)
@@ -66,6 +69,7 @@
  */
 import { writeFileSync } from "node:fs";
 import { Client } from "pg";
+import { PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { sendInvitationPath } from "@/lib/flow/paths";
 
 /**
@@ -283,6 +287,17 @@ function createStem(templateSlug = TEMPLATE_SLUG) {
 }
 
 /**
+ * The plan **row** a billing tier is drawn by — `PLAN_BILLING_TIER` read backwards (#1043).
+ *
+ * The walk's panel is keyed by the fixture's handles (`one`, `unlimited`) and `/pricing` names a
+ * billing tier (`basic`, `principal`); the map is the only crossing, so the harness reads it rather
+ * than typing a row beside the tier it is asserting.
+ */
+function planRowOf(tier) {
+  return Object.entries(PLAN_BILLING_TIER).find(([, mapped]) => mapped === tier)?.[0] ?? null;
+}
+
+/**
  * The instance id in a create redirect, in **either** shape it has (#704).
  *
  * `…/assessment/instances/<id>` is the committed relationship (where a post that names no
@@ -328,9 +343,34 @@ async function createThroughStages(
     setting = "soft",
     aspects,
     templateSlug = TEMPLATE_SLUG,
+    /**
+     * The plan this browser chose on `/pricing` before it started (#1043) — the carry the whole
+     * card is about. When it is given, the run takes the pricing action first and then asserts that
+     * stage 5 opens with that row selected; when it is not, the run asserts the **opposite**, because
+     * "a door that carries nothing carries nothing" is the other half of the same rule.
+     */
+    carriedPlan,
   },
 ) {
   const stem = createStem(templateSlug);
+
+  /* stage 0 — the plan, when this run chose one on /pricing (#1043) -- */
+  // The action every `/pricing` CTA takes: it records the pair on this browser and answers 303 to
+  // the public catalogue, where the template is picked and the wizard starts. Reading the cookie
+  // out of the jar — rather than trusting the redirect alone — is what proves the carry landed
+  // before the four stages that have to survive it.
+  if (carriedPlan !== undefined) {
+    const carried = await jar.get(
+      `/pricing/start?plan=${encodeURIComponent(carriedPlan.planId)}&interval=${encodeURIComponent(carriedPlan.interval)}`,
+    );
+    check(
+      "the pricing action records the chosen plan and opens the template catalogue (#1043)",
+      carried.status === 303 &&
+        new URL(carried.location ?? "/", BASE_URL).pathname === "/relationship-templates" &&
+        jar.cookies.has("flow_plan_intent"),
+      `${carried.status} ${carried.location} · cookie ${jar.cookies.has("flow_plan_intent") ? "set" : "absent"}`,
+    );
+  }
 
   /* stage 1 — Who ---------------------------------------------------- */
   /* #825 — each seat is first + last now, so the post carries four halves rather than two names. */
@@ -412,6 +452,49 @@ async function createThroughStages(
       new URL(location, BASE_URL).pathname.endsWith(`${stem}/invite`),
     `${committed.status} ${location}`,
   );
+
+  /* stage 5 — the plan, carried or not (#1043) ------------------------ */
+  // The screen stage 4 just handed this browser. The carry had to survive four page navigations and
+  // the account write to arrive here, so this is the assertion the card exists for — and when the
+  // run carried nothing, the same screen is where the **absence** is proved: a panel that preselects
+  // a tier nobody chose is the defect the card removed.
+  if (instanceId !== null) {
+    const stageFive = await jar.get(location);
+    const carried = carriedPlan === undefined ? null : planRowOf(carriedPlan.planId);
+    // The panel's radios, read as tags rather than as one regex over the page: React prints `checked`
+    // wherever it sorts it (`name` `checked` `value` on this tree), so a regex fixed on attribute
+    // order asserts the renderer's ordering rather than the selection.
+    const planInputs = [...stageFive.html.matchAll(/<input[^>]*name="plan"[^>]*>/g)].map(
+      (m) => m[0],
+    );
+    if (carriedPlan === undefined) {
+      check(
+        "stage 5 opens with no plan selected when the browser carried none (#1043)",
+        stageFive.status === 200 &&
+          !stageFive.html.includes("data-plan-carried") &&
+          !planInputs.some((tag) => /\bchecked\b/.test(tag)),
+        `status ${stageFive.status} · ${planInputs.filter((t) => /\bchecked\b/.test(t)).length} of ${planInputs.length} radio(s) checked`,
+      );
+    } else {
+      const carriedTag = planInputs.find((tag) => tag.includes(`value="${carried}"`)) ?? "";
+      check(
+        `stage 5 opens with the plan chosen on /pricing already selected (${carriedPlan.planId} · ${carriedPlan.interval}) (#1043)`,
+        stageFive.status === 200 &&
+          stageFive.html.includes(`data-plan-carried="${carriedPlan.planId}"`) &&
+          stageFive.html.includes(`data-plan-carried-interval="${carriedPlan.interval}"`) &&
+          carried !== null &&
+          /\bchecked\b/.test(carriedTag) &&
+          planInputs.filter((tag) => /\bchecked\b/.test(tag)).length === 1,
+        `status ${stageFive.status} · row ${carried ?? "unmapped"} · ${
+          carriedTag === ""
+            ? "no input for that row"
+            : /\bchecked\b/.test(carriedTag)
+              ? "checked"
+              : "not checked"
+        }`,
+      );
+    }
+  }
 
   // #865 — the relationship the stage just wrote, registered here because it is **not** deleted by
   // `DELETE FROM record` and used to survive every run on the shared branch. Read back rather than
@@ -692,8 +775,24 @@ async function main() {
   );
 
   // …and the same stage still draws for the same template once a session exists. The draft is a
-  // `sameSite: "lax"` cookie, so the account round trip cannot drop it (#1042).
+  // `sameSite: "lax"` cookie, so the account round trip cannot drop it (#1042). The **carried plan**
+  // is the same class of cookie (#1043), so the pricing action is taken here — signed out, before
+  // the account exists — and its presence is asserted again after the sign-up, which is the
+  // "sign-in preserves the carry" half of the acceptance.
+  const carriedBefore = await visitor.get("/pricing/start?plan=basic&interval=month");
+  check(
+    "a signed-out visitor's plan is carried onto the browser before any account exists (#1043)",
+    carriedBefore.status === 303 &&
+      new URL(carriedBefore.location ?? "/", BASE_URL).pathname === "/relationship-templates" &&
+      visitor.cookies.has("flow_plan_intent"),
+    `${carriedBefore.status} ${carriedBefore.location}`,
+  );
   await signUpCreator(visitor, { name: "Nadia Visitor" });
+  check(
+    "and the sign-up that follows keeps it — the round trip drops no flow cookie (#1043)",
+    visitor.cookies.has("flow_plan_intent"),
+    `flow_plan_intent ${visitor.cookies.has("flow_plan_intent") ? "present" : "lost"} after sign-up`,
+  );
   const arrived = await visitor.get(startHref);
   dumpPage("stage-1-after-signup", arrived.html);
   check(
@@ -738,6 +837,8 @@ async function main() {
   await signUpCreator(initiator, { name: "Avery E2E" });
 
   /* 1. create — five stages: Details, Settings, Aspects, Account, Invite (#825) --- */
+  // This creator **chose a plan on /pricing first** (#1043), so the run also proves the carry
+  // survives the four stages and the account write between the choice and stage 5.
   const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorFirst: "Avery",
@@ -748,6 +849,7 @@ async function main() {
     title: "Avery and Rowan E2E",
     mode: "basic",
     aspects: templateAspects,
+    carriedPlan: { planId: "principal", interval: "year" },
   });
   if (firstCreate.instanceId === null) throw new Error("no instance id in the create redirect");
   const instanceId = firstCreate.instanceId;

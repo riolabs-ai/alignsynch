@@ -22,8 +22,8 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **97** — 61 static, 36 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 357 files under `components/`, 350 of them `.tsx`
-- route handlers: **30** — `app/**/route.ts`, listed below and not a UI surface
+- component domains: **43** — 356 files under `components/`, 349 of them `.tsx`
+- route handlers: **31** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 75 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 50 · AlignSynch 46 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -690,9 +690,9 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
 
 - `/pricing` — **live**
-  - capability: Plan comparison read from billing_plan with a checkout per sellable tier, the viewer's own plan marked, an FAQ and a closing CTA.
+  - capability: Plan comparison read from billing_plan: every sellable tier's action opens the template catalogue carrying that tier and interval, the viewer's own plan marked, an FAQ and a closing CTA. Nothing on this page starts a checkout (#1043) — the plan is chosen here and sold inside the create flow's last stage.
   - components: `components/pricing`, `components/ui`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `components/pricing/plan-checkout-button.tsx`, `components/pricing/pricing-plans.tsx`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `components/pricing/pricing-plans.tsx`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/quiz-discussions` — **fixture**
   - capability: Every discussion thread across quizzes, with each quiz's comment count and result beside it.
@@ -794,8 +794,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - routes (2): `/news`, `/news/[slug]`
 
 - `components/pricing` — **live**
-  - capability: The plan cards — prices and sellability from billing_plan, a checkout button per sellable tier — the FAQ and the closing CTA.
-  - files (4): `plan-checkout-button.tsx`, `pricing-cta.tsx`, `pricing-faq.tsx`, `pricing-plans.tsx`
+  - capability: The plan cards — prices and sellability from billing_plan, one action per sellable tier that carries that tier and interval into the template catalogue, and the general CTAs that carry nothing — the FAQ and the closing CTA.
+  - files (3): `pricing-cta.tsx`, `pricing-faq.tsx`, `pricing-plans.tsx`
   - routes (1): `/pricing`
 
 - `components/quiz` — **fixture**
@@ -868,6 +868,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/assessment/new/who` — `app/(mainlayout)/assessment/new/who/route.ts`
 - `/favicon.ico` — `app/favicon.ico/route.ts`
 - `/invite/[token]/claim` — `app/(mainlayout)/invite/[token]/claim/route.ts`
+- `/pricing/start` — `app/(marketing)/pricing/start/route.ts`
 - `/qa-demo-flow/[...shot]` — `app/qa-demo-flow/[...shot]/route.ts`
 - `/review-artifacts/[id]` — `app/review-artifacts/[id]/route.ts`
 - `/templates/relationship/[slug]/delete` — `app/(mainlayout)/templates/relationship/[slug]/delete/route.ts`

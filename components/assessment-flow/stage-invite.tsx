@@ -35,6 +35,7 @@
 import { useState } from "react";
 import type { PageCopy } from "@/content/pages";
 import type { CreateDraft } from "@/lib/flow/create-draft";
+import type { CarriedPlan } from "@/lib/flow/plan-intent";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { type CheckoutHandlers, InviteWalk } from "./invite-walk";
 import { StageFoot } from "./stage-foot";
@@ -51,6 +52,7 @@ export function StageInvite({
   relationshipId,
   initialPaid,
   planIncluded,
+  carriedPlan,
   checkout,
   backHref,
   cancelHref,
@@ -76,6 +78,11 @@ export function StageInvite({
   initialPaid?: boolean;
   /** What the account's plan already covers (#870) — the walk's plan panel reads it. */
   planIncluded?: { readonly name: string; readonly entitled: boolean };
+  /**
+   * The plan chosen on `/pricing`, measured by the page from the carried cookie (#1043). The walk
+   * opens with that row selected; absent means nothing was carried and the panel is the choice.
+   */
+  carriedPlan?: CarriedPlan;
   /** The server's membership actions. Absent in a render-only test. */
   checkout?: CheckoutHandlers;
   backHref: string;
@@ -100,6 +107,7 @@ export function StageInvite({
           onPaid={() => setPaid(true)}
           {...(checkout === undefined ? {} : { checkout })}
           {...(planIncluded === undefined ? {} : { planIncluded })}
+          {...(carriedPlan === undefined ? {} : { carriedPlan })}
         />
 
         {/* The two sentences that make "keep it as a draft" safe to choose. */}
