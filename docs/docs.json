@@ -590,6 +590,11 @@
           "path": "qa-atlas/v1.18.0/index.md",
           "title": "QA atlas — v1.18.0",
           "question": "What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?"
+        },
+        {
+          "path": "qa/welcome-copy/README.md",
+          "title": "The welcome panel's copy — the tagline and the Aspects/Opinions tiles",
+          "question": "Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?"
         }
       ]
     },

@@ -141,11 +141,24 @@ describe("the alignment build speaks its own product", () => {
     expect(alignSynchLogin).not.toContain("{count}");
   });
 
-  it("says what the product does: the same questions, and the Gap between the answers", () => {
+  it("carries the owner's welcome copy verbatim: the tagline and the two noun tiles", () => {
+    // The words are the owner's (2026-11-13) and are pinned character for character, full stop
+    // and initial capitals included. A fixture edit that "tidies" this sentence changes what the
+    // first screen of the product claims, so it fails here rather than at review.
+    const copy = loginCopyFor(loginCopy(alignSynch), "alignsynch");
+    expect(copy.subtitle).toBe(
+      "Knowledge is power and communication is your key to relationship success.",
+    );
+    const stats = sectionOf(copy, "stats");
+    expect((stats.items ?? []).map((item) => [item.id, item.value, item.label])).toEqual([
+      ["sides", "Aspects", "Define the Destination"],
+      ["gap", "Opinions", "Your Map to Get There"],
+    ]);
+  });
+
+  it("says on /register what signing up does, out of the register fixture's own hero", () => {
     const register = registerCopyFor(registerCopy(alignSynch), "alignsynch");
     const registerHero = `${register.heading} ${register.subtitle ?? ""}`;
-    expect(alignSynchLogin).toContain("Where your answers part is the Gap");
-    expect(alignSynchLogin).toContain("The Gap");
     expect(registerHero).toContain("the distance between your answers is the Gap");
     expect(registerHero).toContain("invite the person you want to align with");
   });

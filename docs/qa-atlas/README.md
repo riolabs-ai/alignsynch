@@ -33,6 +33,80 @@ evidence of the failure.
   from the atlas page. A release whose assets are immutable cannot take one — `gh release upload`
   answers `HTTP 422` — so the page names the archive and its sha256 instead of linking a 404.
 
+## Retention — the window, and the check that holds it
+
+The atlas is a picture of a release, not an archive of the product. The owner's rule (2026-11-14):
+
+> Drop or delete all atlas versions except the current and the 2 past cuts — 1 past if the tree is
+> too bulky. Hold that window until we have a finished production release fit for official launch.
+
+**The window is a number, not a judgement.** `scripts/qa-atlas-retention.mjs` is its one home:
+
+| term              | value                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| window            | the **current cut + 2 past** — three directories                                                              |
+| bulky             | a cut the window would keep is **over 4 MB** (a capture is ~1.7 MB today, so this is roughly a doubling)      |
+| window when bulky | the **current cut + 1 past** — two directories                                                                |
+| counts as a cut   | a directory named `v<major>.<minor>.<patch>` under `docs/qa-atlas/`; a cut with no `manifest.json` counts too |
+
+The threshold is applied to the cuts that **stay**: a 9 MB cut that is about to be pruned does not
+narrow the window on its way out, because the window describes what the tree holds afterwards.
+
+**Measured on `main` (`180b0802`): three cuts, 5.06 MB** — nothing to prune, and nothing was
+deleted to get here.
+
+| cut       | weight  | role                                                                            |
+| --------- | ------- | ------------------------------------------------------------------------------- |
+| `v1.18.0` | 1.73 MB | **current** — the version `package.json` carries                                |
+| `v1.17.1` | 1.72 MB | past #1 — the label was never a release ([its page](v1.17.1/index.md) says why) |
+| `v1.17.0` | 1.61 MB | past #2                                                                         |
+
+Two commands, and only one of them runs in the gate:
+
+```bash
+pnpm qa:atlas:check   # a gate step: FAILS when the tree holds more cuts than the window
+pnpm qa:atlas:prune   # removes them with `git rm -r`; NEVER a gate step
+```
+
+`qa:atlas:check` fails by name — it lists every cut past the window and prints the command that
+removes it. `qa:atlas:prune` applies the same window, but it is deliberately **not** a step in
+`scripts/verify.sh`: a gate that deletes files is a gate that can delete the wrong files, and the
+gate runs on every push, unattended. It prints the keep/remove plan before touching anything, and it
+**refuses** — exit 2, nothing removed — when:
+
+- the newest cut's directory is not `v` + the version `package.json` carries. The window is counted
+  from the newest directory, so pruning against a mislabelled head retires the capture for the
+  release being cut — that refusal is the whole reason the mode exists;
+- a cut it would remove is not tracked by git (a directory that got there by accident is a human's
+  deletion, not a retention script's);
+- the tree holds no cut at all — a prune that reports success over an empty atlas is worse than one
+  that refuses.
+
+After removing a cut it drops that cut's rows from `docs/docs.json` and refreshes the nav, because a
+pruned cut left in the manifest is a `pnpm docs:check` failure one lane over.
+
+## The launch criterion
+
+The window holds until the atlas says a release is fit to launch. **A release is eligible for
+official launch when the latest atlas cut reports 0 failing surfaces and every skip is explained in
+the index.** Both halves matter: a failure is a surface that did not render the record it claims,
+and an unexplained skip is a surface nobody looked at.
+
+**Today's newest cut, `v1.18.0`, does not meet that bar, and this page will not pretend otherwise.**
+It reports **77 registry surfaces · 74 routes · 71 captured · 3 failing · 3 skipped**:
+
+| surface                                   | verdict                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| `/assessment/instances/[instanceId]/sent` | 500, where the boundary table expects 200                           |
+| `/admin/instances/[id]`                   | 200, with a console error (a controlled/uncontrolled input warning) |
+| `/categories`                             | 404, and the body is not the app's not-found copy                   |
+
+All three skips do carry their reason in that cut's index (`/reset/[token]`,
+`/dashboard/templates/[id]`, `/invite/[token]`), so the skip half of the criterion is satisfied and
+the failure half is not. The atlas is working exactly as intended here — it is reporting the product
+honestly, and the gate passes because publishing a real mismatch is its job. Launch eligibility is a
+statement about the **product**, not about this document.
+
 ## Running a capture
 
 The capture needs a running server and the demo branch's own rows, which is why it is **not** a gate
@@ -91,7 +165,10 @@ every lane. It fails, by route name, when:
 - the manifest does not name the commit it captured (`captureCommit`) — "was this measured against
   the tree it claims?" is the question the document exists to answer;
 - the atlas directory is over the 5 MB budget;
-- the manifest documents a different version than `package.json` carries.
+- the manifest documents a different version than `package.json` carries;
+- **the tree holds more cuts than the retention window** — it names each cut to remove with its
+  weight and the command that removes it (`pnpm qa:atlas:prune`), and it counts a cut that holds no
+  `manifest.json`, because a directory the check cannot read is still weight someone committed.
 
 Two files, no second route list: `scripts/qa-atlas-registry.mjs` derives the row set from
 `data/pages/budget.ts` and reads the boundary out of `tests/parity/boundary.ts`;

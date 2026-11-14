@@ -6,6 +6,9 @@
  *
  *   pnpm demo:flow          walk the three paths, write PNGs + docs/qa/demo-flow/transcript.json
  *   pnpm demo:flow:check    re-run on an unchanged tree and diff the transcript and the PNG hashes
+ *   pnpm demo:flow:verify   read the committed transcript and the PNGs it names, and assert they
+ *                           still describe each other — no browser, no connection, so this is the
+ *                           form that runs in `bash scripts/verify.sh`
  *
  * ## Not a second `flow:e2e`
  *
@@ -77,6 +80,7 @@
  *
  *   BASE_URL=http://localhost:3411 pnpm demo:flow
  *   pnpm demo:flow:check
+ *   pnpm demo:flow:verify           # offline: no BASE_URL, no DATABASE_URL, no Chrome
  *
  * The environment arrives through `withenv.sh` (see the repo skill): `.env.local` is the demo branch
  * and it wins over `.env`, so "which branch did this touch" is answered by the file set.
@@ -113,6 +117,12 @@ import { repoRoot } from "./load-env.mjs";
 
 const ARGS = process.argv.slice(2);
 const CHECK = ARGS.includes("--check");
+/**
+ * `--verify` is the **offline** half: it reads the committed transcript and the PNGs it names and
+ * asserts they still describe each other. It never connects, never launches a browser and never
+ * writes — which is what lets it be a `scripts/verify.sh` step, where `--check` cannot be.
+ */
+const VERIFY = ARGS.includes("--verify");
 const STRICT = ARGS.includes("--strict");
 const SKIP_SEED = process.env.DEMO_FLOW_SKIP_SEED === "1";
 /**
@@ -1980,6 +1990,9 @@ function seed(drift) {
 }
 
 async function main() {
+  // Before `OUT`, before the connection, before Chrome: `--verify` opens nothing.
+  if (VERIFY) return verifyCommitted();
+
   ensureDir(OUT);
 
   console.log(`demo-flow · ${CHECK ? "check" : "run"} · base ${BASE} · out ${OUT}`);
@@ -2117,6 +2130,229 @@ async function main() {
 }
 
 /**
+ * The geometry a PNG records about itself: the IHDR width and height, at bytes 16 and 20.
+ *
+ * Both halves of this file need it — `--check` compares a fresh run's pixels to the committed
+ * ones, `--verify` compares the committed record to the committed file — and two copies of an
+ * offset would drift into two opinions about the same screenshot.
+ */
+function pngSize(file) {
+  const bytes = readFileSync(file);
+  // 24 is the shortest a PNG's IHDR can be before the geometry at 16 and 20 — checked *before* the
+  // read, because `readUInt32BE` past the end throws a range error and a truncated image must be a
+  // named failure ("is not a PNG"), not a stack trace from a byte offset.
+  const isPng = bytes.length > 24 && bytes.toString("latin1", 1, 4) === "PNG";
+  if (!isPng) return { bytes, isPng, width: Number.NaN, height: Number.NaN };
+  return { bytes, isPng, width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+/**
+ * `--verify` — the committed transcript, held against the artifacts it names.
+ *
+ * **Why this exists beside `--check`.** `--check` is a *regeneration* diff: to answer "does the
+ * committed transcript still describe a walk of this tree" it has to walk again, so it needs the
+ * demo instance, a browser, `DATABASE_URL` and the branch's rows — and it seeds and deletes rows
+ * doing it. That is a maintainer's command and can never be a gate step, because the gate is
+ * database-free by doctrine (`AGENTS.md`) and CI has no credentials, no server and no Chrome. This
+ * is the half that can be a gate step: it reads two committed things, the transcript and the PNGs
+ * it names, and asserts they still describe each other. No connection, no browser, no write, ~0.1 s.
+ *
+ * **It pins no content, on purpose — that is what makes regeneration safe.** A re-run of
+ * `pnpm demo:flow` rewrites routes, typed values and expectation sentences whenever an honest
+ * screen changed; a check that compared those to a frozen copy would fail every regeneration and
+ * teach the reader to ignore it — the same mistake `--check`'s docstring already refuses for PNG
+ * hashes. So nothing here reads a value's *text*. What it holds is **consistency**:
+ *
+ *   1. the file declares its own schema (`$doc`), and is closed in both directions — every
+ *      top-level key it writes is declared in `$doc.topLevel`, every declared one is written;
+ *      every step key is declared in `$doc.fields`, and every declared key (bar `actual`, which
+ *      the schema itself calls conditional) is on every step. **This is the #977 lesson**: when
+ *      the generator changes, the thing that must be edited is the schema the generator writes,
+ *      and a driver that starts writing a new field cannot do it silently.
+ *   2. steps are numbered 1..n contiguously, and grouped in the order `paths[]` declares them —
+ *      the order a replay renders its sections in.
+ *   3. every `shot` exists, is a PNG, and its IHDR is the `w`×`h` the transcript records. This is
+ *      the assertion that catches a deleted screenshot, a re-cropped one, or a transcript edited
+ *      against an image nobody re-took.
+ *   4. `paths[]` and `summary` agree with the arrays they count, and findings are 1..n with the
+ *      paths and images they name.
+ *
+ * **What it cannot answer, and does not pretend to:** whether a *fresh* walk would write this. That
+ * needs the live instance, so the transcript is regenerable by a maintainer, not by CI.
+ */
+function verifyCommitted() {
+  const fail = (message) => {
+    console.error(`demo:flow:verify — ${message}`);
+    return 1;
+  };
+
+  const canonical = join(CANONICAL_OUT, "transcript.json");
+  if (!existsSync(canonical)) {
+    return fail(`no committed transcript at ${canonical}; run pnpm demo:flow first`);
+  }
+
+  let committed;
+  try {
+    committed = JSON.parse(readFileSync(canonical, "utf8"));
+  } catch (error) {
+    return fail(`the committed transcript is not JSON: ${error.message}`);
+  }
+
+  const doc = committed.$doc;
+  if (doc?.schema !== "demo-flow/v1") {
+    return fail(`$doc.schema is ${JSON.stringify(doc?.schema)}, not "demo-flow/v1"`);
+  }
+  if (!doc.topLevel || !doc.fields) {
+    return fail("$doc is missing its `topLevel` or `fields` block — the schema is the file's own");
+  }
+
+  const steps = committed.steps;
+  const paths = committed.paths;
+  const findings = committed.findings;
+  if (!Array.isArray(steps) || steps.length === 0) return fail("`steps` is not a non-empty array");
+  if (!Array.isArray(paths) || paths.length === 0) return fail("`paths` is not a non-empty array");
+  if (!Array.isArray(findings)) return fail("`findings` is not an array");
+
+  // --- 1. the declared schema, closed in both directions --------------------
+  const declaredTop = Object.keys(doc.topLevel);
+  const writtenTop = Object.keys(committed);
+  for (const key of writtenTop) {
+    if (!declaredTop.includes(key)) {
+      return fail(`the transcript writes \`${key}\`, which $doc.topLevel does not declare`);
+    }
+  }
+  for (const key of declaredTop) {
+    if (!writtenTop.includes(key)) {
+      return fail(`$doc.topLevel declares \`${key}\`, which the transcript does not write`);
+    }
+  }
+
+  const declaredFields = Object.keys(doc.fields);
+  if (declaredFields.length === 0) return fail("$doc.fields declares no step fields");
+  // The schema says `actual` is present only when a step failed; every other field is unconditional.
+  const CONDITIONAL = "actual";
+
+  const pathNames = paths.map((entry) => entry.path);
+
+  // --- 2. the steps ---------------------------------------------------------
+  for (let index = 0; index < steps.length; index++) {
+    const step = steps[index];
+    const where = `step ${index + 1} (${step.path ?? "no path"})`;
+
+    if (step.step !== index + 1) {
+      return fail(
+        `${where}: numbering is not 1..n contiguous — this record says \`${step.step}\`, the array position says ${index + 1}`,
+      );
+    }
+    for (const field of declaredFields) {
+      if (field === CONDITIONAL) continue;
+      if (!(field in step))
+        return fail(`${where} is missing \`${field}\`, which $doc.fields declares`);
+    }
+    for (const key of Object.keys(step)) {
+      if (!declaredFields.includes(key)) {
+        return fail(`${where} writes \`${key}\`, which $doc.fields does not declare`);
+      }
+    }
+    if (step.ok === false && !(CONDITIONAL in step)) {
+      return fail(`${where} records ok: false but carries no \`actual\` — the schema says it does`);
+    }
+    if (step.ok !== false && CONDITIONAL in step) {
+      return fail(
+        `${where} carries \`actual\` but did not fail — the schema says it is conditional`,
+      );
+    }
+    if (!pathNames.includes(step.path)) {
+      return fail(`${where} names path \`${step.path}\`, which paths[] does not carry`);
+    }
+
+    // --- 3. the screenshot it names ----------------------------------------
+    if (typeof step.shot !== "string" || step.shot === "") {
+      return fail(`${where} carries no \`shot\``);
+    }
+    const file = join(ROOT, step.shot);
+    if (!existsSync(file)) {
+      return fail(`the transcript names a missing image: ${step.shot} (step ${step.step})`);
+    }
+    const { isPng, width, height } = pngSize(file);
+    if (!isPng) return fail(`${step.shot} is not a PNG — the transcript records an image`);
+    if (width !== step.w || height !== step.h) {
+      return fail(`${step.shot} is ${width}×${height}, the transcript records ${step.w}×${step.h}`);
+    }
+  }
+
+  // --- 4. paths, summary and findings --------------------------------------
+  if (new Set(pathNames).size !== pathNames.length) {
+    return fail(`paths[] names a path twice: ${pathNames.join(", ")}`);
+  }
+  const counts = new Map(pathNames.map((name) => [name, 0]));
+  for (const step of steps) counts.set(step.path, counts.get(step.path) + 1);
+  for (const entry of paths) {
+    if (typeof entry.terminal !== "string" || entry.terminal.trim() === "") {
+      return fail(`paths[] entry \`${entry.path}\` has no \`terminal\` screen`);
+    }
+    if (typeof entry.reached !== "boolean") {
+      return fail(`paths[] entry \`${entry.path}\` has a \`reached\` that is not true or false`);
+    }
+    if (counts.get(entry.path) !== entry.steps) {
+      return fail(
+        `paths[] says \`${entry.path}\` has ${entry.steps} step(s); the steps array carries ${counts.get(entry.path)}`,
+      );
+    }
+  }
+
+  // The replay renders one section per path, so the grouping order in `steps` is the order of
+  // `paths[]` — a driver that interleaved two walks would render sections in an order the
+  // transcript does not claim.
+  const order = [];
+  for (const step of steps) {
+    if (order[order.length - 1] !== step.path) order.push(step.path);
+  }
+  if (order.join("|") !== pathNames.join("|")) {
+    return fail(
+      `steps are grouped ${order.join(" → ")}, paths[] declares ${pathNames.join(" → ")} — the two orders disagree`,
+    );
+  }
+
+  const summary = committed.summary;
+  if (!summary || typeof summary !== "object") return fail("no `summary` block");
+  const counted = {
+    paths: paths.length,
+    reached: paths.filter((entry) => entry.reached === true).length,
+    steps: steps.length,
+    findings: findings.length,
+  };
+  for (const [key, expected] of Object.entries(counted)) {
+    if (summary[key] !== expected) {
+      return fail(`summary.${key} is ${summary[key]}; the transcript carries ${expected}`);
+    }
+  }
+
+  for (let index = 0; index < findings.length; index++) {
+    const entry = findings[index];
+    if (entry.n !== index + 1) {
+      return fail(`finding ${index + 1} is numbered \`${entry.n}\` — findings are 1..n contiguous`);
+    }
+    if (!pathNames.includes(entry.path)) {
+      return fail(`finding ${entry.n} names path \`${entry.path}\`, which paths[] does not carry`);
+    }
+    if (typeof entry.title !== "string" || entry.title.trim() === "") {
+      return fail(`finding ${entry.n} has no title`);
+    }
+    if (entry.shot !== null) {
+      if (typeof entry.shot !== "string" || !existsSync(join(ROOT, entry.shot))) {
+        return fail(`finding ${entry.n} names a missing image: ${entry.shot}`);
+      }
+    }
+  }
+
+  console.log(
+    `✓ demo:flow:verify — ${steps.length} step(s) across ${paths.length} path(s), every image present at its recorded size, ${findings.length} finding(s); the committed transcript still describes its own screenshots`,
+  );
+  return 0;
+}
+
+/**
  * `--check`: the run above wrote a staged copy; this diffs it against what is committed.
  *
  * **Two diffs, and one of them is a measurement rather than a byte comparison — on purpose.**
@@ -2180,9 +2416,7 @@ function checkAgainstCommit() {
       );
       return 1;
     }
-    const bytes = readFileSync(file);
-    const width = bytes.readUInt32BE(16);
-    const height = bytes.readUInt32BE(20);
+    const { bytes, width, height } = pngSize(file);
     if (width !== step.w || height !== step.h) {
       console.error(
         `demo:flow:check — ${step.shot} is ${width}×${height}, the transcript records ${step.w}×${step.h}`,

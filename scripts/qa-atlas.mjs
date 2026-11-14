@@ -50,6 +50,12 @@
  *   --role=<role>       one session pass (public | member | admin)
  *   --out=<dir>         write elsewhere (a dry run)
  *   --no-zip            skip the PNG archive
+ *   --prune             **not a capture.** Apply the retention window instead: remove the cuts older
+ *                       than the current one + 2 past (1 past above 4 MB a cut), with `git rm -r`,
+ *                       then drop their rows from `docs/docs.json` and refresh the nav. Wired as
+ *                       `pnpm qa:atlas:prune` and deliberately not in `scripts/verify.sh` — a gate
+ *                       that deletes files is a gate that can delete the wrong files. Refuses when
+ *                       the newest cut is not the version `package.json` carries
  *   --archive-url=<url>  the uploaded Release asset's URL, printed with the archive it names; omit
  *                        when the release cannot take an asset, and the document says so instead
  *
@@ -95,6 +101,7 @@ import {
   deriveRows,
 } from "./qa-atlas-registry.mjs";
 import { zipEntries } from "./zip.mjs";
+import { atlasCuts, mb, pruneRefusal, retentionOf, weight } from "./qa-atlas-retention.mjs";
 
 /* ------------------------------------------------------------------ *
  * Configuration
@@ -1375,9 +1382,130 @@ function changedSince(manifest) {
   };
 }
 
+/**
+ * `pnpm qa:atlas:prune` — the retention window, applied.
+ *
+ * The rule lives in `qa-atlas-retention.mjs` and the check fails when the tree is outside it; this
+ * is the half that **acts**. It is a pnpm script and it is deliberately **not** a step in
+ * `scripts/verify.sh`: a gate that deletes files is a gate that can delete the wrong files, and the
+ * gate runs on every push, in every lane, unattended.
+ *
+ * What it does, in this order, printing each step so the run is its own evidence:
+ *
+ *   1. reads the cuts, applies the window, and **prints keep/remove before touching anything**;
+ *   2. refuses (exit 2) when the newest cut is not `v` + `package.json`'s version — the window is
+ *      counted from the newest directory, so a mislabelled head moves "past" one cut too far back
+ *      and the capture for the release being cut is what gets deleted;
+ *   3. refuses when a cut it would remove is not in the index — `git rm -r` cannot remove what git
+ *      does not track, and a directory that got there by accident is a human's `rm -rf`, not this;
+ *   4. removes them with `git rm -r`, then drops their rows from `docs/docs.json` and refreshes the
+ *      nav (`scripts/docs-nav.mjs --write`) — a pruned cut that stayed in the manifest would turn
+ *      `pnpm docs:check` red, which is the same drift one lane over.
+ *
+ * The current cut is never in `remove`: `retentionOf` puts it at `keep[0]` and `pruneRefusal`
+ * asserts it a second time.
+ */
+async function prune() {
+  const root = join(repoRoot, "docs", "qa-atlas");
+  const cuts = atlasCuts(root);
+  const version = currentVersion();
+  const plan = retentionOf({ cuts });
+
+  const refusal = pruneRefusal({ cuts, version, plan });
+  if (refusal !== null) {
+    console.error(`✗ qa:atlas:prune — ${refusal}`);
+    return 2;
+  }
+
+  const total = cuts.reduce((sum, cut) => sum + cut.bytes, 0);
+  console.log(
+    `· window: current + ${plan.past} past = ${1 + plan.past} cuts` +
+      `${plan.bulky ? ` (narrowed from 2 — a kept cut is over ${mb(plan.threshold)})` : ""} · ` +
+      `the tree holds ${cuts.length} cuts, ${mb(total)}`,
+  );
+  for (const cut of plan.keep)
+    console.log(`  keep   docs/qa-atlas/${cut.label} · ${weight(cut.bytes)}`);
+  for (const cut of plan.remove) {
+    console.log(`  remove docs/qa-atlas/${cut.label} · ${weight(cut.bytes)}`);
+  }
+
+  if (plan.remove.length === 0) {
+    console.log(
+      `✓ qa:atlas:prune — nothing to prune: v${version} and its ${plan.past} past cuts ` +
+        "are inside the window",
+    );
+    return 0;
+  }
+
+  // Files git does not track cannot be `git rm`-ed, and half-removing a cut is worse than refusing.
+  const staged = plan.remove.flatMap((cut) => {
+    const path = `docs/qa-atlas/${cut.label}`;
+    const listed = spawnSync("git", ["ls-files", "--", path], { cwd: repoRoot, encoding: "utf8" });
+    return (listed.stdout ?? "").trim() === "" ? [path] : [];
+  });
+  if (staged.length > 0) {
+    console.error(
+      `✗ qa:atlas:prune — ${staged.join(", ")} ${staged.length === 1 ? "is" : "are"} not tracked by ` +
+        "git, so `git rm -r` cannot remove it. Add it to the index (or delete it by hand, " +
+        "deliberately) and run this again.",
+    );
+    return 2;
+  }
+
+  const removed = plan.remove.map((cut) => `docs/qa-atlas/${cut.label}`);
+  /**
+   * Plain `git rm -r` first. It refuses when a removed path has **staged changes** — a cut carrying
+   * an uncommitted edit — and that refusal is worth honouring on the first attempt: the alternative
+   * is a retention script that silently discards work. A real cut is committed, so the second
+   * attempt exists for the tree where someone staged a directory by hand; the plan printed the path
+   * one line above, and the file it is removing is a capture the window has already retired.
+   */
+  const rm = (force) =>
+    spawnSync("git", ["rm", "-r", "--quiet", ...(force ? ["-f"] : []), "--", ...removed], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+  let git = rm(false);
+  if (git.status !== 0 && /staged in the index|local modifications/.test(git.stderr ?? "")) {
+    console.log("· the cut carries changes that are not committed — retrying with `git rm -rf`");
+    git = rm(true);
+  }
+  if (git.status !== 0) {
+    console.error(`✗ qa:atlas:prune — git rm failed: ${(git.stderr ?? "").trim() || git.status}`);
+    return 1;
+  }
+  console.log(`· git rm -r ${removed.join(" ")}`);
+
+  // The docs manifest lists each cut as a page, and `docs:check` fails on a row with no file, so the
+  // rows go with the directories and the hub/nav are regenerated from what is left.
+  const manifestFile = join(repoRoot, "docs", "docs.json");
+  const docsManifest = JSON.parse(readFileSync(manifestFile, "utf8"));
+  const pruned = new Set(removed.map((path) => `${path}/`));
+  let dropped = 0;
+  for (const section of docsManifest.sections ?? []) {
+    const kept = (section.docs ?? []).filter((doc) => {
+      const isPruned = [...pruned].some((prefix) => String(doc.path).startsWith(prefix));
+      if (isPruned) dropped += 1;
+      return !isPruned;
+    });
+    section.docs = kept;
+  }
+  writeFileSync(manifestFile, `${JSON.stringify(docsManifest, null, 2)}\n`);
+  formatGenerated(manifestFile);
+  console.log(`· docs/docs.json: dropped ${dropped} row${dropped === 1 ? "" : "s"}`);
+
+  refreshDocsNav();
+  console.log("· docs/README.md and every nav block refreshed");
+  console.log(
+    `✓ qa:atlas:prune — ${cuts.length} cuts → ${plan.keep.length} ` +
+      `(${plan.keep.map((cut) => cut.label).join(" ")})`,
+  );
+  return 0;
+}
+
 let exitCode = 1;
 try {
-  exitCode = await main();
+  exitCode = flag("prune") === undefined ? await main() : await prune();
 } catch (error) {
   console.error(`qa-atlas: ${error.message}`);
   exitCode = 1;
