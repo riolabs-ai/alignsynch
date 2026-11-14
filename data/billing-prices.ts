@@ -7,13 +7,19 @@
  * that amount and nothing else, which is why it is a config module beside the fixture rather than
  * a column on it (the `billing_plan` mirror is a price, not a dashboard id).
  *
- * **What these are.** Created 2026-11-13 with the test-mode secret key against the shared test
- * account, one Product per tier and a recurring Price per interval:
+ * **What these are.** Created 2026-11-14 in the AlignSynch test account
+ * `acct_1If98uIxC4rz96cc` (`settings.dashboard.display_name = "AlignSynch"`), one Product per tier
+ * and a recurring Price per interval, each Price carrying its `lookup_key`:
  *
- *   Basic      prod_VcoKngMHfNjvvh   month  price_1UbYhtKKtWHoLhLRB4fuNvT   $8.95   (895)
- *                                    year   price_1UbYhuKKtWHoLhLR9QPb4nfh   $85.92  (8_592)
- *   Principal  prod_VcoK6IzuL7qcx9   month  price_1UbYhvKKtWHoLhLR5LFOHRnk   $16.95  (1_695)
- *                                    year   price_1UbYhwKKtWHoLhLRgTkvF8A9   $162.72 (16_272)
+ *   Basic      prod_Vd1JwLLr4gRqE9   month  price_1UblGqIxC4rz96ccmAumC406   $8.95   (895)
+ *                                    year   price_1UblGqIxC4rz96ccmptGY2EQ   $85.92  (8_592)
+ *   Principal  prod_Vd1JHMddelStiz   month  price_1UblGrIxC4rz96cc1Zt530Ir   $16.95  (1_695)
+ *                                    year   price_1UblGsIxC4rz96ccA1IrDjSA   $162.72 (16_272)
+ *
+ * They replace the Venture I/O pair (`acct_19bZw7KKtWHoLhLR`, `prod_VcoKngMHfNjvvh` /
+ * `prod_VcoK6IzuL7qcx9`) this file used to name: the key the deployment holds now belongs to the
+ * AlignSynch account, and a Price id is account-scoped, so the old ids resolve nowhere there
+ * (`No such price`). Every id below carries the target account's suffix group, `IxC4rz96cc`.
  *
  * The yearly pair exists because `/pricing` sells both intervals (`pricing-plans.ts`'s switch posts
  * `interval: "year"`); a tier/interval with no Price here is a checkout this adapter **refuses**
@@ -50,12 +56,12 @@ export type PlanPriceIds = Readonly<Record<BillingInterval, string>>;
 /** The ids, in the order `BILLING_PLAN_IDS` draws the tiers. */
 export const BILLING_PRICE_IDS: Readonly<Record<PaidPlanId, PlanPriceIds>> = {
   basic: {
-    month: "price_1UbYhtKKtWHoLhLRBv4fuNvT",
-    year: "price_1UbYhuKKtWHoLhLR9QPb4nfh",
+    month: "price_1UblGqIxC4rz96ccmAumC406",
+    year: "price_1UblGqIxC4rz96ccmptGY2EQ",
   },
   principal: {
-    month: "price_1UbYhvKKtWHoLhLR5LFOHRnk",
-    year: "price_1UbYhwKKtWHoLhLRgTkvF8A9",
+    month: "price_1UblGrIxC4rz96cc1Zt530Ir",
+    year: "price_1UblGsIxC4rz96ccA1IrDjSA",
   },
 };
 
