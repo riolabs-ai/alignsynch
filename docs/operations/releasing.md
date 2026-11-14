@@ -37,6 +37,20 @@ The detached-HEAD trap is what this catches: a checkout sitting on an old commit
 on a tree nobody reviewed. `AGENTS.md` § _Checkout hygiene_ is the drift this checkout actually
 exhibits; a stale release worktree pinning `main` is detached, never deleted.
 
+**The script enforces this itself, and it leaves the checkout as it found it.** Before it writes a
+byte, `scripts/release.sh` refuses three states by name — a **detached** `HEAD` (`HEAD is detached at
+<sha> — a cut is made from a branch, never from a floating commit`), a **dirty** tree (it prints the
+first five paths and says to commit or `git stash` them), and a release commit that does not
+**contain** `origin/main`. And it puts the branch back: the one it started on is restored from a
+trap that runs on success, on failure and on `SIGINT`/`SIGTERM`, so an interrupted cut cannot leave
+a detached tree behind either — which is the state the primary checkout was actually found in
+(detached at a `chore(release): 1.16.0` commit and three commits behind `origin/main`, so `git push`
+from it moved nothing and `release_boundary.py` read `0 commits since tag`). The trap restores the
+**branch**, never the files: a cut that dies between the bump and the commit names the leftover
+paths and leaves them alone, because a release script that discards work in progress is a worse bug
+than the one it is fixing. `tests/release-tree-hygiene.test.ts` runs each of those cases against a
+throwaway tree rather than trusting the reading.
+
 ### 2. Version decision
 
 Read what landed since the last tag and let the prefixes decide. Never pick a number to sound bigger,
