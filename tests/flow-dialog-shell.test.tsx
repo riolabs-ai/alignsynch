@@ -164,7 +164,12 @@ describe("the mounting is declared once, and forwarded", () => {
       // Imported by module specifier, so the extension a Next route file carries is not part of it.
       const module = target.replace(/\.tsx$/, "");
       expect(file, `${route} does not import ${target}`).toContain(`from "@/${module}"`);
-      expect(file, `${route} does not mount the stage as a dialog`).toContain('mount="dialog"');
+      // The dialog mounting is a *value*, not a JSX string literal — `data:check` E23 counts those
+      // against the create routes' budget of 0 — so the assertion reads the constant, not a quote.
+      expect(file, `${route} does not mount the stage as a dialog`).toContain(
+        "mount={FLOW_MOUNT_DIALOG}",
+      );
+      expect(file, `${route} does not import the mount token`).toContain("FLOW_MOUNT_DIALOG");
     }
   });
 

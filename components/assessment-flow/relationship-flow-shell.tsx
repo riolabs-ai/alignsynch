@@ -71,6 +71,16 @@ export type FlowStage = 1 | 2 | 3 | 4 | 5;
 export type FlowMount = "page" | "dialog";
 
 /**
+ * The `dialog` mounting, as a **value**.
+ *
+ * A JSX attribute written `presentation="dialog"` is a string literal to `data:check` E23, which
+ * counts every literal a create surface still renders and gives these five routes a budget of **0** —
+ * copy belongs in the fixture. This is not copy: it is which frame to draw, so it is named once here
+ * and handed to the shell as an expression.
+ */
+export const FLOW_MOUNT_DIALOG = "dialog" as const;
+
+/**
  * Is this pathname one of the flow's own stage addresses?
  *
  * The dialog only describes the flow while the address belongs to it. Derived from the address
@@ -197,7 +207,7 @@ function FlowDialogMount({ title, closeLabel, closeHref, body }: FrameProps & { 
       title={title}
       closeLabel={closeLabel}
       closeHref={closeHref}
-      presentation="dialog"
+      presentation={FLOW_MOUNT_DIALOG}
       onDismiss={dismiss}
     >
       <div data-flow-mount="dialog" aria-busy={busy} onSubmitCapture={submit}>

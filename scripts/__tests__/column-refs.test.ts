@@ -357,7 +357,12 @@ describe("rendersColumn", () => {
     const files = new Map([
       [
         "components/create-relationship.tsx",
-        { path: "components/create-relationship.tsx", source: `<RelationshipFlowShell />` },
+        {
+          path: "components/create-relationship.tsx",
+          // The import is what the hop follows: a render with no import is a file whose
+          // dependency graph says nothing, and the walk has nothing to resolve.
+          source: `import { RelationshipFlowShell } from "./relationship-flow-shell";\n<RelationshipFlowShell />`,
+        },
       ],
       [
         "components/relationship-flow-shell.tsx",

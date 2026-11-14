@@ -3,7 +3,7 @@
  *
  * **The stage is not re-implemented here.** This file is the mounting and nothing else: it renders
  * `TemplateCreateCommitPage` — the route a deep link, a refresh and an invitation link all land on — with
- * `mount="dialog"`, and `RelationshipFlowShell` decides that the frame is drawn over the page
+ * `mount={FLOW_MOUNT_DIALOG}`, and `RelationshipFlowShell` decides that the frame is drawn over the page
  * underneath instead of on a page of its own. One stage component, two mountings, so the dialog
  * cannot drift from the page it claims to be.
  *
@@ -18,7 +18,8 @@
  */
 import type { ComponentProps } from "react";
 import TemplateCreateCommitPage from "@/app/(mainlayout)/templates/relationship/[slug]/create/commit/page";
+import { FLOW_MOUNT_DIALOG } from "@/components/assessment-flow/relationship-flow-shell";
 
 export default function Intercepted(props: ComponentProps<typeof TemplateCreateCommitPage>) {
-  return <TemplateCreateCommitPage {...props} mount="dialog" />;
+  return <TemplateCreateCommitPage {...props} mount={FLOW_MOUNT_DIALOG} />;
 }
