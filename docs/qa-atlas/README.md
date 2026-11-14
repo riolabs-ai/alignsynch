@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — v1.17.0](v1.17.0/index.md)
+[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
 
 <!-- docs-nav:end -->
 
@@ -52,14 +52,14 @@ The atlas is a picture of a release, not an archive of the product. The owner's 
 The threshold is applied to the cuts that **stay**: a 9 MB cut that is about to be pruned does not
 narrow the window on its way out, because the window describes what the tree holds afterwards.
 
-**Measured on `main` (`180b0802`): three cuts, 5.06 MB** — nothing to prune, and nothing was
-deleted to get here.
+**Measured while cutting v1.19.0: three cuts, 5.13 MB** — `v1.17.0` went with the capture, removed by
+`pnpm qa:atlas:prune` because the window is the current cut plus two past.
 
 | cut       | weight  | role                                                                            |
 | --------- | ------- | ------------------------------------------------------------------------------- |
-| `v1.18.0` | 1.73 MB | **current** — the version `package.json` carries                                |
-| `v1.17.1` | 1.72 MB | past #1 — the label was never a release ([its page](v1.17.1/index.md) says why) |
-| `v1.17.0` | 1.61 MB | past #2                                                                         |
+| `v1.19.0` | 1.68 MB | **current** — the version `package.json` carries                                |
+| `v1.18.0` | 1.73 MB | past #1                                                                         |
+| `v1.17.1` | 1.72 MB | past #2 — the label was never a release ([its page](v1.17.1/index.md) says why) |
 
 Two commands, and only one of them runs in the gate:
 
@@ -92,20 +92,22 @@ official launch when the latest atlas cut reports 0 failing surfaces and every s
 the index.** Both halves matter: a failure is a surface that did not render the record it claims,
 and an unexplained skip is a surface nobody looked at.
 
-**Today's newest cut, `v1.18.0`, does not meet that bar, and this page will not pretend otherwise.**
-It reports **77 registry surfaces · 74 routes · 71 captured · 3 failing · 3 skipped**:
+**The newest cut, `v1.19.0`, reports 77 registry surfaces · 74 routes · 71 captured · 0 failing · 3
+skipped** — the three failures `v1.18.0` published have all become passes:
 
-| surface                                   | verdict                                                             |
-| ----------------------------------------- | ------------------------------------------------------------------- |
-| `/assessment/instances/[instanceId]/sent` | 500, where the boundary table expects 200                           |
-| `/admin/instances/[id]`                   | 200, with a console error (a controlled/uncontrolled input warning) |
-| `/categories`                             | 404, and the body is not the app's not-found copy                   |
+| surface                                   | v1.18.0                                                             | v1.19.0 |
+| ----------------------------------------- | ------------------------------------------------------------------- | ------- |
+| `/assessment/instances/[instanceId]/sent` | 500, where the boundary table expects 200                           | pass    |
+| `/admin/instances/[id]`                   | 200, with a console error (a controlled/uncontrolled input warning) | pass    |
+| `/categories`                             | 404, and the body is not the app's not-found copy                   | pass    |
 
-All three skips do carry their reason in that cut's index (`/reset/[token]`,
-`/dashboard/templates/[id]`, `/invite/[token]`), so the skip half of the criterion is satisfied and
-the failure half is not. The atlas is working exactly as intended here — it is reporting the product
-honestly, and the gate passes because publishing a real mismatch is its job. Launch eligibility is a
-statement about the **product**, not about this document.
+The three skips are unchanged and still carry their reason in the cut's index (`/reset/[token]`,
+`/dashboard/templates/[id]`, `/invite/[token]`). Read against this page's own rule, that is the first
+cut where both halves are satisfied; whether that makes the release eligible for official launch is
+the owner's statement about the product, and this document does not make it.
+
+The atlas is working exactly as intended either way — it is reporting the product honestly, and the
+gate passes because publishing a real mismatch is its job.
 
 ## Running a capture
 
@@ -183,6 +185,6 @@ the previous atlas once there is one; the first atlas says so instead of showing
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — v1.17.0](v1.17.0/index.md)
+[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
 
 <!-- docs-nav:end -->

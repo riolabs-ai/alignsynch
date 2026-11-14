@@ -48,14 +48,14 @@ function cut(label: string, bytes = 1.7 * 1024 * 1024) {
   return { label, version: label.replace(/^v/, ""), bytes, hasManifest: true };
 }
 
-const CUTS = [cut("v1.18.0"), cut("v1.17.1"), cut("v1.17.0")];
+const CUTS = [cut("v1.19.0"), cut("v1.18.0"), cut("v1.17.1")];
 
 describe("the window is current + 2 past, decided by a number rather than a feeling", () => {
   it("three cuts are inside it — nothing to remove", () => {
     const plan = retentionOf({ cuts: CUTS });
-    expect(plan.current?.label).toBe("v1.18.0");
+    expect(plan.current?.label).toBe("v1.19.0");
     expect(plan.past).toBe(PAST_CUTS);
-    expect(plan.keep.map((entry) => entry.label)).toEqual(["v1.18.0", "v1.17.1", "v1.17.0"]);
+    expect(plan.keep.map((entry) => entry.label)).toEqual(["v1.19.0", "v1.18.0", "v1.17.1"]);
     expect(plan.remove).toEqual([]);
     expect(plan.bulky).toBe(false);
   });
@@ -72,17 +72,17 @@ describe("the window is current + 2 past, decided by a number rather than a feel
   });
 
   it("a kept cut over the bulk threshold narrows the window to 1 past — the tree holds two", () => {
-    const bulky = [cut("v1.18.0", BULK_THRESHOLD_BYTES + 1), cut("v1.17.1"), cut("v1.17.0")];
+    const bulky = [cut("v1.19.0", BULK_THRESHOLD_BYTES + 1), cut("v1.18.0"), cut("v1.17.1")];
     const plan = retentionOf({ cuts: bulky });
     expect(plan.bulky).toBe(true);
     expect(plan.past).toBe(1);
-    expect(plan.keep.map((entry) => entry.label)).toEqual(["v1.18.0", "v1.17.1"]);
-    expect(plan.remove.map((entry) => entry.label)).toEqual(["v1.17.0"]);
+    expect(plan.keep.map((entry) => entry.label)).toEqual(["v1.19.0", "v1.18.0"]);
+    expect(plan.remove.map((entry) => entry.label)).toEqual(["v1.17.1"]);
   });
 
   it("a cut exactly at the threshold is not bulky — the boundary is > 4 MB, not ≥", () => {
     const plan = retentionOf({
-      cuts: [cut("v1.18.0", BULK_THRESHOLD_BYTES), cut("v1.17.1"), cut("v1.17.0")],
+      cuts: [cut("v1.19.0", BULK_THRESHOLD_BYTES), cut("v1.18.0"), cut("v1.17.1")],
     });
     expect(plan.bulky).toBe(false);
     expect(plan.past).toBe(PAST_CUTS);
@@ -99,9 +99,9 @@ describe("the window is current + 2 past, decided by a number rather than a feel
 
   it("compares versions numerically, so v1.9.0 sorts below v1.10.0", () => {
     const plan = retentionOf({
-      cuts: [cut("v1.9.0"), cut("v1.10.0"), cut("v1.18.0"), cut("v1.2.0")],
+      cuts: [cut("v1.9.0"), cut("v1.10.0"), cut("v1.19.0"), cut("v1.2.0")],
     });
-    expect(plan.current?.label).toBe("v1.18.0");
+    expect(plan.current?.label).toBe("v1.19.0");
     expect(plan.remove.map((entry) => entry.label)).toEqual(["v1.2.0"]);
   });
 });
@@ -132,30 +132,30 @@ describe("the failure names the cut and the command that removes it", () => {
   });
 
   it("reads the committed cuts newest-first, by semver", () => {
-    expect(atlasCuts(ATLAS).map((entry) => entry.label)).toEqual(["v1.18.0", "v1.17.1", "v1.17.0"]);
+    expect(atlasCuts(ATLAS).map((entry) => entry.label)).toEqual(["v1.19.0", "v1.18.0", "v1.17.1"]);
   });
 });
 
 describe("a prune refuses before it deletes anything", () => {
   it("proceeds when the newest cut is the version package.json carries", () => {
-    expect(pruneRefusal({ cuts: CUTS, version: "1.18.0" })).toBeNull();
+    expect(pruneRefusal({ cuts: CUTS, version: "1.19.0" })).toBeNull();
   });
 
   it("refuses a mislabelled head, naming both labels — pruning there removes the current cut", () => {
-    const refusal = pruneRefusal({ cuts: CUTS, version: "1.19.0" });
-    expect(refusal).toContain("the newest cut is v1.18.0");
-    expect(refusal).toContain("package.json carries 1.19.0");
+    const refusal = pruneRefusal({ cuts: CUTS, version: "1.20.0" });
+    expect(refusal).toContain("the newest cut is v1.19.0");
+    expect(refusal).toContain("package.json carries 1.20.0");
     expect(refusal).toContain("refusing to prune");
   });
 
   it("refuses an empty tree rather than reporting success over no atlas", () => {
-    expect(pruneRefusal({ cuts: [], version: "1.18.0" })).toContain("no cut directory");
+    expect(pruneRefusal({ cuts: [], version: "1.19.0" })).toContain("no cut directory");
   });
 
   it("refuses a plan that would remove the current cut, even though retentionOf cannot build one", () => {
     const plan = retentionOf({ cuts: CUTS });
     const broken = { ...plan, remove: plan.keep.slice(0, 1) };
-    expect(pruneRefusal({ cuts: CUTS, version: "1.18.0", plan: broken })).toContain(
+    expect(pruneRefusal({ cuts: CUTS, version: "1.19.0", plan: broken })).toContain(
       "the current cut — refusing",
     );
   });
