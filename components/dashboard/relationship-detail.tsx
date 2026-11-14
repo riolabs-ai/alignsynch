@@ -558,16 +558,17 @@ export function RelationshipDetail({
           ) : null}
           {membershipMissing ? (
             /*
-             * #690 — the hard gate. Publishing needs a method on file, and the create flow only ever
-             * *asked* for one: a person who skipped the plans on stage 4 lands here, with no publish
-             * button and one door to the page that sells a tier.
+             * #690 — the hard gate. Publishing needs a live membership, and the create flow only
+             * ever *asked* for a plan: a person who skipped the plans on stage 4 lands here, with no
+             * publish button and one door to the page that sells a tier.
              *
              * #912 — **that door is now the pay modal, not `/pricing`.** `/pricing` sells a
-             * subscription; it does not put a card on file, so the band sent the payer to a page that
-             * could not resolve the thing it refused. The modal is the surface that takes the card,
-             * and a draft that came through the flow has the session and the staged invitation it
-             * needs. A draft with no session cannot open it at all (`payHref === null`), so the
-             * pricing link stays as that case's door rather than being deleted from under it.
+             * subscription but does not open Checkout, so the band sent the payer to a page that
+             * could not resolve the thing it refused. The modal is the surface that takes the card
+             * — the same membership purchase stage 5 makes (#1010 R2) — and a draft that came
+             * through the flow has the session and the staged invitation it needs. A draft with no
+             * session cannot open it at all (`payHref === null`), so the pricing link stays as that
+             * case's door rather than being deleted from under it.
              *
              * #958 — **the pair, in the state that has nothing configured.** This is the band a
              * relationship with no card on file draws, and the owner's rule is that both acts are

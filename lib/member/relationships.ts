@@ -86,12 +86,7 @@ import { readCompletionGate, type CompletionGate } from "@/lib/member/payment";
 import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
-import {
-  lapseIfDue,
-  recordLapseIfDue,
-  trialHolderOf,
-  type Sql,
-} from "@/lib/relationship/enforcement";
+import { lapseIfDue, recordLapseIfDue, type Sql } from "@/lib/relationship/enforcement";
 import { membershipOf, membershipSentence, type Membership } from "@/lib/relationship/membership";
 import { initiatorIsViewer } from "@/lib/relationship/initiator";
 import { trialStateOf, type TrialFacts, type TrialState } from "@/lib/relationship/trial";
@@ -1458,13 +1453,6 @@ export class MemberCheckoutRequired extends Error {
     this.name = "MemberCheckoutRequired";
     this.url = url;
   }
-}
-
-/** Is this error the named unique violation? `pg`'s error carries `code` and `constraint`. */
-function isUniqueViolation(error: unknown, constraint: string): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const candidate = error as { code?: unknown; constraint?: unknown };
-  return candidate.code === "23505" && candidate.constraint === constraint;
 }
 
 /* ------------------------------------------------------------------ *

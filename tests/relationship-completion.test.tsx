@@ -281,6 +281,19 @@ describe("completing a relationship cannot charge", () => {
     }
   });
 
+  it("gates the Gap on the membership, never on the card the deleted capture wrote", () => {
+    /*
+     * `instanceStatusOf()` is where `awaiting_payment` is decided, and the projection is what feeds
+     * it. With the capture deleted nothing can write `relationship_payment.method_captured_at` any
+     * more, so a projection that still read that row would shut every sealed sheet for ever — the
+     * exact regression deleting the fee could leave behind. The publish gate and the claim already
+     * refuse on `membership.writable`, so the Gap asks the same function.
+     */
+    const store = sourceText("lib/flow/store.ts");
+    expect(store).not.toMatch(/paymentArmedOf/);
+    expect(store).toMatch(/paymentArmed\s*=\s*membership\?\.membership\.writable/);
+  });
+
   it("keeps no cron that would call the deleted job", () => {
     const vercel = sourceText("vercel.json");
     expect(vercel).not.toContain("payment-jobs");

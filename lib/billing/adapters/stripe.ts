@@ -327,9 +327,9 @@ export function subscriptionStatusOf(status: string | null | undefined): Subscri
     case "canceled":
     case "paused":
       return "canceled";
-    case "incomplete":
-    case "incomplete_expired":
     default:
+      // `incomplete` never became a subscription and `incomplete_expired` is its dead end, so a
+      // status this map does not name is also "not a subscription yet", never a cancellation.
       return "incomplete";
   }
 }
@@ -399,7 +399,8 @@ export class StripeBillingAdapter implements BillingPort {
    * `data/billing-plans.ts`'s, and a subscription needs a Price object to renew against.
    *
    * **The seven-day trial is sent, not drawn.** `subscription_data[trial_period_days]=7` is the
-   * badge the UI prints; `trial_settings[end_behavior][missing_payment_method]=cancel` is what
+   * badge the UI prints; `subscription_data[trial_settings][end_behavior][missing_payment_method]=
+   * cancel` is what
    * happens when no card is added inside those days, because a trial that ended `pause`d would
    * activate a subscription nobody pays for. `payment_method_collection=always` is sent
    * explicitly rather than left to the provider's default: a trial that collects no card has
@@ -483,7 +484,10 @@ export class StripeBillingAdapter implements BillingPort {
       // Sent, never defaulted: a subscription that renews needs a card the trial collected.
       payment_method_collection: "always",
       "subscription_data[trial_period_days]": String(TRIAL_PERIOD_DAYS),
-      "trial_settings[end_behavior][missing_payment_method]": "cancel",
+      // Nested under `subscription_data`, where the provider's API puts it: sent top-level it is
+      // `parameter_unknown: trial_settings` and every purchase is a 400 (measured against the test
+      // API, 2026-11-14).
+      "subscription_data[trial_settings][end_behavior][missing_payment_method]": "cancel",
       "metadata[user_id]": request.userId,
       "metadata[plan_id]": plan.id,
       "metadata[interval]": interval,

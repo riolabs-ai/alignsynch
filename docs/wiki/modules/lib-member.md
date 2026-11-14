@@ -7,14 +7,15 @@
 <!-- docs-nav:end -->
 
 11 modules — the initiator's side of the product. Where `lib/flow` serves a session to whoever holds
-the link, `lib/member` serves an **account**: its relationships, its templates, its payment method and
-its invoices.
+the link, `lib/member` serves an **account**: its relationships, its templates and its membership.
 
 ## Responsibilities
 
 - Create a relationship from a template the account owns, edit its Aspects, and publish it.
-- Price and take the fee — the trial, the retry ladder, the completion charge.
-- Run the scheduled jobs that email a reminder, retry a decline, or expire an unpaid obligation.
+- Read the membership a relationship runs on — the trial, the period end, and whether either party
+  may still write — and complete a relationship without taking money (#1010).
+- Refuse a write from either party when the membership behind the relationship has lapsed, and say
+  so in one sentence the screen and the refusal both read.
 - Give the member's own pages the data they need: the relationship list, this month's outcomes, the
   template shelf.
 

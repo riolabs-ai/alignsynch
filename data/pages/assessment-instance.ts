@@ -465,8 +465,7 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
         // membership now, and a card arrives only by buying it, so there is nothing separate to add.
         {
           id: "payment-method-required",
-          label:
-            "This relationship needs a running membership before its sheets can be published.",
+          label: "This relationship needs a running membership before its sheets can be published.",
         },
         // #478 — the Steps endpoint's two codes. A tick can name a row this relationship does not
         // hold (`no-such-step`), and a party can write a status the model does not allow (`invalid`).

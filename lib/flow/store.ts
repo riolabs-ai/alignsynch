@@ -87,13 +87,7 @@ import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { relationshipGateRefusal } from "@/lib/billing/entitlements";
 import { activeRelationshipCount, grantPublishTrial } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
-import {
-  openPaymentObligation,
-  paymentFactsOf,
-  readPaymentForSession,
-  type PaymentSql,
-} from "@/lib/db/relationship-payment";
-import { paymentArmedOf } from "@/lib/flow/payment";
+import { openPaymentObligation, type PaymentSql } from "@/lib/db/relationship-payment";
 import {
   assessmentInstanceFromRows,
   assessmentTemplateFromPayload,
@@ -117,15 +111,8 @@ import { invitationLink } from "@/lib/flow/email";
 import { aspectListProblem, aspectWriteProblem, aspectsToWrite } from "@/lib/flow/aspects";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
-import {
-  lapseIfDue,
-  readMembershipForRelationship,
-  readMembershipForSession,
-  recordLapseIfDue,
-  type MembershipReading,
-  type Sql,
-} from "@/lib/relationship/enforcement";
-import { membershipSentence, type Membership } from "@/lib/relationship/membership";
+import { readMembershipForRelationship, type Sql } from "@/lib/relationship/enforcement";
+import type { Membership } from "@/lib/relationship/membership";
 import { canTransition, isRelationshipStatus } from "@/lib/relationship/status";
 import { relationshipRoleOf } from "@/lib/flow/membership";
 import { emailLooksDeliverable, resendRefusal, type ResendRefusal } from "@/lib/flow/resend";
@@ -468,8 +455,9 @@ export async function createInstanceFromTemplate(
   //     hold a seat as the Counterparty on several relationships without having started one; what
   //     a tier limits is the relationships you *start*, which is `relationshipGateRefusal`.
   //
-  // The hard gate the owner's posture names is still the fee at the Gap (`awaiting_payment`,
-  // `lib/flow/screen.ts`) — this gate sells the relationship, and nothing here touches the fee.
+  // The hard gate the owner's posture names is still the membership behind the Gap
+  // (`awaiting_payment`, `lib/flow/screen.ts`) — this gate sells the relationship, and nothing here
+  // touches it.
   //
   // A signed-out create is not gated: there is no account to hold a plan, and the anonymous flow
   // is the pre-#213 behaviour the product still supports. That is also why the gate cannot be
@@ -767,13 +755,11 @@ export async function createInstanceFromTemplate(
       );
 
       // #739 — **the obligation opens with the relationship.** `relationship_payment` is the row
-      // every payment fact is read from: the captured method, the fee's attempts, the unpaid
-      // window. `createRelationship()` has always written it (`openPaymentObligation`, "at
-      // relationship creation" — 0036); this create path minted the invitation and the session and
-      // then left the fee with nothing to record against, so a capture wrote no row
-      // (`recordMethodCaptured` is an UPDATE) and every completion answered
-      // `payment-method-required` for ever — and, worse, the Gap read as free because
-      // `paymentArmedOf(null)` is "not measured" rather than "unpaid".
+      // the payer's facts hang off. `createRelationship()` has always written it
+      // (`openPaymentObligation`, "at relationship creation" — 0036). Since #1010 it records nothing
+      // that can be charged: a relationship's money is the membership bought at stage 5, and
+      // completion is free, so the row is created for symmetry with the existing sessions and read
+      // only to answer "does this session have a payer at all".
       //
       // Only for a creator with an account: the payer is an account, and a signed-out create has
       // none — the same NULL the party row above stores.
@@ -1281,7 +1267,7 @@ export type SendRefusal =
   | "no-invitation"
   | "already-published"
   /**
-   * #911 — the stage's send waits for the walk: a plan joined and a card on file. `resendInvite`
+   * #911 — the stage's send waits for the walk: a plan joined and a live membership. `resendInvite`
    * cannot raise this (a re-invite is a different act on an already-sent relationship) and the send
    * route redirects it into the same `?resend=` band the other two use, so it is a `ResendRefusal`
    * too — one vocabulary per surface, read by one lookup.
@@ -1517,7 +1503,7 @@ function resendReason(
     // code joins this vocabulary so the send route's redirect renders a sentence, and this arm keeps
     // the switch total.
     case "no-payment-method":
-      return "the relationship has no card on file, so stage 5's send has not run";
+      return "the relationship has no live membership, so stage 5's send has not run";
   }
 }
 
@@ -1658,19 +1644,20 @@ export async function submitAnswers(input: SubmitInput): Promise<SubmitResult> {
     }
 
     /*
-     * #739 — **answering is not gated on a payment method. The Gap is.**
+     * #739 / #1010 R2 — **answering is not gated on money. The Gap is gated on the membership.**
      *
      * This block used to refuse the Initiator's sheet with `payment-method-required` until a card
      * was captured ("the fee is taken when the assessment is published"). That is the pre-#619
      * model, and it contradicted the approved posture on two counts: the card is asked for at the
-     * invite as a *soft* prompt, and the hard gate is the fee at completion — the Gap (#619,
-     * `completionRefusalOf()`). Worse, it made the fee unreachable in practice: the completion
-     * needs **both sheets sealed**, and the party who owes the fee could not seal theirs until they
-     * had paid for a fee they could not be charged yet.
+     * invite as a *soft* prompt, and the hard gate is the membership behind completion — the Gap
+     * (#619 for the gate, #1010 for what stands behind it). Worse, it made the gate unreachable in
+     * practice: the completion needs **both sheets sealed**, and the party who owed the fee could
+     * not seal theirs until they had paid for a fee they could not be charged yet.
      *
-     * The rule lives at the completion now, where the money is: `completeRelationship()` refuses
-     * `payment-method-required` (with the capture's url) until a method is on file. Nothing here
-     * needed replacing — the gate was in the wrong place, not missing.
+     * The gate lives where the seal is now, and it no longer takes money at all:
+     * `readCompletionGate()` answers the sealed fact, `instanceStatusOf()` answers
+     * `awaiting_payment` from the relationship's membership, and `completeRelationship()` charges
+     * nothing. Nothing here needed replacing — the gate was in the wrong place, not missing.
      */
     const aspects = await client.query<{ item_id: string }>(
       "SELECT item_id FROM item WHERE record_id = $1 ORDER BY position",
@@ -1770,27 +1757,6 @@ async function sessionRelationshipOf(
     [sessionRecordId],
   );
   return { relationshipId: found.rows[0]?.relationship_id ?? null };
-}
-
-/**
- * The membership of the relationship a session belongs to, **with the lapse recorded** when the
- * derived answer says it has ended.
- *
- * One helper for the three flow writes (submit, accept, claim), so "may this pair still write"
- * is one statement in one place rather than three that could disagree. `undefined` means the
- * session names no relationship, which is the pre-#340 shape and not a lapse.
- *
- * The `now` is the caller's — every one of those writes already takes an injectable clock, and a
- * refusal that names an instant has to name the same instant the test pinned.
- */
-async function membershipForInstance(
-  client: PoolClient,
-  instanceRecordId: string,
-  now: Date,
-): Promise<MembershipReading | undefined> {
-  const { relationshipId } = await sessionRelationshipOf(client, instanceRecordId);
-  if (relationshipId === null) return undefined;
-  return lapseIfDue(client, relationshipId, now);
 }
 
 /**
@@ -2768,11 +2734,20 @@ export async function readFlowScreen(input: {
     answerCounts: bundle.answerCounts,
     voided: bundle.voided,
   };
-  // #619 — the obligation behind this session, read once: `undefined` when the relationship has no
-  // `relationship_payment` row (created before this card), which `instanceStatusOf()` reads as
-  // "not measured" rather than as unpaid.
-  const payment = await readPaymentForSession(input.instanceRecordId);
-  const paymentArmed = payment === undefined ? undefined : paymentArmedOf(paymentFactsOf(payment));
+  // #1010 R2 — the Gap's last gate is the **membership**, not a card on file.
+  //
+  // The per-relationship capture is deleted, so nothing writes
+  // `relationship_payment.method_captured_at` any more; reading the obligation here would leave
+  // every sealed sheet shut for ever. `membership.writable` is the same fact the publish gate and
+  // the claim refuse with, so the screen and the write cannot disagree about it. `undefined` keeps
+  // its meaning — a session naming no relationship is "not measured", never "unpaid".
+  const now = input.now ?? new Date();
+  const membership = await readMembershipForRelationship(
+    poolSql,
+    bundle.instance.relationship_id,
+    now,
+  );
+  const paymentArmed = membership?.membership.writable;
   const status = instanceStatusOf({ ...progressOf(answersOnly), paymentArmed });
   const roles = visibleRoles(viewerRole, status);
   const opinions = await query<OpinionRow>(
@@ -2794,16 +2769,11 @@ export async function readFlowScreen(input: {
   };
 
   // #266 — the invitation's state, derived once from the row and the instant of this read.
-  const now = input.now ?? new Date();
-  // #533 phase 3 — the membership, derived at the same instant and **not written**: a render may
-  // not write a row, so the read draws the derived answer and the next write path records it.
-  // `readMembershipForRelationship` is the same function the claim uses before it refuses, which
-  // is what keeps the screen and the refusal from disagreeing about whether the pair may write.
-  const membership = await readMembershipForRelationship(
-    poolSql,
-    bundle.instance.relationship_id,
-    now,
-  );
+  // #533 phase 3 — the membership above is derived at that same instant and **not written**: a
+  // render may not write a row, so the read draws the derived answer and the next write path
+  // records it. `readMembershipForRelationship` is the same function the claim uses before it
+  // refuses, which is what keeps the screen and the refusal from disagreeing about whether the
+  // pair may write.
   const invite =
     bundle.invite === null
       ? null

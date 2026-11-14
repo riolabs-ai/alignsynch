@@ -50,7 +50,7 @@ export type PlanPriceIds = Readonly<Record<BillingInterval, string>>;
 /** The ids, in the order `BILLING_PLAN_IDS` draws the tiers. */
 export const BILLING_PRICE_IDS: Readonly<Record<PaidPlanId, PlanPriceIds>> = {
   basic: {
-    month: "price_1UbYhtKKtWHoLhLRB4fuNvT",
+    month: "price_1UbYhtKKtWHoLhLRBv4fuNvT",
     year: "price_1UbYhuKKtWHoLhLR9QPb4nfh",
   },
   principal: {

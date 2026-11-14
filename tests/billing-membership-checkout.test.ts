@@ -8,7 +8,8 @@
  *                     subscription renews against a Price object, and an amount authored into the
  *                     request would be a second copy of `data/billing-plans.ts`'s
  *   the trial         `subscription_data[trial_period_days]=7`, the number the badge prints
- *   the trial's end   `trial_settings[end_behavior][missing_payment_method]=cancel`, so a trial
+ *   the trial's end   `subscription_data[trial_settings][end_behavior][missing_payment_method]`,
+ *                     nested the way the provider's API takes it, so a trial
  *                     nobody put a card behind cannot activate a subscription
  *   the card          `payment_method_collection=always`, **sent** rather than defaulted
  *   the presentation  `ui_mode: embedded_page` + `return_url` for stage 5's frame, and
@@ -86,7 +87,9 @@ describe("the embedded membership checkout (stage 5's card step)", () => {
     expect(form.get("subscription_data[trial_period_days]")).toBe(String(TRIAL_PERIOD_DAYS));
     expect(TRIAL_PERIOD_DAYS).toBe(7);
     // What happens if no card is added inside them.
-    expect(form.get("trial_settings[end_behavior][missing_payment_method]")).toBe("cancel");
+    expect(
+      form.get("subscription_data[trial_settings][end_behavior][missing_payment_method]"),
+    ).toBe("cancel");
     // A trial with no card has nothing to charge on day eight.
     expect(form.get("payment_method_collection")).toBe("always");
     // The frame's own shape: embedded, and no page to leave for.
@@ -136,7 +139,9 @@ describe("the hosted checkout (/pricing's plan buttons)", () => {
     expect(form.get("mode")).toBe("subscription");
     expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.basic.month);
     expect(form.get("subscription_data[trial_period_days]")).toBe("7");
-    expect(form.get("trial_settings[end_behavior][missing_payment_method]")).toBe("cancel");
+    expect(
+      form.get("subscription_data[trial_settings][end_behavior][missing_payment_method]"),
+    ).toBe("cancel");
     expect(form.get("payment_method_collection")).toBe("always");
     expect(form.get("success_url")).toBe(CHECKOUT.successUrl);
     expect(form.get("cancel_url")).toBe(CHECKOUT.cancelUrl);
@@ -223,7 +228,9 @@ describe("the source, as the card's grep", () => {
   it("names the trial and the collection policy in the adapter that sends them", () => {
     const source = readFileSync(join(process.cwd(), "lib/billing/adapters/stripe.ts"), "utf8");
     expect(source).toContain("subscription_data[trial_period_days]");
-    expect(source).toContain("trial_settings[end_behavior][missing_payment_method]");
+    expect(source).toContain(
+      "subscription_data[trial_settings][end_behavior][missing_payment_method]",
+    );
     expect(source).toContain("payment_method_collection");
     expect(source).toContain("ui_mode");
     expect(source).toContain("line_items[0][price]");
