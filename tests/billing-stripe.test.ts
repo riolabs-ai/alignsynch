@@ -676,7 +676,7 @@ describe("a delivery is applied to our rows, at most once", () => {
   it("acknowledges an event it does not subscribe to, and records nothing", async () => {
     const { impl, calls } = fakeFetch({});
     const outcome = await adapter(impl).handleWebhook(
-      delivery(event("invoice.paid", { id: "in_1" })),
+      delivery(event("customer.created", { id: "cus_1" })),
     );
     expect(outcome).toMatchObject({ applied: false, kind: "ignored" });
     expect((outcome as { detail: string }).detail).toContain("not one of");
@@ -713,11 +713,17 @@ describe("a delivery is applied to our rows, at most once", () => {
     expect(db.state.written).toHaveLength(0);
   });
 
-  it("subscribes to exactly the three events that change a row", () => {
+  it("subscribes to the six events that move money, a row or a notice", () => {
+    // #1055 added the three that were missing: the renewal, the refusal and the trial warning. The
+    // dashboard's own subscription is held equal to this list by
+    // `tests/billing-webhook-events.test.ts`; this case pins the list itself.
     expect([...STRIPE_WEBHOOK_EVENTS]).toEqual([
       "checkout.session.completed",
       "customer.subscription.updated",
       "customer.subscription.deleted",
+      "invoice.paid",
+      "invoice.payment_failed",
+      "customer.subscription.trial_will_end",
     ]);
   });
 });

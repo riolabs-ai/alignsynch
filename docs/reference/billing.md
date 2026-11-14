@@ -164,11 +164,22 @@ subscription event mappable without a customer→account table.
 `POST /api/billing/webhook` is the only verb, and the path is fixed: it is what the owner pastes into
 the provider's dashboard, so a different path is a silent 404 reported as a failed delivery. The
 endpoint must be registered as a **Snapshot** destination (the payload carries the whole object) and
-subscribed to three events:
+subscribed to six events:
 
-- `checkout.session.completed`
-- `customer.subscription.updated`
-- `customer.subscription.deleted`
+- `checkout.session.completed` — the purchase, and the only event that creates a row
+- `customer.subscription.updated` / `customer.subscription.deleted` — the subscription's own state
+- `invoice.paid` — the renewal; the `expired → active|published` recovery `lib/relationship/status.ts`
+  names (`#1055`)
+- `invoice.payment_failed` — the refused renewal: the account's live relationships lapse and template
+  #7 fires (`#1055`)
+- `customer.subscription.trial_will_end` — the warning before the first charge, template #6 (`#1055`)
+
+That list is `STRIPE_WEBHOOK_EVENTS`, and **the dashboard is the other half of it**: nothing in a
+build can read what an endpoint is subscribed to, so `pnpm billing:webhooks --check` compares the
+account to the record in `tests/fixtures/stripe-webhook-endpoints.json` and
+`tests/billing-webhook-events.test.ts` holds the record equal to the constant. Three of the six were
+missing until `#1055`, and every check stayed green while the state machine and two written templates
+waited for events that were never delivered — which is why the drift is now a test and not a habit.
 
 Anything else is acknowledged with a 200 and recorded nowhere — a 4xx on an unsubscribed type makes
 the provider retry it for days. Status codes: 200 applied/duplicate/ignored/foreign, 400 bad

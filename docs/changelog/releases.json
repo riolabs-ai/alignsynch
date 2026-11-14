@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.20.0",
+      "theme": "the release that makes the version label true — the create walk can be paid and sent, its card step mounts on the choice, and the code it names was already live",
+      "headline": "feat(flow) · #1014 steps 4–5 — send-or-draft inside the walk, and both endings land on the relationship (#1019)"
+    },
+    {
       "version": "1.19.0",
       "theme": "the flow stops being a page — one dialog shell at every wizard entry, behaving like a route — and the docs tree is grouped by the question it answers",
       "headline": "feat(flow) · #979 B — every wizard-route entry opens the flow in place; marketing keeps navigating (#1007)"
