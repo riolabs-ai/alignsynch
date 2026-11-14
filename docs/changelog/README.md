@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.19.0](v1-19-0.md)
+
+- **Released** 2026-11-14
+- **Tag** [`v1.19.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.19.0)
+- **Pull requests named** 21
+- **Theme:** the flow stops being a page — one dialog shell at every wizard entry, behaving like a route — and the docs tree is grouped by the question it answers
+- **Headline:** feat(flow) · #979 B — every wizard-route entry opens the flow in place; marketing keeps navigating (#1007)
+
 ### [v1.18.0](v1-18-0.md)
 
 - **Released** 2026-11-13
