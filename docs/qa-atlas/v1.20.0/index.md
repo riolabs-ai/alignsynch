@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.20.0 · prev [QA atlas — v1.19.0](../v1.19.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.20.0 · prev [QA atlas — v1.19.0](../v1.19.0/index.md) · next [QA atlas — v1.20.1](../v1.20.1/index.md)
 
 <!-- docs-nav:end -->
 
@@ -184,6 +184,6 @@ Full-size PNGs (213 files, 55577762 bytes before compression) are not committed 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.20.0 · prev [QA atlas — v1.19.0](../v1.19.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.20.0 · prev [QA atlas — v1.19.0](../v1.19.0/index.md) · next [QA atlas — v1.20.1](../v1.20.1/index.md)
 
 <!-- docs-nav:end -->
