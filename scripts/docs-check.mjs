@@ -47,6 +47,7 @@ import {
   navProblems,
   walkDocs,
 } from "./docs-nav.mjs";
+import { retentionState } from "./capture-retention.mjs";
 import { indexedPaths } from "./git-index.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -246,6 +247,12 @@ function main(argv) {
   const hub = checkHub(root, pages, problems);
   const manifest = checkManifest(root, state, pages, problems);
   problems.push(...navProblems(root));
+  // The `docs/qa/` shelf has no invariant above — a capture directory with no page is outside
+  // "every `.md` is indexed" by construction, which is how 72 MB of it accumulated unwatched
+  // (#1024). `capture-retention.mjs` is that invariant, and it rides here rather than in a step of
+  // its own: a second CI step is a second place to forget.
+  const retention = retentionState(root);
+  problems.push(...retention.problems);
 
   if (problems.length > 0) {
     const unique = [...new Set(problems)];
@@ -259,6 +266,10 @@ function main(argv) {
   process.stdout.write(
     `  ${manifest.entries} document(s), ${hub.rows} hub row(s), ${links} link(s), ${images} image(s) — ` +
       `every link resolves, every page is listed once, every nav block is current` +
+      (retention.summary.captures === 0
+        ? ""
+        : `; ${retention.summary.captures} capture(s) under docs/qa, ${retention.summary.kept} kept ` +
+          "on an open issue, a pointer or a release cut") +
       (skipped.length === 0
         ? ""
         : ` (${skipped.length} file(s) under docs/ are not in the index — not pages, not checked)`) +

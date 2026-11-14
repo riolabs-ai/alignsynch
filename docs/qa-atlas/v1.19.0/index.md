@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md) · next [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../../qa/welcome-copy/README.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md)
 
 <!-- docs-nav:end -->
 
@@ -189,6 +189,6 @@ No full-size PNG archive: this run captured no screenshots.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md) · next [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../../qa/welcome-copy/README.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md)
 
 <!-- docs-nav:end -->

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [recharts 3](../recharts-3/README.md) · next [Stage 5, both states](../stage5/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [Rail collapse handle](../rail-handle/README.md) · next [Stage 5, both states](../stage5/README.md)
 
 <!-- docs-nav:end -->
 
@@ -66,6 +66,6 @@ than the viewport it is in. `stills.mjs` resets the metrics before each interact
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [recharts 3](../recharts-3/README.md) · next [Stage 5, both states](../stage5/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Relationship detail — the edit form is asked for · prev [Rail collapse handle](../rail-handle/README.md) · next [Stage 5, both states](../stage5/README.md)
 
 <!-- docs-nav:end -->
