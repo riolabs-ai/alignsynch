@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Every in-product Create door opens the flow in place, #979 · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Every in-product Create door opens the flow in place, #979 · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [The flow's dialog behaves like a route, #979](../979-flow-parity/README.md)
 
 <!-- docs-nav:end -->
 
@@ -104,6 +104,6 @@ render unchanged" is a capture, not a sentence.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Every in-product Create door opens the flow in place, #979 · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Every in-product Create door opens the flow in place, #979 · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [The flow's dialog behaves like a route, #979](../979-flow-parity/README.md)
 
 <!-- docs-nav:end -->

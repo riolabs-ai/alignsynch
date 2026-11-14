@@ -462,6 +462,11 @@
           "question": "Do all seven wizard-route entry points open the same flow over the page they were pressed on, at 1440 and 390, while a marketing entry and an empty state still navigate?"
         },
         {
+          "path": "qa/979-flow-parity/README.md",
+          "title": "The flow's dialog behaves like a route, #979",
+          "question": "Does Back walk a stage, does reloading a stage's address render that stage as a page, do the four keyboard behaviours hold, and is the panel full-bleed at 390?"
+        },
+        {
           "path": "qa/as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"

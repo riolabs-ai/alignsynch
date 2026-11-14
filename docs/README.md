@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**154 documents in 9 sections.** Every page carries the same nav block, generated
+**155 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -42,7 +42,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 16 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
-- [Records & QA](#records-qa) — 37 documents
+- [Records & QA](#records-qa) — 38 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
@@ -160,6 +160,7 @@ What was measured, on which tree, and what it looked like.
 - [`qa/976-sent-none/README.md`](qa/976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
 - [`qa/979-flow-dialog/README.md`](qa/979-flow-dialog/README.md) — **The create flow as a dialog over the relationships page, #979** — Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?
 - [`qa/979-flow-entries/README.md`](qa/979-flow-entries/README.md) — **Every in-product Create door opens the flow in place, #979** — Do all seven wizard-route entry points open the same flow over the page they were pressed on, at 1440 and 390, while a marketing entry and an empty state still navigate?
+- [`qa/979-flow-parity/README.md`](qa/979-flow-parity/README.md) — **The flow's dialog behaves like a route, #979** — Does Back walk a stage, does reloading a stage's address render that stage as a page, do the four keyboard behaviours hold, and is the panel full-bleed at 390?
 - [`qa/as2-home/README.md`](qa/as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
 - [`qa/brand-lockup/README.md`](qa/brand-lockup/README.md) — **Brand lockup** — Is the lockup back in the chrome, at a seal's size?
 - [`qa/comments-mockup/README.md`](qa/comments-mockup/README.md) — **Comments mockup, both placements** — Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?
