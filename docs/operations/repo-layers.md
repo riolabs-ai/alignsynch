@@ -63,12 +63,48 @@ untracked files, so the pre-push hook (which gates the working tree, not just
 the commit) classifies what it is about to push. `GATE_REF` defaults to
 `origin/main`.
 
+**The base is resolved before anything is classified, and the resolution is
+printed.** A worktree is not a CI clone: it frequently has no `origin/main` even
+though the remote is one fetch away, and a docs-only card that pays for
+`next build` because of a missing ref is the same silent full gate CI used to pay.
+`scripts/gate-lanes.sh` therefore resolves the base in three steps:
+
+1. the ref already in the object database;
+2. else one **bounded, non-mutating** `git fetch --no-tags --no-write-fetch-head
+   --no-auto-gc origin +refs/heads/main:refs/remotes/origin/main`, under
+   `timeout $GATE_BASE_TIMEOUT` (default 10 s) — only for the default
+   `origin/main`, only when `origin` exists with a URL and the git dir is
+   writable, so a read-only tree or a sandbox is detected rather than hung on.
+   No checkout, no pull, no branch, no reset; the working tree is untouched.
+   `--depth=1` is used only when the repository is **already** shallow: a depth-1
+   fetch into a full clone writes `.git/shallow`, truncating history for every
+   worktree that shares the object database — and destroying the `git merge-base`
+   the three-dot diff needs;
+3. else no base — the full gate, with the reason printed.
+
+Resolution is **cached for the run**, so a step that wants the base
+(`check_whitespace`) reads the same answer instead of fetching again. The lane
+line names the sha and the path that resolved it, and a fetch or a fallback gets
+its own line, so a conservative gate is never silent:
+
+```text
+ lane=docs docs/**, *.md (2 changed file(s) · base origin/main@2742e2d (local ref))
+ lane=docs docs/**, *.md (2 changed file(s) · base origin/main@2742e2d (fetched in 0.4s))
+  base: origin/main was not in this clone — origin/main@2742e2d (fetched in 0.4s)
+ lane=code app/**, components/**, lib/**, hooks/** (and anything unclassified)
+   (fetching origin/main failed (git exit 128) — full gate (conservative))
+```
+
+A fetch problem is a reason to run **more** gate, never a reason to fail it: every
+failure path above ends at `lane=code` with the reason printed. The cases are
+pinned in `tests/gate-lanes-base.test.ts` against real throwaway repositories.
+
 ## What each lane runs
 
 `verify.sh` prints the lane before it runs anything, and the reason:
 
 ```text
- lane=content content/**, data/**, public/** (2 changed file(s) vs origin/main)
+ lane=content content/**, data/**, public/** (2 changed file(s) · base origin/main@2742e2d (local ref))
 ```
 
 | Step                 | docs | content | config | code |

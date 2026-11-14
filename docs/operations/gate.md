@@ -51,6 +51,16 @@ classifies in that job: `ci.yml` checks out full history and fetches `origin/mai
 is what every CI run did until `.github/workflows/ci.yml` was fixed, because
 `actions/checkout`'s default depth-1 clone contains no `origin/main`.
 
+A worktree pays the same way, so the base is now **resolved by the gate itself** before it
+classifies: the local ref, else one bounded `git fetch --no-tags origin main` (no checkout, no
+pull, no branch, 10 s timeout, skipped when there is no usable `origin` or the git dir is
+read-only), else the full gate. The lane line names the sha and how it was resolved —
+`base origin/main@2742e2d (local ref)` / `(fetched in 0.4s)` — and a fetch or a fallback prints
+its own line, so the conservative gate is never silent. A failed fetch is a reason to run more
+gate, never a reason to fail it. Mechanics and the shallow-repository rule (a `--depth=1` fetch
+into a full clone would truncate the shared history _and_ destroy the merge base the diff needs):
+`docs/operations/repo-layers.md`; the cases are pinned in `tests/gate-lanes-base.test.ts`.
+
 `next build` is capped at `QUIZHUB_GATE_SLOTS` (default 3) concurrent gate runs by `flock`
 under `~/.cache/quizhub/`, and that slot now covers the whole heavy section — typecheck,
 lint, `format:check`, the `data:check` compile, `parity` and the build — not the build alone:

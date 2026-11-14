@@ -60,10 +60,16 @@
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
-# logged "no origin/main to diff against — full gate (conservative)"). The
-# fallback is unchanged and stays conservative: no ref, or an empty diff — a
-# push to main, where HEAD *is* origin/main — means the full gate, because "I
-# could not tell what changed" is never evidence that a change is cheap.
+# logged "no origin/main to diff against — full gate (conservative)"). A
+# worktree pays the same way now: gate-lanes.sh resolves the base itself before
+# classifying — the local ref, else one bounded `git fetch --no-tags origin main`
+# (no checkout, no pull, no branch — see scripts/gate-lanes.sh), and the lane
+# line names the sha and the path that resolved it: `base origin/main@abc1234
+# (local ref)` / `(fetched in 0.4s)`. The fallback is unchanged and stays
+# conservative: no ref, no merge base, or an empty diff — a push to main, where
+# HEAD *is* origin/main — means the full gate, because "I could not tell what
+# changed" is never evidence that a change is cheap. A failed fetch is a reason
+# to run MORE gate, never a reason to fail it.
 #
 # GATE SLOTS — one CPU budget for the whole heavy section, not just the build.
 # `next typegen`, `tsc --noEmit`, `biome check`, `biome format --check`, the `data:check`
@@ -298,10 +304,11 @@ check_shell_syntax() {
 }
 
 # Whitespace errors in what this branch adds (and in the working tree), the way
-# `git am` / a reviewer would see them.
+# `git am` / a reviewer would see them. The base is the one `resolve_lane` already
+# resolved (cached for the run) — a second resolution here would be a second fetch.
 check_whitespace() {
-  local ref="${GATE_REF:-origin/main}" rc=0
-  if git rev-parse --verify --quiet "${ref}^{commit}" >/dev/null 2>&1; then
+  local ref="${GATE_BASE_REF:-}" rc=0
+  if [ -n "$ref" ]; then
     git diff --check "${ref}...HEAD" || rc=$?
   fi
   git diff --check HEAD || rc=$?
@@ -434,6 +441,22 @@ fi
 
 printf '%s%s lane=%s%s %s(%s — %s)%s\n' "$C_BOLD" "$C_CYN" "$LANE" "$C_OFF" \
   "$C_DIM" "$(lane_paths "$LANE")" "$LANE_REASON" "$C_OFF"
+
+# WHICH BASE, AND HOW IT GOT HERE. The lane line above names the sha; this line
+# names the path that resolved it whenever the answer was not simply "it was
+# already here" — a silent fetch, or a silent fallback, is the failure mode this
+# resolution exists to remove.
+case "${GATE_BASE_HOW:-}" in
+  fetched)
+    printf '%s  base: %s was not in this clone — %s%s\n' \
+      "$C_DIM" "${GATE_REF:-origin/main}" "$(gate_base_label)" "$C_OFF"
+    ;;
+  '')
+    printf '%s! base: %s — full gate (conservative)%s\n' \
+      "$C_YEL" "${GATE_BASE_WHY:-no base ref}" "$C_OFF" >&2
+    ;;
+esac
+
 if [ "$LANE" = "code" ] && [ -n "$LANE_FILES" ]; then
   printf '%s  deepest match: %s%s\n' "$C_DIM" \
     "$(printf '%s\n' "$LANE_FILES" | while IFS= read -r f; do

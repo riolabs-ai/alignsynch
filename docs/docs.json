@@ -527,11 +527,6 @@
           "question": "Which release shipped without a QA atlas sweep, and what could the atlas not cover?"
         },
         {
-          "path": "qa-atlas/v1.17.1/index.md",
-          "title": "QA atlas — the 1.17.1 tree (never released)",
-          "question": "What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?"
-        },
-        {
           "path": "qa-atlas/v1.18.0/index.md",
           "title": "QA atlas — v1.18.0",
           "question": "What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?"
@@ -540,6 +535,11 @@
           "path": "qa-atlas/v1.19.0/index.md",
           "title": "QA atlas — v1.19.0",
           "question": "What did every registered surface render in v1.19.0, and what changed since the 1.18.0 capture?"
+        },
+        {
+          "path": "qa-atlas/v1.20.0/index.md",
+          "title": "QA atlas — v1.20.0",
+          "question": "What did every registered surface render in v1.20.0, and what changed since the 1.19.0 capture?"
         }
       ]
     },
@@ -731,6 +731,11 @@
           "path": "changelog/v1-2-0.md",
           "title": "v1.2.0",
           "question": "The release where five surfaces read the database."
+        },
+        {
+          "path": "changelog/v1-20-0.md",
+          "title": "v1.20.0",
+          "question": "The release that made the version label true — the walk can be paid and sent, and the code it names was already live."
         },
         {
           "path": "changelog/v1-3-0.md",

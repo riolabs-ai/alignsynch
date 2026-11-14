@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Deferred sweeps · prev [QA atlas](README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
+[Docs hub](../README.md) › **Records & QA** › Deferred sweeps · prev [QA atlas](README.md) · next [QA atlas — v1.18.0](v1.18.0/index.md)
 
 <!-- docs-nav:end -->
 
@@ -67,6 +67,6 @@ this page is listed in the docs hub.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Deferred sweeps · prev [QA atlas](README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
+[Docs hub](../README.md) › **Records & QA** › Deferred sweeps · prev [QA atlas](README.md) · next [QA atlas — v1.18.0](v1.18.0/index.md)
 
 <!-- docs-nav:end -->
