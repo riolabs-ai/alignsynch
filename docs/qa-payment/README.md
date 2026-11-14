@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [The welcome tiles on /register too, #971](../qa-971-tiles/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
+[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../qa-welcome-copy/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
 
 <!-- docs-nav:end -->
 
@@ -183,6 +183,6 @@ The dialog's copy is asserted against `data/pages/dashboard-relationship-detail.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [The welcome tiles on /register too, #971](../qa-971-tiles/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
+[Docs hub](../README.md) › **Records & QA** › Payment capture & completion · prev [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../qa-welcome-copy/README.md) · next [#542 phase 2](../qa-542-phase2/README.md)
 
 <!-- docs-nav:end -->

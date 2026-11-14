@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**151 documents in 9 sections.** Every page carries the same nav block, generated
+**152 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
-- [Records & QA](#records-qa) — 33 documents
+- [Records & QA](#records-qa) — 34 documents
 
 ## Start here
 
@@ -217,6 +217,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-976-sent-none/README.md`](qa-976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
 - [`qa-979-flow-dialog/README.md`](qa-979-flow-dialog/README.md) — **The create flow as a dialog over the relationships page, #979** — Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?
 - [`qa-971-tiles/README.md`](qa-971-tiles/README.md) — **The welcome tiles on /register too, #971** — Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?
+- [`qa-welcome-copy/README.md`](qa-welcome-copy/README.md) — **The welcome panel's copy — the tagline and the Aspects/Opinions tiles** — Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa-rail-handle/README.md`](qa-rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [The create flow as a dialog over the relationships page, #979](../qa-979-flow-dialog/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [The create flow as a dialog over the relationships page, #979](../qa-979-flow-dialog/README.md) · next [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../qa-welcome-copy/README.md)
 
 <!-- docs-nav:end -->
 
@@ -82,6 +82,6 @@ python3 docs/qa-971-tiles/diff.py                          # pixels + body marku
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [The create flow as a dialog over the relationships page, #979](../qa-979-flow-dialog/README.md) · next [Payment capture & completion](../qa-payment/README.md)
+[Docs hub](../README.md) › **Records & QA** › The welcome tiles on /register too, #971 · prev [The create flow as a dialog over the relationships page, #979](../qa-979-flow-dialog/README.md) · next [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../qa-welcome-copy/README.md)
 
 <!-- docs-nav:end -->
