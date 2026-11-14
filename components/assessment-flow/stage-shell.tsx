@@ -21,18 +21,25 @@
  * runtime choice cannot be made on the server, and the server is where the direct-URL render
  * happens.
  *
- * **Rendered in place, never through `DialogPortal`.** A portal mounts on the client only, so a
- * visitor opening a stage URL directly, refreshing it, or following a link from an email would
- * get an empty overlay until hydration finished — the flash the issue forbids. `position: fixed`
- * here does the same visual job without moving the subtree out of the server's HTML, and
- * `tests/stage-modal.test.tsx` renders this component to static markup to prove the stage is
- * already in the document before any JavaScript runs.
+ * **Two presentations of the frame, and one of them keeps the route's own render.** `route` is the
+ * stage address drawing its overlay in place — the deep link, the refresh, the invitation link.
+ * `dialog` (#979 B) is the same frame drawn over the page the flow was started from, mounted by an
+ * intercepted route, and it portals because a click in a hydrated page has no first paint to lose.
+ * Everything between the overlay and the close is identical in both, so a stage cannot look like one
+ * thing in the dialog and another in the deep link.
+ *
+ * **Rendered in place in the `route` presentation, never through `DialogPrimitive.Portal`.** A
+ * portal mounts on the client only, so a visitor opening a stage URL directly, refreshing it, or
+ * following a link from an email would get an empty overlay until hydration finished — the flash the
+ * issue forbids. `position: fixed` here does the same visual job without moving the subtree out of
+ * the server's HTML, and `tests/stage-modal.test.tsx` renders this component to static markup to
+ * prove the stage is already in the document before any JavaScript runs.
  *
  * **Closing is navigation, not state.** The X (and Escape, and a click on the overlay) call
- * `closeHref`: leaving the flow is a page change, so it can never leave an unclosable modal
- * standing over a route that no longer matches it. Completion is the other exit and needs nothing
- * from this file — the commit answers a 303 to `/dashboard`, so the modal is simply not on the
- * page that lands.
+ * `onDismiss` in the `dialog` presentation and `closeHref` in `route`: either way leaving the flow
+ * is a page change, so it can never leave an unclosable modal standing over a route that no longer
+ * matches it. Completion is the other exit and needs nothing from this file — the commit answers a
+ * 303 to `/dashboard`, so the modal is simply not on the page that lands.
  *
  * Literal-free (E23): `title` and `closeLabel` arrive **already resolved** from the caller's
  * fixture, the same contract `WizardSteps` follows. The one non-fixture string here is the Close
@@ -49,6 +56,8 @@ export function StageShell({
   title,
   closeLabel,
   closeHref,
+  presentation = "route",
+  onDismiss,
   children,
 }: {
   /**
@@ -62,39 +71,54 @@ export function StageShell({
   closeLabel: string;
   /** Where leaving the flow goes. A path, so a dismissal is a page change. */
   closeHref: string;
+  /**
+   * **How the frame is mounted (#979 B).** `route` is a stage address rendering its own overlay in
+   * place — the deep-link, refresh and invitation path. `dialog` is the same frame drawn over the
+   * page the flow was started from, which is the only case that can portal: it is mounted by a
+   * click in a page that is already hydrated, so there is no first paint to lose.
+   *
+   * One frame, two mountings: nothing below this prop differs, so a stage cannot look like one
+   * thing in the dialog and another in the deep link.
+   */
+  presentation?: "route" | "dialog";
+  /**
+   * What a dismissal does in the `dialog` presentation. Absent in `route`, where a dismissal is
+   * `closeHref` and needs nothing from the caller.
+   */
+  onDismiss?: () => void;
   /** The stage itself — `CreateRelationship`, `AccountGate`, `SentState`. Not re-drawn here. */
   children: ReactNode;
 }) {
   const router = useRouter();
 
-  return (
-    <DialogPrimitive.Root
-      open
-      onOpenChange={(open) => {
-        if (!open) router.push(closeHref);
-      }}
+  /**
+   * **The frame is modal, and says so.** Radix 1.3.1 renders `role="dialog"` and hides the page
+   * from assistive technology with `aria-hidden`, but it does not emit `aria-modal` itself. The flow
+   * is one overlay that owns the screen in both presentations, so the attribute is stated on the
+   * panel rather than inferred from the primitive's version.
+   */
+  const panel = (
+    <DialogPrimitive.Content
+      data-stage-shell="true"
+      data-stage-close={closeHref}
+      aria-modal="true"
+      // No description to point at: the stage draws its own heading and body. Passing
+      // `undefined` is how Radix is told that, and it silences the missing-description warning
+      // without inventing a sentence to describe the dialog.
+      aria-describedby={undefined}
+      className={cn(
+        "fixed inset-0 z-50 flex min-h-0 flex-col overflow-hidden bg-background",
+        // ≥1024 — the approved v7 dialog: inset by 24px, bordered, rounded, no shadow, and
+        // **capped at 880px and centred** (#760). `inset-6` supplies the two 24px gutters, so
+        // the box is `min(100% - 48px, 880px)`: below 928px wide it is the gutters that decide,
+        // above it `max-w` does and the auto margins centre what is left. The artifact measures
+        // 880px at 1024, 1440, 1920 and 3400 — a wizard is read as one column, and a panel that
+        // keeps growing puts a field's label a screen away from its input.
+        "lg:inset-6 lg:mx-auto lg:max-w-[880px] lg:rounded-lg lg:border",
+      )}
     >
-      <DialogOverlay />
-      <DialogPrimitive.Content
-        data-stage-shell="true"
-        data-stage-close={closeHref}
-        // No description to point at: the stage draws its own heading and body. Passing
-        // `undefined` is how Radix is told that, and it silences the missing-description warning
-        // without inventing a sentence to describe the dialog.
-        aria-describedby={undefined}
-        className={cn(
-          "fixed inset-0 z-50 flex min-h-0 flex-col overflow-hidden bg-background",
-          // ≥1024 — the approved v7 dialog: inset by 24px, bordered, rounded, no shadow, and
-          // **capped at 880px and centred** (#760). `inset-6` supplies the two 24px gutters, so
-          // the box is `min(100% - 48px, 880px)`: below 928px wide it is the gutters that decide,
-          // above it `max-w` does and the auto margins centre what is left. The artifact measures
-          // 880px at 1024, 1440, 1920 and 3400 — a wizard is read as one column, and a panel that
-          // keeps growing puts a field's label a screen away from its input.
-          "lg:inset-6 lg:mx-auto lg:max-w-[880px] lg:rounded-lg lg:border",
-        )}
-      >
-        <DialogPrimitive.Title className="sr-only">{title ?? null}</DialogPrimitive.Title>
-        {/*
+      <DialogPrimitive.Title className="sr-only">{title ?? null}</DialogPrimitive.Title>
+      {/*
           The close, in a chrome band of its own below 1024.
 
           It used to be `absolute right-2 top-2`, floating over the stage — and at 390 that is
@@ -110,21 +134,54 @@ export function StageShell({
           on the scroller would let scrolled content slide under the control. This way the band
           is the only thing that changes and nothing can sit beneath the control at any width.
         */}
-        <div className="flex shrink-0 justify-end px-2 py-2 lg:h-0 lg:p-0">
-          <DialogPrimitive.Close
-            aria-label={closeLabel}
-            className="z-10 grid h-11 w-11 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:absolute lg:right-4 lg:top-4 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-          >
-            <X className="h-5 w-5" aria-hidden="true" />
-          </DialogPrimitive.Close>
-        </div>
-        {/*
+      <div className="flex shrink-0 justify-end px-2 py-2 lg:h-0 lg:p-0">
+        <DialogPrimitive.Close
+          aria-label={closeLabel}
+          className="z-10 grid h-11 w-11 place-items-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:absolute lg:right-4 lg:top-4 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+        >
+          <X className="h-5 w-5" aria-hidden="true" />
+        </DialogPrimitive.Close>
+      </div>
+      {/*
           The one scroll container. `min-h-0` matters: a flex child defaults to `min-height:auto`,
           which lets a long stage (Aspects) push the panel taller than the viewport instead of
           scrolling inside it — the horizontal-overflow class of bug the 390 acceptance names.
         */}
-        <div className="min-h-0 flex-1 overflow-auto overscroll-contain">{children}</div>
-      </DialogPrimitive.Content>
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">{children}</div>
+    </DialogPrimitive.Content>
+  );
+
+  return (
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(open) => {
+        if (open) return;
+        // A dismissal is a page change in both mountings — the route's own address in `route`, the
+        // page the flow was opened from in `dialog`. Neither leaves an unclosable modal standing
+        // over an address that no longer matches it.
+        if (onDismiss !== undefined) {
+          onDismiss();
+          return;
+        }
+        router.push(closeHref);
+      }}
+    >
+      {/*
+        The two mountings differ by this one wrapper and nothing else. `dialog` portals because it
+        is only ever mounted by a click, after hydration (#979 B); `route` renders in place because
+        a stage URL answers a plain GET and its content must already be in the server's HTML (#709).
+      */}
+      {presentation === "dialog" ? (
+        <DialogPrimitive.Portal>
+          <DialogOverlay />
+          {panel}
+        </DialogPrimitive.Portal>
+      ) : (
+        <>
+          <DialogOverlay />
+          {panel}
+        </>
+      )}
     </DialogPrimitive.Root>
   );
 }

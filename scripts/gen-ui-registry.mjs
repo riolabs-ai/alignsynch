@@ -132,7 +132,24 @@ function sourceFiles() {
   return files;
 }
 
-/** `app/(mainlayout)/explore/page.tsx` -> `/explore`; route groups are not URL segments. */
+/**
+ * A parallel-route slot (`@flow`) and an interception marker (`(.)`, `(..)`, `(...)`).
+ *
+ * A page inside one is a **mounting**, not an address: it renders in a slot while the browser stays
+ * on the route it intercepts, and that route already has its own row (`docs/specs/flow-stages.md`,
+ * #979 B). Listing it would give two rows to one screen — and, because `routePathOf` strips the slot,
+ * a duplicate id the bijection refuses.
+ */
+const SLOT_SEGMENT = /^@/;
+const INTERCEPTION_SEGMENT = /^\(\.{1,3}\)/;
+
+function isMountOnly(rel) {
+  return rel.split("/").some((s) => SLOT_SEGMENT.test(s) || INTERCEPTION_SEGMENT.test(s));
+}
+
+/**
+ * `app/(mainlayout)/explore/page.tsx` -> `/explore`; route groups are not URL segments.
+ */
 function routePathOf(rel) {
   const path = rel
     .replace(/^app\//, "")
@@ -284,6 +301,8 @@ function derive() {
 
   const routes = files
     .filter((rel) => rel.startsWith("app/") && /(?:^|\/)page\.tsx$/.test(rel))
+    // An intercepted page or a slot's own page is a mounting of a route that is already listed.
+    .filter((rel) => !isMountOnly(rel))
     .map((rel) => ({ id: routePathOf(rel), file: rel }))
     .sort((a, b) => a.id.localeCompare(b.id));
 
