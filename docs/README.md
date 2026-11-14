@@ -205,8 +205,8 @@ What was measured, on which tree, and what the migration changed.
 - [`V1-RETIREMENT.md`](V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
 - [`qa-atlas/v1.17.0/index.md`](qa-atlas/v1.17.0/index.md) — **QA atlas — v1.17.0** — What did every registered surface render in v1.17.0, and did it read the record it claims?
-- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — v1.17.1** — What did every registered surface render in v1.17.1, and what changed since v1.17.0?
-- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since v1.17.1?
+- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — the 1.17.1 tree (never released)** — What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?
+- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
