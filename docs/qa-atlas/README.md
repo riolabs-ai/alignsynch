@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
+[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [Deferred sweeps](DEFERRED.md)
 
 <!-- docs-nav:end -->
 
@@ -153,7 +153,8 @@ every lane. It fails, by route name, when:
 - a route `data/pages/budget.ts` registers has no row in the current version's `manifest.json` (or the
   manifest carries a route the registry does not know), **or the tree's version has no atlas at all** —
   which is why a release cut carries one: bumping `package.json` without capturing turns the gate red,
-  by design, and the step says which version is undocumented;
+  by design, and the step says which version is undocumented. A release the atlas cannot see may ship
+  anyway **only** by being declared in [`DEFERRED.md`](DEFERRED.md), and the pass says so out loud;
 - a row's `expected` status disagrees with the boundary table, or a capture whose measured status
   differs is reported as anything other than a `fail` — publishing a real mismatch is the atlas's job,
   filing it as a pass is the contradiction the check refuses;
@@ -174,6 +175,25 @@ Two files, no second route list: `scripts/qa-atlas-registry.mjs` derives the row
 `data/pages/budget.ts` and reads the boundary out of `tests/parity/boundary.ts`;
 `scripts/qa-atlas.mjs` captures and writes the document.
 
+## A release without a sweep
+
+A sweep that cannot see the release's own subject must not block that release — and must not go
+unnoticed either. So a version with no manifest passes **only** when the tree declares it in
+[`DEFERRED.md`](DEFERRED.md): one row naming the version, dated, carrying the release commit (which
+must exist) and saying which surfaces the atlas cannot yet cover. The rule is strict on purpose — a
+stale row, a reasonless row, a placeholder reason and an unresolvable commit each fail by name, and
+a version that is both captured and deferred is a contradiction the check refuses.
+
+A declared deferral is not a quiet pass. Every gate run prints it first:
+
+```text
+⚑ v1.20.0 deferred · <reason> — no atlas captures this release, and docs/qa-atlas/DEFERRED.md is the record of it
+  77 registry surfaces · 74 routes · 74 deferred · 0 captured · 19 skipped · 2026-11-14 · commit 83eaee29
+```
+
+`scripts/qa-atlas-deferral.mjs` is the rule's one home (parsing, the four field checks, and whether a
+sha resolves), and `tests/qa-atlas-deferral.test.ts` drives both it and the real check.
+
 ## Reading one
 
 Each version directory holds `index.md` (the document), `manifest.json` (the machine-readable form the
@@ -183,6 +203,6 @@ the previous atlas once there is one; the first atlas says so instead of showing
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
+[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [Deferred sweeps](DEFERRED.md)
 
 <!-- docs-nav:end -->
