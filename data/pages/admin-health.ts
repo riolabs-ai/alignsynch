@@ -17,6 +17,16 @@
  *
  * `violations-none` is a sentence, not an empty list: "no violation on the last recorded run" is a
  * fact about a run, and a table with no rows would read as a page that failed to load one.
+ *
+ * **`stale-action` hands an operator a command, so it is the one line here that must run (#696).**
+ * It printed `pnpm health:record --db --gate`, and `--gate` without `--carry` (or a `--ci` window)
+ * throws `gate: this run did not measure it and --carry was not given` — a remedy that stops is the
+ * worst answer to a stuck operator, and since #961 `release.sh --tag-only` refuses the cut on a
+ * record naming the wrong version, so this line is the documented fix for the exact failure the
+ * release path refuses on. Its `body` therefore names the environment too: the record is written
+ * from the demo branch and nothing else, so a shell holding production credentials is stopped by
+ * name rather than left to guess. `tests/admin-health-stale-remedy.test.ts` holds the command to
+ * `package.json` and to the recorder's own flags, so the two cannot drift again.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
@@ -36,7 +46,12 @@ export const adminHealthPageCopy: PageCopy = zPageCopy.parse({
           label:
             "This record was written at {at}, {hours} h before this page was requested, which is past the {window} h freshness window. Every measurement below is history: a stale record is a failed check, not a quiet one.",
         },
-        { id: "stale-action", label: "Re-record before acting: `pnpm health:record --db --gate`." },
+        {
+          id: "stale-action",
+          label:
+            "Re-record before acting: `pnpm health:record --db --gate --carry`, run from a checkout holding the demo branch's credentials.",
+          body: "Those credentials are that branch's `DATABASE_URL` in `.env.local` at the repo root, which `neon env pull` writes. The record is written from the demo branch and nothing else: the recorder refuses a production connection string, a copy of demo, and a shell with no `DATABASE_URL` — naming the fact that refused it, before it measures anything — so production credentials stop the command rather than writing a partial record. `--carry` keeps the CI-yield block this run did not measure; `--ci <the completed UTC day>` re-derives it instead. Then commit `data/health/platform-health.json`: this page renders the committed file.",
+        },
         {
           id: "fresh-line",
           label: "Recorded {at} — {hours} h old, inside the {window} h freshness window.",

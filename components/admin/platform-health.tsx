@@ -186,6 +186,7 @@ function FreshnessNotice({ copy, facts }: { copy: PageCopy; facts: HealthFacts }
       <CardContent className="space-y-2">
         <p className="text-sm">{fillLabel(itemLabel(section, "stale-body"), values)}</p>
         <p className="text-sm font-semibold">{itemLabel(section, "stale-action")}</p>
+        <p className="text-sm">{itemBody(section, "stale-action")}</p>
         {freshness.window.problem === null ? null : (
           <p className="text-sm text-destructive">
             {fillLabel(itemLabel(section, "window-problem"), {

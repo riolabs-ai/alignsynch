@@ -287,7 +287,7 @@ describe("record freshness (#599)", () => {
     expect(
       freshness.stale,
       `data/health/platform-health.json recordedAt=${actual.recordedAt} is ${freshness.ageHours} h old, ` +
-        `past the ${freshness.window.hours} h freshness window — re-record it: \`pnpm health:record --db --gate\` (#599)`,
+        `past the ${freshness.window.hours} h freshness window — re-record it: \`pnpm health:record --db --gate --carry\` (#599)`,
     ).toBe(false);
   });
 });
@@ -382,7 +382,9 @@ describe("/admin/health — what the page renders", () => {
     const html = renderToStaticMarkup((await AdminHealthPage()) as ReactElement);
     expect(html).toContain("The record is stale — nothing below is current");
     expect(html).toContain("past the 72 h freshness window");
-    expect(html).toContain("pnpm health:record --db --gate");
+    expect(html).toContain("pnpm health:record --db --gate --carry");
+    // ...and the sentence that says which environment can run it (#696).
+    expect(html).toContain("written from the demo branch and nothing else");
     // Above the panels it invalidates, not below them in the sources card.
     expect(html.indexOf("The record is stale")).toBeLessThan(html.indexOf("Database checks"));
   });
