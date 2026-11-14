@@ -743,6 +743,11 @@
           "question": "The release that made the version label true — the walk can be paid and sent, and the code it names was already live."
         },
         {
+          "path": "changelog/v1-20-1.md",
+          "title": "v1.20.1",
+          "question": "Which release connected the billing state machine to the events it was waiting for, and shipped no new surface?"
+        },
+        {
           "path": "changelog/v1-3-0.md",
           "title": "v1.3.0",
           "question": "The release where the flow closed."
