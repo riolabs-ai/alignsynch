@@ -10,7 +10,7 @@
  * **#898 turned the drawn explainer into a recording.** "How it works" that *describes* a flow
  * drifts: the page keeps saying stage 3 asks five Aspects long after the product asks four, and
  * nothing in the gate can see it. So the page now plays back a walk a browser actually made —
- * `docs/qa-demo-flow/transcript.json`, written by `pnpm demo:flow`, checked by
+ * `docs/qa/demo-flow/transcript.json`, written by `pnpm demo:flow`, checked by
  * `pnpm demo:flow:check` — and every step band shows the values the persona typed and the screen the
  * product answered with. The copy here is the frame around that recording: what it is, what the two
  * halves of a step mean, and what the six moves are once creation is over. The steps themselves are

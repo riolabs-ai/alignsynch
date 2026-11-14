@@ -3,7 +3,7 @@
  *
  * The rail's second row used to leave the console for `/#questions` on the public front page. This
  * route is that row's real destination: since #898 it no longer *draws* the flow, it plays one back.
- * The steps come from `docs/qa-demo-flow/transcript.json` — the walk `pnpm demo:flow` recorded
+ * The steps come from `docs/qa/demo-flow/transcript.json` — the walk `pnpm demo:flow` recorded
  * against the demo instance, committed, and held to a fresh run by `pnpm demo:flow:check` — so the
  * page cannot describe a flow the product no longer performs. Words live in
  * `data/pages/how-it-works.ts`; the stepper is `components/onboarding/how-it-works.tsx`.

@@ -12,7 +12,7 @@
  * the gate, in CI, and on a fresh clone with no `.env.local`.
  *
  * **A signed-out visitor gets the recording, not a login form (#898).** The page replays a committed
- * walk of the create flow (`docs/qa-demo-flow/transcript.json`), which is the thing a reader wants
+ * walk of the create flow (`docs/qa/demo-flow/transcript.json`), which is the thing a reader wants
  * *before* signing up. This was a `307 → /login?next=…` until #898; the assertion below is what stops
  * it drifting back, and the last case pins the contrast — `currentUser()` unguarded still throws with
  * no auth env, which is what `/assessment/instances` and its neighbours do.

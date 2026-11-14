@@ -1,7 +1,7 @@
 /**
  * `/how-it-works` reads the recorded demo flow (#898 card 2).
  *
- * The recording is `docs/qa-demo-flow/transcript.json`, written by `pnpm demo:flow`
+ * The recording is `docs/qa/demo-flow/transcript.json`, written by `pnpm demo:flow`
  * (`scripts/demo-flow.mjs`) and kept honest by `pnpm demo:flow:check`. This module is the page's
  * reader: it parses that file through the shape the file's own `$doc` block documents, resolves the
  * paths/steps/findings the stepper renders, and answers the one question a screenshot needs — where
@@ -32,7 +32,7 @@ import { z } from "zod";
 import type { DemoFlow, DemoFlowFinding, DemoFlowPath, DemoFlowStep } from "./types";
 
 /** The committed recording, relative to the repository root. */
-export const DEMO_FLOW_DIR = "docs/qa-demo-flow";
+export const DEMO_FLOW_DIR = "docs/qa/demo-flow";
 
 /** The transcript itself — the one file the page's steps come from. */
 export const DEMO_FLOW_TRANSCRIPT = `${DEMO_FLOW_DIR}/transcript.json`;
@@ -125,7 +125,7 @@ export class DemoFlowUnreadable extends Error {
   }
 }
 
-/** `docs/qa-demo-flow/create-draft/24-….png` → `/qa-demo-flow/create-draft/24-….png`. */
+/** `docs/qa/demo-flow/create-draft/24-….png` → `/qa-demo-flow/create-draft/24-….png`. */
 export function demoFlowShotUrl(shot: string): string {
   const prefix = `${DEMO_FLOW_DIR}/`;
   if (!shot.startsWith(prefix)) {

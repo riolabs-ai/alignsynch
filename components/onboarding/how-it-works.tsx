@@ -17,7 +17,7 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
  * alignment-home.tsx`): a heading, a paragraph, and a two-up pair. This is that composition turned
  * into a sequence — one band per step, numbered, two halves side by side — and since #898 the
  * recorded bands are not written here at all: they are the steps of a walk a browser really made
- * (`docs/qa-demo-flow/transcript.json`), so the left half is the values the persona typed and the
+ * (`docs/qa/demo-flow/transcript.json`), so the left half is the values the persona typed and the
  * right half is the screenshot the product answered with. The page cannot describe a flow the
  * product no longer performs, because the steps come from the recording that
  * `pnpm demo:flow:check` holds to a fresh run.

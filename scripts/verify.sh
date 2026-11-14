@@ -553,7 +553,7 @@ else
   skip_step "qa:atlas:check" "no qa:atlas:check script in package.json"
 fi
 
-# The recorded demo walk (#898). `docs/qa-demo-flow/transcript.json` + its 55 committed PNGs are
+# The recorded demo walk (#898). `docs/qa/demo-flow/transcript.json` + its 55 committed PNGs are
 # what `/how-it-works` replays, so a transcript that has drifted from the screenshots it names is a
 # page describing a walk nobody took — and nothing above can see it: the JSON parses, `typecheck`
 # never reads it and `data:check` has no invariant over it. **Static on purpose** — no browser, no

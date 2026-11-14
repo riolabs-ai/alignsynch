@@ -1,7 +1,7 @@
 /**
  * The recorded demo flow, as the page consumes it — **types only, no runtime**.
  *
- * `docs/qa-demo-flow/transcript.json` is written by `pnpm demo:flow` (`scripts/demo-flow.mjs`) and
+ * `docs/qa/demo-flow/transcript.json` is written by `pnpm demo:flow` (`scripts/demo-flow.mjs`) and
  * its shape belongs to that script: the file's own `$doc` block is the schema, and this module is a
  * reader's view of it, never a second definition. A field this page does not need is not modelled
  * here; a field the script adds lands in `values` as a key the page renders verbatim.

@@ -4,7 +4,7 @@
  * **Why a route rather than `public/`.** `data:check` **E18** fails any file under `public/` with no
  * media-registry key, and E17 forbids `components/` and `app/` writing `public/` paths; a screenshot
  * of a live walk is evidence, not a media asset with an alt and a credit. Serving them from where
- * they are committed (`docs/qa-demo-flow/<path>/<n>-<slug>-1440.png`) keeps both invariants and keeps
+ * they are committed (`docs/qa/demo-flow/<path>/<n>-<slug>-1440.png`) keeps both invariants and keeps
  * them versioned beside the transcript that names them. `/review-artifacts/[id]` made the same choice
  * for the review prototypes (#665), and `outputFileTracingIncludes` names the directory so a
  * deployment carries the files.
