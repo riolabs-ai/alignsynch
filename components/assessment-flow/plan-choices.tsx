@@ -29,10 +29,19 @@
  * writes, and this one writes no sentence at all). The two ids are structure, not copy.
  */
 import type { PageCopy } from "@/content/pages";
+import type { PlanRowId } from "@/data/pages/assessment-create";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
-/** The two plans, in the order the prototype prints them. Their words are the fixture's. */
-export const PLAN_IDS = ["one", "unlimited"] as const;
+/**
+ * The two plans, in the order the prototype prints them. Their words are the fixture's.
+ *
+ * `satisfies readonly PlanRowId[]` is half of the binding: an id listed here that the fixture's
+ * `PLAN_BILLING_TIER` does not price is a compile error, because the walk indexes that map with a
+ * `PlanId`. The other half — a row the fixture prices that this list forgot to draw — is the key
+ * comparison in `tests/plan-billing-tier.test.tsx`, since no type can see a map entry nothing
+ * reads.
+ */
+export const PLAN_IDS = ["one", "unlimited"] as const satisfies readonly PlanRowId[];
 
 export type PlanId = (typeof PLAN_IDS)[number];
 

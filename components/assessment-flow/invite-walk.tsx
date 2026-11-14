@@ -36,6 +36,14 @@
  * if"). The server refuses an unpaid send on its own, in `sendDraftInvitation()` — the UI gate is
  * the courtesy, not the enforcement.
  *
+ * **It buys the tier the plan row names, never the row's own id.** The panel's rows are the
+ * fixture's handles (`one`, `unlimited`), which key its copy; a checkout is named by a
+ * `billing_plan` row (`basic`, `principal`). This module used to post the handle and fall back to
+ * `"basic"` when nothing was chosen, and both sides are `string`, so the crossing was invisible to
+ * the compiler: choosing a plan posted `"one"`, the adapter answered *"one" is not a plan this
+ * product sells*, and the card frame never mounted. `PLAN_BILLING_TIER` in
+ * `data/pages/assessment-create.ts` is the one map between the two, beside the prices it produces.
+ *
  * **It moves focus like a step, not like a page.** `Next` puts focus on the new step's first
  * control — `data-panel-first` — so a screen reader follows the walk. The first render is
  * deliberately silent: a stage that grabs focus on load steals it from the dialog's own close
@@ -52,6 +60,7 @@ import type { PageCopy } from "@/content/pages";
 import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { relationshipPath, sendInvitationPath } from "@/lib/flow/paths";
+import { PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { PlanChoices, type PlanId } from "./plan-choices";
 import { StripeFrame } from "@/components/billing/stripe-frame";
 
@@ -177,9 +186,21 @@ export function InviteWalk({
       setRefusal(itemLabel(flow, "card-refused"));
       return;
     }
+    if (plan === null) {
+      // **No tier, so no checkout.** This control used to post `plan ?? "basic"`, which is the
+      // defect this guard replaces: a default nobody chose is a price decided by a fallback, and
+      // it hid the crossing the map above exists to make explicit. The card step is entered from
+      // the plan panel, whose continue control is disabled until a row is chosen, so the one state
+      // that reaches this line is an account measured as entitled while the membership is not live
+      // — where the drawn answer is the refusal band (with Back and the draft beside it), never a
+      // charge.
+      setRefusal(itemLabel(flow, "card-refused"));
+      return;
+    }
+    const planId = PLAN_BILLING_TIER[plan];
     setStarting(true);
     try {
-      const answer = await checkout.onStart({ planId: plan ?? "basic", interval: "month" });
+      const answer = await checkout.onStart({ planId, interval: "month" });
       if (!answer.ok) {
         setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
         return;

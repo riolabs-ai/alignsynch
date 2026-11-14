@@ -32,6 +32,7 @@
 import { zPageCopy, type PageCopy } from "../../content/pages";
 import { formatCurrency } from "../../content/core";
 import { billingPlan } from "../billing-plans";
+import type { PaidPlanId } from "../billing-prices";
 import { lifecycleStageSection } from "./lifecycle";
 
 /**
@@ -51,6 +52,34 @@ import { lifecycleStageSection } from "./lifecycle";
  */
 const ONE_RELATIONSHIP_PLAN_ID = "basic";
 const UNLIMITED_PLAN_ID = "principal";
+
+/**
+ * **The tier each plan row sells — the crossing between stage 5's row ids and the catalogue.**
+ *
+ * The `plans` section below is keyed by the row ids the prototype prints (`one`, `unlimited`,
+ * `one-note`, `one-price`), and each row's figure is read from the tier named here
+ * (`monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID)`). That pair is what a checkout must be asked for, and
+ * it is declared once, here, beside the prices it produces — a second map anywhere else is how the
+ * two vocabularies drifted apart in the first place.
+ *
+ * **Why it needs saying out loud.** Both vocabularies are `string`, so nothing in the type system
+ * saw the walk posting a row id as a tier: stage 5 sent `"one"`, the adapter answered *"one" is not
+ * a plan this product sells*, the card frame never mounted, and — with `#1019`'s send behind that
+ * gate — no new relationship could be completed. `tests/plan-billing-tier.test.tsx` binds this map
+ * to `BILLING_PLAN_IDS` **and** to a Price at both intervals, so the next rename on either side
+ * fails a check instead of a checkout.
+ *
+ * `satisfies Record<string, PaidPlanId>` keeps a tier that is not sold (`free`) out of the map at
+ * compile time; the reverse direction — a row this map prices that the panel does not draw — is
+ * the key comparison the test makes, since no type can see a map entry nothing reads.
+ */
+export const PLAN_BILLING_TIER = {
+  one: ONE_RELATIONSHIP_PLAN_ID,
+  unlimited: UNLIMITED_PLAN_ID,
+} as const satisfies Record<string, PaidPlanId>;
+
+/** The plan rows the money panel draws: the keys of the map above. */
+export type PlanRowId = keyof typeof PLAN_BILLING_TIER;
 
 function monthlyPriceOf(id: typeof ONE_RELATIONSHIP_PLAN_ID | typeof UNLIMITED_PLAN_ID): string {
   const plan = billingPlan(id);
