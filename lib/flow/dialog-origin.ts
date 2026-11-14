@@ -22,7 +22,7 @@
  *
  * **Why the entry index is remembered.** Closing must *pop* the flow's own history entries rather
  * than push a new address: the dialog is an intercepted route, and a `router.push` back to the page
- * it stands over is a no-op in Next's router — measured, in `docs/qa-979-flow-parity/`, as a push
+ * it stands over is a no-op in Next's router — measured, in `docs/qa/979-flow-parity/`, as a push
  * that leaves the address and the dialog exactly as they were. Popping needs a count, and the count
  * is `window.navigation.currentEntry.index`'s difference from the index the flow was opened at;
  * `history.length` cannot answer it because it never shrinks.
