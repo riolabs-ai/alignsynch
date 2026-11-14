@@ -1,0 +1,34 @@
+{
+  "phase": "after",
+  "base": "http://localhost:3438",
+  "path": "/assessment/instances/assessment-instance-avery-rowan/sent",
+  "instance": "assessment-instance-avery-rowan",
+  "inviteRows": 0,
+  "capturedAt": "2026-11-13T22:56:12.816Z",
+  "http": {
+    "status": 200,
+    "band": "none",
+    "sentence": "Not sent — no invitation was created for this relationship yet",
+    "pageCopyError": null
+  },
+  "widths": {
+    "390": {
+      "path": "/assessment/instances/assessment-instance-avery-rowan/sent",
+      "title": "Invitation sent · AlignSynch",
+      "heading": "Invitation sent",
+      "band": "none",
+      "sentence": "Not sent — no invitation was created for this relationship yet",
+      "errorOverlay": true,
+      "bodyStart": "((e, i, s, u, m, a, l, h)=>{ let d = document.documentElement, w = [ \"light\", \"dark\" ]; function p(n) { (Array.isArray(e) ? e : [ e ]).forEach((y)=>{ let k = y === \"class\", S = k && a ? m.map((f)=>a[f] || f) : m; k ? (d."
+    },
+    "1440": {
+      "path": "/assessment/instances/assessment-instance-avery-rowan/sent",
+      "title": "Invitation sent · AlignSynch",
+      "heading": "Invitation sent",
+      "band": "none",
+      "sentence": "Not sent — no invitation was created for this relationship yet",
+      "errorOverlay": true,
+      "bodyStart": "((e, i, s, u, m, a, l, h)=>{ let d = document.documentElement, w = [ \"light\", \"dark\" ]; function p(n) { (Array.isArray(e) ? e : [ e ]).forEach((y)=>{ let k = y === \"class\", S = k && a ? m.map((f)=>a[f] || f) : m; k ? (d."
+    }
+  }
+}

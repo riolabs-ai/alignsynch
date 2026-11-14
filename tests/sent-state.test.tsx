@@ -29,6 +29,7 @@ import { assessments } from "@/data/assessments";
 import { assessmentSentPageCopy } from "@/data/pages/assessment-sent";
 import type { Assessment, PartyRole } from "@/content/assessment";
 import type { ItemRow, PartyRow } from "@/lib/db/rows";
+import { INVITE_STATES } from "@/lib/flow/invite-state";
 import { instancePath, reinvitePath } from "@/lib/flow/paths";
 import { projectScreen, type FlowInstanceRows, type FlowInvite } from "@/lib/flow/screen";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -153,6 +154,42 @@ describe("the state sentence (#691)", () => {
 
   it("draws a distinct sentence for one an operator withdrew", () => {
     expect(statusSentence(htmlWith("revoked"))).toContain(itemLabel(status, "revoked"));
+  });
+});
+
+/**
+ * **A relationship whose invitation was never written is a state with words (#976).**
+ *
+ * `session_invite` holding no row for the session is legitimate — the commit can land before the
+ * send writes the invitation, and the seed leaves the table empty — so `SentState` asks the band
+ * for the id `"none"`. The fixture had only the four derived states, and `itemLabel`'s throw turned
+ * a reachable state into a server-render exception: `/assessment/instances/<id>/sent` answered 500
+ * for every such relationship. The throw is correct and stays; the fixture was wrong.
+ *
+ * The second case is the invariant that keeps this from recurring: every value the view can ask
+ * for — `INVITE_STATES` plus the absent-row id — must resolve in the same band, so adding a state
+ * to `inviteStateOf()` without a sentence is a red test rather than a 500 at capture time.
+ */
+describe("a relationship with no invitation row (#976)", () => {
+  it("draws its own sentence instead of throwing, with no timeline to draw", () => {
+    // The render itself is the assertion: before the fixture carried the item this call threw
+    // `PageCopy: section "status" has no item "none"`, which is the 500 the card was filed for.
+    const html = htmlWith("none");
+    expect(statusSentence(html)).toBe(`none|${itemLabel(status, "none")}`);
+    // There is no row, so there is no history and no address to print — the screen says the one
+    // fact it has rather than drawing an empty timeline.
+    expect(html).not.toContain("data-sent-timeline");
+    expect(html).not.toContain(itemLabel(status, "email").replace("{email}", "rowan@example.com"));
+  });
+
+  it("covers every state the view can ask for — INVITE_STATES plus the absent row", () => {
+    for (const id of [...INVITE_STATES, "none"]) {
+      // `itemLabel` throws on a missing id; an empty label would be the same defect wearing words.
+      expect(itemLabel(status, id).trim().length).toBeGreaterThan(0);
+    }
+    // The sentence is the row's own — it never borrows `unclaimed`, because "the link has not been
+    // claimed" and "there is no link" are different facts.
+    expect(itemLabel(status, "none")).not.toBe(itemLabel(status, "unclaimed"));
   });
 });
 
