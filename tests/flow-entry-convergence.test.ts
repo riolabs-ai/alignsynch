@@ -238,5 +238,15 @@ describe("the door that is drawn", () => {
     );
     expect(html).toContain(`href="${createRelationshipPath("relationship-basics")}"`);
     expect(html).toContain('data-flow-entry="true"');
+    /*
+     * The door is **named by the address it goes to**, so the shell's fallback can find the same
+     * control again after the dismissal's pop re-renders the page and replaces this node.
+     *
+     * Measured in the browser (card `t_ce4796c3`): the remembered anchor is detached by the time
+     * the shell hands focus back — the pop re-renders the page underneath and React does not keep
+     * the element — so without this name `Esc` closed the dialog and left focus on `<body>` on five
+     * of six doors. The fallback `rememberFlowOrigin` is handed is built from exactly this value.
+     */
+    expect(html).toContain(`data-flow-entry-id="${createRelationshipPath("relationship-basics")}"`);
   });
 });

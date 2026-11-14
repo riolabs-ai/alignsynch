@@ -472,19 +472,30 @@ for (const sample of RUN) {
   if (closed === null) closed = { closedByEsc: false, historyBefore: before };
 
   /* Where the dismissal left the page — measured **before** any diagnostic, so the still and the
-     numbers below describe the product's behaviour and not the harness's probing. */
-  const closedState = await evaluate(`(() => {
-    const active = document.activeElement;
-    const trigger = document.querySelector(${JSON.stringify(sample.selector)});
-    return {
-      url: location.pathname,
-      focusIsTrigger: trigger !== null && active === trigger,
-      activeText: active === null ? null : active.textContent.trim().slice(0, 40),
-      activeTag: active === null ? null : active.tagName.toLowerCase(),
-      activeIsFlowEntry: active !== null && active.getAttribute("data-flow-entry") === "true",
-      historyAfter: history.length,
-    };
-  })()`);
+     numbers below describe the product's behaviour and not the harness's probing. The close is
+     asynchronous (a pop, then a commit, then the shell's focus hand-back), so focus is *traced* for
+     1.5 s and the settled reading is the recorded one: a single sample taken the instant the panel
+     left would call a focus that lands a frame later "focus on body". */
+  const focusTrace = [];
+  let closedState = null;
+  for (let i = 0; i < 15; i += 1) {
+    closedState = await evaluate(`(() => {
+      const active = document.activeElement;
+      const trigger = document.querySelector(${JSON.stringify(sample.selector)});
+      return {
+        url: location.pathname,
+        focusIsTrigger: trigger !== null && active === trigger,
+        activeText: active === null ? null : active.textContent.trim().slice(0, 40),
+        activeTag: active === null ? null : active.tagName.toLowerCase(),
+        activeIsFlowEntry: active !== null && active.getAttribute("data-flow-entry") === "true",
+        historyAfter: history.length,
+      };
+    })()`);
+    focusTrace.push(`${i * 100}ms:${closedState.activeTag}:${closedState.focusIsTrigger}`);
+    if (closedState.focusIsTrigger) break;
+    await sleep(100);
+  }
+  closedState.focusTrace = focusTrace;
   const closedStill = await shot(`${sample.id}-after-esc`);
 
   /*
