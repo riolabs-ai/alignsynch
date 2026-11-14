@@ -52,14 +52,14 @@ The atlas is a picture of a release, not an archive of the product. The owner's 
 The threshold is applied to the cuts that **stay**: a 9 MB cut that is about to be pruned does not
 narrow the window on its way out, because the window describes what the tree holds afterwards.
 
-**Measured on this release's commit (`0dc5b740`): three cuts, 5.05 MB** — the `v1.20.0` capture
-pruned `v1.17.1` (1.72 MB) and its `docs.json` row, leaving the current cut plus two past.
+**Measured on this release's commit (`c26021ae`): three cuts, 4.99 MB** — the `v1.20.1` capture
+pruned `v1.18.0` (1.73 MB) and its `docs.json` row, leaving the current cut plus two past.
 
 | cut       | weight  | role                                             |
 | --------- | ------- | ------------------------------------------------ |
-| `v1.20.0` | 1.66 MB | **current** — the version `package.json` carries |
-| `v1.19.0` | 1.66 MB | past #1                                          |
-| `v1.18.0` | 1.73 MB | past #2                                          |
+| `v1.20.1` | 1.67 MB | **current** — the version `package.json` carries |
+| `v1.20.0` | 1.66 MB | past #1                                          |
+| `v1.19.0` | 1.66 MB | past #2                                          |
 
 Two commands, and only one of them runs in the gate:
 
@@ -92,11 +92,11 @@ official launch when the latest atlas cut reports 0 failing surfaces and every s
 the index.** Both halves matter: a failure is a surface that did not render the record it claims,
 and an unexplained skip is a surface nobody looked at.
 
-**Today's newest cut, `v1.20.0`, meets that bar.** It reports **77 registry surfaces · 74 routes ·
+**Today's newest cut, `v1.20.1`, meets that bar.** It reports **77 registry surfaces · 74 routes ·
 71 captured · 0 failing · 3 skipped**, and all three skips carry their reason in its index
 (`/reset/[token]`, `/dashboard/templates/[id]`, `/invite/[token]`). The three surfaces `v1.18.0`
 recorded as failing — `/assessment/instances/[instanceId]/sent`, `/admin/instances/[id]` and
-`/categories` — all report pass in this cut.
+`/categories` — all report pass in this cut, as they did in the two cuts before it.
 
 ## Running a capture
 
