@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 templates redesign — implementation brief · prev [AS2 templates redesign (handoff)](README.md) · next [AS2 catalogue UI system](CATALOG-UI-SYSTEM.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 templates redesign — implementation brief · prev [AS2 catalogue UI system](CATALOG-UI-SYSTEM.md) · next [AS2 templates redesign (handoff)](README.md)
 
 <!-- docs-nav:end -->
 
@@ -122,6 +122,6 @@ Use the repository's established checks after implementation: typecheck, lint, d
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 templates redesign — implementation brief · prev [AS2 templates redesign (handoff)](README.md) · next [AS2 catalogue UI system](CATALOG-UI-SYSTEM.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 templates redesign — implementation brief · prev [AS2 catalogue UI system](CATALOG-UI-SYSTEM.md) · next [AS2 templates redesign (handoff)](README.md)
 
 <!-- docs-nav:end -->

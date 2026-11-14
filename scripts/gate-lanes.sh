@@ -16,7 +16,7 @@
 # These functions are pure over a path, so they are testable without a git tree:
 #   bash -c 'source scripts/gate-lanes.sh; lane_of_path components/x.tsx'   # code
 #
-# Docs: docs/REPO-LAYERS.md.
+# Docs: docs/operations/repo-layers.md.
 
 # lane_rank <lane> -> 0..3, higher = deeper gate
 lane_rank() {

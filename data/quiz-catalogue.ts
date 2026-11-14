@@ -6,7 +6,7 @@
  * `selectQuizCard()`. Before the reconciliation this file was a second 40-record
  * collection that shared 13 ids with the migration's 42; two lists meant two
  * answers for one quiz, and E1 would have failed the build the moment both
- * landed. See `docs/p1-migration/MIGRATION.md` ("Two collections, one winner").
+ * landed. See `docs/operations/history/p1-migration/MIGRATION.md` ("Two collections, one winner").
  *
  * `catalogueAliases` is the part worth keeping: d2 authored 7 cards under an id
  * it invented rather than the frozen §8 one. Each maps to the record that owns

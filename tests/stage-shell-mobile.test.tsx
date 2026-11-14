@@ -4,7 +4,7 @@
  * The card walked every stage at **390×844** and asked two things of the shell rather than of a
  * screen: nothing overflows sideways, and the actions row is still reachable at **390×500** —
  * the honest height once an on-screen keyboard takes the bottom half of the display. The walk
- * recorded its numbers in `docs/qa-modal-mobile/measurements.json`; this file is what stops them
+ * recorded its numbers in `docs/qa/modal-mobile/measurements.json`; this file is what stops them
  * going back.
  *
  * Both halves are asserted the way the rest of the shell's tests are — there is no layout engine

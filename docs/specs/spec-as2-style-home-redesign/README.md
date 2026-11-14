@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 home redesign (handoff) · prev [Reference UX patterns](../ux-reference-patterns.md) · next [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 home redesign (handoff) · prev [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md) · next [AS2 catalogue UI system](../spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md)
 
 <!-- docs-nav:end -->
 
@@ -24,6 +24,6 @@ To preview from this directory, serve the folder with any static HTTP server and
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 home redesign (handoff) · prev [Reference UX patterns](../ux-reference-patterns.md) · next [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 home redesign (handoff) · prev [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md) · next [AS2 catalogue UI system](../spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md)
 
 <!-- docs-nav:end -->

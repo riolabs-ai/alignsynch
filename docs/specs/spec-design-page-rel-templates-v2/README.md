@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › V2 home and brand package (handoff) · prev [AS2 redesign — asset sources and credits](../spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [V2 home page (handoff)](home/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › V2 home and brand package (handoff) · prev [V2 home page (handoff)](home/README.md) · next [Brand & audience profile page (handoff)](../spec-design-page-rel-templates/README.md)
 
 <!-- docs-nav:end -->
 
@@ -60,6 +60,6 @@ Use the existing AlignSynch app's shared header, footer, route constants, brand 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › V2 home and brand package (handoff) · prev [AS2 redesign — asset sources and credits](../spec-as2-style-home-redesign/ASSET-SOURCES.md) · next [V2 home page (handoff)](home/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › V2 home and brand package (handoff) · prev [V2 home page (handoff)](home/README.md) · next [Brand & audience profile page (handoff)](../spec-design-page-rel-templates/README.md)
 
 <!-- docs-nav:end -->

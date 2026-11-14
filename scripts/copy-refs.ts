@@ -1,7 +1,7 @@
 /**
  * copy-refs — the page-copy ratchet (E23), as pure derivations.
  *
- * The inventory (`docs/P2-INVENTORY.md`) counted 1,809 page-copy strings with no
+ * The inventory (`docs/operations/history/P2-INVENTORY.md`) counted 1,809 page-copy strings with no
  * home. A count in a document is not a gate: nothing stops the next component
  * from typing the sentence back in. This module is the gate's arithmetic, and it
  * is deliberately separate from the filesystem so the negative cases can be

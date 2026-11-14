@@ -1,7 +1,7 @@
 /**
  * A pre-release passes the release gate and publishes as one, proved by running the script.
  *
- * `scripts/release.sh` is the procedure (`docs/RELEASING.md`), so the question "can we cut an RC?"
+ * `scripts/release.sh` is the procedure (`docs/operations/releasing.md`), so the question "can we cut an RC?"
  * is not answered by reading it. Each case below builds a throwaway tree — `release.sh`, the
  * classifier, a `package.json`, a `CHANGELOG.md`, and a one-line `verify.sh` stub — and runs the
  * real script against it:

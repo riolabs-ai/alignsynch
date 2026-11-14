@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Template catalogue · prev [Specifications index](README.md) · next [Transactional email lifecycle](flow-emails.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Template catalogue · prev [Account deletion](account-deletion-spec.md) · next [Transactional email lifecycle](flow-emails.md)
 
 <!-- docs-nav:end -->
 
@@ -190,18 +190,18 @@ So the split requires one column, nothing else:
   Website Specs p9): grouped Business/Personal/Custom rows, title + aspect preview per row,
   a separate "My Templates" section, and the identical-aspect-string padding cited above.
 - Notion help, "The ultimate guide to Notion templates"
-  (https://www.notion.com/help/guides/the-ultimate-guide-to-notion-templates): gallery =
+  (<https://www.notion.com/help/guides/the-ultimate-guide-to-notion-templates>): gallery =
   search + categories + collections; templates are grouped by need, not by author.
 - Notion blog, "The reimagined Notion Template Gallery"
-  (https://www.notion.com/blog/new-notion-template-gallery): the 600 → 5,000 / 21 → 250+
+  (<https://www.notion.com/blog/new-notion-template-gallery>): the 600 → 5,000 / 21 → 250+
   growth is UGC economics — the transferable idea is curation into collections, not the
   number.
 - Miro help, "Templates"
-  (https://help.miro.com/hc/en-us/articles/360017572134-Templates): template picker groups
+  (<https://help.miro.com/hc/en-us/articles/360017572134-Templates>): template picker groups
   300+ templates by category with search; custom templates appear **alongside** built-ins in
   the same picker; blank is always one click away ("deselect Show when creating a new
   board").
-- Base44 docs, "Using app templates" (https://docs.base44.com/Getting-Started/App-templates):
+- Base44 docs, "Using app templates" (<https://docs.base44.com/Getting-Started/App-templates>):
   tabs Built-in / Community / Workspace / My Templates, where the My Templates tab "appears
   once you've created one" — the hidden-until-non-empty pattern recommended above.
 - Paired (paired.com FAQ): the closest product (two-person relationship Q&A) organizes
@@ -210,11 +210,11 @@ So the split requires one column, nothing else:
 
 ## Related
 
-- [DATA-MODEL.md](../DATA-MODEL.md) — the record model these categories project.
-- [BUNDLES.md](../BUNDLES.md) — how a catalogue template travels between deployments.
+- [DATA-MODEL.md](../reference/data-model.md) — the record model these categories project.
+- [BUNDLES.md](../guides/bundles.md) — how a catalogue template travels between deployments.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Template catalogue · prev [Specifications index](README.md) · next [Transactional email lifecycle](flow-emails.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Template catalogue · prev [Account deletion](account-deletion-spec.md) · next [Transactional email lifecycle](flow-emails.md)
 
 <!-- docs-nav:end -->

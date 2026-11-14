@@ -606,7 +606,7 @@ async function assertSourceSuppliesAuth(source, connectionString, branchName) {
       .map(([table]) => `neon_auth.${table}`);
     if (missing.length > 0) {
       throw new Refused(
-        `the source branch "${source.name}" (${source.id}) cannot supply a working demo: ${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} empty or absent, so a restore would leave "${branchName}" with an auth server that answers "Project config not found" and a reseed that cannot create the demo accounts. The source must carry the auth configuration (\`neon_auth.project_config\` and \`neon_auth.jwks\`) and no users — see docs/DEMO.md. Nothing was changed.`,
+        `the source branch "${source.name}" (${source.id}) cannot supply a working demo: ${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} empty or absent, so a restore would leave "${branchName}" with an auth server that answers "Project config not found" and a reseed that cannot create the demo accounts. The source must carry the auth configuration (\`neon_auth.project_config\` and \`neon_auth.jwks\`) and no users — see docs/getting-started/demo.md. Nothing was changed.`,
       );
     }
     return counts;

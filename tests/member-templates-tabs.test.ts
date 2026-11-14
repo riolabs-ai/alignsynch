@@ -158,7 +158,7 @@ describe("one statement about money per screen, and they agree (#796)", () => {
   });
 
   it("leaves the template detail's pay-later sentence byte-identical", () => {
-    // `docs/pay-to-complete/PAYER-PRESENT.md` records this as the only shipped statement of
+    // `docs/specs/pay-to-complete/PAYER-PRESENT.md` records this as the only shipped statement of
     // pay-later, and #619 is the decision it encodes: the plan is chosen at completion, not on a card.
     expect(itemLabel(sectionOf(templateDetailPageCopy, "shape"), "no-money")).toBe(
       "No price is shown here: a relationship's cost depends on the plan chosen when it is ready to complete, and the plan prices are on the pricing page.",

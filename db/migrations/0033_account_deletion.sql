@@ -1,7 +1,7 @@
 -- 0033_account_deletion.sql — the indexes an erasure sweep needs, and nothing else (#278).
 --
 -- The build that uses this file is `lib/account/purge.ts`. Deleting an account is a sweep over
--- every column that identifies a person (`docs/ACCOUNT-DELETION-SPEC.md` §1.1), and the sweep
+-- every column that identifies a person (`docs/specs/account-deletion-spec.md` §1.1), and the sweep
 -- filters those columns by an account id. Six of the tables it reaches do not have an index that
 -- leads with that id, so each statement would be a sequential scan over a table whose size has
 -- nothing to do with the one person being deleted.

@@ -92,15 +92,15 @@ cannot merge, and the head you prove green is the head the lead merges.
 The docs are grouped by the question they answer. [`docs/README.md`](docs/README.md) is the hub —
 start there. The pages most people need:
 
-| Question                                                  | Document                                                 |
-| --------------------------------------------------------- | -------------------------------------------------------- |
-| What is this repo, and how do I build in it?              | [`AGENTS.md`](AGENTS.md)                                 |
-| Where is every document, by question?                     | [`docs/README.md`](docs/README.md)                       |
-| What does the gate cost, and how do I re-measure it?      | [`docs/GATE.md`](docs/GATE.md)                           |
-| How do I cut a release?                                   | [`docs/RELEASING.md`](docs/RELEASING.md)                 |
-| How does one core express many brands?                    | [`docs/TEMPLATE-DOCTRINE.md`](docs/TEMPLATE-DOCTRINE.md) |
-| What environment, integrations and gate does this run on? | [`docs/ENV-SPEC.md`](docs/ENV-SPEC.md)                   |
-| How do I export or import a template or demo dataset?     | [`docs/BUNDLES.md`](docs/BUNDLES.md)                     |
+| Question                                                  | Document                                                               |
+| --------------------------------------------------------- | ---------------------------------------------------------------------- |
+| What is this repo, and how do I build in it?              | [`AGENTS.md`](AGENTS.md)                                               |
+| Where is every document, by question?                     | [`docs/README.md`](docs/README.md)                                     |
+| What does the gate cost, and how do I re-measure it?      | [`docs/operations/gate.md`](docs/operations/gate.md)                   |
+| How do I cut a release?                                   | [`docs/operations/releasing.md`](docs/operations/releasing.md)         |
+| How does one core express many brands?                    | [`docs/guides/template-doctrine.md`](docs/guides/template-doctrine.md) |
+| What environment, integrations and gate does this run on? | [`docs/reference/env-spec.md`](docs/reference/env-spec.md)             |
+| How do I export or import a template or demo dataset?     | [`docs/guides/bundles.md`](docs/guides/bundles.md)                     |
 
 Link, do not summarise: a number copied into two places goes stale in one of them.
 

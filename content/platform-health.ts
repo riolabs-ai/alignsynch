@@ -64,7 +64,7 @@ export const zPlatformHealthDbVerify = z
  * The CI yield, as `python3 docs/gate-baseline.py --window <day>` prints it.
  *
  * `successes`/`runs` are head SHAs whose *first* run was green over head SHAs that ran at all —
- * the definition `docs/GATE.md` baseline section gives — so `percent` is derived from two counts a
+ * the definition `docs/operations/gate.md` baseline section gives — so `percent` is derived from two counts a
  * reader can re-derive, never a rate typed on its own.
  */
 export const zPlatformHealthYield = z

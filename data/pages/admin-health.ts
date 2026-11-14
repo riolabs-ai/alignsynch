@@ -69,7 +69,7 @@ export const adminHealthPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "gate",
       heading: "Gate health",
-      body: "The last verification run this machine recorded, and the CI first-pass yield beside it. The yield is head SHAs whose first run was green, over the head SHAs that ran at all — the definition docs/GATE.md gives, re-derived by the command printed under it.",
+      body: "The last verification run this machine recorded, and the CI first-pass yield beside it. The yield is head SHAs whose first run was green, over the head SHAs that ran at all — the definition docs/operations/gate.md gives, re-derived by the command printed under it.",
       items: [
         { id: "lane-label", label: "Lane" },
         { id: "duration-label", label: "Duration" },

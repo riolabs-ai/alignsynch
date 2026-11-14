@@ -11,7 +11,7 @@
  * is correct, the version genuinely is missing, and nothing measured the pair.
  *
  * The check is `publishedWithoutVersionProblems()` in `scripts/db-verify.mjs`, exported for the
- * same reason V21's is: the gate is database-free (`docs/GATE.md`), so the rule takes rows and
+ * same reason V21's is: the gate is database-free (`docs/operations/gate.md`), so the rule takes rows and
  * these cases feed it rows. The case worth reading first is "the demo branch's own shape" — it
  * rebuilds the measured 28-of-29 and fails if the rule ever stops biting.
  */
