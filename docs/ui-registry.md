@@ -23,7 +23,7 @@ How a template picks from this page — the order a new surface is decided in �
 
 - routes: **97** — 61 static, 36 dynamic, from `app/**/page.tsx`
 - component domains: **43** — 354 files under `components/`, 347 of them `.tsx`
-- route handlers: **32** — `app/**/route.ts`, listed below and not a UI surface
+- route handlers: **33** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 75 · **db** 40 · **live** 8 · **prototype** 1
 - templates: Both templates 50 · AlignSynch 46 · QuizHub 42 · No template yet 2
 - capability written as `undocumented`: **0**
@@ -473,10 +473,10 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - notes: The first caller of requireAdmin(); a demo-only surface, so it answers 404 outside demo mode like every other /demo route. A proof, not a destination: nothing in the flow links here.
 
 - `/how-it-works` — **fixture**
-  - capability: The console's onboarding page: the six moves of one relationship in order — pick a type and a template, invite the Member, both answer blind, both accept, read the report and its Steps, start the next session — with what the member does beside what the product does, and the honest limits of this build.
+  - capability: The onboarding page, replayed: the three paths a browser really walked through the create flow — publish, keep as a draft, stop at payment — one band per recorded step with the values the persona typed beside the screenshot the product answered with, the findings the walk met on each path, and then the six moves of one relationship in words with the honest limits of this build.
   - components: `components/onboarding`
-  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
-  - notes: The rail's How it works row used to leave the console for `/#questions` on the public front page; this route is its real destination (owner's review of the console). A variation of the alignment front page's `#questions` composition, not a new pattern — the heading/body band, numbered, with the member's half against the product's half (`components/onboarding/how-it-works.tsx`, ancestor in its `template-ancestor:` header). It resolves the session first and answers a signed-out request with `redirect(/login?next=/how-it-works)`, and it refuses to render on a build that ships the quiz product instead (`quizProductShipped()`, the same flag resolver the quiz routes read) — the copy is the relationship product's, and #300 is the record of what happens when one product's words are served under the other's name. `fixture` and not `db`: it reads page copy and a session, and no row.
+  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The rail's How it works row used to leave the console for `/#questions` on the public front page; this route is its real destination (owner's review of the console). A variation of the alignment front page's `#questions` composition, not a new pattern — the heading/body band, numbered, with two halves beside each other (`components/onboarding/how-it-works.tsx`, ancestor in its `template-ancestor:` header); since #898 the bands are the _recording's_ steps rather than drawn ones, read from `docs/qa-demo-flow/transcript.json` (written by `pnpm demo:flow`, held to a fresh run by `pnpm demo:flow:check`) through `lib/demo-flow/transcript.ts`, with the committed PNGs served by `/qa-demo-flow/[...shot]` — nothing is captured at request time. `/dashboard/help` mounts the same component and fixture without the recording, so the moves and the tour replay stay one surface. It answers a signed-out visitor with the page (a walkthrough a reader can only see after signing up is a drawing again) and hides the one CTA that would land a stranger on a login wall; the session is still read through `currentUserIfConfigured()`. It refuses to render on a build that ships the quiz product instead (`quizProductShipped()`, the same flag resolver the quiz routes read) — the copy is the relationship product's, and #300 is the record of what happens when one product's words are served under the other's name. `fixture` and not `db`: it reads page copy, a committed transcript and a session, and no row.
 
 - `/invite/[token]` — **db**
   - capability: What an invitation says, and the button that claims it — a single-use token spent by a POST once the invited party accepts.
@@ -871,6 +871,7 @@ HTTP handlers, not screens: they have no `page.tsx` and render nothing, so they 
 - `/assessment/new/who` — `app/(mainlayout)/assessment/new/who/route.ts`
 - `/favicon.ico` — `app/favicon.ico/route.ts`
 - `/invite/[token]/claim` — `app/(mainlayout)/invite/[token]/claim/route.ts`
+- `/qa-demo-flow/[...shot]` — `app/qa-demo-flow/[...shot]/route.ts`
 - `/review-artifacts/[id]` — `app/review-artifacts/[id]/route.ts`
 - `/templates/relationship/[slug]/delete` — `app/(mainlayout)/templates/relationship/[slug]/delete/route.ts`
 - `/templates/relationship/[slug]/duplicate` — `app/(mainlayout)/templates/relationship/[slug]/duplicate/route.ts`

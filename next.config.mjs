@@ -125,6 +125,18 @@ const nextConfig = {
       "./docs/review/artifacts/**",
       "./docs/changelog/releases.json",
     ],
+    /**
+     * The recorded demo (#898): `/how-it-works` reads `docs/qa-demo-flow/transcript.json` at request
+     * time and `/qa-demo-flow/[...shot]` serves the screenshots it names, both through constants in
+     * `lib/demo-flow/transcript.ts` — a path the tracer cannot follow statically. Naming the
+     * directory here is what makes a deployment carry the recording instead of answering 500 on a
+     * page whose whole point is that it shows what really happened.
+     */
+    "/how-it-works": ["./docs/qa-demo-flow/transcript.json"],
+    "/qa-demo-flow/[...shot]": [
+      "./docs/qa-demo-flow/transcript.json",
+      "./docs/qa-demo-flow/**/*.png",
+    ],
   },
   // typescript: {
   //   ignoreBuildErrors: true,
