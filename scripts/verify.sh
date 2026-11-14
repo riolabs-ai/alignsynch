@@ -11,7 +11,7 @@
 # Usage:   bash scripts/verify.sh
 #          GATE_LANE=full bash scripts/verify.sh   # force the code lane
 #
-# LANES — the gate costs what the change costs (docs/REPO-LAYERS.md)
+# LANES — the gate costs what the change costs (docs/operations/repo-layers.md)
 #
 # One job, one script, four depths. The lane is resolved once, up front, from
 # the files that differ from $GATE_REF (default origin/main), highest wins:
@@ -130,7 +130,7 @@
 #                 Target: p50 < 90 s. The flat gate was 145 s under the same load.
 #                 The gate slot now covers the whole heavy section rather than the
 #                 build alone; the measured table and why the default is 3 are in
-#                 docs/REPO-LAYERS.md ("The gate slot").
+#                 docs/operations/repo-layers.md ("The gate slot").
 #
 # If a lane gets slower than its row, measure before adding a step: the build is
 # the only expensive one, and it is the only one a cheaper lane is allowed to
@@ -313,7 +313,7 @@ check_whitespace() {
 # Taken once, at the first heavy step, and held to the end of the build. See the header for why
 # the section is not re-acquired per step and why the lock files kept their old names.
 GATE_LOCK_DIR="${QUIZHUB_GATE_LOCK_DIR:-${QUIZHUB_BUILD_LOCK_DIR:-$HOME/.cache/quizhub}}"
-# Default 3, not 2: measured on this 8-core host (docs/REPO-LAYERS.md carries the table). Two slots
+# Default 3, not 2: measured on this 8-core host (docs/operations/repo-layers.md carries the table). Two slots
 # cost a whole extra wave the moment a third run arrives — 3 runs at 2 slots took 315 s against
 # 200 s with no cap — while three slots never queue at the concurrency the fleet reaches and beat
 # the uncapped gate at five: 333 s against 358 s, peak 1-min load 29.9 against 41.3.
@@ -393,6 +393,10 @@ gate_slot_acquire() {
 gate_slot_release() { # idempotent: explicit release at the end of the section, trap on failure
   local held
   [ -n "$GATE_FD" ] || return 0
+  # A gate that stopped anywhere after the typecheck link must not leave the tree's
+  # `.next/cache` pointing at the shared store: a dev server would then open the
+  # store a later gate build holds. Idempotent — nothing is linked on the normal path.
+  node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
   eval "exec ${GATE_FD}>&-" 2>/dev/null || true
   held=$(( $(date +%s) - GATE_HOLD_0 ))
   printf '  gate slot: released slot %s/%s (held %ss, waited %ss)\n' \
@@ -517,6 +521,23 @@ else
   skip_step "docs:check" "no docs:check script in package.json"
 fi
 
+# Markdown style (#937). `docs/` is 142 pages and nothing enforced their shape: Biome formats them
+# (wrapping, table padding) but a fence with no language tag, an issue number at the start of a line
+# GitHub renders as an `<h1>`, or a `#620`-style heading that swallowed a sentence all stayed green.
+# `pnpm md:check` is `markdownlint-cli2` (the rules in `.markdownlint-cli2.jsonc`, none of them a
+# line-length rule — paragraphs are never re-wrapped) plus `scripts/md-style.mjs --check`, the two
+# rewrites no linter can autofix. It runs in **every lane beside `docs:check`**, not only in the
+# content lane: a formatting defect lands in a `docs/**` diff, which classifies as the docs lane,
+# and a step that only ran for `content/**` would be green over exactly the change it exists to
+# catch. Measured on this host: 106 files linted in 4.8–9.6 s (markdownlint-cli2, a fresh process each
+# run and 8–19 MB of dependencies to resolve) plus 0.15 s for the codemod — the docs lane is the one
+# that pays it most, and it is still seconds, not the build.
+if has_script "md:check"; then
+  run_step "md:check (markdownlint-cli2 + md-style: fences, escapes, alerts)" pnpm md:check || fail
+else
+  skip_step "md:check" "no md:check script in package.json"
+fi
+
 # The release atlas (#945): every route `data/pages/budget.ts` registers has a row in the current
 # version's `docs/qa-atlas/<version>/manifest.json`, every claimed status agrees with the boundary
 # table (`tests/parity/boundary.ts`), every thumbnail the manifest points at exists, and the atlas
@@ -581,7 +602,20 @@ gate_slot_acquire || fail
 if [ "$LANE" = "docs" ]; then
   run_step "whitespace (git diff --check)" check_whitespace || fail
 else
-  run_step "typecheck (next typegen && tsc --noEmit, shared buildinfo)" pnpm typecheck || fail
+  # The typecheck writes the **build's own** buildinfo, so `next build` later in this
+  # section resumes from the program this step already checked instead of repeating
+  # it: one pass, two verdicts, nothing skipped. That only works while `.next/cache`
+  # is linked at this slot (scripts/build-cache.mjs names the path), so the link is
+  # taken here and handed straight back — narrower than the build's own window, and
+  # restored on failure by the trap as well. Measured: 63.9 s → 16.1 s wall for the
+  # build's check, docs/GATE.md.
+  export QUIZHUB_BUILD_SLOT="$GATE_SLOT"
+  node scripts/build-cache.mjs link
+  if ! run_step "typecheck (next typegen && tsc --noEmit, shared with build)" pnpm typecheck; then
+    node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
+    fail
+  fi
+  node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
 fi
 
 # Biome formats markdown too, so this is the docs lane's real gate as well as

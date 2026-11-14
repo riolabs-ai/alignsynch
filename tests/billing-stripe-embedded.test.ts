@@ -26,7 +26,7 @@
  *                          `undefined` would throw inside the provider's loader instead of here
  *
  * Offline, with the transport injected: no network, no keys, no database. The live half — a real
- * test-mode session and a real frame — is the browser pass in `docs/qa-payment/`.
+ * test-mode session and a real frame — is the browser pass in `docs/qa/payment/`.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

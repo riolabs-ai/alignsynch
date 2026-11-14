@@ -53,7 +53,7 @@ export const RESEND_ENDPOINT = "https://api.resend.com/emails";
  *
  * The override exists so the flow can be driven against a capture server — that is how the
  * unlock notice (#258) is proved on a deployment with no mail provider, and how
- * `docs/TWO-PARTY-FLOW.md`'s "no real send was performed" claim was made. Nothing sets it in
+ * `docs/specs/two-party-flow.md`'s "no real send was performed" claim was made. Nothing sets it in
  * production, and pointing it somewhere else is only ever another HTTP endpoint speaking the
  * same request shape; there is still one transport, one provider and no dependency.
  *

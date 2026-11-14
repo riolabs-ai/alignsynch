@@ -10,7 +10,7 @@
  * the real function against a real schema, in a transaction-shaped fixture of its own.
  *
  * **Skipped unless `DATABASE_URL` is set**, exactly like `tests/payment-jobs-live.test.ts`: the gate
- * has no connection string by design (`docs/GATE.md`), so this costs the gate nothing and runs when
+ * has no connection string by design (`docs/operations/gate.md`), so this costs the gate nothing and runs when
  * someone points it at a branch.
  *
  * **It leaves nothing behind.** Every row is created under a `probe-send-…` id and deleted in

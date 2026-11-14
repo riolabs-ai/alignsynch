@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › components · prev [app/api](app-api.md) · next [content](content.md)
+[Docs hub](../../README.md) › **Code wiki** › components · prev [app/(marketing)](app-marketing.md) · next [content](content.md)
 
 <!-- docs-nav:end -->
 
@@ -50,7 +50,7 @@ conventions are load-bearing:
 - **one directory per feature** — `dashboard`, `relationship`, `admin`, `console`, `assessment`,
   `assessment-flow`, `marketing`, `home`, `quiz`, `explore`, `search`, `support`, `identity`, `shell`.
 - **`v1/`** — the retired prototype's components, kept for reference by
-  [`docs/V1-RETIREMENT.md`](../../V1-RETIREMENT.md); nothing in the build imports them.
+  [`docs/operations/history/V1-RETIREMENT.md`](../../operations/history/V1-RETIREMENT.md); nothing in the build imports them.
 
 ## Dependencies
 
@@ -72,6 +72,6 @@ conventions are load-bearing:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › components · prev [app/api](app-api.md) · next [content](content.md)
+[Docs hub](../../README.md) › **Code wiki** › components · prev [app/(marketing)](app-marketing.md) · next [content](content.md)
 
 <!-- docs-nav:end -->

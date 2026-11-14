@@ -6,7 +6,7 @@
  * type's own Aspects, the authored demo sheet (`data/relationship-types.ts`) as the two
  * parties' Opinions, and `assessmentReport()` over both — the **same projection and the same
  * renderer** `/assessment/[slug]` and the instance report use. There is one report in the app,
- * not a marketing copy of one; that is what `docs/V1-RETIREMENT.md`'s demo row means by "owns
+ * not a marketing copy of one; that is what `docs/operations/history/V1-RETIREMENT.md`'s demo row means by "owns
  * the port of `components/v1/template-demo.tsx` to the v2 report".
  *
  * **The example is built from the type, not from a stored template record.** A type's demo

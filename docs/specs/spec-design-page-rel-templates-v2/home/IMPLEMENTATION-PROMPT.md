@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 home page — implementation brief · prev [V2 home page (handoff)](README.md) · next [V2 home page — asset sources and credits](ASSET-SOURCES.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 home page — implementation brief · prev [V2 home page — asset sources and credits](ASSET-SOURCES.md) · next [V2 home page (handoff)](README.md)
 
 <!-- docs-nav:end -->
 
@@ -165,6 +165,6 @@ The shared app contains both AlignSynch and QuizHub. This brief treats “all fr
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 home page — implementation brief · prev [V2 home page (handoff)](README.md) · next [V2 home page — asset sources and credits](ASSET-SOURCES.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 home page — implementation brief · prev [V2 home page — asset sources and credits](ASSET-SOURCES.md) · next [V2 home page (handoff)](README.md)
 
 <!-- docs-nav:end -->

@@ -37,7 +37,7 @@ export const DEMO_NEON_BRANCH = "demo";
  * The demo branch's endpoint. An endpoint outlives every connection string in a checkout, so it is
  * the fact this module can hold; a branch cut from `demo` has a different one, which is the whole
  * refusal below. When the demo branch is re-created (a restore, a move), this constant is what the
- * recorder names in its failure — update it here and say so in `docs/RELEASING.md`.
+ * recorder names in its failure — update it here and say so in `docs/operations/releasing.md`.
  */
 export const DEMO_ENDPOINT = "ep-crimson-truth-b4ppwxrp";
 

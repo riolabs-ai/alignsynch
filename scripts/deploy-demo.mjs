@@ -3,7 +3,7 @@
  * `scripts/deploy-demo.mjs` — create the deployment `demo.alignsynch.com` resolves to.
  *
  * Why this exists. `vercel.json` names exactly one branch besides `main` that may build — `demo` —
- * and `docs/DEPLOYING.md` §1 reads that literal as "the branch that serves the public demo". The
+ * and `docs/operations/deploying.md` §1 reads that literal as "the branch that serves the public demo". The
  * literal is a **policy**, not a mechanism: creation is disabled at the project level
  * (`previewDeploymentsDisabled: true`, `gitProviderOptions.createDeployments: "disabled"`), so a
  * push to `demo` produces no deployment record at all and the `ignoreCommand` is never consulted

@@ -26,6 +26,8 @@ import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Markdown from "react-markdown";
+import { remarkAlert } from "remark-github-blockquote-alert";
+import remarkGfm from "remark-gfm";
 
 import { DocFeedback } from "@/components/admin/docs/doc-feedback";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +58,23 @@ function textOf(children: ReactNode): string {
 
 const LINK_CLASS = "text-action underline underline-offset-2 hover:text-action/80";
 const MUTED_CLASS = "text-muted-foreground";
+
+/**
+ * The two remark plugins this reader needs, and why each is here (#937).
+ *
+ * `remark-gfm` — **tables**, task lists and autolinks are GFM extensions, not CommonMark, so
+ * `react-markdown@10` parses none of them on its own: a pipe table arrived as a paragraph of pipe
+ * characters and `- [x]` as a bullet with a literal bracket. `docs/` carries 87 tables and 2,000-odd
+ * rows of measurement, so this is the single largest visual defect the reader had.
+ *
+ * `remarkAlert` — a `> [!NOTE]` blockquote is GitHub's own extension, and without this it rendered
+ * as a quote whose first line read, literally, `[!NOTE]`. `scripts/md-style.mjs` writes that syntax
+ * only over a document-status notice a page already carries (retired / superseded / verdict).
+ *
+ * Module scope, not inline: `react-markdown` re-runs the plugin array on every render when it is a
+ * fresh array, and these two have no per-render input.
+ */
+const REMARK_PLUGINS = [remarkGfm, remarkAlert];
 
 /**
  * The markdown renderer's element map.
@@ -96,6 +115,28 @@ function markdownComponents(fromPath: string) {
     ),
     hr: ({ node: _node, ...props }: { node?: unknown }) => (
       <hr className="my-8 border-border" {...props} />
+    ),
+    // GFM TABLES (#937). `remark-gfm` is what parses a pipe table at all — without it every one of
+    // the 87 tables in `docs/` arrived as a paragraph of pipes and dashes. The element map decides
+    // how the parsed table *looks*, and it is the reason this change is worth a commit: a table the
+    // browser cannot read is worse than no table. A wrapper carries the horizontal scroll, because a
+    // 7-column measurement table in `docs/qa/` is wider than the phone it is read on.
+    table: ({ node: _node, ...props }: { node?: unknown }) => (
+      <div className="mb-6 overflow-x-auto">
+        <table className="w-full border-collapse text-left text-sm" {...props} />
+      </div>
+    ),
+    thead: ({ node: _node, ...props }: { node?: unknown }) => (
+      <thead className="bg-muted/60" {...props} />
+    ),
+    th: ({ node: _node, ...props }: { node?: unknown }) => (
+      <th
+        className="border border-border px-3 py-2 align-bottom text-xs font-semibold text-foreground"
+        {...props}
+      />
+    ),
+    td: ({ node: _node, ...props }: { node?: unknown }) => (
+      <td className="border border-border px-3 py-2 align-top text-foreground" {...props} />
     ),
     pre: ({ node: _node, ...props }: { node?: unknown }) => (
       <pre
@@ -224,7 +265,9 @@ export function DocArticle({ copy, row, body, siblings, previous, next }: DocArt
         {empty ? (
           <p className={MUTED_CLASS}>{itemLabel(documentCopy, "empty-body")}</p>
         ) : (
-          <Markdown components={markdownComponents(row.path)}>{body}</Markdown>
+          <Markdown components={markdownComponents(row.path)} remarkPlugins={REMARK_PLUGINS}>
+            {body}
+          </Markdown>
         )}
       </article>
 

@@ -316,7 +316,7 @@ function gateBlock() {
   const startedAt = now();
   const started = Date.now();
   // A clean environment, the way CI has one: an inherited `.env` would make `demo:verify` refuse
-  // for a reason that is not the diff (`docs/GATE.md`, `AGENTS.md`).
+  // for a reason that is not the diff (`docs/operations/gate.md`, `AGENTS.md`).
   const run = sh("env", [
     "-i",
     `HOME=${process.env.HOME}`,

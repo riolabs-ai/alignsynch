@@ -1,7 +1,7 @@
 /**
  * Search — DERIVED, never authored (D18).
  *
- * `docs/P2-INVENTORY.md` counted 37 literals in `components/search/search-results.tsx` (8
+ * `docs/operations/history/P2-INVENTORY.md` counted 37 literals in `components/search/search-results.tsx` (8
  * quizzes, 6 categories, 4 creators, 4 pages, none of which existed in a collection) plus the
  * 4/4/3/15 catalog in `data/searchdata.ts`. Both are one call to `buildSearchIndex()` now, so
  * every row below is copied from a real record or counted over real records:

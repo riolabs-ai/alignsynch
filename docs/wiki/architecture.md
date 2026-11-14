@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Code wiki** › Request lifecycle · prev [Getting started](getting-started.md) · next [app/(mainlayout)](modules/app-mainlayout.md)
+[Docs hub](../README.md) › **Code wiki** › Request lifecycle · next [Class diagram](diagrams/class-diagram.md)
 
 <!-- docs-nav:end -->
 
@@ -117,6 +117,6 @@ flowchart LR
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Code wiki** › Request lifecycle · prev [Getting started](getting-started.md) · next [app/(mainlayout)](modules/app-mainlayout.md)
+[Docs hub](../README.md) › **Code wiki** › Request lifecycle · next [Class diagram](diagrams/class-diagram.md)
 
 <!-- docs-nav:end -->

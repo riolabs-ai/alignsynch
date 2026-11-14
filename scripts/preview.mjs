@@ -2,7 +2,7 @@
 /**
  * `scripts/preview.mjs` — one command, one shareable preview URL, toolbar included.
  *
- * Why this exists. `docs/DEPLOYING.md` §1 records a deliberate policy: a push builds production
+ * Why this exists. `docs/operations/deploying.md` §1 records a deliberate policy: a push builds production
  * (and the branch `demo`) and nothing else, because a preview per push would spend a deployment per
  * push out of Hobby's rolling 100. The cost of that policy is named in the same section — "there is
  * no shareable preview URL for someone who is not on this machine" — which is exactly what makes
@@ -18,7 +18,7 @@
  *   is the production/localhost path, where the toolbar is *not* injected — mounting it in this tree
  *   would ship toolbar code into the production bundle to duplicate something already there.
  * - **It never deploys production.** `--prod` is refused outright: production is the merge to `main`
- *   (`docs/RELEASING.md`), not a local command.
+ *   (`docs/operations/releasing.md`), not a local command.
  * - **It changes no setting.** Preview creation is still off at the project level
  *   (`previewDeploymentsDisabled: true`), so a branch push creates no preview record; this script is
  *   the opt-in route and it spends exactly one deployment each time it is run.
@@ -51,7 +51,7 @@ const execFileAsync = promisify(execFile);
 /** The repository root — the tree that gets uploaded, and where `vercel link` writes `.vercel/`. */
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** The project this repository builds (`docs/DEPLOYING.md` §1). */
+/** The project this repository builds (`docs/operations/deploying.md` §1). */
 const DEFAULT_PROJECT = "alignsynch";
 
 /** A deployment URL, whole. Used to validate what the parser found, never to search with. */
@@ -98,7 +98,7 @@ function parseArgs(argv) {
       index += 1;
     } else if (arg === "--prod" || arg === "--production") {
       throw new Error(
-        "this script deploys previews only — production is the merge to `main` (docs/RELEASING.md)",
+        "this script deploys previews only — production is the merge to `main` (docs/operations/releasing.md)",
       );
     } else {
       throw new Error(`unknown argument ${JSON.stringify(arg)}`);

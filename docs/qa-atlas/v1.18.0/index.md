@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — the 1.17.1 tree (never released)](../v1.17.1/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — the 1.17.1 tree (never released)](../v1.17.1/index.md) · next [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../../qa/welcome-copy/README.md)
 
 <!-- docs-nav:end -->
 
@@ -10,7 +10,7 @@ Every route `data/pages/budget.ts` registers, captured in a real browser at 390 
 
 ## Coverage
 
-```
+```text
 77 registry surfaces · 74 routes · 68 captured and passing · 3 failing · 3 skipped
 3 non-route surfaces (not-found, shell, tour) — covered by the pages that mount them, listed below.
 ```
@@ -196,6 +196,6 @@ Full-size PNGs (213 files, 57651251 bytes before compression) are not committed 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — the 1.17.1 tree (never released)](../v1.17.1/index.md) · next [P4 dogfood pass](../../QA-DOGFOOD-P4.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.18.0 · prev [QA atlas — the 1.17.1 tree (never released)](../v1.17.1/index.md) · next [The welcome panel's copy — the tagline and the Aspects/Opinions tiles](../../qa/welcome-copy/README.md)
 
 <!-- docs-nav:end -->

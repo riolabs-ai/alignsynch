@@ -597,7 +597,7 @@ function renderPage(structure, entries) {
       " yet_, which is where a candidate for the next vertical starts its life.",
     "",
     "How a template picks from this page — the order a new surface is decided in — is" +
-      " [`TEMPLATE-DOCTRINE.md`](TEMPLATE-DOCTRINE.md): one core, many expressions.",
+      " [`guides/template-doctrine.md`](guides/template-doctrine.md): one core, many expressions.",
     "",
     "## Summary",
     "",

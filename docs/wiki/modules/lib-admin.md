@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › lib/admin · prev [lib/member](lib-member.md) · next [Class diagram](../diagrams/class-diagram.md)
+[Docs hub](../../README.md) › **Code wiki** › lib/admin · prev [data](data.md) · next [lib/db](lib-db.md)
 
 <!-- docs-nav:end -->
 
@@ -82,6 +82,6 @@ from its caller, because a nested transaction is two commits waiting to disagree
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › lib/admin · prev [lib/member](lib-member.md) · next [Class diagram](../diagrams/class-diagram.md)
+[Docs hub](../../README.md) › **Code wiki** › lib/admin · prev [data](data.md) · next [lib/db](lib-db.md)
 
 <!-- docs-nav:end -->

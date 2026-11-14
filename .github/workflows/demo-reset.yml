@@ -108,7 +108,7 @@ jobs:
         if: steps.key.outputs.present == 'true'
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          # The project is not a secret (it is named in docs/ENV-SPEC.md) and is passed
+          # The project is not a secret (it is named in docs/reference/env-spec.md) and is passed
           # explicitly so the script never has to guess from a list of one.
           NEON_PROJECT_ID: fragrant-glade-99460966
           DEMO_BRANCH: demo

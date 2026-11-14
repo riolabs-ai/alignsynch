@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS broadcast_send (
   subject         TEXT        NOT NULL CHECK (length(btrim(subject)) > 0),
   recipient_count INT         NOT NULL CHECK (recipient_count >= 0),
   -- The deployment's mail key mode at the moment of the send. `live` is a real mailbox; `captured`
-  -- is an endpoint override (docs/TWO-PARTY-FLOW.md's capture server), so a send made while
+  -- is an endpoint override (docs/specs/two-party-flow.md's capture server), so a send made while
   -- proving the path is distinguishable from one that reached people.
   key_mode        TEXT        NOT NULL CHECK (key_mode IN ('live', 'captured')),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),

@@ -8,7 +8,7 @@
  * locked behind a `complete` that no longer derived, and nothing in the suite said a word.
  *
  * The check is `seededInstanceStatusProblems()` in `scripts/db-verify.mjs`, exported for exactly
- * this reason: the gate is database-free (`docs/GATE.md`), so the part that decides an answer takes
+ * this reason: the gate is database-free (`docs/operations/gate.md`), so the part that decides an answer takes
  * a client-shaped object and the cases here feed it rows. The status itself is the product's own
  * `instanceStatusOf()`, so these cases fail if a rule change moves `complete` — which is the class
  * of drift the card exists to catch.
@@ -186,7 +186,7 @@ describe("V21 — the seeded instances read complete", () => {
   });
 
   it("does not fail an authored instance this database does not hold at all", async () => {
-    // An emptied demo branch (docs/DEMO.md): no rows, and `db:verify` is green there. Absence is a
+    // An emptied demo branch (docs/getting-started/demo.md): no rows, and `db:verify` is green there. Absence is a
     // branch the seed has not built yet, not a seeded instance reading wrongly.
     const { problems, complete, authored } = await seededInstanceStatusProblems(
       clientOf([]),
