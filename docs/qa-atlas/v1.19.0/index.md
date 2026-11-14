@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md) · next [QA atlas — v1.20.0](../v1.20.0/index.md)
 
 <!-- docs-nav:end -->
 
@@ -189,6 +189,6 @@ No full-size PNG archive: this run captured no screenshots.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › QA atlas — v1.19.0 · prev [QA atlas — v1.18.0](../v1.18.0/index.md) · next [QA atlas — v1.20.0](../v1.20.0/index.md)
 
 <!-- docs-nav:end -->

@@ -52,14 +52,14 @@ The atlas is a picture of a release, not an archive of the product. The owner's 
 The threshold is applied to the cuts that **stay**: a 9 MB cut that is about to be pruned does not
 narrow the window on its way out, because the window describes what the tree holds afterwards.
 
-**Measured on `main` (`180b0802`): three cuts, 5.06 MB** — nothing to prune, and nothing was
-deleted to get here.
+**Measured on this release's commit (`0dc5b740`): three cuts, 5.05 MB** — the `v1.20.0` capture
+pruned `v1.17.1` (1.72 MB) and its `docs.json` row, leaving the current cut plus two past.
 
-| cut       | weight  | role                                                                            |
-| --------- | ------- | ------------------------------------------------------------------------------- |
-| `v1.18.0` | 1.73 MB | **current** — the version `package.json` carries                                |
-| `v1.17.1` | 1.72 MB | past #1 — the label was never a release ([its page](v1.17.1/index.md) says why) |
-| `v1.17.0` | 1.61 MB | past #2                                                                         |
+| cut       | weight  | role                                             |
+| --------- | ------- | ------------------------------------------------ |
+| `v1.20.0` | 1.66 MB | **current** — the version `package.json` carries |
+| `v1.19.0` | 1.66 MB | past #1                                          |
+| `v1.18.0` | 1.73 MB | past #2                                          |
 
 Two commands, and only one of them runs in the gate:
 
@@ -92,20 +92,11 @@ official launch when the latest atlas cut reports 0 failing surfaces and every s
 the index.** Both halves matter: a failure is a surface that did not render the record it claims,
 and an unexplained skip is a surface nobody looked at.
 
-**Today's newest cut, `v1.18.0`, does not meet that bar, and this page will not pretend otherwise.**
-It reports **77 registry surfaces · 74 routes · 71 captured · 3 failing · 3 skipped**:
-
-| surface                                   | verdict                                                             |
-| ----------------------------------------- | ------------------------------------------------------------------- |
-| `/assessment/instances/[instanceId]/sent` | 500, where the boundary table expects 200                           |
-| `/admin/instances/[id]`                   | 200, with a console error (a controlled/uncontrolled input warning) |
-| `/categories`                             | 404, and the body is not the app's not-found copy                   |
-
-All three skips do carry their reason in that cut's index (`/reset/[token]`,
-`/dashboard/templates/[id]`, `/invite/[token]`), so the skip half of the criterion is satisfied and
-the failure half is not. The atlas is working exactly as intended here — it is reporting the product
-honestly, and the gate passes because publishing a real mismatch is its job. Launch eligibility is a
-statement about the **product**, not about this document.
+**Today's newest cut, `v1.20.0`, meets that bar.** It reports **77 registry surfaces · 74 routes ·
+71 captured · 0 failing · 3 skipped**, and all three skips carry their reason in its index
+(`/reset/[token]`, `/dashboard/templates/[id]`, `/invite/[token]`). The three surfaces `v1.18.0`
+recorded as failing — `/assessment/instances/[instanceId]/sent`, `/admin/instances/[id]` and
+`/categories` — all report pass in this cut.
 
 ## Running a capture
 
