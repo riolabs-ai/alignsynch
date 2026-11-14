@@ -278,6 +278,57 @@ store is a single-writer RocksDB: a second concurrent opener fails rather than m
 comes from the gate slot the run is holding (`QUIZHUB_GATE_SLOTS`, legacy `QUIZHUB_BUILD_SLOTS`
 honoured), so the cache grows with the slot count, not with the number of worktrees.
 
+### The three passes, measured 2026-11-13
+
+`verify.sh` type-checks a code-lane diff twice: `pnpm typecheck` (`next typegen && tsc --noEmit`,
+in every lane but `docs`) and the check `next build` runs itself
+(`next/dist/lib/typescript/runTypeCheck.js`, which prints `Running TypeScript ...`). The obvious
+question is whether one of them can go. Measured on one head (`2742e2dc9`, Node 24.22.0, pnpm
+12.16.1, worktree `t_885ce160`), with the load average recorded because this host runs the fleet's
+other gates at the same time — wall clock moves with it, so **user CPU is the figure to compare**:
+
+| Pass                                                          | user CPU | sys   | wall    | load |
+| ------------------------------------------------------------- | -------- | ----- | ------- | ---- |
+| `next typegen` alone (cold, no `.next`)                       | —        | —     | 0.61 s  | 19   |
+| `pnpm typecheck` = typegen + `tsc --noEmit`, cold buildinfo   | 80.4 s   | 2.2 s | 135.4 s | 29.1 |
+| `next build`, type check **on**, no buildinfo                 | 91.5 s   | 4.8 s | 112.1 s | 24.8 |
+| `next build`, `typescript.ignoreBuildErrors` (throwaway only) | 18.2 s   | 3.1 s | 19.0 s  | 22.4 |
+| `next build` after the _build_ wrote the buildinfo            | 33.9 s   | 4.5 s | 31.0 s  | 16.5 |
+| `next build` after the standalone `tsc` wrote the buildinfo   | 120.0 s  | 6.6 s | 129.3 s | 17.9 |
+
+Three readings:
+
+- **`next typegen` is not a compile pass.** It writes the route types in 0.6 s and `tsc` needs
+  `.next/types` to exist, so it is not a candidate for removal.
+- **Both type checks are total.** Three errors were planted and the build failed on each of them,
+  with its own `TS2322` line and `Failed to type check.`: in `lib/utils.ts` (imported everywhere), in
+  a `tests/` file nothing imports, and in a `*.test.*` file that `runTypeCheck.js`'s test-file
+  diagnostic filter would have been expected to swallow. All three probes were reverted.
+- **The build's check does carry ~73 s of user CPU of its own** (91.5 s against 18.2 s with the
+  check off), so the duplication is real and it is a real cost.
+
+Neither pass can be dropped without buying time with something this repo has refused:
+
+- dropping `pnpm typecheck` removes the only type verdict from the `content` and `config` lanes
+  (they skip `next build`), so it is a narrower gate, not a cheaper one;
+- dropping the build's check needs `typescript.ignoreBuildErrors: true` in a committed
+  `next.config.mjs` — a config flag whose whole purpose is to let a type error ship;
+- and the two checks are not identical anyway: `runTypeCheck.js` filters the `.next/dev/types`
+  files out of the build's program, while `tsconfig.json` includes them, so the standalone pass is
+  the only one that reads the dev route types.
+
+Sharing the incremental state was measured and does **not** work. Pointing `tsc`'s
+`--tsBuildInfoFile` at `<distDir>/cache/.tsbuildinfo` — the exact path `runTypeCheck` reads — leaves
+the next build at 120.0 s user CPU, against 33.9 s when a _build_ wrote that file itself. The
+mechanism is visible in the numbers and in the build log: `next build` re-runs its own type
+generation before it type-checks, so the route-type files the standalone `tsc` recorded are stale by
+the time the build's program is built, and the incremental state is discarded. A buildinfo is only
+warm for the writer that owns the same typegen.
+
+A measured "no safe saving here", then — with the one saving that does exist already banked: run to
+run in the same worktree the build's own buildinfo takes it from 91.5 s to 33.9 s of user CPU, which
+is the shared cache above doing its job.
+
 ### Budget
 
 **CI < 4 min holds** (p95 176 s to the last job; the 1440 s `updated_at` p95 is explained above).
