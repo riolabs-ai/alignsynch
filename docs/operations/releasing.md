@@ -151,6 +151,27 @@ One thing to expect rather than debug: the `production` block of a pre-cut recor
 production serves _now_ — the previous release. It is a measurement, not a claim about what you are
 about to ship. Step 7 is the proof of the new version.
 
+**`--tag-only` runs this step itself, and will not call the cut done without it (#961).** A tag is
+immutable, so the record _on_ a tag is a snapshot of whenever the tree was last measured: v1.17.0 was
+cut with `--tag-only`, the file on the tag read `tree.packageVersion 1.15.0`, and `/admin/health` —
+which renders the **committed** record — named the previous release as current until a separate
+re-record landed. That step was skipped once and cost three cards and one duplicate. So after
+publishing the tag the cut runs
+
+```bash
+pnpm health:record --db --gate --carry --ci <the completed UTC day>
+node scripts/release-record.mjs check <version> <the commit the tag sits on> --since <when the step began>
+```
+
+and the second command is the invariant: the record it wrote must name `tree.packageVersion` as this
+version, `tree.latestTag` as `v<version>`, `tree.headSha` as the commit the tag sits on, and a
+`recordedAt` from this run rather than a carried one. A record that says anything else exits non-zero
+with each disagreement named — a cut that exits 0 over a stale record is worse than one that fails —
+and the file is left **uncommitted**, because landing it is its own `chore(health): re-record platform
+health at v<version>` pull request. On a machine without the demo branch's credentials,
+`bash scripts/release.sh --tag-only <version> --no-record` publishes the tag, runs no recorder, prints
+that exact command and exits 0 saying the record is owed: the escape is explicit, never silent.
+
 ### 6. Cut the release
 
 One rule above the two shapes: the tag is created before anything is deployed, or the version badge
@@ -168,6 +189,11 @@ merge commit:
 ```bash
 bash scripts/release.sh --tag-only 1.7.0
 ```
+
+`--tag-only` ends by re-recording the platform health and holding the record it wrote to the version it
+just tagged (step 5), so the cut is not done while `/admin/health` still names the previous release.
+A machine without the demo branch's credentials uses `--no-record`, which prints the command instead
+of running it.
 
 Then the release mail — with the key hydrated at call time, because a spawned shell has no
 `RESEND_API_KEY`:

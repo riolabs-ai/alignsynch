@@ -260,9 +260,13 @@ describe("--dry-run for a pre-release", () => {
 });
 
 describe("--tag-only for a pre-release", () => {
+  // Every cut ends by re-recording the platform health and refusing to be called done over a record
+  // that disagrees (#961). That step needs the demo branch's credentials and the real recorder, so
+  // these cases opt out with `--no-record` — the record step has its own file,
+  // `tests/release-record-step.test.ts`, which plays the recorder with a shim.
   it("publishes with --prerelease and reads the flag back", () => {
     const p = probe({ remote: true });
-    const run = release(p, ["--tag-only", RC]);
+    const run = release(p, ["--tag-only", RC, "--no-record"]);
 
     expect(run.status).toBe(0);
     expect(run.stderr).not.toContain("release:");
@@ -278,7 +282,7 @@ describe("--tag-only for a pre-release", () => {
   });
 
   it("fails when the flag did not take, instead of calling the cut done", () => {
-    const run = release(probe({ remote: true }), ["--tag-only", RC], "false");
+    const run = release(probe({ remote: true }), ["--tag-only", RC, "--no-record"], "false");
     expect(run.status).toBe(1);
     expect(run.stderr).toContain("isPrerelease=false, expected true");
   });
@@ -288,7 +292,7 @@ describe("--tag-only for a pre-release", () => {
     // below it. A parser that only understood `[x.y.z]: ` would append it to the notes.
     const changelog = `# Changelog\n\n${RC_ENTRY}\n\n[${RC}]: https://example.test/releases/tag/v${RC}\n`;
     const p = probe({ changelog, remote: true });
-    const run = release(p, ["--tag-only", RC]);
+    const run = release(p, ["--tag-only", RC, "--no-record"]);
 
     expect(run.status).toBe(0);
     expect(readFileSync(p.ghNotes, "utf8")).toBe(`${RC_ENTRY}\n`);
@@ -297,7 +301,7 @@ describe("--tag-only for a pre-release", () => {
   it("publishes a final version as a final release", () => {
     const changelog = `# Changelog\n\n${FINAL_ENTRY}\n\n[1.1.0]: https://example.test/releases/tag/v1.1.0\n`;
     const p = probe({ version: "1.1.0", changelog, entry: FINAL_ENTRY, remote: true });
-    const run = release(p, ["--tag-only", "1.1.0"], "false");
+    const run = release(p, ["--tag-only", "1.1.0", "--no-record"], "false");
 
     expect(run.status).toBe(0);
     const argv = readFileSync(p.ghLog, "utf8");
