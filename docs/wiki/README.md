@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Code wiki** › Code wiki index · next [Getting started](getting-started.md)
+[Docs hub](../README.md) › **Code wiki** › Code wiki index · prev [lib/member](modules/lib-member.md)
 
 <!-- docs-nav:end -->
 
@@ -17,7 +17,7 @@ the authored source, the database is their mirror, and the gate never needs a co
 
 This directory is reference documentation (what the code is and how a request becomes a page). The
 rules a change must obey are in [`AGENTS.md`](../../AGENTS.md); the gate's numbers are in
-[`docs/GATE.md`](../GATE.md).
+[`docs/operations/gate.md`](../operations/gate.md).
 
 ## Key concepts
 
@@ -103,10 +103,10 @@ Node 24, `pnpm install --frozen-lockfile`, `pnpm dev`. See [getting-started.md](
 - No coverage of `lib/quizhub/` — a vendored static template drop that is gitignored, absent from a
   fresh clone, and imported by nothing.
 - No database migration history: [`db/migrations/`](../../db/migrations) is 39 numbered SQL files and
-  [`docs/DATA-MODEL.md`](../DATA-MODEL.md) already narrates them.
+  [`docs/reference/data-model.md`](../reference/data-model.md) already narrates them.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Code wiki** › Code wiki index · next [Getting started](getting-started.md)
+[Docs hub](../README.md) › **Code wiki** › Code wiki index · prev [lib/member](modules/lib-member.md)
 
 <!-- docs-nav:end -->

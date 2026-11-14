@@ -1,7 +1,7 @@
 /**
  * island-refs — the fixtures a component writes into itself.
  *
- * `docs/P2-INVENTORY.md` counted 68 literals in WU-3 alone: a search page carrying 8 quizzes,
+ * `docs/operations/history/P2-INVENTORY.md` counted 68 literals in WU-3 alone: a search page carrying 8 quizzes,
  * 6 categories, 4 creators and 4 pages, plus a chat component carrying 5 contacts and 6
  * messages. None of those rows existed in `data/`; none of them could be edited by changing a
  * fixture. Two checks make that shape impossible to reintroduce:

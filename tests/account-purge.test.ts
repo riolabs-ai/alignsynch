@@ -1,7 +1,7 @@
 /**
  * The account-deletion sweep, with no database (#278).
  *
- * `docs/ACCOUNT-DELETION-SPEC.md` §7 is the plan; these cases hold the two properties the plan
+ * `docs/specs/account-deletion-spec.md` §7 is the plan; these cases hold the two properties the plan
  * exists for, and they are the two a reader cannot check by reading the file top to bottom:
  *
  *   - **the order**, which is load-bearing in three places (a complete session must not be voided;

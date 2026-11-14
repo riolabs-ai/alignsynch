@@ -30,7 +30,7 @@
  * Not here: the testimonial records (success-stories' `stories`, why-partner's `testimonials` —
  * quote/author/role/earnings/rating/avatar) and the `alt` text. A repeated row that is really a
  * record has no schema in P2; those arrays stay in their components and are left for a later
- * fixture (the `Testimonial` row named in `docs/P2-INVENTORY.md`).
+ * fixture (the `Testimonial` row named in `docs/operations/history/P2-INVENTORY.md`).
  */
 import { brand } from "../brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";

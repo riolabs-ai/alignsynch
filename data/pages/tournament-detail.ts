@@ -4,7 +4,7 @@
  * **No tournament domain here.** The record the page renders (`Tournament` in
  * `components/tournaments/tournament-detail.tsx`) is the mock object it always was:
  * no `Tournament` entity in `content/`, no bracket type, no standings collection.
- * The direction the card chose is the one recorded in `docs/DATA-MODEL.md` —
+ * The direction the card chose is the one recorded in `docs/reference/data-model.md` —
  * tournaments stay out of scope in P2, so this route gets **copy, not records**. A
  * value the page reads off its record is written here as a `{placeholder}` and
  * filled by `fillLabel`, never copied out of the record and never typed twice.

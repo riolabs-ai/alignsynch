@@ -1,5 +1,5 @@
 /**
- * The nine proofs `docs/ACCOUNT-DELETION-SPEC.md` §7 asks for, against a **live branch** (#278).
+ * The nine proofs `docs/specs/account-deletion-spec.md` §7 asks for, against a **live branch** (#278).
  *
  * Eight are the matrix §7 tabulates. The ninth is the one that matrix was missing and t_091acbc0's
  * T9 measured: a scrub that fails after the auth user is gone must be **resumable**, with the
@@ -8,7 +8,7 @@
  * real auth user to delete.
  *
  * Skipped unless `DATABASE_URL`, `NEON_AUTH_BASE_URL` and `NEON_PROJECT_ID` are set, so the gate
- * (which has no connection string, by design — `docs/GATE.md`) stays database-free and this file
+ * (which has no connection string, by design — `docs/operations/gate.md`) stays database-free and this file
  * costs it nothing. Run it against the **demo** branch only:
  *
  *     DATABASE_URL=<demo unpooled url> NEON_AUTH_BASE_URL=<demo auth url> \

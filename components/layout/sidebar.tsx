@@ -380,7 +380,7 @@ export function AppSidebar({
                * **Why the 64 px column still crops.** The square asset a rail that narrow should
                * draw is `brand.icon`, and on this build that file is the template's open-book
                * glyph on the brand's blue: `lib/brand-icon.ts` carries one geometry for every
-               * brand, by the shape rule `docs/BRAND-RELEASE.md` states ("identical geometry,
+               * brand, by the shape rule `docs/operations/brand-release.md` states ("identical geometry,
                * different token"), and `tests/brand-immutable.test.ts` holds its bytes. A book in
                * an alignment rail is a worse answer than a cropped monogram, so the window stays
                * until AlignSynch has a square icon of its own — the handoff names that asset as
@@ -461,7 +461,7 @@ export function AppSidebar({
            * positioned handle takes no width from the row, so the search beside it can neither be
            * pushed aside nor covered, and the handle can never be pushed off the rail. The 12px
            * that crosses the border lands in the header's own gutter, and the search starts beyond
-           * it at every width (`docs/qa-rail-handle/measurements.json` carries the x-coordinates).
+           * it at every width (`docs/qa/rail-handle/measurements.json` carries the x-coordinates).
            *
            * `hidden md:inline-flex`: below `md` the rail is an overlay drawer whose width is the
            * viewport's business, so a control that narrows it means nothing — and half a handle

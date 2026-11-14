@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.18.0](v1-18-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.0.0](v1-0-0.md)
 
 <!-- docs-nav:end -->
 
@@ -222,6 +222,6 @@ history should read v1.3.0 (the flow closes), v1.4.0 (the console and the audite
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.18.0](v1-18-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.0.0](v1-0-0.md)
 
 <!-- docs-nav:end -->

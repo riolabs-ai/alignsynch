@@ -7,235 +7,202 @@
       "blurb": "Read these before your first command.",
       "docs": [
         {
-          "path": "ENV-SPEC.md",
-          "title": "Environment & ops spec",
-          "question": "What is installed, what does the team own, and what did the P1–P4 gates demand?"
+          "path": "getting-started/demo-auth.md",
+          "title": "Demo auth",
+          "question": "How do the demo roles and the PIN gate work?"
         },
         {
-          "path": "ITERATION.md",
-          "title": "Iteration rhythm",
-          "question": "Which loop do I run for this edit — `check:fast` or the full gate?"
+          "path": "getting-started/demo.md",
+          "title": "The demo",
+          "question": "How is the demo branch built, reset and bundled?"
         },
         {
-          "path": "REPO-LAYERS.md",
-          "title": "Repo layers",
-          "question": "Why does the gate cost what my change costs, and which lane am I in?"
-        },
-        {
-          "path": "WORKFLOW.md",
+          "path": "getting-started/workflow.md",
           "title": "Request → release",
           "question": "How does an annotation become a versioned release, and how deep is this request?"
-        },
-        {
-          "path": "templates/RELEASE-TRAIN.md",
-          "title": "Release-train card template",
-          "question": "What does a release-train card carry — children, sequence, cutoff, proof?"
-        },
-        {
-          "path": "GATE.md",
-          "title": "The gate",
-          "question": "What does `scripts/verify.sh` run, in what order, and what are its current numbers?"
         }
       ]
     },
     {
-      "id": "architecture",
-      "title": "Architecture",
-      "blurb": "How the tree is put together, and why it is shaped that way.",
+      "id": "guides",
+      "title": "Guides",
+      "blurb": "How to do one thing well: templates, bundles, brand, models.",
       "docs": [
         {
-          "path": "DATA-MODEL.md",
-          "title": "Data model",
-          "question": "What is a record, an item, an answer — and where does the Gap live?"
-        },
-        {
-          "path": "TWO-PARTY-FLOW.md",
-          "title": "The two-party flow",
-          "question": "How do two people get from an invitation to a sealed Gap?"
-        },
-        {
-          "path": "STAGES.md",
-          "title": "Stages",
-          "question": "What are Invited, Connected, Sharing and Aligned, and who decides each?"
-        },
-        {
-          "path": "TEMPLATE-DOCTRINE.md",
-          "title": "Template doctrine",
-          "question": "When I add a screen, what existing surface is it a variation of?"
-        },
-        {
-          "path": "BRAND-RELEASE.md",
-          "title": "Two brands, one tree",
-          "question": "How does a brand version ship without moving parity?"
-        },
-        {
-          "path": "QUIZHUB-CAPABILITY-MAP.md",
-          "title": "QuizHub capability map",
-          "question": "What can a reader reach under the quiz expression, and what is each surface made of?"
-        },
-        {
-          "path": "UI-MAPPING.md",
-          "title": "Quiz-surface map",
-          "question": "Which quiz surface is this AlignSynch file a variation of?"
-        },
-        {
-          "path": "UI-DIVERGENCE.md",
-          "title": "Divergence table",
-          "question": "Where does each surface deliberately differ from its ancestor?"
-        },
-        {
-          "path": "UI-UX-AUDIT.md",
-          "title": "UI/UX audit",
-          "question": "What does the build follow, vary, or quietly diverge from in the purchased template?"
-        },
-        {
-          "path": "SPEC-DRIFT.md",
-          "title": "Spec drift",
-          "question": "Where has the build moved away from the specification, and is that deliberate?"
-        },
-        {
-          "path": "BUNDLES.md",
+          "path": "guides/bundles.md",
           "title": "Bundles",
           "question": "How does a template or a demo dataset travel as one versioned JSON file?"
+        },
+        {
+          "path": "guides/growth-model.md",
+          "title": "The growth model",
+          "question": "Where does the $3M demonstration business come from, and how is it proven?"
+        },
+        {
+          "path": "guides/mimo-guide.md",
+          "title": "MiMo harness guide",
+          "question": "How is the MiMo model wired, and what are its measured quirks?"
+        },
+        {
+          "path": "guides/template-doctrine.md",
+          "title": "Template doctrine",
+          "question": "When I add a screen, what existing surface is it a variation of?"
         }
       ]
     },
     {
-      "id": "wiki",
-      "title": "Code wiki",
-      "blurb": "A guided tour of the code, module by module.",
+      "id": "reference",
+      "title": "Reference",
+      "blurb": "The data model, the environment, the generated tables and the record of what the tree holds.",
       "docs": [
         {
-          "path": "wiki/README.md",
-          "title": "Code wiki index",
-          "question": "Where do I start reading the code?"
+          "path": "assets/screens/README.md",
+          "title": "Screenshot registry",
+          "question": "Which screenshot shows which surface, on which brand and viewport?"
         },
         {
-          "path": "wiki/getting-started.md",
-          "title": "Getting started",
-          "question": "What do I install and run to get a green tree?"
+          "path": "glossary.md",
+          "title": "Glossary",
+          "question": "What does this domain's vocabulary mean? Generated from the schema comments."
         },
         {
-          "path": "wiki/architecture.md",
-          "title": "Request lifecycle",
-          "question": "What happens to a request from the App Router down to Postgres?"
-        },
-        {
-          "path": "wiki/modules/app-mainlayout.md",
-          "title": "app/(mainlayout)",
-          "question": "What does the product route group own?"
-        },
-        {
-          "path": "wiki/modules/app-marketing.md",
-          "title": "app/(marketing)",
-          "question": "Which pages are public, and why do they never get the shell?"
-        },
-        {
-          "path": "wiki/modules/app-api.md",
-          "title": "app/api",
-          "question": "Which HTTP endpoints exist and what does each serve?"
-        },
-        {
-          "path": "wiki/modules/components.md",
-          "title": "components",
-          "question": "How is the UI organised, and what belongs in components/ui?"
-        },
-        {
-          "path": "wiki/modules/content.md",
-          "title": "content",
-          "question": "Where is the content model defined, and what derives from it?"
-        },
-        {
-          "path": "wiki/modules/data.md",
-          "title": "data",
-          "question": "Where do the fixtures live that every product route projects?"
-        },
-        {
-          "path": "wiki/modules/lib-db.md",
-          "title": "lib/db",
-          "question": "Where is SQL written, and how do rows map back to the model?"
-        },
-        {
-          "path": "wiki/modules/lib-flow.md",
-          "title": "lib/flow",
-          "question": "What drives the two-party session end to end?"
-        },
-        {
-          "path": "wiki/modules/lib-member.md",
-          "title": "lib/member",
-          "question": "What does the initiator's side own?"
-        },
-        {
-          "path": "wiki/modules/lib-admin.md",
-          "title": "lib/admin",
-          "question": "How does an operator action pass the write gate?"
-        },
-        {
-          "path": "wiki/diagrams/class-diagram.md",
-          "title": "Class diagram",
-          "question": "How do a quiz and an assessment share one record root?"
-        },
-        {
-          "path": "wiki/diagrams/sequences.md",
-          "title": "Sequence walks",
-          "question": "What does a traced request look like, step by step?"
-        }
-      ]
-    },
-    {
-      "id": "product",
-      "title": "Product",
-      "blurb": "What the product promises, and the specifications behind it.",
-      "docs": [
-        {
-          "path": "pay-to-complete/README.md",
-          "title": "Pay-to-complete set",
-          "question": "What is in the v1.6.0 document set, and in what order do I read it?"
-        },
-        {
-          "path": "pay-to-complete/PRD.md",
-          "title": "PRD",
-          "question": "Why is a relationship paid for once, at completion?"
-        },
-        {
-          "path": "pay-to-complete/SPEC.md",
-          "title": "Technical spec",
-          "question": "What exactly is the payment obligation, in code terms?"
-        },
-        {
-          "path": "pay-to-complete/ADR.md",
-          "title": "ADR",
-          "question": "Which choice was made, what alternative did it beat, and what does it cost?"
-        },
-        {
-          "path": "pay-to-complete/RESEARCH.md",
-          "title": "Research",
-          "question": "What does the tree do today, and what does the industry do?"
-        },
-        {
-          "path": "pay-to-complete/COPY-INVENTORY.md",
-          "title": "Payer copy inventory",
-          "question": "Which payer strings already exist, at which line, and which are still unwritten?"
-        },
-        {
-          "path": "pay-to-complete/PAYER-PRESENT.md",
-          "title": "Payer-present state",
-          "question": "What does the spec actually say about a charge that needs the payer, and which of its strings may a mockup quote?"
-        },
-        {
-          "path": "billing.md",
+          "path": "reference/billing.md",
           "title": "Billing",
           "question": "How are the two billing drivers wired, and where is the pricing CTA?"
         },
         {
-          "path": "ACCOUNT-DELETION-SPEC.md",
-          "title": "Account deletion",
-          "question": "What happens to a shared record when one person deletes their account?"
+          "path": "reference/data-model.md",
+          "title": "Data model",
+          "question": "What is a record, an item, an answer — and where does the Gap live?"
         },
         {
-          "path": "specs/README.md",
-          "title": "Specifications index",
-          "question": "What are these research specs, and what do they have in common?"
+          "path": "reference/env-spec.md",
+          "title": "Environment & ops spec",
+          "question": "What is installed, what does the team own, and what did the P1–P4 gates demand?"
+        },
+        {
+          "path": "reference/mockup-index.md",
+          "title": "Reference mockups",
+          "question": "What did the specification's own mockups look like?"
+        },
+        {
+          "path": "reference/provenance.md",
+          "title": "Legal provenance",
+          "question": "Where did `/terms` and `/privacy` come from, and what was cut?"
+        },
+        {
+          "path": "reference/quizhub-capability-map.md",
+          "title": "QuizHub capability map",
+          "question": "What can a reader reach under the quiz expression, and what is each surface made of?"
+        },
+        {
+          "path": "reference/relationship-types-source.md",
+          "title": "Relationship types",
+          "question": "What did the owner actually supply as the catalogue, before anyone edited it?"
+        },
+        {
+          "path": "ui-registry.md",
+          "title": "UI registry",
+          "question": "Which surface is this, and may a template reuse it? Generated from the tree."
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "title": "Operations",
+      "blurb": "The gate, releasing, deploying, iteration and the history behind them.",
+      "docs": [
+        {
+          "path": "operations/branch-triage.md",
+          "title": "Branch triage",
+          "question": "Which of the non-main heads is safe, and on what evidence?"
+        },
+        {
+          "path": "operations/brand-release.md",
+          "title": "Two brands, one tree",
+          "question": "How does a brand version ship without moving parity?"
+        },
+        {
+          "path": "operations/deploying.md",
+          "title": "Deploying",
+          "question": "How does this repository reach `alignsynch.com`?"
+        },
+        {
+          "path": "operations/gate.md",
+          "title": "The gate",
+          "question": "What does `scripts/verify.sh` run, in what order, and what are its current numbers?"
+        },
+        {
+          "path": "operations/history/p1-migration/MIGRATION.md",
+          "title": "P1 migration",
+          "question": "What did the P1 content model change, field by field?"
+        },
+        {
+          "path": "operations/history/P2-INVENTORY.md",
+          "title": "P2 inventory",
+          "question": "Which hardcoded strings and media paths does templatisation have to cover?"
+        },
+        {
+          "path": "operations/history/P3-EXIT.md",
+          "title": "P3 exit record",
+          "question": "Did bulk generation meet its gate, and with what numbers?"
+        },
+        {
+          "path": "operations/history/V1-PROTOTYPE.md",
+          "title": "V1 prototype",
+          "question": "What is the clickable `/v1/**` prototype, and who is it for?"
+        },
+        {
+          "path": "operations/history/V1-RETIREMENT.md",
+          "title": "V1 retirement",
+          "question": "What happened to every `/v1` item?"
+        },
+        {
+          "path": "operations/iteration.md",
+          "title": "Iteration rhythm",
+          "question": "Which loop do I run for this edit — `check:fast` or the full gate?"
+        },
+        {
+          "path": "operations/orchestration.md",
+          "title": "Orchestration rules",
+          "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
+        },
+        {
+          "path": "operations/release-train.md",
+          "title": "Release-train card template",
+          "question": "What does a release-train card carry — children, sequence, cutoff, proof?"
+        },
+        {
+          "path": "operations/releasing.md",
+          "title": "Releasing",
+          "question": "Which four artefacts must agree for a release, and how is the tag cut?"
+        },
+        {
+          "path": "operations/repo-layers.md",
+          "title": "Repo layers",
+          "question": "Why does the gate cost what my change costs, and which lane am I in?"
+        },
+        {
+          "path": "operations/resend-inbound.md",
+          "title": "Resend inbound",
+          "question": "How do bounces, complaints and suppression marks reach us?"
+        },
+        {
+          "path": "operations/spec-drift.md",
+          "title": "Spec drift",
+          "question": "Where has the build moved away from the specification, and is that deliberate?"
+        }
+      ]
+    },
+    {
+      "id": "specs",
+      "title": "Specs & design briefs",
+      "blurb": "What the product promises, written down before it was built.",
+      "docs": [
+        {
+          "path": "specs/account-deletion-spec.md",
+          "title": "Account deletion",
+          "question": "What happens to a shared record when one person deletes their account?"
         },
         {
           "path": "specs/catalogue.md",
@@ -263,9 +230,179 @@
           "question": "Which fields does the relationship-maintenance form carry?"
         },
         {
+          "path": "specs/pay-to-complete/ADR.md",
+          "title": "ADR",
+          "question": "Which choice was made, what alternative did it beat, and what does it cost?"
+        },
+        {
+          "path": "specs/pay-to-complete/COPY-INVENTORY.md",
+          "title": "Payer copy inventory",
+          "question": "Which payer strings already exist, at which line, and which are still unwritten?"
+        },
+        {
+          "path": "specs/pay-to-complete/PAYER-PRESENT.md",
+          "title": "Payer-present state",
+          "question": "What does the spec actually say about a charge that needs the payer, and which of its strings may a mockup quote?"
+        },
+        {
+          "path": "specs/pay-to-complete/PRD.md",
+          "title": "PRD",
+          "question": "Why is a relationship paid for once, at completion?"
+        },
+        {
+          "path": "specs/pay-to-complete/README.md",
+          "title": "Pay-to-complete set",
+          "question": "What is in the v1.6.0 document set, and in what order do I read it?"
+        },
+        {
+          "path": "specs/pay-to-complete/RESEARCH.md",
+          "title": "Research",
+          "question": "What does the tree do today, and what does the industry do?"
+        },
+        {
+          "path": "specs/pay-to-complete/SPEC.md",
+          "title": "Technical spec",
+          "question": "What exactly is the payment obligation, in code terms?"
+        },
+        {
+          "path": "specs/prototype-save.md",
+          "title": "Prototype copy saves",
+          "question": "Where a reviewer's in-page copy edits go when they press Save, and what the implementation reads from them?"
+        },
+        {
+          "path": "specs/prototype-wiring.md",
+          "title": "Prototype wiring",
+          "question": "What of the one prototype screen moves into the build, and in what order?"
+        },
+        {
+          "path": "specs/README.md",
+          "title": "Specifications index",
+          "question": "What are these research specs, and what do they have in common?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/ASSET-SOURCES.md",
+          "title": "AS2 redesign — asset sources and credits",
+          "question": "Where did each photograph come from, who took it, and under which licence?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md",
+          "title": "AS2 home redesign — implementation brief",
+          "question": "Which existing components does the redesign reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-as2-style-home-redesign/README.md",
+          "title": "AS2 home redesign (handoff)",
+          "question": "What is in the approved home-redesign package, and how do I preview it?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md",
+          "title": "AS2 catalogue UI system",
+          "question": "What are the reusable realm tints, icon map, card anatomy and detail order?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md",
+          "title": "AS2 templates redesign — implementation brief",
+          "question": "Which existing components does the catalogue rewrite reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/README.md",
+          "title": "AS2 templates redesign (handoff)",
+          "question": "What is in the approved Templates-catalogue package, and how do I preview it?"
+        },
+        {
+          "path": "specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md",
+          "title": "AS2 templates redesign — source notes",
+          "question": "Which live routes, fixtures and assets did the approved catalogue read from?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/admin-brand/README.md",
+          "title": "/admin/brand (V2 package)",
+          "question": "Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/banner/README.md",
+          "title": "Admin notice banner (V2 package)",
+          "question": "Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/brand-profile/README.md",
+          "title": "V2 brand and audience profile (handoff)",
+          "question": "How do I open the private brand profile, and which sections does it carry?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md",
+          "title": "V2 home page — asset sources and credits",
+          "question": "Where did each V2 home-page photograph come from, and under which licence?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md",
+          "title": "V2 home page — implementation brief",
+          "question": "Which components, tokens and fixtures does the V2 home page reuse, and what must not change?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/home/README.md",
+          "title": "V2 home page (handoff)",
+          "question": "How do I preview the V2 home page, and which files make it up?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates-v2/README.md",
+          "title": "V2 home and brand package (handoff)",
+          "question": "What is in the V2 package, which files ship with it, and what is it authoritative for?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates/README.md",
+          "title": "Brand & audience profile page (handoff)",
+          "question": "How do I preview the brand and audience profile page, and in what order does it place the audiences?"
+        },
+        {
+          "path": "specs/spec-help-center/GLOSSARY-CONTENT-MAP.md",
+          "title": "Glossary source map",
+          "question": "Which 2024 glossary terms feed the public Help page, and how is each editorial decision recorded?"
+        },
+        {
+          "path": "specs/spec-help-center/IMPLEMENTATION-BRIEF.md",
+          "title": "Help Center — implementation brief",
+          "question": "Which route does the Help Center redesign target, which files drive it, and what must not change?"
+        },
+        {
+          "path": "specs/spec-help-center/README.md",
+          "title": "Help Center design spec (handoff)",
+          "question": "How do I preview the Help Center, and which three files make up the page?"
+        },
+        {
+          "path": "specs/stages.md",
+          "title": "Stages",
+          "question": "What are Invited, Connected, Sharing and Aligned, and who decides each?"
+        },
+        {
+          "path": "specs/two-party-flow.md",
+          "title": "The two-party flow",
+          "question": "How do two people get from an invitation to a sealed Gap?"
+        },
+        {
+          "path": "specs/ui-divergence.md",
+          "title": "Divergence table",
+          "question": "Where does each surface deliberately differ from its ancestor?"
+        },
+        {
+          "path": "specs/ui-mapping.md",
+          "title": "Quiz-surface map",
+          "question": "Which quiz surface is this AlignSynch file a variation of?"
+        },
+        {
+          "path": "specs/ui-ux-audit.md",
+          "title": "UI/UX audit",
+          "question": "What does the build follow, vary, or quietly diverge from in the purchased template?"
+        },
+        {
           "path": "specs/ux-input.md",
           "title": "Answer input",
           "question": "How does a person answer — scale, labels, semantics?"
+        },
+        {
+          "path": "specs/ux-reference-patterns.md",
+          "title": "Reference UX patterns",
+          "question": "What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?"
         },
         {
           "path": "specs/ux-report.md",
@@ -276,230 +413,280 @@
           "path": "specs/ux-stages.md",
           "title": "Stage display",
           "question": "How is each stage shown, and who acts next?"
+        }
+      ]
+    },
+    {
+      "id": "records",
+      "title": "Records & QA",
+      "blurb": "What was measured, on which tree, and what it looked like.",
+      "docs": [
+        {
+          "path": "qa/542-phase2/README.md",
+          "title": "#542 phase 2",
+          "question": "Is the rail role-constrained data, with focused-flow chrome?"
         },
         {
-          "path": "specs/ux-reference-patterns.md",
-          "title": "Reference UX patterns",
-          "question": "What does the product's own UX look like as a measured pattern set — tokens, shell, nine screens?"
+          "path": "qa/957-assessment-one-click/README.md",
+          "title": "One-click create on /assessment, #957",
+          "question": "Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?"
         },
         {
-          "path": "specs/spec-as2-style-home-redesign/README.md",
-          "title": "AS2 home redesign (handoff)",
-          "question": "What is in the approved home-redesign package, and how do I preview it?"
+          "path": "qa/958-no-initiator-member/README.md",
+          "title": "A relationship with no initiator member, #958",
+          "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
         },
         {
-          "path": "specs/spec-as2-style-home-redesign/IMPLEMENTATION-PROMPT.md",
-          "title": "AS2 home redesign — implementation brief",
-          "question": "Which existing components does the redesign reuse, and what must not change?"
+          "path": "qa/971-tiles/README.md",
+          "title": "The welcome tiles on /register too, #971",
+          "question": "Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?"
         },
         {
-          "path": "specs/spec-as2-style-home-redesign/ASSET-SOURCES.md",
-          "title": "AS2 redesign — asset sources and credits",
-          "question": "Where did each photograph come from, who took it, and under which licence?"
+          "path": "qa/975-detail-identity/README.md",
+          "title": "The relationship detail's identity, #975",
+          "question": "Does the detail page say whose relationship it is and which one — its own title and both names, one role per screen?"
         },
         {
-          "path": "specs/spec-design-page-rel-templates-v2/README.md",
-          "title": "V2 home and brand package (handoff)",
-          "question": "What is in the V2 package, which files ship with it, and what is it authoritative for?"
+          "path": "qa/976-sent-none/README.md",
+          "title": "The Sent screen with no invitation row, #976",
+          "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
         },
         {
-          "path": "specs/spec-design-page-rel-templates-v2/home/README.md",
-          "title": "V2 home page (handoff)",
-          "question": "How do I preview the V2 home page, and which files make it up?"
+          "path": "qa/979-flow-dialog/README.md",
+          "title": "The create flow as a dialog over the relationships page, #979",
+          "question": "Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?"
         },
         {
-          "path": "specs/spec-design-page-rel-templates-v2/home/IMPLEMENTATION-PROMPT.md",
-          "title": "V2 home page — implementation brief",
-          "question": "Which components, tokens and fixtures does the V2 home page reuse, and what must not change?"
+          "path": "qa/979-flow-entries/README.md",
+          "title": "Every in-product Create door opens the flow in place, #979",
+          "question": "Do all seven wizard-route entry points open the same flow over the page they were pressed on, at 1440 and 390, while a marketing entry and an empty state still navigate?"
         },
         {
-          "path": "specs/spec-design-page-rel-templates-v2/home/ASSET-SOURCES.md",
-          "title": "V2 home page — asset sources and credits",
-          "question": "Where did each V2 home-page photograph come from, and under which licence?"
-        },
-        {
-          "path": "specs/spec-design-page-rel-templates-v2/brand-profile/README.md",
-          "title": "V2 brand and audience profile (handoff)",
-          "question": "How do I open the private brand profile, and which sections does it carry?"
-        },
-        {
-          "path": "specs/spec-design-page-rel-templates-v2/banner/README.md",
-          "title": "Admin notice banner (V2 package)",
-          "question": "Where does the admin notice bar sit, what offsets does it move, how tall is it at each viewport, and who may see it?"
-        },
-        {
-          "path": "specs/spec-design-page-rel-templates-v2/admin-brand/README.md",
-          "title": "/admin/brand (V2 package)",
-          "question": "Which eleven sections does the brand profile page clone, how is it gated, where does its copy live, and which mockup colours the token layer cannot express?"
-        },
-        {
-          "path": "specs/spec-as2-style-templates-redesign/README.md",
-          "title": "AS2 templates redesign (handoff)",
-          "question": "What is in the approved Templates-catalogue package, and how do I preview it?"
-        },
-        {
-          "path": "specs/spec-as2-style-templates-redesign/IMPLEMENTATION-PROMPT.md",
-          "title": "AS2 templates redesign — implementation brief",
-          "question": "Which existing components does the catalogue rewrite reuse, and what must not change?"
-        },
-        {
-          "path": "specs/spec-as2-style-templates-redesign/CATALOG-UI-SYSTEM.md",
-          "title": "AS2 catalogue UI system",
-          "question": "What are the reusable realm tints, icon map, card anatomy and detail order?"
-        },
-        {
-          "path": "specs/spec-as2-style-templates-redesign/SOURCE-NOTES.md",
-          "title": "AS2 templates redesign — source notes",
-          "question": "Which live routes, fixtures and assets did the approved catalogue read from?"
-        },
-        {
-          "path": "qa-as2-home/README.md",
+          "path": "qa/as2-home/README.md",
           "title": "AS2 home visual QA",
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"
         },
         {
-          "path": "qa-templates-redesign/README.md",
-          "title": "AS2 templates catalogue visual QA",
-          "question": "Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?"
+          "path": "qa/brand-lockup/README.md",
+          "title": "Brand lockup",
+          "question": "Is the lockup back in the chrome, at a seal's size?"
         },
         {
-          "path": "qa-home-comments/README.md",
+          "path": "qa/comments-mockup/README.md",
+          "title": "Comments mockup, both placements",
+          "question": "Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?"
+        },
+        {
+          "path": "qa/contact-land/README.md",
+          "title": "Contact landing",
+          "question": "What do the contact pages look like?"
+        },
+        {
+          "path": "qa/docs-pretty/README.md",
+          "title": "The docs before and after formatting, #937",
+          "question": "Does an /admin/docs article render the tables and alerts it is written in, at 1440 and at 390?"
+        },
+        {
+          "path": "qa/flow-stages/README.md",
+          "title": "Six flow stages",
+          "question": "Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?"
+        },
+        {
+          "path": "qa/flow-validation/2026-11-07.md",
+          "title": "Flow validation, 2026-11-07",
+          "question": "Does the assessment flow work end to end with two real identities?"
+        },
+        {
+          "path": "qa/help-two-column/README.md",
+          "title": "Help two-column",
+          "question": "Did `/help` get its two-column layout?"
+        },
+        {
+          "path": "qa/home-comments/README.md",
           "title": "Home review comments — the logo",
           "question": "Is the public header's brand lockup a link home, and what did the page look like before it was?"
         },
         {
-          "path": "specs/spec-design-page-rel-templates/README.md",
-          "title": "Brand & audience profile page (handoff)",
-          "question": "How do I preview the brand and audience profile page, and in what order does it place the audiences?"
+          "path": "qa/home-polish/README.md",
+          "title": "Home hero polish",
+          "question": "Were the six hero defects fixed, before and after?"
         },
         {
-          "path": "specs/spec-help-center/README.md",
-          "title": "Help Center design spec (handoff)",
-          "question": "How do I preview the Help Center, and which three files make up the page?"
+          "path": "qa/lockup-2rem/README.md",
+          "title": "Lockup 2rem",
+          "question": "Is the lockup 2rem in every expanded-header viewport?"
         },
         {
-          "path": "specs/spec-help-center/IMPLEMENTATION-BRIEF.md",
-          "title": "Help Center — implementation brief",
-          "question": "Which route does the Help Center redesign target, which files drive it, and what must not change?"
+          "path": "qa/noun-crud/README.md",
+          "title": "Templates and relationships after creation",
+          "question": "Can a template be revised and retired, and does a bound relationship keep the version it was answered under?"
         },
         {
-          "path": "specs/spec-help-center/GLOSSARY-CONTENT-MAP.md",
-          "title": "Glossary source map",
-          "question": "Which 2024 glossary terms feed the public Help page, and how is each editorial decision recorded?"
-        }
-      ]
-    },
-    {
-      "id": "operations",
-      "title": "Operations",
-      "blurb": "Deploying, releasing, demoing and running the fleet.",
-      "docs": [
-        {
-          "path": "DEPLOYING.md",
-          "title": "Deploying",
-          "question": "How does this repository reach `alignsynch.com`?"
+          "path": "qa/payment/README.md",
+          "title": "Payment capture & completion",
+          "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
         },
         {
-          "path": "RELEASING.md",
-          "title": "Releasing",
-          "question": "Which four artefacts must agree for a release, and how is the tag cut?"
+          "path": "qa/qa-dogfood-p4.md",
+          "title": "P4 dogfood pass",
+          "question": "Did every route answer, on a production build?"
         },
         {
-          "path": "ORCHESTRATION.md",
-          "title": "Orchestration rules",
-          "question": "How does the orchestrator behave — decisions, blocking, re-carding?"
-        },
-        {
-          "path": "QA-LINKS.md",
+          "path": "qa/qa-links.md",
           "title": "QA links",
           "question": "Which local routes do I click to QA this change range, and what will each one cost me?"
         },
         {
-          "path": "BRANCH-TRIAGE.md",
-          "title": "Branch triage",
-          "question": "Which of the non-main heads is safe, and on what evidence?"
+          "path": "qa/rail-handle/README.md",
+          "title": "Rail collapse handle",
+          "question": "Does the width control toggle from the rail's border, and is the icon rail coherent?"
         },
         {
-          "path": "DEMO.md",
-          "title": "The demo",
-          "question": "How is the demo branch built, reset and bundled?"
+          "path": "qa/recharts-3/README.md",
+          "title": "recharts 3",
+          "question": "Do the pie labels still render after the recharts 3 bump?"
         },
         {
-          "path": "DEMO-AUTH.md",
-          "title": "Demo auth",
-          "question": "How do the demo roles and the PIN gate work?"
+          "path": "qa/rel-detail-edit/README.md",
+          "title": "Relationship detail — the edit form is asked for",
+          "question": "Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?"
         },
         {
-          "path": "GROWTH-MODEL.md",
-          "title": "The growth model",
-          "question": "Where does the $3M demonstration business come from, and how is it proven?"
+          "path": "qa/stage5/README.md",
+          "title": "Stage 5, both states",
+          "question": "Does stage 5 offer the payment walk and send/draft instead of a band with no action?"
         },
         {
-          "path": "RESEND-INBOUND.md",
-          "title": "Resend inbound",
-          "question": "How do bounces, complaints and suppression marks reach us?"
+          "path": "qa/surface-sweep-913/README.md",
+          "title": "Surface sweep, #913",
+          "question": "Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?"
         },
         {
-          "path": "P3-EXIT.md",
-          "title": "P3 exit record",
-          "question": "Did bulk generation meet its gate, and with what numbers?"
+          "path": "qa/swiper-12/README.md",
+          "title": "swiper 12",
+          "question": "Do the carousels survive swiper 11.2.7 → 12.2.0?"
+        },
+        {
+          "path": "qa/template-catalogue/README.md",
+          "title": "Template catalogue",
+          "question": "What do the catalogue pages look like from the AlignSynch build?"
+        },
+        {
+          "path": "qa/templates-redesign/README.md",
+          "title": "AS2 templates catalogue visual QA",
+          "question": "Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?"
+        },
+        {
+          "path": "qa/v1x-ui-cohort/README.md",
+          "title": "v1.x UI cohort",
+          "question": "Were all ten owner items measured in a real browser?"
+        },
+        {
+          "path": "qa-atlas/README.md",
+          "title": "QA atlas",
+          "question": "How is every registered surface captured, asserted and checked, and what is committed?"
+        },
+        {
+          "path": "qa-atlas/v1.17.0/index.md",
+          "title": "QA atlas — v1.17.0",
+          "question": "What did every registered surface render in v1.17.0, and did it read the record it claims?"
+        },
+        {
+          "path": "qa-atlas/v1.17.1/index.md",
+          "title": "QA atlas — the 1.17.1 tree (never released)",
+          "question": "What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?"
+        },
+        {
+          "path": "qa-atlas/v1.18.0/index.md",
+          "title": "QA atlas — v1.18.0",
+          "question": "What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?"
+        },
+        {
+          "path": "qa/welcome-copy/README.md",
+          "title": "The welcome panel's copy — the tagline and the Aspects/Opinions tiles",
+          "question": "Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?"
         }
       ]
     },
     {
-      "id": "reference",
-      "title": "Reference",
-      "blurb": "The generated tables, the owner's own material, and the records nothing else owns.",
+      "id": "wiki",
+      "title": "Code wiki",
+      "blurb": "A guided tour of the code, module by module.",
       "docs": [
         {
-          "path": "glossary.md",
-          "title": "Glossary",
-          "question": "What does this domain's vocabulary mean? Generated from the schema comments."
+          "path": "wiki/architecture.md",
+          "title": "Request lifecycle",
+          "question": "What happens to a request from the App Router down to Postgres?"
         },
         {
-          "path": "ui-registry.md",
-          "title": "UI registry",
-          "question": "Which surface is this, and may a template reuse it? Generated from the tree."
+          "path": "wiki/diagrams/class-diagram.md",
+          "title": "Class diagram",
+          "question": "How do a quiz and an assessment share one record root?"
         },
         {
-          "path": "RELATIONSHIP-TYPES-SOURCE.md",
-          "title": "Relationship types",
-          "question": "What did the owner actually supply as the catalogue, before anyone edited it?"
+          "path": "wiki/diagrams/sequences.md",
+          "title": "Sequence walks",
+          "question": "What does a traced request look like, step by step?"
         },
         {
-          "path": "REFERENCE-MOCKUPS.md",
-          "title": "Reference mockups",
-          "question": "What did the specification's own mockups look like?"
+          "path": "wiki/getting-started.md",
+          "title": "Getting started",
+          "question": "What do I install and run to get a green tree?"
         },
         {
-          "path": "MIMO-GUIDE.md",
-          "title": "MiMo harness guide",
-          "question": "How is the MiMo model wired, and what are its measured quirks?"
+          "path": "wiki/modules/app-api.md",
+          "title": "app/api",
+          "question": "Which HTTP endpoints exist and what does each serve?"
         },
         {
-          "path": "legal/PROVENANCE.md",
-          "title": "Legal provenance",
-          "question": "Where did `/terms` and `/privacy` come from, and what was cut?"
+          "path": "wiki/modules/app-mainlayout.md",
+          "title": "app/(mainlayout)",
+          "question": "What does the product route group own?"
         },
         {
-          "path": "PROTOTYPE-WIRING.md",
-          "title": "Prototype wiring",
-          "question": "What of the one prototype screen moves into the build, and in what order?"
+          "path": "wiki/modules/app-marketing.md",
+          "title": "app/(marketing)",
+          "question": "Which pages are public, and why do they never get the shell?"
         },
         {
-          "path": "P2-INVENTORY.md",
-          "title": "P2 inventory",
-          "question": "Which hardcoded strings and media paths does templatisation have to cover?"
+          "path": "wiki/modules/components.md",
+          "title": "components",
+          "question": "How is the UI organised, and what belongs in components/ui?"
         },
         {
-          "path": "V1-PROTOTYPE.md",
-          "title": "V1 prototype",
-          "question": "What is the clickable `/v1/**` prototype, and who is it for?"
+          "path": "wiki/modules/content.md",
+          "title": "content",
+          "question": "Where is the content model defined, and what derives from it?"
         },
         {
-          "path": "PROTOTYPE-SAVE.md",
-          "title": "Prototype copy saves",
-          "question": "Where a reviewer's in-page copy edits go when they press Save, and what the implementation reads from them?"
+          "path": "wiki/modules/data.md",
+          "title": "data",
+          "question": "Where do the fixtures live that every product route projects?"
+        },
+        {
+          "path": "wiki/modules/lib-admin.md",
+          "title": "lib/admin",
+          "question": "How does an operator action pass the write gate?"
+        },
+        {
+          "path": "wiki/modules/lib-db.md",
+          "title": "lib/db",
+          "question": "Where is SQL written, and how do rows map back to the model?"
+        },
+        {
+          "path": "wiki/modules/lib-flow.md",
+          "title": "lib/flow",
+          "question": "What drives the two-party session end to end?"
+        },
+        {
+          "path": "wiki/modules/lib-member.md",
+          "title": "lib/member",
+          "question": "What does the initiator's side own?"
+        },
+        {
+          "path": "wiki/README.md",
+          "title": "Code wiki index",
+          "question": "Where do I start reading the code?"
         }
       ]
     },
@@ -508,16 +695,6 @@
       "title": "Diagrams",
       "blurb": "The five Mermaid charts, one home each.",
       "docs": [
-        {
-          "path": "diagrams/lifecycle.md",
-          "title": "Lifecycle",
-          "question": "Which states can one relationship reach, and on what event?"
-        },
-        {
-          "path": "diagrams/payment.md",
-          "title": "Payment",
-          "question": "When is money owed, retried, or written off?"
-        },
         {
           "path": "diagrams/brand-boundary.md",
           "title": "Brand boundary",
@@ -532,6 +709,16 @@
           "path": "diagrams/gate.md",
           "title": "Gate",
           "question": "What path does a change take through the gate?"
+        },
+        {
+          "path": "diagrams/lifecycle.md",
+          "title": "Lifecycle",
+          "question": "Which states can one relationship reach, and on what event?"
+        },
+        {
+          "path": "diagrams/payment.md",
+          "title": "Payment",
+          "question": "When is money owed, retried, or written off?"
         }
       ]
     },
@@ -546,21 +733,6 @@
           "question": "What shipped in which release, and where does this page come from?"
         },
         {
-          "path": "changelog/v1-18-0.md",
-          "title": "v1.18.0",
-          "question": "Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?"
-        },
-        {
-          "path": "changelog/v1-17-0.md",
-          "title": "v1.17.0",
-          "question": "Which release made stage 5 a three-step payment walk, and what does it defer?"
-        },
-        {
-          "path": "changelog/v1-16-0.md",
-          "title": "v1.16.0",
-          "question": "Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?"
-        },
-        {
           "path": "changelog/v1-0-0.md",
           "title": "v1.0.0",
           "question": "The release where the webapp stopped being a mock."
@@ -569,6 +741,51 @@
           "path": "changelog/v1-1-0-rc1.md",
           "title": "v1.1.0-rc1",
           "question": "The release candidate that made the template a product."
+        },
+        {
+          "path": "changelog/v1-10-0.md",
+          "title": "v1.10.0",
+          "question": "The release where paying stopped leaving the page."
+        },
+        {
+          "path": "changelog/v1-11-0.md",
+          "title": "v1.11.0",
+          "question": "The release where the build drew what the review approved."
+        },
+        {
+          "path": "changelog/v1-12-0.md",
+          "title": "v1.12.0",
+          "question": "Which release moved the payment decision into the create flow, and what does it defer?"
+        },
+        {
+          "path": "changelog/v1-13-0.md",
+          "title": "v1.13.0",
+          "question": "Which release turned the templates page into a directory, and gave every template a page?"
+        },
+        {
+          "path": "changelog/v1-14-0.md",
+          "title": "v1.14.0",
+          "question": "Which release moved the catalogue onto the relationship noun, and put the plan's price on every card?"
+        },
+        {
+          "path": "changelog/v1-15-0.md",
+          "title": "v1.15.0",
+          "question": "Which release made the create flow five stages, with the account at stage 4 and the invitation at stage 5?"
+        },
+        {
+          "path": "changelog/v1-16-0.md",
+          "title": "v1.16.0",
+          "question": "Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?"
+        },
+        {
+          "path": "changelog/v1-17-0.md",
+          "title": "v1.17.0",
+          "question": "Which release made stage 5 a three-step payment walk, and what does it defer?"
+        },
+        {
+          "path": "changelog/v1-18-0.md",
+          "title": "v1.18.0",
+          "question": "Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?"
         },
         {
           "path": "changelog/v1-2-0.md",
@@ -614,218 +831,6 @@
           "path": "changelog/v1-9-0.md",
           "title": "v1.9.0",
           "question": "The release where the payer could finally pay."
-        },
-        {
-          "path": "changelog/v1-10-0.md",
-          "title": "v1.10.0",
-          "question": "The release where paying stopped leaving the page."
-        },
-        {
-          "path": "changelog/v1-11-0.md",
-          "title": "v1.11.0",
-          "question": "The release where the build drew what the review approved."
-        },
-        {
-          "path": "changelog/v1-12-0.md",
-          "title": "v1.12.0",
-          "question": "Which release moved the payment decision into the create flow, and what does it defer?"
-        },
-        {
-          "path": "changelog/v1-13-0.md",
-          "title": "v1.13.0",
-          "question": "Which release turned the templates page into a directory, and gave every template a page?"
-        },
-        {
-          "path": "changelog/v1-14-0.md",
-          "title": "v1.14.0",
-          "question": "Which release moved the catalogue onto the relationship noun, and put the plan's price on every card?"
-        },
-        {
-          "path": "changelog/v1-15-0.md",
-          "title": "v1.15.0",
-          "question": "Which release made the create flow five stages, with the account at stage 4 and the invitation at stage 5?"
-        }
-      ]
-    },
-    {
-      "id": "records",
-      "title": "Records & QA",
-      "blurb": "What was measured, on which tree, and what the migration changed.",
-      "docs": [
-        {
-          "path": "assets/screens/README.md",
-          "title": "Screenshot registry",
-          "question": "Which screenshot shows which surface, on which brand and viewport?"
-        },
-        {
-          "path": "p1-migration/MIGRATION.md",
-          "title": "P1 migration",
-          "question": "What did the P1 content model change, field by field?"
-        },
-        {
-          "path": "V1-RETIREMENT.md",
-          "title": "V1 retirement",
-          "question": "What happened to every `/v1` item?"
-        },
-        {
-          "path": "qa-atlas/README.md",
-          "title": "QA atlas",
-          "question": "How is every registered surface captured, asserted and checked, and what is committed?"
-        },
-        {
-          "path": "qa-atlas/v1.17.0/index.md",
-          "title": "QA atlas — v1.17.0",
-          "question": "What did every registered surface render in v1.17.0, and did it read the record it claims?"
-        },
-        {
-          "path": "qa-atlas/v1.17.1/index.md",
-          "title": "QA atlas — the 1.17.1 tree (never released)",
-          "question": "What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?"
-        },
-        {
-          "path": "qa-atlas/v1.18.0/index.md",
-          "title": "QA atlas — v1.18.0",
-          "question": "What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?"
-        },
-        {
-          "path": "QA-DOGFOOD-P4.md",
-          "title": "P4 dogfood pass",
-          "question": "Did every route answer, on a production build?"
-        },
-        {
-          "path": "qa-flow-stages/README.md",
-          "title": "Six flow stages",
-          "question": "Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?"
-        },
-        {
-          "path": "qa-flow-validation/2026-11-07.md",
-          "title": "Flow validation, 2026-11-07",
-          "question": "Does the assessment flow work end to end with two real identities?"
-        },
-        {
-          "path": "qa-surface-sweep-913/README.md",
-          "title": "Surface sweep, #913",
-          "question": "Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?"
-        },
-        {
-          "path": "qa-957-assessment-one-click/README.md",
-          "title": "One-click create on /assessment, #957",
-          "question": "Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?"
-        },
-        {
-          "path": "qa-958-no-initiator-member/README.md",
-          "title": "A relationship with no initiator member, #958",
-          "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
-        },
-        {
-          "path": "qa-975-detail-identity/README.md",
-          "title": "The relationship detail's identity, #975",
-          "question": "Does the detail page say whose relationship it is and which one — its own title and both names, one role per screen?"
-        },
-        {
-          "path": "qa-976-sent-none/README.md",
-          "title": "The Sent screen with no invitation row, #976",
-          "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
-        },
-        {
-          "path": "qa-979-flow-dialog/README.md",
-          "title": "The create flow as a dialog over the relationships page, #979",
-          "question": "Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?"
-        },
-        {
-          "path": "qa-979-flow-entries/README.md",
-          "title": "Every in-product Create door opens the flow in place, #979",
-          "question": "Do all seven wizard-route entry points open the same flow over the page they were pressed on, at 1440 and 390, while a marketing entry and an empty state still navigate?"
-        },
-        {
-          "path": "qa-971-tiles/README.md",
-          "title": "The welcome tiles on /register too, #971",
-          "question": "Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?"
-        },
-        {
-          "path": "qa-welcome-copy/README.md",
-          "title": "The welcome panel's copy — the tagline and the Aspects/Opinions tiles",
-          "question": "Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?"
-        },
-        {
-          "path": "qa-payment/README.md",
-          "title": "Payment capture & completion",
-          "question": "Can a member capture a method, pay the fee, complete, and read the Gap?"
-        },
-        {
-          "path": "qa-542-phase2/README.md",
-          "title": "#542 phase 2",
-          "question": "Is the rail role-constrained data, with focused-flow chrome?"
-        },
-        {
-          "path": "qa-rail-handle/README.md",
-          "title": "Rail collapse handle",
-          "question": "Does the width control toggle from the rail's border, and is the icon rail coherent?"
-        },
-        {
-          "path": "qa-brand-lockup/README.md",
-          "title": "Brand lockup",
-          "question": "Is the lockup back in the chrome, at a seal's size?"
-        },
-        {
-          "path": "qa-comments-mockup/README.md",
-          "title": "Comments mockup, both placements",
-          "question": "Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?"
-        },
-        {
-          "path": "qa-contact-land/README.md",
-          "title": "Contact landing",
-          "question": "What do the contact pages look like?"
-        },
-        {
-          "path": "qa-help-two-column/README.md",
-          "title": "Help two-column",
-          "question": "Did `/help` get its two-column layout?"
-        },
-        {
-          "path": "qa-home-polish/README.md",
-          "title": "Home hero polish",
-          "question": "Were the six hero defects fixed, before and after?"
-        },
-        {
-          "path": "qa-lockup-2rem/README.md",
-          "title": "Lockup 2rem",
-          "question": "Is the lockup 2rem in every expanded-header viewport?"
-        },
-        {
-          "path": "qa-noun-crud/README.md",
-          "title": "Templates and relationships after creation",
-          "question": "Can a template be revised and retired, and does a bound relationship keep the version it was answered under?"
-        },
-        {
-          "path": "qa-recharts-3/README.md",
-          "title": "recharts 3",
-          "question": "Do the pie labels still render after the recharts 3 bump?"
-        },
-        {
-          "path": "qa-rel-detail-edit/README.md",
-          "title": "Relationship detail — the edit form is asked for",
-          "question": "Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?"
-        },
-        {
-          "path": "qa-stage5/README.md",
-          "title": "Stage 5, both states",
-          "question": "Does stage 5 offer the payment walk and send/draft instead of a band with no action?"
-        },
-        {
-          "path": "qa-swiper-12/README.md",
-          "title": "swiper 12",
-          "question": "Do the carousels survive swiper 11.2.7 → 12.2.0?"
-        },
-        {
-          "path": "qa-template-catalogue/README.md",
-          "title": "Template catalogue",
-          "question": "What do the catalogue pages look like from the AlignSynch build?"
-        },
-        {
-          "path": "qa-v1x-ui-cohort/README.md",
-          "title": "v1.x UI cohort",
-          "question": "Were all ten owner items measured in a real browser?"
         }
       ]
     }

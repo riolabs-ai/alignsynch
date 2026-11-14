@@ -22,7 +22,7 @@
  *                   existing non-NULL `user_id` is never overwritten — and one account cannot
  *                   be both parties (`party_session_user_key`).
  *
- * **The client is a stub, on purpose.** The gate is database-free (`docs/GATE.md`), so the
+ * **The client is a stub, on purpose.** The gate is database-free (`docs/operations/gate.md`), so the
  * store's SQL is driven through a recording `PoolClient` and the claims above are asserted on
  * the statements it issued: which table, which binding value, in which transaction. The port
  * that reads live rows is `pnpm db:verify`'s V10 (a seeded party still has its binding; every

@@ -124,7 +124,7 @@ export function StageShell({
           It used to be `absolute right-2 top-2`, floating over the stage — and at 390 that is
           not chrome over a margin, it is chrome over the content: the sheet has no inset there,
           the column pads by 16px, so the 44px control landed on the rail's sixth cell and
-          covered 35×35px of it (measured 2026-11-08, `docs/qa-modal-mobile/measurements.json`,
+          covered 35×35px of it (measured 2026-11-08, `docs/qa/modal-mobile/measurements.json`,
           `closeOverlap`). At ≥1024 the panel is inset by 24px and padded by 32px, so the corner
           has real margin and the control overlaps nothing — measured `hits: []` at 1440.
 

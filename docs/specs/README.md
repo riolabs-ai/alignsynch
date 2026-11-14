@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Specifications index · prev [Account deletion](../ACCOUNT-DELETION-SPEC.md) · next [Template catalogue](catalogue.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Specifications index · prev [Prototype wiring](prototype-wiring.md) · next [AS2 redesign — asset sources and credits](spec-as2-style-home-redesign/ASSET-SOURCES.md)
 
 <!-- docs-nav:end -->
 
@@ -11,7 +11,7 @@ These are research specifications produced during a drift review of the two docu
 question, surveys what the accessibility, design-system and survey-methodology literature says about
 it, states a recommendation, and records the alternatives that were rejected and why. **They are
 recommendations, not decisions already taken** — nothing here is built, and where a choice carries a
-product or schema consequence the decision still belongs to §4 of `docs/SPEC-DRIFT.md`.
+product or schema consequence the decision still belongs to §4 of `docs/operations/spec-drift.md`.
 
 | file                                             | one line                                                                                                                 |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
@@ -51,6 +51,6 @@ reason — a handbook is read, not cloned.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Specifications index · prev [Account deletion](../ACCOUNT-DELETION-SPEC.md) · next [Template catalogue](catalogue.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Specifications index · prev [Prototype wiring](prototype-wiring.md) · next [AS2 redesign — asset sources and credits](spec-as2-style-home-redesign/ASSET-SOURCES.md)
 
 <!-- docs-nav:end -->

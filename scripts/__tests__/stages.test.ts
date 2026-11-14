@@ -5,7 +5,7 @@
  * **four** stages — 1 Invited, 2 Connected, 3 Sharing, 4 Aligned — and that the other numbers
  * in the source material belong to a different ladder: the specification's **A–D "stage of
  * User"** (Play, Registered, Parties Locked, Subscribed), which is billing and out of scope
- * (`docs/SPEC-DRIFT.md` §4.2, §4.3). So the cases below pin, in order:
+ * (`docs/operations/spec-drift.md` §4.2, §4.3). So the cases below pin, in order:
  *
  *   1. the vocabulary — four stages numbered 1–4 contiguously, and no fifth relationship
  *      stage invented to fill a gap that turned out to be a different product;
@@ -83,7 +83,7 @@ describe("the vocabulary", () => {
   it("has no fifth relationship stage — A–D are the specification's billing ladder, not stages here", () => {
     // Contiguous 1–4: nothing skipped, nothing appended. The A–D rows the specification draws
     // beside this ladder are "stage of User" (Play, Registered, Parties Locked, Subscribed) —
-    // billing and account states, out of scope (`docs/SPEC-DRIFT.md` §4.2, §4.3) — so they are
+    // billing and account states, out of scope (`docs/operations/spec-drift.md` §4.2, §4.3) — so they are
     // not stage names here and no fifth relationship stage is invented to hold their place.
     const numbers: number[] = RELATIONSHIP_STAGES.map((stage) => STAGE_NUMBERS[stage]);
     assert.deepEqual(numbers, [1, 2, 3, 4]);

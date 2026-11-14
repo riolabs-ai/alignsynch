@@ -17,7 +17,7 @@
  *   into a stage address is left anywhere a person can press it.**
  *
  * The browser half — the dialog opens, stage 1 completes, the address is the stage's, `Esc` returns
- * focus to the trigger — is `docs/qa-979-flow-entries/` and is measured, not asserted here.
+ * focus to the trigger — is `docs/qa/979-flow-entries/` and is measured, not asserted here.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";

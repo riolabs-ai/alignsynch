@@ -8,7 +8,7 @@
  * near-name variant — `Sports Trivia Challenge` is the generator template
  * `quiz-11`, and `Music Through Decades` is `quiz-music-through-the-decades`.
  * Those 7 fold onto the canonical records (see `data/quiz-catalogue.ts` for the
- * id mapping and `docs/p1-migration/MIGRATION.md` for the ruling); adding them
+ * id mapping and `docs/operations/history/p1-migration/MIGRATION.md` for the ruling); adding them
  * would put two records with one title in the collection, which is the drift
  * this card exists to remove.
  *

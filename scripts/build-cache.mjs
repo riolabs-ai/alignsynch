@@ -21,9 +21,15 @@
  * `.next/cache` back afterwards, because `.next` also backs `next dev` and a dev
  * server must never open the shared RocksDB store while a gate build holds it.
  *
- * `tsc` runs `tsc --noEmit` with `--tsBuildInfoFile` pointing at
- * `~/.cache/quizhub/tsc/<key>/tsconfig.tsbuildinfo`, so the incremental state
- * survives the worktree that produced it.
+ * `tsc` runs `tsc --noEmit` with `--tsBuildInfoFile` pointing at the **build's own**
+ * `<distDir>/cache/.tsbuildinfo` — through the relative `.next/cache` path, which is
+ * the form `next build` accepts — so `pnpm typecheck` fills the program the build's
+ * type check then resumes from: the app is type-checked once, not twice (measured:
+ * 63.9 s → 16.1 s wall for the build's check, docs/GATE.md). Inside the gate that
+ * path is the shared store because `scripts/verify.sh` links `.next/cache` at the
+ * held slot first; outside it, it is the tree's own `.next/cache` — still correct,
+ * just not shared. The private `~/.cache/quizhub/tsc/<key>/` buildinfo stays as the
+ * fallback for a tree whose `.next` cannot be written.
  *
  * It changes **nothing** about what the gate checks. It is not a flag on a check,
  * not a skipped step, and it needs no install step, daemon or dependency: it is
@@ -129,12 +135,40 @@ function layout() {
   const { key, inputs, override } = resolveKey();
   const base = path.join(cacheRoot(), "next", key);
   const tscDir = path.join(cacheRoot(), "tsc", key);
+  const nextCache = path.join(slotDir(base), "cache");
   return {
     key,
     inputs,
     override,
     nextBase: base,
-    nextCache: path.join(slotDir(base), "cache"),
+    nextCache,
+    /**
+     * The build's own type-check cache, as the build itself names it.
+     *
+     * `next/dist/lib/typescript/runTypeCheck.js` calls `createIncrementalProgram`
+     * with `tsBuildInfoFile: path.join(cacheDir, '.tsbuildinfo')`, where `cacheDir`
+     * is `<distDir>/cache` — the directory `link` points at the shared store. Writing
+     * the standalone `tsc` buildinfo at that same path is what lets one pass pay for
+     * both: the gate's `pnpm typecheck` fills it, and the build's check then resumes
+     * from the program that was already checked.
+     *
+     * It is deliberately a **relative** path through `.next/cache`, resolved from the
+     * repo root, and not the resolved real directory: the buildinfo records its file
+     * list relative to the path it was written at, and TypeScript compares that
+     * record against the file the build reads. Handing `tsc` the resolved cache
+     * directory produces a buildinfo `next build` rejects (851,686 bytes, full
+     * re-check); the same program written through `.next/cache` is accepted
+     * (738,846 bytes, 29.3 s instead of 63.9 s for the build's check). Measured —
+     * docs/GATE.md.
+     *
+     * It is a **cache path, not a saved check**: the build still runs its own type
+     * check and still fails on a new error (proved with a planted error, same doc).
+     * When the two file lists differ — a `next dev` has left `.next/dev/types`
+     * behind, which `tsconfig.json` includes and the build filters out — the
+     * buildinfo is simply stale and the check runs in full, exactly as on `main`.
+     */
+    buildTypeCheckArg: path.join(".next", "cache", ".tsbuildinfo"),
+    buildTypeCheckFile: path.join(ROOT, ".next", "cache", ".tsbuildinfo"),
     tscDir,
     tscFile: path.join(tscDir, "tsconfig.tsbuildinfo"),
     tscLock: path.join(tscDir, "tsc.lock"),
@@ -262,6 +296,12 @@ function unlink() {
 /**
  * `tsc --noEmit` against the shared buildinfo.
  *
+ * The buildinfo is written at the **build's** path when the gate has linked
+ * `.next/cache` for this slot (`layout().buildTypeCheckFile`), because that is the
+ * file `next build`'s own type check resumes from: one pass, two verdicts. Falling
+ * back to the typechecker's private directory when that path is not there keeps
+ * `pnpm typecheck` working outside the gate and on a tree with no `.next` at all.
+ *
  * `flock` serializes two concurrent typechecks on the same key: `tsc` writes its
  * buildinfo with a plain write, so two writers would race. The wait is bounded and
  * a missing `flock` degrades to an unlocked run — the cache must never be able to
@@ -285,7 +325,20 @@ function tsc() {
     return run(process.execPath, [tscBin, ...args]);
   }
 
-  const warm = fs.existsSync(l.tscFile);
+  // The build's own buildinfo wins whenever `.next/cache` can hold it: the build
+  // reads that exact file, so filling it makes the build's check a resume, not a
+  // re-run. `--tsBuildInfoFile` is passed as the relative path through `.next/cache`
+  // (see `buildTypeCheckArg`) with the repo root as the cwd — the resolved directory
+  // writes a buildinfo `next build` will not accept.
+  let sharedWithBuild = true;
+  try {
+    fs.mkdirSync(path.dirname(l.buildTypeCheckFile), { recursive: true });
+  } catch {
+    sharedWithBuild = false;
+  }
+  const buildInfoArg = sharedWithBuild ? l.buildTypeCheckArg : l.tscFile;
+
+  const warm = fs.existsSync(l.buildTypeCheckFile) && sharedWithBuild;
   const flock = spawnSync("flock", ["--version"], { stdio: "ignore" });
   if (flock.error) {
     printf("  typecheck cache: flock unavailable — tree-local buildinfo");
@@ -294,12 +347,13 @@ function tsc() {
 
   printf(
     `  typecheck cache: key ${l.key}${l.override ? " (overridden)" : ""} · ` +
-      `${ownership === "wiped" ? "poisoned, wiped" : warm ? `warm ${du(l.tscFile)}` : "empty — this run fills it"}`,
+      `${ownership === "wiped" ? "poisoned, wiped" : warm ? `warm ${du(l.buildTypeCheckFile)}` : "empty — this run fills it"} · ` +
+      `${sharedWithBuild ? "shared with next build" : "typecheck only"}`,
   );
   const locked = spawnSync(
     "flock",
-    ["-w", "600", l.tscLock, process.execPath, tscBin, ...args, "--tsBuildInfoFile", l.tscFile],
-    { stdio: "inherit" },
+    ["-w", "600", l.tscLock, process.execPath, tscBin, ...args, "--tsBuildInfoFile", buildInfoArg],
+    { stdio: "inherit", cwd: ROOT },
   );
   if (locked.error) {
     printf(`  typecheck cache: flock failed (${locked.error.message}) — tree-local buildinfo`);
@@ -321,6 +375,7 @@ function status() {
     `key inputs     ${l.inputs}`,
     `slot           ${l.slot}`,
     `next cache     ${l.nextCache}  ${stat(l.nextCache) ? du(l.nextCache) : "(absent)"}`,
+    `build typecheck ${l.buildTypeCheckFile}  ${stat(l.buildTypeCheckFile) ? du(l.buildTypeCheckFile) : "(absent)"}`,
     `tsc buildinfo  ${l.tscFile}  ${stat(l.tscFile) ? du(l.tscFile) : "(absent)"}`,
     `tree .next/cache ${
       stat(path.join(ROOT, ".next", "cache"))?.isSymbolicLink()

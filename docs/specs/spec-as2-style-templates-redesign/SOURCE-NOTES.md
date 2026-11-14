@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 templates redesign — source notes · prev [AS2 catalogue UI system](CATALOG-UI-SYSTEM.md) · next [AS2 home visual QA](../../qa-as2-home/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 templates redesign — source notes · prev [AS2 templates redesign (handoff)](README.md) · next [/admin/brand (V2 package)](../spec-design-page-rel-templates-v2/admin-brand/README.md)
 
 <!-- docs-nav:end -->
 
@@ -43,6 +43,6 @@ The user asked for this Templates page to serve the “My Relationship” party 
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 templates redesign — source notes · prev [AS2 catalogue UI system](CATALOG-UI-SYSTEM.md) · next [AS2 home visual QA](../../qa-as2-home/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 templates redesign — source notes · prev [AS2 templates redesign (handoff)](README.md) · next [/admin/brand (V2 package)](../spec-design-page-rel-templates-v2/admin-brand/README.md)
 
 <!-- docs-nav:end -->

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › data · prev [content](content.md) · next [lib/db](lib-db.md)
+[Docs hub](../../README.md) › **Code wiki** › data · prev [content](content.md) · next [lib/admin](lib-admin.md)
 
 <!-- docs-nav:end -->
 
@@ -75,6 +75,6 @@ E37/E39 finding, not dead code.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › data · prev [content](content.md) · next [lib/db](lib-db.md)
+[Docs hub](../../README.md) › **Code wiki** › data · prev [content](content.md) · next [lib/admin](lib-admin.md)
 
 <!-- docs-nav:end -->

@@ -111,7 +111,7 @@ jobs:
       # runtime. A check that exists only in this file is a red push; a check that
       # exists only in the script is a red CI run. One definition, two callers.
       #
-      # GATE_LANE=auto is the lane classifier (docs/REPO-LAYERS.md). It only
+      # GATE_LANE=auto is the lane classifier (docs/operations/repo-layers.md). It only
       # classifies because the checkout above carries origin/main; the fallback
       # is unchanged and deliberately conservative — no ref, no diff, or a
       # non-fast-forward base means lane=code and the full gate.
