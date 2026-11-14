@@ -449,3 +449,154 @@ export function coverageOf(rows) {
     skipped: routes.filter((row) => row.skip !== null),
   };
 }
+
+/**
+ * Why a capture must **refuse to start**, or `null` when the thing answering is the tree being
+ * captured (#983).
+ *
+ * A capture measures whatever answers `QA_ATLAS_BASE`, and a dev server on a contested port belongs
+ * to whoever started it, not to the card that wants a number. That is not a hypothetical: the first
+ * v1.17.1 run on port 3411 answered as **another card's** server, and the document it produced was
+ * confidently wrong in exactly the way a screenshot cannot reveal — the numbers, the failures and
+ * the evidence were all real, and all about a different commit. Nothing in the run could see it,
+ * because nothing compared the answer to the tree.
+ *
+ * So `/api/version`'s pair is compared to the tree **before a browser opens, a row is read or a
+ * file is written**, and a disagreement is a refusal (exit 2), never a warning:
+ *
+ *   commit   must equal the tree's `git rev-parse HEAD`. A server whose commit differs holds another
+ *            checkout's build, so every capture would be about that build
+ *   version  must equal the version the atlas documents, when the server states one. A server left
+ *            running across a `package.json` bump is the same mistake one release later
+ *
+ * `"unknown"` — the honest answer from a build made without git (`lib/build-info.ts`) — is refused
+ * too: a capture that cannot name the commit it measured has not measured anything a reader can act
+ * on. The tree side is refused the same way, which is why the value is recorded in `manifest.json`
+ * as `captureCommit` once the run is allowed to continue.
+ */
+export function captureRefusal({ base, server, tree, version }) {
+  const own = typeof tree === "string" ? tree.trim() : "";
+  const served = server !== null && typeof server === "object" ? server : {};
+  const commit = typeof served.commit === "string" ? served.commit.trim() : "";
+  const servedVersion = typeof served.version === "string" ? served.version.trim() : "";
+
+  if (own === "") {
+    return (
+      `${base}/api/version cannot be checked against this tree: \`git rev-parse HEAD\` answered ` +
+      "nothing here. A capture records the commit it measured in manifest.json, so it refuses to " +
+      "start without one — run it from a real checkout, not an exported copy of the files."
+    );
+  }
+  if (commit === "" || commit === "unknown") {
+    return (
+      `${base}/api/version reports commit "${served.commit ?? ""}", which names no build. This tree ` +
+      `is ${own}; start its own server (a build made without git cannot say what it compiled) and ` +
+      "point QA_ATLAS_BASE at that."
+    );
+  }
+  if (commit !== own) {
+    return (
+      `${base} is serving ${commit}, this tree is ${own} — refusing to capture. Something else owns ` +
+      "that port (a dev server from another card or checkout), and an atlas measured against a " +
+      "different commit is confidently wrong, not approximately right. Start this tree's own server " +
+      "on a free port and point QA_ATLAS_BASE at it."
+    );
+  }
+  const wanted = version === undefined || version === null ? "" : String(version).trim();
+  if (wanted !== "" && servedVersion !== "" && servedVersion !== wanted) {
+    return (
+      `${base} is serving v${servedVersion}, this atlas documents v${wanted} — refusing to capture. ` +
+      "The server inlined its version when it started, so a package.json bump needs a restart " +
+      "before the capture measures this tree."
+    );
+  }
+
+  return null;
+}
+
+/**
+ * The problems with a manifest's **coverage block** — the extent it claims, checked against the rows
+ * it ships with (#983).
+ *
+ * The block is the document's own statement of how big the run was: `keys · routes · surfaces ·
+ * captured · failing · skipped`. It used to be written and never read, which is how a capture that
+ * stopped after the public pass could be committed as a complete one — every row it wrote was
+ * truthful, and the absence of rows for everything else was invisible to both the check and the
+ * reader. So each field must be a non-negative integer, must equal what the rows say, and the three
+ * registry counts must equal what `data/pages/budget.ts` derives **today**.
+ *
+ * `expected` is `coverageOf(deriveRows(...))`; pass `null` to skip the registry half (a caller with
+ * only a manifest in hand). The returned strings are the check's own failure text, so a test can
+ * assert the wording a reader sees.
+ *
+ * @param {{
+ *   coverage?: unknown,
+ *   rows?: unknown,
+ *   expected?: { keys?: number, routes?: number, surfaces?: number } | null,
+ * }} input
+ * @returns {string[]} the problems, empty when the block is complete and honest
+ */
+export function coverageProblems({ coverage, rows, expected = null }) {
+  if (!Array.isArray(rows)) {
+    return ["manifest.json: routes is not a list — there is nothing to describe"];
+  }
+  if (coverage === null || typeof coverage !== "object" || Array.isArray(coverage)) {
+    return [
+      "manifest.json: no coverage block — a capture that cannot state its own extent cannot be " +
+        "read as a complete one",
+    ];
+  }
+
+  const FIELDS = ["keys", "routes", "surfaces", "captured", "failing", "skipped"];
+  const broken = FIELDS.filter(
+    (field) => !Number.isInteger(coverage[field]) || coverage[field] < 0,
+  );
+  if (broken.length > 0) {
+    const named = broken
+      .map((field) => `${field}=${JSON.stringify(coverage[field] ?? null)}`)
+      .join(", ");
+    return [
+      `manifest.json: coverage.${broken.join("/coverage.")} is not a non-negative integer ` +
+        `(${named}) — a truncated block is the signature of a run that stopped early`,
+    ];
+  }
+
+  const problems = [];
+  const routeRows = rows.filter((row) => row.kind === "route");
+  const counted = {
+    keys: rows.length,
+    routes: routeRows.length,
+    surfaces: rows.length - routeRows.length,
+    captured: routeRows.filter((row) => row.verdict !== "skipped").length,
+    failing: rows.filter((row) => row.verdict === "fail").length,
+    skipped: rows.filter((row) => row.verdict === "skipped").length,
+  };
+
+  for (const field of FIELDS) {
+    if (coverage[field] !== counted[field]) {
+      problems.push(
+        `manifest.json: coverage.${field} says ${coverage[field]}, the ${rows.length} rows in the ` +
+          `same file say ${counted[field]} — the block must describe the rows it ships with`,
+      );
+    }
+  }
+  if (coverage.captured + coverage.skipped !== coverage.routes) {
+    problems.push(
+      `manifest.json: coverage.captured ${coverage.captured} + coverage.skipped ` +
+        `${coverage.skipped} ≠ coverage.routes ${coverage.routes} — every route is either captured ` +
+        "or skipped with a reason, and a capture that stopped early leaves neither",
+    );
+  }
+  if (expected !== null && typeof expected === "object") {
+    for (const field of ["keys", "routes", "surfaces"]) {
+      if (Number.isInteger(expected[field]) && coverage[field] !== expected[field]) {
+        problems.push(
+          `manifest.json: coverage.${field} says ${coverage[field]}, data/pages/budget.ts derives ` +
+            `${expected[field]} today — an atlas for another route set cannot vouch for this one`,
+        );
+      }
+    }
+  }
+
+  return problems;
+}
