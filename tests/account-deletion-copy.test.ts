@@ -1,7 +1,7 @@
 /**
  * The words a person reads before deleting their account (#278).
  *
- * `docs/ACCOUNT-DELETION-SPEC.md` §5 fixes one sentence and forbids a class of stronger ones, and
+ * `docs/specs/account-deletion-spec.md` §5 fixes one sentence and forbids a class of stronger ones, and
  * §6 fixes what is retained — including the one row that keeps an **address**: the marketing
  * opt-out list, which `lib/account/purge.ts` writes as `UPDATE news_signup … WHERE email = $1`.
  * Copy that says nothing personal is kept, beside code that keeps the address, is the exact
@@ -31,7 +31,10 @@ import { itemBody, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
 const brand = quizHubBrand as Brand;
 
-const SPEC = readFileSync(new URL("../docs/ACCOUNT-DELETION-SPEC.md", import.meta.url), "utf8");
+const SPEC = readFileSync(
+  new URL("../docs/specs/account-deletion-spec.md", import.meta.url),
+  "utf8",
+);
 const PURGE = readFileSync(new URL("../lib/account/purge.ts", import.meta.url), "utf8");
 const ACTION = readFileSync(
   new URL("../app/(mainlayout)/settings/delete-account-actions.ts", import.meta.url),

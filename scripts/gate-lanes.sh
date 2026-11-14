@@ -40,7 +40,7 @@
 # anyway. In a full clone the incremental one-branch fetch is small and carries
 # the same timeout.
 #
-# Docs: docs/REPO-LAYERS.md.
+# Docs: docs/operations/repo-layers.md.
 
 # lane_rank <lane> -> 0..3, higher = deeper gate
 lane_rank() {

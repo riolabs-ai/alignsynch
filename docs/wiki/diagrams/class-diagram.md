@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › Class diagram · prev [lib/admin](../modules/lib-admin.md) · next [Sequence walks](sequences.md)
+[Docs hub](../../README.md) › **Code wiki** › Class diagram · prev [Request lifecycle](../architecture.md) · next [Sequence walks](sequences.md)
 
 <!-- docs-nav:end -->
 
@@ -187,6 +187,6 @@ which is what makes `pnpm db:verify` able to report drift as a _named_ failure.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › Class diagram · prev [lib/admin](../modules/lib-admin.md) · next [Sequence walks](sequences.md)
+[Docs hub](../../README.md) › **Code wiki** › Class diagram · prev [Request lifecycle](../architecture.md) · next [Sequence walks](sequences.md)
 
 <!-- docs-nav:end -->

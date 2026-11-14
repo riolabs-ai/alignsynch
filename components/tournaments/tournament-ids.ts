@@ -10,7 +10,7 @@
  * `featured-tournament.tsx`.
  *
  * Why a list of ids and not a fixture: the tournament *domain* is out of scope (P4 — see
- * `docs/DATA-MODEL.md`, and WU-11/#58 which moved only the route's words into
+ * `docs/reference/data-model.md`, and WU-11/#58 which moved only the route's words into
  * `data/pages/tournament-detail.ts`). A `Tournament` record collection would be that
  * domain, so this module deliberately carries no records — not a title, not a date. The
  * duplication it does carry (these seven strings also appear where the rows are authored)

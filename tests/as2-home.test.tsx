@@ -259,7 +259,7 @@ describe("the arrow glyph", () => {
     // are not buttons: before an explicit size existed on the glyph, the secondary CTA's arrow
     // resolved to 59.891px square and made a 14px text link a **123.906 × 60** box at every width
     // from `sm` up — 249.453px tall at 390, where the stacked column gave the glyph the whole 342px
-    // width to resolve against. The measurements are in `docs/qa-home-comments/measurements.json`.
+    // width to resolve against. The measurements are in `docs/qa/home-comments/measurements.json`.
     //
     // The class is not always `size-4`: the reference draws the button arrow at 16px, the hero's
     // secondary link at 15px and the card footer at 14px. What must hold is that **every** arrow

@@ -37,7 +37,7 @@ are sealed.
 
 This repository is the **template** that product is built from, not a single site: one Next.js codebase,
 one route table, several brands, and a build picks the brand. It is cut from the QuizHub starting UI
-template ([docs/TEMPLATE-DOCTRINE.md](docs/TEMPLATE-DOCTRINE.md), #318) — so the quiz product ships from
+template ([docs/guides/template-doctrine.md](docs/guides/template-doctrine.md), #318) — so the quiz product ships from
 the same tree, and both are first-class.
 
 ![The AlignSynch front door at 1440 wide: the hero reading "Know what your team will not say out loud.", the two-sided answer drawn beside it, and the four assessment templates below.](docs/assets/screens/alignsynch/desktop/home.png)
@@ -136,7 +136,7 @@ next and what each of them will see, and only then the account gate and the clai
 claims nothing on a `GET` — a token consumed by a mail client's link preview would be a token wasted. The
 invitation expires in seven days, and re-inviting is revoke-and-replace: a new token, and the old link
 answers `unknown` rather than `expired`. The whole flow, route by route, is
-[docs/TWO-PARTY-FLOW.md](docs/TWO-PARTY-FLOW.md).
+[docs/specs/two-party-flow.md](docs/specs/two-party-flow.md).
 
 ### The Gap is the report
 
@@ -332,24 +332,24 @@ check that lives only in the YAML is a guaranteed red push.
 
 ## Where the docs are
 
-| Start here                                                     | What it answers                                                            |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| [docs/wiki/README.md](docs/wiki/README.md)                     | the code wiki: key concepts, module map, how a request becomes a page      |
-| [docs/diagrams/](docs/diagrams)                                | the five flow charts — lifecycle, payment, brand boundary, data, gate      |
-| [AGENTS.md](AGENTS.md)                                         | command table with verified results, conventions, pitfalls                 |
-| [CHANGELOG.md](CHANGELOG.md)                                   | every release, generated from the commits and published as the notes       |
-| [docs/assets/screens/README.md](docs/assets/screens/README.md) | the current screenshot set — one row per surface — and how to recapture it |
-| [docs/GATE.md](docs/GATE.md)                                   | gate baseline, first-pass yield, the required-check ruleset                |
-| [docs/glossary.md](docs/glossary.md)                           | the domain's words, generated from the schema comments                     |
-| [docs/ui-registry.md](docs/ui-registry.md)                     | every surface, its status, and which template claims it                    |
-| [docs/DATA-MODEL.md](docs/DATA-MODEL.md)                       | the content model: entities, invariants, strictness                        |
-| [docs/TWO-PARTY-FLOW.md](docs/TWO-PARTY-FLOW.md)               | the assessment flow: create, invite, answer, unlock the Gap                |
-| [docs/TEMPLATE-DOCTRINE.md](docs/TEMPLATE-DOCTRINE.md)         | one core, many expressions: the three questions a new surface answers      |
-| [docs/BUNDLES.md](docs/BUNDLES.md)                             | a template or the demo dataset as one importable file                      |
-| [docs/billing.md](docs/billing.md)                             | the billing port, its adapters, and why test mode says so on the page      |
-| [docs/RELEASING.md](docs/RELEASING.md)                         | cutting a version: changelog entry, tag, GitHub Release, the deploy        |
-| [docs/ENV-SPEC.md](docs/ENV-SPEC.md)                           | environment, team, integrations, feature flags, the P1–P4 stage gates      |
-| [docs/REPO-LAYERS.md](docs/REPO-LAYERS.md)                     | lane table, classifier rules, build semaphore                              |
+| Start here                                                           | What it answers                                                            |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [docs/wiki/README.md](docs/wiki/README.md)                           | the code wiki: key concepts, module map, how a request becomes a page      |
+| [docs/diagrams/](docs/diagrams)                                      | the five flow charts — lifecycle, payment, brand boundary, data, gate      |
+| [AGENTS.md](AGENTS.md)                                               | command table with verified results, conventions, pitfalls                 |
+| [CHANGELOG.md](CHANGELOG.md)                                         | every release, generated from the commits and published as the notes       |
+| [docs/assets/screens/README.md](docs/assets/screens/README.md)       | the current screenshot set — one row per surface — and how to recapture it |
+| [docs/operations/gate.md](docs/operations/gate.md)                   | gate baseline, first-pass yield, the required-check ruleset                |
+| [docs/glossary.md](docs/glossary.md)                                 | the domain's words, generated from the schema comments                     |
+| [docs/ui-registry.md](docs/ui-registry.md)                           | every surface, its status, and which template claims it                    |
+| [docs/reference/data-model.md](docs/reference/data-model.md)         | the content model: entities, invariants, strictness                        |
+| [docs/specs/two-party-flow.md](docs/specs/two-party-flow.md)         | the assessment flow: create, invite, answer, unlock the Gap                |
+| [docs/guides/template-doctrine.md](docs/guides/template-doctrine.md) | one core, many expressions: the three questions a new surface answers      |
+| [docs/guides/bundles.md](docs/guides/bundles.md)                     | a template or the demo dataset as one importable file                      |
+| [docs/reference/billing.md](docs/reference/billing.md)               | the billing port, its adapters, and why test mode says so on the page      |
+| [docs/operations/releasing.md](docs/operations/releasing.md)         | cutting a version: changelog entry, tag, GitHub Release, the deploy        |
+| [docs/reference/env-spec.md](docs/reference/env-spec.md)             | environment, team, integrations, feature flags, the P1–P4 stage gates      |
+| [docs/operations/repo-layers.md](docs/operations/repo-layers.md)     | lane table, classifier rules, build semaphore                              |
 
 `AGENTS.md` is the agent-facing companion to this file. The two must agree on commands, the package
 manager and the Node version; a command change belongs in both.
@@ -374,7 +374,7 @@ landed expires fourteen days after the seal, after reminders at day 3 and day 10
 
 **Why does one repo ship two products?**
 
-Because the core is the product ([docs/TEMPLATE-DOCTRINE.md](docs/TEMPLATE-DOCTRINE.md)): QuizHub is the
+Because the core is the product ([docs/guides/template-doctrine.md](docs/guides/template-doctrine.md)): QuizHub is the
 template AlignSynch was cut from, and retiring it would fork the tree. The boundary between them is a
 capability and a parity test, not a convention.
 
@@ -409,7 +409,7 @@ The model in five lines: a **Record** is a post (`id`, `slug`, `type`, `status`,
 items and has no parties, because `strict()` rejects one; a **Session** is a template copied and given two
 parties, and a **Relationship** is the subscription that owns one or more of them; the **Gap** is a
 function of two opinions, never a field. [docs/glossary.md](docs/glossary.md) is generated from the schema
-comments and [docs/DATA-MODEL.md](docs/DATA-MODEL.md) is the field-level inventory.
+comments and [docs/reference/data-model.md](docs/reference/data-model.md) is the field-level inventory.
 
 ```bash
 pnpm db:migrate   # apply db/migrations/*.sql in order; wants the unpooled URL

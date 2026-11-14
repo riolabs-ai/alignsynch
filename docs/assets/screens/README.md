@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Screenshot registry · next [P1 migration](../../p1-migration/MIGRATION.md)
+[Docs hub](../../README.md) › **Reference** › Screenshot registry · next [Glossary](../../glossary.md)
 
 <!-- docs-nav:end -->
 
@@ -73,7 +73,7 @@ curl -s http://localhost:3000/opengraph-image.png -o docs/assets/og-image.png
 Re-render it whenever `data/brand.ts` or `lib/brand-og.tsx` changes — the file is a snapshot, and the
 route is the thing crawlers are served. `docs/assets/og_image.png` was the same bytes under a second
 name; it is deleted rather than kept as a copy, and the root `README.md` now points at this one.
-`docs/qa-og-card/` keeps the ticket's own evidence (including a 600×315 render) and is not promoted.
+`docs/qa/og-card/` keeps the ticket's own evidence (including a 600×315 render) and is not promoted.
 
 ## How these were captured
 
@@ -93,7 +93,7 @@ PORT=3000 withenv.sh <repo> node24.sh pnpm start
 #    /demo  ->  the PIN (DEMO_PIN)  ->  /login  ->  a role button  ->  /dashboard
 ```
 
-The demo sign-in is `docs/DEMO-AUTH.md`: `/demo` takes a PIN and sets a signed fifteen-minute unlock
+The demo sign-in is `docs/getting-started/demo-auth.md`: `/demo` takes a PIN and sets a signed fifteen-minute unlock
 cookie; `/login` then draws one button per seeded account, and the server signs in with a credential
 the browser never receives. **The demo stack is the only stack these are captured from**
 (`NEON_BRANCH=demo`, `DEMO_AUTH=1`): the production branch holds real client relationships, and a
@@ -119,6 +119,6 @@ red test rather than a broken link somebody finds later.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Screenshot registry · next [P1 migration](../../p1-migration/MIGRATION.md)
+[Docs hub](../../README.md) › **Reference** › Screenshot registry · next [Glossary](../../glossary.md)
 
 <!-- docs-nav:end -->

@@ -2,10 +2,11 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
 
 <!-- docs-nav:end -->
 
+> [!NOTE]
 > **Superseded in part by #548 (the band and templates 2–5).** This document's volume argument
 > still governs _what the product does not send_, but three of its rows are now wrong by decision:
 > the claim notice (row 4) and the pre-expiry reminder (row 7) **are** built — as templates #4 and
@@ -77,32 +78,32 @@ states. Rows 7, 9–13 are rejected, explicitly.**
 
 The evidence, and what each piece is used for here:
 
-- **Unily Digital Noise Impact Report** (https://www.peoplemanagement.co.uk/article/1878015/three-quarters-employees-distracted-notifications-workplace-research-finds):
+- **Unily Digital Noise Impact Report** (<https://www.peoplemanagement.co.uk/article/1878015/three-quarters-employees-distracted-notifications-workplace-research-finds>):
   77% of employees call digital-tool notifications a distraction; 66% turn off email or
   messaging notifications to focus. → In this product the counterparty is a consumer, not an
   employee, and the initiator is their partner, not their admin: every message competes with a
   real conversation. The bar is higher, not lower.
-- **HelpLama via MagicBell** (https://www.magicbell.com/blog/help-your-users-avoid-notification-fatigue):
+- **HelpLama via MagicBell** (<https://www.magicbell.com/blog/help-your-users-avoid-notification-fatigue>):
   64% of users delete an app receiving 5+ notifications a week; 61% stay if notifications match
   their preferences. → A relationship with invitation + claimed + warning + expired + unlock +
   congratulations emails is 4–6 messages for one relationship, most weeks, before the first
   report is read.
-- **SuprSend, alert fatigue** (https://www.suprsend.com/post/alert-fatigue): 47% disable
+- **SuprSend, alert fatigue** (<https://www.suprsend.com/post/alert-fatigue>): 47% disable
   notifications entirely within the first week if unhelpful; 60% unsubscribe from irrelevant
   alerts; notification volume up 97% since 2020. → Default-off, not default-on, is the rational
   baseline for every type that is not carrying an action.
-- **Microsoft WorkLab 2025** (via https://www.saner.ai/blogs/digital-overwhelm-statistics):
+- **Microsoft WorkLab 2025** (via <https://www.saner.ai/blogs/digital-overwhelm-statistics>):
   117 emails/day per worker on average. → A relationship tool's mail competes with 117 others;
   the two senders here are chosen to survive that inbox.
-- **DevOps Daily, "In-App, Email and Push From One Event"** (https://devops-daily.com/posts/in-app-email-and-push-from-one-event):
+- **DevOps Daily, "In-App, Email and Push From One Event"** (<https://devops-daily.com/posts/in-app-email-and-push-from-one-event>):
   in-app is exact and reversible; email is irreversible, at-least-once, and the provider talks
   back (bounces, complaints) — hard bounces and spam complaints must suppress the address. →
   Channel-selection principle: email for the two irreversible, action-bearing events; in-app for
   every state change; and (follow-up, not now) bounce suppression before volume grows.
-- **925studios, notification system design** (https://www.925studios.co/blog/notification-system-design):
+- **925studios, notification system design** (<https://www.925studios.co/blog/notification-system-design>):
   "In-app is the safest place for information that matters but doesn't justify interruption." →
   That is exactly the claimed/expired/warning set.
-- **dev.to/lunealabs, team invite email template** (https://dev.to/lunealabs/team-invite-email-template-what-to-include-and-how-to-send-it-96e):
+- **dev.to/lunealabs, team invite email template** (<https://dev.to/lunealabs/team-invite-email-template-what-to-include-and-how-to-send-it-96e>):
   recommends one day-3 reminder, cancelled on accept — the closest thing to evidence for
   reminders, and it is written for workspace admins onboarding strangers. An intimate is not a
   stranger: the reminder channel is the initiator's own words, not a product cron. Rejected
@@ -129,18 +130,18 @@ The evidence, and what each piece is used for here:
 
 ## 5. Sources
 
-- Unily Digital Noise Impact Report — https://www.peoplemanagement.co.uk/article/1878015/three-quarters-employees-distracted-notifications-workplace-research-finds
-- MagicBell — https://www.magicbell.com/blog/help-your-users-avoid-notification-fatigue
-- SuprSend, alert fatigue — https://www.suprsend.com/post/alert-fatigue
-- Microsoft WorkLab 2025 (via saner.ai aggregation) — https://www.saner.ai/blogs/digital-overwhelm-statistics
-- DevOps Daily, in-app vs email guarantees — https://devops-daily.com/posts/in-app-email-and-push-from-one-event
-- 925studios, notification system design — https://www.925studios.co/blog/notification-system-design
-- dev.to/lunealabs, team invite email template — https://dev.to/lunealabs/team-invite-email-template-what-to-include-and-how-to-send-it-96e
+- Unily Digital Noise Impact Report — <https://www.peoplemanagement.co.uk/article/1878015/three-quarters-employees-distracted-notifications-workplace-research-finds>
+- MagicBell — <https://www.magicbell.com/blog/help-your-users-avoid-notification-fatigue>
+- SuprSend, alert fatigue — <https://www.suprsend.com/post/alert-fatigue>
+- Microsoft WorkLab 2025 (via saner.ai aggregation) — <https://www.saner.ai/blogs/digital-overwhelm-statistics>
+- DevOps Daily, in-app vs email guarantees — <https://devops-daily.com/posts/in-app-email-and-push-from-one-event>
+- 925studios, notification system design — <https://www.925studios.co/blog/notification-system-design>
+- dev.to/lunealabs, team invite email template — <https://dev.to/lunealabs/team-invite-email-template-what-to-include-and-how-to-send-it-96e>
 - Spec PDF in-repo: `docs/AlignSynch.com - Website Specs.pdf`, "WRITTEN ANALYSIS and GENERATED
   EMAIL TERMS" (p. 71) — the eleven-artefact list dispositioned above.
 - In-repo: `lib/flow/email.ts` (the two senders, `sent|unset|failed`, no retry, no queue),
   `lib/flow/unlock-notice.ts` (#258), `db/migrations/0007_party_unlock_seen.sql` (#252),
-  `docs/SPEC-DRIFT.md` §4.1/§5/§7.
+  `docs/operations/spec-drift.md` §4.1/§5/§7.
 
 ## 6. Implementation sketch (what a card would touch)
 
@@ -152,8 +153,8 @@ The evidence, and what each piece is used for here:
 - **Unlock path unchanged:** `sendUnlockNotice` remains the only post-submit send, triggered by
   the `ok && complete` transition, other-seat-only via `otherRoleOf`, no-opinion read via
   `readUnlockFacts`.
-- **Docs:** `docs/TWO-PARTY-FLOW.md` "Email" section gains the channel table above;
-  `docs/SPEC-DRIFT.md` §7's "~10 spec email types" entry is replaced with this disposition (the
+- **Docs:** `docs/specs/two-party-flow.md` "Email" section gains the channel table above;
+  `docs/operations/spec-drift.md` §7's "~10 spec email types" entry is replaced with this disposition (the
   rejection record).
 - **Explicitly out of scope, named so they stop reappearing:** bounce webhooks and address
   suppression, delivery tracking, a scheduler/queue, per-event opt-outs, and marketing mail.
@@ -182,19 +183,19 @@ The evidence, and what each piece is used for here:
 6. No scheduler, queue or cron is introduced; every send remains triggered by a request's write
    (creation, resend, completing submit), and no pre-expiry reminder exists for the recipient.
 7. The spec's Analysis, Congratulations, Change, Daily, Weekly, Interest, Coach and
-   Counterparty-Registered emails remain absent, and `docs/SPEC-DRIFT.md` + `docs/TWO-PARTY-FLOW.md`
+   Counterparty-Registered emails remain absent, and `docs/operations/spec-drift.md` + `docs/specs/two-party-flow.md`
    record that disposition (rejection is a document, not a hope).
 8. Gate stays green and dependency-free: `bash scripts/verify.sh` passes with no new package and
    no database access; `pnpm data:check` still validates the new copy items (E23/E10).
 
 ## Related
 
-- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the flow every one of these emails belongs to.
-- [RESEND-INBOUND.md](../RESEND-INBOUND.md) — what happens when a send bounces or is complained about.
+- [TWO-PARTY-FLOW.md](two-party-flow.md) — the flow every one of these emails belongs to.
+- [RESEND-INBOUND.md](../operations/resend-inbound.md) — what happens when a send bounces or is complained about.
 - [flow-reinvite.md](flow-reinvite.md) — the expired-invitation case, specified separately.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Transactional email lifecycle · prev [Template catalogue](catalogue.md) · next [Re-invite](flow-reinvite.md)
 
 <!-- docs-nav:end -->

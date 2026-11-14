@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](README.md) › **Reference** › Glossary · next [UI registry](ui-registry.md)
+[Docs hub](README.md) › **Reference** › Glossary · prev [Screenshot registry](assets/screens/README.md) · next [Billing](reference/billing.md)
 
 <!-- docs-nav:end -->
 

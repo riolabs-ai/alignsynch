@@ -9,7 +9,7 @@
  * **One shell with the template page, two declared axes.** `components/assessment-flow/
  * record-detail-shell.tsx` draws the identity band, the facts card, the back link and the section
  * order; this file supplies only what a *relationship* says — exactly as the template page supplies
- * only what a template says. The artifact (`docs/mockups/one-card-one-detail-v2.html` §5, approved
+ * only what a template says. The artifact (`docs/reference/mockups/one-card-one-detail-v2.html` §5, approved
  * on option A) allows two differences and no others: the cover slot (a card difference, drawn by
  * `relationship-cards.tsx`) and the working panels, which exist here and not there. Before #795 this
  * screen was a stack of shadcn cards with a page `<h1>` above a `CardTitle` — two headings, no back

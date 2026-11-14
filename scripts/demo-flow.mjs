@@ -4,7 +4,7 @@
  * screenshots every screen it lands on, and writes the whole thing down as a committed transcript
  * (#898, card 1 of 2).
  *
- *   pnpm demo:flow          walk the three paths, write PNGs + docs/qa-demo-flow/transcript.json
+ *   pnpm demo:flow          walk the three paths, write PNGs + docs/qa/demo-flow/transcript.json
  *   pnpm demo:flow:check    re-run on an unchanged tree and diff the transcript and the PNG hashes
  *   pnpm demo:flow:verify   read the committed transcript and the PNGs it names, and assert they
  *                           still describe each other — no browser, no connection, so this is the
@@ -36,7 +36,7 @@
  *
  * ## The transcript is the deliverable, and card 2 renders it
  *
- * `docs/qa-demo-flow/transcript.json` — `demo-flow/v1`. The schema is documented in the file's own
+ * `docs/qa/demo-flow/transcript.json` — `demo-flow/v1`. The schema is documented in the file's own
  * `about` block, because a JSON file has no comments and the second reader is a script. Fields:
  *
  *   step   1..n, contiguous across the three paths (a reader can key on it)
@@ -45,7 +45,7 @@
  *          an unchanged tree produce the same bytes
  *   action "fill" | "click" | "assert"
  *   values { field: value } — verbatim what was entered, empty for clicks and asserts
- *   shot   "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png"
+ *   shot   "docs/qa/demo-flow/<path>/<n>-<slug>-1440.png"
  *   expect the assertion this step proved, in words
  *   ok     whether it held; `actual` carries what was measured when it did not
  *
@@ -135,7 +135,7 @@ const ONLY = (process.env.DEMO_FLOW_ONLY ?? "")
   .filter((entry) => entry !== "");
 
 const ROOT = repoRoot;
-const CANONICAL_OUT = join(ROOT, "docs", "qa-demo-flow");
+const CANONICAL_OUT = join(ROOT, "docs", "qa", "demo-flow");
 /** Where the images are written. `--check` stages them elsewhere and diffs against the commit. */
 const OUT = CHECK
   ? join(process.env.DEMO_FLOW_OUT ?? "/tmp", "demo-flow-check")
@@ -251,7 +251,7 @@ const transcript = {
       route: "where the step happened; run-specific ids are normalised to <instance> and <token>",
       action: "fill | click | assert",
       values: "verbatim what was entered; {} for clicks and asserts",
-      shot: "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png",
+      shot: "docs/qa/demo-flow/<path>/<n>-<slug>-1440.png",
       expect: "the assertion this step proved, in words",
       ok: "whether it held; `actual` carries what was measured when it did not",
       actual: "only present when ok is false",
@@ -290,7 +290,7 @@ function normaliseRoute(href) {
 async function record(send, { action, expect, values = {}, ok, actual, name, route }) {
   stepNumber += 1;
   const shotName = `${String(stepNumber).padStart(2, "0")}-${slugOf(name ?? route)}-${WIDTH}.png`;
-  const relative = `docs/qa-demo-flow/${currentPath}/${shotName}`;
+  const relative = `docs/qa/demo-flow/${currentPath}/${shotName}`;
   const file = join(OUT, currentPath, shotName);
   ensureDir(dirname(file));
   const sha256 = await shutter(send, file);

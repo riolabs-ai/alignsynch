@@ -9,7 +9,7 @@
  *
  * The check is `stuckDeletionJobProblems()` in `scripts/db-verify.mjs`, exported for the same
  * reason `seededInstanceStatusProblems()` and `orphanProfileProblems()` are: the gate is
- * database-free (`docs/GATE.md`), so the part that decides an answer takes rows and a `now`, and
+ * database-free (`docs/operations/gate.md`), so the part that decides an answer takes rows and a `now`, and
  * these cases feed it both. The boundary cases are logged as comments beside the rule: the
  * threshold exists so an ordinary in-flight scrub never fires it, which is only true if the
  * comparison is `>=` and not `>`.
@@ -55,7 +55,7 @@ describe("V28's rule", () => {
     // id, and printing the address would leak the fact the check reports.
     expect(problems[0]?.message).not.toMatch(/@/);
     // It does point at the procedure that finishes the job, so the line is actionable.
-    expect(problems[0]?.message).toContain("ACCOUNT-DELETION-SPEC.md §7");
+    expect(problems[0]?.message).toContain("specs/account-deletion-spec.md §7");
   });
 
   it("stays green under the threshold, and fires exactly at it", () => {

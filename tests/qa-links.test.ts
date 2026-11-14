@@ -307,7 +307,7 @@ describe("reasonForUnrouted", () => {
     );
     expect(reasonForUnrouted("tests/qa-links.test.ts")).toBe("a test");
     expect(reasonForUnrouted("package.json")).toContain("dependency manifest");
-    expect(reasonForUnrouted("docs/QA-LINKS.md")).toBe("documentation");
+    expect(reasonForUnrouted("docs/qa/qa-links.md")).toBe("documentation");
     expect(reasonForUnrouted("public/home/personal-life.avif")).toBe("a static asset");
     expect(reasonForUnrouted("scripts/qa-links.ts")).toBe("a tooling script");
     expect(reasonForUnrouted("data/billing-plans.ts")).toBe("a fixture no page reaches");

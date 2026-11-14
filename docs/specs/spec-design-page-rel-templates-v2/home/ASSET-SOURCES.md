@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 home page — asset sources and credits · prev [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md) · next [V2 brand and audience profile (handoff)](../brand-profile/README.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 home page — asset sources and credits · prev [V2 brand and audience profile (handoff)](../brand-profile/README.md) · next [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->
 
@@ -42,6 +42,6 @@ name. The credits section in `data/pages/legal.ts` changes with it — the two a
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 home page — asset sources and credits · prev [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md) · next [V2 brand and audience profile (handoff)](../brand-profile/README.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 home page — asset sources and credits · prev [V2 brand and audience profile (handoff)](../brand-profile/README.md) · next [V2 home page — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->

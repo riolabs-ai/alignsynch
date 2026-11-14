@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › The Gap report · prev [Answer input](ux-input.md) · next [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The Gap report · prev [Reference UX patterns](ux-reference-patterns.md) · next [Stage display](ux-stages.md)
 
 <!-- docs-nav:end -->
 
@@ -102,26 +102,26 @@ since Soft/Full change the verdict on the same numbers.
 ## Sources
 
 - **Stephen Few, "Bullet Graph Design Specification" (Perceptual Edge)** —
-  https://www.perceptualedge.com/articles/misc/Bullet_Graph_Design_Spec.pdf
+  <https://www.perceptualedge.com/articles/misc/Bullet_Graph_Design_Spec.pdf>
   Single measure + comparative measure tick + ≤5 (ideally 3) qualitative ranges; "rich display
   of data in a small space"; comparative measure as a perpendicular short line.
-- **Stephen Few, "Why Most Dashboards Fail"** — https://www.perceptualedge.com/articles/misc/WhyMostDashboardsFail.pdf
+- **Stephen Few, "Why Most Dashboards Fail"** — <https://www.perceptualedge.com/articles/misc/WhyMostDashboardsFail.pdf>
   Condense; include only what is needed; one accent colour so attention lands on what is urgent.
 - **NN/g, "Comparison Tables for Products, Services, and Features"** —
-  https://www.nngroup.com/articles/comparison-tables/ — tables are for comparing across
+  <https://www.nngroup.com/articles/comparison-tables/> — tables are for comparing across
   attributes; keep the compared items stable and columns consistent (supports the stable-row-order
   decision and the row-table choice).
-- **GOV.UK Design System, Tables** — https://design-system.service.gov.uk/components/table/
+- **GOV.UK Design System, Tables** — <https://design-system.service.gov.uk/components/table/>
   "Use the table component to make information easier to compare and scan" for numerical data;
   numeric data right-aligned, tabular numbers.
-- **WCAG 2.2, SC 1.4.1 Use of Color** — https://www.w3.org/TR/WCAG22/#use-of-color
+- **WCAG 2.2, SC 1.4.1 Use of Color** — <https://www.w3.org/TR/WCAG22/#use-of-color>
   "Color is not used as the only visual means of conveying information" — the spec's four flag
   colours are the only channel in the mockup.
 - **Spec p. 65 (mockup 09-gap-analysis-terms.png)** — gap severity → flag colour mapping, the
   three group headings ("Feelings and Wishes Differ", "Desires To Change", "Prediction Gaps &
   Analysis") — the headings are the spec's own words; the build adopts them instead of inventing
   "Basic / Prediction".
-- **docs/SPEC-DRIFT.md §1, §6** — Doubt gaps are not computable (frozen opinions, no history);
+- **docs/operations/spec-drift.md §1, §6** — Doubt gaps are not computable (frozen opinions, no history);
   quick win #4 "In synch" capitalisation; quick win #5 "name the gap groups".
 
 ## Implementation sketch (real files)
@@ -175,11 +175,11 @@ since Soft/Full change the verdict on the same numbers.
 
 ## Related
 
-- [PRD.md](../pay-to-complete/PRD.md) — the report is what the completion fee buys.
+- [PRD.md](pay-to-complete/PRD.md) — the report is what the completion fee buys.
 - [ux-input.md](ux-input.md) — the answers the report is derived from.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › The Gap report · prev [Answer input](ux-input.md) · next [Stage display](ux-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › The Gap report · prev [Reference UX patterns](ux-reference-patterns.md) · next [Stage display](ux-stages.md)
 
 <!-- docs-nav:end -->

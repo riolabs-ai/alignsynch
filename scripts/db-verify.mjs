@@ -94,7 +94,7 @@
  *       `party.accepted_at` from the instance's own fixture date, so a seeded instance that reads
  *       `answering` is either a seed older than #427/R2 or a rule change that moved `complete` —
  *       the state production sat in for a day on 2026-11-03 while this file stayed green
- *       (`docs/RELEASING.md` 2a). V11 names the *mark* on a non-complete instance; this names the
+ *       (`docs/operations/releasing.md` 2a). V11 names the *mark* on a non-complete instance; this names the
  *       absence of completion itself. Instances the seed does not author are not checked: their
  *       status is their own.
  *   V22 `template_version` exists and carries its immutability trigger (#502b): a published version
@@ -208,7 +208,7 @@ const VOID_COLUMNS = new Set(["voided_at", "voided_by"]);
 /**
  * The deletion sweep's one write to `session` (#278): its optional **label**.
  *
- * `docs/ACCOUNT-DELETION-SPEC.md` §1.2 requires the label to be rewritten, because it is free text
+ * `docs/specs/account-deletion-spec.md` §1.2 requires the label to be rewritten, because it is free text
  * a person wrote (`"Run for Avery Rowan"`) and no `user_id` sweep reaches it — leaving it is leaving
  * the deleted person's name on the survivor's session. It is not a score column: `name` is the
  * console's optional label (`0011`), read by `/assessment/instances` and by no derivation over
@@ -330,7 +330,7 @@ const SEEDED_STATUS_SQL = `
  * What is missing from an instance that is not `complete`, in the words of the row it is missing.
  *
  * `instanceStatusOf()` answers one word; the reader needs the fact under it, because the repair
- * differs — a NULL `accepted_at` is `docs/RELEASING.md` 2a's stamp, an unanswered Aspect is a
+ * differs — a NULL `accepted_at` is `docs/operations/releasing.md` 2a's stamp, an unanswered Aspect is a
  * missing `opinion` row, and an absent party row is a seed that never wrote the seat. Named per
  * seat so a half-written instance does not read as "the seed did not run".
  */
@@ -362,7 +362,7 @@ function seededStatusDetail(row) {
  *
  * `profileIds` is every `public.user_profile.user_id`; `authIds` is every id in
  * `neon_auth."user"`. A profile whose account is gone is the half-deleted state
- * `docs/ACCOUNT-DELETION-SPEC.md` §7 step 5 names: the sweep deletes the auth user first, so a
+ * `docs/specs/account-deletion-spec.md` §7 step 5 names: the sweep deletes the auth user first, so a
  * scrub that then failed leaves exactly this row, and the public profile URL keeps resolving.
  */
 export function orphanProfileProblems(profileIds, authIds) {
@@ -423,7 +423,7 @@ export function stuckDeletionJobProblems(jobs, now = Date.now()) {
     const hours = Math.floor((now - startedAt) / HOUR_MS);
     problems.push({
       code: "V28",
-      message: `account_deletion_job has an unfinished deletion for "${job.user_id}" started ${hours} h ago — the auth user is gone and the sweep never landed, so the address recorded with it is still retained with no owner: resume it (docs/ACCOUNT-DELETION-SPEC.md §7)`,
+      message: `account_deletion_job has an unfinished deletion for "${job.user_id}" started ${hours} h ago — the auth user is gone and the sweep never landed, so the address recorded with it is still retained with no owner: resume it (docs/specs/account-deletion-spec.md §7)`,
     });
   }
   return problems;
@@ -530,7 +530,7 @@ export function publishedWithoutVersionProblems(records) {
  * sessions nobody can open.
  *
  * An authored instance this database does not hold **at all** is not a seeded instance reading
- * wrongly — it is a branch the seed has not built yet, which `docs/DEMO.md` records as a green
+ * wrongly — it is a branch the seed has not built yet, which `docs/getting-started/demo.md` records as a green
  * state an emptied demo branch is allowed to be in. It is counted as absent and not failed.
  *
  * Takes any client-shaped object with `query(text, values)`, so the test can drive every branch
@@ -1193,7 +1193,7 @@ async function main() {
       // but it is **not** terminal per *rule*. #427/R2 made acceptance the hinge, and an instance
       // that was complete when its mark was written read `answering` afterwards: avery-rowan on
       // production carried a mark from 2026-11-02T08:42Z, three hours before that merge. So this
-      // check names a real defect either way, and the repair is the mark (docs/RELEASING.md
+      // check names a real defect either way, and the repair is the mark (docs/operations/releasing.md
       // §"main → production", 2a), never the instance — a rule change is a data event, and this is
       // the check that finds it.
       if (hasUnlockColumn && status !== "complete") {
@@ -1882,7 +1882,7 @@ async function main() {
      * `public` holds no foreign key to `neon_auth` (`0003`'s header: "a profile whose user was
      * deleted in the managed schema is an orphan row, not a broken constraint"), so this is the
      * one half-deleted state no constraint refuses: the auth user gone and the profile row left.
-     * The sweep deletes the auth user **first** on purpose (`docs/ACCOUNT-DELETION-SPEC.md` §7
+     * The sweep deletes the auth user **first** on purpose (`docs/specs/account-deletion-spec.md` §7
      * step 3), so a scrub that failed after it leaves exactly this, and the person's public
      * profile URL keeps resolving to an account nobody can sign in to.
      *

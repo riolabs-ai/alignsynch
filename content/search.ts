@@ -24,7 +24,7 @@
  *  - Private quizzes never enter the index (`visibility: "public"` only; `unlisted` opt-in via options).
  *  - `quizCount` is a derived count, so it is 0 for a creator with no quizzes — today's 87/34/56 are fiction
  *    and the real number is 0/0/0 until authorship is backfilled (migration note in
- *    docs/p1-migration/MIGRATION.md#consequences-worth-knowing).
+ *    docs/operations/history/p1-migration/MIGRATION.md#consequences-worth-knowing).
  *  - Every `path` is validated with `isValidRoute()`; a path that does not resolve is a hard error, which is
  *    how the two dead notification routes and `/categories/<16 A slugs>` became impossible to re-introduce.
  *  - Output order is deterministic (quizzes by title, categories by count desc then name, creators by

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › app/(mainlayout) · prev [Request lifecycle](../architecture.md) · next [app/(marketing)](app-marketing.md)
+[Docs hub](../../README.md) › **Code wiki** › app/(mainlayout) · prev [app/api](app-api.md) · next [app/(marketing)](app-marketing.md)
 
 <!-- docs-nav:end -->
 
@@ -84,6 +84,6 @@ Writes split two ways, and the choice is deliberate:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › app/(mainlayout) · prev [Request lifecycle](../architecture.md) · next [app/(marketing)](app-marketing.md)
+[Docs hub](../../README.md) › **Code wiki** › app/(mainlayout) · prev [app/api](app-api.md) · next [app/(marketing)](app-marketing.md)
 
 <!-- docs-nav:end -->

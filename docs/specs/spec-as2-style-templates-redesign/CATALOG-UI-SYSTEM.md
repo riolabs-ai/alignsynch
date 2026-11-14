@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 catalogue UI system · prev [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md) · next [AS2 templates redesign — source notes](SOURCE-NOTES.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 catalogue UI system · prev [AS2 home redesign (handoff)](../spec-as2-style-home-redesign/README.md) · next [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->
 
@@ -121,6 +121,6 @@ The current mutedGradientFor() creates arbitrary HSL tints per slug. Replace tho
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 catalogue UI system · prev [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md) · next [AS2 templates redesign — source notes](SOURCE-NOTES.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 catalogue UI system · prev [AS2 home redesign (handoff)](../spec-as2-style-home-redesign/README.md) · next [AS2 templates redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->

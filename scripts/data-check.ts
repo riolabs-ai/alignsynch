@@ -179,7 +179,7 @@ const nodeRequire = createRequire(__filename);
  * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
  * exported array returned; when it is absent the generated set is simply empty. A present
  * but unloadable module is an E26 error, never a silent skip. (E20 is reserved for WU-5's
- * DUP tier — `docs/P2-INVENTORY.md` — so the generator takes the next free code.)
+ * DUP tier — `docs/operations/history/P2-INVENTORY.md` — so the generator takes the next free code.)
  */
 function loadGenerated<T>(label: string, exportName: string): readonly T[] {
   const source = join(process.cwd(), "data", "generated", `${label}.ts`);
@@ -1001,7 +1001,7 @@ if (clientEntries.length === 0) {
  *
  * The repo is a base core webapp and AlignSynch is a brand variation of it, so a component that
  * was authored from scratch is a component the next brand has to author again. That was not a
- * hypothesis: `docs/UI-DIVERGENCE.md` read twenty-seven files, named six hand-built surfaces with
+ * hypothesis: `docs/specs/ui-divergence.md` read twenty-seven files, named six hand-built surfaces with
  * an ancestor sitting beside each one, and measured **zero** variations actually derived from an
  * ancestor. Docs did not stop it, so the claim is checked: the first comment block of every
  * `components/` file that renders JSX must say either
@@ -1577,7 +1577,7 @@ for (const problem of modeWiringProblems(
  * The shape it forbids is a whole node — `<span>Science</span>`, `label="Science"` —
  * because that is exactly the copy that drifts: rename the subject in
  * `content/categories.ts` and the page keeps saying the old name while typecheck, lint,
- * data:check and build all stay green (docs/P2-INVENTORY.md, DUP tier: 26 hits).
+ * data:check and build all stay green (docs/operations/history/P2-INVENTORY.md, DUP tier: 26 hits).
  *
  * The vocabulary is built from the model here, never from the component tree, so the
  * scan cannot agree with the code it is checking. Record-shaped literals inside a
@@ -1676,7 +1676,7 @@ const copyMeasured = Object.entries(pageCopyBudget).map(([route, entry]) => ({
  *   * no instant is after the fixture clock — a card dated in the future renders
  *     "in 2 days", the same defect E10 blocks for the social fixtures.
  *
- * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` (DUP / MOCK / METRIC /
+ * Numbering: E20–E23 are reserved by `docs/operations/history/P2-INVENTORY.md` (DUP / MOCK / METRIC /
  * PageCopy), so the next free code is E24 rather than reusing a reserved one.
  * ------------------------------------------------------------------ */
 
@@ -1796,7 +1796,7 @@ for (const review of activityReviews) {
  *             (`buildSearchIndex`, `data/chat-data.ts`), so an island there is a second
  *             catalog by construction. The other feature directories still hold islands that
  *             their own work unit removes; this check widens to all of `components/**` when
- *             the last of them lands (E21 in docs/P2-INVENTORY.md is the whole-tree rule).
+ *             the last of them lands (E21 in docs/operations/history/P2-INVENTORY.md is the whole-tree rule).
  *   copies    a quiz title from the search index, or a chat message body from
  *             `data/chat-data.ts`, written into one of the components that render them — as a
  *             literal, a JSX text node or a comment. No baseline on these files: the count is

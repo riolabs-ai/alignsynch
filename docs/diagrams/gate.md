@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Gate · prev [Schemas → fixtures → tables](data.md)
+[Docs hub](../README.md) › **Diagrams** › Gate · prev [Schemas → fixtures → tables](data.md) · next [Lifecycle](lifecycle.md)
 
 <!-- docs-nav:end -->
 
@@ -103,11 +103,11 @@ worktree still corrupt `.next/`, so a single shell must not run two gates at onc
 
 - [`scripts/verify.sh`](../../scripts/verify.sh) — the steps, in order, with the reasons above them.
 - [`scripts/gate-lanes.sh`](../../scripts/gate-lanes.sh) — the classifier, pure over a path.
-- [`docs/REPO-LAYERS.md`](../REPO-LAYERS.md) — the layer table and the measurements behind it.
-- [`docs/GATE.md`](../GATE.md) — the current baseline, yield and the required-check ruleset.
+- [`docs/operations/repo-layers.md`](../operations/repo-layers.md) — the layer table and the measurements behind it.
+- [`docs/operations/gate.md`](../operations/gate.md) — the current baseline, yield and the required-check ruleset.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Gate · prev [Schemas → fixtures → tables](data.md)
+[Docs hub](../README.md) › **Diagrams** › Gate · prev [Schemas → fixtures → tables](data.md) · next [Lifecycle](lifecycle.md)
 
 <!-- docs-nav:end -->

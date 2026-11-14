@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md) · next [AS2 home redesign (handoff)](spec-as2-style-home-redesign/README.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Reference UX patterns · prev [Answer input](ux-input.md) · next [The Gap report](ux-report.md)
 
 <!-- docs-nav:end -->
 
@@ -97,12 +97,12 @@ unproven. Proposed: off-canvas sidebar, single column, rail full width with `Ste
 
 ## Related
 
-- [UI-UX-AUDIT.md](../UI-UX-AUDIT.md) — what the build follows, varies or diverges from, measured against the purchased template.
-- [REFERENCE-MOCKUPS.md](../REFERENCE-MOCKUPS.md) — the specification's own mockups, the other reference set this one is measured against.
+- [UI-UX-AUDIT.md](ui-ux-audit.md) — what the build follows, varies or diverges from, measured against the purchased template.
+- [REFERENCE-MOCKUPS.md](../reference/mockup-index.md) — the specification's own mockups, the other reference set this one is measured against.
 - [ui-registry.md](../ui-registry.md) — the surfaces these nine screens are, and their status.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Reference UX patterns · prev [Stage display](ux-stages.md) · next [AS2 home redesign (handoff)](spec-as2-style-home-redesign/README.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Reference UX patterns · prev [Answer input](ux-input.md) · next [The Gap report](ux-report.md)
 
 <!-- docs-nav:end -->
