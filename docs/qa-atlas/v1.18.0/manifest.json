@@ -3,6 +3,7 @@
   "version": "1.18.0",
   "brand": "alignsynch",
   "base": "http://127.0.0.1:3417",
+  "captureCommit": "73a78ceb01f5e5f0afdde92a397fb5fe0cac7727",
   "generatedAt": "2026-11-13T22:09:42.909Z",
   "runtime": {
     "node": "v24.22.0",
