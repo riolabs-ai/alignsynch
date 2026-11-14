@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.20.0](v1-20-0.md)
+
+- **Released** 2026-11-14
+- **Tag** [`v1.20.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.0)
+- **Pull requests named** 15
+- **Theme:** the release that makes the version label true — the create walk can be paid and sent, its card step mounts on the choice, and the code it names was already live
+- **Headline:** feat(flow) · #1014 steps 4–5 — send-or-draft inside the walk, and both endings land on the relationship (#1019)
+
 ### [v1.19.0](v1-19-0.md)
 
 - **Released** 2026-11-14
