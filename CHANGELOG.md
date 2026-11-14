@@ -8,13 +8,15 @@ with a **Known limits** block, because a release that does not say what it canno
 
 ## [1.20.1] - 2026-11-14
 
-Six fixes and no new surface: the billing receiver now subscribes the events its own state machine
-and email band were waiting for, the price table points at the AlignSynch test account, and four
-doors open onto the thing they name. The ledger below the fixes is provenance — the three commits in
-this window that are not fixes, named so the entry accounts for every commit the tag covers.
+Seven fixes and no new surface: the billing receiver now subscribes the events its own state machine
+and email band were waiting for, the price table points at the AlignSynch test account, four doors
+open onto the thing they name, and the parity render no longer inherits the developer's shell
+environment. The ledger below the fixes is provenance — the three commits in this window that are not
+fixes, named so the entry accounts for every commit the tag covers.
 
 ### Fixed
 
+- `fix(gate)` — the parity render no longer inherits the developer shell's environment (#1066) ([#1067](https://github.com/riolabs-ai/alignsynch/pull/1067))
 - `fix(pricing)` — carry the chosen plan from /pricing to stage 5 (#1043) ([#1061](https://github.com/riolabs-ai/alignsynch/pull/1061))
 - `fix(onboarding)` — #1042 — one wizard door for every create-intent action ([#1050](https://github.com/riolabs-ai/alignsynch/pull/1050))
 - `fix(health)` — the stale-record remedy names a command that runs (#696) ([#1045](https://github.com/riolabs-ai/alignsynch/pull/1045))
