@@ -48,7 +48,7 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 
 - **Released** 2026-11-14
 - **Tag** [`v1.20.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.1)
-- **Pull requests named** 9
+- **Pull requests named** 10
 - **Theme:** the release where the billing wiring caught up with its own notices — six fixes, no new surface, and the second cut in a row whose code was already live
 - **Headline:** fix(pricing) — carry the chosen plan from /pricing to stage 5 (#1043) (#1061)
 
