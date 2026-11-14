@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [A relationship with no initiator member, #958](../958-no-initiator-member/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [The relationship detail's identity, #975](../975-detail-identity/README.md) · next [AS2 home visual QA](../as2-home/README.md)
 
 <!-- docs-nav:end -->
 
@@ -67,6 +67,6 @@ node docs/qa-976-sent-none/capture.mjs --phase after --base http://localhost:343
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [A relationship with no initiator member, #958](../958-no-initiator-member/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The Sent screen with no invitation row, #976 · prev [The relationship detail's identity, #975](../975-detail-identity/README.md) · next [AS2 home visual QA](../as2-home/README.md)
 
 <!-- docs-nav:end -->
