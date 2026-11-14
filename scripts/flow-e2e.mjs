@@ -810,6 +810,21 @@ async function main() {
   await captureMethodStandIn(await relationshipState(instanceId), "stage 5 · draft");
   const sent = await initiator.post(sendInvitationPath(instanceId), {});
   check("Send and Continue answers 303", sent.status === 303, `${sent.status} ${sent.location}`);
+  // #1014 — the send lands on the **relationship**, not the session and not the Sent screen: the flow
+  // ends where every later cycle of the relationship lives.
+  const sendLocation = String(sent.location ?? "");
+  const sendTarget = new URL(sendLocation, "http://localhost");
+  check(
+    "and it lands on the relationship it published, carrying the mailer's own outcome",
+    /^\/dashboard\/relationships\/[^/]+$/.test(sendTarget.pathname) &&
+      sendTarget.searchParams.has("invite"),
+    `location = "${sendLocation}"`,
+  );
+  check(
+    "and it does not land on the session screen or the retired Sent confirmation",
+    !/^\/assessment\/instances\//.test(sendTarget.pathname) && !/\/sent$/.test(sendTarget.pathname),
+    `location = "${sendLocation}"`,
+  );
   const published = await relationshipState(instanceId);
   check(
     "and it moves the draft to published, with the publish instant written",

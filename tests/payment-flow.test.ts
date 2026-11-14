@@ -38,6 +38,7 @@ import {
   PAY_FLOW_STEPS,
   type PayFlowStep,
 } from "@/components/assessment-flow/invite-walk";
+import { membershipOf } from "@/lib/relationship/membership";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -170,5 +171,35 @@ describe("stage 5 — the walk happens in place, in four steps, and ends on the 
       expect(source).not.toContain("beside this walk");
       expect(source).not.toContain("the control beside");
     }
+  });
+});
+
+/**
+ * #1014 — **the walk's gate is a subscription, not `membership.writable`.**
+ *
+ * This pair is the whole defect: `writable` is `true` for a `draft` on purpose (nothing has been
+ * sold, so there is nothing to lapse), and stage 5 renders on exactly such a draft. Gating the walk
+ * on it opened the walk on its thank-you for every new relationship, skipped the plan and the card,
+ * and left `sendDraftInvitation()` to refuse the send with `no-payment-method` — a screen saying
+ * "the plan is active" about an account holding no subscription at all.
+ */
+describe("stage 5 — the walk is paid for by a subscription, not by `writable`", () => {
+  it("a draft reads writable while holding no subscription: the two facts disagree", () => {
+    const reading = membershipOf({
+      status: "draft",
+      subscription: null,
+      now: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    expect(reading.state).toBe("open");
+    expect(reading.writable).toBe(true);
+  });
+
+  it("the invite stage gates the walk on `subscriptionLive`, never on `paymentArmed`", () => {
+    const page = readFileSync(
+      join(process.cwd(), "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain("initialPaid={screen.subscriptionLive === true}");
+    expect(page).not.toContain("initialPaid={screen.paymentArmed");
   });
 });

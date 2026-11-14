@@ -111,7 +111,11 @@ import { invitationLink } from "@/lib/flow/email";
 import { aspectListProblem, aspectWriteProblem, aspectsToWrite } from "@/lib/flow/aspects";
 import { confirmationMatches, type ClaimRefusal } from "@/lib/flow/claim";
 import { inviteStateOf } from "@/lib/flow/invite-state";
-import { readMembershipForRelationship, type Sql } from "@/lib/relationship/enforcement";
+import {
+  readMembershipForRelationship,
+  readSubscriptionLive,
+  type Sql,
+} from "@/lib/relationship/enforcement";
 import type { Membership } from "@/lib/relationship/membership";
 import { canTransition, isRelationshipStatus } from "@/lib/relationship/status";
 import { relationshipRoleOf } from "@/lib/flow/membership";
@@ -2767,6 +2771,19 @@ export async function readFlowScreen(input: {
     now,
   );
   const paymentArmed = membership?.membership.writable;
+  /**
+   * #1014 — **the walk's gate is a subscription, not `writable`.**
+   *
+   * `paymentArmed` above is `membership.writable`, and a `draft` reads `true` there on purpose (it
+   * is not sold, so there is nothing to lapse). Stage 5 renders on a freshly created draft, so asking
+   * `paymentArmed` whether the walk had been paid for answered "yes" for every new relationship: the
+   * walk opened on its thank-you, skipped the plan and the card, and `sendDraftInvitation()` then
+   * refused the send with `no-payment-method`. This is the fact the send enforces, read the same way.
+   */
+  const subscriptionLive =
+    membership === undefined || membership.initiatorUserId === null
+      ? undefined
+      : await readSubscriptionLive(poolSql, membership.initiatorUserId);
   const status = instanceStatusOf({ ...progressOf(answersOnly), paymentArmed });
   const roles = visibleRoles(viewerRole, status);
   const opinions = await query<OpinionRow>(
@@ -2818,6 +2835,7 @@ export async function readFlowScreen(input: {
     viewerRole,
     membership: membership?.membership ?? null,
     paymentArmed,
+    subscriptionLive,
     invite:
       invite === null
         ? null

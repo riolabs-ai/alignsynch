@@ -280,6 +280,15 @@ nothing to press. The lock is enforced twice: that absence is the courtesy, and
 `sendDraftInvitation()` refuses a relationship whose Initiator holds no live membership
 (`no-payment-method`) in the write, so a crafted POST cannot publish an unpaid draft.
 
+**The gate reads a subscription, never `membership.writable` (#1014).** `writable` answers "may either
+party write?", and it is `true` for a `draft` on purpose — nothing has been sold, so there is nothing
+to lapse. Stage 5 renders on exactly such a draft, so a gate built on `writable` opened the walk on its
+thank-you for every brand-new relationship, skipped the plan and the card, and left the send to be
+refused with `no-payment-method`: the screen said "the plan is active" about an account holding no
+subscription. The walk therefore reads `screen.subscriptionLive`, read from the same
+`billing_subscription` row the refusal names, and `screen.paymentArmed` keeps its own meaning for the
+Gap.
+
 **The purchase charges nothing today.** The membership is a subscription with a seven-day trial: the
 card is the plan's, and the walk's card step says so in as many words.
 

@@ -175,7 +175,24 @@ function readingOf(
 }
 
 /**
- * Read one relationship's membership, without writing anything.
+ * Does this account hold a **live subscription** — the fact stage 5's send is gated on?
+ *
+ * This is not `membership.writable`, and the difference is the whole reason it exists. `writable`
+ * answers "may either party write?" and deliberately reads `true` for a `draft` (nothing has been
+ * sold yet, so there is nothing to lapse). A freshly created relationship is exactly that: a draft.
+ * So a screen that asked `membership.writable` whether the walk was paid for would open the walk on
+ * its thank-you for every brand-new relationship, skip the plan and the card entirely, and then be
+ * refused by `sendDraftInvitation()` with `no-payment-method` — the UI saying "the plan is active"
+ * about an account holding no subscription.
+ *
+ * The read is the same one the send performs (`readSubscriptionFacts` filters to the entitling
+ * statuses), so the courtesy and the rule cannot disagree.
+ */
+export async function readSubscriptionLive(sql: Sql, userId: string): Promise<boolean> {
+  return (await readSubscriptionFacts(sql, userId)) !== null;
+}
+
+/** Read one relationship's membership, without writing anything.
  *
  * This is the read a screen uses. It never takes a lock and never writes, which is what makes it
  * safe inside a render — the repo's rule is that a render does not read a clock *or* write a row,

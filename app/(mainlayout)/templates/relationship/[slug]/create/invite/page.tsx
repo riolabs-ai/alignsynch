@@ -150,6 +150,13 @@ export default async function TemplateCreateInvitePage({
    *   `planIncluded` what the account's plan already covers, so an entitled account gets a summary
    *                  rather than a radio group selling a tier it holds.
    *
+   * **`initialPaid` is `screen.subscriptionLive`, not `screen.paymentArmed` (#1014).** The latter is
+   * `membership.writable`, and a `draft` reads writable on purpose — nothing has been sold, so there
+   * is nothing to lapse. Stage 5 renders on exactly such a draft, so `paymentArmed` answered "paid"
+   * for every new relationship: the walk opened on its thank-you, skipped the plan and the card, and
+   * `sendDraftInvitation()` refused the send with `no-payment-method`. `subscriptionLive` is read
+   * from the same `billing_subscription` row that refusal names, so the courtesy and the rule agree.
+   *
    * **This is the membership purchase (#1010 R2), and the only card form.** The card is Stripe's,
    * mounted inside the walk from `components/billing/stripe-frame.tsx`, and it mounts the
    * *subscription* checkout — one monthly membership covering both parties, seven days free. There
@@ -189,7 +196,7 @@ export default async function TemplateCreateInvitePage({
         onStart: startMembershipAction,
         onConfirm: confirmMembershipAction,
       }}
-      initialPaid={screen.paymentArmed === true}
+      initialPaid={screen.subscriptionLive === true}
       {...(accountPlan === undefined ? {} : { planIncluded: accountPlan })}
     />
   );
