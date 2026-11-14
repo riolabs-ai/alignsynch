@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The flow's dialog behaves like a route, #979 · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The flow's dialog behaves like a route, #979 · prev [Every in-product Create door opens the flow in place, #979](../979-flow-entries/README.md) · next [AS2 home visual QA](../as2-home/README.md)
 
 <!-- docs-nav:end -->
 
@@ -126,6 +126,6 @@ stage 3, reopening the flow shows `title: "Avery and Rowan, on trust"` and
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The flow's dialog behaves like a route, #979 · prev [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md) · next [AS2 home visual QA](../as2-home/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The flow's dialog behaves like a route, #979 · prev [Every in-product Create door opens the flow in place, #979](../979-flow-entries/README.md) · next [AS2 home visual QA](../as2-home/README.md)
 
 <!-- docs-nav:end -->

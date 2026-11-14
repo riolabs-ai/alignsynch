@@ -61,6 +61,7 @@ import {
   relationshipTypeDemoPath,
 } from "@/lib/flow/paths";
 import type { ReactNode } from "react";
+import { FlowEntryLink } from "./flow-entry-link";
 
 /**
  * The card's shell — a column that fills the grid cell, so one long summary cannot leave its
@@ -280,9 +281,17 @@ export function TemplateCard<T extends CatalogueTemplate>({
 
       <div className="mt-auto flex flex-wrap items-center gap-3 pt-4">
         {createable(template) ? (
-          <a className={PRIMARY} href={createRelationshipPath(template.slug)}>
+          /*
+           * The door, and it opens the flow **in place** (#979 B). This card is drawn by
+           * `/assessment` and `/templates/relationship`, and both segments declare the intercepted
+           * route that turns that address into the flow's dialog over them — `FlowEntryLink` is the
+           * soft navigation and the remembered origin the dialog needs, in one component, so the
+           * two surfaces cannot be mounted differently. A bare `<a>` here would be a document load:
+           * the route would render as a page and the shelf would be gone.
+           */
+          <FlowEntryLink className={PRIMARY} href={createRelationshipPath(template.slug)}>
             {copy.useTemplate}
-          </a>
+          </FlowEntryLink>
         ) : null}
         <a className={SECONDARY} href={relationshipTemplatePath(template.slug)}>
           {copy.viewDetails}

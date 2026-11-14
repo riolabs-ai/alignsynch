@@ -63,6 +63,34 @@ a full-height sheet at 390. A stage URL still renders standalone — a deep link
 invitation link must never 404. **Account is stage 4 _inside_ the overlay**; there is no longer a
 gate step after Invite, and no page whose only job is to demand an account.
 
+### Where the flow is entered — three classes, one rule
+
+The inventory behind #979 counted **36 entry controls** (`21 full page · 7 wizard route · 6 in-flow
+stage · 2 external · 0 modal`). One rule decides what each one does, and it is a property of the
+**destination**, never of the surface's tidiness:
+
+| the control's destination                                                                          | what pressing it does                                                       | why                                                                                                       |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **a stage of the flow** (`/templates/relationship/<slug>/create{,/mode,/aspects,/commit,/invite}`) | opens the flow **in place**, in the dialog, over the page it was pressed on | the user keeps their context; that is the whole point of the shell                                        |
+| **any other page** — a marketing surface, an auth page, a catalogue, a relationship                | **navigates**, exactly as before                                            | a dialog over a crawlable page breaks its first paint and its back button, and there is no stage to mount |
+| **a third party** (Google, the payment provider)                                                   | unchanged: it leaves the product and returns                                | it is not ours to mount                                                                                   |
+
+A wizard-route entry is therefore a `FlowEntryLink` (`components/assessment-flow/flow-entry-link.tsx`)
+and nothing else: a `next/link` **soft navigation** — which is what lets the intercepted route draw
+the stage over the page — that remembers the page and the control it was pressed on, so `Esc`, the X
+and the overlay close back onto them with focus restored.
+
+**The slot is declared per host segment, never on the product shell.** `@flow` sits beside the page
+in each segment that carries a door — `/assessment`, `/templates/relationship` (and its `[slug]`),
+`/dashboard/templates`, `/dashboard/relationships` — and intercepts all five stages there. Declared
+once at `(mainlayout)/layout.tsx` it would also intercept one stage navigating to the next (stage 3's
+"Continue" is a link) and draw a modal over the flow itself.
+
+**Marketing keeps navigating.** `/relationship-types`, `/relationship-types/<slug>[/demo]`,
+`/relationship-templates` and `/pricing` live in `app/(marketing)/**`; their controls resolve through
+`lib/start-path.ts` to `/register?next=<stage>` for a visitor and the stage for a member, and they are
+**not** converted. A dialog there would put an app shell on a crawlable page for a count.
+
 ### The invitation is the response path, and it enters at Account
 
 The counterparty opens `/invite/<token>` and gets the same overlay: `StageShell` frames it,
