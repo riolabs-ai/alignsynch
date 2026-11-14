@@ -41,10 +41,23 @@ function cli(args: string[], env: Record<string, string> = {}) {
   return { status: run.status ?? -1, stdout: run.stdout ?? "", stderr: run.stderr ?? "" };
 }
 
+/**
+ * Stdout with the plan's escape sequences removed. The CLI colours its output whether or not it is
+ * piped — `milestone implied` is wrapped in bold — so a pattern that spans the word and its value
+ * never matches raw stdout. The escape is built from its code point, the same way
+ * `scripts/preview.mjs` does, because biome's `noControlCharactersInRegex` (rightly) rejects a
+ * control character written into a regex literal.
+ */
+const ESCAPE = String.fromCharCode(27);
+const ANSI = new RegExp(`${ESCAPE}\\[[0-9;]*[A-Za-z]`, "g");
+
+function plain(text: string) {
+  return text.replace(ANSI, "");
+}
+
 /* ------------------------------------------------------------------ *
  * The census — release_boundary.py's rule, widened to the repo's separators
  * ------------------------------------------------------------------ */
-
 describe("the census classifies the repo's own commit subjects", () => {
   it("reads all three separators the repo's commits use", () => {
     // #1021: a colon-only rule filed every `feat(flow) · …` under Maintenance, which is how
@@ -354,17 +367,55 @@ describe("one actor: a worker cannot run a cut, and the number cannot be typed",
   });
 
   it("reads milestone evidence from --milestones, not from gh", () => {
-    // Measured on the first acceptance run: the flag was accepted and then ignored, so the row read
-    // `gh api …` and the demonstration proved nothing. The row's own source is the tell.
+    // Measured twice, both times in the row's own `source` column. First run: the flag was accepted
+    // and then ignored, so the row read `gh api …` and the demonstration proved nothing. Second run,
+    // after 1.20.1 was published: the fixture hardcoded `v1.20.1 — the patch`, the candidate became
+    // 1.20.2, no milestone named it, and the row printed "none names the cut" instead of the title —
+    // a red gate on a tree nobody touched, caused by someone renaming a milestone.
+    //
+    // The row only echoes a title that names *the candidate*, so the fixture is now built from the
+    // candidate the tool computes rather than from a literal: a test that hardcodes a version breaks
+    // the day that version ships, which is the class this file exists to stop. Both runs pass
+    // --milestones, so neither one spawns `gh` — a test that needs the network is not a test of the
+    // computation.
+    const probe = join(tmpdir(), `release-cut-milestones-probe-${process.pid}.json`);
+    writeFileSync(
+      probe,
+      JSON.stringify([{ number: 23, title: "DEFERRED — a name with no version" }]),
+    );
+    const plan = cli(["--milestones", probe, "--check"]);
+    rmSync(probe, { force: true });
+
+    // The implied name is printed on every plan, including this one, and it is the census's answer.
+    const implied = /milestone implied\s+(v\d+\.\d+\.\d+)/.exec(plain(plan.stdout))?.[1] ?? "";
+    expect(implied).toMatch(/^v\d+\.\d+\.\d+$/);
+
     const file = join(tmpdir(), `release-cut-milestones-${process.pid}.json`);
-    writeFileSync(file, JSON.stringify([{ number: 23, title: "v1.20.1 — the patch" }]));
+    const other = join(tmpdir(), `release-cut-milestones-other-${process.pid}.json`);
+    writeFileSync(
+      file,
+      JSON.stringify([{ number: 23, title: `${implied} — the fixture milestone` }]),
+    );
+    writeFileSync(
+      other,
+      JSON.stringify([{ number: 23, title: "v0.0.1 — names some other number" }]),
+    );
     try {
       const run = cli(["--milestones", file, "--check"]);
-      expect(run.stdout).toContain(`--milestones ${file}`);
-      expect(run.stdout).toContain("v1.20.1 — the patch");
-      expect(run.stdout).not.toContain("gh api repos/");
+      const out = plain(run.stdout);
+      expect(out).toContain(`--milestones ${file}`);
+      expect(out).toContain(`${implied} — the fixture milestone`);
+      expect(out).not.toContain("gh api repos/");
+
+      // The echo is earned, not free: a title that names another number is not printed at all. That
+      // is what makes the assertion above evidence the file was read rather than a substring that
+      // happened to already be in the output — and it is the assertion that was missing when the
+      // fixture went stale.
+      const stale = cli(["--milestones", other, "--check"]);
+      expect(plain(stale.stdout)).not.toContain("v0.0.1 — names some other number");
     } finally {
       rmSync(file, { force: true });
+      rmSync(other, { force: true });
     }
   });
 });
