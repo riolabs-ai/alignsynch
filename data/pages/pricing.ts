@@ -79,8 +79,6 @@ export const pricingPageCopy: PageCopy = zPageCopy.parse({
          * start, which "Not available on this plan right now." says without the shop verb.
          */
         { id: "not-available", label: "Not available on this plan right now." },
-        { id: "checkout-busy", label: "Opening checkout…" },
-        { id: "checkout-error", label: "Checkout did not start — try again" },
         { id: "whats-included", label: "WHAT'S INCLUDED:" },
         { id: "limitations", label: "LIMITATIONS:" },
         { id: "price-per-month", label: "mo" },

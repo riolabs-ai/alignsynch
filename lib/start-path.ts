@@ -106,11 +106,18 @@ export function startPathFor(typeId: string): string {
  *   anything else               → unchanged, for both viewers
  *
  * **A bare `/register` still means account-only intent**, and it is the authored form for it: the
- * shell's Sign Up row and `/pricing`'s "Start your 7 days" are not create actions, and rewriting
- * them into a wizard would invent an intent the fixture did not author. A create-intent CTA
- * authors its destination instead — the flow's own stage 1, blank or template-backed
- * (`data/pages/templates.ts::final-cta`) — and this function passes it through untouched because
- * it is not a sign-up address.
+ * shell's Sign Up row is not a create action, and rewriting it into a wizard would invent an intent
+ * the fixture did not author. A create-intent CTA authors its destination instead — the flow's own
+ * stage 1, blank or template-backed (`data/pages/templates.ts::final-cta`) — and this function
+ * passes that through untouched because it is not a sign-up address.
+ *
+ * **`/pricing` is no longer an account-only surface (#1043).** When this sentence was written the
+ * pricing page's "Start your 7 days" resolved here; #1043 made every action on that page a door into
+ * the flow — a plan card carries its tier and interval, the general CTAs carry nothing, and both land
+ * on the template catalogue — so the page reads this module for nothing. Its identity-dependent
+ * action is gone on purpose: a member and a visitor are sent to the same catalogue, and the account
+ * is stage 4 of the wizard they land in. The bare `/register` case still exists for the shell's own
+ * rows and for any other authored surface that means "make me an account".
  *
  * An authored href that is not the sign-up route passes through untouched — `checkout` is the one
  * other value in the plan fixture, and a resolver that rewrote it would be making a billing

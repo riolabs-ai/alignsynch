@@ -78,6 +78,7 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
 import type { CheckoutHandlers } from "./invite-walk";
+import type { CarriedPlan } from "@/lib/flow/plan-intent";
 import { RelationshipFlowShell, type FlowMount } from "./relationship-flow-shell";
 import { StageAccount } from "./stage-account";
 import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
@@ -251,6 +252,7 @@ export function CreateRelationship({
   checkout,
   initialPaid,
   planIncluded,
+  carriedPlan,
   copyBlocked,
 }: {
   copy: PageCopy;
@@ -326,6 +328,14 @@ export function CreateRelationship({
   initialPaid?: boolean;
   /** What the account's plan already covers (#870), measured by the page. */
   planIncluded?: { readonly name: string; readonly entitled: boolean };
+  /**
+   * The plan the reader chose on `/pricing`, carried to stage 5 (#1043).
+   *
+   * The page measures it from a cookie this component cannot read — the choice was made one page
+   * earlier, on a marketing surface — and passes it down as the row to preselect plus the interval
+   * the checkout must use. Absent on stages 1–4, and whenever nothing was carried.
+   */
+  carriedPlan?: CarriedPlan;
   /**
    * **This template cannot be copied, so stage 1 must not collect anything (#870).**
    *
@@ -732,6 +742,7 @@ export function CreateRelationship({
             {...(checkout === undefined ? {} : { checkout })}
             {...(initialPaid === undefined ? {} : { initialPaid })}
             {...(planIncluded === undefined ? {} : { planIncluded })}
+            {...(carriedPlan === undefined ? {} : { carriedPlan })}
             backHref={backHref}
             cancelHref={shell.closeHref}
             cancelLabel={cancelLabel}

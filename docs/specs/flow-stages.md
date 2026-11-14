@@ -309,6 +309,18 @@ Gap.
 **The purchase charges nothing today.** The membership is a subscription with a seven-day trial: the
 card is the plan's, and the walk's card step says so in as many words.
 
+**A plan chosen on `/pricing` arrives here already selected (#1043).** The pricing page sells nothing
+itself: every action on it opens the public template catalogue, and a plan card's action carries the
+tier and the interval (`/pricing/start` → `303` → `/relationship-templates`). The pair is recorded on
+the browser as one small intent (`lib/flow/plan-intent.ts`), because the pages between — the
+catalogue, the twenty-seven taxonomy pages, stage 1, the sign-in at stage 4 — are prerendered on
+purpose and must not learn about it to pass it along. When stage 5 mounts, the matching row is
+**already checked** (`data-plan-carried` on the walk, the row's own radio `checked`) and its panel
+carries the one control that opens the card step, since a checked radio fires no `change`. Choosing
+the other row still starts the checkout directly, exactly as it does when nothing was carried; a
+choice that arrived is reviewable, changeable, and **never charged here** — the membership still
+starts from this panel, and `sendDraftInvitation()` still refuses an unpaid send.
+
 **The words are the product**: _join membership plan_, _activate relationship_, _send email to
 counterparty now_. `purchase`, `buy` and `save payment method` appear nowhere in the stage — the
 thing being paid for is a membership plan and an activated relationship, and not a checkout.
@@ -328,6 +340,10 @@ thing being paid for is a membership plan and an activated relationship, and not
   storage, so the derivation cannot survive a reload by writing one.
 - `data:check` E10 still holds every flow `href` to the route manifest, so a retired
   `/…/create/account` route cannot quietly return, and a `/…/ongoing` route cannot arrive.
+- `tests/pricing-plan-carry.test.tsx` holds the whole carry (#1043): which pairs a card may carry,
+  the cookie round trip, the tier→row crossing read backwards off `PLAN_BILLING_TIER`, the route's
+  `303` and its clear-on-nothing policy, and the walk drawing the carried row checked with the
+  carried interval in the checkout it starts.
 - `tests/invite-response-shell.test.tsx` renders the response stage through `StageShell` and fails
   if it stops drawing the five-stage rail at Account, drops off the shared stage column, gains a
   second progress band, or exits onto anything but the screens `afterClaimTarget()` names.
