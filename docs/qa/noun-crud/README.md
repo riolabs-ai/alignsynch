@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Templates and relationships after creation · prev [Lockup 2rem](../lockup-2rem/README.md) · next [Payment capture & completion](../payment/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Templates and relationships after creation · prev [Home review comments — the logo](../home-comments/README.md) · next [Payment capture & completion](../payment/README.md)
 
 <!-- docs-nav:end -->
 
@@ -66,6 +66,6 @@ database's, and the panel's `blocked` refusal names it (`mode-fixed`).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Templates and relationships after creation · prev [Lockup 2rem](../lockup-2rem/README.md) · next [Payment capture & completion](../payment/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Templates and relationships after creation · prev [Home review comments — the logo](../home-comments/README.md) · next [Payment capture & completion](../payment/README.md)
 
 <!-- docs-nav:end -->

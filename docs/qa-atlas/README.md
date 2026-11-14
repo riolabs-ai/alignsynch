@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — v1.17.0](v1.17.0/index.md)
+[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
 
 <!-- docs-nav:end -->
 
@@ -183,6 +183,6 @@ the previous atlas once there is one; the first atlas says so instead of showing
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — v1.17.0](v1.17.0/index.md)
+[Docs hub](../README.md) › **Records & QA** › QA atlas · prev [v1.x UI cohort](../qa/v1x-ui-cohort/README.md) · next [QA atlas — the 1.17.1 tree (never released)](v1.17.1/index.md)
 
 <!-- docs-nav:end -->

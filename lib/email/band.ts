@@ -41,14 +41,15 @@ import type { MailKeyMode } from "@/lib/email/key-mode";
 export type EmailClass = "transactional" | "marketing";
 
 /**
- * The marker a body carries where its prose has not been written yet (#548).
+ * The marker a body carried where its prose was not written yet (#548).
  *
- * It lives in the band rather than in any one template because it is a property of the pass, not
- * of a message: a template that cannot say something yet writes this marker and a bare
- * instruction, and never a sentence nobody wrote. The release note re-exports it so its callers
- * keep one import.
+ * **Retired.** It used to be exported here and printed by a template that had no sentence to send,
+ * on the doctrine *"a sentence nobody wrote is worse"* — which stands. What changed is that every
+ * body now has a pen: `content/email-bodies.md` holds the words and `lib/email/body.ts` reads them,
+ * so a template with nothing to say writes the plainest true sentence it can and the file's own
+ * `<!-- TODO(owner): … -->` carries the blank where a human reads it. `scripts/gen-email-bodies.mjs`
+ * fails on the token in a body, so re-introducing it is a red gate rather than a habit.
  */
-export const CONTENT_TO_REFINE = "{{content_to_refine}}";
 
 /** A section heading — rendered as `## ` in the text, so the parser needs no second channel. */
 export interface EmailHeading {

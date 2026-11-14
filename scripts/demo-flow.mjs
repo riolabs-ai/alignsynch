@@ -22,8 +22,8 @@
  *
  * ## No browser dependency
  *
- * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa-as2-home/capture.mjs` and
- * the rest of `docs/qa-*` use — Node 24 has a global `WebSocket`, so this is a hand-rolled session
+ * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa/as2-home/capture.mjs` and
+ * the rest of `docs/qa/**` use — Node 24 has a global `WebSocket`, so this is a hand-rolled session
  * with no Playwright and no Puppeteer in `package.json`, and there never will be one from this file.
  *
  * Two CDP details the stills convention already paid for:

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Home review comments — the logo · prev [Help two-column](../help-two-column/README.md) · next [Home hero polish](../home-polish/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Home review comments — the logo · prev [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md) · next [Templates and relationships after creation](../noun-crud/README.md)
 
 <!-- docs-nav:end -->
 
@@ -114,6 +114,6 @@ does not move.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › Home review comments — the logo · prev [Help two-column](../help-two-column/README.md) · next [Home hero polish](../home-polish/README.md)
+[Docs hub](../../README.md) › **Records & QA** › Home review comments — the logo · prev [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md) · next [Templates and relationships after creation](../noun-crud/README.md)
 
 <!-- docs-nav:end -->

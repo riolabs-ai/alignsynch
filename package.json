@@ -1,6 +1,6 @@
 {
   "name": "quizhub",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "engines": {
@@ -31,6 +31,8 @@
     "brand:icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",
+    "email:bodies": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-email-bodies.mjs",
+    "email:bodies:check": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-email-bodies.mjs --check",
     "ui:registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs",
     "ui:registry:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs --check",
     "ui:census": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/ui-census.js",
@@ -42,6 +44,9 @@
     "changelog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs --check",
     "docs:nav": "node scripts/docs-nav.mjs --write",
     "docs:check": "node scripts/docs-check.mjs",
+    "qa:retention": "node scripts/capture-retention.mjs",
+    "qa:retention:report": "node scripts/capture-retention.mjs --report",
+    "qa:retention:prune": "node scripts/capture-retention.mjs --prune",
     "md:check": "markdownlint-cli2 && node scripts/md-style.mjs --check",
     "md:fix": "markdownlint-cli2 --fix && node scripts/md-style.mjs && biome format --write docs",
     "release:note": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/release-notify.mjs",

@@ -48,7 +48,17 @@ cd "$ROOT"
 CHANGELOG="CHANGELOG.md"
 VERSION_TOOL="scripts/release-version.mjs"
 LIMITS_TOOL="scripts/release-limits.mjs"
-CONVENTIONAL='^[a-z]+(\([^)]*\))?!?: '
+# A subject is conventional when a lowercase type follows with an optional `(scope)` then a
+# separator: the `: ` the convention specifies, or the ` · ` and ` — ` this repo's commits use for
+# the same thing. All three are the same claim — a type and a scope — so all three classify:
+# reading only `: ` filed every `feat(flow) · …` under Maintenance with no prefix, which is how
+# v1.19.0's billing subscription and dialog shell were about to ship as maintenance bullets, and
+# four older commits (`feat(admin) — …`, `fix(shell) — …`) were still filed that way.
+#
+# The em dash is safe to add because the entries those four commits sit in are already published:
+# an entry is written once and a pushed tag is never moved, and `--check` compares the *newest*
+# entry against its own tag range, so no shipped section is rewritten by this rule.
+CONVENTIONAL='^([a-z]+(\([^)]*\))?!?)(: | · | — )'
 
 say() { printf '%s\n' "$*"; }
 step() { printf '\n▶ %s\n' "$*"; }
@@ -151,13 +161,16 @@ limits_placeholder() { # <version> -> 0 when the block is still the generated TO
 
 # --- commits -> entry ----------------------------------------------------------
 
-subject_prefix() { # "feat(scope): rest" -> "feat(scope)"; anything else -> ""
-  if [[ $1 =~ $CONVENTIONAL ]]; then printf '%s' "${1%%: *}"; fi
+subject_prefix() { # "feat(scope): rest", "feat(scope) · rest" or "feat(scope) — rest" -> "feat(scope)"; anything else -> ""
+  if [[ $1 =~ $CONVENTIONAL ]]; then printf '%s' "${BASH_REMATCH[1]}"; fi
 }
 
 subject_text() { # the commit subject's words, conventional prefix removed
   local s="$1"
-  if [[ $s =~ $CONVENTIONAL ]]; then s="${s#*: }"; fi
+  # The matched prefix is removed rather than the text the pattern implies: `${s#*: }` kept a
+  # `·`-separated subject intact (no `: ` to cut at), and `*: ` would cut at the first `: ` inside
+  # the words instead of at the separator.
+  if [[ $s =~ $CONVENTIONAL ]]; then s="${s#"${BASH_REMATCH[0]}"}"; fi
   printf '%s' "$s"
 }
 
