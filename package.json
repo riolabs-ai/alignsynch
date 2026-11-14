@@ -39,6 +39,7 @@
     "vocabulary:census": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/vocabulary.js",
     "columns:check": "node scripts/column-refs.ts --check",
     "release": "bash scripts/release.sh",
+    "release:cut": "node scripts/release-cut.mjs",
     "release:check": "bash scripts/release.sh --check",
     "changelog": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs",
     "changelog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs --check",
