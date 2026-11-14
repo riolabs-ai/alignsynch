@@ -395,6 +395,11 @@
           "question": "What does the build follow, vary, or quietly diverge from in the purchased template?"
         },
         {
+          "path": "specs/ux-defect-inventory.md",
+          "title": "UX defect inventory (#975)",
+          "question": "Which UX defects were measured in the flow, the modal and the dashboard — and which commit shipped each one?"
+        },
+        {
           "path": "specs/ux-input.md",
           "title": "Answer input",
           "question": "How does a person answer — scale, labels, semantics?"

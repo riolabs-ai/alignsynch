@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › UI/UX audit · prev [Quiz-surface map](ui-mapping.md) · next [Answer input](ux-input.md)
+[Docs hub](../README.md) › **Specs & design briefs** › UI/UX audit · prev [Quiz-surface map](ui-mapping.md) · next [UX defect inventory (#975)](ux-defect-inventory.md)
 
 <!-- docs-nav:end -->
 
@@ -252,6 +252,6 @@ fixture or route file was modified — `git status` is clean apart from this fil
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › UI/UX audit · prev [Quiz-surface map](ui-mapping.md) · next [Answer input](ux-input.md)
+[Docs hub](../README.md) › **Specs & design briefs** › UI/UX audit · prev [Quiz-surface map](ui-mapping.md) · next [UX defect inventory (#975)](ux-defect-inventory.md)
 
 <!-- docs-nav:end -->

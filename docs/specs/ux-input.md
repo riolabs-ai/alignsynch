@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › Answer input · prev [UI/UX audit](ui-ux-audit.md) · next [Reference UX patterns](ux-reference-patterns.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Answer input · prev [UX defect inventory (#975)](ux-defect-inventory.md) · next [Reference UX patterns](ux-reference-patterns.md)
 
 <!-- docs-nav:end -->
 
@@ -173,6 +173,6 @@ below; guard with a min-width and test at 320 px.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › Answer input · prev [UI/UX audit](ui-ux-audit.md) · next [Reference UX patterns](ux-reference-patterns.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Answer input · prev [UX defect inventory (#975)](ux-defect-inventory.md) · next [Reference UX patterns](ux-reference-patterns.md)
 
 <!-- docs-nav:end -->
