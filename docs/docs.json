@@ -422,19 +422,9 @@
       "blurb": "What was measured, on which tree, and what it looked like.",
       "docs": [
         {
-          "path": "qa/542-phase2/README.md",
-          "title": "#542 phase 2",
-          "question": "Is the rail role-constrained data, with focused-flow chrome?"
-        },
-        {
-          "path": "qa/957-assessment-one-click/README.md",
-          "title": "One-click create on /assessment, #957",
-          "question": "Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?"
-        },
-        {
-          "path": "qa/958-no-initiator-member/README.md",
-          "title": "A relationship with no initiator member, #958",
-          "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
+          "path": "qa/RETENTION.md",
+          "title": "The qa/ capture shelf",
+          "question": "Which captures stay, which went, and what decides it?"
         },
         {
           "path": "qa/971-tiles/README.md",
@@ -445,11 +435,6 @@
           "path": "qa/975-detail-identity/README.md",
           "title": "The relationship detail's identity, #975",
           "question": "Does the detail page say whose relationship it is and which one — its own title and both names, one role per screen?"
-        },
-        {
-          "path": "qa/976-sent-none/README.md",
-          "title": "The Sent screen with no invitation row, #976",
-          "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
         },
         {
           "path": "qa/979-flow-dialog/README.md",
@@ -472,29 +457,9 @@
           "question": "Does the built front page match the approved page, and where do its anchor targets land?"
         },
         {
-          "path": "qa/brand-lockup/README.md",
-          "title": "Brand lockup",
-          "question": "Is the lockup back in the chrome, at a seal's size?"
-        },
-        {
-          "path": "qa/comments-mockup/README.md",
-          "title": "Comments mockup, both placements",
-          "question": "Does the comment thread work under and beside an aspect opinion, a session and a relationship, in every state?"
-        },
-        {
-          "path": "qa/contact-land/README.md",
-          "title": "Contact landing",
-          "question": "What do the contact pages look like?"
-        },
-        {
           "path": "qa/docs-pretty/README.md",
           "title": "The docs before and after formatting, #937",
           "question": "Does an /admin/docs article render the tables and alerts it is written in, at 1440 and at 390?"
-        },
-        {
-          "path": "qa/flow-stages/README.md",
-          "title": "Six flow stages",
-          "question": "Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?"
         },
         {
           "path": "qa/flow-validation/2026-11-07.md",
@@ -502,24 +467,9 @@
           "question": "Does the assessment flow work end to end with two real identities?"
         },
         {
-          "path": "qa/help-two-column/README.md",
-          "title": "Help two-column",
-          "question": "Did `/help` get its two-column layout?"
-        },
-        {
           "path": "qa/home-comments/README.md",
           "title": "Home review comments — the logo",
           "question": "Is the public header's brand lockup a link home, and what did the page look like before it was?"
-        },
-        {
-          "path": "qa/home-polish/README.md",
-          "title": "Home hero polish",
-          "question": "Were the six hero defects fixed, before and after?"
-        },
-        {
-          "path": "qa/lockup-2rem/README.md",
-          "title": "Lockup 2rem",
-          "question": "Is the lockup 2rem in every expanded-header viewport?"
         },
         {
           "path": "qa/noun-crud/README.md",
@@ -547,11 +497,6 @@
           "question": "Does the width control toggle from the rail's border, and is the icon rail coherent?"
         },
         {
-          "path": "qa/recharts-3/README.md",
-          "title": "recharts 3",
-          "question": "Do the pie labels still render after the recharts 3 bump?"
-        },
-        {
           "path": "qa/rel-detail-edit/README.md",
           "title": "Relationship detail — the edit form is asked for",
           "question": "Is the edit form a dialog/sheet the person opens, instead of a permanent column beside the detail?"
@@ -562,24 +507,9 @@
           "question": "Does stage 5 offer the payment walk and send/draft instead of a band with no action?"
         },
         {
-          "path": "qa/surface-sweep-913/README.md",
-          "title": "Surface sweep, #913",
-          "question": "Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?"
-        },
-        {
           "path": "qa/swiper-12/README.md",
           "title": "swiper 12",
           "question": "Do the carousels survive swiper 11.2.7 → 12.2.0?"
-        },
-        {
-          "path": "qa/template-catalogue/README.md",
-          "title": "Template catalogue",
-          "question": "What do the catalogue pages look like from the AlignSynch build?"
-        },
-        {
-          "path": "qa/templates-redesign/README.md",
-          "title": "AS2 templates catalogue visual QA",
-          "question": "Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?"
         },
         {
           "path": "qa/v1x-ui-cohort/README.md",
@@ -592,11 +522,6 @@
           "question": "How is every registered surface captured, asserted and checked, and what is committed?"
         },
         {
-          "path": "qa-atlas/v1.17.0/index.md",
-          "title": "QA atlas — v1.17.0",
-          "question": "What did every registered surface render in v1.17.0, and did it read the record it claims?"
-        },
-        {
           "path": "qa-atlas/v1.17.1/index.md",
           "title": "QA atlas — the 1.17.1 tree (never released)",
           "question": "What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?"
@@ -607,9 +532,9 @@
           "question": "What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?"
         },
         {
-          "path": "qa/welcome-copy/README.md",
-          "title": "The welcome panel's copy — the tagline and the Aspects/Opinions tiles",
-          "question": "Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?"
+          "path": "qa-atlas/v1.19.0/index.md",
+          "title": "QA atlas — v1.19.0",
+          "question": "What did every registered surface render in v1.19.0, and what changed since the 1.18.0 capture?"
         }
       ]
     },
@@ -791,6 +716,11 @@
           "path": "changelog/v1-18-0.md",
           "title": "v1.18.0",
           "question": "Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?"
+        },
+        {
+          "path": "changelog/v1-19-0.md",
+          "title": "v1.19.0",
+          "question": "The release where the create flow became one dialog shell that behaves like a route."
         },
         {
           "path": "changelog/v1-2-0.md",

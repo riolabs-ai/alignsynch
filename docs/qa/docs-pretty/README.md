@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The docs before and after formatting, #937 · prev [Contact landing](../contact-land/README.md) · next [Six flow stages](../flow-stages/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The docs before and after formatting, #937 · prev [AS2 home visual QA](../as2-home/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
 
 <!-- docs-nav:end -->
 
@@ -43,6 +43,6 @@ bytes a reader saw before, and `pnpm md:check` is what keeps them that way.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The docs before and after formatting, #937 · prev [Contact landing](../contact-land/README.md) · next [Six flow stages](../flow-stages/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The docs before and after formatting, #937 · prev [AS2 home visual QA](../as2-home/README.md) · next [Flow validation, 2026-11-07](../flow-validation/2026-11-07.md)
 
 <!-- docs-nav:end -->
