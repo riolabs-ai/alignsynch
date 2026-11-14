@@ -192,9 +192,9 @@ describe("stage 5 posts a billing tier — the defect the live error named", () 
   it("posts the second row's tier too — the mapping is not a one-row coincidence", async () => {
     const where = await mount();
     await press(where, 'input[name="plan"][value="unlimited"]');
-    // The buys-list recaps the chosen row in the owner's words, and the tier behind it is the
-    // catalogue's: the panel's label and its price are unchanged by this card.
-    expect(where.innerHTML).toContain("Unlimited relationships");
+    // The buys-list recaps the chosen row by the plan's own name, which is the tier the catalogue
+    // sells (`Principal`), while the id behind the row stays the walk's (`unlimited`).
+    expect(where.innerHTML).toContain("Principal ·");
     await press(where, '[data-pay-action="card"]');
     await press(where, '[data-pay-action="subscribe"]');
     expect(posted[0]?.planId).toBe("principal");
