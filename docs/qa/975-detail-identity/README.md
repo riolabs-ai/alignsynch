@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [The welcome tiles on /register too, #971](../971-tiles/README.md) · next [The Sent screen with no invitation row, #976](../976-sent-none/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [The welcome tiles on /register too, #971](../971-tiles/README.md) · next [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md)
 
 <!-- docs-nav:end -->
 
@@ -112,6 +112,6 @@ the probe log. Nothing is created, and no relationship or account is written.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [The welcome tiles on /register too, #971](../971-tiles/README.md) · next [The Sent screen with no invitation row, #976](../976-sent-none/README.md)
+[Docs hub](../../README.md) › **Records & QA** › The relationship detail's identity, #975 · prev [The welcome tiles on /register too, #971](../971-tiles/README.md) · next [The create flow as a dialog over the relationships page, #979](../979-flow-dialog/README.md)
 
 <!-- docs-nav:end -->

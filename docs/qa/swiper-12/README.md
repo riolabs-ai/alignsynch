@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Surface sweep, #913](../surface-sweep-913/README.md) · next [Template catalogue](../template-catalogue/README.md)
+[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../stage5/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
 
 <!-- docs-nav:end -->
 
@@ -61,6 +61,6 @@ across the two versions at both widths.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Surface sweep, #913](../surface-sweep-913/README.md) · next [Template catalogue](../template-catalogue/README.md)
+[Docs hub](../../README.md) › **Records & QA** › swiper 12 · prev [Stage 5, both states](../stage5/README.md) · next [v1.x UI cohort](../v1x-ui-cohort/README.md)
 
 <!-- docs-nav:end -->
