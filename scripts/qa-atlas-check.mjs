@@ -8,7 +8,7 @@
  * `DATABASE_URL`, and this must too). The capture needs a server and the demo branch's rows; the
  * *claim* that every registered route was captured is what a gate can check, every push.
  *
- * Seven rules, each failing by the name of the thing that is wrong:
+ * Eight rules, each failing by the name of the thing that is wrong:
  *
  *   coverage   every route `data/pages/budget.ts` registers has a row in the current version's
  *              `manifest.json`, and the manifest carries no route the registry does not know — an
@@ -29,6 +29,10 @@
  *              this measured against the tree it claims?". The capture refuses to start when
  *              `/api/version` disagrees with the tree (`captureRefusal()`); this is the half a
  *              database-free check can prove, and the line it prints says which commit was measured
+ *   window     the tree holds no more cuts than the retention window — the current cut plus two
+ *              past ones, one past while a kept cut is over 4 MB (`qa-atlas-retention.mjs`). The
+ *              failure names the cuts to remove and the command that removes them, so "the atlas
+ *              tree is growing" is a finding with an action and not an observation
  *
  * Exit 0 prints one line in the shape the release note quotes:
  *
@@ -51,6 +55,7 @@ import {
   currentVersion,
   deriveRows,
 } from "./qa-atlas-registry.mjs";
+import { PAST_CUTS, atlasCuts, mb, retentionOf, retentionProblems } from "./qa-atlas-retention.mjs";
 
 /** The committed weight ceiling for one atlas directory. */
 const BUDGET_BYTES = 5 * 1024 * 1024;
@@ -89,6 +94,15 @@ function main() {
   const manifestFile = join(atlasDir, "manifest.json");
   const problems = [];
 
+  /**
+   * 8. the retention window, first, because it is a fact about the **directory** and not about the
+   * manifest: a tree that grew a fourth cut is drift whether or not the newest one is readable, and
+   * a check that only ran after the manifest parsed would stay silent on exactly the tree that is
+   * accumulating captures.
+   */
+  const cuts = atlasCuts(join(ROOT, "docs", "qa-atlas"));
+  problems.push(...retentionProblems({ cuts }));
+
   // `deriveRows` with `db: null` is the same derivation the generator uses, minus the row ids: the
   // route set, the area, the gate and the expectation are all facts about the tree.
   return deriveRows({ brand: "alignsynch", db: null }).then(({ rows }) => {
@@ -99,7 +113,7 @@ function main() {
         `docs/qa-atlas/${label}/manifest.json is missing — the tree is v${version} and no atlas ` +
           "documents it (run `pnpm qa:atlas` against the release cut)",
       );
-      report(problems, coverage, version, null);
+      report(problems, coverage, version, null, cuts);
       return 1;
     }
 
@@ -116,7 +130,13 @@ function main() {
 
     if (!Array.isArray(manifest.routes)) {
       problems.push("manifest.json: routes is not a list — there is no row set to check");
-      report(problems, coverage, version, { manifest: { ...manifest, routes: [] }, bytes: 0 });
+      report(
+        problems,
+        coverage,
+        version,
+        { manifest: { ...manifest, routes: [] }, bytes: 0 },
+        cuts,
+      );
       return 1;
     }
 
@@ -244,11 +264,11 @@ function main() {
       );
     }
 
-    return report(problems, coverage, version, { manifest, bytes });
+    return report(problems, coverage, version, { manifest, bytes }, cuts);
   });
 }
 
-function report(problems, coverage, version, state) {
+function report(problems, coverage, version, state, cuts = []) {
   const routes = coverage.routes;
   const captured =
     state === null
@@ -260,6 +280,20 @@ function report(problems, coverage, version, state) {
   const missing = state === null ? routes : 0;
   const skipped = coverage.skipped.length;
 
+  /**
+   * The window, printed on both paths: a reader asking "is the atlas tree healthy?" needs the cut
+   * count beside the route count, and a failure that lists routes without it reads as if the only
+   * problem were a route.
+   */
+  const plan = retentionOf({ cuts });
+  const total = cuts.reduce((sum, cut) => sum + cut.bytes, 0);
+  const windowLine =
+    cuts.length === 0
+      ? "  window: no atlas cuts on disk — nothing to retain\n"
+      : `  window: ${cuts.length} cut${cuts.length === 1 ? "" : "s"} · ${mb(total)} · ` +
+        `${plan.current.label} current + ${Math.min(plan.past, Math.max(0, cuts.length - 1))} past ` +
+        `(window ${1 + plan.past}${plan.bulky ? `, narrowed from ${PAST_CUTS} — a kept cut is over ${mb(plan.threshold)}` : ""})\n`;
+
   if (problems.length > 0) {
     process.stderr.write(
       `✗ qa:atlas:check — ${problems.length} problem${problems.length === 1 ? "" : "s"} for v${version}:\n`,
@@ -270,6 +304,7 @@ function report(problems, coverage, version, state) {
         `${failing} failing · ${missing > 0 ? `${missing} missing` : `${problems.length} problem`} · ` +
         `${skipped} skipped\n`,
     );
+    process.stdout.write(windowLine);
     return 1;
   }
 
@@ -284,6 +319,7 @@ function report(problems, coverage, version, state) {
       "row, every row reports what it measured, every thumbnail resolves, the coverage block " +
       "describes the rows it ships with and the manifest names the commit it measured\n",
   );
+  process.stdout.write(windowLine);
   return 0;
 }
 

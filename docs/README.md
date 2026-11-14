@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**150 documents in 9 sections.** Every page carries the same nav block, generated
+**151 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -36,7 +36,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
 - [Release notes](#release-notes) — 21 documents
-- [Records & QA](#records-qa) — 32 documents
+- [Records & QA](#records-qa) — 33 documents
 
 ## Start here
 
@@ -213,6 +213,7 @@ What was measured, on which tree, and what the migration changed.
 - [`qa-surface-sweep-913/README.md`](qa-surface-sweep-913/README.md) — **Surface sweep, #913** — Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?
 - [`qa-957-assessment-one-click/README.md`](qa-957-assessment-one-click/README.md) — **One-click create on /assessment, #957** — Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?
 - [`qa-958-no-initiator-member/README.md`](qa-958-no-initiator-member/README.md) — **A relationship with no initiator member, #958** — Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?
+- [`qa-975-detail-identity/README.md`](qa-975-detail-identity/README.md) — **The relationship detail's identity, #975** — Does the detail page say whose relationship it is and which one — its own title and both names, one role per screen?
 - [`qa-976-sent-none/README.md`](qa-976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
 - [`qa-979-flow-dialog/README.md`](qa-979-flow-dialog/README.md) — **The create flow as a dialog over the relationships page, #979** — Does pressing Create relationship on /dashboard/relationships draw a real stage in a dialog over that page, with the address still the stage's own?
 - [`qa-971-tiles/README.md`](qa-971-tiles/README.md) — **The welcome tiles on /register too, #971** — Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?
