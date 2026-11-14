@@ -34,6 +34,9 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => {} }),
+  // The band remembers the page it was pressed on, so the flow's dialog can close back onto it
+  // (#979 B). A static render reads the address and does not navigate.
+  usePathname: () => "/dashboard/relationships",
 }));
 
 import { TemplateList } from "@/components/assessment-flow/template-list";
@@ -165,6 +168,9 @@ describe("the start band", () => {
       createElement(RelationshipStart, { copy: dashboardRelationshipsPageCopy, templates }),
     );
     expect(html).toContain('data-start-in-flow="true"');
+    // The control that opens the flow's dialog is marked as such: it is what closing returns focus
+    // to (#979 B).
+    expect(html).toContain('data-create-relationship-trigger="true"');
     // Selecting is the only state this band owns; the button is the navigation.
     expect(html).toContain("Start the relationship");
   });
