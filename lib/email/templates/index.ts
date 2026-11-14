@@ -63,11 +63,6 @@ import {
   type PurchaseConfirmationFacts,
 } from "@/lib/email/templates/purchase-confirmation";
 import {
-  paymentReminderDocument,
-  paymentReminderSubject,
-  type PaymentReminderFacts,
-} from "@/lib/email/templates/payment-reminder";
-import {
   relationshipExpiredDocument,
   relationshipExpiredSubject,
   type RelationshipExpiredFacts,
@@ -187,27 +182,18 @@ export const purchaseConfirmationTemplate: EmailTemplate<PurchaseConfirmationFac
 };
 
 /**
- * #11 — the day-3 / day-10 fee reminder. The **payer** is the only recipient (the fee is theirs to
- * pay, and the counterparty is told no billing detail at any point), and the message is the thing
- * `reminder_day3_at` / `reminder_day10_at` are the record *of*: `lib/member/payment-notice.ts`
- * sends it and `lib/member/payment-job-run.ts` stamps only after the transport says `sent`.
- */
-export const paymentReminderTemplate: EmailTemplate<PaymentReminderFacts> = {
-  id: "payment-reminder",
-  numeral: 11,
-  emailClass: "transactional",
-  subject: paymentReminderSubject,
-  document: paymentReminderDocument,
-};
-
-/**
- * #12 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
- * no figure and no fee: `expire` is the one job whose notice cannot be the fact (the state is
- * already terminal and stored), so this template is a courtesy rather than a stamp's evidence.
- */
+ /**
+  * #11 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
+  * no figure and no fee: `expire` is a job whose notice cannot be the fact (the state is already
+  * terminal and stored), so this template is a courtesy rather than a stamp's evidence.
+  *
+  * It was #12 until #1010 deleted the day-3 / day-10 fee reminder that sat before it: a reminder to
+  * pay a fee no longer taken is a letter nobody should receive, so the register is now eleven
+  * templates and this one keeps the sequence contiguous.
+  */
 export const relationshipExpiredTemplate: EmailTemplate<RelationshipExpiredFacts> = {
   id: "relationship-expired",
-  numeral: 12,
+  numeral: 11,
   emailClass: "transactional",
   subject: relationshipExpiredSubject,
   document: relationshipExpiredDocument,
@@ -229,7 +215,6 @@ export type RegisteredEmailTemplate =
   | EmailTemplate<SupportReplyFacts>
   | EmailTemplate<SignupConfirmationFacts>
   | EmailTemplate<PurchaseConfirmationFacts>
-  | EmailTemplate<PaymentReminderFacts>
   | EmailTemplate<RelationshipExpiredFacts>;
 
 export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
@@ -243,7 +228,6 @@ export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   supportReplyTemplate,
   signupConfirmationTemplate,
   purchaseConfirmationTemplate,
-  paymentReminderTemplate,
   relationshipExpiredTemplate,
 ];
 

@@ -56,6 +56,8 @@
  *                       `pnpm qa:atlas:prune` and deliberately not in `scripts/verify.sh` — a gate
  *                       that deletes files is a gate that can delete the wrong files. Refuses when
  *                       the newest cut is not the version `package.json` carries
+ *   --root=<dir>        run `--prune` (and the manifest registration) against another tree — the
+ *                       sandbox the retention test proves the prune on
  *   --archive-url=<url>  the uploaded Release asset's URL, printed with the archive it names; omit
  *                        when the release cannot take an asset, and the document says so instead
  *
@@ -75,7 +77,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { Client } from "pg";
 
@@ -101,7 +103,15 @@ import {
   deriveRows,
 } from "./qa-atlas-registry.mjs";
 import { zipEntries } from "./zip.mjs";
-import { atlasCuts, mb, pruneRefusal, retentionOf, weight } from "./qa-atlas-retention.mjs";
+import {
+  atlasCuts,
+  mb,
+  pruneDocsManifest,
+  pruneRefusal,
+  registerAtlasCut,
+  retentionOf,
+  weight,
+} from "./qa-atlas-retention.mjs";
 
 /* ------------------------------------------------------------------ *
  * Configuration
@@ -126,6 +136,16 @@ const BRAND = String(
   flag("brand") ?? process.env.QA_ATLAS_BRAND ?? process.env.BRAND ?? "alignsynch",
 );
 const OUT = String(flag("out") ?? join(repoRoot, "docs", "qa-atlas", atlasLabel(VERSION)));
+/**
+ * The tree `--prune` and the manifest registration read and write.
+ *
+ * `--root` exists for `tests/qa-atlas-retention.test.ts`, which runs the **real** prune against a
+ * sandbox copy — the same flag, for the same reason, as `qa-atlas-check.mjs`: a harness that can
+ * only demonstrate the failure on the tree the gate runs in cannot demonstrate it at all. A capture
+ * measures the server this checkout is running, so its own output (`OUT`) stays on `repoRoot`; the
+ * commands that only move bookkeeping are the ones that honour the flag.
+ */
+const ROOT = flag("root") === undefined ? repoRoot : resolve(String(flag("root")));
 /** Full-size PNGs never go in the repository. This is a scratch directory, replaced each run. */
 const SHOTS = join(
   process.env.QA_ATLAS_SHOTS ?? process.env.TMPDIR ?? "/tmp",
@@ -712,17 +732,43 @@ function formatGenerated(file) {
  * a bare page would leave the tree failing `docs:check` — and a person would be tempted to add the
  * block by hand, which `docs:nav` then rewrites. So the generator runs the same command the gate
  * pretends you ran.
+ *
+ * `root` is the tree to stamp: `repoRoot` for a capture, `--root` for a prune against a sandbox.
+ * The generator itself is always this checkout's, because the format is a property of the code and
+ * not of the tree it is pointed at.
  */
-function refreshDocsNav() {
+function refreshDocsNav(root = repoRoot) {
   const script = join(repoRoot, "scripts", "docs-nav.mjs");
   if (!existsSync(script)) return;
-  const result = spawnSync(process.execPath, [script, "--write"], {
+  const rootArgs = root === repoRoot ? [] : ["--root", root];
+  const result = spawnSync(process.execPath, [script, "--write", ...rootArgs], {
     cwd: repoRoot,
     encoding: "utf8",
   });
   if (result.status !== 0) {
     console.error(`qa-atlas: docs:nav failed: ${(result.stderr ?? "").slice(0, 300)}`);
   }
+}
+
+/**
+ * Register the cut this run wrote in `docs/docs.json`, so its page is reachable.
+ *
+ * The page was an orphan until someone hand-edited the manifest — measured on the v1.19.0 cut, where
+ * `docs:check` failed by name on both halves (the page is not in the hub, and the hub lists nothing
+ * at that path) *after* a capture that reported success. The row is idempotent, so `--render` and a
+ * re-capture of the same version are free.
+ */
+function registerCutRow() {
+  const manifestFile = join(ROOT, "docs", "docs.json");
+  const docsManifest = JSON.parse(readFileSync(manifestFile, "utf8"));
+  const row = registerAtlasCut(docsManifest, VERSION);
+  if (!row.inserted) {
+    console.log(`· docs/docs.json: ${row.path} is already listed — left where it is`);
+    return;
+  }
+  writeFileSync(manifestFile, `${JSON.stringify(docsManifest, null, 2)}\n`);
+  formatGenerated(manifestFile);
+  console.log(`· docs/docs.json: registered ${row.path} — "${row.title}"`);
 }
 
 function markdownFor(manifest, coverage, findings, changed) {
@@ -920,7 +966,8 @@ async function main() {
     );
     writeFileSync(join(OUT, "index.md"), `${markdown.replace(/\n+$/, "")}\n`);
     formatGenerated(join(OUT, "index.md"));
-    refreshDocsNav();
+    registerCutRow();
+    refreshDocsNav(ROOT);
     console.log(`· re-rendered ${join(OUT, "index.md")} from manifest.json`);
     return 0;
   }
@@ -1292,7 +1339,10 @@ async function main() {
   writeFileSync(join(OUT, "index.md"), `${markdown.replace(/\n+$/, "")}\n`);
   formatGenerated(join(OUT, "manifest.json"));
   formatGenerated(join(OUT, "index.md"));
-  refreshDocsNav();
+  // Before the nav: the page this run wrote is an orphan until the manifest lists it, and the nav
+  // block `docs:nav` stamps is what `docs:check` reads for a listed page.
+  registerCutRow();
+  refreshDocsNav(ROOT);
 
   rmSync(SHOTS, { recursive: true, force: true });
 
@@ -1406,7 +1456,7 @@ function changedSince(manifest) {
  * asserts it a second time.
  */
 async function prune() {
-  const root = join(repoRoot, "docs", "qa-atlas");
+  const root = join(ROOT, "docs", "qa-atlas");
   const cuts = atlasCuts(root);
   const version = currentVersion();
   const plan = retentionOf({ cuts });
@@ -1440,7 +1490,7 @@ async function prune() {
   // Files git does not track cannot be `git rm`-ed, and half-removing a cut is worse than refusing.
   const staged = plan.remove.flatMap((cut) => {
     const path = `docs/qa-atlas/${cut.label}`;
-    const listed = spawnSync("git", ["ls-files", "--", path], { cwd: repoRoot, encoding: "utf8" });
+    const listed = spawnSync("git", ["ls-files", "--", path], { cwd: ROOT, encoding: "utf8" });
     return (listed.stdout ?? "").trim() === "" ? [path] : [];
   });
   if (staged.length > 0) {
@@ -1462,7 +1512,7 @@ async function prune() {
    */
   const rm = (force) =>
     spawnSync("git", ["rm", "-r", "--quiet", ...(force ? ["-f"] : []), "--", ...removed], {
-      cwd: repoRoot,
+      cwd: ROOT,
       encoding: "utf8",
     });
   let git = rm(false);
@@ -1478,23 +1528,33 @@ async function prune() {
 
   // The docs manifest lists each cut as a page, and `docs:check` fails on a row with no file, so the
   // rows go with the directories and the hub/nav are regenerated from what is left.
-  const manifestFile = join(repoRoot, "docs", "docs.json");
+  const manifestFile = join(ROOT, "docs", "docs.json");
   const docsManifest = JSON.parse(readFileSync(manifestFile, "utf8"));
-  const pruned = new Set(removed.map((path) => `${path}/`));
-  let dropped = 0;
-  for (const section of docsManifest.sections ?? []) {
-    const kept = (section.docs ?? []).filter((doc) => {
-      const isPruned = [...pruned].some((prefix) => String(doc.path).startsWith(prefix));
-      if (isPruned) dropped += 1;
-      return !isPruned;
-    });
-    section.docs = kept;
-  }
+  const { dropped, unmatched } = pruneDocsManifest(docsManifest, removed);
   writeFileSync(manifestFile, `${JSON.stringify(docsManifest, null, 2)}\n`);
   formatGenerated(manifestFile);
   console.log(`· docs/docs.json: dropped ${dropped} row${dropped === 1 ? "" : "s"}`);
 
-  refreshDocsNav();
+  /**
+   * A removed cut with no row is a failure, not a zero.
+   *
+   * This is the guard for the defect that carded this work: the filter compared a repo-relative
+   * prefix (`docs/qa-atlas/v1.17.0/`) against a manifest path that is relative to `docs/`
+   * (`qa-atlas/v1.17.0/index.md`), matched nothing, printed `dropped 0 rows` over a directory it had
+   * just `git rm`-ed, and left `docs:check` to fail by name on the *next* push. Measured on the
+   * v1.19.0 cut. Every cut that passes `docs:check` is a listed page, so a removed cut with no row
+   * means the path spelling is wrong — and the run says so instead of reporting success.
+   */
+  if (unmatched.length > 0) {
+    console.error(
+      `✗ qa:atlas:prune — docs/docs.json listed no row for ${unmatched.join(", ")}, and the ` +
+        "directory is now gone: `pnpm docs:check` will fail on the stale path. The rows are " +
+        "relative to `docs/`; check the spelling before trusting a drop count.",
+    );
+    return 1;
+  }
+
+  refreshDocsNav(ROOT);
   console.log("· docs/README.md and every nav block refreshed");
   console.log(
     `✓ qa:atlas:prune — ${cuts.length} cuts → ${plan.keep.length} ` +

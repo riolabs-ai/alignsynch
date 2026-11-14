@@ -13,6 +13,7 @@ import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BILLING_PRICE_IDS } from "@/data/billing-prices";
 import { POST as checkoutRoute } from "@/app/api/billing/checkout/route";
 import { POST as webhookRoute } from "@/app/api/billing/webhook/route";
 import {
@@ -391,9 +392,9 @@ describe("a checkout session is created from the fixture's price", () => {
 
     const form = new URLSearchParams(call?.body);
     expect(form.get("mode")).toBe("subscription");
-    expect(form.get("line_items[0][price_data][unit_amount]")).toBe("1695");
-    expect(form.get("line_items[0][price_data][currency]")).toBe("usd");
-    expect(form.get("line_items[0][price_data][recurring][interval]")).toBe("month");
+    // #1010 R2 — the line item is a Price, not an inline amount: a subscription renews against a
+    // Price object, and the amount lives in `data/billing-plans.ts` behind it.
+    expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.principal.month);
     expect(form.get("line_items[0][quantity]")).toBe("1");
     expect(form.get("customer_email")).toBe("avery@example.test");
     // The account rides on the session and on the subscription, so every later
@@ -422,9 +423,9 @@ describe("a checkout session is created from the fixture's price", () => {
       cancelUrl: "https://example.test/no",
     });
     const form = new URLSearchParams(calls[0]?.body);
-    // The fixture's yearly figure is the amount charged once, not the monthly equivalent.
-    expect(form.get("line_items[0][price_data][unit_amount]")).toBe("16272");
-    expect(form.get("line_items[0][price_data][recurring][interval]")).toBe("year");
+    // The yearly interval is sold on the yearly Price — the fixture's yearly figure is what that
+    // Price charges once, not the monthly equivalent.
+    expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.principal.year);
     expect(form.get("customer_email")).toBeNull();
   });
 

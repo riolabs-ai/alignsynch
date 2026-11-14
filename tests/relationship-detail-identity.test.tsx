@@ -76,7 +76,7 @@ function view(overrides: Partial<MemberRelationshipView> = {}): MemberRelationsh
     template: record,
     aspectsEditable: false,
     publishable: false,
-    hasPaymentMethod: false,
+    hasMembership: false,
     completion: null,
     offersRepublish: false,
     trialWithoutLiveInvite: false,

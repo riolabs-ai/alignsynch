@@ -120,7 +120,7 @@ function relationshipView(overrides: Partial<MemberRelationshipView> = {}): Memb
     template: record,
     aspectsEditable: true,
     publishable: true,
-    hasPaymentMethod: false,
+    hasMembership: false,
     completion: null,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
@@ -291,7 +291,7 @@ describe("the shell's order — band, facts, actions, content", () => {
   it("draws the relationship's working panels above the content, in the actions slot", () => {
     const html = relationshipHtml();
     const facts = html.indexOf("data-relationship-facts");
-    const gate = html.indexOf('data-publish-gate="method-required"');
+    const gate = html.indexOf('data-publish-gate="membership-required"');
     const where = html.indexOf("data-relationship-view");
     expect(facts).toBeGreaterThan(-1);
     expect(gate).toBeGreaterThan(facts);
@@ -310,7 +310,7 @@ describe("the two declared axes, and nothing else", () => {
 
   it("draws the relationship's panels at the shell's panel heading, never a text-2xl title", () => {
     const html = relationshipHtml();
-    expect(html).toContain('data-publish-gate="method-required"');
+    expect(html).toContain('data-publish-gate="membership-required"');
     // The one type step the artifact moves: a 320 px rail cannot carry a `CardTitle`.
     expect(html).not.toContain("text-2xl");
     expect(html).toContain('<h2 class="text-base font-semibold text-foreground">');
