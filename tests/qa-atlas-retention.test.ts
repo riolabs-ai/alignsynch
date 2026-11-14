@@ -204,7 +204,7 @@ describe("the failure names the cut and the command that removes it", () => {
   });
 
   it("reads the committed cuts newest-first, by semver", () => {
-    expect(atlasCuts(ATLAS).map((entry) => entry.label)).toEqual(["v1.18.0", "v1.17.1", "v1.17.0"]);
+    expect(atlasCuts(ATLAS).map((entry) => entry.label)).toEqual(["v1.19.0", "v1.18.0", "v1.17.1"]);
   });
 });
 
@@ -432,14 +432,14 @@ describe("a capture registers its own cut in docs/docs.json", () => {
     const manifest = readManifest();
     const before = rowsOf(manifest).length;
 
-    const row = registerAtlasCut(manifest, "1.19.0");
+    const row = registerAtlasCut(manifest, "1.20.0");
 
     expect(row.inserted).toBe(true);
-    expect(row.path).toBe("qa-atlas/v1.19.0/index.md");
-    expect(row.title).toBe("QA atlas — v1.19.0");
+    expect(row.path).toBe("qa-atlas/v1.20.0/index.md");
+    expect(row.title).toBe("QA atlas — v1.20.0");
     // The newest existing cut's own shape, which is what a reader of the hub compares it against.
     expect(row.question).toBe(
-      "What did every registered surface render in v1.19.0, and what changed since the 1.18.0 capture?",
+      "What did every registered surface render in v1.20.0, and what changed since the 1.19.0 capture?",
     );
     expect(rowsOf(manifest)).toHaveLength(before + 1);
     const listed = rowsOf(manifest).filter((doc) => doc.path === row.path);
@@ -455,13 +455,13 @@ describe("a capture registers its own cut in docs/docs.json", () => {
       candidate.docs.some((doc) => doc.path === "qa-atlas/README.md"),
     );
     if (section === undefined) throw new Error("the committed manifest lists no qa-atlas section");
-    const newest = section.docs.findIndex((doc) => doc.path === "qa-atlas/v1.18.0/index.md");
+    const newest = section.docs.findIndex((doc) => doc.path === "qa-atlas/v1.19.0/index.md");
     expect(newest).toBeGreaterThan(-1);
 
-    registerAtlasCut(manifest, "1.19.0");
+    registerAtlasCut(manifest, "1.20.0");
 
     const docs = section.docs;
-    expect(docs[newest + 1]?.path).toBe("qa-atlas/v1.19.0/index.md");
+    expect(docs[newest + 1]?.path).toBe("qa-atlas/v1.20.0/index.md");
     const cuts = docs
       .map((doc, index) => (CUT_ROWS.test(doc.path) ? index : -1))
       .filter((index) => index >= 0);
@@ -474,10 +474,10 @@ describe("a capture registers its own cut in docs/docs.json", () => {
     const manifest = readManifest();
     const before = rowsOf(manifest).length;
 
-    const again = registerAtlasCut(manifest, "1.18.0");
+    const again = registerAtlasCut(manifest, "1.19.0");
 
     expect(again.inserted).toBe(false);
-    expect(rowsOf(manifest).filter((doc) => doc.path === "qa-atlas/v1.18.0/index.md")).toHaveLength(
+    expect(rowsOf(manifest).filter((doc) => doc.path === "qa-atlas/v1.19.0/index.md")).toHaveLength(
       1,
     );
     expect(rowsOf(manifest)).toHaveLength(before);

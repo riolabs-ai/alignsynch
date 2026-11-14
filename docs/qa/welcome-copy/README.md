@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The welcome panel's copy — the tagline and the Aspects/Opinions tiles · prev [QA atlas — v1.18.0](../../qa-atlas/v1.18.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › The welcome panel's copy — the tagline and the Aspects/Opinions tiles · prev [QA atlas — v1.19.0](../../qa-atlas/v1.19.0/index.md)
 
 <!-- docs-nav:end -->
 
@@ -76,6 +76,6 @@ one is copied from (a `subtitle` probe added, its own prefix and CDP port).
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Records & QA** › The welcome panel's copy — the tagline and the Aspects/Opinions tiles · prev [QA atlas — v1.18.0](../../qa-atlas/v1.18.0/index.md)
+[Docs hub](../../README.md) › **Records & QA** › The welcome panel's copy — the tagline and the Aspects/Opinions tiles · prev [QA atlas — v1.19.0](../../qa-atlas/v1.19.0/index.md)
 
 <!-- docs-nav:end -->

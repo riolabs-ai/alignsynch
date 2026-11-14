@@ -186,9 +186,9 @@ What was measured, on which tree, and what it looked like.
 - [`qa/templates-redesign/README.md`](qa/templates-redesign/README.md) — **AS2 templates catalogue visual QA** — Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?
 - [`qa/v1x-ui-cohort/README.md`](qa/v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
-- [`qa-atlas/v1.17.0/index.md`](qa-atlas/v1.17.0/index.md) — **QA atlas — v1.17.0** — What did every registered surface render in v1.17.0, and did it read the record it claims?
 - [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — the 1.17.1 tree (never released)** — What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?
 - [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?
+- [`qa-atlas/v1.19.0/index.md`](qa-atlas/v1.19.0/index.md) — **QA atlas — v1.19.0** — What did every registered surface render in v1.19.0, and what changed since the 1.18.0 capture?
 - [`qa/welcome-copy/README.md`](qa/welcome-copy/README.md) — **The welcome panel's copy — the tagline and the Aspects/Opinions tiles** — Does /login carry the owner's tagline and both noun tiles verbatim, on /register too, with the in-modal stage still drawing none of it?
 
 ## Code wiki

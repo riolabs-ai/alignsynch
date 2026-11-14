@@ -24,11 +24,21 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 
-import { captureRefusal, coverageProblems } from "../scripts/qa-atlas-registry.mjs";
+import {
+  atlasLabel,
+  captureRefusal,
+  coverageProblems,
+  currentVersion,
+} from "../scripts/qa-atlas-registry.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CHECK = join(ROOT, "scripts/qa-atlas-check.mjs");
-const ATLAS = "docs/qa-atlas/v1.18.0";
+/**
+ * The atlas the tree carries today, derived from `package.json` rather than written out: the
+ * sandbox cases below run `qa:atlas:check`, whose `--version` default *is* `package.json`'s, so a
+ * literal here would assert yesterday's cut and fail a release bump for being a release bump.
+ */
+const ATLAS = join("docs", "qa-atlas", atlasLabel(currentVersion()));
 
 const TREE = "c2029a5ea34831cb3a392d491fdfdd2ee06a624a";
 const OTHER = "b34d09b82043b8b257b92326858bf001ed9fbf0b";
@@ -179,7 +189,9 @@ describe("pnpm qa:atlas:check on the bytes it would gate", () => {
     const dir = sandbox();
     const result = check(dir);
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("captured at 73a78ceb");
+    // The commit it reports is the commit the manifest names — the field a reader checks, not a
+    // sha copied in here that goes stale at the next cut.
+    expect(result.stdout).toContain(`captured at ${manifestOf(ROOT).captureCommit.slice(0, 8)}`);
   }, 120_000);
 
   it("fails on a manifest that does not name the commit it measured", () => {
