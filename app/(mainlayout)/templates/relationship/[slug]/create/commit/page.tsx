@@ -53,7 +53,7 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { loginPageCopy } from "@/data/pages/login";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { currentUserIfConfigured } from "@/lib/auth/session";
-import { loginCopyFor } from "@/lib/auth-copy";
+import { loginCopyFor, heroTilesFor } from "@/lib/auth-copy";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { parseCreateDraft } from "@/lib/flow/create-draft";
@@ -179,6 +179,10 @@ export default async function TemplateCreateCommitPage({
           destination: createCommitPath(slug),
           marks: AUTH_MARKS_BY_BRAND[brandId],
           markSrc: AUTH_MARK_SRC_BY_BRAND[brandId],
+          // The hero's band travels with the copy so the view keeps one prop contract (#971);
+          // this mount is `embedded`, so no panel is drawn — a stage column is a step in the
+          // flow, not a landing.
+          stats: heroTilesFor(loginPageCopy, brandId),
           initialFirst: draft?.initiatorFirst ?? "",
           initialLast: draft?.initiatorLast ?? "",
         }}
