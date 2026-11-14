@@ -733,6 +733,11 @@
           "question": "The release where five surfaces read the database."
         },
         {
+          "path": "changelog/v1-20-0.md",
+          "title": "v1.20.0",
+          "question": "The release that made the version label true — the walk can be paid and sent, and the code it names was already live."
+        },
+        {
           "path": "changelog/v1-3-0.md",
           "title": "v1.3.0",
           "question": "The release where the flow closed."
