@@ -366,6 +366,26 @@
           "path": "qa-home-comments/README.md",
           "title": "Home review comments — the logo",
           "question": "Is the public header's brand lockup a link home, and what did the page look like before it was?"
+        },
+        {
+          "path": "specs/spec-design-page-rel-templates/README.md",
+          "title": "Brand & audience profile page (handoff)",
+          "question": "How do I preview the brand and audience profile page, and in what order does it place the audiences?"
+        },
+        {
+          "path": "specs/spec-help-center/README.md",
+          "title": "Help Center design spec (handoff)",
+          "question": "How do I preview the Help Center, and which three files make up the page?"
+        },
+        {
+          "path": "specs/spec-help-center/IMPLEMENTATION-BRIEF.md",
+          "title": "Help Center — implementation brief",
+          "question": "Which route does the Help Center redesign target, which files drive it, and what must not change?"
+        },
+        {
+          "path": "specs/spec-help-center/GLOSSARY-CONTENT-MAP.md",
+          "title": "Glossary source map",
+          "question": "Which 2024 glossary terms feed the public Help page, and how is each editorial decision recorded?"
         }
       ]
     },
@@ -526,6 +546,16 @@
           "question": "What shipped in which release, and where does this page come from?"
         },
         {
+          "path": "changelog/v1-18-0.md",
+          "title": "v1.18.0",
+          "question": "Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?"
+        },
+        {
+          "path": "changelog/v1-17-0.md",
+          "title": "v1.17.0",
+          "question": "Which release made stage 5 a three-step payment walk, and what does it defer?"
+        },
+        {
           "path": "changelog/v1-16-0.md",
           "title": "v1.16.0",
           "question": "Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?"
@@ -638,6 +668,26 @@
           "question": "What happened to every `/v1` item?"
         },
         {
+          "path": "qa-atlas/README.md",
+          "title": "QA atlas",
+          "question": "How is every registered surface captured, asserted and checked, and what is committed?"
+        },
+        {
+          "path": "qa-atlas/v1.17.0/index.md",
+          "title": "QA atlas — v1.17.0",
+          "question": "What did every registered surface render in v1.17.0, and did it read the record it claims?"
+        },
+        {
+          "path": "qa-atlas/v1.17.1/index.md",
+          "title": "QA atlas — v1.17.1",
+          "question": "What did every registered surface render in v1.17.1, and what changed since v1.17.0?"
+        },
+        {
+          "path": "qa-atlas/v1.18.0/index.md",
+          "title": "QA atlas — v1.18.0",
+          "question": "What did every registered surface render in v1.18.0, and what changed since v1.17.1?"
+        },
+        {
           "path": "QA-DOGFOOD-P4.md",
           "title": "P4 dogfood pass",
           "question": "Did every route answer, on a production build?"
@@ -651,6 +701,31 @@
           "path": "qa-flow-validation/2026-11-07.md",
           "title": "Flow validation, 2026-11-07",
           "question": "Does the assessment flow work end to end with two real identities?"
+        },
+        {
+          "path": "qa-surface-sweep-913/README.md",
+          "title": "Surface sweep, #913",
+          "question": "Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?"
+        },
+        {
+          "path": "qa-957-assessment-one-click/README.md",
+          "title": "One-click create on /assessment, #957",
+          "question": "Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?"
+        },
+        {
+          "path": "qa-958-no-initiator-member/README.md",
+          "title": "A relationship with no initiator member, #958",
+          "question": "Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?"
+        },
+        {
+          "path": "qa-976-sent-none/README.md",
+          "title": "The Sent screen with no invitation row, #976",
+          "question": "Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?"
+        },
+        {
+          "path": "qa-971-tiles/README.md",
+          "title": "The welcome tiles on /register too, #971",
+          "question": "Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?"
         },
         {
           "path": "qa-payment/README.md",

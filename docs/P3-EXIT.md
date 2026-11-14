@@ -55,8 +55,10 @@ registry both-directions, metric computability, image dimensions).
 - CI `typecheck / lint / build`: **76–79 s**, all green on the last four `main` runs.
 - Lanes: `docs` · `content` · `config` · `code`, resolved from the diff against `origin/main`
   (`scripts/verify.sh` header). A content-only change never builds Next.
-- At most **2** concurrent `next build`s (`QUIZHUB_BUILD_SLOTS`, default 2) — eight workers
-  compiling in parallel previously took load average to 39.5 on this box.
+- At most **3** concurrent gate runs (`QUIZHUB_GATE_SLOTS`, default 3, legacy `QUIZHUB_BUILD_SLOTS`
+  honoured) — eight workers compiling in parallel previously took load average to 39.5 on this box.
+  The slot covers the heavy section (typecheck, lint, format, `data:check` compile, parity, build),
+  not the build alone.
 
 ## Deliberately not done at P3
 

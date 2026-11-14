@@ -1,0 +1,451 @@
+[
+  {
+    "name": "d12-00-record",
+    "note": "the record both passes photographed: /dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7, created through the five stages and kept as a draft because status=draft/published is what draws the Edit control (all four seeded relationships are complete). Removed afterwards with its session, party, record, items, member and payment rows; the demo branch is back to 4 relationships / 4 sessions / 8 parties / 33 records / 172 items / 40 opinions / 0 payments",
+    "href": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7"
+  },
+  {
+    "name": "d12-01-inline-editor-1440",
+    "note": "the draft's detail: the Aspects editor that owns them (unchanged)",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 250,
+        "y": 64,
+        "w": 1190,
+        "h": 1254
+      },
+      "dialog": null,
+      "dialogWords": null,
+      "dialogFields": 0,
+      "band": null,
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 0,
+      "door": null,
+      "aspectsSection": {
+        "x": 650,
+        "y": 500,
+        "w": 718,
+        "h": 574
+      },
+      "inlineEditor": {
+        "x": 650,
+        "y": 620,
+        "w": 718,
+        "h": 62
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 0
+    },
+    "shot": "docs/qa-975-d12/975-d12-01-inline-editor-1440.png",
+    "sha": "e45d46591d91",
+    "shotHeight": 1318
+  },
+  {
+    "name": "d12-02-dialog-1440",
+    "note": "the Edit dialog on the draft: the Aspects band and the door",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 250,
+        "y": 64,
+        "w": 1190,
+        "h": 1254
+      },
+      "dialog": {
+        "kind": "dialog",
+        "x": 384,
+        "y": 68,
+        "w": 672,
+        "h": 765
+      },
+      "dialogWords": "Edit this relationship Edit this relationship Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered. Title Summary Aspects The 5 Aspects are edited on this page, in the Aspects section \u2014 this form leaves them exactly as they are. Edit the Aspects Mode Basic Setting Soft Answered under version 1 The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship. Their name Their email The invitation stays open for (days) Extending the window does not touch the Aspects or anybody's answers. Check the cost Save the change Close",
+      "dialogFields": 5,
+      "band": {
+        "x": 409,
+        "y": 405,
+        "w": 622,
+        "h": 146,
+        "words": "Aspects The 5 Aspects are edited on this page, in the Aspects section \u2014 this form leaves them exactly as they are. Edit the Aspects"
+      },
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 1,
+      "door": {
+        "words": "Edit the Aspects",
+        "x": 422,
+        "y": 494,
+        "w": 109,
+        "h": 44
+      },
+      "aspectsSection": {
+        "x": 650,
+        "y": 500,
+        "w": 718,
+        "h": 574
+      },
+      "inlineEditor": {
+        "x": 650,
+        "y": 620,
+        "w": 718,
+        "h": 62
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 0
+    },
+    "shot": "docs/qa-975-d12/975-d12-02-dialog-1440.png",
+    "sha": "03114a4061df",
+    "shotHeight": 1318
+  },
+  {
+    "name": "d12-03-door-revealed-1440",
+    "note": "after the door: the dialog is gone and the page's Aspects section is in view (scrollY 0 -> 418)",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 250,
+        "y": -354,
+        "w": 1190,
+        "h": 1254
+      },
+      "dialog": null,
+      "dialogWords": null,
+      "dialogFields": 0,
+      "band": null,
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 0,
+      "door": null,
+      "aspectsSection": {
+        "x": 650,
+        "y": 82,
+        "w": 718,
+        "h": 574
+      },
+      "inlineEditor": {
+        "x": 650,
+        "y": 202,
+        "w": 718,
+        "h": 62
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 418
+    },
+    "shot": "docs/qa-975-d12/975-d12-03-door-revealed-1440.png",
+    "sha": "a1113a8b76a9",
+    "shotHeight": 900
+  },
+  {
+    "name": "d12-04-inline-editor-390",
+    "note": "the same detail at 390: the Aspects editor (unchanged)",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 390,
+        "clientWidth": 390
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 0,
+        "y": 64,
+        "w": 390,
+        "h": 2312
+      },
+      "dialog": null,
+      "dialogWords": null,
+      "dialogFields": 0,
+      "band": null,
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 0,
+      "door": null,
+      "aspectsSection": {
+        "x": 28,
+        "y": 1634,
+        "w": 334,
+        "h": 714
+      },
+      "inlineEditor": {
+        "x": 28,
+        "y": 1814,
+        "w": 334,
+        "h": 78
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 0
+    },
+    "shot": "docs/qa-975-d12/975-d12-04-inline-editor-390.png",
+    "sha": "0507bf2f0ca5",
+    "shotHeight": 2376
+  },
+  {
+    "name": "d12-05-dialog-390",
+    "note": "the Edit sheet at 390: the same band, same door",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 390,
+        "clientWidth": 390
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 0,
+        "y": 64,
+        "w": 390,
+        "h": 2312
+      },
+      "dialog": {
+        "kind": "sheet",
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 900
+      },
+      "dialogWords": "Edit this relationship Edit this relationship Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered. Title Summary Aspects The 5 Aspects are edited on this page, in the Aspects section \u2014 this form leaves them exactly as they are. Edit the Aspects Mode Basic Setting Soft Answered under version 1 The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship. Their name Their email The invitation stays open for (days) Extending the window does not touch the Aspects or anybody's answers. Check the cost Save the change Close",
+      "dialogFields": 5,
+      "band": {
+        "x": 25,
+        "y": 377,
+        "w": 340,
+        "h": 166,
+        "words": "Aspects The 5 Aspects are edited on this page, in the Aspects section \u2014 this form leaves them exactly as they are. Edit the Aspects"
+      },
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 1,
+      "door": {
+        "words": "Edit the Aspects",
+        "x": 38,
+        "y": 486,
+        "w": 109,
+        "h": 44
+      },
+      "aspectsSection": {
+        "x": 28,
+        "y": 1634,
+        "w": 334,
+        "h": 714
+      },
+      "inlineEditor": {
+        "x": 28,
+        "y": 1814,
+        "w": 334,
+        "h": 78
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 0
+    },
+    "shot": "docs/qa-975-d12/975-d12-05-dialog-390.png",
+    "sha": "4eb7ceb266a8",
+    "shotHeight": 2376
+  },
+  {
+    "name": "d12-06-door-revealed-390",
+    "note": "after the door at 390: the sheet is gone and the Aspects section is in view",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 390,
+        "clientWidth": 390
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 0,
+        "y": -1412,
+        "w": 390,
+        "h": 2312
+      },
+      "dialog": null,
+      "dialogWords": null,
+      "dialogFields": 0,
+      "band": null,
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 0,
+      "door": null,
+      "aspectsSection": {
+        "x": 28,
+        "y": 158,
+        "w": 334,
+        "h": 714
+      },
+      "inlineEditor": {
+        "x": 28,
+        "y": 338,
+        "w": 334,
+        "h": 78
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 1476
+    },
+    "shot": "docs/qa-975-d12/975-d12-06-door-revealed-390.png",
+    "sha": "90eca8346b9a",
+    "shotHeight": 900
+  },
+  {
+    "name": "d12-before-01-inline-editor-1440",
+    "note": "the draft's detail on the pinned tree: the inline Aspects editor",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 250,
+        "y": 64,
+        "w": 1190,
+        "h": 1254
+      },
+      "dialog": null,
+      "dialogWords": null,
+      "dialogFields": 0,
+      "band": null,
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 0,
+      "door": null,
+      "aspectsSection": {
+        "x": 650,
+        "y": 500,
+        "w": 718,
+        "h": 574
+      },
+      "inlineEditor": {
+        "x": 650,
+        "y": 620,
+        "w": 718,
+        "h": 62
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 0
+    },
+    "shot": "docs/qa-975-d12/975-d12-before-01-inline-editor-1440.png",
+    "sha": "e45d46591d91",
+    "shotHeight": 1318
+  },
+  {
+    "name": "d12-before-02-dialog-1440",
+    "note": "the same dialog on the pinned tree: no Aspects at all",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 1440,
+        "clientWidth": 1440
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 250,
+        "y": 64,
+        "w": 1190,
+        "h": 1254
+      },
+      "dialog": {
+        "kind": "dialog",
+        "x": 384,
+        "y": 68,
+        "w": 672,
+        "h": 765
+      },
+      "dialogWords": "Edit this relationship Edit this relationship Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered. Title Summary Mode Basic Setting Soft Answered under version 1 The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship. Their name Their email The invitation stays open for (days) Extending the window does not touch the Aspects or anybody's answers. Check the cost Save the change Close",
+      "dialogFields": 5,
+      "band": null,
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 0,
+      "door": null,
+      "aspectsSection": {
+        "x": 650,
+        "y": 500,
+        "w": 718,
+        "h": 574
+      },
+      "inlineEditor": {
+        "x": 650,
+        "y": 620,
+        "w": 718,
+        "h": 62
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 0
+    },
+    "shot": "docs/qa-975-d12/975-d12-before-02-dialog-1440.png",
+    "sha": "45ef2eca1727",
+    "shotHeight": 1318
+  },
+  {
+    "name": "d12-before-03-dialog-390",
+    "note": "the same sheet at 390 on the pinned tree: no Aspects",
+    "probe": {
+      "url": "/dashboard/relationships/d85dd0dd-defd-4d30-ad98-21f1acf6fde7",
+      "doc": {
+        "scrollWidth": 390,
+        "clientWidth": 390
+      },
+      "overflowX": 0,
+      "main": {
+        "x": 0,
+        "y": 64,
+        "w": 390,
+        "h": 2312
+      },
+      "dialog": {
+        "kind": "sheet",
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 844
+      },
+      "dialogWords": "Edit this relationship Edit this relationship Everything here is written to the relationship itself. Anything that would change what the other person has already answered is priced first: press Check the cost, read what it takes, and confirm it before the save is offered. Title Summary Mode Basic Setting Soft Answered under version 1 The mode and the Setting are printed, not editable: they were written on the session when it opened, and a session that has been answered is never rewritten. Changing them means a new relationship. Their name Their email The invitation stays open for (days) Extending the window does not touch the Aspects or anybody's answers. Check the cost Save the change Close",
+      "dialogFields": 5,
+      "band": null,
+      "bandPrompts": [],
+      "bandFields": 0,
+      "bandControls": 0,
+      "door": null,
+      "aspectsSection": {
+        "x": 28,
+        "y": 1634,
+        "w": 334,
+        "h": 714
+      },
+      "inlineEditor": {
+        "x": 28,
+        "y": 1814,
+        "w": 334,
+        "h": 78
+      },
+      "aspectRows": 5,
+      "readOnlyAspects": 0,
+      "scrollY": 0
+    },
+    "shot": "docs/qa-975-d12/975-d12-before-03-dialog-390.png",
+    "sha": "a8b5a52a8a36",
+    "shotHeight": 2376
+  }
+]

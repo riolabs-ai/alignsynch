@@ -32,9 +32,19 @@
  * reorders them, an in-place editor and its own save — so a second, always-open stack of forms here
  * printed the same five questions twice and offered two different writers for one fact. The owner
  * read that off the running screen and asked for the drag list to be kept and the stacked forms
- * removed. So this panel carries **no aspect state**: `payload()` rebuilds the record from
- * `state.aspects`, the rows the page read, which makes the write a no-op for them instead of an
- * overwrite by an array this surface can no longer show anyone.
+ * removed. So this panel carries **no aspect state at all**: `payload()` names no item list, and the
+ * server reads an omitted list as *leave the stored rows exactly as they are* (#943). The earlier
+ * shape — posting `state.aspects`, the rows the page read — was a snapshot, and a snapshot taken
+ * before a drag undoes the drag when it is saved.
+ *
+ * **`note` is the one thing this panel says about a section it does not write — #975 D12.** The
+ * member's dialog mounts `RelationshipAspectsNote` here: it names the Aspects, says the form leaves
+ * them alone and draws one door to the section that owns the editor, because #935 left the dialog
+ * silent about the section the page behind it edits. It is a *slot*, not a field: the caller passes
+ * the node, so this file types none of its words (E23 budget 0 on both mounts) and the console's
+ * staff mount — which has no Aspects section to point at — passes nothing and draws nothing. It sits
+ * directly under the title and the summary because it is a statement about the record's words, and
+ * a reader who opened "Edit" to change a question has to meet it before the fields they *can* save.
  */
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,12 +53,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { PageCopy, PageCopySection } from "@/content/pages";
-import { buildTemplateRecord } from "@/lib/admin/template-draft";
+import { buildEditedRecord } from "@/lib/admin/template-draft";
 import { refusalSentence, type EditOutcome, type EditPreviewOutcome } from "@/lib/member/outcomes";
 import type { EditInvalidation } from "@/lib/relationship/edit";
 import type { RelationshipEditState } from "@/lib/relationship/edit-view";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
-import { useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 
 /** The payload both calls take — one shape, so the preview and the save cannot disagree. */
 export interface RelationshipEditPayload {
@@ -66,6 +76,7 @@ export interface RelationshipEditPayload {
 export function RelationshipEditPanel({
   copy,
   state,
+  note,
   instanceRecordId,
   variant = "page",
   onPreview,
@@ -73,6 +84,12 @@ export function RelationshipEditPanel({
 }: {
   copy: PageCopy;
   state: RelationshipEditState;
+  /**
+   * #975 D12 — **the one statement about a section this form does not write.** The member's dialog
+   * passes `RelationshipAspectsNote`; the console passes nothing. A node, not a field, because the
+   * words belong to the caller's fixture and this panel is rendered under two of them.
+   */
+  note?: ReactNode;
   /**
    * The console's id, when this is the staff mount. The console's URL names a *session* record and
    * the member's names the relationship; the panel passes whichever its page was given rather than
@@ -123,25 +140,29 @@ export function RelationshipEditPanel({
   const boundVersion = state.versions.find((version) => version.current);
 
   /**
-   * The record the edit posts — and the Aspects in it are the ones the page read, never a copy this
-   * panel can edit (#935). `state.aspects` is the row set the detail's `AspectList` shows; posting
-   * anything else here would be a second writer for one fact, and posting nothing (`items: []`)
-   * would delete every Aspect on a title change. So the list travels exactly as read: the server's
-   * arithmetic sees no move, and the Aspect save stays where the drag is.
+   * The record the edit posts — and **it carries no Aspect list at all** (#935's panel, #943's
+   * payload).
+   *
+   * The detail screen's `AspectList` is the one writer for the list: it has the drag, the in-place
+   * editor and its own save. So this panel posts no list, and the server reads an omitted list as
+   * *leave the stored rows exactly as they are*. That is what makes "this panel does not edit
+   * Aspects" true rather than stated: `state.aspects` is the row set the page read, and posting it
+   * back was a snapshot — reorder in the drag list, save this panel without a reload, and the
+   * pre-reorder array was written over the drag. `buildEditedRecord` cannot express that snapshot
+   * (it emits no `items` key), so the two writers cannot disagree again.
    */
   function payload(confirm: boolean): RelationshipEditPayload {
     return {
       ...(instanceRecordId === undefined
         ? { relationshipId: state.relationshipId }
         : { instanceRecordId }),
-      record: buildTemplateRecord({
+      record: buildEditedRecord({
         id: state.record.id,
         slug: state.record.slug,
         title,
         summary,
         status: state.record.status,
         date: state.record.date,
-        aspects: state.aspects,
       }),
       versionId,
       ...(claimed ? {} : { counterpartyName, counterpartyEmail }),
@@ -219,6 +240,10 @@ export function RelationshipEditPanel({
             onChange={(event) => setSummary(event.target.value)}
           />
         </div>
+
+        {/* #975 D12 — the caller's note about a section this form does not write. Absent on the
+            console's mount, where there is no Aspects section to point at. */}
+        {note ?? null}
 
         {/* The two settings, printed with the reason they are not controls. */}
         <dl className={rail ? "grid gap-2 text-sm" : "grid gap-2 text-sm sm:grid-cols-2"}>

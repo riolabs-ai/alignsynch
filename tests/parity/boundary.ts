@@ -32,6 +32,8 @@ import AdminBillingPage from "@/app/(mainlayout)/admin/billing/page";
 import AdminBroadcastPage from "@/app/(mainlayout)/admin/broadcast/page";
 import AdminConsolePage from "@/app/(mainlayout)/admin/console/page";
 import AdminDocsPage from "@/app/(mainlayout)/admin/docs/page";
+import AdminDocsFeaturesPage from "@/app/(mainlayout)/admin/docs/features/page";
+import AdminDocsReleasesPage from "@/app/(mainlayout)/admin/docs/releases/page";
 import AdminGapsPage from "@/app/(mainlayout)/admin/gaps/page";
 import AdminHealthPage from "@/app/(mainlayout)/admin/health/page";
 import AdminInstancesPage from "@/app/(mainlayout)/admin/instances/page";
@@ -205,6 +207,14 @@ export type AdminProductRoute = {
  * `parity.check.ts` — open on a template that claims the console (both this tree ships, today) and
  * Next's not-found on one that does not.
  */
+/**
+ * #906 names this list's one deliberate absence: `/admin/brand`. The list's claim is "open
+ * capability → the page renders on every template that claims it", and that page is gated a second
+ * time by `requireAlignmentProduct()`, so it answers 404 on `quizhub` even though `quizhub` sells
+ * the console — an entry here would be a false claim. It is covered instead by
+ * `tests/admin-brand.test.tsx`, which flips each capability through the real `notFound()` and
+ * asserts the order, and by the admin/visitor/quiz-build screenshots in the #906 PR.
+ */
 export const adminProductRoutes: readonly AdminProductRoute[] = [
   {
     route: "/admin/audit",
@@ -246,6 +256,23 @@ export const adminProductRoutes: readonly AdminProductRoute[] = [
     // same policy, and the PR's `curl` table is where its 200 is proven.
     route: "/admin/docs",
     page: AdminDocsPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    // #893 — the features index. `render`: the page derives its rows from two files in the tree and
+    // hands them to a server component, so an open gate produces a document.
+    route: "/admin/docs/features",
+    page: AdminDocsFeaturesPage as unknown as ParityPage,
+    params: {},
+    open: "render",
+  },
+  {
+    // #893 — the releases shelf. `render` for the same reason; `?release=` is not exercised here,
+    // because the harness renders the page module with no search params and the default selection
+    // is the newest release. The PR's `curl` table is where the 200 and the 404 are proven.
+    route: "/admin/docs/releases",
+    page: AdminDocsReleasesPage as unknown as ParityPage,
     params: {},
     open: "render",
   },

@@ -10,6 +10,7 @@
  * No runtime at all: `import type` only, so this file adds nothing to any bundle.
  */
 import type { AlignmentSetting, Assessment, AssessmentMode, PartyRole } from "@/content/assessment";
+import type { EditedRecord } from "@/lib/admin/template-draft";
 import type { EditAspect, AnswerTally } from "@/lib/relationship/edit";
 import type { RelationshipStatus } from "@/lib/relationship/status";
 
@@ -58,8 +59,13 @@ export interface RelationshipEditState {
 
 /** What an edit is asked for: the relationship, the actor, and the values the surface holds. */
 export interface EditDraft {
-  /** The relationship's copy as the editor built it — `zAssessment`-validated by the action. */
-  readonly record: Assessment;
+  /**
+   * The relationship's copy as the editor built it, `zAssessment`-validated by the action — with
+   * **`items` optional** (#943). An absent item list means *leave the stored Aspects exactly as
+   * they are*, which is what the surface that draws no aspect control sends; a present one is
+   * applied in full, so a caller that means to send rows still can.
+   */
+  readonly record: EditedRecord;
   /** Move the pin to this version, applying its payload — `null`/absent is "leave the pin". */
   readonly versionId?: string | null;
   readonly counterpartyName?: string;

@@ -71,7 +71,7 @@
  * With no `ADMIN_*` set (CI, a fresh clone, the gate) the pass is skipped with a printed line,
  * which is the point — a platform admin is opt-in, not a default.
  */
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { Client } from "pg";
@@ -164,64 +164,247 @@ async function seedTemplate(client, template) {
 }
 
 /**
- * #502b — the version a seeded relationship is bound to.
+ * #962 — a template the fixtures mark `published` is published, here, with a version.
  *
- * `relationship.template_version_id` is NOT NULL: a relationship reads its template through the
- * version it was created from, so a seeded relationship needs a version row to point at. The
- * statement is the one `db/migrations/0026_template_version.sql` backfills with — a migration
- * cannot import a module and this script writes rows for a *fresh* database, where the migration
- * ran before any template existed, so the payload is assembled in SQL in both places. `db:verify`
- * V23 is what proves the two agree: every relationship bound, every payload parses.
+ * The two statements that had parted company were `record.status = 'published'` (copied from the
+ * fixture) and the absence of a `template_version` row. `lib/flow/store.ts` refuses to create a
+ * relationship from a template with no version — correctly, because a relationship reads its
+ * Aspects through the version it was bound to — while `/admin/templates` painted the same
+ * template green. The operator was told to publish something the badge already called published.
  *
- * Only the templates the seeded instances name get a v1, which is the migration's rule too: a
- * template nobody has used has never been published, and publishing it here would invent a
- * publication the fixture does not carry. `published_at` is the record's own `date` and
- * `published_by` is NULL ("before publishing was recorded"), exactly as the backfill writes them.
+ * So: **every** record the fixture marks `published` gets version 1, and a template the fixture
+ * marks `draft` stays draft with no version (the deliberate part has to stay deliberate, or the
+ * seed is just a lie in the other direction). A template a seeded relationship names is published
+ * regardless of status, because `relationship.template_version_id` is NOT NULL — the seed cannot
+ * write the relationship without a version, so the contradiction is printed rather than crashed.
+ *
+ * **Written through the product's path, not through SQL (#962).** The old statement here was a
+ * hand-built `jsonb_build_object` that happened to parse: a second implementation of "what a
+ * version holds", and one that could drift from `zAssessment` without any check noticing. So the
+ * read is `readTemplateRowsWithin()` — the same statement the console's publish uses, through the
+ * connection this transaction is already holding — the parse is `assessmentTemplateFromRows()`,
+ * and the write is `snapshotTemplateVersion()`. The payload is therefore a real `zAssessment`
+ * because the mapper that builds it is the mapper every other reader builds one with.
+ *
+ * **`published_at` is the record's own `date`**, as `0026_template_version.sql`'s backfill writes
+ * it: a seeded version has no publish to attribute and `now()` would claim one nobody made. That
+ * is the one argument the product path takes for the seed's sake.
+ *
+ * **Idempotent by absence, not by version number.** A template that already has any version is
+ * skipped, so a second run writes nothing — `snapshotTemplateVersion()` numbers `max + 1`, and
+ * calling it on a published template would mint a v2 on every seed.
  */
-async function seedTemplateVersion(client, templateId) {
-  const { rows } = await client.query(
-    `INSERT INTO template_version
-       (id, template_record_id, version, payload, published_at, published_by, superseded_at)
-     SELECT 'template-version-' || r.id || '-v1',
-            r.id,
-            1,
-            jsonb_build_object(
-              'id', r.id,
-              'slug', r.slug,
-              'type', r.record_type,
-              'status', r.status,
-              'date', r.date,
-              'title', r.title,
-              'summary', r.summary
-            ) || CASE
-                   WHEN r.author_user_id IS NULL THEN '{}'::jsonb
-                   ELSE jsonb_build_object('authorUserId', r.author_user_id)
-                 END
-              || jsonb_build_object(
-                   'items', COALESCE(
-                     (SELECT jsonb_agg(
-                               jsonb_build_object(
-                                 'id', i.item_id,
-                                 'prompt', i.prompt,
-                                 'scale', jsonb_build_object('kind', 'score', 'min', 1, 'max', 5),
-                                 'leftValue', i.left_value,
-                                 'rightValue', i.right_value
-                               ) ORDER BY i.position)
-                        FROM item i WHERE i.record_id = r.id),
-                     '[]'::jsonb)
-                 ),
-            r.date,
-            NULL,
-            NULL
-       FROM record r
-      WHERE r.id = $1
-        AND r.record_type = 'assessment'
-        AND NOT EXISTS (SELECT 1 FROM session s WHERE s.record_id = r.id)
-     ON CONFLICT (template_record_id, version) DO NOTHING
-     RETURNING id`,
-    [templateId],
+async function publishTemplateVersion(client, template, reason) {
+  const { rows: existing } = await client.query(
+    "SELECT 1 FROM template_version WHERE template_record_id = $1 LIMIT 1",
+    [template.id],
   );
-  return rows.length;
+  if (existing.length > 0) return 0;
+
+  const { readTemplateRowsWithin } = await import("../lib/db/assessments.ts");
+  const { assessmentTemplateFromRows } = await import("../lib/db/rows.ts");
+  const { snapshotTemplateVersion } = await import("../lib/db/template-versions.ts");
+
+  const rows = await readTemplateRowsWithin(client, template.id);
+  if (rows === undefined) {
+    throw new Error(
+      `template "${template.slug}" has no rows to publish — the record write above did not land, and a version cannot be snapshotted from nothing`,
+    );
+  }
+  const published = await snapshotTemplateVersion(client, {
+    template: assessmentTemplateFromRows(rows),
+    publishedBy: null,
+    publishedAt: String(template.date),
+  });
+  if (published === undefined) {
+    throw new Error(
+      `template "${template.slug}" lost the version-number race while seeding — the seed holds the branch lock, so this is not a concurrent publish`,
+    );
+  }
+  if (reason !== undefined) console.log(`  · ${reason}`);
+  return 1;
+}
+
+/**
+ * The demo invitation's plaintext token, **derived** from the instance it invites somebody to
+ * (#975).
+ *
+ * A real invitation's token is `mintToken()` — 32 random bytes nobody can reconstruct — and the
+ * row keeps only its hash. The demo cannot work that way: a seeded token nobody can reproduce is
+ * a link nobody can open, which is how `/invite/<token>` ended up as the one surface in the
+ * product with no reachable screen. So the demo's token is a SHA-256 of a fixed, instance-scoped
+ * string, in base64url: exactly 43 characters, which is the shape `tokenIsWellFormed()` demands,
+ * and still stored only as a hash.
+ *
+ * It is not a secret and does not need to be. Every invitation the seed writes is **claimed** —
+ * it names a seat somebody already took — so the token cannot spend anything, and the branch is
+ * the disposable demo (`docs/DEMO.md`), not production. The seed prints the link for the two
+ * parties the demo accounts own, which is what makes the invitation surface walkable.
+ */
+function demoInviteToken(instanceId) {
+  return createHash("sha256").update(`algnsynch demo invitation:${instanceId}`).digest("base64url");
+}
+
+/**
+ * The address the invitation was sent to (#975).
+ *
+ * A `session_invite` row requires one (`email` is NOT NULL with an `@` check), and the fixture
+ * authors none — a party is a name and a sheet, never a mailbox. Two sources, in order, and
+ * neither invents a person:
+ *
+ *   1. **the demo account that owns the seat**, when this instance is the one the demo identities
+ *      answer (`counterparty@demo.alignsynch.test` for `assessment-instance-avery-rowan`). That
+ *      address is the identity the demo signs in with, so the invitation names the real invitee.
+ *   2. **the counterparty's own fixture name** at `demo.alignsynch.test` — `sam@demo.alignsynch.test`
+ *      for the instance a five-party catalogue says belongs to Sam. `.test` is reserved by RFC
+ *      6761 and can never route anywhere, so a derived demo address cannot deliver mail to a
+ *      stranger.
+ */
+function inviteEmailFor(instance) {
+  const account = DEMO_ACCOUNTS.find(
+    (candidate) =>
+      candidate.party !== null &&
+      candidate.party.instance === instance.id &&
+      candidate.party.role === "counterparty",
+  );
+  if (account !== undefined) return account.email;
+
+  const counterparty = instance.parties.find((party) => party.role === "counterparty");
+  if (counterparty === undefined) {
+    throw new Error(
+      `instance "${instance.id}" has no counterparty party — an invitation needs somebody to invite`,
+    );
+  }
+  const stem = counterparty.name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (stem === "") {
+    throw new Error(
+      `instance "${instance.id}": the counterparty's name "${counterparty.name}" yields no address stem`,
+    );
+  }
+  return `${stem}@${DEMO_DOMAIN}`;
+}
+
+/**
+ * #975 — **the seeded relationship is written coherently, not merely written.**
+ *
+ * Two rows describe one pair, and the seed wrote only the first half of each:
+ *
+ *   `relationship.status`      was never written at all, so all four rows took 0030's `draft`
+ *                              default while both parties had accepted every Aspect and the
+ *                              report drew six Gaps. `/dashboard/relationships/<id>` therefore said
+ *                              **"Not sent yet — nothing has been invited or charged"** over a
+ *                              relationship `/assessments` called "You have both accepted — the Gap
+ *                              is open". A draft that was never sent cannot have answers; a pair
+ *                              with a Gap cannot be a draft. This is the defect.
+ *   `session_invite`           was never written either, so no relationship had an invitation —
+ *                              and `publishViewOf()` draws `invite-missing` ("that is a defect;
+ *                              support can repair it") for any non-draft row whose invite is NULL.
+ *                              Fixing the status alone would have moved the lie one band down.
+ *
+ * **The status is derived from the fixture, and the derivation is the product's own rule.** A
+ * seeded instance is a finished demo session (every Aspect answered on both seats, both
+ * acceptances stamped), so its session derives `complete` — which is precisely what V21 asserts
+ * on every run — and the relationship follows it:
+ *
+ *   sealed (every party answered every Aspect)   `complete`, published and completed at the
+ *                                                instance's own instant
+ *   not sealed                                   `published`, published at that instant, nothing
+ *                                                completed — the truthful pair for a dataset whose
+ *                                                pair has not answered yet
+ *
+ * `active` is the other defensible word, and it is **not** used: `membershipOf()` reads a live
+ * status with no entitling subscription as `lapsed`, so an `active` demo would print "the
+ * initiator's membership ended — the subscription was cancelled … read-only for both of you" over
+ * a relationship nobody ever charged. Trading a status lie for a billing lie is not a fix. A
+ * `complete` row is closed, so it never lapses and never claims a charge.
+ *
+ * `published_at` is the relationship's own `created_at`, the same instant 0030's backfill uses and
+ * the earliest instant it can have gone out: inventing `now()` would claim a publish nobody made.
+ *
+ * **Idempotent by update, not by insert.** `status`, `published_at` and `completed_at` are in the
+ * `DO UPDATE` list, so a re-seed converges a row an older seed left draft instead of leaving the
+ * branch half-converted.
+ */
+async function seedRelationship(client, instance) {
+  const sealed =
+    instance.parties.length > 0 &&
+    instance.parties.every((party) => party.opinions.length === instance.items.length);
+  const status = sealed ? "complete" : "published";
+
+  await client.query(
+    `INSERT INTO relationship
+       (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
+        purchased_at, plan, created_at, status, published_at, completed_at)
+     VALUES ($1, $2, $3, NULL, NULL, NULL, NULL, $4, $5, $4, $6)
+     ON CONFLICT (id) DO UPDATE SET
+       template_id         = EXCLUDED.template_id,
+       template_version_id = EXCLUDED.template_version_id,
+       created_at          = EXCLUDED.created_at,
+       status              = EXCLUDED.status,
+       published_at        = EXCLUDED.published_at,
+       completed_at        = EXCLUDED.completed_at`,
+    [
+      `relationship-${instance.id}`,
+      instance.templateId,
+      `template-version-${instance.templateId}-v1`,
+      instance.date,
+      status,
+      sealed ? instance.date : null,
+    ],
+  );
+  return { sealed, status };
+}
+
+/**
+ * The invitation that put the counterparty in their seat (#975).
+ *
+ * `claimInvite()` (`lib/flow/store.ts`) is the only code path that creates a Counterparty party,
+ * and it does so by spending an invitation: it inserts the party and sets `claimed_at` in one
+ * transaction. So a seeded instance that *has* a counterparty party, opinions and an acceptance
+ * is a relationship somebody was invited into, and a branch without the row is a relationship
+ * nobody could have been invited to. That is D16, and it had no screen: `session_invite` was
+ * empty, so `/invite/<token>` could only ever answer "No such invitation".
+ *
+ * Written from the same facts as the party row, so the two cannot disagree: `created_at` is the
+ * relationship's instant, `expires_at` is that instant plus `INVITE_TTL_MS` (7 days, the same
+ * constant the product writes), and `claimed_at` is the acceptance instant — the seed stamps
+ * `party.accepted_at` from the instance's own date, so the claim and the acceptance share it.
+ * An invitation displayed as claimed is exactly the state `inviteStateOf()` reads off the pair
+ * (`claimed` outranks `expired`, so a seeded row older than its window still reads claimed).
+ */
+async function seedInvitation(client, instance, relationship) {
+  const { hashToken, INVITE_TTL_MS } = await import("../lib/flow/tokens.ts");
+  const token = demoInviteToken(instance.id);
+  const expiresAt = new Date(new Date(instance.date).getTime() + INVITE_TTL_MS);
+  const counterparty = instance.parties.find((party) => party.role === "counterparty");
+
+  await client.query(
+    `INSERT INTO session_invite
+       (session_record_id, email, counterparty_name, token_hash, created_at, expires_at, claimed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (session_record_id) DO UPDATE SET
+       email             = EXCLUDED.email,
+       counterparty_name = EXCLUDED.counterparty_name,
+       token_hash        = EXCLUDED.token_hash,
+       expires_at        = EXCLUDED.expires_at,
+       claimed_at        = EXCLUDED.claimed_at`,
+    [
+      instance.id,
+      inviteEmailFor(instance),
+      counterparty?.name ?? "",
+      hashToken(token),
+      instance.date,
+      // A claimed invitation's window is history; an unclaimed one still has to satisfy
+      // `invite_expires_after_creation`, which the TTL does on its own.
+      expiresAt,
+      relationship.sealed ? instance.date : null,
+    ],
+  );
+  return { token, email: inviteEmailFor(instance) };
 }
 
 async function seedInstance(client, instance) {
@@ -233,22 +416,9 @@ async function seedInstance(client, instance) {
   // do not exist yet (they are created and bound later, in phase 2), and the relationship's
   // Initiator/Counterparty are the parties' bindings, which `bindDemoParties` writes on `party`
   // and nowhere else. `purchased_at` is NULL — no demo relationship records a purchase.
-  await client.query(
-    `INSERT INTO relationship
-       (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
-        purchased_at, plan, created_at)
-     VALUES ($1, $2, $3, NULL, NULL, NULL, NULL, $4)
-     ON CONFLICT (id) DO UPDATE SET
-       template_id         = EXCLUDED.template_id,
-       template_version_id = EXCLUDED.template_version_id,
-       created_at          = EXCLUDED.created_at`,
-    [
-      `relationship-${instance.id}`,
-      instance.templateId,
-      `template-version-${instance.templateId}-v1`,
-      instance.date,
-    ],
-  );
+  //
+  // #975 — and the row carries the lifecycle facts its own session implies (`seedRelationship`).
+  const relationship = await seedRelationship(client, instance);
   await client.query(
     `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
      VALUES ($1, $2, $3, $4, $5)
@@ -264,6 +434,10 @@ async function seedInstance(client, instance) {
       `relationship-${instance.id}`,
     ],
   );
+  // #975 — the invitation that put the counterparty in this seat. Written after the `session` row
+  // because `session_invite.session_record_id` is a foreign key to it (0013 renamed the table and
+  // the column; the constraint never went away).
+  await seedInvitation(client, instance, relationship);
   await client.query("DELETE FROM party WHERE session_record_id = $1", [instance.id]);
   for (const party of instance.parties) {
     // A seeded instance is a **finished** demo session: its parties have answered every Aspect,
@@ -1042,6 +1216,9 @@ const COUNT_SQL = {
   response_option: "SELECT count(*)::int AS n FROM response_option",
   session: "SELECT count(*)::int AS n FROM session",
   relationship: "SELECT count(*)::int AS n FROM relationship",
+  // #975 — one invitation per session: the row that put each counterparty in their seat. Counted
+  // because "the invitation exists" is now a fact the seed promises and V31 checks.
+  session_invite: "SELECT count(*)::int AS n FROM session_invite",
   party: "SELECT count(*)::int AS n FROM party",
   opinion: "SELECT count(*)::int AS n FROM opinion",
   billing_plan: "SELECT count(*)::int AS n FROM billing_plan",
@@ -1266,6 +1443,10 @@ async function main() {
     ),
     session: assessmentInstances.length,
     relationship: assessmentInstances.length,
+    // #975 — one invitation per session. A seeded session has a counterparty party, and the only
+    // way the product ever creates one is by spending an invitation, so the row is part of what
+    // the seed promises rather than an extra.
+    session_invite: assessmentInstances.length,
     party: assessmentInstances.reduce((total, instance) => total + instance.parties.length, 0),
     opinion: assessmentInstances.reduce(
       (total, instance) =>
@@ -1370,12 +1551,25 @@ async function main() {
     phaseTwoOpen = true;
 
     for (const template of assessments) await seedTemplate(client, template);
-    // #502b — the versions the seeded relationships bind to, written before the relationships
-    // themselves: `relationship.template_version_id` is NOT NULL and names this row.
-    const seededTemplates = new Set(assessmentInstances.map((instance) => instance.templateId));
+    /* #962 — the versions, so a green `published` badge is a template a relationship can be
+     * created from. Every record the fixture marks published gets version 1, and a template a
+     * seeded relationship is bound to gets one whatever its status, because
+     * `relationship.template_version_id` is NOT NULL. Written here, before the relationships
+     * themselves, because the relationship names the row. */
+    const relationshipTemplates = new Set(
+      assessmentInstances.map((instance) => instance.templateId),
+    );
     let seededVersions = 0;
-    for (const templateId of seededTemplates) {
-      seededVersions += await seedTemplateVersion(client, templateId);
+    for (const template of assessments) {
+      const needsVersion = relationshipTemplates.has(template.id);
+      if (template.status !== "published" && !needsVersion) continue;
+      seededVersions += await publishTemplateVersion(
+        client,
+        template,
+        needsVersion && template.status !== "published"
+          ? `template "${template.slug}" is ${template.status} in the fixture and still published a v1 — a seeded relationship is bound to it, and the column is NOT NULL`
+          : undefined,
+      );
     }
     for (const instance of assessmentInstances) await seedInstance(client, instance);
     // #289 — the plan rows, from the same fixture a pricing surface renders. Seeded here and not
@@ -1411,6 +1605,15 @@ async function main() {
       );
       for (const party of bound) {
         console.log(`  · ${party.email} is ${party.partyName} — ${party.instance}/${party.role}`);
+      }
+      // #975 — the invitation surface had no reachable address because the token was a hash nobody
+      // could reconstruct. It is derived here (`demoInviteToken`), so the seed can hand the link
+      // over: the demo's own `/invite/<token>`, for the relationships the demo accounts answer.
+      for (const party of bound) {
+        if (party.role !== "counterparty") continue;
+        console.log(
+          `  · invitation: /invite/${demoInviteToken(party.instance)} — ${party.partyName} (claimed)`,
+        );
       }
     }
 

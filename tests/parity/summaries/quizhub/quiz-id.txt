@@ -31,7 +31,7 @@ links (16 unique, 19 total)
   /quiz-discussions                                    1
   /support                                             1
   /tournaments                                         1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.16.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.18.0 2
 
 counts
   elements  409

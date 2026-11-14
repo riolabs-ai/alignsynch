@@ -150,6 +150,28 @@
  *       who will believe the list. The duplicate-number half is here for the same reason — the
  *       constraint makes it impossible, and a rule that only checks what is already impossible is
  *       how the constraint's absence goes unnoticed.
+ *   V30 a **published record is a template somebody can start from** (#962): every assessment
+ *       record with `status = 'published'` that is not a session's copy has at least one
+ *       `template_version` row. `record.status` and `template_version` are two statements about one
+ *       fact — "this template is offered" — and the seed wrote only the first, so the demo branch
+ *       carried 28 published templates with no version at all: `/admin/templates` painted 29 green
+ *       `published` badges over a catalogue where every create answered "has no published version
+ *       — publish it before a relationship can copy it". The refusal is right; the badge was the
+ *       lie, and nothing measured the pair. A **draft** is exempt (no version is what "not offered"
+ *       means) and a **session record** is exempt (it is a played copy, never a template).
+ *       Numbered after #667's V29, which landed first.
+ *   V31 a **seeded relationship is coherent with its own session** (#975): for every instance
+ *       `data/assessments.ts` authors, the pair of rows that describe it agree. A session that
+ *       derives `complete` — both parties answered every Aspect and both accepted — cannot be a
+ *       relationship that says `draft` or `pending`, because nothing was ever invited; and it
+ *       cannot be missing its `session_invite` row, because `claimInvite()` is the only code path
+ *       that creates a Counterparty party and it spends an invitation to do it. On the demo branch
+ *       both statements were false at once: all four relationships read `draft` (0030's default the
+ *       seed never overwrote) with six Gaps open, and `session_invite` held **0 rows** — so
+ *       `/dashboard/relationships/<id>` said "Not sent yet — nothing has been invited or charged"
+ *       while `/assessments` said the pair had accepted, and `/invite/<token>` could only answer
+ *       "No such invitation". V21 asserted the session and said nothing about the relationship, so
+ *       the branch stayed green with the two surfaces disagreeing. Numbered after #962's V30.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -461,6 +483,42 @@ export function reviewIssueProblems(issues) {
 }
 
 /**
+ * V30 over `record`'s rows — a published record is a template somebody can start from (#962).
+ *
+ * The defect this names was measured on the demo branch: 28 records `status = 'published'` with
+ * zero `template_version` rows, so `/admin/templates` painted 29 green `published` badges over a
+ * catalogue that could not start a single relationship — `lib/flow/store.ts` refused each one with
+ * "has no published version — publish it before a relationship can copy it", which tells an
+ * operator to publish something the badge already calls published. `db:seed` was writing the
+ * status and not the version; nothing checked the pair, so the branch stayed green.
+ *
+ * Two exemptions, and both are the rule rather than a hole in it:
+ *
+ *   a **draft**        has no version on purpose — that is what "not offered" means, and a check
+ *                      that demanded one would force the seed to publish everything.
+ *   a **session record** is a played copy, never a template: an instance record carries
+ *                      `status = 'published'` because it went live, and it can never be the
+ *                      `template_record_id` of a version. Without this, the card's own count could
+ *                      never reach zero — 4 of the 29 rows that query returned were instances.
+ *
+ * The failure line names the slug, because a slug is what an operator types and what the refusal
+ * sentence quotes; the fix is named too, so the reader does not have to know which script writes it.
+ */
+export function publishedWithoutVersionProblems(records) {
+  const problems = [];
+  for (const record of records) {
+    if (record.status !== "published") continue;
+    if (record.is_session === true) continue;
+    if (Number(record.versions) > 0) continue;
+    problems.push({
+      code: "V30",
+      message: `record "${record.slug}" is published and has no template_version — the admin registry paints it published while createInstanceFromTemplate() refuses it with "has no published version": run \`pnpm db:seed\` (it publishes every record the fixtures mark published) or publish it at /admin/templates`,
+    });
+  }
+  return problems;
+}
+
+/**
  * V21 over the fixture's own ids — the whole check, and the only part of this script that does not
  * iterate `listAssessmentInstances()`.
  *
@@ -510,6 +568,159 @@ export async function seededInstanceStatusProblems(client, authoredInstances) {
   }
 
   return { problems, complete, authored: authored.length };
+}
+
+/**
+ * The one statement V31 reads — one row per authored instance, carrying the relationship's own
+ * lifecycle facts beside the invitation that is supposed to explain them.
+ *
+ * The counts are the same six `instanceStatusOf()` asks for in `SEEDED_STATUS_SQL`; the difference
+ * is what the row is *for*. V21 asks "is the session complete"; V31 asks "does the relationship
+ * say the same thing". `LEFT JOIN` on both sides so a missing relationship or a missing invitation
+ * comes back as a row (with `NULL`s) and can be named, instead of vanishing from the check.
+ *
+ * `invite_claimed` is `claimed_at IS NOT NULL`, not a timestamp: the comparison `inviteStateOf()`
+ * makes is against a clock, and this check is about which *facts* exist, not about whether a
+ * window has closed. An invitation that expired after being claimed is still claimed.
+ */
+const SEEDED_RELATIONSHIP_SQL = `
+  SELECT ai.record_id,
+         r.slug,
+         rel.id              AS relationship_id,
+         rel.status          AS relationship_status,
+         rel.published_at    AS published_at,
+         rel.completed_at    AS completed_at,
+         ii.session_record_id IS NOT NULL AS invite_present,
+         (ii.claimed_at IS NOT NULL)      AS invite_claimed,
+         (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)::int AS aspect_count,
+         count(*) FILTER (WHERE p.role = 'initiator')::int AS initiators,
+         count(*) FILTER (WHERE p.role = 'counterparty')::int AS counterparties,
+         count(*) FILTER (WHERE p.role = 'initiator' AND p.accepted_at IS NOT NULL)::int
+           AS initiator_accepted,
+         count(*) FILTER (WHERE p.role = 'counterparty' AND p.accepted_at IS NOT NULL)::int
+           AS counterparty_accepted,
+         (SELECT count(*) FROM opinion o
+           WHERE o.session_record_id = ai.record_id AND o.role = 'initiator')::int
+           AS initiator_answered,
+         (SELECT count(*) FROM opinion o
+           WHERE o.session_record_id = ai.record_id AND o.role = 'counterparty')::int
+           AS counterparty_answered
+    FROM session ai
+    JOIN record r              ON r.id = ai.record_id
+    LEFT JOIN relationship rel ON rel.id = ai.relationship_id
+    LEFT JOIN session_invite ii ON ii.session_record_id = ai.record_id
+    LEFT JOIN party p          ON p.session_record_id = ai.record_id
+   WHERE ai.record_id = ANY($1::text[])
+   GROUP BY ai.record_id, r.slug, rel.id, rel.status, rel.published_at, rel.completed_at,
+            ii.session_record_id, ii.claimed_at
+   ORDER BY r.slug`;
+
+/** The statuses that mean "nothing has gone out", which a completed session cannot be. */
+const UNSENT_RELATIONSHIP_STATUSES = ["draft", "pending"];
+
+/**
+ * V31 over the rows above — the whole rule, so a test can drive it with no database.
+ *
+ * Each row is one authored instance with its **derived** session status already computed by
+ * `instanceStatusOf()` (`instance_status`), so the rule never re-implements the derivation it is
+ * checking against.
+ *
+ * Three findings, in the order a reader would hit them:
+ *
+ *   `draft`/`pending`   over a pair that has answered everything and accepted each other. This is
+ *                       D3: the screen says "Not sent yet — nothing has been invited or charged"
+ *                       while the report draws six Gaps. A lifecycle word is a statement about the
+ *                       pair, and this one contradicts every other row about them.
+ *   no `published_at`   on a relationship that is past the unsent statuses. `published_at` is when
+ *                       the invitation went out; a live relationship without one is a row that has
+ *                       lost the only instant the trial and the invite window are measured from.
+ *   no invitation       on an instance with a counterparty. The product cannot create that party
+ *                       without spending an invitation (`claimInvite()`), so its absence means the
+ *                       row was written by something that skipped the product — this is D16, where
+ *                       `session_invite` was empty and `/invite/<token>` had no address at all.
+ *                       An invitation that is present but **unclaimed** is the same finding from the
+ *                       other side: both seats accepted, on a link nobody spent.
+ *
+ * A relationship that does not exist at all is reported too — a session with no relationship is the
+ * #340 split half-applied, and every screen that reads the relationship 404s over it.
+ */
+export function seededRelationshipProblems(rows) {
+  const problems = [];
+  for (const row of rows) {
+    if (row.instance_status !== "complete") continue;
+    const slug = row.slug ?? row.record_id;
+
+    if (row.relationship_id === null || row.relationship_id === undefined) {
+      problems.push({
+        code: "V31",
+        message: `seeded instance "${slug}" derives complete but has no relationship row — the #340 split half-applied, so every surface that reads the relationship answers 404 over a session two people finished`,
+      });
+      continue;
+    }
+
+    if (UNSENT_RELATIONSHIP_STATUSES.includes(row.relationship_status)) {
+      problems.push({
+        code: "V31",
+        message: `relationship "${row.relationship_id}" reads "${row.relationship_status}" while its session "${slug}" derives complete (every Aspect answered on both seats, both accepted) — a relationship that was never sent cannot have answers, and /dashboard/relationships says "Not sent yet" over a report full of Gaps: run \`pnpm db:seed\` (it writes the status its own session implies)`,
+      });
+      continue;
+    }
+
+    if (row.published_at === null || row.published_at === undefined) {
+      problems.push({
+        code: "V31",
+        message: `relationship "${row.relationship_id}" reads "${row.relationship_status}" with published_at NULL — the invitation went out at some instant, and it is the instant the trial and the invite window are measured from`,
+      });
+    }
+
+    if (row.invite_present !== true) {
+      problems.push({
+        code: "V31",
+        message: `session "${slug}" has a counterparty and no session_invite row — the only code path that creates a Counterparty party spends an invitation (claimInvite), so this relationship has a seat nobody could have been invited into and /invite/<token> can never resolve: run \`pnpm db:seed\``,
+      });
+    } else if (row.invite_claimed !== true) {
+      problems.push({
+        code: "V31",
+        message: `session "${slug}" carries an unclaimed invitation while both seats answered and accepted — the link is still spendable on a seat somebody already holds`,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
+ * V31, wired: derives each authored session's status with the product's own `instanceStatusOf()`,
+ * then hands the rows to the pure rule.
+ *
+ * Only the fixture's own instances are checked, for V21's reason: an instance a person created in
+ * the app is theirs to be mid-flow, while a seeded one is a finished demo session by construction.
+ * An authored instance the database does not hold is skipped — an emptied demo branch is a green
+ * state (`docs/DEMO.md`), not drift.
+ */
+export async function seededRelationshipCoherenceProblems(client, authoredInstances) {
+  const authored = authoredInstances.map((instance) => ({ id: instance.id, slug: instance.slug }));
+  if (authored.length === 0) return { problems: [], checked: 0 };
+
+  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { rows } = await client.query(SEEDED_RELATIONSHIP_SQL, [
+    authored.map((instance) => instance.id),
+  ]);
+  const slugById = new Map(authored.map((instance) => [instance.id, instance.slug]));
+
+  const evaluated = rows.map((row) => ({
+    ...row,
+    slug: row.slug ?? slugById.get(row.record_id),
+    instance_status: instanceStatusOf({
+      aspectCount: row.aspect_count,
+      hasCounterparty: row.counterparties >= 1,
+      initiatorAnswered: row.initiator_answered,
+      counterpartyAnswered: row.counterparty_answered,
+      initiatorAccepted: row.initiator_accepted,
+      counterpartyAccepted: row.counterparty_accepted,
+    }),
+  }));
+
+  return { problems: seededRelationshipProblems(evaluated), checked: evaluated.length };
 }
 
 async function main() {
@@ -1087,6 +1298,26 @@ async function main() {
     const seeded = await seededInstanceStatusProblems(client, authoredInstances);
     problems.push(...seeded.problems);
 
+    /* V31 — a seeded relationship is coherent with its own session (#975).
+     *
+     * V21 above asserts the *session*: both seats answered, both accepted, so `instanceStatusOf()`
+     * answers `complete`. It said nothing about the `relationship` row beside it, and the seed wrote
+     * that row without a status at all — so the branch carried four `draft` relationships over four
+     * finished sessions with six Gaps open. The screen that reads the relationship said "Not sent
+     * yet — nothing has been invited or charged"; the screen that reads the session said "You have
+     * both accepted — the Gap is open". Both were the product's own derivation over rows that
+     * disagreed, which is why no read-path test could have caught it.
+     *
+     * The invitation half is D16: `session_invite` held zero rows on a branch whose every session
+     * has a counterparty, so `/invite/<token>` could only ever answer "No such invitation" and the
+     * counterparty's accept path had no screen to be exercised on.
+     */
+    const seededRelationships = await seededRelationshipCoherenceProblems(
+      client,
+      authoredInstances,
+    );
+    problems.push(...seededRelationships.problems);
+
     const { rows: halfPair } = await client.query(
       `SELECT session_record_id, role, item_id FROM opinion
         WHERE (think IS NULL) <> (guess IS NULL) ORDER BY session_record_id, role, item_id`,
@@ -1317,6 +1548,37 @@ async function main() {
       } catch (error) {
         fail("V23", error.message);
       }
+    }
+
+    /* V30 — a record the catalogue marks published is a template a relationship can start from
+     * (#962).
+     *
+     * `record.status` and `template_version` are two statements about one fact, and the seed wrote
+     * only the first: 28 templates read `published` with no version at all, so `/admin/templates`
+     * drew 29 green badges over a catalogue where every create answered "has no published version
+     * — publish it before a relationship can copy it". Nothing measured the pair, so a green
+     * `db:verify` said nothing about the one screen an operator would open.
+     *
+     * The rows are read for every assessment record and handed to `publishedWithoutVersionProblems()`
+     * — one row per record, with its version count and whether it is a session's copy — so the rule
+     * is a function a test can drive with no connection, and the SQL here only reports facts.
+     */
+    let publishedTemplates = 0;
+    const { rows: publicationRows } = await client.query(
+      `SELECT r.slug,
+              r.status,
+              EXISTS (SELECT 1 FROM session s WHERE s.record_id = r.id) AS is_session,
+              (SELECT count(*)::int FROM template_version v WHERE v.template_record_id = r.id)
+                AS versions
+         FROM record r
+        WHERE r.record_type = 'assessment'
+        ORDER BY r.slug`,
+    );
+    publishedTemplates = publicationRows.filter(
+      (row) => row.status === "published" && row.is_session !== true,
+    ).length;
+    for (const problem of publishedWithoutVersionProblems(publicationRows)) {
+      fail(problem.code, problem.message);
     }
 
     const { rows: unlockMarks } = hasUnlockColumn
@@ -1793,7 +2055,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

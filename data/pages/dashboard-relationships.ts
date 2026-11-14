@@ -179,14 +179,25 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
          * centre instead of one verb and a menu:
          *
          *   invite-members        the pay modal (`…/create/invite?instance=`), which is the only
-         *                         surface that takes a card. It needs a session to open, which is
-         *                         the second label below: a draft written by this list's own create
-         *                         band has none, and the card says so rather than drawing a link that
-         *                         would land on stage 1 again.
-         *   publish-to-counterparty  the relationship's own screen, where the publish band is.
+         *                         surface that takes a card. It needs a session to open.
+         *   publish-to-counterparty  the same address (#913) — the modal's own Send is what
+         *                         publishes, so the row does not stop one click short of it.
+         *
+         * #958 — **`invite-members-why` is a sentence now, not a tooltip.** It used to be the
+         * `title` on an inert, greyed-out `Invite Members`; a disabled control carrying its reason
+         * in a hover is the pattern the owner rejected ("use the modal", not "explain why you
+         * cannot"), so the card prints the reason in words beside a door — the template's own
+         * create flow, which is the only writer of a session. The branch is unreachable for any
+         * row created since #913 deleted the list's create band; it exists for a tree that still
+         * holds one, and it exists as words rather than as a dead button.
          */
         { id: "invite-members", label: "Invite Members" },
-        { id: "invite-members-why", label: "No invitation yet — this draft has no session" },
+        {
+          id: "invite-members-why",
+          label:
+            "No session yet, so the pay modal has nothing to open — start it again from its template and the modal comes with it. This draft stays as it is.",
+        },
+        { id: "invite-members-why-door", label: "Start it again" },
         { id: "publish-to-counterparty", label: "Publish to Counterparty" },
         /**
          * #706 — the card's primary action for the seat that cannot publish. The destination is
@@ -229,26 +240,14 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "new",
       heading: "Start a relationship",
-      body: "Pick one of your templates. The relationship gets its own copy of the Aspects, so tuning them here never changes the template you started from.",
+      body: "Pick the template to start from — yours, or one the platform publishes. The flow opens in its own window, where you name the relationship, tune its Aspects and send it; the relationship gets its own copy of them, so tuning that never changes the template you started from.",
       items: [
         /** #841 part 2 — the header action's word, and the empty state's. */
         { id: "start", label: "Start a relationship" },
         { id: "choose", label: "Template" },
         { id: "submit", label: "Start the relationship" },
-        { id: "starting", label: "Starting…" },
-        { id: "created", label: "Started. Open it to configure the Aspects." },
-        { id: "open", label: "Open it" },
-        { id: "none", label: "You have no templates yet." },
+        { id: "none", label: "No template is published to start from yet." },
         { id: "new-template", label: "Create a template first" },
-        { id: "not-yours", label: "That template belongs to another account." },
-        { id: "no-such-template", label: "That template is not in this database." },
-        {
-          id: "not-editable",
-          label: "That template is archived — it cannot start a relationship.",
-        },
-        { id: "role-too-low", label: "Your role may not start a relationship." },
-        { id: "signed-out", label: "Your session ended. Sign in and try again." },
-        { id: "failed", label: "The relationship was not started." },
       ],
     },
     {

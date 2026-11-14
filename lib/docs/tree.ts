@@ -1,5 +1,5 @@
 /**
- * `/admin/docs` — the reader's filesystem half (#892).
+ * `/admin/docs` — the reader's filesystem half (#892, extended for #893).
  *
  * **Server-only, and it says so.** This is the one module in the feature that touches `fs`, and a
  * `"use client"` module that value-imports it fails `data:check` E34 (the browser graph has no
@@ -10,7 +10,9 @@
  * **Nothing here is under `public/`, and nothing is copied out of `docs/`.** 117 documents and the
  * 45 images they reference stay where the gate and 1,281 links expect them; this module opens them
  * read-only, and `app/api/docs/asset/[...path]` streams the images. A copy under `public/` would be
- * a second source of truth for a tree the gate already holds together.
+ * a second source of truth for a tree the gate already holds together. The same rule covers the two
+ * #893 sources: `CHANGELOG.md` is read where `scripts/release.sh` writes it, and the release record
+ * is read where `scripts/changelog-view.mjs` checks it — neither is duplicated here.
  *
  * **Containment before the syscall, not after.** Every read resolves the requested path against
  * `docs/` and refuses anything whose resolved form leaves it — `../..`, an absolute path, a
@@ -28,8 +30,16 @@ import { extname, join, resolve, sep } from "node:path";
 
 import { cache } from "react";
 
+import { CHANGELOG_PATH, type ChangelogEntry, parseChangelog } from "@/lib/docs/changelog";
 import { IMAGE_EXTENSIONS } from "@/lib/docs/links";
-import { DocsManifestUnreadable, type DocsManifest, parseDocsManifest } from "@/lib/docs/manifest";
+import {
+  DocsManifestUnreadable,
+  type DocsManifest,
+  type ReleaseRecord,
+  ReleaseRecordUnreadable,
+  parseDocsManifest,
+  parseReleaseRecord,
+} from "@/lib/docs/manifest";
 
 if (typeof window !== "undefined") {
   throw new Error(
@@ -42,6 +52,12 @@ export const DOCS_ROOT = join(process.cwd(), "docs");
 
 /** The generated manifest `scripts/docs-nav.mjs` writes and `scripts/docs-check.mjs` gates. */
 export const DOCS_MANIFEST_PATH = join(DOCS_ROOT, "docs.json");
+
+/** The release record `scripts/changelog-view.mjs` writes against and `pnpm changelog:check` holds. */
+export const RELEASE_RECORD_PATH = join(DOCS_ROOT, "changelog", "releases.json");
+
+/** `CHANGELOG.md` at the repository root — the source of every release fact (#893). */
+export const CHANGELOG_FILE_PATH = join(process.cwd(), CHANGELOG_PATH);
 
 /**
  * The content types the asset route may answer with.
@@ -111,6 +127,52 @@ export const readDocsManifest = cache((): DocsManifest => {
     throw new DocsManifestUnreadable("docs/docs.json is not valid JSON");
   }
   return parseDocsManifest(raw);
+});
+
+/**
+ * `CHANGELOG.md`, parsed — once per request.
+ *
+ * A missing or empty file is `ReleaseRecordUnreadable` with a sentence, for the same reason the
+ * manifest's reader has one: the features index and the releases shelf both build from this file,
+ * and an empty list would say "nothing has shipped" about a file that could not be opened. The
+ * *parse* is `lib/docs/changelog.ts` — the same function `scripts/changelog-view.mjs` runs — so
+ * the screen and the generated pages cannot disagree about what an entry is.
+ */
+export const readChangelog = cache((): ChangelogEntry[] => {
+  let text: string;
+  try {
+    text = readFileSync(CHANGELOG_FILE_PATH, "utf8");
+  } catch {
+    throw new ReleaseRecordUnreadable(
+      `${CHANGELOG_PATH} could not be read from the repository root`,
+    );
+  }
+  const entries = parseChangelog(text);
+  if (entries.length === 0)
+    throw new ReleaseRecordUnreadable(`${CHANGELOG_PATH} carries no "## [x.y.z] - date" entries`);
+  return entries;
+});
+
+/**
+ * `docs/changelog/releases.json`, parsed — once per request.
+ *
+ * The record of what shipped, and the only source of `theme` and `headline`. A missing file or a
+ * shape drift is `ReleaseRecordUnreadable`; see `parseReleaseRecord` for what is refused.
+ */
+export const readReleaseRecord = cache((): ReleaseRecord => {
+  let text: string;
+  try {
+    text = readFileSync(RELEASE_RECORD_PATH, "utf8");
+  } catch {
+    throw new ReleaseRecordUnreadable("docs/changelog/releases.json could not be read");
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text) as unknown;
+  } catch {
+    throw new ReleaseRecordUnreadable("docs/changelog/releases.json is not valid JSON");
+  }
+  return parseReleaseRecord(raw);
 });
 
 /**

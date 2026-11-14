@@ -8,11 +8,14 @@
 
 This folder is the self-contained handoff for the approved home-page redesign.
 
+The audience hierarchy is business and corporate relationships first, personal growth and personal relationships/friendships second, with a brief callout for counselors, therapists, and coaches. `AUDIENCE-AND-POSITIONING.md` is the copy source for this direction, the story, profile descriptions, CTAs, and claim boundaries. The page and React handoff should follow it. AlignSynch is not a clinical assessment, diagnosis, therapy service, or practitioner platform.
+
 - Open `homepage-redesign.html` for the browser-ready page.
 - `css/homepage-redesign.css` contains the page styles.
 - `images/` contains the logo and four locally bundled page photos.
-- `reference/alignsynch_home.jpg` is the supplied source screenshot.
+- The supplied source screenshot, `alignsynch_home.jpg`, is held outside this repository in `project-spec/`, not committed with this package.
 - `IMPLEMENTATION-PROMPT.md` is the detailed React and Tailwind CSS v3 team brief.
+- `AUDIENCE-AND-POSITIONING.md` records the intended audience hierarchy and reusable copy direction.
 - `ASSET-SOURCES.md` records the source URLs for the bundled images.
 
 The preview is static HTML. Its header, newsletter form, footer, and hard-coded version are visual references; the live app should use its existing shared React components for those pieces.

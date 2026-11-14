@@ -74,6 +74,18 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-broadcast",
     budget: 0,
   },
+  // #906 — the brand and audience profile. Budget 0 from the first commit, like the console's other
+  // screens: the eleven headings, the story's three paragraphs, the three value cards, both audience
+  // cards with their example rows, the counselor and participant notes, the four steps, the three
+  // reusable descriptions, the hero figure's eight labels and the two hero actions are all
+  // `data/pages/admin-brand.ts`, so the next string written in `brand-profile.tsx` is a red build.
+  // Attribution is reachability, so this row counts one component.
+  "/admin/brand": {
+    page: "app/(mainlayout)/admin/brand/page.tsx",
+    dirs: ["components/admin"],
+    fixture: "data/pages/admin-brand",
+    budget: 0,
+  },
   // #505 — billing control. Budget 0 from the first commit, like the console's other screens: the
   // test-mode banner's three states, the six stat captions, the nine column labels, the five
   // subscription states, the four plan sources, the plan-limit sentences, the comp band's eleven
@@ -162,6 +174,25 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     page: "app/(mainlayout)/admin/docs/[...slug]/page.tsx",
     dirs: ["components/admin/docs"],
     fixture: "data/pages/admin-docs-document",
+    budget: 0,
+  },
+  // #893 — the features index. Budget 0 from the first commit: the area counts, the two section
+  // headings inside a card, the gap sentence and the derivation rule are `data/pages/admin-docs.ts`,
+  // so the next literal written in `features-index.tsx` is a red build. Nothing about a *scope* is
+  // in the fixture, which is the point — a release adds a card without a copy edit.
+  "/admin/docs/features": {
+    page: "app/(mainlayout)/admin/docs/features/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs",
+    budget: 0,
+  },
+  // #893 — the releases shelf. Budget 0: the eight fact labels, the row meta, the build sentences
+  // and the unreadable panel are the same fixture. Attribution is the subdirectory, so this row and
+  // the two above share it without sharing a count — each route measures its own reachable set.
+  "/admin/docs/releases": {
+    page: "app/(mainlayout)/admin/docs/releases/page.tsx",
+    dirs: ["components/admin/docs"],
+    fixture: "data/pages/admin-docs",
     budget: 0,
   },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,

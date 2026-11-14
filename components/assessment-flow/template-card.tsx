@@ -16,7 +16,7 @@
  * asked for would have to exist in all three fixtures, and a shared card that declares the union
  * of three vocabularies is a card arguing with itself. Every string arrives as a
  * `CatalogueCardCopy` the surface resolved from **its own** fixture, which is also what lets the
- * picker say "Create and invite" where the catalogue says "Duplicate" without the card knowing
+ * library say "Open" where the catalogue says "Create Relationship" without the card knowing
  * either word.
  *
  * **The group is a field, never a guess.** `data/relationship-types.ts` authors the catalogue
@@ -26,6 +26,13 @@
  * (`relationship-basics`), the blank draft and everything an account wrote resolve to no type, and
  * those are drawn in the last group with the card saying, in words, that no type is named:
  * inferring `Office` from a title would be the card inventing a fact about somebody's template.
+ *
+ * **`Create Relationship` is a door, never a write (#957).** The primary action is an anchor to
+ * `createRelationshipPath(template.slug)` — stage 1 of the one create flow — so this card is the
+ * *single* create path on both surfaces that draw it (`/assessment` and `/templates/relationship`).
+ * `/assessment` used to add a form beside it that posted straight to the create endpoint and
+ * published the relationship in one press; that form is deleted, and because the door lives here,
+ * the two surfaces cannot drift back apart without deleting this anchor.
  *
  * **A card states the record's own facts, and one price that is the plan's.** The title, the
  * summary, `count(item)` for the Aspect count, and the type/realm/roles/price the catalogue
@@ -220,7 +227,7 @@ export function TemplateCard<T extends CatalogueTemplate>({
 }: {
   copy: CatalogueCardCopy;
   template: T;
-  /** The surface's own controls — the picker's create form, the library's row actions. */
+  /** The surface's own extra controls — the library's row actions. Never a create form (#957). */
   actions?: ReactNode;
 }) {
   const type = relationshipTypeOf(template.slug);

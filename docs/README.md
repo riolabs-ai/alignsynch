@@ -22,7 +22,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**134 documents in 9 sections.** Every page carries the same nav block, generated
+**149 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -31,12 +31,12 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 6 documents
 - [Architecture](#architecture) — 11 documents
 - [Code wiki](#code-wiki) — 15 documents
-- [Product](#product) — 36 documents
+- [Product](#product) — 40 documents
 - [Operations](#operations) — 10 documents
 - [Reference](#reference) — 10 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 19 documents
-- [Records & QA](#records-qa) — 22 documents
+- [Release notes](#release-notes) — 21 documents
+- [Records & QA](#records-qa) — 31 documents
 
 ## Start here
 
@@ -125,6 +125,10 @@ What the product promises, and the specifications behind it.
 - [`qa-as2-home/README.md`](qa-as2-home/README.md) — **AS2 home visual QA** — Does the built front page match the approved page, and where do its anchor targets land?
 - [`qa-templates-redesign/README.md`](qa-templates-redesign/README.md) — **AS2 templates catalogue visual QA** — Does the rebuilt /relationship-types match the approved catalogue, and what did each width measure?
 - [`qa-home-comments/README.md`](qa-home-comments/README.md) — **Home review comments — the logo** — Is the public header's brand lockup a link home, and what did the page look like before it was?
+- [`specs/spec-design-page-rel-templates/README.md`](specs/spec-design-page-rel-templates/README.md) — **Brand & audience profile page (handoff)** — How do I preview the brand and audience profile page, and in what order does it place the audiences?
+- [`specs/spec-help-center/README.md`](specs/spec-help-center/README.md) — **Help Center design spec (handoff)** — How do I preview the Help Center, and which three files make up the page?
+- [`specs/spec-help-center/IMPLEMENTATION-BRIEF.md`](specs/spec-help-center/IMPLEMENTATION-BRIEF.md) — **Help Center — implementation brief** — Which route does the Help Center redesign target, which files drive it, and what must not change?
+- [`specs/spec-help-center/GLOSSARY-CONTENT-MAP.md`](specs/spec-help-center/GLOSSARY-CONTENT-MAP.md) — **Glossary source map** — Which 2024 glossary terms feed the public Help page, and how is each editorial decision recorded?
 
 ## Operations
 
@@ -171,6 +175,8 @@ The five Mermaid charts, one home each.
 One page per release, a view of `CHANGELOG.md`.
 
 - [`changelog/README.md`](changelog/README.md) — **Release blog** — What shipped in which release, and where does this page come from?
+- [`changelog/v1-18-0.md`](changelog/v1-18-0.md) — **v1.18.0** — Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?
+- [`changelog/v1-17-0.md`](changelog/v1-17-0.md) — **v1.17.0** — Which release made stage 5 a three-step payment walk, and what does it defer?
 - [`changelog/v1-16-0.md`](changelog/v1-16-0.md) — **v1.16.0** — Which release made the relationship detail a destination, listed the member's assessments, and gave the shell one column?
 - [`changelog/v1-0-0.md`](changelog/v1-0-0.md) — **v1.0.0** — The release where the webapp stopped being a mock.
 - [`changelog/v1-1-0-rc1.md`](changelog/v1-1-0-rc1.md) — **v1.1.0-rc1** — The release candidate that made the template a product.
@@ -197,9 +203,18 @@ What was measured, on which tree, and what the migration changed.
 - [`assets/screens/README.md`](assets/screens/README.md) — **Screenshot registry** — Which screenshot shows which surface, on which brand and viewport?
 - [`p1-migration/MIGRATION.md`](p1-migration/MIGRATION.md) — **P1 migration** — What did the P1 content model change, field by field?
 - [`V1-RETIREMENT.md`](V1-RETIREMENT.md) — **V1 retirement** — What happened to every `/v1` item?
+- [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
+- [`qa-atlas/v1.17.0/index.md`](qa-atlas/v1.17.0/index.md) — **QA atlas — v1.17.0** — What did every registered surface render in v1.17.0, and did it read the record it claims?
+- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — v1.17.1** — What did every registered surface render in v1.17.1, and what changed since v1.17.0?
+- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since v1.17.1?
 - [`QA-DOGFOOD-P4.md`](QA-DOGFOOD-P4.md) — **P4 dogfood pass** — Did every route answer, on a production build?
 - [`qa-flow-stages/README.md`](qa-flow-stages/README.md) — **Six flow stages** — Does the flow say Details · Settings · Aspects · Invite · Completed · Align, and is Align conditional?
 - [`qa-flow-validation/2026-11-07.md`](qa-flow-validation/2026-11-07.md) — **Flow validation, 2026-11-07** — Does the assessment flow work end to end with two real identities?
+- [`qa-surface-sweep-913/README.md`](qa-surface-sweep-913/README.md) — **Surface sweep, #913** — Does every screen, menu and button obey the modal rule — new relationship, draft, no initiator member?
+- [`qa-957-assessment-one-click/README.md`](qa-957-assessment-one-click/README.md) — **One-click create on /assessment, #957** — Did the public catalogue publish a relationship in one submit, and does its door now land on stage 1?
+- [`qa-958-no-initiator-member/README.md`](qa-958-no-initiator-member/README.md) — **A relationship with no initiator member, #958** — Does a draft whose initiator account column is NULL still reach the pay modal, or is it read-only?
+- [`qa-976-sent-none/README.md`](qa-976-sent-none/README.md) — **The Sent screen with no invitation row, #976** — Does the Sent screen render for a relationship whose invitation was never written, or does the copy lookup throw?
+- [`qa-971-tiles/README.md`](qa-971-tiles/README.md) — **The welcome tiles on /register too, #971** — Do both auth pages carry the two tiles while /login renders byte-identically and the in-flow stage stays compact?
 - [`qa-payment/README.md`](qa-payment/README.md) — **Payment capture & completion** — Can a member capture a method, pay the fee, complete, and read the Gap?
 - [`qa-542-phase2/README.md`](qa-542-phase2/README.md) — **#542 phase 2** — Is the rail role-constrained data, with focused-flow chrome?
 - [`qa-rail-handle/README.md`](qa-rail-handle/README.md) — **Rail collapse handle** — Does the width control toggle from the rail's border, and is the icon rail coherent?

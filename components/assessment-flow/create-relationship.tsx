@@ -65,6 +65,7 @@ import {
 } from "@/content/assessment";
 import type { PageCopy } from "@/content/pages";
 import type { AspectDraft } from "@/lib/flow/aspects";
+import { fieldSentence } from "@/lib/flow/create-copy";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
   RELATIONSHIPS_PATH,
@@ -78,6 +79,7 @@ import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
 import { type CaptureHandlers } from "./invite-walk";
 import { StageAccount } from "./stage-account";
+import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
 import { StageColumn } from "./stage-column";
 import { StageInvite } from "./stage-invite";
 import { StageOneFields } from "./stage-one-fields";
@@ -236,81 +238,6 @@ interface ChoiceOption {
   readonly value: string;
   readonly label: string;
   readonly help: string;
-}
-
-/**
- * **One single-select group**, drawn twice on Settings (#760).
- *
- * Opinions Mode and Alignment Setting are two dimensions of equal weight, so they are the same
- * control and not a control and a toolbar: a `fieldset` with the live legend, one bordered cell
- * per option, a native `required` radio (the browser's own single-choice contract — arrow keys
- * move within one `name`) and the option's one-line glossary help. The peers sit side by side
- * from `sm` up, one column below it.
- *
- * `badge` is the "Fixed at creation" chip beside the Opinions Mode legend; `intro` and `note` are
- * the Alignment Setting's sentence above the cells and its threshold line under them.
- */
-function ChoiceFieldset({
-  name,
-  legend,
-  options,
-  selected,
-  badge,
-  intro,
-  note,
-}: {
-  name: string;
-  legend: string;
-  options: readonly ChoiceOption[];
-  selected: string | undefined;
-  badge?: string;
-  intro?: string;
-  note?: string;
-}) {
-  return (
-    <fieldset
-      data-choice-group={name}
-      className="grid content-start gap-2 rounded-lg border border-gray-200 p-4 text-sm dark:border-gray-700"
-    >
-      <legend className="font-medium text-gray-800 dark:text-gray-100">
-        {legend}
-        {badge === undefined ? null : (
-          <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 align-middle text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-            {badge}
-          </span>
-        )}
-      </legend>
-      {intro === undefined ? null : (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{intro}</p>
-      )}
-      <div className="grid gap-2">
-        {options.map((option) => (
-          <label
-            key={option.value}
-            className="flex items-start gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-700"
-          >
-            <input
-              type="radio"
-              name={name}
-              value={option.value}
-              required
-              defaultChecked={selected === option.value}
-              className="mt-1"
-            />
-            <span>
-              <span className="font-medium text-gray-800 dark:text-gray-100">{option.label}</span>
-              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
-                {option.help}
-              </span>
-            </span>
-          </label>
-        ))}
-      </div>
-      {note === undefined ? null : (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{note}</p>
-      )}
-    </fieldset>
-  );
 }
 
 export function CreateRelationship({
@@ -472,6 +399,33 @@ export function CreateRelationship({
     label: SETTING_LABELS[option],
     help: SETTING_DEFINITIONS[option],
   }));
+
+  /**
+   * **The two groups, and the one sentence each refuses with (#975 D7).**
+   *
+   * `requiredSentence` is the fixture's `{field} is required.` row with this group's own legend
+   * filled in — `lib/flow/create-copy.ts::fieldSentence()` is the same composition the refusal band
+   * uses when the server refuses the post, so a press in the browser and a refusal from the store
+   * say the same words about the same field. It is resolved here, not inside the client component,
+   * because every word on this screen comes from `data/pages/assessment-create.ts` (E23).
+   */
+  const choiceGroups: ChoiceGroup[] = [
+    {
+      name: "mode",
+      legend: itemLabel(mode, "mode-label"),
+      badge: itemLabel(mode, "mode-fixed"),
+      options: modeOptions,
+      requiredSentence: fieldSentence("mode", "required") ?? "",
+    },
+    {
+      name: "alignmentSetting",
+      legend: itemLabel(mode, "setting-label"),
+      intro: itemLabel(mode, "setting-help"),
+      note: itemLabel(mode, "setting-note"),
+      options: settingOptions,
+      requiredSentence: fieldSentence("setting", "required") ?? "",
+    },
+  ];
 
   // The refusal that leaves nothing to copy: still a page, never a 404 that loses the sentence.
   if (template === null) {
@@ -679,62 +633,37 @@ export function CreateRelationship({
               )}
             </>
           ) : stage === 2 ? (
-            <form
+            /*
+             * **Settings is a client component (#975 D7).** The two groups and the form live in
+             * `StageChoiceForm`, because a press that cannot advance has to *answer* — with the
+             * fixture's own `Opinions Mode is required.` at the field it is about — and a server
+             * render cannot answer a click. This component still owns every word: the legends, the
+             * option helps and the two required sentences are resolved here from
+             * `data/pages/assessment-create.ts` and handed down, so the screen's voice stays in one
+             * fixture and the refusal cannot drift from the label it names.
+             */
+            <StageChoiceForm
               action={SAVE_MODE_PATH}
-              method="post"
-              aria-labelledby="create-mode-heading"
-              className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-            >
-              <h2
-                id="create-mode-heading"
-                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-              >
-                {mode.heading}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{sectionBody(mode)}</p>
-
-              {/* The template is the route's own fact; the form carries it so the POST names it. */}
-              <input type="hidden" name="templateRecordId" value={template.recordId} />
-
-              {/*
-               * **Two peers, not two stacks** (#760). Opinions Mode and Alignment Setting are two
-               * independent dimensions of equal weight — the Mode decides how many Opinion
-               * questions an Aspect asks, the Setting decides how strictly the Gap is judged — so
-               * they are drawn with one control, side by side from `sm` up and one column below
-               * it. The badge is the one sentence Mode needs ("Fixed at creation"); the Setting
-               * carries its own lens line above and its threshold line below.
-               */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <ChoiceFieldset
-                  name="mode"
-                  legend={itemLabel(mode, "mode-label")}
-                  badge={itemLabel(mode, "mode-fixed")}
-                  options={modeOptions}
-                  selected={draft.mode}
+              heading={mode.heading ?? ""}
+              body={sectionBody(mode)}
+              templateRecordId={template.recordId}
+              groups={choiceGroups}
+              selected={{ mode: draft.mode, alignmentSetting: draft.alignmentSetting }}
+              foot={
+                // The stage foot (#760): `[Back][Cancel]` left, the advance flush right.
+                <StageFoot
+                  backHref={backHref}
+                  backLabel={itemLabel(mode, "back")}
+                  cancelHref={shell.closeHref}
+                  cancelLabel={cancelLabel}
+                  advance={
+                    <button type="submit" className={ADVANCE_CLASSES}>
+                      {itemLabel(mode, "submit")}
+                    </button>
+                  }
                 />
-                <ChoiceFieldset
-                  name="alignmentSetting"
-                  legend={itemLabel(mode, "setting-label")}
-                  intro={itemLabel(mode, "setting-help")}
-                  note={itemLabel(mode, "setting-note")}
-                  options={settingOptions}
-                  selected={draft.alignmentSetting}
-                />
-              </div>
-
-              {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
-              <StageFoot
-                backHref={backHref}
-                backLabel={itemLabel(mode, "back")}
-                cancelHref={shell.closeHref}
-                cancelLabel={cancelLabel}
-                advance={
-                  <button type="submit" className={ADVANCE_CLASSES}>
-                    {itemLabel(mode, "submit")}
-                  </button>
-                }
-              />
-            </form>
+              }
+            />
           ) : stage === 3 ? (
             <div className="space-y-5">
               {/*

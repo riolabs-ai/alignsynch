@@ -81,11 +81,11 @@ links (44 unique, 60 total)
   /relationship-types/teacher-student                  1
   /relationship-types/team                             1
   /terms                                               1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.16.0 1
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.18.0 1
 
 counts
   elements  356
   images    6
   buttons   1
   inputs    4
-  classes   485 (sha 4f0db6cbb3b5)
+  classes   485 (sha 0e8ca02e627e)

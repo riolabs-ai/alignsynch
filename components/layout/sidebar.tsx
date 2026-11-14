@@ -77,14 +77,24 @@ const FOCUSABLE =
  * `app/(mainlayout)/layout.tsx`, which read the cookie on the server, so there is no state here
  * and no width that changes after hydration.
  */
-export function railClassName(open: boolean, collapsed = false): string {
+export function railClassName(open: boolean, collapsed = false, notice = false): string {
   return cn(
     // Below `md`: an overlay. Out of the flow, off-canvas, and absent from the a11y tree while
     // closed — `transform` alone moves paint, not focus.
     "fixed inset-y-0 left-0 z-50 flex w-[250px] max-w-[85vw] flex-col border-r bg-background transition-transform duration-200 ease-out",
     open ? "visible translate-x-0 shadow-2xl" : "invisible -translate-x-full",
     // From `md`: a column again — sticky, 64px, always visible — and from `lg` the expanded rail.
-    "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none",
+    //
+    // **The admin notice bar (#906) moves the column's top and shortens its height**, and only when
+    // it is mounted (`notice`). The bar is a row above the shell, so a rail pinned at `top-0` would
+    // run from behind the bar to the viewport's bottom edge — past it by exactly the bar's height.
+    // `top` and `height` are therefore one pair: `md:top-[var(--admin-notice-h)]` with
+    // `md:h-[calc(100vh_-_var(--admin-notice-h)_-_4rem)]`, the 4rem being the app header the column
+    // sits under. Without the bar both resolve to the constants this file shipped with, and the
+    // class list is the same string (see `tests/admin-notice-bar.test.tsx`, which pins both).
+    notice
+      ? "md:visible md:sticky md:top-[var(--admin-notice-h)] md:bottom-auto md:z-auto md:h-[calc(100vh_-_var(--admin-notice-h)_-_4rem)] md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none"
+      : "md:visible md:sticky md:top-0 md:bottom-auto md:z-auto md:h-screen md:w-16 md:shrink-0 md:translate-x-0 md:shadow-none",
     collapsed ? "lg:w-16" : "lg:w-[250px]",
   );
 }
@@ -98,6 +108,7 @@ export function AppSidebar({
   collapsed = false,
   open,
   onClose,
+  notice = false,
 }: {
   copy: PageCopy;
   mark?: BrandMark;
@@ -123,6 +134,13 @@ export function AppSidebar({
   open: boolean;
   /** Close the drawer. Stable identity — the focus effect below re-runs if it changes. */
   onClose: () => void;
+  /**
+   * Is the admin notice bar mounted above the shell (#906)? Forwarded from `MainLayout`, which
+   * receives it from the layout: at `md` and up the column's `top` and height move down by exactly
+   * the bar's published height (`--admin-notice-h`), and below `md` nothing changes — the drawer is
+   * an overlay, not a column, and a `top` there would push it off the viewport's edge.
+   */
+  notice?: boolean;
 }) {
   const nav = sectionOf(copy, "nav");
   const rail = sectionOf(copy, "rail");
@@ -313,7 +331,7 @@ export function AppSidebar({
          */
         tabIndex={-1}
         {...(open ? { role: "dialog", "aria-modal": true, "aria-label": railLabel } : {})}
-        className={railClassName(open, collapsed)}
+        className={railClassName(open, collapsed, notice)}
       >
         <div
           className={cn(
