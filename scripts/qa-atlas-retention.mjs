@@ -20,6 +20,14 @@
  * ever grows past 4 MB. Both numbers are asserted in `tests/qa-atlas-retention.test.ts`, and the
  * README states them for a reader who does not read tests.
  *
+ * ## The manifest's rows go with the directories
+ *
+ * A cut is a page in `docs/docs.json` as well as a directory, and `docs:check` fails on either half
+ * alone: a listed page with no file, or a file with no row ("an orphan page"). So the two applied
+ * ends of the window — `pnpm qa:atlas:prune` and `pnpm qa:atlas` — own the rows, through the two
+ * pure helpers at the foot of this file. They live here rather than in `qa-atlas.mjs` because that
+ * script runs a capture on import: a helper a test cannot import is a helper nothing checks.
+ *
  * ## What counts as a cut
  *
  * A directory under `docs/qa-atlas/` named `v<major>.<minor>.<patch>`. Nothing else — `README.md`
@@ -232,4 +240,130 @@ export function pruneRefusal({ cuts, version, plan = null }) {
     );
   }
   return null;
+}
+
+/* ------------------------------------------------------------------ *
+ * `docs/docs.json` — the rows a prune drops and the row a capture adds
+ * ------------------------------------------------------------------ */
+
+/**
+ * A repo-relative directory as the manifest spells it, relative to `docs/`.
+ *
+ * This one line is the whole of the defect this pair of helpers replaced: `removed` holds
+ * `docs/qa-atlas/v1.17.0` (a path from the repository root, which is what `git rm -r` takes) while
+ * a manifest row's `path` is `qa-atlas/v1.17.0/index.md` (relative to `docs/`). Comparing the two
+ * directly matched nothing, so `--prune` printed `dropped 0 rows` over a directory it had just
+ * deleted and `docs:check` went red on the next push — a prune is never a gate step, so nothing
+ * caught it first.
+ *
+ * @param {string} dir
+ * @returns {string} `docs/qa-atlas/v1.17.0` → `qa-atlas/v1.17.0/`
+ */
+function manifestPrefix(dir) {
+  const posix = String(dir)
+    .split("\\")
+    .join("/")
+    .replace(/^\.\//, "")
+    .replace(/^docs\//, "");
+  return `${posix.replace(/\/+$/, "")}/`;
+}
+
+/**
+ * Drop every manifest row belonging to the cuts a prune removed, and name the cut that had none.
+ *
+ * Returns the count the run prints and the cuts it found **no row for**. That second list is the
+ * failure guard and not decoration: a prefix that does not match leaves every row in place, so
+ * `dropped 0` over a deletion is the signature of exactly the bug above. A removed cut with no row
+ * at all is not the same fact — a directory nobody registered has nothing to drop — so the caller
+ * fails on the *named* case rather than on a zero.
+ *
+ * @param {{ sections?: Array<{ docs?: Array<{ path?: string }> }> }} manifest mutated in place
+ * @param {string[]} removed repo-relative directories, oldest first
+ * @returns {{ dropped: number, unmatched: string[] }}
+ */
+export function pruneDocsManifest(manifest, removed) {
+  const prefixes = removed.map((dir) => ({ dir: String(dir), prefix: manifestPrefix(dir) }));
+  const matched = new Set();
+  let dropped = 0;
+  for (const section of manifest.sections ?? []) {
+    const kept = [];
+    for (const doc of section.docs ?? []) {
+      const hit = prefixes.find((entry) => String(doc.path ?? "").startsWith(entry.prefix));
+      if (hit === undefined) kept.push(doc);
+      else {
+        dropped += 1;
+        matched.add(hit.prefix);
+      }
+    }
+    section.docs = kept;
+  }
+  return {
+    dropped,
+    unmatched: prefixes.filter((entry) => !matched.has(entry.prefix)).map((entry) => entry.dir),
+  };
+}
+
+/** The row a cut is listed as, in the shape `docs/docs.json` uses. */
+const cutRowPattern = /^qa-atlas\/v\d+\.\d+\.\d+\/index\.md$/;
+
+/**
+ * Insert the row for the cut a capture just wrote, after the newest cut already listed.
+ *
+ * `pnpm qa:atlas` writes `docs/qa-atlas/<version>/index.md`; the page is an orphan until a row
+ * exists in `docs/docs.json`, and `docs:check` fails the next push by name for both halves of it
+ * ("not listed in docs/README.md — an orphan page" and "`qa-atlas/<version>/index.md` is missing").
+ * Editing the manifest by hand is what that failure used to cost, on the one command a release can
+ * least afford to leave half-done, so the capture registers itself.
+ *
+ * Idempotent: a row already listing the path is left exactly where it is, because `docs-nav` fails a
+ * page listed twice and a re-capture of the same version is normal (`--render` rewrites the page
+ * from the manifest on disk). Title and question are the neighbouring cuts' own shapes — the
+ * question names the previous cut when there is one, and falls back to the oldest cut's wording.
+ *
+ * @param {{ sections?: Array<{ id?: string, docs?: Array<{ path?: string, title?: string, question?: string }> }> }} manifest mutated in place
+ * @param {string} version bare (`1.19.0`) or labelled (`v1.19.0`)
+ * @returns {{ inserted: boolean, path: string, title: string, question: string, index: number }}
+ */
+export function registerAtlasCut(manifest, version) {
+  const bare = String(version).replace(/^v/, "");
+  const path = `qa-atlas/v${bare}/index.md`;
+  const sections = manifest.sections ?? [];
+  const rows = sections.flatMap((section) => section.docs ?? []);
+  const existing = rows.findIndex((doc) => doc.path === path);
+  if (existing !== -1) {
+    const doc = rows[existing];
+    return {
+      inserted: false,
+      path,
+      title: String(doc.title),
+      question: String(doc.question),
+      index: existing,
+    };
+  }
+
+  const section = sections.find((candidate) =>
+    (candidate.docs ?? []).some((doc) => doc.path === "qa-atlas/README.md"),
+  );
+  if (section === undefined) {
+    throw new Error(
+      "docs/docs.json lists no `qa-atlas/README.md` — the hub cannot reach the atlas, so a new cut " +
+        "has no section to be listed in",
+    );
+  }
+  const docs = section.docs ?? [];
+  const cuts = docs.filter((doc) => cutRowPattern.test(String(doc.path)));
+  const newest = cuts[cuts.length - 1];
+  const anchor = newest ?? docs.find((doc) => doc.path === "qa-atlas/README.md");
+  const at = docs.indexOf(anchor);
+  const title = `QA atlas — v${bare}`;
+  const question =
+    newest === undefined
+      ? `What did every registered surface render in v${bare}, and did it read the record it claims?`
+      : `What did every registered surface render in v${bare}, and what changed since the ` +
+        `${String(newest.path)
+          .replace(/^qa-atlas\/v?/, "")
+          .replace(/\/index\.md$/, "")} capture?`;
+  docs.splice(at + 1, 0, { path, title, question });
+  section.docs = docs;
+  return { inserted: true, path, title, question, index: rows.length };
 }

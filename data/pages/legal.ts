@@ -511,7 +511,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "flow",
             label: "Assessment cookies",
-            body: "When you start or claim an assessment, the application sets cookies named flow_party_<instance-id> and flow_invite_<instance-id> that identify you as one of the two people answering. They are httpOnly (scripts cannot read them), sent only over HTTPS in production, and expire within 7 days.",
+            body: "When you start or claim an assessment, the application sets cookies named flow_party_<session-id> and flow_invite_<session-id> that identify you as one of the two people answering. They are httpOnly (scripts cannot read them), sent only over HTTPS in production, and expire within 7 days.",
           },
           {
             id: "none-else",

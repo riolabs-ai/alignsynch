@@ -126,6 +126,7 @@ import {
   gatedPages,
   type CopySurface,
 } from "./brand-word";
+import { VOCABULARY_ALIGNMENT_COPY, VOCABULARY_ALLOWANCES, vocabularyFindings } from "./vocabulary";
 import { NON_EMPTY_LISTS, censusFindings } from "./ui-census";
 import {
   danglingEntries,
@@ -1134,6 +1135,45 @@ for (const problem of brandWordResult.problems) err(problem.rule, problem.messag
 const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fixtures, ${brandWordResult.census.strings} reader-visible strings, ${brandWordResult.census.gated} gated pages, ${brandWordResult.census.allowances} allowance${brandWordResult.census.allowances === 1 ? "" : "s"}`;
 
 /* ------------------------------------------------------------------ *
+ * E41 — the product says "session", never "instance"
+ *
+ * The owner has asked for this more than once and it kept coming back, because nothing enforced
+ * it: a fixture is prose, so no typecheck, lint rule or parity hash can see the retired noun. The
+ * word was the model's (`assessment_instance`), the product's is a session — one cycle of
+ * answering inside a published relationship — and a reader who is told they have "instances" is
+ * reading a database's vocabulary.
+ *
+ * The render set is E37's, derived from the same two facts rather than listed (an E23 budget row
+ * names the page and its fixture; a page calling `requireQuizProduct()` answers 404 here, so
+ * nothing it renders reaches an alignment reader — which is also what keeps QuizHub's own words
+ * out of scope). `scripts/vocabulary.ts` owns the extraction it shares with `brand-word.ts` and the
+ * `{token}` fill masking, and is pure, so `scripts/__tests__/vocabulary.test.ts` drives every shape
+ * and its last section asserts the real tree is clean. The same walk is runnable by name:
+ * `pnpm vocabulary:census` prints the counts and exits non-zero on a violation.
+ *
+ * `VOCABULARY_ALLOWANCES` is exact string, exact file, and a row nothing uses is a finding — the
+ * same shape as `BRAND_WORD_ALLOWANCES`, so the boundary cannot be pre-widened.
+ * ------------------------------------------------------------------ */
+
+const vocabularyResult = vocabularyFindings({
+  surfaces: brandWordSurfaces,
+  gated: brandWordGated,
+  overrides: ALIGNMENT_COPY_OVERRIDES,
+  extras: ALIGNMENT_COPY_EXTRAS,
+  files: [
+    ...brandWordFiles,
+    ...VOCABULARY_ALIGNMENT_COPY.map((fixture) => `${fixture}.ts`)
+      .filter((path) => existsSync(join(process.cwd(), path)))
+      .map((path) => ({ path, source: readFileSync(join(process.cwd(), path), "utf8") })),
+  ],
+  allowances: VOCABULARY_ALLOWANCES,
+});
+
+for (const problem of vocabularyResult.problems) err(problem.rule, problem.message);
+
+const vocabularyCensus = `${vocabularyResult.census.strings} reader-visible strings across ${vocabularyResult.census.fixtures.length} alignment fixtures, ${vocabularyResult.census.naming} naming a retired noun, ${vocabularyResult.census.allowances} allowance${vocabularyResult.census.allowances === 1 ? "" : "s"}`;
+
+/* ------------------------------------------------------------------ *
  * E38 — a brand that names its own mark draws its icon set from it
  *
  * The icon generator is deterministic, and `--check` re-draws every file and compares bytes, so
@@ -1996,6 +2036,7 @@ console.log(
 );
 console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
 console.log(`      ${brandWordCensus} (E37)`);
+console.log(`      ${vocabularyCensus} (E41)`);
 console.log(`      ${leavingCensus} (E39)`);
 console.log(`      ${uiCensusSummary} (E40)`);
 console.log(
