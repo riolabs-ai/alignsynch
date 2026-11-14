@@ -257,7 +257,9 @@ export type MailSender =
   | "reset"
   | "news"
   | "broadcast"
-  | "payment";
+  | "payment"
+  | "lapse"
+  | "trial";
 
 /**
  * The senders' log sentences, in one table because they must stay parallel: the label
@@ -316,6 +318,23 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
   payment: {
     noun: "payment notice",
     unsent: "the nag stays owed, so the next run attempts it again",
+  },
+  /**
+   * The membership-lapsed notice (#1055, template #7). Its `unsent` tail is the honest consequence:
+   * the relationship is already read-only in the app — the mail is the courtesy, not the state — so
+   * a message that did not go out costs a member the explanation, never their data.
+   */
+  lapse: {
+    noun: "membership lapse notice",
+    unsent: "the relationship is read-only in the app either way",
+  },
+  /**
+   * The trial-ending notice (#1055, template #6). This is the one that has no in-app delivery: the
+   * trial has no banner, so a refused or unconfigured send means the member was warned nowhere.
+   */
+  trial: {
+    noun: "trial ending notice",
+    unsent: "the trial has no in-app banner, so this mailbox was the only prompt",
   },
 };
 

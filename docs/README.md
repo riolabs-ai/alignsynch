@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**143 documents in 9 sections.** Every page carries the same nav block, generated
+**144 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -40,7 +40,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
-- [Operations](#operations) — 16 documents
+- [Operations](#operations) — 17 documents
 - [Specs & design briefs](#specs-design-briefs) — 43 documents
 - [Records & QA](#records-qa) — 24 documents
 - [Code wiki](#code-wiki) — 15 documents
@@ -99,6 +99,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/repo-layers.md`](operations/repo-layers.md) — **Repo layers** — Why does the gate cost what my change costs, and which lane am I in?
 - [`operations/resend-inbound.md`](operations/resend-inbound.md) — **Resend inbound** — How do bounces, complaints and suppression marks reach us?
 - [`operations/spec-drift.md`](operations/spec-drift.md) — **Spec drift** — Where has the build moved away from the specification, and is that deliberate?
+- [`operations/stripe-go-live.md`](operations/stripe-go-live.md) — **Stripe go-live** — What exists in the Stripe account, where does every key live, and what must pass before a real card is charged?
 
 ## Specs & design briefs
 

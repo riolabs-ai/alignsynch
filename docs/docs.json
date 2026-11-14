@@ -191,6 +191,11 @@
           "path": "operations/spec-drift.md",
           "title": "Spec drift",
           "question": "Where has the build moved away from the specification, and is that deliberate?"
+        },
+        {
+          "path": "operations/stripe-go-live.md",
+          "title": "Stripe go-live",
+          "question": "What exists in the Stripe account, where does every key live, and what must pass before a real card is charged?"
         }
       ]
     },
