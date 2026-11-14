@@ -173,9 +173,9 @@ What was measured, on which tree, and what it looked like.
 - [`qa/v1x-ui-cohort/README.md`](qa/v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
 - [`qa-atlas/DEFERRED.md`](qa-atlas/DEFERRED.md) — **Deferred sweeps** — Which release shipped without a QA atlas sweep, and what could the atlas not cover?
-- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — the 1.17.1 tree (never released)** — What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?
 - [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?
 - [`qa-atlas/v1.19.0/index.md`](qa-atlas/v1.19.0/index.md) — **QA atlas — v1.19.0** — What did every registered surface render in v1.19.0, and what changed since the 1.18.0 capture?
+- [`qa-atlas/v1.20.0/index.md`](qa-atlas/v1.20.0/index.md) — **QA atlas — v1.20.0** — What did every registered surface render in v1.20.0, and what changed since the 1.19.0 capture?
 
 ## Code wiki
 
