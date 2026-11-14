@@ -35,7 +35,6 @@ import {
   invitationTemplate,
   joinedTemplate,
   membershipLapsedTemplate,
-  paymentReminderTemplate,
   purchaseConfirmationTemplate,
   relationshipExpiredTemplate,
   releaseNoteTemplate,
@@ -245,25 +244,6 @@ const SAMPLES: readonly Sample[] = [
     },
   ),
   sample(
-    paymentReminderTemplate,
-    {
-      recipient: "Avery",
-      template: "Relationship Basics",
-      day: 3,
-      amountCents: 1900,
-      expiresAt: new Date("2026-11-15T12:00:00.000Z"),
-      link: RELATIONSHIP,
-    },
-    {
-      name: "payment reminder (#11)",
-      subject: "The fee for Relationship Basics is still unpaid",
-      links: [RELATIONSHIP],
-      // Every sentence is a fact from the row — the amount the job will charge, the deadline the
-      // obligation expires at.
-      mustSay: ["Avery", "Relationship Basics", "2026-11-15", "$19.00"],
-    },
-  ),
-  sample(
     relationshipExpiredTemplate,
     {
       recipient: "payer",
@@ -273,7 +253,7 @@ const SAMPLES: readonly Sample[] = [
       link: RELATIONSHIP,
     },
     {
-      name: "relationship expired (#12)",
+      name: "relationship expired (#11)",
       subject: "The relationship Relationship Basics expired",
       links: [RELATIONSHIP],
       mustSay: ["Avery", "Relationship Basics", "2026-11-15"],
@@ -395,7 +375,7 @@ describe("the class rule holds in both directions", () => {
   });
 
   it("every transactional template carries none", () => {
-    expect(TRANSACTIONAL).toHaveLength(11);
+    expect(TRANSACTIONAL).toHaveLength(10);
     for (const item of TRANSACTIONAL) {
       const rendered = item.render();
       expect(rendered.text).not.toContain("Unsubscribe");
@@ -417,9 +397,9 @@ describe("the class rule holds in both directions", () => {
 });
 
 describe("the register", () => {
-  it("holds templates 1–12, in order, once each", () => {
+  it("holds templates 1–11, in order, once each", () => {
     expect(EMAIL_TEMPLATES.map((template) => template.numeral)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
     ]);
     const ids = EMAIL_TEMPLATES.map((template) => template.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -427,7 +407,7 @@ describe("the register", () => {
     expect([...ids].sort()).toEqual(SAMPLES.map((item) => item.id).sort());
   });
 
-  it("is transactional for eleven of them and marketing for the signup confirmation only", () => {
+  it("is transactional for ten of them and marketing for the signup confirmation only", () => {
     for (const item of SAMPLES) {
       expect(templateById(item.id)?.emailClass).toBe(item.emailClass);
     }

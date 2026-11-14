@@ -112,7 +112,10 @@ describe("stage 5 — the send is gated by the walk", () => {
     // The UI half is a courtesy; the rule is in the write. Read the source the gate ships.
     const store = readFileSync(join(process.cwd(), "lib/flow/store.ts"), "utf8");
     expect(store).toContain('code: "no-payment-method"');
-    expect(store).toMatch(/methodCaptured === null/);
+    // #1010 R2 — the rule the write asks is the **membership**, not a captured card: the capture is
+    // deleted, so a gate still reading `methodCaptured` would refuse every send for ever.
+    expect(store).toMatch(/if \(!membershipLive\)/);
+    expect(store).not.toMatch(/methodCaptured === null/);
   });
 });
 

@@ -24,17 +24,13 @@ describe("the file and the register agree", () => {
     expect(WIRED).toHaveLength(9);
   });
 
-  it("names, by id, the three templates that carry their body in code", () => {
+  it("names, by id, the two templates that carry their body in code", () => {
     // A listed decision, not a gap: adding a template without a body must fail here, and moving
     // one of these into the file must fail this list.
     const inline = EMAIL_TEMPLATES.filter((template) => template.body === undefined).map(
       (template) => template.id,
     );
-    expect(inline.sort()).toEqual([
-      "payment-reminder",
-      "relationship-expired",
-      "stakeholder-release-note",
-    ]);
+    expect(inline.sort()).toEqual(["relationship-expired", "stakeholder-release-note"]);
   });
 
   it("points every body spec at the template's own id", () => {

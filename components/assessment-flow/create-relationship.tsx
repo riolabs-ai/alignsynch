@@ -77,7 +77,7 @@ import {
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { AspectList } from "./aspect-list";
 import { ADVANCE_CLASSES, StageFoot } from "./stage-foot";
-import type { CaptureHandlers } from "./invite-walk";
+import type { CheckoutHandlers } from "./invite-walk";
 import { RelationshipFlowShell, type FlowMount } from "./relationship-flow-shell";
 import { StageAccount } from "./stage-account";
 import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
@@ -255,7 +255,7 @@ export function CreateRelationship({
   instanceRecordId,
   relationshipId,
   publishAction,
-  capture,
+  checkout,
   initialPaid,
   planIncluded,
   copyBlocked,
@@ -328,7 +328,7 @@ export function CreateRelationship({
    * all three are the page's to know (a session, an entitlement, a row) and none of them can be read
    * inside a client component.
    */
-  capture?: CaptureHandlers;
+  checkout?: CheckoutHandlers;
   /** A card is already on file for this relationship: the walk opens on the thank-you. */
   initialPaid?: boolean;
   /** What the account's plan already covers (#870), measured by the page. */
@@ -736,7 +736,7 @@ export function CreateRelationship({
             draft={draft}
             instanceRecordId={instanceRecordId ?? ""}
             relationshipId={relationshipId ?? ""}
-            {...(capture === undefined ? {} : { capture })}
+            {...(checkout === undefined ? {} : { checkout })}
             {...(initialPaid === undefined ? {} : { initialPaid })}
             {...(planIncluded === undefined ? {} : { planIncluded })}
             backHref={backHref}

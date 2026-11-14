@@ -48,14 +48,12 @@ never computed from a clock, so the mail says the same day however often it is r
 
 ### Where the body does not live here
 
-Three of the twelve templates keep their body in code, and that is deliberate. Two of the three were
-already written before this file existed — the reminder and the expiry notice each carry a sentence
-this file's one-fence shape cannot express — and the third is assembled from the changelog.
+Two of the eleven templates keep their body in code, and that is deliberate. Both were already written
+before this file existed — each carries a sentence this file's one-fence shape cannot express.
 
 | template                   | why this file has no section for it                                                                                                         |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `stakeholder-release-note` | its body is parsed from `CHANGELOG.md` — the version line, the entry's own sections and its Known limits block, in the entry's own words.   |
-| `payment-reminder`         | the body is already written, and it carries one paragraph only the day-10 nag sends — a condition a fence has no way to express.            |
 | `relationship-expired`     | there are two bodies, one per seat reading it: the payer is told their fee was not paid, the counterparty is told no billing detail at all. |
 
 A body may not be moved into this file and a body may not be moved out of it without changing these

@@ -86,6 +86,19 @@ export interface Subscription {
   readonly currentPeriodEnd: string;
 }
 
+/**
+ * How a checkout is presented (#748's split, kept by #1010 for the purchase).
+ *
+ * `hosted` is the shape `/pricing` uses: the server creates a session and answers a URL the
+ * browser leaves the page for. `embedded` draws the provider's own form in a frame **inside this
+ * page** — the artifact's `ui_mode: embedded_page` — and answers a client secret instead of a URL.
+ * It is a per-call choice, not a deployment flag: the same adapter carries both, and a caller that
+ * does not say which it wants gets `hosted`.
+ */
+export const CHECKOUT_PRESENTATIONS = ["hosted", "embedded"] as const;
+
+export type CheckoutPresentation = (typeof CHECKOUT_PRESENTATIONS)[number];
+
 /** What a "choose this plan" button asks the port to start. */
 export interface CheckoutRequest {
   /** The signed-in account — resolved from the session by the route, never from the body. */
@@ -93,18 +106,30 @@ export interface CheckoutRequest {
   /** The tier to buy. Refused unless the fixture marks it `checkout`. */
   readonly planId: string;
   readonly interval: BillingInterval;
-  /** Where the provider sends the browser after a completed checkout. */
+  /**
+   * Where the provider sends the browser after a completed checkout. For `embedded` this is the
+   * frame's `return_url`: the one case that must navigate (an SCA challenge) comes back here.
+   */
   readonly successUrl: string;
-  /** Where it sends the browser after an abandoned one. */
+  /** Where it sends the browser after an abandoned one. Unused by `embedded`. */
   readonly cancelUrl: string;
   /** The account's address, when the session has one: a provider pre-fills its form with it. */
   readonly email?: string;
+  /** `hosted` (the default) or `embedded`. See `CHECKOUT_PRESENTATIONS`. */
+  readonly presentation?: CheckoutPresentation;
 }
 
-/** Where to send the browser. `completed` is `true` only for an adapter that charges nothing. */
+/**
+ * Where to send the browser, or what to mount.
+ *
+ * Only one of `url` / `clientSecret` is populated: `hosted` answers a `url` and the browser leaves
+ * the page, `embedded` answers a `clientSecret` and nothing navigates. `completed` is `true` only
+ * for an adapter that has already written the subscription (the offline one).
+ */
 export interface CheckoutSession {
   readonly id: string;
-  readonly url: string;
+  /** `null` for an embedded session — there is no page to leave for. */
+  readonly url: string | null;
   readonly provider: BillingProvider;
   /**
    * `true` when the subscription already exists by the time this returns.
@@ -114,116 +139,11 @@ export interface CheckoutSession {
    * appears when its webhook arrives — which is why no surface may depend on this flag.
    */
   readonly completed: boolean;
-}
-
-/* ------------------------------------------------------------------ *
- * Pay to complete (#619) — a method on file, and the fee taken later
- * ------------------------------------------------------------------ */
-
-/**
- * How a capture is presented (#748).
- *
- * `hosted` is the shipped shape: the server creates a session and answers a URL the browser leaves
- * the page for. `embedded` draws the provider's own form in a frame **inside this page** — the
- * artifact's `ui_mode: embedded` — and answers a client secret instead of a URL. It is a per-call
- * choice, not a deployment flag: the same adapter carries both, and a caller that does not say
- * which it wants gets `hosted`, which is why nothing that shipped before this existed changed.
- */
-export const CAPTURE_PRESENTATIONS = ["hosted", "embedded"] as const;
-
-export type CapturePresentation = (typeof CAPTURE_PRESENTATIONS)[number];
-
-/**
- * What capturing a payment method asks for.
- *
- * No amount: the fee is decided at **completion**, from the plan the initiator chooses then. A
- * capture that carried an amount would lock the charge to a plan chosen days earlier — which is
- * exactly the "purchase at creation" model #619 retires.
- *
- * `relationshipId` rides along so the provider's session can carry it in metadata and the return
- * can be resolved to the relationship without a second table; `userId` is the payer, resolved from
- * the session, never from a body.
- */
-export interface MethodCaptureRequest {
-  readonly userId: string;
-  readonly relationshipId: string;
-  readonly successUrl: string;
-  readonly cancelUrl: string;
-  readonly email?: string;
-  /** `hosted` (the default) or `embedded`. See `CAPTURE_PRESENTATIONS`. */
-  readonly presentation?: CapturePresentation;
-}
-
-/**
- * What starting a capture answered.
- *
- * Two presentations, one shape, and only one of `url` / `clientSecret` is populated:
- *
- *   hosted    `url` is where the browser goes; `completed` is `false` and the ids arrive through
- *             `resolveMethodCapture()` when it comes back
- *   embedded  `clientSecret` is what the browser mounts the provider's frame with; `url` is `null`
- *             because nobody leaves the page, and the session id travels as `id` so the method can
- *             be resolved the same way once the frame reports completion
- *   inline    `completed` is `true` (the offline adapter) and neither is needed
- */
-export interface MethodCaptureSession {
-  readonly id: string;
-  readonly url: string | null;
-  readonly provider: BillingProvider;
-  /**
-   * `true` when the method is already on file by the time this returns (the mock captures inline).
-   * A hosted provider returns `false`, and the ids arrive through `resolveMethodCapture()`.
-   */
-  readonly completed: boolean;
-  readonly customerId?: string;
-  readonly paymentMethodId?: string;
   /** Embedded only: the secret the browser's frame is initialised with. Never logged. */
   readonly clientSecret?: string;
   /** Embedded only: the publishable key the loader needs. `null` when none is configured. */
   readonly publishableKey?: string | null;
 }
-
-/** A capture, resolved from the provider after the browser returned. */
-export interface ResolvedMethod {
-  readonly relationshipId: string | null;
-  readonly userId: string | null;
-  readonly customerId: string;
-  readonly paymentMethodId: string;
-  /** The provider's own word for "this object is test mode". Never inferred from `provider`. */
-  readonly livemode: boolean;
-}
-
-/** One charge against a method already on file — the fee, taken once per relationship. */
-export interface RelationshipChargeRequest {
-  /** The payer (the relationship's original initiator). Billing for the record, not a control. */
-  readonly userId: string;
-  readonly relationshipId: string;
-  readonly customerId: string;
-  readonly paymentMethodId: string;
-  readonly amountCents: number;
-  /** What the payer's statement shows. */
-  readonly description: string;
-  /**
-   * The provider's idempotency key. `relationship-<id>` makes a retried completion one charge, not
-   * two — the guard the database's `charged_at IS NULL` cannot provide across a network call.
-   */
-  readonly idempotencyKey: string;
-}
-
-/**
- * What a charge did.
- *
- * `declined` is a **result**, not an exception: it is the outcome the retry ladder exists for, and a
- * caller that had to catch an error to learn it would confuse "the card said no" with "the provider
- * is down". A transport or 5xx failure still throws, because that is not the payer's card.
- */
-export type ChargeOutcome =
-  | { readonly ok: true; readonly chargeId: string; readonly amountCents: number }
-  | {
-      readonly ok: false;
-      readonly code: "declined" | "no-method" | "not-configured";
-      readonly message: string;
-    };
 
 /** A webhook as the receiver got it: the exact bytes, and the signature header if there was one. */
 export interface WebhookRequest {

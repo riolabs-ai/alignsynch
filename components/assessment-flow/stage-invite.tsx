@@ -33,7 +33,7 @@ import type { PageCopy } from "@/content/pages";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import { RELATIONSHIPS_PATH, sendInvitationPath } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
-import { type CaptureHandlers, InviteWalk } from "./invite-walk";
+import { type CheckoutHandlers, InviteWalk } from "./invite-walk";
 import { StageFoot } from "./stage-foot";
 
 const CARD =
@@ -56,7 +56,7 @@ export function StageInvite({
   relationshipId,
   initialPaid,
   planIncluded,
-  capture,
+  checkout,
   backHref,
   cancelHref,
   cancelLabel,
@@ -83,7 +83,7 @@ export function StageInvite({
   /** What the account's plan already covers (#870) — the walk's plan panel reads it. */
   planIncluded?: { readonly name: string; readonly entitled: boolean };
   /** The server's capture actions. Absent in a render-only test. */
-  capture?: CaptureHandlers;
+  checkout?: CheckoutHandlers;
   backHref: string;
   cancelHref: string;
   cancelLabel: string;
@@ -107,7 +107,7 @@ export function StageInvite({
           relationshipId={relationshipId}
           paid={paid}
           onPaid={() => setPaid(true)}
-          {...(capture === undefined ? {} : { capture })}
+          {...(checkout === undefined ? {} : { checkout })}
           {...(planIncluded === undefined ? {} : { planIncluded })}
         />
 
