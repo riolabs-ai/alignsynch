@@ -1463,29 +1463,43 @@ async function walkCreateDraft(send) {
     return;
   }
   await click(send, `[data-create-keep-draft]`, { timeout: 30000 });
-  await waitFor(send, `location.pathname === "/dashboard/relationships"`, {
+  // #1014 — the draft control lands on the **relationship itself**, not the list; the list is one
+  // Back away, and the row is still the way into the draft from there.
+  await waitFor(send, `location.pathname.startsWith("/dashboard/relationships/")`, {
     timeout: 30000,
-    label: "/dashboard/relationships",
+    label: "/dashboard/relationships/<id>",
   });
-  const listed = await text(send);
-  const shows = listed.includes(PERSONA.draft.title);
+  const landed = await text(send);
+  const landedStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
+  const shows = landed.includes(PERSONA.draft.title) && landedStatus === "draft";
   await record(send, {
     action: "click",
-    expect:
-      "Continue as Draft lands on /dashboard/relationships with the draft listed by its own title",
+    expect: "Continue as Draft lands on the draft's own relationship screen, showing it as a draft",
     ok: shows,
-    actual: listed.slice(0, 500),
-    name: "draft-listed",
+    actual: `status ${landedStatus} · ${landed.slice(0, 500)}`,
+    name: "draft-landed",
   });
 
   if (!shows) {
-    finding("create-draft: the draft is not listed on /dashboard/relationships", {
-      expected: `a row titled "${PERSONA.draft.title}"`,
-      actual: listed.slice(0, 600),
+    finding("create-draft: the draft control does not land on the draft", {
+      expected: `the relationship screen showing "${PERSONA.draft.title}" as a draft`,
+      actual: `status ${landedStatus} · ${landed.slice(0, 600)}`,
       shot: transcript.steps[transcript.steps.length - 1].shot,
     });
     return;
   }
+
+  // The other half of the promise: the draft is listed, and a row opens it.
+  await navigate(send, "/dashboard/relationships");
+  await waitFor(
+    send,
+    `Array.from(document.querySelectorAll('a[href^="/dashboard/relationships/"]')).length > 0`,
+    { timeout: 30000, label: "the relationships list" },
+  );
+  const listed = await text(send);
 
   const draftLink = await evaluate(
     send,

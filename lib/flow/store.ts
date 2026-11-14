@@ -1278,6 +1278,12 @@ export type SendResult =
   | {
       readonly ok: true;
       readonly instanceRecordId: string;
+      /**
+       * The relationship the send published (#1014). Carried so the route that answers the walk can
+       * land the reader on **the relationship**, which is where both of stage 5's acts end — the
+       * session id the post carries names the wrong screen.
+       */
+      readonly relationshipId: string;
       readonly inviteToken: string;
       readonly email: string;
       readonly initiatorName: string;
@@ -1285,7 +1291,17 @@ export type SendResult =
       readonly templateTitle: string;
       readonly expiresAt: Date;
     }
-  | { readonly ok: false; readonly code: SendRefusal; readonly reason: string };
+  | {
+      readonly ok: false;
+      readonly code: SendRefusal;
+      readonly reason: string;
+      /**
+       * The relationship the refusal is about, when the read found one. `already-published` is the
+       * one code a person can reach by pressing send twice, and its honest answer is not a sentence
+       * but the screen the first press produced.
+       */
+      readonly relationshipId?: string;
+    };
 
 export async function sendDraftInvitation(input: {
   readonly instanceRecordId: string;
@@ -1372,6 +1388,7 @@ export async function sendDraftInvitation(input: {
       ok: false,
       code: "already-published",
       reason: `relationship "${relationshipId ?? "none"}" is ${status ?? "unreadable"}: its invitation is not a draft waiting to go out`,
+      ...(relationshipId === undefined ? {} : { relationshipId }),
     };
   }
 
@@ -1427,6 +1444,7 @@ export async function sendDraftInvitation(input: {
       ok: false,
       code: "already-published",
       reason: `relationship "${relationshipId}" moved out of draft before this send wrote it`,
+      relationshipId,
     };
   }
 
@@ -1452,6 +1470,7 @@ export async function sendDraftInvitation(input: {
   return {
     ok: true,
     instanceRecordId: input.instanceRecordId,
+    relationshipId,
     inviteToken: reissued.inviteToken,
     email: reissued.email,
     initiatorName: reissued.initiatorName,

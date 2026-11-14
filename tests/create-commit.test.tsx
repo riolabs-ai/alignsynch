@@ -29,11 +29,10 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import type { CreateDraft } from "@/lib/flow/create-draft";
 import {
   CREATE_INSTANCE_PATH,
-  RELATIONSHIPS_PATH,
   createAspectsPath,
   createCommitPath,
   createInviteForPath,
-  sendInvitationPath,
+  relationshipPath,
 } from "@/lib/flow/paths";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -49,6 +48,8 @@ const TEMPLATE_ID = "template-relationship-basics";
 /** The same row's slug — what a create-flow URL carries (#794); the id stays the cookie key. */
 const TEMPLATE_SLUG = "relationship-basics";
 const INSTANCE_ID = "assessment-instance-audit-ready";
+/** The relationship stage 4 wrote — what the walk names and what both of its acts land on. */
+const RELATIONSHIP_ID = "relationship-audit-ready";
 
 const TEMPLATE = {
   slug: TEMPLATE_SLUG,
@@ -106,6 +107,7 @@ function stage5Html(): string {
       template: TEMPLATE,
       draft: DRAFT,
       instanceRecordId: INSTANCE_ID,
+      relationshipId: RELATIONSHIP_ID,
       backHref: createCommitPath(TEMPLATE_SLUG),
       problem: null,
       problemLink: null,
@@ -226,20 +228,43 @@ describe("stage 4 — the conversion writes a draft", () => {
 });
 
 describe("stage 5 — send or keep", () => {
-  it("posts the relationship's own send endpoint, and nothing else", () => {
+  it("draws the walk and no create form: the row already exists", () => {
     const html = stage5Html();
-    expect(html).toContain(`action="${sendInvitationPath(INSTANCE_ID)}"`);
-    expect(html).toContain('data-create-send="true"');
-    expect(html).toContain(itemLabel(INVITE, "submit"));
-    expect(html).toContain(sectionBody(INVITE));
-    // No create form on this stage: the row already exists.
+    expect(html).toContain('data-pay-step="plan"');
+    // No create form on this stage — not the draft's and not a second one for the send.
     expect(html).not.toContain('data-create-draft="true"');
+    expect(html).not.toContain(`action="${CREATE_INSTANCE_PATH}"`);
   });
 
-  it("offers the draft as a second act, and names where it goes", () => {
+  it("sends from the walk's last step, and from no other place", () => {
+    // The stage opens unpaid, so the act does not exist yet: the walk is the gate (#1014).
+    const unpaid = stage5Html();
+    expect(unpaid).toContain('data-send-gate="locked"');
+    expect(unpaid).not.toContain('data-create-send="true"');
+    // Paid, the returning state lands on the thank-you, and the act is one step from it.
+    const paid = renderToStaticMarkup(
+      createElement(CreateRelationship, {
+        copy: assessmentCreatePageCopy,
+        stage: 5,
+        template: TEMPLATE,
+        draft: DRAFT,
+        instanceRecordId: INSTANCE_ID,
+        relationshipId: "relationship-audit-ready",
+        backHref: createCommitPath(TEMPLATE_SLUG),
+        problem: null,
+        problemLink: null,
+        initialPaid: true,
+      }),
+    );
+    expect(paid).toContain('data-send-gate="open"');
+    expect(paid).toContain('data-pay-action="action"');
+    expect(paid).not.toContain('data-create-send="true"');
+  });
+
+  it("offers the draft as the second act, and names where it goes", () => {
     const html = stage5Html();
-    // #841 — the draft is kept in the relationships list, which is where the control points.
-    expect(html).toContain(`href="${RELATIONSHIPS_PATH}"`);
+    // #1014 — the draft lands on the relationship itself, which is where the row waits.
+    expect(html).toContain(`href="${relationshipPath(RELATIONSHIP_ID)}"`);
     expect(html).toContain('data-create-keep-draft="true"');
     expect(html).toContain(itemLabel(INVITE, "draft"));
     expect(html).toContain(itemLabel(INVITE, "draft-help"));

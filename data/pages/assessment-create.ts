@@ -265,11 +265,6 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "The plan is active and the card is on file. Nothing has been charged today — the trial starts when the card is saved.",
         },
-        {
-          id: "thanks-next",
-          label:
-            "Send the invitation with the control beside this walk when you are ready, or keep the draft and send it later.",
-        },
       ],
     },
     {
@@ -350,6 +345,21 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label: "The plan is active and the card is on file. The invitation can go now.",
         },
         { id: "draft", label: "Continue as Draft" },
+        {
+          /**
+           * #1014 — the send's transport refusal, drawn in the walk's own panel. It is the one
+           * sentence this card adds: every other word on the action step already existed (the
+           * stage's heading, its body, its two labels, its unlocked line). It says the three true
+           * things — nothing was sent, nothing was charged, and the draft is still theirs — because
+           * a send that failed to reach the app must not read as a send that failed to happen.
+           *
+           * The `?resend=` band owns the codes the *endpoint* refuses with (no membership, not the
+           * Initiator, already published); this is the one the network itself can produce.
+           */
+          id: "send-refused",
+          label:
+            "The invitation did not go out — the request could not reach the app. Nothing was sent and nothing was charged. Try again, or keep the draft.",
+        },
         { id: "note-heading", label: "What you can do later" },
         {
           id: "reassure",
