@@ -538,6 +538,19 @@ else
   skip_step "md:check" "no md:check script in package.json"
 fi
 
+# The email bodies. `content/email-bodies.md` is where every template's prose is written and
+# `lib/email/bodies.generated.ts` is what the build imports, so a body edited without regenerating
+# — or a template with no section — is drift no typecheck can see: the type is a string either way.
+# Same placement as the glossary step and for the same reason: the markdown is content, the
+# generator is scripts, the generated module is lib, and those three paths classify into three
+# different lanes. It also fails by name on a body that still carries the retired marker, an orphan
+# section, a duplicate id and an undeclared placeholder. ~0.4 s.
+if has_script "email:bodies:check"; then
+  run_step "email:bodies (content/email-bodies.md generates lib/email/bodies.generated.ts)" pnpm email:bodies:check || fail
+else
+  skip_step "email:bodies" "no email:bodies:check script in package.json"
+fi
+
 # The release atlas (#945): every route `data/pages/budget.ts` registers has a row in the current
 # version's `docs/qa-atlas/<version>/manifest.json`, every claimed status agrees with the boundary
 # table (`tests/parity/boundary.ts`), every thumbnail the manifest points at exists, and the atlas

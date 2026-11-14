@@ -18,9 +18,17 @@
  * instance's report. No answer, no score, no Gap value, no count — a mailbox is not a party, and
  * `readUnlockFacts()` reads no `opinion` row, so there is nothing in scope that could leak one.
  * Nothing is invented: the facts are who has answered, which assessment, and that the answers are
- * frozen now (the acceptance is what freezes them).
+ * frozen now (the acceptance is what freezes them). The opening line is this template's section in
+ * `content/email-bodies.md`.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const REPORT_READY_BODY = {
+  id: "gap-report-ready",
+  placeholders: ["recipient", "other", "template", "link"],
+} as const satisfies EmailBodySpec;
 
 export interface ReportReadyFacts {
   /** The party reading — the seat the notice is addressed to. */
@@ -40,10 +48,12 @@ export function reportReadyDocument(facts: ReportReadyFacts): EmailDocument {
     subject: REPORT_READY_SUBJECT,
     preheader: `Both of you have answered and accepted ${facts.template}, so the report is open.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what the report shows, in the product's own voice.`,
-      },
+      ...bodyBlocks(REPORT_READY_BODY, {
+        recipient: facts.recipient,
+        other: facts.other,
+        template: facts.template,
+        link: facts.link,
+      }),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, ${facts.other} accepted their side of ${facts.template}, and so have you. The Gap report is open to you both.`,

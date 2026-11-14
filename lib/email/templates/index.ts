@@ -31,34 +31,53 @@
  */
 import type { EmailClass, EmailDocument, RenderedEmail } from "@/lib/email/band";
 import { renderEmail } from "@/lib/email/band";
+import type { EmailBodySpec } from "@/lib/email/body";
 import { releaseNoteDocument, type ChangelogSection } from "@/lib/email/release-note";
 import {
+  INVITATION_BODY,
   invitationDocument,
   invitationSubject,
   type InvitationFacts,
 } from "@/lib/email/templates/invitation";
-import { reminderDocument, type ReminderFacts } from "@/lib/email/templates/invitation-reminder";
 import {
+  REMINDER_BODY,
+  reminderDocument,
+  type ReminderFacts,
+} from "@/lib/email/templates/invitation-reminder";
+import {
+  JOINED_BODY,
   joinedDocument,
   joinedSubject,
   type JoinedFacts,
 } from "@/lib/email/templates/counterparty-joined";
-import { reportReadyDocument, type ReportReadyFacts } from "@/lib/email/templates/report-ready";
-import { trialEndingDocument, type TrialEndingFacts } from "@/lib/email/templates/trial-ending";
 import {
+  REPORT_READY_BODY,
+  reportReadyDocument,
+  type ReportReadyFacts,
+} from "@/lib/email/templates/report-ready";
+import {
+  TRIAL_ENDING_BODY,
+  trialEndingDocument,
+  type TrialEndingFacts,
+} from "@/lib/email/templates/trial-ending";
+import {
+  MEMBERSHIP_LAPSED_BODY,
   membershipLapsedDocument,
   type MembershipLapsedFacts,
 } from "@/lib/email/templates/membership-lapsed";
 import {
+  SUPPORT_REPLY_BODY,
   supportReplyDocument,
   supportReplySubject,
   type SupportReplyFacts,
 } from "@/lib/email/templates/support-reply";
 import {
+  SIGNUP_CONFIRMATION_BODY,
   signupConfirmationDocument,
   type SignupConfirmationFacts,
 } from "@/lib/email/templates/signup-confirmation";
 import {
+  PURCHASE_CONFIRMATION_BODY,
   purchaseConfirmationDocument,
   type PurchaseConfirmationFacts,
 } from "@/lib/email/templates/purchase-confirmation";
@@ -81,6 +100,14 @@ export interface EmailTemplate<Facts> {
   readonly numeral: number;
   /** `marketing` may carry an unsubscribe line; `transactional` may not. */
   readonly emailClass: EmailClass;
+  /**
+   * Where this template's body comes from: its section in `content/email-bodies.md`, and the
+   * `{{…}}` facts it may say. **Omitted** means the body is already written in code and is not the
+   * owner's to edit there — `scripts/gen-email-bodies.mjs` reports a section for a template that
+   * omits it and a template that omits it with no section, so the omission is a listed decision
+   * rather than a gap nobody noticed.
+   */
+  readonly body?: EmailBodySpec;
   readonly subject: (facts: Facts) => string;
   readonly document: (facts: Facts) => EmailDocument;
 }
@@ -99,6 +126,7 @@ export const invitationTemplate: EmailTemplate<InvitationFacts> = {
   id: "counterparty-invitation",
   numeral: 2,
   emailClass: "transactional",
+  body: INVITATION_BODY,
   subject: invitationSubject,
   document: invitationDocument,
 };
@@ -111,6 +139,7 @@ export const reminderTemplate: EmailTemplate<ReminderFacts> = {
   id: "invitation-reminder",
   numeral: 3,
   emailClass: "transactional",
+  body: REMINDER_BODY,
   subject: (facts) => reminderDocument(facts).subject,
   document: reminderDocument,
 };
@@ -120,6 +149,7 @@ export const joinedTemplate: EmailTemplate<JoinedFacts> = {
   id: "counterparty-joined",
   numeral: 4,
   emailClass: "transactional",
+  body: JOINED_BODY,
   subject: joinedSubject,
   document: joinedDocument,
 };
@@ -129,6 +159,7 @@ export const reportReadyTemplate: EmailTemplate<ReportReadyFacts> = {
   id: "gap-report-ready",
   numeral: 5,
   emailClass: "transactional",
+  body: REPORT_READY_BODY,
   subject: (facts) => reportReadyDocument(facts).subject,
   document: reportReadyDocument,
 };
@@ -142,6 +173,7 @@ export const trialEndingTemplate: EmailTemplate<TrialEndingFacts> = {
   id: "trial-ending",
   numeral: 6,
   emailClass: "transactional",
+  body: TRIAL_ENDING_BODY,
   subject: (facts) => trialEndingDocument(facts).subject,
   document: trialEndingDocument,
 };
@@ -151,6 +183,7 @@ export const membershipLapsedTemplate: EmailTemplate<MembershipLapsedFacts> = {
   id: "membership-lapsed",
   numeral: 7,
   emailClass: "transactional",
+  body: MEMBERSHIP_LAPSED_BODY,
   subject: (facts) => membershipLapsedDocument(facts).subject,
   document: membershipLapsedDocument,
 };
@@ -160,6 +193,7 @@ export const supportReplyTemplate: EmailTemplate<SupportReplyFacts> = {
   id: "support-reply",
   numeral: 8,
   emailClass: "transactional",
+  body: SUPPORT_REPLY_BODY,
   subject: supportReplySubject,
   document: supportReplyDocument,
 };
@@ -173,6 +207,7 @@ export const signupConfirmationTemplate: EmailTemplate<SignupConfirmationFacts> 
   id: "signup-confirmation",
   numeral: 9,
   emailClass: "marketing",
+  body: SIGNUP_CONFIRMATION_BODY,
   subject: (facts) => signupConfirmationDocument(facts).subject,
   document: signupConfirmationDocument,
 };
@@ -182,6 +217,7 @@ export const purchaseConfirmationTemplate: EmailTemplate<PurchaseConfirmationFac
   id: "purchase-confirmation",
   numeral: 10,
   emailClass: "transactional",
+  body: PURCHASE_CONFIRMATION_BODY,
   subject: (facts) => purchaseConfirmationDocument(facts).subject,
   document: purchaseConfirmationDocument,
 };

@@ -12,9 +12,17 @@
  * path that computed "in 2 days" from the clock would say something different at hydration.
  *
  * Nothing is invented: there is no discount, no urgency device and no claim about the other
- * party's behaviour. The reminder says what expires, when, and how to open it.
+ * party's behaviour. The reminder says what expires, when, and how to open it — and the opening
+ * line is the one `content/email-bodies.md` holds for this template.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const REMINDER_BODY = {
+  id: "invitation-reminder",
+  placeholders: ["inviter", "template", "link", "expires_on"],
+} as const satisfies EmailBodySpec;
 
 /** The window the reminder exists for, in milliseconds — 48 hours before `expires_at`. */
 export const REMINDER_LEAD_MS = 48 * 60 * 60 * 1000;
@@ -57,10 +65,12 @@ export function reminderDocument(facts: ReminderFacts): EmailDocument {
     subject: REMINDER_SUBJECT,
     preheader: `Your invitation to answer ${facts.template} expires on ${expiryDateOf(facts.expiresAt)}.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what is about to expire, in the product's own voice.`,
-      },
+      ...bodyBlocks(REMINDER_BODY, {
+        inviter: facts.inviter,
+        template: facts.template,
+        link: facts.link,
+        expires_on: expiryDateOf(facts.expiresAt),
+      }),
       { kind: "paragraph", text: `Open your invitation: ${facts.link}` },
       {
         kind: "paragraph",

@@ -311,15 +311,17 @@ describe("the release note", () => {
     expect(() => releaseNoteBlocks(noLimits)).toThrow(/Known limits/);
   });
 
-  it("puts {{content_to_refine}} where the entry has no intro at all", () => {
+  it("invents no lead where the entry has no intro at all", () => {
     const bare = { version: "9.9.6", date: "2026-09-01", body: "### Known limits\n- One limit.\n" };
     const bareDoc = releaseNoteDocument(bare);
-    expect(
-      bareDoc.blocks.some(
-        (block) => block.kind === "paragraph" && block.text.includes("{{content_to_refine}}"),
-      ),
-    ).toBe(true);
+    // The note opens on the version line: with no intro in the entry there is no lead paragraph,
+    // rather than a sentence nobody wrote standing in for one.
+    expect(bareDoc.blocks[0]).toEqual({
+      kind: "paragraph",
+      text: "Version 9.9.6, released 2026-09-01.",
+    });
     expect(bareDoc.preheader).toContain("9.9.6");
+    expect(JSON.stringify(bareDoc.blocks)).not.toContain("{{");
   });
 
   it("carries no unsubscribe line — a release note is transactional", () => {
