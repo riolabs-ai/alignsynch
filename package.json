@@ -31,6 +31,8 @@
     "brand:icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",
+    "email:bodies": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-email-bodies.mjs",
+    "email:bodies:check": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-email-bodies.mjs --check",
     "ui:registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs",
     "ui:registry:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-ui-registry.mjs --check",
     "ui:census": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/ui-census.js",
