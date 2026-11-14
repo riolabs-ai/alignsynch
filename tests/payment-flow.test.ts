@@ -16,7 +16,9 @@
  *   3. **The money is named.** The plan panel says what the money buys in the owner's two phrases —
  *      *join membership plan* and *activate relationship*.
  *   4. **The card is Stripe's.** The card panel draws the provider's mount point and never a card
- *      field of our own — no `type="password"`, no `name="card…"`, no CVC.
+ *      field of our own — no `type="password"`, no `name="card…"`, no CVC. Since #1031 the mount
+ *      point is drawn the moment the step opens, and no control on either panel starts a checkout:
+ *      choosing the plan row is the act, so this file fails if a start button comes back.
  *   5. **The walk ends with an act, not a thank-you.** The thank-you carries one control that opens
  *      the action panel; the action panel carries **send** and **keep the draft**, and both name the
  *      relationship they land on.
@@ -59,6 +61,16 @@ function decode(html: string): string {
   return html.replaceAll("&#x27;", "'").replaceAll("&quot;", '"').replaceAll("&amp;", "&");
 }
 
+/**
+ * Every `data-pay-action` a rendered panel draws, in document order — the *set* of controls, not a
+ * search for one name. Since #1031 there is no start control between the plan and the card fields, so
+ * the proof is that the plan panel draws none and the card step draws only its two ways out: a
+ * resurrected start button fails this list by name, without the retired marker being spelled here.
+ */
+function payActions(html: string): string[] {
+  return [...html.matchAll(/data-pay-action="([^"]+)"/g)].map((match) => match[1] ?? "");
+}
+
 /** Render the walk at one panel. `paid` is the returning state — the membership is already live. */
 function walk(step?: PayFlowStep, paid = false): string {
   return decode(
@@ -99,13 +111,20 @@ describe("stage 5 — the walk happens in place, in four steps, and ends on the 
     // The rows are the plan group's, and nothing is pre-selected: this screen never picks a tier.
     expect(html).toContain('name="plan"');
     expect(html).not.toMatch(/<input[^>]*\schecked/);
+    // **No button on this panel starts the checkout** (#1031): choosing a row is the act, and the
+    // draft is the only other control the walk draws before the card step exists.
+    expect(payActions(html)).toEqual(["draft"]);
   });
 
   it("takes the card from Stripe's frame, never from a field of ours", () => {
     const html = walk("card");
     expect(html).toContain('data-pay-step="card"');
     expect(html).toContain(itemLabel(flow, "card-heading"));
-    expect(html).toContain(itemLabel(flow, "card-start"));
+    // **The frame is drawn on the reveal, and nothing starts it** (#1031): the mount point is the
+    // step's own first state, and the only controls left are the two ways out.
+    expect(html).toContain('data-checkout-frame="opening"');
+    expect(html).toContain('data-checkout-pending="true"');
+    expect(payActions(html)).toEqual(["plan", "draft"]);
     // The step says what the card unlocks — the sentence the send card used to carry beside the walk.
     expect(html).toContain(itemLabel(invite, "locked"));
     // Nothing here is a card form: the fields belong to the provider's iframe, and the mount point

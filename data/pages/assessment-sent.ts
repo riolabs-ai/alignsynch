@@ -49,6 +49,23 @@ export const assessmentSentPageCopy: PageCopy = zPageCopy.parse({
         { id: "expired", label: "Expired — the invitation ran out before it was claimed" },
         { id: "revoked", label: "Withdrawn — the invitation was cancelled before it was used" },
         { id: "none", label: "Not sent — no invitation was created for this relationship yet" },
+        /**
+         * The band's **fallback** row (#998), and the only item here that is not a state.
+         *
+         * `invite.state` is derived at read time, so its id is not a literal E23 can resolve: the
+         * next status `inviteStateOf()` grows would meet `itemLabel`'s throw inside a server render
+         * and answer 500 on a reachable screen, exactly as `none` did before #988. `SentState` asks
+         * for this row when the state has no sentence of its own, so an unknown state renders one
+         * neutral sentence and the screen keeps its timeline and its next-step list.
+         *
+         * It says nothing about the invitation on purpose — the distinctness the state rows keep is
+         * not a property this row can have, and a fallback that guessed would be the bug it exists
+         * to prevent.
+         */
+        {
+          id: "unknown",
+          label: "This invitation is in a state this screen does not describe yet.",
+        },
         { id: "email", label: "Sent to {email}" },
       ],
     },

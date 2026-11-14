@@ -11,12 +11,17 @@
  *
  *   plan    Join a membership plan. The two things the money buys are named here — the plan joined
  *           and the relationship activated — because a price without its purpose is what makes a
- *           checkout feel like a toll.
+ *           checkout feel like a toll. **Choosing a row is the act** (#1031): the row's selection
+ *           advances the walk and starts the session, so there is no control between reading a
+ *           price and seeing the card fields.
  *   card    Stripe's checkout fields, mounted **in this panel** from
  *           `components/billing/stripe-frame.tsx`. The session behind them is the membership
  *           subscription (#1010 R2): one monthly plan, both parties, seven days free. Since #912
  *           this walk is that module's **only** caller — the dashboard's capture dialog is deleted,
- *           so there is no second card surface and no second set of card fields.
+ *           so there is no second card surface and no second set of card fields. The frame's mount
+ *           point is drawn **on the reveal** and the session is minted behind it, so a step that
+ *           opens is a step that is already loading; a failure replaces the frame with a sentence
+ *           in the step itself, never an alert over a control that would fail again.
  *   thanks  A thank-you, and **one button** that opens the last step. It says what the money bought
  *           and hands over; it no longer narrates a control that lives somewhere else (#1014).
  *   action  **The act, inside the walk.** The send — through the same endpoint stage 5 has always
@@ -36,10 +41,19 @@
  * if"). The server refuses an unpaid send on its own, in `sendDraftInvitation()` — the UI gate is
  * the courtesy, not the enforcement.
  *
- * **It moves focus like a step, not like a page.** `Next` puts focus on the new step's first
- * control — `data-panel-first` — so a screen reader follows the walk. The first render is
- * deliberately silent: a stage that grabs focus on load steals it from the dialog's own close
- * control.
+ * **It buys the tier the plan row names, never the row's own id.** The panel's rows are the
+ * fixture's handles (`one`, `unlimited`), which key its copy; a checkout is named by a
+ * `billing_plan` row (`basic`, `principal`). This module used to post the handle and fall back to
+ * `"basic"` when nothing was chosen, and both sides are `string`, so the crossing was invisible to
+ * the compiler: choosing a plan posted `"one"`, the adapter answered *"one" is not a plan this
+ * product sells*, and the card frame never mounted. `PLAN_BILLING_TIER` in
+ * `data/pages/assessment-create.ts` is the one map between the two, beside the prices it produces.
+ *
+ * **It moves focus like a step, not like a page.** The reveal puts focus on the step's first
+ * control — `data-panel-first` — so a screen reader follows the walk; on the card step that target
+ * is the frame's own mount point, which is why it carries `tabIndex={-1}` rather than being a
+ * button. The first render is deliberately silent: a stage that grabs focus on load steals it from
+ * the dialog's own close control.
  *
  * Every reader-visible word is `data/pages/assessment-create.ts` (`plans`, `payment-flow`, `invite`)
  * through `sectionOf`/`itemLabel`/`fillLabel` — E23 counts what a component writes, and this one
@@ -52,6 +66,7 @@ import type { PageCopy } from "@/content/pages";
 import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { relationshipPath, sendInvitationPath } from "@/lib/flow/paths";
+import { PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { PlanChoices, type PlanId } from "./plan-choices";
 import { StripeFrame } from "@/components/billing/stripe-frame";
 
@@ -129,14 +144,22 @@ export function InviteWalk({
   const [sending, setSending] = useState(false);
   const [sendRefusal, setSendRefusal] = useState<string | null>(null);
 
-  const plansRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const firstRender = useRef(true);
 
+  /** The provider's frame can mount: the session and the key that opens it are both in hand. */
+  const frameReady = clientSecret !== null && publishableKey !== null;
+
   /**
-   * The walk's Next moves the *reader* as well as the panel: focus lands on the new step's first
-   * control. The first render is skipped on purpose — a stage that grabs focus on load takes it off
-   * the dialog's close control, which is where Radix puts it.
+   * The account's plan already covers a tier (#870): its panel is a summary, not the radio group, and
+   * the card step is the only place it can go from there.
+   */
+  const planEntitled = planIncluded?.entitled === true;
+
+  /**
+   * The walk's step change moves the *reader* as well as the panel: focus lands on the new step's
+   * first control. The first render is skipped on purpose — a stage that grabs focus on load takes
+   * it off the dialog's close control, which is where Radix puts it.
    */
   useEffect(() => {
     if (firstRender.current) {
@@ -148,14 +171,6 @@ export function InviteWalk({
     );
     target?.focus();
   }, [step]);
-
-  /** The plan chosen in the radio group, read at the moment somebody continues. */
-  function chosenPlan(): PlanId | null {
-    const checked = plansRef.current?.querySelector<HTMLInputElement>("input[name=plan]:checked");
-    return (checked?.value as PlanId | undefined) ?? null;
-  }
-
-  const planChosen = plan !== null || (planIncluded !== undefined && planIncluded.entitled);
 
   /** The plan's own words from the fixture, or the tier the account already holds (#870). */
   function planLabel(picked: PlanId | null): string {
@@ -170,16 +185,30 @@ export function InviteWalk({
    *              completion confirms it by the session it was minted with
    *   inline     the offline adapter wrote the row inside the request, so the walk is done
    *   refusal    a sentence: no key on this deployment, a tier with no Price, not signed in
+   *
+   * **`picked` is handed in, never read from state.** Since #1031 the choice and the step change are
+   * one act, so the `plan` this render holds is a render behind the row that was just chosen.
    */
-  async function startMembership(): Promise<void> {
+  async function startMembership(picked: PlanId | null): Promise<void> {
     setRefusal(null);
     if (checkout === undefined) {
       setRefusal(itemLabel(flow, "card-refused"));
       return;
     }
+    if (picked === null) {
+      // **No tier, so no checkout.** This used to post `plan ?? "basic"`, which is the defect this
+      // guard replaces: a default nobody chose is a price decided by a fallback, and it hid the
+      // crossing the map above exists to make explicit. The card step is entered by choosing a row,
+      // so the one state that reaches this line is an account measured as entitled while the
+      // membership is not live — where the drawn answer is the refusal band (with Back and the draft
+      // beside it), never a charge.
+      setRefusal(itemLabel(flow, "card-refused"));
+      return;
+    }
+    const planId = PLAN_BILLING_TIER[picked];
     setStarting(true);
     try {
-      const answer = await checkout.onStart({ planId: plan ?? "basic", interval: "month" });
+      const answer = await checkout.onStart({ planId, interval: "month" });
       if (!answer.ok) {
         setRefusal(answer.message ?? itemLabel(flow, "card-refused"));
         return;
@@ -199,6 +228,40 @@ export function InviteWalk({
     } finally {
       setStarting(false);
     }
+  }
+
+  /**
+   * **Choosing a plan is the act** (#1031). One gesture does what two presses used to: the row's
+   * selection is the choice, the step change is the reveal, and the checkout starts behind the frame
+   * that mounts on it. The old shape drew `Enter the card` on the plan panel and `Opening the card
+   * fields…` on the card panel, so the press *was* the load and a failure to start arrived as an
+   * alert over a control that would fail identically again.
+   *
+   * `null` is the entitled account (#870), whose panel is a summary with no row to click — the
+   * summary is the choice, and its one control calls this with no tier, which `startMembership`
+   * answers with the refusal band rather than a charge.
+   */
+  function choosePlan(picked: PlanId | null): void {
+    if (picked !== null) setPlan(picked);
+    setClientSecret(null);
+    setPublishableKey(null);
+    setCheckoutSessionId(null);
+    setStep("card");
+    void startMembership(picked);
+  }
+
+  /**
+   * Back to the plan panel, with the checkout forgotten and **the choice cleared**. Clearing it is
+   * what makes the return honest: a native radio fires no `change` when it is already checked, so a
+   * panel that kept its selection would be a step nobody could leave twice.
+   */
+  function backToPlan(): void {
+    setRefusal(null);
+    setClientSecret(null);
+    setPublishableKey(null);
+    setCheckoutSessionId(null);
+    setPlan(null);
+    setStep("plan");
   }
 
   /** The frame reported the purchase: confirm it against the provider, by the session it minted. */
@@ -295,7 +358,7 @@ export function InviteWalk({
         would otherwise sell a tier the person holds, and the thank-you would recap a plan nobody
         picked. The words are the fixture's; the tier name is the entitlement's own.
       */}
-      {planIncluded !== undefined && planIncluded.entitled ? (
+      {planEntitled ? (
         <div data-pay-plan-included="true">
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {itemLabel(plans, "included-plan-label")}
@@ -306,9 +369,7 @@ export function InviteWalk({
           </p>
         </div>
       ) : (
-        <div ref={plansRef}>
-          <PlanChoices copy={copy} initial={plan ?? undefined} onSelect={setPlan} />
-        </div>
+        <PlanChoices copy={copy} initial={plan ?? undefined} onSelect={choosePlan} />
       )}
 
       {/* What the money buys, named: the plan joined, and the relationship it activates. */}
@@ -326,22 +387,30 @@ export function InviteWalk({
 
       <p className={SMALL}>{itemLabel(plans, "trial")}</p>
 
-      <button
-        type="button"
-        data-pay-action="card"
-        data-panel-first={planIncluded !== undefined && planIncluded.entitled ? "true" : undefined}
-        className={PRIMARY}
-        disabled={!planChosen}
-        onClick={() => {
-          setPlan(chosenPlan());
-          setStep("card");
-        }}
-      >
-        {itemLabel(flow, "continue")}
-      </button>
+      {/* The entitled account has no row to choose, so its panel needs the one control that is the
+          act everywhere else. It opens the card step with no tier, which the walk answers as a
+          refusal rather than a charge (#870). Nothing else on this panel is a button (#1031). */}
+      {planEntitled ? (
+        <button
+          type="button"
+          data-pay-action="continue"
+          data-panel-first="true"
+          className={PRIMARY}
+          onClick={() => choosePlan(null)}
+        >
+          {itemLabel(flow, "continue")}
+        </button>
+      ) : null}
     </>
   );
 
+  /**
+   * **The card step is a reveal, not a two-press walk** (#1031). The frame's mount point is drawn
+   * the moment the step opens and the session is minted behind it, so `opening` is the step's first
+   * state and `embedded` the provider's frame once there is a secret for it. A failure replaces the
+   * frame with a sentence **in this step** — never a dialog beside a control that would fail
+   * identically — and the two ways out stay: Back, and the draft at the foot of the walk.
+   */
   const cardPanel = (
     <>
       <p className={MUTED}>{itemLabel(flow, "card-body")}</p>
@@ -352,10 +421,16 @@ export function InviteWalk({
         {itemLabel(invite, "locked")}
       </p>
 
-      {clientSecret !== null && publishableKey !== null ? (
+      {refusal !== null ? (
+        <p data-pay-refusal="true" role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {refusal}
+        </p>
+      ) : (
         <div
+          tabIndex={-1}
+          data-panel-first="true"
+          data-checkout-frame={frameReady ? "embedded" : "opening"}
           className="space-y-3 rounded-lg border border-gray-200 dark:border-gray-700"
-          data-checkout-frame="embedded"
         >
           <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
             <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
@@ -365,47 +440,31 @@ export function InviteWalk({
               {itemLabel(flow, "card-test-mode")}
             </span>
           </div>
-          <StripeFrame
-            clientSecret={clientSecret}
-            publishableKey={publishableKey}
-            placeholder={itemLabel(flow, "card-frame")}
-            onComplete={() => void confirmMembership()}
-            onError={() => setRefusal(itemLabel(flow, "card-refused"))}
-          />
+          {frameReady ? (
+            <StripeFrame
+              clientSecret={clientSecret}
+              publishableKey={publishableKey}
+              placeholder={itemLabel(flow, "card-frame")}
+              onComplete={() => void confirmMembership()}
+              onError={() => setRefusal(itemLabel(flow, "card-refused"))}
+            />
+          ) : (
+            /* A status, not a refusal: the step is doing what it was opened to do. */
+            <p
+              data-checkout-pending="true"
+              role="status"
+              className="px-3 py-6 text-center text-xs text-gray-600 dark:text-gray-300"
+            >
+              {starting ? itemLabel(flow, "card-starting") : itemLabel(flow, "card-frame")}
+            </p>
+          )}
           <p className="px-3 pb-2 text-xs text-gray-600 dark:text-gray-300">
             {itemLabel(flow, "card-frame-note")}
           </p>
         </div>
-      ) : (
-        <button
-          type="button"
-          data-pay-action="subscribe"
-          data-panel-first="true"
-          className={PRIMARY}
-          disabled={starting}
-          onClick={() => void startMembership()}
-        >
-          {starting ? itemLabel(flow, "card-starting") : itemLabel(flow, "card-start")}
-        </button>
       )}
 
-      {refusal === null ? null : (
-        <p data-pay-refusal="true" role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {refusal}
-        </p>
-      )}
-
-      <button
-        type="button"
-        data-pay-action="plan"
-        className={GHOST}
-        onClick={() => {
-          setRefusal(null);
-          setClientSecret(null);
-          setCheckoutSessionId(null);
-          setStep("plan");
-        }}
-      >
+      <button type="button" data-pay-action="plan" className={GHOST} onClick={backToPlan}>
         {itemLabel(flow, "back")}
       </button>
     </>
