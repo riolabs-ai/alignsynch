@@ -1087,37 +1087,43 @@ function countQueries() {
   ];
 }
 
-/** The six tables the seed writes, in the bundle's own terms — the comparison that matters. */
-const BUNDLE_KEYS = {
-  record: (payload) => payload.templates.length + payload.instances.length,
-  item: (payload) =>
-    [...payload.templates, ...payload.instances].reduce(
-      (total, record) => total + record.items.length,
-      0,
-    ),
-  response_option: (payload) =>
-    [...payload.templates, ...payload.instances].reduce(
-      (total, record) =>
-        total +
-        record.items.reduce(
-          (count, item) => count + (item.scale.kind === "options" ? item.scale.options.length : 0),
-          0,
-        ),
-      0,
-    ),
-  session: (payload) => payload.instances.length,
-  relationship: (payload) => payload.instances.length,
-  party: (payload) =>
-    payload.instances.reduce((total, instance) => total + instance.parties.length, 0),
-  opinion: (payload) =>
-    payload.instances.reduce(
-      (total, instance) =>
-        total + instance.parties.reduce((count, party) => count + party.opinions.length, 0),
-      0,
-    ),
-};
+/**
+ * The tables the seed writes, in the bundle's own terms — the comparison that matters.
+ *
+ * A function of `seededRowTotals` rather than a constant, because two of these counts are not a
+ * property of the file: `party` and `opinion` count the rows a **seed** installs, which the
+ * authored bundle's own arrays over-count (62/310 authored against 56/205 written). Reading them
+ * from `content/assessment.ts` keeps this report and the writer on one derivation.
+ */
+function bundleKeys(seededRowTotals) {
+  return {
+    record: (payload) => payload.templates.length + payload.instances.length,
+    item: (payload) =>
+      [...payload.templates, ...payload.instances].reduce(
+        (total, record) => total + record.items.length,
+        0,
+      ),
+    response_option: (payload) =>
+      [...payload.templates, ...payload.instances].reduce(
+        (total, record) =>
+          total +
+          record.items.reduce(
+            (count, item) =>
+              count + (item.scale.kind === "options" ? item.scale.options.length : 0),
+            0,
+          ),
+        0,
+      ),
+    session: (payload) => payload.instances.length,
+    relationship: (payload) => payload.instances.length,
+    party: (payload) =>
+      payload.instances.reduce((total, instance) => total + seededRowTotals(instance).parties, 0),
+    opinion: (payload) =>
+      payload.instances.reduce((total, instance) => total + seededRowTotals(instance).opinions, 0),
+  };
+}
 
-/** Label in the report → key in `BUNDLE_KEYS` and in the DB count map. */
+/** Label in the report → key in `bundleKeys()` and in the DB count map. */
 const COMPARED = [
   ["record", "record"],
   ["item", "item"],
@@ -1177,6 +1183,9 @@ async function bundleCounts() {
   }
 
   const { parseBundle, formatBundleIssue } = await import("../content/bundle.ts");
+  // The seed-vs-bundle comparison for `party`/`opinion` is the seed's own rule, not the file's
+  // arrays — see `bundleKeys`. `seededRowTotals` is the same derivation `db-seed.mjs` writes by.
+  const { seededRowTotals } = await import("../content/assessment.ts");
   const parsed = parseBundle(readFileSync(new URL(`../${BUNDLE}`, import.meta.url), "utf8"));
   if (!parsed.ok) {
     throw new Error(
@@ -1190,7 +1199,8 @@ async function bundleCounts() {
   }
   const payload = parsed.bundle.payload;
   const expected = {};
-  for (const [key, count] of Object.entries(BUNDLE_KEYS)) expected[key] = count(payload);
+  for (const [key, count] of Object.entries(bundleKeys(seededRowTotals)))
+    expected[key] = count(payload);
   return { expected, appVersion: parsed.bundle.appVersion, path: BUNDLE };
 }
 
