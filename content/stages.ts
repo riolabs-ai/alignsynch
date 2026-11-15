@@ -36,12 +36,12 @@
  *
  * **Derived, never stored.** A stage is a function of facts the rows already carry — whether
  * the Counterparty's seat exists (the invite has been claimed), whether both parties have
- * submitted, and whether the Gaps meet the instance's Setting:
+ * submitted, and whether the Gaps meet the session's Setting:
  *
  *   invited    the invite is unclaimed — the Counterparty is not a party yet
  *   connected  both seats exist; the sheet is not complete (blind answering)
- *   sharing    complete, and at least one Gap the instance has exceeds its Setting
- *   aligned    complete, and every Gap the instance has meets its Setting
+ *   sharing    complete, and at least one Gap the session has exceeds its Setting
+ *   aligned    complete, and every Gap the session has meets its Setting
  *
  * There is no `stage` column, exactly as there is no `status` column (#145, #146) and no
  * `gap` column (#219): a stored stage would be a second authored copy of facts the opinion
@@ -55,7 +55,7 @@
  * `connected` and nothing else: no score, no answered count, no Gap value, not even a hint
  * that the other party is part-way through. `StageFacts` makes that structural instead of a
  * rule the caller is trusted to keep — the Setting and the Gaps are **not representable** on
- * an instance that is not yet complete, so there is no argument through which either could
+ * a session that is not yet complete, so there is no argument through which either could
  * reach a pre-submit stage.
  *
  * Pure, like `content/gaps.ts` beside it: no React, no Next, no `lib/**` import, no clock.
@@ -63,7 +63,7 @@
  * `scripts/__tests__/stages.test.ts` over it under plain Node with `DATABASE_URL` unset.
  */
 import type { AlignmentSetting } from "./assessment";
-import { instanceAlignment, type AspectGaps } from "./gaps";
+import { sessionAlignment, type AspectGaps } from "./gaps";
 
 /* ------------------------------------------------------------------ *
  * The vocabulary — four stages, the numbers the source gives them
@@ -143,7 +143,7 @@ export const STAGES_BEFORE_COMPLETE = [
  * A union rather than a bag of booleans: `setting` and `aspects` exist **only** in the
  * `bothSubmitted: true` branch, so "work out aligned before the sheet is complete" is a type
  * error, not a caller's discipline. A caller maps the flow's derived status onto it
- * (`lib/flow/state.ts::instanceStatusOf`): `awaiting_counterparty` → the invite is unclaimed,
+ * (`lib/flow/state.ts::sessionStatusOf`): `awaiting_counterparty` → the invite is unclaimed,
  * `answering` → both seats and not complete, `complete` → `bothSubmitted`.
  */
 export type StageFacts =
@@ -152,9 +152,9 @@ export type StageFacts =
   | {
       readonly counterpartyClaimed: true;
       readonly bothSubmitted: true;
-      /** The instance's Setting, read from its row — never a default, never guessed. */
+      /** The session's Setting, read from its row — never a default, never guessed. */
       readonly setting: AlignmentSetting;
-      /** Every Aspect's Gaps, in `instanceAlignment`'s shape. */
+      /** Every Aspect's Gaps, in `sessionAlignment`'s shape. */
       readonly aspects: readonly AspectGaps[];
     };
 
@@ -167,12 +167,12 @@ export type StageFacts =
  *   complete, every Gap within the Setting          → aligned
  *
  * `aligned` is the only branch that reads the Setting, and it reads it through
- * `instanceAlignment` — the one comparison in the codebase (`gapMeetsSetting`), so a stage
- * cannot disagree with the report about the same instance. Soft tolerates a Gap of 1 and Full
+ * `sessionAlignment` — the one comparison in the codebase (`gapMeetsSetting`), so a stage
+ * cannot disagree with the report about the same session. Soft tolerates a Gap of 1 and Full
  * does not, which is exactly why the Setting is a required member here: the same five Aspects
  * under `soft` and under `full` are two different stages.
  *
- * A copy with **no Aspects** is never `complete` (`instanceStatusOf`), so the last branch
+ * A copy with **no Aspects** is never `complete` (`sessionStatusOf`), so the last branch
  * cannot be reached from the flow; it returns `sharing` rather than `aligned` if it ever is,
  * because "In Synch about a question nobody asked" is the defect `gapKindsOf` refuses when it
  * omits an absent kind.
@@ -181,5 +181,5 @@ export function stageOf(facts: StageFacts): RelationshipStage {
   if (!facts.counterpartyClaimed) return "invited";
   if (!facts.bothSubmitted) return "connected";
   if (facts.aspects.length === 0) return "sharing";
-  return instanceAlignment(facts.aspects, facts.setting).aligned ? "aligned" : "sharing";
+  return sessionAlignment(facts.aspects, facts.setting).aligned ? "aligned" : "sharing";
 }

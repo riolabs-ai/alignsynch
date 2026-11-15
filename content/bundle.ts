@@ -1,20 +1,20 @@
 /**
  * The bundle — one RECORD, portable (#147).
  *
- * Four templates and four instances live in `data/assessments.ts`, compiled into the
+ * Four templates and four sessions live in `data/assessments.ts`, compiled into the
  * build. That is a fine store for this repository and a useless one for anybody else: a
  * tenant cannot produce a template this repo can read, and this repo cannot hand a tenant
  * a dataset it can install. The bundle is the file in between — one versioned,
  * self-describing JSON document that carries a TEMPLATE, or a DEMO DATASET (templates,
- * instances, parties, opinions).
+ * sessions, parties, opinions).
  *
  * **The payload is the schemas, not a copy of them.** A template bundle's payload is
  * `zAssessment`; a dataset bundle's payload is `zAssessment` records and
- * `zAssessmentInstance` records, exactly as `content/assessment.ts` defines them. There is
+ * `zAssessmentSession` records, exactly as `content/assessment.ts` defines them. There is
  * no second shape to drift, and the two rules a single record cannot see — a dataset's
- * ids/slugs are unique, and every instance is a copy of a template inside the same file —
+ * ids/slugs are unique, and every session is a copy of a template inside the same file —
  * are the ones `data:check` already runs (E1/E2/E31), reused through
- * `instanceTemplateProblems()` instead of re-implemented.
+ * `sessionTemplateProblems()` instead of re-implemented.
  *
  * **Canonical, so a round trip is byte-identical.** `parseBundle()` returns the
  * schema-parsed value — zod emits output keys in schema order, every assessment schema is
@@ -43,7 +43,7 @@
  * **`bundleVersion: 2` — the platform package (#899).** One bundle could carry records; a
  * tenant also needs the *configuration* around them, the people the demo flow signs in as,
  * the media those records render, and a statement of which build the file belongs to. That
- * is `kind: "platform"`: `content` (the same `zAssessment` / `zAssessmentInstance` schemas,
+ * is `kind: "platform"`: `content` (the same `zAssessment` / `zAssessmentSession` schemas,
  * never a copy), `config` (plans, prices, flags, options — an additive plain schema), `identities`
  * (`{ email, displayName, role }` — **declared, never copied**: there is no password, hash or
  * session field, and `B4` refuses one even if a future schema grows a place to put it),
@@ -58,11 +58,11 @@
 import { z } from "zod";
 import { pathOf } from "./core";
 import {
-  instanceTemplateProblems,
+  sessionTemplateProblems,
   zAssessment,
-  zAssessmentInstance,
+  zAssessmentSession,
   type Assessment,
-  type AssessmentInstance,
+  type AssessmentSession,
 } from "./assessment";
 
 /* ------------------------------------------------------------------ *
@@ -135,14 +135,14 @@ export type PlatformEnvelope = z.infer<typeof zPlatformEnvelope>;
  * ------------------------------------------------------------------ */
 
 /**
- * A DEMO DATASET's payload: the templates, and the instances that copy them. At least one
- * template — a dataset with none installs nothing — and any number of instances. Further
+ * A DEMO DATASET's payload: the templates, and the sessions that copy them. At least one
+ * template — a dataset with none installs nothing — and any number of sessions. Further
  * rules need the whole payload, so they run in `datasetCollectionProblems()` below.
  */
 export const zDatasetPayload = z
   .object({
     templates: z.array(zAssessment).min(1),
-    instances: z.array(zAssessmentInstance),
+    instances: z.array(zAssessmentSession),
   })
   .strict();
 
@@ -190,14 +190,14 @@ export type DatasetBundle = z.infer<typeof zDatasetBundleObject>;
 
 /**
  * The content group: exactly the dataset payload's two arrays, at the root of the platform
- * payload rather than under `payload`. Parties, Aspects and Opinions travel *inside* an
- * instance — they are `zAssessmentInstance`'s own fields — so there is no third copy of them
+ * payload rather than under `payload`. Parties, Aspects and Opinions travel *inside* a
+ * session — they are `zAssessmentSession`'s own fields — so there is no third copy of them
  * here, and no place for one to drift.
  */
 export const zPlatformContent = z
   .object({
     templates: z.array(zAssessment).min(1),
-    instances: z.array(zAssessmentInstance),
+    instances: z.array(zAssessmentSession),
   })
   .strict();
 
@@ -362,7 +362,7 @@ export type Bundle = TemplateBundle | DatasetBundle | PlatformBundle;
  * The codes a bundle can fail with, each naming one rule:
  *
  *   B1  envelope shape — not one JSON object, a bad `format`/`kind`, an unknown top-level key
- *   B2  payload record — a `zAssessment` / `zAssessmentInstance` issue, path included
+ *   B2  payload record — a `zAssessment` / `zAssessmentSession` issue, path included
  *   B3  dataset collection — ids or slugs twice, a `templateId` outside the file, a copy that drifted
  *   B4  forbidden key — a key that names a credential, wherever it sits
  *   B6  `bundleVersion` — this build reads 1 and 2
@@ -386,7 +386,7 @@ export interface BundleIssue {
 }
 
 /**
- * One printed line, `[B3] payload.instances: instance "x" names template "y", …`.
+ * One printed line, `[B3] payload.instances: session "x" names template "y", …`.
  *
  * Takes any code, not only this module's: `B5` is minted by `scripts/bundles.ts` (a template
  * import colliding with the active store), and one line format is the point.
@@ -407,14 +407,14 @@ export function formatBundleIssue(issue: {
 /**
  * A dataset is one store in one file, so the identity and copy rules hold inside it:
  * an id names one record, `type/slug` names one record per collection (the split E2 makes —
- * a template and an instance keep separate URL spaces), every `templateId` resolves here,
- * and every instance's Aspects are its template's. The last two are
- * `instanceTemplateProblems()`, the same function E31 runs, so "a dataset is
+ * a template and a session keep separate URL spaces), every `templateId` resolves here,
+ * and every session's Aspects are its template's. The last two are
+ * `sessionTemplateProblems()`, the same function E31 runs, so "a dataset is
  * self-contained" is one rule and not a second implementation of one.
  */
 export function datasetCollectionProblems(payload: {
   readonly templates: readonly Assessment[];
-  readonly instances: readonly AssessmentInstance[];
+  readonly instances: readonly AssessmentSession[];
 }): BundleIssue[] {
   const issues: BundleIssue[] = [];
   const seenIds = new Map<string, string>();
@@ -449,19 +449,19 @@ export function datasetCollectionProblems(payload: {
       "slug",
     );
   });
-  payload.instances.forEach((instance, index) => {
-    claim(instance.id, `payload.instances[${index}]`, ["instances", index, "id"], "id");
+  payload.instances.forEach((session, index) => {
+    claim(session.id, `payload.instances[${index}]`, ["instances", index, "id"], "id");
     claim(
-      `${instance.type}/${instance.slug}`,
+      `${session.type}/${session.slug}`,
       `payload.instances[${index}]`,
       ["instances", index, "slug"],
       "slug",
     );
-    // The id claim above already covers every instance; a slug is only compared inside
-    // the instance collection, so a template and an instance may share one — E2's split.
+    // The id claim above already covers every session; a slug is only compared inside
+    // the session collection, so a template and a session may share one — E2's split.
   });
 
-  for (const problem of instanceTemplateProblems(payload.templates, payload.instances)) {
+  for (const problem of sessionTemplateProblems(payload.templates, payload.instances)) {
     issues.push({ code: "B3", path: ["instances"], message: problem });
   }
 
@@ -478,8 +478,8 @@ export function datasetCollectionProblems(payload: {
  *   B3  the content is one store — the dataset rules, reused, not re-implemented; and no two
  *       declarations or config rows share an identity (two identities with one email, a plan
  *       id twice, a flag name twice, an option key twice, a media path twice)
- *   B8  every reference resolves *inside the package* — a price names a plan in it, an
- *       instance names a template in it, and media paths are relative, inside `media/`, and
+ *   B8  every reference resolves *inside the package* — a price names a plan in it, a
+ *       session names a template in it, and media paths are relative, inside `media/`, and
  *       hash-addressed
  *
  * B8 here is the static half. The half that needs a whole dataset — "this subset dropped a
@@ -823,7 +823,7 @@ export function serializeDatasetPayload(payload: DatasetPayload): string {
  */
 export function canonicalDemoBundle(
   templates: readonly Assessment[],
-  instances: readonly AssessmentInstance[],
+  instances: readonly AssessmentSession[],
   appVersion: string,
 ): DatasetBundle {
   const envelope = {
@@ -831,7 +831,7 @@ export function canonicalDemoBundle(
     bundleVersion: BUNDLE_VERSION,
     kind: "dataset" as const,
     appVersion,
-    payload: { templates: [...templates], instances: [...instances] },
+    payload: { templates: [...templates], instances: [...sessions] },
   };
 
   const parsed = parseBundle(JSON.stringify(envelope));

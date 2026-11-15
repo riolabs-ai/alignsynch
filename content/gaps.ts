@@ -32,7 +32,7 @@
  * Flag colours are display over the same numbers.
  *
  * The four Advanced kinds exist only where the prediction does: Basic Mode asks Feel and
- * Wish, so an Aspect of a Basic instance has four Gaps and no prediction to measure.
+ * Wish, so an Aspect of a Basic session has four Gaps and no prediction to measure.
  * A kind whose two Opinions are not both present is **absent**, never 0 — `abs(score,
  * nothing)` is not a number, and a 0 there would print the glossary's In Synch about a
  * question nobody asked.
@@ -76,8 +76,8 @@ export type GapKind = z.infer<typeof zGapKind>;
 export const GAP_KINDS = zGapKind.options;
 
 /**
- * The four kinds an instance has whatever its mode: the cross-party Feel and Wish gaps,
- * and each party's own Feel-against-Wish gap. Basic Mode is the floor — every instance
+ * The four kinds a session has whatever its mode: the cross-party Feel and Wish gaps,
+ * and each party's own Feel-against-Wish gap. Basic Mode is the floor — every session
  * that was ever played answered Feel and Wish on every Aspect.
  */
 export const BASIC_GAP_KINDS = [
@@ -88,7 +88,7 @@ export const BASIC_GAP_KINDS = [
 ] as const satisfies readonly GapKind[];
 
 /**
- * The four kinds only an Advanced instance has: no Think/Guess pair, no prediction to
+ * The four kinds only an Advanced session has: no Think/Guess pair, no prediction to
  * measure. They are the glossary's "present surprise or doubt" and "future desire
  * surprise or doubt", read as the two parties' predictions of each other.
  */
@@ -138,7 +138,7 @@ export interface GapGroup {
  *   Desires To Change             each party's own Feel against their own Wish (Basic)
  *   Prediction Gaps and Analysis  the four prediction-against-actual kinds (Advanced only)
  *
- * The third group holds only kinds an Advanced instance has, so on a Basic instance it is
+ * The third group holds only kinds an Advanced session has, so on a Basic session it is
  * **absent**, not empty: `groupsIn()` drops a group with no present kind, which is the same
  * rule `gapKindsOf` applies to a kind. Rendering an empty "Prediction" table would be the
  * `abs(score, nothing)` defect one level up — a heading about a question nobody asked.
@@ -270,11 +270,11 @@ export function gapKindsIn(gaps: GapKinds): GapKind[] {
 }
 
 /**
- * The groups one Aspect actually has a row for — two on a Basic instance, three on an
+ * The groups one Aspect actually has a row for — two on a Basic session, three on an
  * Advanced one.
  *
  * A group is present when **at least one** of its kinds is: the Prediction group is
- * absent on a Basic instance because no prediction was ever asked, and drawing its heading
+ * absent on a Basic session because no prediction was ever asked, and drawing its heading
  * over an empty table would announce four Gaps that do not exist. The filtering lives here
  * beside `gapKindsIn` so the report's loop cannot render a group the numbers do not have.
  */
@@ -296,7 +296,7 @@ export interface AspectGaps {
   readonly gaps: GapKinds;
 }
 
-/** One Gap the instance's Setting does not tolerate. */
+/** One Gap the session's Setting does not tolerate. */
 export interface UnmetGap {
   readonly itemId: string;
   readonly kind: GapKind;
@@ -305,7 +305,7 @@ export interface UnmetGap {
 }
 
 /**
- * The answer to "is this instance aligned under its Setting".
+ * The answer to "is this session aligned under its Setting".
  *
  * `limit` is the widest tolerated Gap (`content/assessment.ts::SETTING_GAP_LIMITS`) and is
  * carried so a caller can say *why* — "a Gap of 2 exceeds Full's 0" — without importing the
@@ -331,16 +331,16 @@ export function gapMeetsSetting(gap: Gap, setting: AlignmentSetting): boolean {
 }
 
 /**
- * Is the instance aligned under its Setting — derived from the Gaps on every call.
+ * Is the session aligned under its Setting — derived from the Gaps on every call.
  *
- * Aligned means **every Gap the instance actually has** meets the Setting. A kind that is
- * *absent* is never unmet: a Basic instance has four kinds and no prediction to measure, so
+ * Aligned means **every Gap the session actually has** meets the Setting. A kind that is
+ * *absent* is never unmet: a Basic session has four kinds and no prediction to measure, so
  * reading its absence as a Gap of 0 would report In Synch about a question nobody asked
  * (the same reason `gapKindsOf` omits it). Nothing here is stored: no `aligned` column, no
  * `gap` column, no per-kind flag — the answer is a function of the opinion rows, so it
  * cannot drift from the numbers it is derived from.
  */
-export function instanceAlignment(
+export function sessionAlignment(
   aspects: readonly AspectGaps[],
   setting: AlignmentSetting,
 ): AlignmentVerdict {

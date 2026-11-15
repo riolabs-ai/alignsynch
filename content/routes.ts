@@ -127,12 +127,12 @@ const DYNAMIC_ROUTES = [
   "/assessment/[slug]",
   "/assessment/instances/[instanceId]",
   "/assessment/instances/[instanceId]/report",
-  // R1-E (#409): the two write screens sit one segment below the instance, beside the
+  // R1-E (#409): the two write screens sit one segment below the session, beside the
   // `answers`/`invite` route handlers — `answer` (singular), because Next forbids a
   // `page.tsx` in the same segment as a `route.ts`.
   "/assessment/instances/[instanceId]/answer",
   "/assessment/instances/[instanceId]/accept",
-  // #691 — stage 5, Sent: the screen the create lands on. A child of the instance rather than of
+  // #691 — stage 5, Sent: the screen the create lands on. A child of the session rather than of
   // the `create` tree, because the invitation's row is what it draws and the template is a fact on
   // the session by the time it renders.
   "/assessment/instances/[instanceId]/sent",
