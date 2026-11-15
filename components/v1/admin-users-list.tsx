@@ -1,4 +1,4 @@
-// template-ancestor: components/admin/instance-registry.tsx   (variation: the operator's users list — the two seats and the members in the registry's table shape, with role and seeded last sign-in and no address rendered at all)
+// template-ancestor: components/admin/session-registry.tsx   (variation: the operator's users list — the two seats and the members in the registry's table shape, with role and seeded last sign-in and no address rendered at all)
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

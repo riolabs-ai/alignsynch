@@ -4,7 +4,7 @@ import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { invitePageCopy } from "@/data/pages/invite";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimRefusalOf } from "@/lib/flow/claim";
-import { instancePath, inviteWizardStepOf } from "@/lib/flow/paths";
+import { sessionPath, inviteWizardStepOf } from "@/lib/flow/paths";
 import { partyTokensFrom } from "@/lib/flow/session";
 import { previewInvite } from "@/lib/flow/store";
 import { cookies } from "next/headers";
@@ -20,7 +20,7 @@ import type { Metadata } from "next";
  * spent by the first mail client that previewed the link.
  *
  * **The invitation lands on step 1, not on a questionnaire.** Until #t_0aa81144 this page was
- * one button whose POST answered with the instance screen: the person it was addressed to was
+ * one button whose POST answered with the session screen: the person it was addressed to was
  * joined to a relationship and dropped into a form with no sentence saying who had invited them,
  * what would happen, or what was expected of them. The page now renders the wizard
  * (`components/assessment-flow/counterparty-wizard.tsx`) for a browser that may claim it —
@@ -78,9 +78,9 @@ export default async function InvitePage({
   if (
     preview.state === "claimed" &&
     preview.viewerRole === "counterparty" &&
-    preview.instanceRecordId !== null
+    preview.sessionRecordId !== null
   ) {
-    redirect(instancePath(preview.instanceRecordId));
+    redirect(sessionPath(preview.sessionRecordId));
   }
 
   const refusal = claimRefusalOf(claim);

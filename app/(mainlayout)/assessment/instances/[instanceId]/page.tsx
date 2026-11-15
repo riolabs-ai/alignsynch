@@ -1,10 +1,10 @@
 import {
-  AssessmentInstanceView,
+  AssessmentSessionView,
   inviteNoticeOf,
   problemCodeOf,
-} from "@/components/assessment-flow/instance-view";
+} from "@/components/assessment-flow/session-view";
 import { StageColumn } from "@/components/assessment-flow/stage-column";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { readRelationshipById } from "@/lib/db/assessments";
@@ -43,7 +43,7 @@ import { cache } from "react";
  * given.
  *
  * **The id may name either noun.** Every link in this tree carries a session record id
- * (`lib/flow/paths.ts::instancePath`), and the `/v1` prototype addresses the relationship, so the
+ * (`lib/flow/paths.ts::sessionPath`), and the `/v1` prototype addresses the relationship, so the
  * read answers both and takes the newest session of a relationship. That is what keeps
  * `/assessment/instances/assessment-instance-avery-rowan` — the demo's own URL — the same screen
  * as a relationship-shaped one, with no second route.
@@ -52,9 +52,9 @@ import { cache } from "react";
  *
  * **Opening this screen is the event that clears the unlock marker** (#252). The list says
  * "complete since you last looked"; this page writes `party.unlock_seen_at` for the party the
- * request resolved as, once and only once the instance is complete — see `recordUnlockSeen()`
+ * request resolved as, once and only once the session is complete — see `recordUnlockSeen()`
  * below for the three rules that keep the write from firing on a prefetch, on an unfinished
- * instance, or on a connection that has already dropped.
+ * session, or on a connection that has already dropped.
  *
  * The invite notice (`?invite=sent|unset|failed`) is the creation redirect's own fact. It is
  * dropped from the URL by a redirect to the same screen without it, so a reload does not
@@ -104,11 +104,11 @@ async function detailFor(ref: string) {
 }
 
 /**
- * The unlock mark (#252): opening a complete instance is what clears it, for the party reading.
+ * The unlock mark (#252): opening a complete session is what clears it, for the party reading.
  *
  * Three rules, and each one is a way this could go wrong:
  *
- * - **Only a complete instance.** Before that there is no unlock to have seen, and
+ * - **Only a complete session.** Before that there is no unlock to have seen, and
  *   `markUnlockSeen` would be recording a visit as if it were an event. `screen.status` is the
  *   same derivation the report below is drawn from, so the marker cannot be cleared by a screen
  *   that had nothing to show.
@@ -133,7 +133,7 @@ async function recordUnlockSeen(screen: FlowScreen): Promise<void> {
   if (prefetch === "1") return;
 
   try {
-    await markUnlockSeen({ instanceRecordId: screen.instanceRecordId, role: screen.viewer.role });
+    await markUnlockSeen({ sessionRecordId: screen.sessionRecordId, role: screen.viewer.role });
   } catch (error) {
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("instance screen: the unlock mark could not be written", error);
@@ -176,7 +176,7 @@ export async function generateMetadata({
   return { title: detail?.screen.title ?? "Assessment Not Found" };
 }
 
-export default async function AssessmentInstancePage({
+export default async function AssessmentSessionPage({
   params,
   searchParams,
 }: {
@@ -213,9 +213,9 @@ export default async function AssessmentInstancePage({
 
   return (
     <StageColumn>
-      <AssessmentInstanceView
+      <AssessmentSessionView
         screen={screen}
-        copy={assessmentInstancePageCopy}
+        copy={assessmentSessionPageCopy}
         paid={detail.paid}
         steps={steps}
         submitted={submitted === SUBMITTED_QUERY_VALUE}

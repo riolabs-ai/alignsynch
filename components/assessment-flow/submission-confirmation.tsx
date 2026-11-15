@@ -1,9 +1,9 @@
 /**
- * template-ancestor: components/assessment-flow/instance-view.tsx   (variation: one band above the screen for the visit a submit created — the thank-you, the wait and the way back into the sheet)
+ * template-ancestor: components/assessment-flow/session-view.tsx   (variation: one band above the screen for the visit a submit created — the thank-you, the wait and the way back into the sheet)
  *
  * The confirmation state a Counterparty (or Initiator) lands on after submitting (#t_0aa81144).
  *
- * The submit endpoint used to answer with a bare 303 to the instance screen. The person had just
+ * The submit endpoint used to answer with a bare 303 to the session screen. The person had just
  * answered every Aspect and was handed a form again — or, on a session that had moved on, a wait —
  * with no sentence saying the answers were saved, what the other party still had to do, or how to
  * change a score. `POST …/answers` now redirects to `submittedPath()`, and this band is what that
@@ -11,7 +11,7 @@
  *
  * Four rules:
  *
- *   it is a state, not a route      `?submitted=1` on the instance screen, because the read is the
+ *   it is a state, not a route      `?submitted=1` on the session screen, because the read is the
  *                                   same `readFlowScreen()` — a second page module would be a
  *                                   second read of the same rows
  *   it only speaks while blind      the parent draws it only when `screen.report === null`. Once
@@ -29,26 +29,26 @@
  * immediately after answering their last Aspect — and until it linked there, nothing did.
  */
 import type { PageCopy } from "@/content/pages";
-import { answerSheetPath, instancePath } from "@/lib/flow/paths";
+import { answerSheetPath, sessionPath } from "@/lib/flow/paths";
 import { fillLabel, itemBody, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
 
 export function SubmissionConfirmation({
   copy,
-  instanceRecordId,
+  sessionRecordId,
   otherName,
   acceptHref,
 }: {
   copy: PageCopy;
-  instanceRecordId: string;
-  /** The other party's name, from the instance's own rows — never a clock-derived label. */
+  sessionRecordId: string;
+  /** The other party's name, from the session's own rows — never a clock-derived label. */
   otherName: string;
   /**
    * The acceptance step, or `null` when there is nothing to accept yet (#617).
    *
    * The band is drawn on the visit a submit created, so the viewer has just answered every
    * Aspect — but `null` is still the honest default: a caller that has not read the seat's own
-   * facts draws no link rather than a control that posts to a refusal. The instance screen decides,
+   * facts draws no link rather than a control that posts to a refusal. The session screen decides,
    * from `screen.viewerAnswered` and `screen.viewerAccepted`, which is the same pair
    * `readFlowScreen` fills from `party.accepted_at`.
    */
@@ -101,13 +101,13 @@ export function SubmissionConfirmation({
           </Link>
         )}
         <Link
-          href={answerSheetPath(instanceRecordId)}
+          href={answerSheetPath(sessionRecordId)}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
         >
           {itemLabel(band, "change-link")}
         </Link>
         <Link
-          href={instancePath(instanceRecordId)}
+          href={sessionPath(sessionRecordId)}
           className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800"
         >
           {itemLabel(band, "session-link")}

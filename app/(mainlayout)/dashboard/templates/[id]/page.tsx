@@ -28,7 +28,7 @@ import { notFound } from "next/navigation";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { PRIVATE_BAND, TemplateEditor } from "@/components/admin/template-editor";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { dashboardTemplateEditorPageCopy } from "@/data/pages/dashboard-template-editor";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -81,7 +81,7 @@ export default async function MemberTemplatePage({ params }: { params: Promise<{
         </header>
         <TemplateEditor
           copy={dashboardTemplateEditorPageCopy}
-          sheetCopy={assessmentInstancePageCopy}
+          sheetCopy={assessmentSessionPageCopy}
           template={view.template}
           editable={view.editable}
           status={view.template.status}

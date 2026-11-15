@@ -82,7 +82,7 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
     source.document === null
       ? null
       : reportDocument(
-          source.document.instance,
+          source.document.session,
           source.document.report,
           process.env.APP_VERSION ?? "unknown",
         );

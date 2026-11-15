@@ -41,7 +41,7 @@
  * saw the question, and the Mode is too consequential to inherit from a designer's taste. Both
  * groups are `required`, so a browser cannot send the form without a choice; the store still
  * refuses a crafted post that omits the Mode, and a Setting it is not given falls to the schema's
- * documented default (see `CreateInstanceInput`).
+ * documented default (see `CreateSessionInput`).
  *
  * **A refused create is this same screen with a sentence above the form.** The refusal that a
  * server-side validation produces names one field by its own label — "Their email address is
@@ -246,7 +246,7 @@ export function CreateRelationship({
   noticeLink,
   account,
   accountAdvanceHref,
-  instanceRecordId,
+  sessionRecordId,
   relationshipId,
   publishAction,
   checkout,
@@ -298,7 +298,7 @@ export function CreateRelationship({
    */
   accountAdvanceHref?: string;
   /** Stage 5's relationship — the id its send form posts to (#825). Absent on every other stage. */
-  instanceRecordId?: string;
+  sessionRecordId?: string;
   /**
    * The relationship's own row id, for the payment walk (#911).
    *
@@ -763,7 +763,7 @@ export function CreateRelationship({
           <StageInvite
             copy={copy}
             draft={draft}
-            instanceRecordId={instanceRecordId ?? ""}
+            sessionRecordId={sessionRecordId ?? ""}
             relationshipId={relationshipId ?? ""}
             {...(checkout === undefined ? {} : { checkout })}
             {...(initialPaid === undefined ? {} : { initialPaid })}

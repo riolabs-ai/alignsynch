@@ -1,7 +1,7 @@
 /**
  * `/templates/relationship/new` — author a template (#255).
  *
- * Until this route existed a person could create an instance from the four seeded templates and
+ * Until this route existed a person could create a session from the four seeded templates and
  * nothing else; the model already held what a template is (a record with items and no party rows),
  * and only the surface was missing.
  *

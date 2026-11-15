@@ -25,7 +25,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { PageCopy } from "@/content/pages";
 import type { CreateDraft } from "@/lib/flow/create-draft";
-import { CREATE_INSTANCE_PATH } from "@/lib/flow/paths";
+import { CREATE_SESSION_PATH } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 import { RelationshipReview } from "./relationship-review";
 import { StageFoot } from "./stage-foot";
@@ -102,7 +102,7 @@ export function StageAccount({
       {advanceHref === undefined ? (
         <form
           id={commitFormId}
-          action={CREATE_INSTANCE_PATH}
+          action={CREATE_SESSION_PATH}
           method="post"
           data-create-draft="true"
         >

@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/instance-view.tsx   (variation: shared prototype atoms: status tones and empty-state copy)
+// template-ancestor: components/assessment-flow/session-view.tsx   (variation: shared prototype atoms: status tones and empty-state copy)
 import { STAGE_LABELS, type RelationshipStage } from "@/content/stages";
 import { flagSeverityOf, type FlagSeverity } from "@/content/gaps";
 import type { Gap } from "@/content/record";

@@ -5,7 +5,7 @@
 // per-filter empty state — is `components/dashboard/relationships-list.tsx`, whose ancestor is
 // `components/my-quizzes/my-quizzes.tsx`. What lives here is only the record's card, which is why
 // this header names `assessments-list.tsx`: that is the card's own ancestor (it was
-// `components/assessment-flow/my-instances.tsx` until #877 moved the listing to `/assessments`),
+// `components/assessment-flow/my-sessions.tsx` until #877 moved the listing to `/assessments`),
 // and rebuilding the *shell* out of its markup is what the card forbids — the shell is not this
 // component.
 
@@ -59,7 +59,7 @@ import { formatDate } from "@/content/core";
 import {
   createInviteForPath,
   createRelationshipPath,
-  instancePath,
+  sessionPath,
   relationshipPath,
 } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -120,7 +120,7 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
   const card = sectionOf(copy, "card");
 
   const relationshipHref = relationshipPath(row.id);
-  const assessmentHref = row.sessionRecordId === null ? null : instancePath(row.sessionRecordId);
+  const assessmentHref = row.sessionRecordId === null ? null : sessionPath(row.sessionRecordId);
   const assessmentWhy = itemLabel(card, "open-assessment-why");
 
   /*

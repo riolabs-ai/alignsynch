@@ -19,13 +19,13 @@ import { NextResponse } from "next/server";
  *
  *   the token          from the path, never from the body
  *   the party cookies  every `flow_party_*` value this browser holds. A browser that
- *                      already answers as a party to this instance cannot claim its
+ *                      already answers as a party to this session cannot claim its
  *                      invitation — that was the defect QA found: an Initiator following
  *                      their own link spent the token and their session silently became the
  *                      Counterparty, so one person filled both columns
  *   the session        `currentUserIfConfigured()` — the account claiming, resolved from the
  *                      request's own cookies and written on the Counterparty's party row, so
- *                      the claimed instance turns up in the claimer's `/assessment/instances`
+ *                      the claimed session turns up in the claimer's `/assessment/instances`
  *                      list (#213 follow-up). Nothing posted by the form can name it. Signed
  *                      out, this is `null` and the claim is unchanged: a link-bound browser
  *                      with no account
@@ -77,7 +77,7 @@ export async function POST(
   }
 
   jar.set(
-    partyCookieName(result.instanceRecordId),
+    partyCookieName(result.sessionRecordId),
     result.sessionToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
@@ -86,7 +86,7 @@ export async function POST(
   // committed and after the claimer's cookie is set, so neither a provider refusal nor an
   // unreachable host can cost the person their claim; the redirect below happens either way.
   // `sendJoinNotice()` never throws and answers `no-address` when the create was signed out.
-  await sendJoinNotice({ instanceRecordId: result.instanceRecordId }).catch((error: unknown) => {
+  await sendJoinNotice({ sessionRecordId: result.sessionRecordId }).catch((error: unknown) => {
     console.error(
       "[joined] the notice could not be attempted after a claim — the claim is stored and the instance screen shows both seats",
       error instanceof Error ? error.name : "unknown",
@@ -97,7 +97,7 @@ export async function POST(
     new URL(
       afterClaimTarget({
         viewerSignedIn: viewer !== null,
-        instanceRecordId: result.instanceRecordId,
+        sessionRecordId: result.sessionRecordId,
       }),
       request.url,
     ),

@@ -4,7 +4,7 @@
  * The Counterparty's onboarding wizard (#t_0aa81144) — the three screens between the invitation
  * link and the session.
  *
- * Before this, `POST /invite/[token]/claim` answered with the instance screen: a stranger who
+ * Before this, `POST /invite/[token]/claim` answered with the session screen: a stranger who
  * accepted an invitation was dropped into a questionnaire with no sentence saying who invited
  * them, what would happen, or whether anything was owed. The claim is still the one write that
  * binds the seat; what changed is that the *journey* starts here and the claim is the last hop,

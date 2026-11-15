@@ -17,7 +17,7 @@
  *      none.
  *   2. **the difference** — every Gap the Aspect actually has, as a row that prints **the two
  *      Opinions it subtracts** (`content/gaps.ts`'s `GAP_KIND_SOURCES`) beside the number, so a
- *      reader cannot be handed a 3 with no way to see what was subtracted. A Basic instance is
+ *      reader cannot be handed a 3 with no way to see what was subtracted. A Basic session is
  *      asked for four Opinions and carries four kinds; a prediction kind is absent, never a
  *      printed 0 (`gapKindsIn`).
  *   3. **this Aspect's verdict** — whether every Gap on it meets the Setting, from
@@ -31,7 +31,7 @@
  * component could not read one if there were: it is handed `FlowScreen.report`, a projection
  * `lib/assessment-report.ts::assessmentReport()` builds from the two parties' `opinion` rows at
  * read time, and every number below is that projection's `rows[].gaps[kind]`. The relationship's
- * verdict (`report.verdict`) is `instanceAlignment()`'s own `unmet` list, so this band and every
+ * verdict (`report.verdict`) is `sessionAlignment()`'s own `unmet` list, so this band and every
  * Aspect row count the same Gaps — they cannot disagree, because there is one list.
  *
  * ## No total, and no metric
@@ -351,7 +351,7 @@ export function AlignmentView({ screen, copy }: { screen: FlowScreen; copy: Page
       </div>
 
       <p className="mt-4">
-        <a className={LINK} href={reportPath(screen.instanceRecordId)} data-alignment-report="true">
+        <a className={LINK} href={reportPath(screen.sessionRecordId)} data-alignment-report="true">
           {itemLabel(alignment, "report-link")}
         </a>
       </p>

@@ -12,7 +12,7 @@
  * **The record is read through the flow's own mapper.** `readAdminTemplate` uses
  * `readAssessmentTemplateRowsById` + `assessmentTemplateFromRows`, so a row that drifted from
  * `zAssessment` raises the mapper's sentence here instead of rendering a half-empty editor, and an
- * id that is not a template (an instance, a quiz, nothing) is `notFound()`.
+ * id that is not a template (a session, a quiz, nothing) is `notFound()`.
  *
  * **Realm and price come from the catalogue, read-only.** The record holds a `slug`; the type that
  * slug names (`data/relationship-types.ts`) owns the realm, the two roles and the price. The page
@@ -28,7 +28,7 @@ import { notFound } from "next/navigation";
 
 import { TemplateEditor } from "@/components/admin/template-editor";
 import { adminTemplateEditorPageCopy } from "@/data/pages/admin-template-editor";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { relationshipTypes } from "@/data/relationship-types";
 import { ADMIN_TEMPLATES_PATH, readAdminTemplate } from "@/lib/admin/templates";
 import { requireAdmin } from "@/lib/auth/require-role";
@@ -93,7 +93,7 @@ export default async function AdminTemplatePage({ params }: { params: Promise<{ 
         </header>
         <TemplateEditor
           copy={adminTemplateEditorPageCopy}
-          sheetCopy={assessmentInstancePageCopy}
+          sheetCopy={assessmentSessionPageCopy}
           template={view.template}
           editable={view.editable}
           status={view.status}

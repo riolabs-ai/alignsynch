@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 };
 
 type InviteParams = {
-  readonly instance?: string | string[];
+  readonly session?: string | string[];
   readonly problem?: string | string[];
   readonly field?: string | string[];
 };
@@ -76,10 +76,10 @@ export default async function TemplateCreateInvitePage({
   const query = await searchParams;
   const whoPath = createRelationshipPath(slug);
   const commitPath = createCommitPath(slug);
-  const instanceRecordId = (firstValue(query.instance) ?? "").trim();
+  const sessionRecordId = (firstValue(query.session) ?? "").trim();
 
   // No relationship named: nothing was created by this browser in this flow.
-  if (instanceRecordId === "") redirect(whoPath);
+  if (sessionRecordId === "") redirect(whoPath);
 
   const jar = await cookies();
   const viewer = await currentUserIfConfigured();
@@ -91,8 +91,8 @@ export default async function TemplateCreateInvitePage({
   });
 
   const screen = await readFlowScreen({
-    instanceRecordId,
-    token: jar.get(partyCookieName(instanceRecordId))?.value,
+    sessionRecordId,
+    token: jar.get(partyCookieName(sessionRecordId))?.value,
     viewerUserId: viewer?.userId ?? null,
   });
   // Not this browser's relationship, and not one an account it holds is a party to.
@@ -201,7 +201,7 @@ export default async function TemplateCreateInvitePage({
             }
       }
       draft={draft}
-      instanceRecordId={screen.instanceRecordId}
+      sessionRecordId={screen.sessionRecordId}
       relationshipId={screen.relationshipId}
       backHref={commitPath}
       problem={refusal?.sentence ?? null}

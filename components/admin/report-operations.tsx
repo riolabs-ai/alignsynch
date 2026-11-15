@@ -59,12 +59,12 @@ import type {
   SubmissionAnswerView,
 } from "@/lib/admin/report-inputs";
 import type { ReportSource } from "@/lib/db/admin-report";
-import type { InstanceStatus } from "@/lib/flow/state";
+import type { SessionStatus } from "@/lib/flow/state";
 import type { DocumentedAspect, ReportDocument } from "@/lib/report/document";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
 /** The status the derivation answers, mapped onto the copy id that names it. */
-const STATUS_COPY_ID: Record<InstanceStatus, string> = {
+const STATUS_COPY_ID: Record<SessionStatus, string> = {
   draft: "draft",
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
@@ -231,7 +231,7 @@ export function ReportOperations({
     event.preventDefault();
     if (busy !== null) return;
     setBusy("regenerate");
-    void action({ operation: "regenerate", instanceRecordId: source.instanceRecordId })
+    void action({ operation: "regenerate", sessionRecordId: source.sessionRecordId })
       .then((outcome) => setPhase({ kind: "done", outcome }))
       .finally(() => setBusy(null));
   };
@@ -241,7 +241,7 @@ export function ReportOperations({
     setBusy("read");
     void action({
       operation: "read-submission",
-      instanceRecordId: source.instanceRecordId,
+      sessionRecordId: source.sessionRecordId,
       role,
     })
       .then((outcome) => setPhase({ kind: "done", outcome }))
@@ -264,7 +264,7 @@ export function ReportOperations({
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-3">
-            <Fact label={itemLabel(facts, "instance")} value={source.instanceRecordId} />
+            <Fact label={itemLabel(facts, "instance")} value={source.sessionRecordId} />
             <Fact label={itemLabel(facts, "template")} value={ready?.report.title ?? "—"} />
             <Fact
               label={itemLabel(facts, "mode")}

@@ -17,11 +17,11 @@
  *   2. the Aspects, in authored order, each with **both named ends of the scale** — notch 1 and
  *      notch 5 are the words a party actually answers against;
  *   3. what a Mode and a Setting are, because the person reading this page will choose both when
- *      they start an instance;
+ *      they start a session;
  *   4. the actions card — the two write actions the list already offers (duplicate, archive) plus
  *      the product's one primary action, **"Create Relationship"**, which opens this template's own
  *      create step (#618). It used to read "Start an instance" and point back at the library, which
- *      was instance language on a product page and a link to where the reader came from. This is
+ *      was session language on a product page and a link to where the reader came from. This is
  *      also the slot the relationship page draws its Edit/Publish/Complete panels in — the
  *      artifact's second declared axis, and the only difference between the two pages' asides.
  *
@@ -33,7 +33,7 @@
  * teams use this": nothing in the tree measures any of them.
  *
  * The archived state is drawn as a band, not as a hidden control: an archived template still
- * opens, because its instances copied their Aspects at creation and nothing joins back to it.
+ * opens, because its sessions copied their Aspects at creation and nothing joins back to it.
  */
 import {
   DetailBand,
@@ -135,7 +135,7 @@ export function TemplateDetail({
     {
       id: "instances",
       label: itemLabel(facts, "instances"),
-      value: template.instanceCount,
+      value: template.sessionCount,
       figure: true,
     },
     {

@@ -7,7 +7,7 @@
  * **The viewer is resolved by Postgres, never by the URL.** `readFlowScreen()` answers "who is
  * reading" from the party cookie's token hash, then the signed-in account (`party.user_id`), then
  * a relationship membership — and returns `undefined` for a request that is none of those. That
- * `undefined` is a `notFound()`: an instance a browser is not a party to does not exist for it, and
+ * `undefined` is a `notFound()`: a session a browser is not a party to does not exist for it, and
  * a 404 leaks less than a screen that names the relationship and then refuses.
  *
  * **The blind rule is the input, not a check on this page.** `readFlowScreen()` asks Postgres only
@@ -39,7 +39,7 @@ import { assessmentAnswerPageCopy } from "@/data/pages/assessment-answer";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { answerGateOf } from "@/lib/flow/answer-gate";
-import { instancePath } from "@/lib/flow/paths";
+import { sessionPath } from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { inviteCookieName, partyCookieName } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
@@ -53,7 +53,7 @@ export const dynamic = "force-dynamic";
 /**
  * The signed-in account id, or `null` — never a thrown error on a tree without auth env.
  *
- * The same five lines the instance screen carries, and for the same reason: `currentUser()` answers
+ * The same five lines the session screen carries, and for the same reason: `currentUser()` answers
  * `null` for "no session", and `authConfigured()` adds the "is auth here at all" question so the
  * gate's database-free build renders this route without `NEON_AUTH_*` set.
  */
@@ -73,7 +73,7 @@ async function viewerUserId(): Promise<string | null> {
 const screenFor = cache(async (instanceId: string): Promise<FlowScreen | undefined> => {
   const jar = await cookies();
   return readFlowScreen({
-    instanceRecordId: instanceId,
+    sessionRecordId: instanceId,
     token: jar.get(partyCookieName(instanceId))?.value,
     inviteToken: jar.get(inviteCookieName(instanceId))?.value ?? null,
     viewerUserId: await viewerUserId(),
@@ -81,10 +81,10 @@ const screenFor = cache(async (instanceId: string): Promise<FlowScreen | undefin
 });
 
 /**
- * The instance's own title — for a viewer who is a party to it, and nobody else.
+ * The session's own title — for a viewer who is a party to it, and nobody else.
  *
  * `readFlowScreen()` already refuses a non-viewer, so the fallback is the whole protection here:
- * a browser that holds no seat for this instance is told nothing about it, not even its name.
+ * a browser that holds no seat for this session is told nothing about it, not even its name.
  */
 export async function generateMetadata({
   params,
@@ -106,7 +106,7 @@ export default async function AnswerSheetPage({
   if (screen === undefined) notFound();
 
   const gate = answerGateOf({
-    instanceRecordId: screen.instanceRecordId,
+    sessionRecordId: screen.sessionRecordId,
     viewerRole: screen.viewer.role,
     status: screen.status,
     viewerAccepted: screen.viewerAccepted,
@@ -124,7 +124,7 @@ export default async function AnswerSheetPage({
         gate={gate}
         viewer={screen.viewer}
         mode={screen.mode}
-        backHref={instancePath(instanceId)}
+        backHref={sessionPath(instanceId)}
       />
     </StageColumn>
   );

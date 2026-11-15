@@ -3,7 +3,7 @@
  *
  * `AnswerSheet` — `/assessment/instances/[instanceId]/answer`, the gated sheet (#427, R2-2).
  *
- * The ancestor is the **live** form the instance screen embeds: same `SEGMENT` arithmetic
+ * The ancestor is the **live** form the session screen embeds: same `SEGMENT` arithmetic
  * (44×44 targets, a glyph beside the fill so a selection is not colour-only), five notches from
  * `SCORE_MIN` to `SCORE_MAX`, each notch's accessible name built from the Aspect's own two Values,
  * and the same no-JS `POST` — `name="kind:itemId"`, `value="1".."5"`, which is what
@@ -35,12 +35,12 @@
  * 5. **No progress band (#825).** The sheet used to draw the shared cell rail at `Align`, the
  *    sixth stage. Align is the dashboard's surface now, not a stage of the create modal, so a band
  *    here would number a screen nobody invites anybody from. The relationship's position is the
- *    instance screen's own sentence (`stageCopyId()` in `lib/flow/stage.ts`), drawn by the shell
+ *    session screen's own sentence (`stageCopyId()` in `lib/flow/stage.ts`), drawn by the shell
  *    that frames this block; nothing in the block is a progress indicator, which is a rule a test
  *    asserts against the rendered markup rather than a promise.
  *
  * The kinds asked are `opinionKindsFor(mode)` — imported, never typed here — so a Basic sheet
- * cannot draw Think and Guess, and the mode is a prop decided by the instance row. Literal-free:
+ * cannot draw Think and Guess, and the mode is a prop decided by the session row. Literal-free:
  * every word is `data/pages/assessment-answer.ts` (E23) except the Opinion names and the Mode
  * names, which are the glossary's own (`OPINION_LABELS`, `MODE_LABELS`).
  */
@@ -79,7 +79,7 @@ const TARGET_SIZE = "min-h-[44px] min-w-[44px]";
 
 /**
  * The segment skin, byte-identical to `answer-form.tsx`: a class list is markup, not copy, and
- * importing it would reach the live form's fixture (`assessment-instance`) from a route whose
+ * importing it would reach the live form's fixture (`assessment-session`) from a route whose
  * words are `assessment-answer` — which E23 reads as that fixture declaring ids it does not have.
  * The disabled state is `fieldset[disabled]`'s own styling below, not a second class list.
  */
@@ -133,7 +133,7 @@ export function AnswerSheet({
         {copy.heading}
       </h1>
       <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">{copy.subtitle}</p>
-      {/* Which Mode this instance asks — drawn from the row, never chosen here. */}
+      {/* Which Mode this session asks — drawn from the row, never chosen here. */}
       <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
         {MODE_LABELS[mode]}
       </p>
@@ -158,7 +158,7 @@ export function AnswerSheet({
       <div className="space-y-6">
         {/* No stage rail: this is the relationship's own surface, not a stage of the create
             modal (#825). A coach is reading this relationship, and where it stands is the
-            instance screen's own sentence (`stageCopyId()`), not a band from the create flow. */}
+            session screen's own sentence (`stageCopyId()`), not a band from the create flow. */}
         {heading}
         <section
           aria-labelledby="answer-sheet-coach-heading"

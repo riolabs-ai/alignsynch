@@ -144,9 +144,9 @@ function quizHubFaqRows(brand: Pick<Brand, "name">): SupportFaqRows {
  *
  *   /assessment           the published templates, each with the create form (#146)
  *   the create form       name, the other person's name and their email (#146)
- *   one submission        `createInstanceFromTemplate()` writes the instance, the Initiator's seat
+ *   one submission        `createSessionFromTemplate()` writes the session, the Initiator's seat
  *                         and the invitation together (`lib/flow/store.ts`)
- *   the invitation link   a single-use token (`lib/flow/tokens.ts`), drawn on the instance screen
+ *   the invitation link   a single-use token (`lib/flow/tokens.ts`), drawn on the session screen
  *                         whenever it exists, emailed or not (#220, #257)
  *   seven days            `INVITE_TTL_MS`, the column `expires_at` is written from
  *   neither reads first   `lib/flow` freezes the answers once both parties submit; the report is

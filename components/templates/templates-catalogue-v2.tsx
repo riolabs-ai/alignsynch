@@ -15,7 +15,7 @@ import type React from "react";
  * **Every band is a component the approved package already drew.** The package
  * (`docs/specs/spec-design-page-rel-templates-v2/`) contains a home page and a brand profile; it
  * does not contain this page. So "rebuild it on the V2 system" cannot mean cloning a drawing that
- * does not exist — it means every element here is an *instance* of a pattern the package does draw:
+ * does not exist — it means every element here is an *session* of a pattern the package does draw:
  * the same `hero` with its two life cards, the same sticky in-page menu, the same four-step
  * `how-it-works` row, the same `sand` templates band with its chips and counselor note, the same
  * ruled `benefits` grid, the same graphite closing band. Not one of them is re-typed here: they are

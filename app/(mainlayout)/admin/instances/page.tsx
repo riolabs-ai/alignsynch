@@ -15,7 +15,7 @@
  * bookmark to this page. That is not a leak: `/login` is public, and the value is a path this
  * site owns (`loginPathFor` refuses anything absolute).
  *
- * **Nothing here decides who may see what beyond that gate.** The read (`listAdminInstances`)
+ * **Nothing here decides who may see what beyond that gate.** The read (`listAdminSessions`)
  * is cross-account by design — that is what an operator's registry is — and the card's blind
  * rule is enforced by what the read *selects*: seats, mode, Setting, derived stage. There is no
  * `relation` parameter, no `?userId=` and no second mode of this page.
@@ -31,12 +31,12 @@
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import type { Metadata } from "next";
 
-import { InstanceRegistry } from "@/components/admin/instance-registry";
-import { adminInstancesPageCopy } from "@/data/pages/admin-instances";
-import { ADMIN_INSTANCES_PATH, type AdminInstanceRow } from "@/lib/admin/instance-registry";
+import { SessionRegistry } from "@/components/admin/session-registry";
+import { adminSessionsPageCopy } from "@/data/pages/admin-instances";
+import { ADMIN_SESSIONS_PATH, type AdminSessionRow } from "@/lib/admin/session-registry";
 import { requireAdmin } from "@/lib/auth/require-role";
 import { requireAdminProduct } from "@/lib/brand-boundary";
-import { listAdminInstances } from "@/lib/db/admin-instances";
+import { listAdminSessions } from "@/lib/db/admin-sessions";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 
 export const dynamic = "force-dynamic";
@@ -62,18 +62,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminInstancesPage() {
+export default async function AdminSessionsPage() {
   // The capability before the role (#509): a template that does not claim `product.admin` answers
   // the 404 an unknown URL gets, with no session read and no database work behind it.
   requireAdminProduct();
-  await requireAdmin({ next: ADMIN_INSTANCES_PATH });
+  await requireAdmin({ next: ADMIN_SESSIONS_PATH });
 
-  let rows: readonly AdminInstanceRow[] = [];
+  let rows: readonly AdminSessionRow[] = [];
   let unreadable: string | null = null;
   try {
     // One clock for the whole request: the invite states on one screen are decided against the
     // same instant, so two rows cannot disagree about "expired" by a millisecond.
-    rows = await listAdminInstances(new Date());
+    rows = await listAdminSessions(new Date());
   } catch (error) {
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("admin-instances: the registry could not be read", error);
@@ -82,7 +82,7 @@ export default async function AdminInstancesPage() {
 
   return (
     <StageColumn>
-      <InstanceRegistry copy={adminInstancesPageCopy} rows={rows} unreadable={unreadable} />
+      <SessionRegistry copy={adminSessionsPageCopy} rows={rows} unreadable={unreadable} />
     </StageColumn>
   );
 }

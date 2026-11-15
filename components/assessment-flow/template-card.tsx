@@ -7,7 +7,7 @@
  * catalogue (`/v1/templates`) and the dashboard library (`/v1/[persona]/templates`) both draw it,
  * and the only difference between the two is the action row the surface owns. This module is the
  * same decision for the app's two catalogue surfaces — `/assessment` (pick a template, then create
- * an instance from it) and `/templates/relationship` (the catalogue: open, use, duplicate, archive) —
+ * a session from it) and `/templates/relationship` (the catalogue: open, use, duplicate, archive) —
  * so a card looks the same wherever a person meets a template, and neither surface re-implements
  * one.
  *
@@ -101,7 +101,7 @@ export const CATALOGUE_PRICE_CENTS: number = CATALOGUE_PLAN.monthlyCents;
 /**
  * The narrow shape both reads satisfy: `TemplateSummary` (`lib/flow/store.ts`) and
  * `LibraryTemplate` (`lib/flow/template-library.ts`). A card draws only these four facts, so it
- * cannot start reading an authorship or an instance count that one of the two reads does not
+ * cannot start reading an authorship or a session count that one of the two reads does not
  * carry.
  *
  * `status` is optional for the same reason `TemplateSummary` does not have one: the picker only
@@ -148,7 +148,7 @@ export interface CatalogueCardCopy {
    * says which plan the catalogue is included in rather than a bare figure beside nine cards.
    */
   readonly priceOf: (plan: string, cents: number) => string;
-  /** The card's primary action: start an instance from this template. */
+  /** The card's primary action: start a session from this template. */
   readonly useTemplate: string;
   /** The exemplar link, drawn only where a finished sheet exists. */
   readonly seeExample: string;

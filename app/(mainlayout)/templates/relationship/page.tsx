@@ -166,7 +166,7 @@ export default async function TemplateLibraryPage({
     visible = await listLibraryTemplates(user.userId);
   } catch (error) {
     // "The database did not answer" is a state this screen can describe; a schema failure is a
-    // code defect and keeps throwing, exactly as the instance screen decides it.
+    // code defect and keeps throwing, exactly as the session screen decides it.
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("template-library: the list could not be read", error);
     unreadable = error.reason;

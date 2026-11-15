@@ -22,13 +22,13 @@
  *   grid of cards                 `Table`/`TableHeader`/`TableRow`/`TableCell`
  *
  * Every filter is **client-side over the already-read list** — the read is one statement
- * (`lib/db/admin-instances.ts`) and a filter must not become a second query. That also means the
+ * (`lib/db/admin-sessions.ts`) and a filter must not become a second query. That also means the
  * count line and the table are the same `filterRegistry()` call, so they cannot disagree.
  *
  * **What this component is not allowed to render.** It draws a seat's *state*, the mode, the
  * Setting and the derived stage. It has no prop, no helper and no field through which a score, a
- * Gap or an answered count could reach the DOM: `AdminInstanceRow` is the whole of the data, and
- * it carries none of those (see `lib/admin/instance-registry.ts`). A later "operators need the
+ * Gap or an answered count could reach the DOM: `AdminSessionRow` is the whole of the data, and
+ * it carries none of those (see `lib/admin/session-registry.ts`). A later "operators need the
  * answers" screen starts by widening that type, which is a decision somebody has to make in a
  * diff rather than a column somebody adds here.
  */
@@ -57,7 +57,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/content/core";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import {
-  type AdminInstanceRow,
+  type AdminSessionRow,
   filterRegistry,
   MODE_OPTIONS,
   NO_FILTER,
@@ -66,7 +66,7 @@ import {
   SETTING_OPTIONS,
   STAGE_TABS,
   type SeatRow,
-} from "@/lib/admin/instance-registry";
+} from "@/lib/admin/session-registry";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { adminRelationshipPath } from "@/lib/admin/paths";
 import { useState } from "react";
@@ -83,7 +83,7 @@ const SEAT_VARIANT: Record<SeatRow["state"], "success" | "secondary" | "outline"
   };
 
 /** The stage's tone, in ladder order — never a colour a reader could read as a measure. */
-const STAGE_VARIANT: Record<AdminInstanceRow["stage"], "secondary" | "outline" | "success"> = {
+const STAGE_VARIANT: Record<AdminSessionRow["stage"], "secondary" | "outline" | "success"> = {
   invited: "outline",
   connected: "secondary",
   sharing: "secondary",
@@ -119,14 +119,14 @@ function SeatCell({
   );
 }
 
-export function InstanceRegistry({
+export function SessionRegistry({
   copy,
   rows,
   unreadable,
 }: {
   copy: PageCopy;
   /** Every row the reader may see, newest first. Already bounded by role at the page's gate. */
-  rows: readonly AdminInstanceRow[];
+  rows: readonly AdminSessionRow[];
   /** `DatabaseUnavailableError.reason` when the read failed; `null` on a normal visit. */
   unreadable: string | null;
 }) {
@@ -288,10 +288,10 @@ export function InstanceRegistry({
                 </TableHeader>
                 <TableBody>
                   {visible.map((row) => (
-                    <TableRow key={row.instanceRecordId}>
+                    <TableRow key={row.sessionRecordId}>
                       <TableCell className="font-mono text-xs">
                         <span className="block">{row.slug}</span>
-                        <span className="block text-muted-foreground">{row.instanceRecordId}</span>
+                        <span className="block text-muted-foreground">{row.sessionRecordId}</span>
                       </TableCell>
                       <TableCell className="font-medium">{row.name}</TableCell>
                       <TableCell>
@@ -320,7 +320,7 @@ export function InstanceRegistry({
                       </TableCell>
                       <TableCell>
                         <Link
-                          href={adminRelationshipPath(row.instanceRecordId)}
+                          href={adminRelationshipPath(row.sessionRecordId)}
                           className="text-action text-sm font-medium hover:underline"
                         >
                           {itemLabel(columns, "open")}

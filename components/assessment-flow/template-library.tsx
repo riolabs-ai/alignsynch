@@ -417,7 +417,7 @@ export function TemplateLibrary({
                * The card's own controls, in the card's action row rather than in a second block
                * under it: 27 cards each carrying a stacked admin stanza is what made this page a
                * wall. `Duplicate` is always offered (a built-in can be copied, never archived);
-               * the status and the instance count appear only when they say something — an
+               * the status and the session count appear only when they say something — an
                * archived row, or a template somebody has actually used — and a creation date is
                * shown only for the account's own record, because "published on the platform's
                * day" repeated 27 times is not a fact about the template.
@@ -489,12 +489,12 @@ export function TemplateLibrary({
                 </span>
               ) : null}
 
-              {template.instanceCount > 0 ? (
+              {template.sessionCount > 0 ? (
                 <span
                   className={`${MUTED} text-xs`}
-                  data-template-instances={template.instanceCount}
+                  data-template-sessions={template.sessionCount}
                 >
-                  {fillLabel(itemLabel(row, "instances"), { count: template.instanceCount })}
+                  {fillLabel(itemLabel(row, "instances"), { count: template.sessionCount })}
                 </span>
               ) : null}
 

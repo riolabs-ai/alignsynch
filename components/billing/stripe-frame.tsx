@@ -80,7 +80,7 @@ export function StripeFrame({
     if (clientSecret === null || publishableKey === null || element === null) return;
 
     let disposed = false;
-    let instance: StripeEmbeddedCheckout | null = null;
+    let session: StripeEmbeddedCheckout | null = null;
 
     void (async () => {
       try {
@@ -104,7 +104,7 @@ export function StripeFrame({
           checkout.destroy();
           return;
         }
-        instance = checkout;
+        session = checkout;
         checkout.mount(element);
         setMounted(true);
       } catch (error) {
@@ -120,8 +120,8 @@ export function StripeFrame({
 
     return () => {
       disposed = true;
-      instance?.destroy();
-      instance = null;
+      session?.destroy();
+      session = null;
       setMounted(false);
     };
   }, [clientSecret, publishableKey]);

@@ -5,7 +5,7 @@
  * measured would do the most damage. So the page authors nothing: it resolves the session, reads
  * **the viewer's own rows**, and hands the counts to `components/console/overview.tsx`.
  *
- * **Two reads, both keyed on the session.** `listMyInstances(user.userId)` filters
+ * **Two reads, both keyed on the session.** `listMySessions(user.userId)` filters
  * `party.user_id = $1` — the same rule `/assessment/instances` follows, with no name, no query
  * parameter and no role in the path, so an admin's Overview is their own and never everybody's
  * (the console spec's role table). `listPublishedTemplates()` is the catalogue `/assessment`
@@ -43,14 +43,14 @@ import { ConsoleOverview } from "@/components/console/overview";
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { FirstRunTour } from "@/components/tour/first-run-tour";
 import { DemoFill } from "@/components/tour/demo-fill";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { overviewPageCopy } from "@/data/pages/overview";
 import { tourDemoAnswers, tourPageCopy } from "@/data/pages/tour";
 import { assessments } from "@/data/assessments";
 import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { DatabaseUnavailableError } from "@/lib/db/client";
-import { listMyInstances, type MyInstance } from "@/lib/db/my-instances";
+import { listMySessions, type MySession } from "@/lib/db/my-sessions";
 import { readTourState } from "@/lib/db/tour";
 import { OVERVIEW_PATH } from "@/lib/flow/paths";
 import { listPublishedTemplates } from "@/lib/flow/store";
@@ -77,7 +77,7 @@ export default async function OverviewPage() {
   const user = await currentUser();
   if (user === null) redirect(loginPathFor(OVERVIEW_PATH));
 
-  let instances: readonly MyInstance[] = [];
+  let sessions: readonly MySession[] = [];
   let templates = 0;
   let unreadable: string | null = null;
   /**
@@ -91,7 +91,7 @@ export default async function OverviewPage() {
     // Both figures in one guarded block: a console that drew three real counts beside a zero it
     // invented for the fourth would be the exact defect this screen exists to avoid, so a failed
     // read draws the panel and no figures at all.
-    instances = await listMyInstances(user.userId);
+    sessions = await listMySessions(user.userId);
     templates = (await listPublishedTemplates()).length;
     tourSeen = (await readTourState(user.userId)).seen;
   } catch (error) {
@@ -131,14 +131,14 @@ export default async function OverviewPage() {
       <ConsoleOverview
         copy={overviewPageCopy}
         name={user.name}
-        instances={instances}
+        sessions={sessions}
         templates={templates}
         unreadable={unreadable}
       />
       {demoTemplate !== undefined && demoAspects.length > 0 ? (
         <DemoFill
           copy={tourPageCopy}
-          sheetCopy={assessmentInstancePageCopy}
+          sheetCopy={assessmentSessionPageCopy}
           aspects={demoAspects}
           answers={tourDemoAnswers}
           exampleTitle={demoTemplate.title}

@@ -82,7 +82,7 @@ type CommitParams = {
   readonly problem?: string | string[];
   readonly field?: string | string[];
   /** The relationship stage 4 already wrote, when stage 5's `Back` is what brought the reader. */
-  readonly instance?: string | string[];
+  readonly session?: string | string[];
   /** `account` draws the sign-in panel for a signed-in viewer too — a review affordance. */
   readonly preview?: string | string[];
 };
@@ -135,12 +135,12 @@ export default async function TemplateCreateCommitPage({
    * cookie is the proof — an id alone is not a secret — and a read that finds no seat is treated as
    * no relationship at all, which falls through to the ordinary account stage.
    */
-  const createdId = (firstValue(query.instance) ?? "").trim();
+  const createdId = (firstValue(query.session) ?? "").trim();
   const created =
     createdId === "" || detail === undefined
       ? undefined
       : await readFlowScreen({
-          instanceRecordId: createdId,
+          sessionRecordId: createdId,
           token: jar.get(partyCookieName(createdId))?.value,
           viewerUserId: viewer?.userId ?? null,
         });
@@ -255,7 +255,7 @@ export default async function TemplateCreateCommitPage({
       // offers the way forward and renders no create form at all.
       {...(created === undefined
         ? {}
-        : { accountAdvanceHref: createInviteForPath(slug, created.instanceRecordId) })}
+        : { accountAdvanceHref: createInviteForPath(slug, created.sessionRecordId) })}
     />
   );
 }
