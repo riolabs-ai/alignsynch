@@ -24,6 +24,14 @@
  * a rewrite that points a link somewhere else or edits pasted evidence is still visible in a diff (a
  * link that changed is `docs:check`'s failure, not this file's).
  *
+ * THE SCOPE IS THE INDEX, NOT THE DISK (#1073). `.gitignore:73-77` keeps five
+ * `AUDIENCE-AND-POSITIONING.md` copies out of the tree on purpose (#1020), so a checkout can carry
+ * pages no commit contains. This module used to walk the filesystem while the test filtered by
+ * `git ls-files`, which is the same question answered two ways: the generator named a page "moved"
+ * that the test never compared, and `--write` on that tree wrote an entry the test then rejected.
+ * `scopedFiles()` below is the one definition both entry points use, and the CLI prints what it
+ * skipped so the exemption is visible instead of silent.
+ *
  * THE GENERATED REGIONS ARE DROPPED. `docs-nav.mjs` writes the hub link, the section and the
  * prev/next chain into every page, and the hub's own index (`docs/README.md`), and their *words* are
  * a function of which pages exist — so adding one page legitimately rewrites the chain in its two
@@ -35,6 +43,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { indexedPaths } from "./git-index.mjs";
+import { markdownFiles } from "./md-style.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const FIXTURE = "tests/fixtures/md-normalised.json";
@@ -85,19 +96,56 @@ export function snapshot(root = ROOT, files) {
   return out;
 }
 
+/**
+ * THE PAGES THE SNAPSHOT COVERS: everything `markdownFiles()` walks that the index also carries,
+ * and the walked-but-unindexed ones named back to the caller (#1073).
+ *
+ * `.gitignore:73-77` keeps five `AUDIENCE-AND-POSITIONING.md` copies out of the tree on purpose
+ * (#1020), so a checkout can hold pages no commit contains. Walking the filesystem for the snapshot
+ * made its answer a function of whose disk ran it: with a copy present the generator reported
+ * `moved  docs/specs/…/AUDIENCE-AND-POSITIONING.md` beside a green `tests/md-normalised.test.ts`,
+ * and `--write` added the entry, which the test then rejected by name. This is the one file list
+ * both callers use — the test compares it, `--write` writes it — so they cannot disagree again.
+ *
+ * When git cannot answer for the root (no git binary, a fabricated `--root` tree) every walked page
+ * is kept, exactly as `git-index.mjs` documents: a check that cannot read the index must never stop
+ * checking.
+ */
+export function scopedFiles(root = ROOT) {
+  const walked = markdownFiles(root);
+  const index = indexedPaths(root, "docs");
+  const files = index === null ? walked : walked.filter((rel) => index.has(rel));
+  const inScope = new Set(files);
+  return {
+    files,
+    walked: walked.length,
+    skipped: walked.filter((rel) => !inScope.has(rel)),
+  };
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
-  const { markdownFiles } = await import("./md-style.mjs");
-  const files = markdownFiles(ROOT);
+  const { files, skipped } = scopedFiles(ROOT);
+  for (const rel of skipped) {
+    process.stdout.write(
+      `skipped  ${rel}  (on disk, not in the index — .gitignore keeps it out of the tree, #1020)\n`,
+    );
+  }
+  const outOfScope =
+    skipped.length === 0
+      ? ""
+      : ` (${skipped.length} page${skipped.length === 1 ? "" : "s"} on disk out of scope)`;
   const fresh = snapshot(ROOT, files);
   if (process.argv.includes("--write")) {
     writeFileSync(join(ROOT, FIXTURE), `${JSON.stringify(fresh, null, 2)}\n`);
-    process.stdout.write(`md-normalise: ${files.length} pages snapshotted into ${FIXTURE}\n`);
+    process.stdout.write(
+      `md-normalise: ${files.length} pages snapshotted into ${FIXTURE}${outOfScope}\n`,
+    );
   } else {
     const committed = JSON.parse(readFileSync(join(ROOT, FIXTURE), "utf8"));
     const moved = files.filter((rel) => committed[rel] !== fresh[rel]);
     for (const rel of moved) process.stdout.write(`moved  ${rel}\n`);
     process.stdout.write(
-      `md-normalise: ${files.length} pages, ${moved.length} with a changed word sequence\n`,
+      `md-normalise: ${files.length} pages, ${moved.length} with a changed word sequence${outOfScope}\n`,
     );
     if (moved.length > 0) process.exit(1);
   }
