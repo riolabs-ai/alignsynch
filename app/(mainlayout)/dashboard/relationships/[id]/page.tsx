@@ -28,6 +28,7 @@ import { notFound } from "next/navigation";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { RelationshipDetail } from "@/components/dashboard/relationship-detail";
+import { RelationshipAspectsNote } from "@/components/dashboard/relationship-aspects-note";
 import { RelationshipEditDialog } from "@/components/dashboard/relationship-edit-dialog";
 import { RelationshipEditPanel } from "@/components/relationship/relationship-edit-panel";
 import {
@@ -38,7 +39,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_RELATIONSHIPS_PATH, readMyRelationship } from "@/lib/member/relationships";
 import { readRelationshipEditState } from "@/lib/member/relationship-edit";
-import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
   completeRelationshipAction,
@@ -134,6 +135,35 @@ export default async function MemberRelationshipPage({
                   <RelationshipEditPanel
                     copy={dashboardRelationshipDetailPageCopy}
                     state={editState}
+                    /*
+                      #975 D12 — **the dialog names the Aspects; the page owns their editing.**
+
+                      The inventory found the inverse of the owner's duplicate-aspects complaint:
+                      #935 took the stacked Aspect forms out of this panel, and with them every
+                      mention of the Aspects — so the dialog that says "everything here is written
+                      to the relationship itself" was silent about the one section the page edits.
+                      It stays silent *about writing them* (#935's decision: a second editor in the
+                      modal would draw the drag list over the list it duplicates); it is no longer
+                      silent about their existence. The note is a pointer, and `aspectsEditable`
+                      picks its sentence and its verb: a published relationship's Aspects are fixed,
+                      so the note says so and the door offers a view rather than an edit (#706).
+                    */
+                    note={
+                      <RelationshipAspectsNote
+                        heading={itemLabel(editSection, "aspects")}
+                        note={fillLabel(
+                          itemLabel(
+                            editSection,
+                            view.aspectsEditable ? "aspects-note" : "aspects-note-locked",
+                          ),
+                          { count: view.template.items.length },
+                        )}
+                        door={itemLabel(
+                          editSection,
+                          view.aspectsEditable ? "aspects-open" : "aspects-view",
+                        )}
+                      />
+                    }
                     variant="panel"
                     onPreview={previewRelationshipEditAction}
                     onEdit={editRelationshipAction}

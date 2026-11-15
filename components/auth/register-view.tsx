@@ -3,6 +3,7 @@
 // template-ancestor: components/auth/login-view.tsx   (variation: the same card with name, username and role fields and a confirm-password row)
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthHeroTiles } from "@/components/auth/auth-hero-tiles";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { LeavingLink } from "@/components/layout/leaving-link";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength";
@@ -12,7 +13,7 @@ import { FormSurface } from "@/components/ui/form-surface";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { PageCopy } from "@/content/pages";
+import type { PageCopy, PageCopySection } from "@/content/pages";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureItemId, authFailureOf } from "@/lib/auth/errors";
 import type { AuthMarkSet } from "@/lib/auth/marks";
@@ -77,6 +78,7 @@ export function RegisterView({
   destination,
   marks,
   markSrc,
+  stats,
   layout = "page",
   onSwitchToSignIn,
   leaving = false,
@@ -91,6 +93,19 @@ export function RegisterView({
    * mark, handed down for every brand and read by the one whose hero names that id.
    */
   markSrc: string;
+  /**
+   * The two tiles this page's hero draws (#971) — the pair `/login` draws, mounted beneath this
+   * page's own `h1`. They are `/login`'s band (`data/pages/login.ts`, resolved by `heroTilesFor`)
+   * rather than a second copy of the same claim in this route's fixture: the owner's decision is
+   * that the proposition appears on both pages, so a tile is reworded once. Resolved by the page
+   * and passed down for the reason every other section is — this is a client module and the
+   * fixture carries zod.
+   *
+   * Required, not optional: an absent band would render this page without the tiles, which is the
+   * defect this card fixes. The embedded mount carries it too and simply draws no panel, because a
+   * stage column is not a landing (#829).
+   */
+  stats: PageCopySection;
   /**
    * `"page"` is `/register`; `"embedded"` is stage 4 of the create flow (#829), the same prop
    * `LoginView` grew in #824. Same view, no hero panel and no page frame, sized for the stage
@@ -235,7 +250,10 @@ export function RegisterView({
 
   return (
     <div className={layout === "embedded" ? "w-full" : "min-h-screen flex"}>
-      {/* Left Side - Image/Illustration. Page layout only (#829): embedded is a stage column. */}
+      {/* Left Side - Image/Illustration. Page layout only (#829): embedded is a stage column.
+          The two tiles are `components/auth/auth-hero-tiles.tsx` (#971) — the same pair `/login`
+          draws — under this page's own `h1`. The headline, the mark and the step rail stay
+          sign-up's, which is why the panel is not the sign-in one. */}
       {layout === "embedded" ? null : (
         <div className="hidden lg:flex lg:w-1/2 bg-action relative overflow-hidden">
           <div className="absolute inset-0 bg-black/20"></div>
@@ -253,6 +271,8 @@ export function RegisterView({
               <h1 className="text-4xl font-bold mb-4">{copy.heading}</h1>
               <p className="text-xl text-white/90 leading-relaxed mb-8">{copy.subtitle}</p>
             </div>
+
+            <AuthHeroTiles tiles={stats} className="mb-8" />
 
             {/* Progress Indicator */}
             <div className="flex items-center space-x-4 mb-8">

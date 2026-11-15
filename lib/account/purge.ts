@@ -1,7 +1,7 @@
 /**
  * Deleting an account: the auth-side delete, and the scrub it is followed by (#278).
  *
- * `docs/ACCOUNT-DELETION-SPEC.md` is the specification this file implements; §7 is the ordered
+ * `docs/specs/account-deletion-spec.md` is the specification this file implements; §7 is the ordered
  * build plan and the numbers below cite it. Two facts shape everything here.
  *
  * **1. There is no self-service deletion endpoint on the auth server.** `POST /delete-user`

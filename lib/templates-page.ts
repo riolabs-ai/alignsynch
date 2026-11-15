@@ -19,6 +19,15 @@
  *                        detail page's price line and the two shelves read (#798: one price model)
  *   card facts           name, roles, realm, Aspect count, and the search blob, from the record
  *
+ * ## The one thing that is not derived from a fixture: the account action (#979, #1042)
+ *
+ * A card's "use this template" is the create flow's stage 1 for every viewer — the template is the
+ * only fact the address carries, so no session is involved. What still reads the request's session
+ * is the **authored** action: the membership band's CTA arrives as data and a bare `/register` means
+ * an account to a visitor and an account home to a member. That rule lives in `lib/start-path.ts`;
+ * this module only carries the `StartViewer` the page resolved, which is why the model stays free
+ * of React, Next and the session module.
+ *
  * The one number the approved artifact prints that this module deliberately does **not** copy is
  * the example's "1 of 6": the Aspect the artifact illustrates is the **third** of six in
  * `data/relationship-types.ts`, so the ordinal is derived and renders "3 of 6". The data wins, and
@@ -55,6 +64,7 @@ import {
 } from "@/lib/page-copy";
 import { realmArt, twoPartyMark, type RealmArt } from "@/lib/relationship-art";
 import { cataloguePriceNote, templateCard, type TemplateCard } from "@/lib/template-catalogue";
+import { startHrefFor, type StartViewer } from "@/lib/start-path";
 
 /**
  * The catalogue's in-page anchor, and the explainer's.
@@ -305,6 +315,7 @@ function stepsOf(copy: PageCopy, sectionId: string, ids: readonly string[]): Tem
  */
 export function templatesPage(
   copy: PageCopy,
+  viewer: StartViewer,
   relationshipTypes: readonly RelationshipType[] = purchasableRelationshipTypes,
   realms: readonly string[] = REALMS,
 ): TemplatesPageModel {
@@ -392,7 +403,14 @@ export function templatesPage(
         },
       ],
       ...(testMode.length === 0 ? {} : { testMode }),
-      ...(membership.cta === undefined ? {} : { link: membership.cta }),
+      ...(membership.cta === undefined
+        ? {}
+        : {
+            link: {
+              label: membership.cta.label,
+              href: startHrefFor(membership.cta.href, viewer),
+            },
+          }),
     },
     catalogue: {
       eyebrow: itemLabel(catalogueSection, "eyebrow-catalogue"),

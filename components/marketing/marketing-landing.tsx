@@ -17,7 +17,7 @@ import type React from "react";
  * through `sectionOf`/`itemBody`, and this file holds neither a sentence nor a colour: E23 holds
  * `components/marketing/**` at zero leaf literals, and the palette is the theme's.
  *
- * **What it composes** (`docs/UI-DIVERGENCE.md`, this file's row). The verdict is *"wrap
+ * **What it composes** (`docs/specs/ui-divergence.md`, this file's row). The verdict is *"wrap
  * `components/ui/card.tsx` — the boxes are cards, and `border-slate-200` is not the `--border`
  * token, so the warm-edge decision in `app/globals.css` never reaches this page; the two CTAs are
  * `components/ui/button.tsx`"*. So:

@@ -24,7 +24,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { test } from "vitest";
+import { test, vi } from "vitest";
+
+/**
+ * The route module this file reads (`generateStaticParams`) resolves the request's session for the
+ * page's own action (#979), and `@/lib/auth/session` reaches Neon's SDK — whose entry imports
+ * `next/headers`, which a plain node process cannot resolve. The answer here is the signed-out one,
+ * which is the viewer every assertion in this file is written against (`VISITOR`). The member's
+ * half is `tests/catalogue-start-session.test.ts`.
+ */
+vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
 import { generateStaticParams } from "@/app/(marketing)/relationship-types/[slug]/page";
 import { TemplateDetail } from "@/components/templates/template-detail";
@@ -48,9 +57,17 @@ import {
 } from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 import { CATALOGUE_PATH, START_PATH, startPathFor, templateCards } from "@/lib/template-catalogue";
+import { visitorOf } from "@/lib/start-path";
 import { templateDetail, templateSlugs } from "@/lib/template-detail";
 import { templatesPage } from "@/lib/templates-page";
 import { pageItemOf } from "@/lib/page-copy";
+
+/**
+ * These cases are the page as a **visitor** reads it: the public surface, whose one action is the
+ * account that buys the relationship (#867). The member's half — the same action with the account
+ * step removed — is `tests/catalogue-start-session.test.ts` (#979).
+ */
+const VISITOR = visitorOf("alignsynch");
 
 /** The one plan the marketing surfaces price: Basic, whose monthly figure each card prints. */
 const basic = billingPlan("basic");
@@ -124,15 +141,13 @@ test("prints the plan's price and the one start action, both from the fixture", 
   assert.ok(html.includes(model.priceNote), "the price line is not in the markup");
   assert.equal(model.start.href, startPathFor(type.id));
   assert.equal(START_PATH, "/register");
-  // #867 — the one action names the create step this visitor chose as the sign-up destination, so
-  // the account round trip cannot drop the template. A bare `/register` is the defect.
-  assert.equal(
-    new URL(model.start.href, "http://x").searchParams.get("next"),
-    createRelationshipPath(type.id),
-  );
+  // #1042 — the one action is the create flow's stage 1, carrying the template: one door for a
+  // visitor and a member alike, and no `next=` indirection through the sign-up form.
+  assert.equal(model.start.href, createRelationshipPath(type.id));
+  assert.equal(new URL(model.start.href, "http://x").search, "");
   assert.ok(
     html.includes(`href="${model.start.href}"`),
-    "the start action does not link to the register gate for this template",
+    "the start action does not link to this template's create step",
   );
   assert.ok(html.includes(`href="${CATALOGUE_PATH}"`), "there is no way back to the directory");
   assert.equal(model.back.href, CATALOGUE_PATH);
@@ -219,7 +234,7 @@ test("generateStaticParams covers exactly the purchasable set", async () => {
 
 test("every catalogue card carries its own detail href, and the directory renders it", () => {
   const cards = templateCards(templatesPageCopy, purchasableRelationshipTypes);
-  const page = templatesPage(templatesPageCopy);
+  const page = templatesPage(templatesPageCopy, VISITOR);
   const html = renderToStaticMarkup(createElement(TemplatesPageView, { model: page }));
 
   assert.equal(cards.length, purchasableRelationshipTypes.length);

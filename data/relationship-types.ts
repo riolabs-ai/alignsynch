@@ -2,7 +2,7 @@
  * data/relationship-types.ts — the relationship taxonomy the product sells.
  *
  * The owner supplied a 29-row catalogue (issue #385, preserved verbatim at
- * `docs/RELATIONSHIP-TYPES-SOURCE.md`). This file is the **normalised** form of it: every row
+ * `docs/reference/relationship-types-source.md`). This file is the **normalised** form of it: every row
  * is a typed record, the three source typos are corrected, the `purchasable` field is real,
  * and each of the 26 purchasable types carries its Aspects exactly as the issue wrote them.
  * Three rows — the dating set — are kept with `purchasable: false` and no Aspects, because

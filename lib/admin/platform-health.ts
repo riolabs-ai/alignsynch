@@ -214,7 +214,7 @@ const SHA = /^[0-9a-f]{7,40}$/;
 /**
  * How far `main` is ahead of production's commit.
  *
- * The count is `git rev-list --count <deployed>..origin/main` — the command `docs/GATE.md`'s
+ * The count is `git rev-list --count <deployed>..origin/main` — the command `docs/operations/gate.md`'s
  * neighbours use and the one the card asks for in evidence. It needs the deployed object in this
  * checkout's history; a deployment (no git), a detached object and an `unknown` commit all fall
  * back to the number the recorder measured, with the record's timestamp as its source.

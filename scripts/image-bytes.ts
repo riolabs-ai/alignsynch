@@ -218,13 +218,53 @@ export function decodePng(bytes: Uint8Array): RgbaImage {
 
 /** The rectangle the mark's ink occupies — the transparent padding removed, or `undefined` if empty. */
 export function alphaBBox(image: RgbaImage): PixelBox | undefined {
+  return bboxWhere(image, (at) => image.data[at + 3] >= INK_ALPHA);
+}
+
+/**
+ * The same rectangle for an image drawn on an **opaque** ground — a glyph on the brand's `action`,
+ * where alpha is 255 everywhere and `alphaBBox` would answer "the whole canvas".
+ *
+ * Ink is a pixel that differs from the ground by at least `threshold` (summed over the three
+ * channels) *and* is fully opaque. The alpha condition is what keeps a rounded tile's own edge out
+ * of the answer: that boundary blends the ground toward transparent, which reads as a large
+ * deviation, and a measurement that counted it would report every rounded icon as 100 % full —
+ * exactly the number this check exists to stop being taken on trust.
+ *
+ * `ground` defaults to the colour at the top edge's centre, which is inside the tile for every
+ * icon this tree generates (the mark sits in the middle, the corners are the only clear pixels).
+ */
+export function contrastBBox(
+  image: RgbaImage,
+  ground?: readonly [number, number, number],
+  threshold = 24,
+): PixelBox | undefined {
+  const sample = ground ?? sampleGround(image);
+  return bboxWhere(
+    image,
+    (at) =>
+      image.data[at + 3] >= 250 &&
+      Math.abs(image.data[at] - sample[0]) +
+        Math.abs(image.data[at + 1] - sample[1]) +
+        Math.abs(image.data[at + 2] - sample[2]) >=
+        threshold,
+  );
+}
+
+/** The ground an opaque icon is painted on: the pixel at the top edge's centre. */
+function sampleGround(image: RgbaImage): readonly [number, number, number] {
+  const at = (8 * image.width + Math.floor(image.width / 2)) * 4;
+  return [image.data[at], image.data[at + 1], image.data[at + 2]];
+}
+
+function bboxWhere(image: RgbaImage, isInk: (index: number) => boolean): PixelBox | undefined {
   let left = image.width;
   let top = image.height;
   let right = -1;
   let bottom = -1;
   for (let y = 0; y < image.height; y++) {
     for (let x = 0; x < image.width; x++) {
-      if (image.data[(y * image.width + x) * 4 + 3] < INK_ALPHA) continue;
+      if (!isInk((y * image.width + x) * 4)) continue;
       if (x < left) left = x;
       if (x > right) right = x;
       if (y < top) top = y;

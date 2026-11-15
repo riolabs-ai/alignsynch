@@ -23,11 +23,14 @@
  *
  * ## What "the modules it imports directly" means
  *
- * One level: the page's own file plus every module it names in an import. That is where a
- * page-level shell lives — `instance-view.tsx`, `invite-view.tsx`, `report-view.tsx` were each
- * imported by exactly one page and each drew its own container. A component reached two levels
- * down is a component's own decision about its own box (`components/ui/**` primitives, whose
- * dialogs centre by design), not a page's column.
+ * One level for the **centring** rule: the page's own file plus every module it names in an import.
+ * That is where a page-level shell lives — `instance-view.tsx`, `invite-view.tsx`,
+ * `report-view.tsx` were each imported by exactly one page and each drew its own container.
+ *
+ * One level for the **column** rule, plus one more, because the create flow's stages moved their
+ * column into the one shell that both mountings share (#979 B): the page renders `CreateRelationship`,
+ * which renders `RelationshipFlowShell`, which draws `StageColumn`. `rendersColumn` walks two hops and
+ * stops there — three is the case that matters, a page that draws no column at all.
  *
  * The leftovers are named one at a time in `CENTRING_ALLOWANCES`: an **exact string in an exact
  * file**, never a whole file, and an allowance no walked source uses is itself a finding — the
@@ -73,15 +76,27 @@ export function pagesOf(files: readonly SourceFile[]): SourceFile[] {
 }
 
 /**
+ * A parallel-route slot (`@flow`) and an interception marker (`(.)`, `(..)`, `(...)`), which add no
+ * address of their own: an intercepted page renders in a slot while the browser stays on the route
+ * it intercepts, and that route has its own row (#979 B, `docs/specs/flow-stages.md`).
+ */
+const MOUNT_ONLY = /^(?:@|\(\.{1,3}\))/;
+
+/**
  * `app/(mainlayout)/dashboard/page.tsx` → `/dashboard`. The root of the group would be `/`.
  *
  * Bracket segments are kept verbatim (`[id]`, `[instanceId]`): the registry spells a dynamic
  * route the way the directory does, so the two cannot disagree about a parameter's name.
+ *
+ * A page that is a **mounting** rather than a surface — inside a slot, or intercepting another
+ * route — answers `null`: it draws a route that already carries a row, and asking it for its own
+ * width would be asking one screen to declare two.
  */
 export function routeOfPageFile(path: string): string | null {
   const prefix = `${ROUTE_GROUP}/`;
   if (!path.startsWith(prefix) || !path.endsWith("/page.tsx")) return null;
   const route = path.slice(prefix.length, -"/page.tsx".length);
+  if (route.split("/").some((segment) => MOUNT_ONLY.test(segment))) return null;
   return route === "" ? "/" : `/${route}`;
 }
 
@@ -256,19 +271,43 @@ export const CENTRING_ALLOWANCES: readonly CentringAllowance[] = [
 ];
 
 /**
- * Does this page's left edge come from `StageColumn` — its own markup, or a component it imports?
+ * Does this page's left edge come from `StageColumn` — its own markup, or a component it renders?
  *
- * The second half is what keeps the check from demanding a second wrapper: `StageShell`, the
- * admin views #717 moved, and the member views (`settings-view`, `my-instances`, `overview`) each
- * render the column themselves, and a page that mounted another one would nest two boxes.
+ * Two hops, not one, and the second hop exists for one shape: **the flow's shell** (#979 B). The five
+ * stage pages render `CreateRelationship`; that component renders `RelationshipFlowShell`; the shell
+ * is what draws the column and the rail, for the page mounting and the dialog mounting alike. The
+ * registry marks those pages `column` and means it, so the walk follows their tree to the module that
+ * draws it instead of announcing a fork that is not there.
+ *
+ * The bound is what keeps the check honest: a page three imports away from the column still fails,
+ * which is the case that matters — a new page that draws no column at all.
  */
 export function rendersColumn(
   pageSource: string,
   directImports: readonly string[],
   files: ReadonlyMap<string, SourceFile>,
+  depth = 2,
 ): boolean {
   if (pageSource.includes("<StageColumn")) return true;
-  return directImports.some((path) => files.get(path)?.source.includes("<StageColumn") ?? false);
+  let frontier = [...directImports];
+  const seen = new Set(frontier);
+  for (let hop = 0; hop < depth; hop += 1) {
+    const next: string[] = [];
+    for (const path of frontier) {
+      const file = files.get(path);
+      if (file === undefined) continue;
+      if (file.source.includes("<StageColumn")) return true;
+      for (const specifier of importedModules(file.source)) {
+        const resolved = resolveImport(path, specifier, (candidate) => files.has(candidate));
+        if (resolved !== null && !seen.has(resolved)) {
+          seen.add(resolved);
+          next.push(resolved);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return false;
 }
 
 /**
@@ -391,11 +430,11 @@ export function checkColumns(input: {
     }
 
     /**
-     * The left edge is owned when the page renders the column, or when a component it renders
-     * does. The second form is derived, not listed: `StageShell` and the admin views #717 already
-     * moved render `StageColumn` themselves, and demanding a second wrapper in the page would be
-     * the fork this card forbids. A page two imports away from the column still fails, which is
-     * the case that matters — a new page that draws no column at all.
+     * The left edge is owned when the page renders the column, when a component it renders does, or
+     * — for the create flow's stages (#979 B) — when a component one hop further down does: those
+     * pages hand the column to `RelationshipFlowShell`, which draws it for the page mounting and the
+     * dialog mounting alike. The walk is bounded at two; a page three imports away from the column
+     * still fails, which is the case that matters — a new page that draws no column at all.
      */
     if (row.mode === "column" && !rendersColumn(page.source, directImports, byPath)) {
       problems.push({

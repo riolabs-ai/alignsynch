@@ -21,14 +21,9 @@
  * change, no component change, no rebuild.
  */
 import type {
-  ChargeOutcome,
   CheckoutRequest,
   CheckoutSession,
   Entitlement,
-  MethodCaptureRequest,
-  MethodCaptureSession,
-  RelationshipChargeRequest,
-  ResolvedMethod,
   Subscription,
   WebhookOutcome,
   WebhookRequest,
@@ -39,47 +34,21 @@ export interface BillingPort {
   readonly provider: CheckoutSession["provider"];
 
   /**
-   * Capture a payment method, and charge nothing (#619).
-   *
-   * This is the "pay now / later" half of the model: the method comes on file so completion can
-   * take the fee, and the invite is never blocked on it. Three presentations, one operation, and
-   * the caller says which it wants (`MethodCaptureRequest.presentation`, #748):
-   *
-   *   inline    the mock captures with no page at all and answers the ids directly;
-   *   hosted    a provider answers a `url` the browser leaves the page for;
-   *   embedded  a provider answers a `clientSecret` the browser mounts a frame with, inside the
-   *             screen that asked — nothing navigates.
-   *
-   * A caller that says nothing gets `hosted`, which is what every caller before #748 did, so
-   * adding the embedded path changed no existing behaviour.
-   */
-  startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession>;
-
-  /**
-   * Resolve a capture once the provider says the method was saved.
-   *
-   * The hosted return URL carries the provider's session id, and the embedded frame's completion
-   * names the same id; either way this reads it back so the ids are **the provider's own objects**
-   * rather than anything a URL claimed. An incomplete or foreign session is a refusal, never a
-   * captured method — which is why both presentations resolve through this one function.
-   */
-  resolveMethodCapture(sessionId: string): Promise<ResolvedMethod>;
-
-  /**
-   * Charge a method already on file — one fee per relationship (#619).
-   *
-   * A decline is a `ChargeOutcome`, not an exception: it is the outcome the retry ladder exists
-   * for. `idempotencyKey` is the caller's, so a retried completion cannot take the fee twice.
-   */
-  chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome>;
-
-  /**
-   * Start a purchase and return where to send the browser.
+   * Start a purchase and return where to send the browser — or what to mount.
    *
    * Refuses (`BillingRefusal`) rather than throwing a bare error when the tier is not for sale:
    * a card that exists but cannot be bought is a 400 with a sentence, not a 500.
    */
   startCheckout(request: CheckoutRequest): Promise<CheckoutSession>;
+
+  /**
+   * Read a completed checkout back from the provider and answer the subscription it created.
+   *
+   * The browser's `onComplete` is a claim; the provider's own session is the fact. `null` means
+   * "not complete yet". This exists so an embedded checkout can be confirmed without waiting on a
+   * webhook, and it writes through the same idempotent path the webhook does.
+   */
+  confirmCheckout(userId: string, sessionId: string): Promise<Subscription | null>;
 
   /** The account's live subscription, or `null`. A cancelled one is not returned as live. */
   readSubscription(userId: string): Promise<Subscription | null>;

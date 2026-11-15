@@ -22,9 +22,18 @@
  * **Nothing is invented.** No ticket reference, no response-time promise, no apology on the
  * product's behalf and no name for the person who replied: the facts are who is being answered,
  * what they wrote about, and when they wrote it. Transactional, so the band refuses an unsubscribe
- * line on it — a reply to a message someone chose to send is not a list.
+ * line on it — a reply to a message someone chose to send is not a list. The opening line is this
+ * template's section in `content/email-bodies.md`, which carries the one `TODO(owner)` in the set:
+ * the reply's own words are not a fact this template takes.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const SUPPORT_REPLY_BODY = {
+  id: "support-reply",
+  placeholders: ["recipient", "subject", "received_on"],
+} as const satisfies EmailBodySpec;
 
 export interface SupportReplyFacts {
   /** The person whose message is being answered — the name the inbox holds for it. */
@@ -50,10 +59,11 @@ export function supportReplyDocument(facts: SupportReplyFacts): EmailDocument {
     subject: supportReplySubject(facts),
     preheader: `A reply to your message of ${calendarDate(facts.receivedAt)} about ${facts.subject}.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} The support seat's reply, in the product's own voice.`,
-      },
+      ...bodyBlocks(SUPPORT_REPLY_BODY, {
+        recipient: facts.recipient,
+        subject: facts.subject,
+        received_on: calendarDate(facts.receivedAt),
+      }),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, this answers the message you sent us on ${calendarDate(facts.receivedAt)} about ${facts.subject}.`,

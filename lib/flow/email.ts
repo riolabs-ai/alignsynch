@@ -53,7 +53,7 @@ export const RESEND_ENDPOINT = "https://api.resend.com/emails";
  *
  * The override exists so the flow can be driven against a capture server — that is how the
  * unlock notice (#258) is proved on a deployment with no mail provider, and how
- * `docs/TWO-PARTY-FLOW.md`'s "no real send was performed" claim was made. Nothing sets it in
+ * `docs/specs/two-party-flow.md`'s "no real send was performed" claim was made. Nothing sets it in
  * production, and pointing it somewhere else is only ever another HTTP endpoint speaking the
  * same request shape; there is still one transport, one provider and no dependency.
  *
@@ -257,7 +257,9 @@ export type MailSender =
   | "reset"
   | "news"
   | "broadcast"
-  | "payment";
+  | "payment"
+  | "lapse"
+  | "trial";
 
 /**
  * The senders' log sentences, in one table because they must stay parallel: the label
@@ -316,6 +318,23 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
   payment: {
     noun: "payment notice",
     unsent: "the nag stays owed, so the next run attempts it again",
+  },
+  /**
+   * The membership-lapsed notice (#1055, template #7). Its `unsent` tail is the honest consequence:
+   * the relationship is already read-only in the app — the mail is the courtesy, not the state — so
+   * a message that did not go out costs a member the explanation, never their data.
+   */
+  lapse: {
+    noun: "membership lapse notice",
+    unsent: "the relationship is read-only in the app either way",
+  },
+  /**
+   * The trial-ending notice (#1055, template #6). This is the one that has no in-app delivery: the
+   * trial has no banner, so a refused or unconfigured send means the member was warned nowhere.
+   */
+  trial: {
+    noun: "trial ending notice",
+    unsent: "the trial has no in-app banner, so this mailbox was the only prompt",
   },
 };
 

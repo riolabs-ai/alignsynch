@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Brand & audience profile page (handoff) · prev [Home review comments — the logo](../../qa-home-comments/README.md) · next [Help Center design spec (handoff)](../spec-help-center/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Brand & audience profile page (handoff) · prev [V2 home and brand package (handoff)](../spec-design-page-rel-templates-v2/README.md) · next [Glossary source map](../spec-help-center/GLOSSARY-CONTENT-MAP.md)
 
 <!-- docs-nav:end -->
 
@@ -25,6 +25,6 @@ Product mechanics follow the AlignSynch Project Brief dated 4 Nov 2026: two peop
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Brand & audience profile page (handoff) · prev [Home review comments — the logo](../../qa-home-comments/README.md) · next [Help Center design spec (handoff)](../spec-help-center/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Brand & audience profile page (handoff) · prev [V2 home and brand package (handoff)](../spec-design-page-rel-templates-v2/README.md) · next [Glossary source map](../spec-help-center/GLOSSARY-CONTENT-MAP.md)
 
 <!-- docs-nav:end -->

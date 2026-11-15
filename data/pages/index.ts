@@ -21,7 +21,11 @@ import { adminBrandPageCopy } from "./admin-brand";
 import { adminBroadcastPageCopy } from "./admin-broadcast";
 // #892 — the documentation home and one document of the tree under `docs/`.
 import { adminDocPageCopy } from "./admin-docs-document";
-import { adminDocsPageCopy } from "./admin-docs";
+import {
+  adminDocsFeaturesPageCopy,
+  adminDocsPageCopy,
+  adminDocsReleasesPageCopy,
+} from "./admin-docs";
 import { adminGapsPageCopy } from "./admin-gaps";
 // #920 — the growth model: cohorts, plan mix, churn and invoices from one committed artifact.
 import { adminGrowthPageCopy } from "./admin-growth";
@@ -102,6 +106,11 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // owns.
   "/admin/docs": adminDocsPageCopy,
   "/admin/docs/[...slug]": adminDocPageCopy,
+  // #893 — the two derived views. Each export is its own fixture in `data/pages/admin-docs.ts`,
+  // because each screen says different things: the features index prints the rule it matches on,
+  // the releases shelf prints the build answering.
+  "/admin/docs/features": adminDocsFeaturesPageCopy,
+  "/admin/docs/releases": adminDocsReleasesPageCopy,
   "/admin/gaps": adminGapsPageCopy,
   // #920 — the growth model and the sampled operational set beside it.
   "/admin/growth": adminGrowthPageCopy,

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 home redesign — implementation brief · prev [AS2 home redesign (handoff)](README.md) · next [AS2 redesign — asset sources and credits](ASSET-SOURCES.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 home redesign — implementation brief · prev [AS2 redesign — asset sources and credits](ASSET-SOURCES.md) · next [AS2 home redesign (handoff)](README.md)
 
 <!-- docs-nav:end -->
 
@@ -165,6 +165,6 @@ The shared app contains both AlignSynch and QuizHub. This brief treats “all fr
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 home redesign — implementation brief · prev [AS2 home redesign (handoff)](README.md) · next [AS2 redesign — asset sources and credits](ASSET-SOURCES.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 home redesign — implementation brief · prev [AS2 redesign — asset sources and credits](ASSET-SOURCES.md) · next [AS2 home redesign (handoff)](README.md)
 
 <!-- docs-nav:end -->

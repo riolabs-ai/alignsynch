@@ -13,7 +13,7 @@
  *   * a send that cannot happen is an outcome, never a throw: `unset` (no mailer configured),
  *     `failed` (attempted and refused / unreachable), `no-address` (the seat has none).
  *
- * The store is a stub because the gate is database-free (`docs/GATE.md`): `readUnlockFacts` is
+ * The store is a stub because the gate is database-free (`docs/operations/gate.md`): `readUnlockFacts` is
  * replaced with the two seats this file needs, and what remains under test is everything the
  * route actually composes — the recipient choice, the words, and the transport's degraded paths.
  * The live-rows proof (`SELECT … FROM party`, the transition, the single capture on a second

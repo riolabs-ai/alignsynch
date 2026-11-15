@@ -192,6 +192,9 @@ describe("browserUnsafe", () => {
   it("names the database layer and the packages with no browser build", () => {
     assert.match(String(browserUnsafe("lib/db/client.ts")), /database layer/);
     assert.match(String(browserUnsafe("lib/db/user-profiles.ts")), /database layer/);
+    assert.match(String(browserUnsafe("lib/docs/feedback-github.ts")), /feedback writer/);
+    assert.equal(browserUnsafe("lib/docs/feedback.ts"), null);
+    assert.equal(browserUnsafe("lib/docs/rows.ts"), null);
     assert.match(String(browserUnsafe("pg")), /no browser build/);
     assert.match(String(browserUnsafe("node:fs")), /Node builtin/);
     assert.match(String(browserUnsafe("fs")), /no browser build/);

@@ -1,6 +1,6 @@
 /**
  * The two explore tab blocks, and which authored rows each one owns (curation card,
- * decided in `docs/p1-migration/MIGRATION.md`).
+ * decided in `docs/operations/history/p1-migration/MIGRATION.md`).
  *
  * The snapshot's `explore-page/*` group is **not** the section `/explore` renders: its 18
  * rows are six per tab and equal `featuredTrending/Popular/New`, the tabs of

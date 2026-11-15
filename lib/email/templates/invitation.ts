@@ -10,13 +10,20 @@
  * text and derives the HTML from it (`lib/email/band.ts`). No sentence is written here that the
  * text half does not carry.
  *
- * **Nothing is invented.** The body is the `{{content_to_refine}}` marker plus the facts the
- * record holds — who invited whom, which template, and the link — and three sentences of product
- * behaviour that are true of this build: the link works once, answers stay blind until both
- * parties answer and accept, and the answers are frozen after that. There is no metric, no
- * testimonial and no promise of an outcome.
+ * **Nothing is invented.** The opening line is the one `content/email-bodies.md` holds for this
+ * template, drafted from the facts the record carries — who invited whom, which template, and the
+ * link — and three sentences of product behaviour that are true of this build: the link works once,
+ * answers stay blind until both parties answer and accept, and the answers are frozen after that.
+ * There is no metric, no testimonial and no promise of an outcome.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const INVITATION_BODY = {
+  id: "counterparty-invitation",
+  placeholders: ["inviter", "counterparty", "template", "link"],
+} as const satisfies EmailBodySpec;
 
 /** Everything the words need: who, which template, and the one link. */
 export interface InvitationFacts {
@@ -40,10 +47,12 @@ export function invitationDocument(facts: InvitationFacts): EmailDocument {
     subject: invitationSubject(facts),
     preheader: `${facts.inviter} invited ${facts.counterparty} to answer ${facts.template}.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what this invitation is, in the product's own voice.`,
-      },
+      ...bodyBlocks(INVITATION_BODY, {
+        inviter: facts.inviter,
+        counterparty: facts.counterparty,
+        template: facts.template,
+        link: facts.link,
+      }),
       {
         kind: "paragraph",
         text: `${facts.inviter} has started an assessment called ${facts.template} and invited ${facts.counterparty} to answer it.`,

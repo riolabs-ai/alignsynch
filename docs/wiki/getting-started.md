@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Code wiki** › Getting started · prev [Code wiki index](README.md) · next [Request lifecycle](architecture.md)
+[Docs hub](../README.md) › **Code wiki** › Getting started · prev [Sequence walks](diagrams/sequences.md) · next [app/api](modules/app-api.md)
 
 <!-- docs-nav:end -->
 
@@ -56,7 +56,7 @@ pnpm check:fast             # the inner loop: the cheap half, no build
 The gate prints its `lane` and skips the steps that cannot see a file in the diff: a `docs/`-only
 change is ~2 s, a `content/` change skips `next build`, and only `app/`, `components/`, `lib/` or
 `hooks/` pay for the build. Force the full run with `GATE_LANE=full bash scripts/verify.sh` after a
-dependency bump or a `tsconfig` change. Layer table: [`docs/REPO-LAYERS.md`](../REPO-LAYERS.md).
+dependency bump or a `tsconfig` change. Layer table: [`docs/operations/repo-layers.md`](../operations/repo-layers.md).
 
 The four steps worth knowing individually:
 
@@ -105,7 +105,7 @@ drift no later check would name.
 ### Add a surface
 
 1. pick the existing surface this one is a variation of
-   ([`docs/TEMPLATE-DOCTRINE.md`](../TEMPLATE-DOCTRINE.md) asks three questions, in order);
+   ([`docs/guides/template-doctrine.md`](../guides/template-doctrine.md) asks three questions, in order);
 2. add the page under the right route group and its copy module in `data/pages/`;
 3. `pnpm data:check` — E10 fails a dead `href`, E39 a public route the manifest does not know.
 
@@ -139,11 +139,11 @@ plain shell has no credentials — never assume one is in the environment.
 - [Architecture](architecture.md) — how a request becomes a page.
 - [Module map](README.md) — the ten modules, one page each.
 - [Sequence diagrams](diagrams/sequences.md) — three walks through the tree.
-- [`docs/GATE.md`](../GATE.md) — the current gate numbers and how to re-measure them.
+- [`docs/operations/gate.md`](../operations/gate.md) — the current gate numbers and how to re-measure them.
 - [`AGENTS.md`](../../AGENTS.md) — the rules a change must obey.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Code wiki** › Getting started · prev [Code wiki index](README.md) · next [Request lifecycle](architecture.md)
+[Docs hub](../README.md) › **Code wiki** › Getting started · prev [Sequence walks](diagrams/sequences.md) · next [app/api](modules/app-api.md)
 
 <!-- docs-nav:end -->

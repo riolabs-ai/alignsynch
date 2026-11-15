@@ -16,9 +16,12 @@ import { notFound } from "next/navigation";
  * The segment is the **taxonomy id**, never a record handle: a type is a row in a fixture, and
  * the templates that implement it are a different noun at `/templates/relationship/<slug>`.
  *
- * **Nothing here is dynamic.** No clock, no cookie, no session, no store read: the page is a
- * projection of `data/relationship-types.ts` through `data/pages/templates-detail.ts`, which is
- * what lets `next build` list it with a prerender marker rather than `ƒ`.
+ * **The page's one action is the flow's stage 1, for every viewer (#1042).** "Use this template"
+ * was `/register?next=…` for everybody until #979 split it by session, and #1042 closed the other
+ * half: the stage renders for a signed-out visitor (#690), the account is stage 4 of that same
+ * wizard, and a visitor who types Details there keeps their draft through the sign-in. So this
+ * route reads no session at all — identity is not a parameter of the destination any more — and
+ * every page stays prerendered, which is what lets the gate build with no auth environment.
  *
  * The title is relative: the root layout's template composes `<name> · <brand>`, so the brand is
  * named once, by the layout.

@@ -1,8 +1,14 @@
 /**
- * `/assessment` — the template list and the create form (#146).
+ * `/assessment` — the template catalogue and its door into the create flow (#146, #957).
  *
  * The route's surface is `app/(mainlayout)/assessment/page.tsx` plus
  * `components/assessment-flow/**`; the words are here so the components hold none (E23).
+ *
+ * **No create form's copy lives here any more (#957).** This fixture used to carry the labels for a
+ * six-field form on every card — mode radios, two names, an address, "Create and invite" — and that
+ * form wrote a published relationship in one press. The card's door is `Create Relationship`, a
+ * link into stage 1 of the flow, and the flow's own stages own their words
+ * (`data/pages/assessment-create.ts`).
  *
  * The email copy is not here: since #548 every message the product sends is a template in
  * `lib/email/templates/`, rendered through the band (`lib/email/band.ts`) so the plain text is
@@ -19,30 +25,22 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "create",
       heading: "Start a relationship",
-      body: "You answer first. They see none of it until they have answered too — and you see none of theirs.",
+      /**
+       * **The sentence a page that cannot create anything has to get right (#957).**
+       *
+       * Each card's `Create Relationship` is a link into the create flow, not a submit, so this
+       * paragraph says what the press actually does: it opens the guided setup, and the invitation
+       * goes out at the end — after the plan. The six field-level items that used to live here
+       * (mode labels, the two names, the address, the submit's own words) went with the form: copy
+       * for a control the page does not render is the next reader's trap.
+       */
+      body: "Pick the template you want and press Create Relationship. It opens the guided setup — who you are inviting, the settings, the Aspects you will both answer — and the invitation only goes out at the end, once the plan is chosen.",
       cta: {
         // The authoring form (#255). A `cta` and not a bare href in the view: the path is then
         // resolved against `content/routes.ts` by E23, so a moved form is a red build and not a 404.
         label: "Write your own template",
         href: "/templates/relationship/new",
       },
-      items: [
-        { id: "mode-label", label: "Which mode?" },
-        { id: "mode-basic", label: "Basic Mode — Feel and Wish" },
-        { id: "mode-advanced", label: "Advanced Mode — Feel, Wish, Think and Guess" },
-        {
-          id: "mode-help",
-          label:
-            "The mode is chosen now and fixed for this relationship: both of you answer the same sheet, and it cannot be switched later.",
-        },
-        { id: "initiator-name", label: "Your name" },
-        { id: "initiator-placeholder", label: "Avery" },
-        { id: "counterparty-name", label: "Their name" },
-        { id: "counterparty-placeholder", label: "Rowan" },
-        { id: "email", label: "Their email" },
-        { id: "email-placeholder", label: "rowan@example.com" },
-        { id: "submit", label: "Create and invite" },
-      ],
     },
     {
       id: "templates",

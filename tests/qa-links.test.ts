@@ -70,6 +70,25 @@ describe("routeForPagePath", () => {
     expect(routeForPagePath("components/home/as2-home.tsx")).toBeNull();
     expect(routeForPagePath("app/(mainlayout)/templates/relationship/save/route.ts")).toBeNull();
   });
+
+  it("answers null for a slot's page and an intercepted one — neither adds an address (#979 B)", () => {
+    // The flow's dialog lives in `@flow` and intercepts the stage routes: the browser stays on
+    // `/templates/relationship/[slug]/create/…`, which those stage pages already own. A QA list that
+    // invented five more rows for the same screens would be pointing at nothing.
+    const slot =
+      "app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/mode/page.tsx";
+    expect(routeForPagePath(slot)).toBeNull();
+    expect(
+      routeForPagePath("app/(mainlayout)/dashboard/relationships/@flow/default.tsx"),
+    ).toBeNull();
+    expect(
+      routeForPagePath("app/(mainlayout)/dashboard/relationships/@flow/loading.tsx"),
+    ).toBeNull();
+    // The route it intercepts is still the stage's own, and still a route.
+    expect(
+      routeForPagePath("app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx"),
+    ).toBe("/templates/relationship/[slug]/create/mode");
+  });
 });
 
 describe("routesForEntry", () => {
@@ -288,7 +307,7 @@ describe("reasonForUnrouted", () => {
     );
     expect(reasonForUnrouted("tests/qa-links.test.ts")).toBe("a test");
     expect(reasonForUnrouted("package.json")).toContain("dependency manifest");
-    expect(reasonForUnrouted("docs/QA-LINKS.md")).toBe("documentation");
+    expect(reasonForUnrouted("docs/qa/qa-links.md")).toBe("documentation");
     expect(reasonForUnrouted("public/home/personal-life.avif")).toBe("a static asset");
     expect(reasonForUnrouted("scripts/qa-links.ts")).toBe("a tooling script");
     expect(reasonForUnrouted("data/billing-plans.ts")).toBe("a fixture no page reaches");

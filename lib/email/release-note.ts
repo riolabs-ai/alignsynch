@@ -13,20 +13,18 @@
  * the same words — and a section whose limits are missing makes `releaseNoteDocument()` throw
  * rather than send a note that quietly omits them.
  *
- * **Nothing is invented.** The intro paragraph is the entry's own; if an entry has none, the mail
- * carries `{{content_to_refine}}` and a bare instruction, because a sentence nobody wrote is worse
- * than a visible gap. No metric, no customer, no testimonial is computed, quoted or implied: every
- * sentence below comes from the changelog or from `data/brand.ts`.
+ * **Nothing is invented.** The intro paragraph is the entry's own. An entry with no intro gets no
+ * invented lead: the preheader already carries `…, released <date>.` and the note opens on the
+ * version line, because a sentence nobody wrote is worse than an absent one. No metric, no
+ * customer, no testimonial is computed, quoted or implied: every sentence below comes from the
+ * changelog or from `data/brand.ts`.
  *
  * Two heading spellings are accepted, because the tree carries both: the generated
  * `## [1.3.0] - 2026-11-03` and the hand-written `## 1.4.0 — 2026-11-04` an owner-approved entry
  * uses. A parser that knew only one would fail the first release cut in the other style.
  */
 import { brand } from "@/data/brand";
-import { CONTENT_TO_REFINE, plainInline, type EmailBlock, type EmailDocument } from "./band";
-
-/** Re-exported from the band: the `{{…}}` marker a block carries when its prose is unwritten. */
-export { CONTENT_TO_REFINE };
+import { plainInline, type EmailBlock, type EmailDocument } from "./band";
 
 /** One release's section of the changelog, as the file carries it. */
 export interface ChangelogSection {
@@ -191,10 +189,9 @@ export function releaseNoteBlocks(
     return title !== LIMITS_TITLE && title !== LEDGER_TITLE;
   });
   const intro = parsed.intro.slice(options.skipIntro ?? 0);
-  const lead: string[] = intro.length > 0 ? [...intro] : [];
-  if (parsed.intro.length === 0) {
-    lead.push(`${CONTENT_TO_REFINE} One sentence on what this release changes.`);
-  }
+  // No intro in the entry, no lead in the mail: the preheader is the entry's own first line or the
+  // version line, and a paragraph invented to fill the gap is the sentence nobody wrote.
+  const lead: string[] = [...intro];
 
   return [
     { kind: "paragraph", text: `Version ${section.version}, released ${section.date}.` },

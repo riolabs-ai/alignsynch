@@ -8,7 +8,8 @@
  * writes the refreshed session cookie from inside `getSession()`. So the moment a session was due
  * for refresh, a perfectly good session was reported as signed out and the page redirected to
  * `/login`. Measured on the dev server: `/how-it-works` answered `307 → /login?next=…` for a
- * session with five days left on it.
+ * session with five days left on it. (That route answers a signed-out visitor with the page itself
+ * since #898; the measurement is of the session defect, not of the route's access rule.)
  *
  * **The negative case is the point.** Every gate in this repo is green with the defect present:
  * the throw is caught and logged, the type is right, the page answers `200` — with the wrong

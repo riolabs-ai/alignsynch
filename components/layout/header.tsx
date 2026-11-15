@@ -26,6 +26,7 @@ import type { ShellAccount } from "@/lib/auth/shell-account";
 import type { BrandMark } from "@/lib/brand-mark";
 import { type NavViewer, seesQuizProduct } from "@/lib/nav";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
+import { accountMenu, type AccountMenuRowId } from "@/lib/shell/account-menu";
 import { searchSectionFor } from "@/lib/shell-copy";
 import {
   Bell,
@@ -42,6 +43,7 @@ import {
   Tag,
   TrendingUp,
   User,
+  UserPlus,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -53,7 +55,23 @@ import NotificationDrawer from "../header/NotificationDrawer";
 import { Badge } from "../ui/badge";
 
 /**
- * The account slot when nobody is signed in (issue #212).
+ * The icon and its two colours, per row — the only thing the header adds to `accountMenu()`'s
+ * derived rows (#979). Keyed by the row id rather than by position, so a row that disappears (a
+ * visitor's Settings, a member's profile before they have a handle) cannot shift a neighbour's
+ * icon, and a new row id is a compile error until it is given art.
+ */
+const ACCOUNT_ROW_ART: Readonly<
+  Record<AccountMenuRowId, { icon: typeof User; ground: string; ink: string }>
+> = {
+  "sign-in": { icon: User, ground: "bg-muted", ink: "" },
+  "sign-up": { icon: UserPlus, ground: "bg-gray-100", ink: "text-gray-600" },
+  profile: { icon: User, ground: "bg-blue-100", ink: "text-blue-600" },
+  dashboard: { icon: TrendingUp, ground: "bg-muted", ink: "text-action" },
+  quizzes: { icon: MessageCircleQuestion, ground: "bg-blue-100", ink: "text-blue-600" },
+  settings: { icon: Settings, ground: "bg-gray-100", ink: "text-gray-600" },
+};
+
+/**
  *
  * `GeneratedAvatar` draws a monogram from a person's name; a signed-out shell has no person and
  * no name, so it must not draw one. This is the neutral disc the spec allows in that state: the
@@ -196,6 +214,19 @@ export function Header({
    * than pointing it at whichever person the fixtures happen to name.
    */
   const profileHref = accountProfileHref(account);
+
+  /**
+   * The account menu, derived from the session (#979). `accountMenu()` owns *which* rows exist —
+   * a visitor gets Sign in and Sign up, a member gets their own rows and a Log out — so this
+   * component cannot drift back to a menu that offers a log-out control to somebody with no
+   * session. The art below is the only thing it adds.
+   */
+  const menu = accountMenu({
+    copy: accountCopy,
+    account,
+    quizRows: seesQuizProduct(brandId, viewer),
+    profileHref,
+  });
 
   /**
    * The drawers' content for this brand (`data/chat-data.ts`, `data/notifications.ts`). Both
@@ -666,129 +697,83 @@ export function Header({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-0">
-              {account === null ? (
-                <div className="p-2">
-                  <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                    <Link href="/login">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-                        <User className="h-4 w-4" />
-                      </div>
-                      <span>{itemLabel(accountCopy, "signed-out")}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                </div>
-              ) : (
+              {/*
+                The menu is the session's, not a list with a session-shaped header (#979). A
+                signed-out visitor used to get Settings and a destructive **Log out** below the
+                "Sign in" row: nothing to log out of, and a control describing a session that did
+                not exist. `accountMenu()` decides which rows exist; this file draws them.
+
+                The identity block is a member's only: a visitor's first rows *are* Sign in and
+                Sign up, so drawing both would offer the same door twice.
+              */}
+              {menu.account !== null && (
                 <div className="flex flex-col space-y-2 p-4">
                   <div className="flex items-center gap-3">
-                    <GeneratedAvatar name={account.name} seed={account.handle} size={64} />
+                    <GeneratedAvatar
+                      name={menu.account.name}
+                      seed={menu.account.handle}
+                      size={64}
+                    />
                     <div>
-                      <h3 className="text-lg font-semibold">{account.name}</h3>
-                      <p className="text-sm text-muted-foreground">{`@${account.handle}`}</p>
+                      <h3 className="text-lg font-semibold">{menu.account.name}</h3>
+                      <p className="text-sm text-muted-foreground">{`@${menu.account.handle}`}</p>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Mail className="h-3 w-3" />
-                        <span>{account.email}</span>
+                        <span>{menu.account.email}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              <DropdownMenuSeparator />
+              {menu.signedIn && <DropdownMenuSeparator />}
 
               <div className="p-2">
-                {/*
-                  The account menu's quiz rows: the signed-in person's own profile, the quiz
-                  dashboard and the quiz author's own list. They are the quiz product's
-                  destinations, so an alignment visitor does not get them — the Settings row
-                  below stays on both brands, because a preference page is an account action
-                  rather than a product surface.
-
-                  "My Profile" is the one row of the three that is about *this* person rather than
-                  a product surface, so it is conditional on there being one (#226): with no
-                  session there is no profile to open, and the row is absent instead of opening
-                  somebody else's. The other two are product destinations and stay.
-                */}
-                {seesQuizProduct(brandId, viewer) && (
-                  <>
-                    {profileHref !== null && (
-                      <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                        <Link href={profileHref}>
-                          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
-                            <User className="h-4 w-4 text-blue-600" />
-                          </div>
+                {menu.rows.map((row) => {
+                  const art = ACCOUNT_ROW_ART[row.id];
+                  const Icon = art.icon;
+                  return (
+                    <DropdownMenuItem key={row.id} asChild className="flex gap-3 px-3 py-1.5">
+                      <Link href={row.href}>
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-md ${art.ground}`}
+                        >
+                          <Icon className={`h-4 w-4 ${art.ink}`} />
+                        </div>
+                        {row.hint === undefined ? (
+                          <span>{row.label}</span>
+                        ) : (
                           <div className="flex flex-col">
-                            <span>{itemLabel(accountCopy, "profile")}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {itemLabel(accountCopy, "profile-hint")}
-                            </span>
+                            <span>{row.label}</span>
+                            <span className="text-xs text-muted-foreground">{row.hint}</span>
                           </div>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                      <Link href="/dashboard/user">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-                          <TrendingUp className="h-4 w-4 text-action" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span>{itemLabel(accountCopy, "dashboard")}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {itemLabel(accountCopy, "dashboard-hint")}
-                          </span>
-                        </div>
+                        )}
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                      <Link href="/my-quizzes">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100">
-                          <MessageCircleQuestion className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span>{itemLabel(accountCopy, "quizzes")}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {itemLabel(accountCopy, "quizzes-hint")}
-                          </span>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-
-                <DropdownMenuItem asChild className="flex gap-3 px-3 py-1.5">
-                  <Link href="/settings">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gray-100">
-                      <Settings className="h-4 w-4 text-gray-600" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span>{itemLabel(accountCopy, "settings")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {itemLabel(accountCopy, "settings-hint")}
-                      </span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
+                  );
+                })}
               </div>
 
-              <div className="p-4 pt-0">
-                <Button
-                  variant="destructive"
-                  className="w-full justify-center"
-                  onClick={signOut}
-                  disabled={signingOut}
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>
-                    {signingOut
-                      ? itemLabel(accountCopy, "logout-pending")
-                      : itemLabel(accountCopy, "logout")}
-                  </span>
-                </Button>
-                {signOutFailed && (
-                  <p className="pt-2 text-sm text-red-600">
-                    {itemLabel(accountCopy, "logout-error")}
-                  </p>
-                )}
-              </div>
+              {/*
+                Log out exists only for a member, and `null` — not a disabled button — is how a
+                visitor's menu says there is no session to end.
+              */}
+              {menu.signOut !== null && (
+                <div className="p-4 pt-0">
+                  <Button
+                    variant="destructive"
+                    className="w-full justify-center"
+                    onClick={signOut}
+                    disabled={signingOut}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>{signingOut ? menu.signOut.pending : menu.signOut.label}</span>
+                  </Button>
+                  {signOutFailed && (
+                    <p className="pt-2 text-sm text-red-600">{menu.signOut.error}</p>
+                  )}
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

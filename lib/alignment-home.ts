@@ -54,6 +54,7 @@ import {
 import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
 import { brandMark, type BrandMark } from "@/lib/brand-mark";
 import { fillLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import { visitorOf } from "@/lib/start-path";
 import {
   CATALOGUE_PATH,
   featuredTemplateTypes,
@@ -624,6 +625,13 @@ export function alignmentHome(
    *
    * `viewAll` is the band's one action. The label is the fixture's, the href is the catalogue
    * route's (`CATALOGUE_PATH`), so neither the words nor the destination are typed in a component.
+   *
+   * **The viewer is irrelevant to a card since #1042, and that is the point.** This composition
+   * renders no route since #853 — `/` draws `lib/home-alignsynch.ts::as2Home`, whose every action is
+   * an in-page anchor — and even where it is mounted, a card's `start` is the create flow's stage 1
+   * for every viewer, so no session has to be read to build it. If this composition is ever mounted
+   * again, nothing about a card needs the request's viewer; only an *authored* CTA does
+   * (`templatesPage()` keeps that parameter for the membership band, which authors `/pricing`).
    */
   const featuredCards = templateCards(
     copy,

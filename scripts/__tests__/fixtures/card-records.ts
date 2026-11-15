@@ -40,7 +40,7 @@ export const FIXTURE_NOW = "2026-10-29T12:00:00.000Z";
  * tabs of `explore-featured.tsx`, mounted on `/explore`). So `explore-page/*[3..5]` names no
  * rendered card, and `/explore`'s three-card tabs are a strict prefix of the authored six
  * rather than a shelf that lost three cards. The decision, the measurement behind it and what
- * would have to change to show six are in `docs/p1-migration/MIGRATION.md`; the mapping is
+ * would have to change to show six are in `docs/operations/history/p1-migration/MIGRATION.md`; the mapping is
  * pinned by `scripts/__tests__/explore-curation.test.ts`.
  */
 export interface CardRecordSnapshot {

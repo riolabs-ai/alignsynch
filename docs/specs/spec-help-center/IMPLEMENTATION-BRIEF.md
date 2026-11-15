@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Help Center — implementation brief · prev [Help Center design spec (handoff)](README.md) · next [Glossary source map](GLOSSARY-CONTENT-MAP.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Help Center — implementation brief · prev [Glossary source map](GLOSSARY-CONTENT-MAP.md) · next [Help Center design spec (handoff)](README.md)
 
 <!-- docs-nav:end -->
 
@@ -70,6 +70,6 @@ The supplied document contains historical definitions and product concepts. Trea
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Help Center — implementation brief · prev [Help Center design spec (handoff)](README.md) · next [Glossary source map](GLOSSARY-CONTENT-MAP.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Help Center — implementation brief · prev [Glossary source map](GLOSSARY-CONTENT-MAP.md) · next [Help Center design spec (handoff)](README.md)
 
 <!-- docs-nav:end -->

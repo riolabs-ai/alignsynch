@@ -19,7 +19,7 @@
  *   the screen   all three states are quoted out of the markup `AssessmentInstanceView` renders
  *                for that screen, with the date the row carries.
  *
- * **The client is a stub, on purpose** — the gate is database-free (`docs/GATE.md`), exactly as
+ * **The client is a stub, on purpose** — the gate is database-free (`docs/operations/gate.md`), exactly as
  * `tests/flow-store-identity.test.ts` does it. The rows the stub answers with are the shape the
  * real columns have, including a `TIMESTAMPTZ` for `expires_at`, so `inviteStateOf()` is given a
  * `Date` and compares instants rather than strings. The live port for the same claim is

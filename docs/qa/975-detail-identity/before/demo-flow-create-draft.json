@@ -1,0 +1,353 @@
+{
+  "$doc": {
+    "schema": "demo-flow/v1",
+    "purpose": "A browser walked the create flow on the demo instance and wrote down every screen. Committed so a reviewer, and the /how-it-works replay (#898 card 2), can read what happened without re-running it.",
+    "topLevel": {
+      "$doc": "this block — the schema, in the file it describes",
+      "base": "the origin the walk ran against",
+      "paths": "one entry per path: { path, terminal (the screen the path must end on, in words), reached, steps }",
+      "findings": "behaviour the walk met that is not this driver's to fix: { n, path, title, shot, expected, actual, note }. A finding is a report, never a failure.",
+      "steps": "every screen, in order — see fields",
+      "seed": "what the run did about the demo dataset: { attempted, ok?, reason?, drift? }",
+      "summary": "what this run found: { paths, reached, steps, findings }",
+      "cleanup": "the branch before and after the walk: { created, before, after, leftover, unchanged }"
+    },
+    "fields": {
+      "step": "1..n, contiguous across the three paths",
+      "path": "create-published | create-draft | unpaid — a state, not a happy path",
+      "route": "where the step happened; run-specific ids are normalised to <instance> and <token>",
+      "action": "fill | click | assert",
+      "values": "verbatim what was entered; {} for clicks and asserts",
+      "shot": "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png",
+      "expect": "the assertion this step proved, in words",
+      "ok": "whether it held; `actual` carries what was measured when it did not",
+      "actual": "only present when ok is false",
+      "sha256": "the digest of the image this run wrote — evidence of the run, not an invariant",
+      "w": "the image's pixel width",
+      "h": "the image's pixel height"
+    },
+    "determinism": "steps and paths carry no timestamp, id or absolute path, and two runs on an unchanged tree write them identically — that is what `pnpm demo:flow:check` diffs, byte for byte. `summary`, `seed`, `cleanup` and each step's `sha256` are measurements of one run or of a shared branch, so the diff excludes them: screenshots are compared by the geometry in `w`/`h`, because a page prints a minted invitation token, mounts the provider's live frame and seeds placeholder art from a row's id — none of which is byte-stable."
+  },
+  "base": "http://localhost:3419",
+  "paths": [
+    {
+      "path": "create-draft",
+      "terminal": "the draft reopened at /dashboard/relationships/<instance>",
+      "reached": false,
+      "steps": 14
+    }
+  ],
+  "findings": [
+    {
+      "n": 1,
+      "path": "create-draft",
+      "title": "create-draft: the relationship detail is headed by the template's name, not the draft's own title",
+      "shot": "docs/qa-demo-flow/create-draft/14-draft-own-title-1440.png",
+      "expected": "\"Demo walk — draft\" on the detail page",
+      "actual": "WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.17.1 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. Relationship Basics Five Asp",
+      "note": "the listing row prints the draft's own title, and the detail prints the template's (\"Relationship Basics\") — the row and the page disagree about what the record is called."
+    },
+    {
+      "n": 2,
+      "path": "create-draft",
+      "title": "create-draft: the draft does not reopen in an editor",
+      "shot": "docs/qa-demo-flow/create-draft/14-draft-own-title-1440.png",
+      "expected": "the relationship detail with the draft's title and an editing surface",
+      "actual": "WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.17.1 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. Relationship Basics Five Aspects of a relationship — time, housework, money, conflict and affection — each answered from how it feels now to how you wish it to change. STATE Draft STARTED Nov 13, 2026 PUBLISHED — INVITED Alex Moreau Initiator Edit A payment method is needed to publish Publish is locked until a payment method i",
+      "note": null
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "path": "create-draft",
+      "route": "/demo",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/01-demo-gate-1440.png",
+      "expect": "the demo gate answers /demo with a PIN field",
+      "ok": true,
+      "sha256": {
+        "sha256": "d54d48f75d1ab25cee3aac6d4469b30d049efa0dda6327f2c47e3b79bd4e925a",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 2,
+      "path": "create-draft",
+      "route": "/login",
+      "action": "click",
+      "values": {
+        "pin": "<DEMO_PIN>"
+      },
+      "shot": "docs/qa-demo-flow/create-draft/02-demo-unlocked-1440.png",
+      "expect": "the PIN unlocks /login's three demo role buttons",
+      "ok": true,
+      "sha256": {
+        "sha256": "98ee7a2074b8aa79467c3c01cfd04ab9d4d2c7a8a1e6b92978c80afefa059c88",
+        "width": 1440,
+        "height": 1099
+      },
+      "w": 1440,
+      "h": 1099
+    },
+    {
+      "step": 3,
+      "path": "create-draft",
+      "route": "/assessment/instances/assessment-instance-avery-rowan",
+      "action": "click",
+      "values": {
+        "role": "initiator"
+      },
+      "shot": "docs/qa-demo-flow/create-draft/03-signed-in-initiator-1440.png",
+      "expect": "the \"initiator\" role button signs this browser in",
+      "ok": true,
+      "sha256": {
+        "sha256": "d27ff1cc19e5cb5d2a0770c576a7076880f9ccc989c2481f4c2baf795c78b7b2",
+        "width": 1440,
+        "height": 2945
+      },
+      "w": 1440,
+      "h": 2945
+    },
+    {
+      "step": 4,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/04-signed-in-stage-1-1440.png",
+      "expect": "the draft walk starts signed in, on stage 1",
+      "ok": true,
+      "sha256": {
+        "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 5,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/05-stage-1-details-1440.png",
+      "expect": "stage 1 renders its seven fields and the five-cell rail reads Stage 1 of 5",
+      "ok": true,
+      "sha256": {
+        "sha256": "5b19b97e8985ae4db7260b48ccb421ed515e5099b0a32ba77b6e04ed9c1372de",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 6,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create",
+      "action": "fill",
+      "values": {
+        "title": "Demo walk — draft",
+        "initiatorFirst": "Riley",
+        "initiatorLast": "Nolan",
+        "counterpartyFirst": "Alex",
+        "counterpartyLast": "Moreau",
+        "email": "alex.moreau@demo.alignsynch.test",
+        "description": "A demo walk of the create flow, kept as a draft."
+      },
+      "shot": "docs/qa-demo-flow/create-draft/06-typed-the-details-1440.png",
+      "expect": "every field holds what was typed",
+      "ok": true,
+      "sha256": {
+        "sha256": "f4125b3c5125a31ce145794cde6e2835c4e2e0a4867534540c88900105825fb2",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 7,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/07-stage-2-mode-1440.png",
+      "expect": "Continue goes to stage 2 with both choice groups drawn",
+      "ok": true,
+      "sha256": {
+        "sha256": "f912297ca4c74172bbd7dbab84591c793f5fb3f59aae7b0a2a1a2475374af5d0",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 8,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/mode",
+      "action": "click",
+      "values": {
+        "mode": "basic",
+        "alignmentSetting": "soft"
+      },
+      "shot": "docs/qa-demo-flow/create-draft/08-chose-mode-and-setting-1440.png",
+      "expect": "the Mode and the Setting are both selected",
+      "ok": true,
+      "sha256": {
+        "sha256": "28f0da2d16791affed5dde92c6a7507cc1333a8d5e96363b0527f1a07bd45cf9",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 9,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/aspects",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/09-stage-3-aspects-1440.png",
+      "expect": "stage 3 lists the template's Aspects",
+      "ok": true,
+      "sha256": {
+        "sha256": "da69b2178dcb6a849e7ab1695e06df9e38d4d4966fe3e0b117db5a8073271989",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 10,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/10-stage-4-account-1440.png",
+      "expect": "stage 4 is the Account stage",
+      "ok": true,
+      "sha256": {
+        "sha256": "c42f6051b987284eac9472da97507ae4382b50c345d75aaacbc2a84d6b44f3a6",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 11,
+      "path": "create-draft",
+      "route": "/templates/relationship/relationship-basics/create/commit",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/11-draft-account-confirmed-1440.png",
+      "expect": "stage 4 draws the confirmation for the signed-in creator, not the account form",
+      "ok": true,
+      "sha256": {
+        "sha256": "66210f0a2a76b2e76d6865a8fef9049b6964ebcfc1a22872788bbc8016bb2e13",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 12,
+      "path": "create-draft",
+      "route": "/dashboard/relationships",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/12-draft-listed-1440.png",
+      "expect": "Continue as Draft lands on /dashboard/relationships with the draft listed by its own title",
+      "ok": true,
+      "sha256": {
+        "sha256": "8c38877f102b04c9e36d9814980f9ea8aecdfec9d8d43ab60f8ade905fd1c206",
+        "width": 1440,
+        "height": 900
+      },
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "step": 13,
+      "path": "create-draft",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "click",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/13-draft-reopened-1440.png",
+      "expect": "the draft reopens in the editor",
+      "ok": false,
+      "sha256": {
+        "sha256": "2356bfa50f31e2aeaaf8c850c71831b2f82c75279e35414d38c6c1e115042198",
+        "width": 1440,
+        "height": 1318
+      },
+      "w": 1440,
+      "h": 1318,
+      "actual": "/dashboard/relationships/<instance> · WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support Logout Version 1.17.1 Settings A Recent Messages No messages Conversations will appear here. Notifications No notifications You're all caught up! We'll notify you when something new happens. Relationship Basics Five Asp"
+    },
+    {
+      "step": 14,
+      "path": "create-draft",
+      "route": "/dashboard/relationships/<instance>",
+      "action": "assert",
+      "values": {},
+      "shot": "docs/qa-demo-flow/create-draft/14-draft-own-title-1440.png",
+      "expect": "the relationship detail heads the draft with the title the creator gave it",
+      "ok": false,
+      "sha256": {
+        "sha256": "2356bfa50f31e2aeaaf8c850c71831b2f82c75279e35414d38c6c1e115042198",
+        "width": 1440,
+        "height": 1318
+      },
+      "w": 1440,
+      "h": 1318,
+      "actual": "the page reads \"WORKSPACE My Relationships My Assessments Templates SUPPORT How It Works Support\" without \"Demo walk — draft\""
+    }
+  ],
+  "seed": {
+    "attempted": false
+  },
+  "summary": {
+    "paths": 1,
+    "reached": 0,
+    "steps": 14,
+    "findings": 2
+  },
+  "cleanup": {
+    "created": {
+      "records": 1,
+      "relationships": 1,
+      "accounts": 0
+    },
+    "before": {
+      "record": 33,
+      "relationship": 4,
+      "session": 4,
+      "party": 8,
+      "demo_account": 3
+    },
+    "after": {
+      "record": 33,
+      "relationship": 4,
+      "session": 4,
+      "party": 8,
+      "demo_account": 3
+    },
+    "leftover": {
+      "records": 0,
+      "relationships": 0,
+      "sessions": 0
+    },
+    "unchanged": true
+  }
+}

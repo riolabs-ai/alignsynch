@@ -50,6 +50,11 @@
       "id": "review-relationship-lifecycle-v1",
       "release": "1.7.0",
       "lookFor": "The original six stages from template choice to alignment — read the count against the ten the model defines now."
+    },
+    {
+      "id": "review-brand-icons-963",
+      "release": "1.17.0",
+      "lookFor": "The icon set, as pixels. Top to bottom: the measured ink table (both brands, before and after), then each brand's app mark at 16/32/48/180/192/512 px with before on the left and after on the right, then the maskable 512 inside the crop circle the OS may apply. Check three things: the book fills the tile instead of floating in it, the corner reads like the app's 5 px rather than a 20 % blob, and the monogram keeps its own aspect — fill is scale, never a stretch. The bottom of the page carries the two gate transcripts that show a retyped radius failing by name."
     }
   ]
 }

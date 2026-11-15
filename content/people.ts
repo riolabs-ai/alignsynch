@@ -39,7 +39,7 @@
  * a face needs. There is no key to validate and no file to exist, so E24 no longer has an
  * avatar rule — a drawn avatar cannot address the wrong file because it addresses none.
  *
- * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` for WU-5 / WU-3 / WU-4 / WU-6,
+ * Numbering: E20–E23 are reserved by `docs/operations/history/P2-INVENTORY.md` for WU-5 / WU-3 / WU-4 / WU-6,
  * so the people and leaderboard joins continue the set as **E24**. Every object is
  * `.strict()` like the rest of the model: an unknown key is a drift, not a carried field.
  */

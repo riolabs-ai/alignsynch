@@ -352,4 +352,36 @@ describe("rendersColumn", () => {
   it("is false for a page whose imports do not exist in the set", () => {
     assert.equal(rendersColumn(`<Thing />`, ["components/thing.tsx"], new Map()), false);
   });
+
+  it("follows two hops — the create flow's stages hand the column to the one shell (#979 B)", () => {
+    const files = new Map([
+      [
+        "components/create-relationship.tsx",
+        {
+          path: "components/create-relationship.tsx",
+          // The import is what the hop follows: a render with no import is a file whose
+          // dependency graph says nothing, and the walk has nothing to resolve.
+          source: `import { RelationshipFlowShell } from "./relationship-flow-shell";\n<RelationshipFlowShell />`,
+        },
+      ],
+      [
+        "components/relationship-flow-shell.tsx",
+        { path: "components/relationship-flow-shell.tsx", source: `<StageColumn />` },
+      ],
+    ]);
+    const imports = ["components/create-relationship.tsx"];
+    // One hop: the column is not in `create-relationship.tsx` any more.
+    assert.equal(rendersColumn(`<CreateRelationship />`, imports, files, 1), false);
+    // Two: the shell it renders draws it.
+    assert.equal(rendersColumn(`<CreateRelationship />`, imports, files), true);
+  });
+
+  it("stops at two hops, so a page that draws no column still fails", () => {
+    const files = new Map([
+      ["a.tsx", { path: "a.tsx", source: `import { B } from "./b";` }],
+      ["b.tsx", { path: "b.tsx", source: `import { C } from "./c";` }],
+      ["c.tsx", { path: "c.tsx", source: `<StageColumn />` }],
+    ]);
+    assert.equal(rendersColumn(`<A />`, ["a.tsx"], files), false);
+  });
 });

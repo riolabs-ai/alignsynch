@@ -94,17 +94,31 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const ROUTE_GROUP = /^\([^)]*\)$/;
 
 /**
+ * A parallel-route slot (`@flow`) and an interception marker (`(.)`, `(..)`, `(...)`).
+ *
+ * Neither adds an address. A slot is a hole in its layout, and an intercepted page renders in that
+ * hole while the browser stays on the address being *intercepted* — the target page already serves
+ * it. `app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/page.tsx`
+ * is `/templates/relationship/[slug]/create` for QA purposes, because that is what is in the URL,
+ * and it is that page's row in the manifest which vouches for it.
+ */
+const SLOT = /^@/;
+const INTERCEPTION = /^\(\.{1,3}\)/;
+
+/**
  * The route a `page.tsx` serves, or `null` for any other file.
  *
  * `app/(marketing)/page.tsx` is `/` — the group is stripped, not substituted. A dynamic segment is
  * kept as written (`/quiz/[id]/play`), because the route manifest spells it that way and a made-up
- * id would be a link the tree cannot vouch for.
+ * id would be a link the tree cannot vouch for. A page inside a slot, or one that intercepts another
+ * route, serves no address of its own (#979 B) and is `null` here rather than a route nobody links.
  */
 export function routeForPagePath(path: string): string | null {
   if (!path.startsWith("app/") || !path.endsWith("/page.tsx")) return null;
   const segments = path.slice("app/".length).split("/");
   const page = segments.pop();
   if (page !== "page.tsx") return null;
+  if (segments.some((segment) => SLOT.test(segment) || INTERCEPTION.test(segment))) return null;
   const kept = segments.filter((segment) => !ROUTE_GROUP.test(segment));
   return `/${kept.join("/")}`;
 }

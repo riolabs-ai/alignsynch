@@ -21,9 +21,17 @@
  * **Nothing is invented.** There is no price, no discount, no extension offer and no claim about
  * what the provider will charge: the facts are when the trial ends and where the plan lives, and
  * the one behaviour sentence is the product's own rule — a lapsed membership is read-only for both
- * parties. Transactional, so the band refuses an unsubscribe line on it.
+ * parties. Transactional, so the band refuses an unsubscribe line on it. The opening line is this
+ * template's section in `content/email-bodies.md`.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const TRIAL_ENDING_BODY = {
+  id: "trial-ending",
+  placeholders: ["recipient", "trial_ends_on", "link"],
+} as const satisfies EmailBodySpec;
 
 /** The spec's subject, as a constant: its "2 days" is wording, not a computation. */
 export const TRIAL_ENDING_SUBJECT = "Your trial ends in 2 days";
@@ -47,10 +55,11 @@ export function trialEndingDocument(facts: TrialEndingFacts): EmailDocument {
     subject: TRIAL_ENDING_SUBJECT,
     preheader: `Your trial ends on ${calendarDate(facts.trialEndsAt)}.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what the trial covers, in the product's own voice.`,
-      },
+      ...bodyBlocks(TRIAL_ENDING_BODY, {
+        recipient: facts.recipient,
+        trial_ends_on: calendarDate(facts.trialEndsAt),
+        link: facts.link,
+      }),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, the trial on your account ends on ${calendarDate(facts.trialEndsAt)}.`,

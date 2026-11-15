@@ -4,7 +4,7 @@
  * The audit (#795 F3) found one concept — "a small label about a record" — drawn by three
  * primitives at three radii: `rounded-md` `CHIP` in the console library card, `rounded-full`
  * `CHIP`/`CHIP_TEMPLATE` on the shelves, and shadcn's `Badge` on the relationship detail. The
- * approved artifact (`docs/mockups/one-card-one-detail-v2.html`, §1) decides it: **one
+ * approved artifact (`docs/reference/mockups/one-card-one-detail-v2.html`, §1) decides it: **one
  * primitive, `rounded-full`, four tones**, and the tone is the variant while the radius never is.
  *
  * Four claims, each one a test:
@@ -260,7 +260,10 @@ describe("one primitive, one geometry", () => {
      * on the rendered one — the primitive may add the base string's own furniture, it may never
      * repaint a tone's ink, fill, border or type step.
      */
-    const artifact = readFileSync(join(ROOT, "docs/mockups/one-card-one-detail-v2.html"), "utf8");
+    const artifact = readFileSync(
+      join(ROOT, "docs/reference/mockups/one-card-one-detail-v2.html"),
+      "utf8",
+    );
     const drawn = [
       ...artifact.matchAll(/<span class="(inline-flex items-center rounded-full[^"]*)"/g),
     ]

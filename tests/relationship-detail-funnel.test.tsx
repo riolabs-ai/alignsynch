@@ -48,7 +48,7 @@ const GATE_HEADING = sectionOf(dashboardRelationshipDetailPageCopy, "publish-gat
 
 function viewOf(input: {
   status: MemberRelationshipView["status"];
-  hasPaymentMethod: boolean;
+  hasMembership: boolean;
   isInitiator?: boolean;
   view?: MemberRelationshipView["view"];
 }): MemberRelationshipView {
@@ -76,7 +76,7 @@ function viewOf(input: {
     // #706 — the two write flags the read derives, verbatim: `isInitiator && <status question>`.
     aspectsEditable: isInitiator && draft,
     publishable: isInitiator && draft,
-    hasPaymentMethod: input.hasPaymentMethod,
+    hasMembership: input.hasMembership,
     completion: null,
     offersRepublish: false,
     trialWithoutLiveInvite: false,
@@ -122,7 +122,7 @@ function html(view: MemberRelationshipView, editTrigger: ReactNode = EDIT_TRIGGE
 
 describe("#873 · the initiator's draft funnel", () => {
   it("step 1 — the edit door is drawn, and drawn before the publish band", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
     // #923 — the rail carries the trigger, not the form: the panel is not in the document.
     expect(rendered).toContain('data-relationship-edit-open="true"');
     expect(rendered).toContain(`>${EDIT_OPEN}</button>`);
@@ -136,36 +136,36 @@ describe("#873 · the initiator's draft funnel", () => {
   it("step 1b — a relationship the page cannot edit renders no Edit control at all", () => {
     // #923 keeps `editState === undefined || closed` meaning *no control*: a disabled button
     // would claim a permission the server would refuse, and that is not the same screen.
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }), null);
+    const rendered = html(viewOf({ status: "draft", hasMembership: true }), null);
     expect(rendered).not.toContain('data-relationship-edit-open="true"');
     expect(rendered).not.toContain('data-edit-panel="stand-in"');
   });
 
   it("step 2 — the Aspect editor is drawn on a draft, with its add control", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
     expect(rendered).toContain('data-relationship-aspects="true"');
     expect(rendered).toContain('data-aspect-list="true"');
     expect(rendered).toContain('data-aspect-add="true"');
   });
 
   it("step 3 — with no method on file, the plan door is drawn and the publish form is not", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: false }));
-    expect(rendered).toContain('data-publish-gate="method-required"');
+    const rendered = html(viewOf({ status: "draft", hasMembership: false }));
+    expect(rendered).toContain('data-publish-gate="membership-required"');
     expect(rendered).toContain(GATE_HEADING);
     expect(rendered).toContain(`href="${PRICING_PATH}"`);
     expect(rendered).not.toContain(PUBLISH_SUBMIT);
   });
 
   it("step 4 — with a method on file, the publish form and its button are drawn", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
     expect(rendered).toContain(PUBLISH_SUBMIT);
     expect(rendered).toContain('id="publish-name"');
     expect(rendered).toContain('id="publish-email"');
-    expect(rendered).not.toContain('data-publish-gate="method-required"');
+    expect(rendered).not.toContain('data-publish-gate="membership-required"');
   });
 
   it("says nothing about a read-only seat to the person who owns the writes", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
     expect(rendered).not.toContain('data-relationship-read-only="counterparty"');
     expect(rendered).not.toContain('data-relationship-read-only-open="relationships"');
   });
@@ -174,7 +174,7 @@ describe("#873 · the initiator's draft funnel", () => {
 describe("#873 · the counterparty's read-only screen has a way forward", () => {
   it("carries a real door to My Relationships, in the page's own words", () => {
     const rendered = html(
-      viewOf({ status: "published", hasPaymentMethod: false, isInitiator: false }),
+      viewOf({ status: "published", hasMembership: false, isInitiator: false }),
     );
     expect(rendered).toContain('data-relationship-read-only="counterparty"');
     expect(rendered).toContain('data-relationship-read-only-open="relationships"');
@@ -186,12 +186,12 @@ describe("#873 · the counterparty's read-only screen has a way forward", () => 
 
   it("stays read-only: no editor, no publish form, no plan gate", () => {
     const rendered = html(
-      viewOf({ status: "published", hasPaymentMethod: false, isInitiator: false }),
+      viewOf({ status: "published", hasMembership: false, isInitiator: false }),
     );
     expect(rendered).not.toContain('data-aspect-list="true"');
     expect(rendered).not.toContain(PUBLISH_SUBMIT);
     expect(rendered).not.toContain('id="publish-name"');
-    expect(rendered).not.toContain('data-publish-gate="method-required"');
+    expect(rendered).not.toContain('data-publish-gate="membership-required"');
   });
 
   it("draws the door on an unanswered draft-shaped read too — never a notice with no exit", () => {
@@ -200,7 +200,7 @@ describe("#873 · the counterparty's read-only screen has a way forward", () => 
     const rendered = html(
       viewOf({
         status: "published",
-        hasPaymentMethod: true,
+        hasMembership: true,
         isInitiator: false,
         view: "invite-live",
       }),

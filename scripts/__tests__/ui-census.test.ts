@@ -530,6 +530,11 @@ describe("the real tree", () => {
       const source = TREE.find((entry) => entry.path === page)?.source ?? "";
       assert.equal(/requireQuizProduct\s*\(/.test(source), false, page);
     }
+    // A mounting is not a dashboard surface: the flow's dialog renders in a slot and intercepts
+    // the stage routes, so its closure is the stage's own business (#979 B).
+    for (const page of pages) {
+      assert.equal(/\/@|\/\(\.{1,3}\)/.test(page), false, page);
+    }
   });
 
   it("scopes the walk by import closure, not by directory", () => {

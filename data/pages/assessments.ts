@@ -17,8 +17,8 @@
  * `card`, `paid`, `invite`, `state` and `marker` bands below, and it is the projection every
  * relationship card in this tree prints — moving this surface did not change one sentence a reader
  * sees on a card (#795 F2/F4). The bands this surface adds are the shell's: `controls` (the
- * toolbar), `tabs` (the three stored states plus `all`), `links` (the row's destinations) and the
- * two empty states.
+ * toolbar), `tabs` (the four stored states plus `all`), `links` (the row's destinations) and the
+ * two empty states. `stage` holds the one cover word the ladder does not own — a draft's (#975).
  *
  * **Every label here is a word a reader sees; none of them is a figure.** A count comes from the
  * rows the read returned, never from a fixture — the one rule the old fixture stated and this one
@@ -68,14 +68,21 @@ export const assessmentsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The tabs are the **three stored states** (`MyInstanceState`), and nothing else: a session
-       * is either waiting on this reader, waiting on the other party, or complete and accepted —
-       * which is the state that opens the Gap. `all` is the default, so a row is never hidden
-       * behind a tab nobody clicked.
+       * The tabs are the **four stored states** (`MyInstanceState`), and nothing else: a
+       * relationship the creator has not sent, a session waiting on this reader, one waiting on
+       * the other party, or one complete and accepted — which is the state that opens the Gap.
+       * `all` is the default, so a row is never hidden behind a tab nobody clicked.
+       *
+       * `Drafts` is the tab's word and `Draft` is the badge's — `data/pages` keeps both, the way
+       * `/dashboard/relationships` does (#975): one is a filter, the other is a state. A draft has
+       * a tab of its own because a row whose sentence changed is still a row a reader has to be
+       * able to narrow to; leaving it reachable only under `all` would be the label fixed and the
+       * row still lost.
        */
       id: "tabs",
       items: [
         { id: "all", label: "All assessments" },
+        { id: "draft", label: "Drafts" },
         { id: "yours-to-answer", label: "Needs your answers" },
         { id: "awaiting-other", label: "Waiting on the other party" },
         { id: "complete", label: "Gap ready" },
@@ -144,8 +151,27 @@ export const assessmentsPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * The cover word for a relationship that is **not on the ladder yet** (#975).
+       *
+       * The three stage words this card draws for a sent relationship are `content/stages.ts`'s —
+       * the glossary's own four names, and this page does not get a second copy of them. A draft
+       * has no rung: the ladder's first rung *is* "the invitation went out and has not been
+       * claimed", so the cover needs a word the ladder does not own, and it lives here with the
+       * rest of this surface's copy.
+       */
+      id: "stage",
+      items: [{ id: "draft", label: "Draft" }],
+    },
+    {
       id: "state",
       items: [
+        /**
+         * #975 — a never-sent relationship. The words are the detail page's own ("Not sent yet —
+         * nothing has been invited or charged"), so the two surfaces agree about one fact instead
+         * of one of them claiming an invitation the other says was never sent.
+         */
+        { id: "draft", label: "Not sent yet — nothing has been invited or charged" },
         { id: "yours-to-answer", label: "Yours to answer" },
         { id: "awaiting-other", label: "Waiting for {name} to answer." },
         { id: "complete", label: "You have both accepted — the Gap is open" },

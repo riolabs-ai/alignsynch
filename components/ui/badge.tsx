@@ -43,7 +43,7 @@ const badgeVariants = cva(
          *
          * The geometry is the primitive's now and it is `rounded-full`, the radius three of the
          * four already carried. **The tone is the variant; the radius is never a variant.** The
-         * four are the approved artifact's (`docs/mockups/one-card-one-detail-v2.html` §1), and
+         * four are the approved artifact's (`docs/reference/mockups/one-card-one-detail-v2.html` §1), and
          * they are a closed set: `Chip` accepts these four and nothing else, so the filled
          * `Badge` variants below cannot be handed to a label by accident.
          *

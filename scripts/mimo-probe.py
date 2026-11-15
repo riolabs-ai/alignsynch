@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """mimo-probe.py — reproducible Xiaomi MiMo API probes (stdlib only, no pip).
 
-Feeds docs/MIMO-GUIDE.md. Every probe prints one ``evidence:`` line per measured
+Feeds docs/guides/mimo-guide.md. Every probe prints one ``evidence:`` line per measured
 fact; the guide may only claim what a doc URL or an ``evidence:`` line supports.
 
 Usage:

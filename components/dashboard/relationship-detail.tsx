@@ -9,7 +9,7 @@
  * **One shell with the template page, two declared axes.** `components/assessment-flow/
  * record-detail-shell.tsx` draws the identity band, the facts card, the back link and the section
  * order; this file supplies only what a *relationship* says — exactly as the template page supplies
- * only what a template says. The artifact (`docs/mockups/one-card-one-detail-v2.html` §5, approved
+ * only what a template says. The artifact (`docs/reference/mockups/one-card-one-detail-v2.html` §5, approved
  * on option A) allows two differences and no others: the cover slot (a card difference, drawn by
  * `relationship-cards.tsx`) and the working panels, which exist here and not there. Before #795 this
  * screen was a stack of shadcn cards with a page `<h1>` above a `CardTitle` — two headings, no back
@@ -52,6 +52,7 @@
  * posts at it gets `not-yours` — #533's "enforce in the server action, not by hiding a button".
  */
 import { AspectList, type AspectSaveResult } from "@/components/assessment-flow/aspect-list";
+import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
 import {
   DetailBand,
   DetailFacts,
@@ -68,7 +69,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { aspectStatesOf, buildTemplateRecord } from "@/lib/admin/template-draft";
-import { formatCurrency, formatDate } from "@/content/core";
+import { formatDate } from "@/content/core";
 import {
   refusalSentence,
   type AspectsOutcome,
@@ -210,6 +211,15 @@ export function RelationshipDetail({
    * when the relationship has no session — with no session there is no invitation for stage 5 to
    * shape, so the band draws the copy that says so instead of a link that would bounce the reader
    * back to stage 1.
+   *
+   * **#975 D10 (`t_90026133`) — the address is entered by a flow entry, not a document load.** This
+   * page declares the create flow's `@flow` slot (`app/(mainlayout)/dashboard/relationships/
+   * layout.tsx`), so a *soft* navigation to this address is intercepted and stage 5 renders as a
+   * dialog over this relationship. A bare `<a>` is a document load: the interception never runs,
+   * the reader loses the page they were reading, and the stage draws as a page whose `Cancel`
+   * leaves to the template library. Every door below is therefore a `FlowEntryLink` — the same one
+   * the list's card already used — which also remembers this page as the flow's origin, so the
+   * dialog's close returns here instead of to the library.
    */
   const payHref =
     relationship.sessionRecordId === null
@@ -222,12 +232,13 @@ export function RelationshipDetail({
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
   /**
-   * #690 — **the hard gate at publish.** A relationship may be published from its status, but not
-   * without a payment method on file: the plans on stage 4 are the soft prompt and this is the half
-   * that is not optional. When the method is missing the publish band is not drawn at all — no
-   * disabled button, no form whose submit would be refused — and a band that says what to do is.
+   * #690 / #1010 R2 — **the hard gate at publish.** A relationship may be published from its
+   * status, but not without a **live membership**: the plan on stage 4 is the soft prompt and this
+   * is the half that is not optional. When the membership is missing the publish band is not drawn
+   * at all — no disabled button, no form whose submit would be refused — and a band that says what
+   * to do is. A card is not a separate act any more: buying the membership is what puts one on file.
    */
-  const methodMissing = publishableNow && !relationship.hasPaymentMethod;
+  const membershipMissing = publishableNow && !relationship.hasMembership;
   const offersRepublish = relationship.offersRepublish;
   const trialAlone = relationship.trialWithoutLiveInvite;
 
@@ -343,7 +354,7 @@ export function RelationshipDetail({
    * #739 — **complete and open the Gap.** One click: the fee is taken against the method on file
    * and both parties can read the report.
    *
-   * `payment-method-required` is not a dead end and not an error: it carries the capture's url, so
+   * `payment-membership-required` is not a dead end and not an error: it carries the capture's url, so
    * the screen prints the sentence and a working link rather than a button the person cannot get
    * past. A decline is a sentence too — the retry ladder is already running on the server.
    */
@@ -398,13 +409,44 @@ export function RelationshipDetail({
   const type = relationshipTypeOf(relationship.template.slug);
   const groupLabel =
     type === undefined ? "" : itemLabel(identityCopy, REALM_GROUP[type.realm].toLowerCase());
-  const rolesLine =
-    type === undefined
-      ? undefined
-      : fillLabel(itemLabel(identityCopy, "roles"), {
-          initiator: type.roles.initiator,
-          counterparty: type.roles.counterparty,
-        });
+  /**
+   * #975 D9 — **the heading is the relationship's, not its template's.**
+   *
+   * `relationship.title` is the record the relationship was configured from, so every relationship
+   * made from one template is headed by that template's name: five rows, one `<h1>`, and nothing on
+   * the page says which of them the reader opened. `relationshipTitle` is the title the creator's
+   * stage 1 wrote (the flow derives `Avery B – Rowan` from the two seats, `lib/flow/names.ts`), and
+   * it is the same field the list and the card already print (`row.relationshipTitle ?? row.title`)
+   * — the detail page was the one surface that ignored it. The fallback keeps a pre-#841 row, whose
+   * session copy carries no title of its own, headed by the template rather than by nothing.
+   */
+  const heading = relationship.relationshipTitle ?? relationship.title;
+  /**
+   * #975 D9 — **the two seats, named, under the heading.**
+   *
+   * A relationship whose creator kept stage 1's default title reads the template's name, and two of
+   * those are indistinguishable however the heading is read — so the band's roles line names who
+   * holds each seat, in the artifact's own shape (`Daniel — payer`, §11 of
+   * `prototype-relationship-lifecycle-v9`). The nouns stay the catalogue type's where the slug names
+   * one (`Spouse A / Spouse B`), and fall back to the product's two words otherwise, which is the
+   * state every relationship made from a non-catalogue template is in.
+   *
+   * The Counterparty's name is the **seat's** first: `counterpartySeatName` is the account in the
+   * seat, `counterpartyName` is what the initiator typed on the invitation. A draft names nobody
+   * yet, which is why the noun is the fallback rather than an empty half.
+   */
+  const seatLabel = (name: string | null | undefined, noun: string): string =>
+    name === null || name === undefined || name === "" ? noun : `${name} — ${noun}`;
+  const rolesLine = fillLabel(itemLabel(identityCopy, "roles"), {
+    initiator: seatLabel(
+      relationship.initiatorName,
+      type?.roles.initiator ?? pageItemOf(copy, "role-initiator").label,
+    ),
+    counterparty: seatLabel(
+      relationship.counterpartyName ?? relationship.counterpartySeatName,
+      type?.roles.counterparty ?? pageItemOf(copy, "role-counterparty").label,
+    ),
+  });
 
   /* #795 — the facts card. The four the artifact draws (§5), in the same cell anatomy the template
      uses for its figures. */
@@ -445,7 +487,7 @@ export function RelationshipDetail({
         <DetailBand
           scope="relationship"
           type={type}
-          title={relationship.title}
+          title={heading}
           summary={relationship.summary}
           groupLabel={groupLabel}
           rolesLine={rolesLine}
@@ -524,22 +566,30 @@ export function RelationshipDetail({
               )}
             </DetailPanel>
           ) : null}
-          {methodMissing ? (
+          {membershipMissing ? (
             /*
-             * #690 — the hard gate. Publishing needs a method on file, and the create flow only ever
-             * *asked* for one: a person who skipped the plans on stage 4 lands here, with no publish
-             * button and one door to the page that sells a tier.
+             * #690 — the hard gate. Publishing needs a live membership, and the create flow only
+             * ever *asked* for a plan: a person who skipped the plans on stage 4 lands here, with no
+             * publish button and one door to the page that sells a tier.
              *
              * #912 — **that door is now the pay modal, not `/pricing`.** `/pricing` sells a
-             * subscription; it does not put a card on file, so the band sent the payer to a page that
-             * could not resolve the thing it refused. The modal is the surface that takes the card,
-             * and a draft that came through the flow has the session and the staged invitation it
-             * needs. A draft with no session cannot open it at all (`payHref === null`), so the
-             * pricing link stays as that case's door rather than being deleted from under it.
+             * subscription but does not open Checkout, so the band sent the payer to a page that
+             * could not resolve the thing it refused. The modal is the surface that takes the card
+             * — the same membership purchase stage 5 makes (#1010 R2) — and a draft that came
+             * through the flow has the session and the staged invitation it needs. A draft with no
+             * session cannot open it at all (`payHref === null`), so the pricing link stays as that
+             * case's door rather than being deleted from under it.
+             *
+             * #958 — **the pair, in the state that has nothing configured.** This is the band a
+             * relationship with no card on file draws, and the owner's rule is that both acts are
+             * decided in the modal: `Publish to Counterparty` *is* stage 5's Send, and
+             * `Invite Members` is the same screen a step earlier. So both are here and both go to
+             * `payHref` — the card draws the same pair to the same address (#913), and a band that
+             * offered only the invite read as if publishing lived somewhere else.
              */
             <DetailPanel
               title={publishGateCopy.heading}
-              hooks={{ "data-publish-gate": "method-required" }}
+              hooks={{ "data-publish-gate": "membership-required" }}
             >
               <p className={DETAIL_MUTED}>{sectionBody(publishGateCopy)}</p>
               {payHref === null ? (
@@ -551,19 +601,28 @@ export function RelationshipDetail({
                   {itemLabel(publishGateCopy, "plans")}
                 </a>
               ) : (
-                <a
-                  className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
-                  href={payHref}
-                  data-publish-gate-link="pay-modal"
-                  data-invite-members="true"
-                >
-                  {itemLabel(publishGateCopy, "invite-members")}
-                </a>
+                <div className="flex flex-wrap items-center gap-3">
+                  <FlowEntryLink
+                    className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                    href={payHref}
+                    data-publish-gate-link="pay-modal"
+                    data-invite-members="true"
+                  >
+                    {itemLabel(publishGateCopy, "invite-members")}
+                  </FlowEntryLink>
+                  <FlowEntryLink
+                    className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
+                    href={payHref}
+                    data-publish-to-counterparty="true"
+                  >
+                    {itemLabel(publishGateCopy, "publish-to-counterparty")}
+                  </FlowEntryLink>
+                </div>
               )}
             </DetailPanel>
           ) : null}
 
-          {publishableNow && relationship.hasPaymentMethod ? (
+          {publishableNow && relationship.hasMembership ? (
             <DetailPanel title={publishCopy.heading}>
               <p className={DETAIL_MUTED}>{sectionBody(publishCopy)}</p>
               {/*
@@ -571,19 +630,20 @@ export function RelationshipDetail({
                 publish panel *is* "Publish to Counterparty"; this is the other half of the pair the
                 card asks for, and it is the pay modal rather than a capture. It sits above the
                 fields because the money decision comes before the counterparty's address, and it is
-                a plain link: the modal owns the card, this screen owns nothing payment-shaped.
+                a flow entry — the modal owns the card, this screen owns nothing payment-shaped, and
+                opening the modal must not navigate this page away (#975 D10, `t_90026133`).
 
                 A relationship with no session has no invitation to shape, so the control is not
                 drawn here — `payHref` is the same fact the list's card reads.
               */}
               {payHref === null ? null : (
-                <a
+                <FlowEntryLink
                   href={payHref}
                   data-invite-members="true"
                   className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 >
                   {itemLabel(publishCopy, "invite-members")}
-                </a>
+                </FlowEntryLink>
               )}
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
@@ -695,153 +755,65 @@ export function RelationshipDetail({
             </DetailPanel>
           ) : null}
 
-          {relationship.isInitiator &&
-          gate !== null &&
-          (!relationship.closed || gate.phase === "charged") ? (
+          {relationship.isInitiator && gate !== null && !relationship.closed ? (
             /*
-             * #739 — the payer's two acts, and the only place either is reachable.
+             * #739 — **the completion band, and since #1010 there is nothing to pay on it.**
              *
-             * Initiator only: `isInitiator` is the payer (`initiator_user_id`), and the server action
-             * re-asks under a row lock (`not-the-payer`), so this band is a courtesy and not the rule.
-             * Nothing is drawn for a relationship with no session (`completion === null`) or a closed
-             * one — both would be an affordance the transaction refuses. The exception is a closed
-             * relationship whose fee was taken: the payer keeps the receipt sentence ("the $8.95 was
-             * charged on …"), because the alternative is a screen that says nothing at all about money
-             * that moved.
+             * The membership bought at stage 5 covers this relationship, so sealing it is one click
+             * on a free act: the band draws the seal's state and the button, and nothing about
+             * money — no amount, no deadline, no method, and no door to a card. `gate` is the read's
+             * own answer (`readCompletionGate()`), and the write re-reads the row under a lock, so
+             * this is a courtesy and not the rule.
              *
-             * The four outcomes that are not success each draw a sentence: `payment-method-required`
-             * carries a url the person can click, a decline names the ladder that is already running,
-             * `already-charged` says the fee landed, and `not-the-payer` says whose fee it is.
+             * Initiator only: completion belongs to the account that owns the relationship, and the
+             * server action re-asks under the row lock (`not-the-payer`).
              */
             <DetailPanel
               title={completionCopy.heading}
-              hooks={{
-                "data-completion-gate": gate.phase,
-                "data-completion-sealed": gate.sealed ? "true" : "false",
-              }}
+              hooks={{ "data-completion-gate": gate.sealed ? "sealed" : "open" }}
             >
               <p className={DETAIL_MUTED}>{sectionBody(completionCopy)}</p>
               <div className="space-y-3">
-                <p
-                  data-completion-amount={gate.amountCents}
-                  className="text-sm text-muted-foreground"
-                >
-                  {fillLabel(itemLabel(completionCopy, "amount"), {
-                    amount: formatCurrency(gate.amountCents),
-                  })}
-                </p>
-                {gate.deadlineAt === null ? null : (
-                  <p className="text-sm text-muted-foreground">
-                    {fillLabel(itemLabel(completionCopy, "deadline"), {
-                      instant: formatDate(gate.deadlineAt),
-                    })}
-                  </p>
-                )}
-                {gate.phase === "charged" ? (
-                  <p
-                    data-completion-charged={gate.chargedAt ?? "true"}
-                    className="text-sm font-medium"
-                  >
-                    {fillLabel(itemLabel(completionCopy, "charged"), {
-                      amount: formatCurrency(gate.amountCents),
-                      instant:
-                        gate.chargedAt === null
-                          ? pageItemOf(copy, "none").label
-                          : formatDate(gate.chargedAt),
-                    })}
-                  </p>
-                ) : gate.phase === "expired" ? (
-                  <p data-completion-expired="true" className="text-sm">
-                    {itemLabel(completionCopy, "expired")}
+                {gate.sealed ? (
+                  <p data-completion-sealed="true" className="text-sm font-medium">
+                    {itemLabel(completionCopy, "sealed")}
                   </p>
                 ) : (
-                  <>
-                    <p
-                      data-completion-method={gate.hasMethod ? "on-file" : "missing"}
-                      className="text-sm"
+                  <p data-completion-seal="open" className="text-sm text-muted-foreground">
+                    {itemLabel(completionCopy, "not-sealed")}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  {gate.sealed ? (
+                    <Button
+                      type="button"
+                      onClick={complete}
+                      disabled={pending}
+                      data-complete-relationship="true"
                     >
-                      {gate.hasMethod
-                        ? itemLabel(completionCopy, "method-on-file")
-                        : itemLabel(completionCopy, "method-missing")}
-                    </p>
-                    {gate.sealed ? null : (
-                      <p data-completion-seal="open" className="text-sm text-muted-foreground">
-                        {itemLabel(completionCopy, "not-sealed")}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap items-center gap-3">
-                      {/*
-                        #912 — **the payer's route into the one capture.** #748 made this a button
-                        that opened a dialog on this band; the dialog is deleted, because a card
-                        taken in place is a second way to pay. What is left is a link to the pay
-                        modal, which is the same plan card and the same Stripe frame the dialog drew,
-                        on the surface that owns them.
-
-                        `payHref` is `null` only for a relationship with no session, and this band
-                        cannot render for one (`gate` is `null` without a session), so the null arm
-                        is unreachable here — it is drawn as the honest sentence rather than as a
-                        link to nowhere.
-                      */}
-                      {gate.hasMethod ? null : payHref === null ? (
-                        <p data-capture-unavailable="true" className="text-sm">
-                          {itemLabel(completionCopy, "capture-unavailable")}
-                        </p>
-                      ) : (
-                        <a
-                          href={payHref}
-                          data-capture-method="true"
-                          data-invite-members="true"
-                          className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-                        >
-                          {itemLabel(completionCopy, "capture")}
-                        </a>
-                      )}
-                      {gate.sealed ? (
-                        <Button
-                          type="button"
-                          onClick={complete}
-                          disabled={pending}
-                          data-complete-relationship="true"
-                        >
-                          {pending
-                            ? itemLabel(completionCopy, "completing")
-                            : itemLabel(completionCopy, "complete")}
-                        </Button>
-                      ) : null}
-                    </div>
-                    {completeOutcome?.ok === true ? (
-                      <p
-                        data-completion-done={completeOutcome.status}
-                        className="text-sm font-medium"
-                      >
-                        {fillLabel(itemLabel(completionCopy, "completed"), {
-                          amount: formatCurrency(completeOutcome.amountCents),
-                          status: completeOutcome.status,
-                        })}
-                      </p>
-                    ) : null}
-                    {completeRefusal === null ? null : (
-                      <p
-                        data-completion-refusal={
-                          completeOutcome?.ok === false ? completeOutcome.code : ""
-                        }
-                        className="text-sm"
-                      >
-                        {completeRefusal}
-                      </p>
-                    )}
-                    {completeOutcome?.ok === false && completeOutcome.url !== undefined ? (
-                      <p className="text-sm">
-                        <a
-                          className="text-action underline underline-offset-4"
-                          href={completeOutcome.url}
-                          data-completion-link="capture"
-                        >
-                          {itemLabel(completionCopy, "pay")}
-                        </a>
-                      </p>
-                    ) : null}
-                  </>
+                      {pending
+                        ? itemLabel(completionCopy, "completing")
+                        : itemLabel(completionCopy, "complete")}
+                    </Button>
+                  ) : null}
+                </div>
+                {completeOutcome?.ok === true ? (
+                  <p data-completion-done={completeOutcome.status} className="text-sm font-medium">
+                    {fillLabel(itemLabel(completionCopy, "completed"), {
+                      instant: completeOutcome.completedAt,
+                      status: completeOutcome.status,
+                    })}
+                  </p>
+                ) : null}
+                {completeRefusal === null ? null : (
+                  <p
+                    data-completion-refusal={
+                      completeOutcome?.ok === false ? completeOutcome.code : ""
+                    }
+                    className="text-sm"
+                  >
+                    {completeRefusal}
+                  </p>
                 )}
               </div>
             </DetailPanel>
@@ -915,10 +887,20 @@ export function RelationshipDetail({
             the only place these words live, and the id already exists on this route. */}
         {relationship.isInitiator ? null : (
           <div
-            data-relationship-read-only="counterparty"
+            data-relationship-read-only={relationship.viewerRole}
             className="space-y-2 rounded-md border border-gray-300 bg-gray-50 p-3 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-200"
           >
-            <p>{itemLabel(viewCopy, "counterparty-read-only")}</p>
+            {/* #975 D2 — the sentence is chosen by the **seat**, the same value the chip above
+                prints, so one screen cannot state two roles. The band exists because the controls
+                are gone (`isInitiator` is false); it no longer claims a role from that fact. */}
+            <p>
+              {itemLabel(
+                viewCopy,
+                relationship.viewerRole === "counterparty"
+                  ? "counterparty-read-only"
+                  : "controls-belong-to-starter",
+              )}
+            </p>
             <a
               className="inline-flex h-11 items-center font-medium text-action underline underline-offset-4"
               href={RELATIONSHIPS_PATH}

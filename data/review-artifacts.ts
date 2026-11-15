@@ -192,4 +192,23 @@ export const reviewArtifacts: readonly ReviewArtifact[] = [
     path: "docs/review/artifacts/prototype-comments-v1.html",
     capturedAt: "2026-11-12T00:00:00.000Z",
   },
+  /**
+   * The icon set, captured (#963). A `report`, not a prototype: the deliverable is pixels and the
+   * measured table beside them, because the owner's complaint was that three attempts were signed
+   * off on description. Before/after at 16, 32, 48, 180, 192 and 512 px for both brands, the ink
+   * column measured from the shipped bytes, and the two gate transcripts that prove a retyped
+   * radius turns the build red.
+   *
+   * Written by `scripts/capture-brand-icons.mjs` — the file is a published document, so re-running
+   * the generator after any icon change is the review diff.
+   */
+  {
+    id: "review-brand-icons-963",
+    slug: "report-brand-icons-963",
+    title: "Brand icon set — the fill and the corner, measured before and after (#963)",
+    kind: "report",
+    version: "v1",
+    path: "docs/review/artifacts/report-brand-icons-963.html",
+    capturedAt: "2026-11-13T00:00:00.000Z",
+  },
 ];

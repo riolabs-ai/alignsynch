@@ -7,7 +7,7 @@
  *   assessment-relationship-basics      the template #128 introduced (unchanged)
  *   assessment-business-staff-manager   Relationship Type: Business — Staff / Manager
  *   assessment-personal-parent-child    Relationship Type: Personal — Parent / Child
- *   assessment-blank-template           Relationship Type: blank — the user names it (draft)
+ *   assessment-blank-template           Relationship Type: blank — the user names it (published, #1042)
  *
  *   assessment-instance-avery-rowan     the feature example: Basic Mode on every Aspect
  *   assessment-instance-ruth-sam        two parties who agree on every Aspect — every Gap is 0
@@ -19,9 +19,19 @@
  * templates _________" and lists "Business, Personal, ______" — a category of the
  * template collection, not a property of a record. So the type is named in each
  * template's `title` and `summary`, where a reader and a screen both already look. The
- * third line is blank on purpose: that template is the user's to name, so it ships as a
- * **draft** whose five Aspects are prompts to overwrite, and no instance copies it —
- * nobody has played a template that has not been named yet.
+ * third line is blank on purpose: that template is the user's to name, so its five Aspects
+ * are prompts to overwrite as Stage 3 of the create flow.
+ *
+ * **It is `published` since #1042, and that reverses the fixture's earlier rule.** It used to
+ * be a `draft` no instance could copy, because "nobody has played a template that has not been
+ * named yet". That reasoning was sound while the only way into the flow was choosing a named
+ * template — and it left the product with no answer for the *generic* create action ("Create a
+ * relationship", "Create your first assessment"), which had nowhere to go but `/register`.
+ * #1042 makes every create-intent action start Stage 1, and the generic one has to start
+ * somewhere: this record is that start — the blank the person names at Details and whose
+ * Aspects they reword at Stage 3, which is exactly what the third glossary line was for. It
+ * still binds through a `template_version` (`scripts/db-seed.mjs` writes version 1 for every
+ * published record), so nothing about the copy-at-creation rule changes.
  *
  * The copy is authored here rather than aliased to the template's `items`, because a
  * copy is what an instance holds: editing the template later is a deliberate act, not
@@ -208,12 +218,13 @@ const authoredTemplates: readonly Assessment[] = [
      * Relationship Type: **blank** — the glossary's third line, "________". This is the
      * user's template to name: the Aspects are prompts and the Values are the two ends
      * of the scale, all of them meant to be overwritten before the template is copied
-     * into a Relationship. It is a `draft` for that reason, and no instance copies it.
+     * into a Relationship. `published` since #1042 so the generic create action has a
+     * start (see the file's header); the placeholders are what "blank" renders as.
      */
     id: "assessment-blank-template",
     slug: "blank-template",
     type: "assessment",
-    status: "draft",
+    status: "published",
     date: "2026-10-27T10:00:00.000Z",
     title: "Untitled Relationship",
     summary:

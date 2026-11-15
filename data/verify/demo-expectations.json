@@ -16,7 +16,7 @@
     {
       "path": "/",
       "status": 200,
-      "mustContain": ["Turn one assessment into a practice"],
+      "mustContain": ["Bring expectations into the open at work"],
       "mustNotContain": ["Internal Server Error", "Application error", "captcha"]
     },
     {
@@ -44,7 +44,7 @@
       "mustNotContain": ["Internal Server Error", "Application error", "captcha"]
     },
     {
-      "path": "/assessment/instances",
+      "path": "/assessments",
       "status": 307,
       "redirect": "/login"
     },
@@ -64,11 +64,11 @@
       "redirect": "/templates/relationship"
     },
     {
-      "path": "/assessment/instances",
+      "path": "/assessments",
       "session": "initiator",
       "status": 200,
-      "mustContain": ["My Relationships", "Start a relationship"],
-      "mustNotContain": ["could not be read", "You are not in a relationship yet"],
+      "mustContain": ["My Relationships", "Start a relationship", "data-assessments-list"],
+      "mustNotContain": ["data-assessments-unreadable", "data-assessments-empty"],
       "mustNameRelationship": true
     }
   ]

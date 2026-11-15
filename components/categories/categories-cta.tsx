@@ -18,7 +18,7 @@ import Link from "next/link";
  * item id the fixture declares (`itemOf` is the join, and E23 fails the build when the
  * id is not in the fixture).
  */
-export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
+export function CategoriesCTA({ copy, startHref }: { copy: PageCopySection; startHref: string }) {
   const cards = [
     {
       item: itemOf(copy, "compete"),
@@ -152,7 +152,7 @@ export function CategoriesCTA({ copy }: { copy: PageCopySection }) {
               </p>
             </div>
             <div className="sm:ml-auto">
-              <Link href="/register">
+              <Link href={startHref}>
                 <Button variant={"action"}>{itemOf(copy, "join").label}</Button>
               </Link>
             </div>

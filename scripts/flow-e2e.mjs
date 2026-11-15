@@ -12,6 +12,9 @@
  *   2. invite      the invitation link is on the screen — drawn whether or not this deployment
  *                  has a mailer, because a send that did not happen must never make the link
  *                  unshareable (#220)
+ *   2a. carried    the plan chosen on `/pricing` is recorded by that page's one action and arrives
+ *                  at stage 5 already selected — through four stages and an account round trip —
+ *                  and a browser that chose nothing opens the panel unselected (#1043)
  *   2b. self-claim the Initiator's own browser cannot claim its own invitation: the page
  *                  names them as the party they already are, the claim is refused with
  *                  `already-a-party`, and the token stays live (#202)
@@ -66,6 +69,7 @@
  */
 import { writeFileSync } from "node:fs";
 import { Client } from "pg";
+import { PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import { sendInvitationPath } from "@/lib/flow/paths";
 
 /**
@@ -92,6 +96,13 @@ const TEMPLATE_ID = "assessment-relationship-basics";
 const TEMPLATE_SLUG = "relationship-basics";
 const TIME = "aspect-time-together";
 const MONEY = "aspect-money";
+/**
+ * The tier stage 5's plan row buys (`data/pages/assessment-create.ts::PLAN_BILLING_TIER.one`).
+ *
+ * The harness asks the provider for exactly this tier at the monthly interval, which is what the
+ * card step's own first row asks for — see `membershipStandIn` and section 6e.
+ */
+const MEMBERSHIP_PLAN_ID = "basic";
 
 const failures = [];
 const notes = [];
@@ -276,6 +287,17 @@ function createStem(templateSlug = TEMPLATE_SLUG) {
 }
 
 /**
+ * The plan **row** a billing tier is drawn by — `PLAN_BILLING_TIER` read backwards (#1043).
+ *
+ * The walk's panel is keyed by the fixture's handles (`one`, `unlimited`) and `/pricing` names a
+ * billing tier (`basic`, `principal`); the map is the only crossing, so the harness reads it rather
+ * than typing a row beside the tier it is asserting.
+ */
+function planRowOf(tier) {
+  return Object.entries(PLAN_BILLING_TIER).find(([, mapped]) => mapped === tier)?.[0] ?? null;
+}
+
+/**
  * The instance id in a create redirect, in **either** shape it has (#704).
  *
  * `…/assessment/instances/<id>` is the committed relationship (where a post that names no
@@ -295,12 +317,12 @@ function instanceIdIn(location) {
 /**
  * One relationship, created through the four stages: Who, Mode, Aspects, then Create's own control.
  *
- * **The stages are the app's, not this script's.** A single post to `POST /assessment/new` still
- * works — the endpoint keeps the pre-#688 shape for a post that carries no draft — and that is
- * what this script used to do, which is how three slices of the create (#688 who, #689 aspects,
- * #690 commit) shipped without the e2e ever seeing them (#704). What is driven here is what a
- * person does: two form posts that only write a draft cookie, one JSON save from the list, and
- * then the commit that writes.
+ * **The stages are the app's, not this script's, and the endpoint no longer accepts a short cut.**
+ * A post to `POST /assessment/new` with no `draft=1` is refused with `?problem=create-not-from-flow`
+ * (#957's server half), so the pre-#688 single-post create this script used to do is gone — the only
+ * way to a relationship is stages 1–3's draft and stage 4's write, followed by stage 5's send. What
+ * is driven here is what a person does: two form posts that only write a draft cookie, one JSON save
+ * from the list, then the commit that writes, and then the send that publishes it.
  *
  * **The id is registered before anything after it can throw.** `created` is what `cleanup()`
  * deletes, and a throw between the commit and the registration is what left `record` rows on the
@@ -321,9 +343,34 @@ async function createThroughStages(
     setting = "soft",
     aspects,
     templateSlug = TEMPLATE_SLUG,
+    /**
+     * The plan this browser chose on `/pricing` before it started (#1043) — the carry the whole
+     * card is about. When it is given, the run takes the pricing action first and then asserts that
+     * stage 5 opens with that row selected; when it is not, the run asserts the **opposite**, because
+     * "a door that carries nothing carries nothing" is the other half of the same rule.
+     */
+    carriedPlan,
   },
 ) {
   const stem = createStem(templateSlug);
+
+  /* stage 0 — the plan, when this run chose one on /pricing (#1043) -- */
+  // The action every `/pricing` CTA takes: it records the pair on this browser and answers 303 to
+  // the public catalogue, where the template is picked and the wizard starts. Reading the cookie
+  // out of the jar — rather than trusting the redirect alone — is what proves the carry landed
+  // before the four stages that have to survive it.
+  if (carriedPlan !== undefined) {
+    const carried = await jar.get(
+      `/pricing/start?plan=${encodeURIComponent(carriedPlan.planId)}&interval=${encodeURIComponent(carriedPlan.interval)}`,
+    );
+    check(
+      "the pricing action records the chosen plan and opens the template catalogue (#1043)",
+      carried.status === 303 &&
+        new URL(carried.location ?? "/", BASE_URL).pathname === "/relationship-templates" &&
+        jar.cookies.has("flow_plan_intent"),
+      `${carried.status} ${carried.location} · cookie ${jar.cookies.has("flow_plan_intent") ? "set" : "absent"}`,
+    );
+  }
 
   /* stage 1 — Who ---------------------------------------------------- */
   /* #825 — each seat is first + last now, so the post carries four halves rather than two names. */
@@ -406,6 +453,71 @@ async function createThroughStages(
     `${committed.status} ${location}`,
   );
 
+  /* stage 5 — the plan, carried or not (#1043) ------------------------ */
+  // The screen stage 4 just handed this browser. The carry had to survive four page navigations and
+  // the account write to arrive here, so this is the assertion the card exists for — and when the
+  // run carried nothing, the same screen is where the **absence** is proved: a panel that preselects
+  // a tier nobody chose is the defect the card removed.
+  if (instanceId !== null) {
+    const stageFive = await jar.get(location);
+    const carried = carriedPlan === undefined ? null : planRowOf(carriedPlan.planId);
+    // The panel's radios, read as tags rather than as one regex over the page: React prints `checked`
+    // wherever it sorts it (`name` `checked` `value` on this tree), so a regex fixed on attribute
+    // order asserts the renderer's ordering rather than the selection.
+    const planInputs = [...stageFive.html.matchAll(/<input[^>]*name="plan"[^>]*>/g)].map(
+      (m) => m[0],
+    );
+    if (carriedPlan === undefined) {
+      check(
+        "stage 5 opens with no plan selected when the browser carried none (#1043)",
+        stageFive.status === 200 &&
+          !stageFive.html.includes("data-plan-carried") &&
+          !planInputs.some((tag) => /\bchecked\b/.test(tag)),
+        `status ${stageFive.status} · ${planInputs.filter((t) => /\bchecked\b/.test(t)).length} of ${planInputs.length} radio(s) checked`,
+      );
+    } else {
+      const carriedTag = planInputs.find((tag) => tag.includes(`value="${carried}"`)) ?? "";
+      check(
+        `stage 5 opens with the plan chosen on /pricing already selected (${carriedPlan.planId} · ${carriedPlan.interval}) (#1043)`,
+        stageFive.status === 200 &&
+          stageFive.html.includes(`data-plan-carried="${carriedPlan.planId}"`) &&
+          stageFive.html.includes(`data-plan-carried-interval="${carriedPlan.interval}"`) &&
+          carried !== null &&
+          /\bchecked\b/.test(carriedTag) &&
+          planInputs.filter((tag) => /\bchecked\b/.test(tag)).length === 1,
+        `status ${stageFive.status} · row ${carried ?? "unmapped"} · ${
+          carriedTag === ""
+            ? "no input for that row"
+            : /\bchecked\b/.test(carriedTag)
+              ? "checked"
+              : "not checked"
+        }`,
+      );
+    }
+    /**
+     * **A reload keeps it** (#1043): the carry is a cookie, not render state, so the second GET of
+     * the same stage — which is exactly what a refresh is — must draw the same selection. The first
+     * read above cannot prove that on its own: a value a server had already computed once could be
+     * cached for the rest of the walk and still disappear on the next request.
+     */
+    const reloaded = await jar.get(location);
+    const reloadedInputs = [...reloaded.html.matchAll(/<input[^>]*name="plan"[^>]*>/g)].map(
+      (m) => m[0],
+    );
+    const reloadedChecked = reloadedInputs.filter((tag) => /\bchecked\b/.test(tag));
+    check(
+      carriedPlan === undefined
+        ? "a reload of stage 5 still opens with no plan selected (#1043)"
+        : `a reload of stage 5 still opens with ${carriedPlan.planId} selected (#1043)`,
+      reloaded.status === 200 &&
+        (carriedPlan === undefined
+          ? !reloaded.html.includes("data-plan-carried") && reloadedChecked.length === 0
+          : reloaded.html.includes(`data-plan-carried="${carriedPlan.planId}"`) &&
+            reloaded.html.includes(`data-plan-carried-interval="${carriedPlan.interval}"`) &&
+            reloadedChecked.length === 1),
+      `status ${reloaded.status} · ${reloadedChecked.length} of ${reloadedInputs.length} radio(s) checked`,
+    );
+  }
   // #865 — the relationship the stage just wrote, registered here because it is **not** deleted by
   // `DELETE FROM record` and used to survive every run on the shared branch. Read back rather than
   // assumed: the id is minted by the app (`cryptoRandomId()`), so a guess is exactly the kind of
@@ -485,51 +597,44 @@ async function relationshipState(instanceRecordId) {
 }
 
 /**
- * The card entry a person makes in stage 5's walk, written as the row a completed capture writes.
+ * The membership stage 5's card step buys, written as the row a completed checkout writes.
  *
- * **#911 gated the send on the walk** — a plan joined and a card on file — so a harness that POSTs
- * `/send` with no method is refused `no-payment-method`. That refusal is the gate working, and this
- * script used to fail on it in two places while the product was correct: it POSTed the send the way
- * the pre-#911 screen allowed. Stripe's fields belong to the provider's own page, so the card entry
- * cannot be typed here; the harness writes `relationship_payment` — the row `paymentArmedOf()`
- * reads — and says so in its own line. Every other act in the walk is driven through the app.
+ * **#1010 R2 moved this gate, and this stand-in has to move with it.** The send waits on the
+ * Initiator's live `billing_subscription` now — `lib/flow/store.ts::sendDraftInvitation()` refuses
+ * with `no-payment-method` on `!membershipLive`, and the same row decides the screen's
+ * `subscriptionLive` and its `paymentArmed` (`membership.writable`). It used to wait on a captured
+ * card in `relationship_payment`, which nothing writes any more: a harness that still wrote that
+ * row answered a gate the product had stopped asking, and every assertion downstream of the send
+ * failed against a correct refusal.
+ *
+ * Stripe's fields belong to the provider's own page, so the card entry cannot be typed here: the
+ * harness opens the row the gate reads, in the shape `grantPublishTrial()` writes (`mock`,
+ * `livemode = false`, a future period end), idempotently, and says so in its own line. Every other
+ * act in the walk is driven through the app.
  */
-async function captureMethodStandIn(state, label) {
-  if (state === null || state?.id === undefined) {
-    console.log(`· ${label}: no relationship to put a method on`);
+async function membershipStandIn(state, label) {
+  if (state === null || state?.id === undefined || state.initiator_user_id === null) {
+    console.log(`· ${label}: no relationship to open a membership for`);
     return false;
   }
   await db.query(
-    `INSERT INTO relationship_payment
-       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
-        charge_due_at)
-     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
-     ON CONFLICT (relationship_id) DO UPDATE
-       SET method_captured_at = EXCLUDED.method_captured_at,
-           charge_due_at = EXCLUDED.charge_due_at`,
-    [state.id, state.initiator_user_id],
+    `INSERT INTO billing_subscription
+       (user_id, plan_id, interval, provider, provider_subscription_id, status, livemode,
+        current_period_end)
+     SELECT $1, $2, 'month', 'mock', $3, 'active', false, now() + interval '30 days'
+      WHERE NOT EXISTS (
+              SELECT 1
+                FROM billing_subscription
+               WHERE user_id = $1
+                 AND status = ANY(ARRAY['active', 'trialing', 'past_due'])
+            )
+     ON CONFLICT DO NOTHING`,
+    [state.initiator_user_id, MEMBERSHIP_PLAN_ID, `e2e-harness-${state.id}`],
   );
-  console.log(`· ${label}: method stand-in written (the card entry is the browser's act)`);
+  console.log(
+    `· ${label}: membership stand-in written (billing_subscription active — the card entry is the browser's act)`,
+  );
   return true;
-}
-
-/**
- * The method stand-in taken back off the obligation — the state "no card on file".
- *
- * Stage 5's send needs the card (#911) and the fee gate needs its absence, and both are the product's
- * rules: a published relationship whose payer has not finished the walk is exactly what the gate
- * shuts. The **row stays** and only its capture is cleared, because `paymentArmedOf()` answers
- * `undefined` — "not measured" — for a missing obligation and only `false` closes the gate
- * (`lib/flow/payment.ts:157`). Section 6e puts the capture back through the provider's own endpoint.
- */
-async function clearMethodStandIn(instanceRecordId, label) {
-  await db.query(
-    `UPDATE relationship_payment
-        SET method_captured_at = NULL, charge_due_at = NULL
-      WHERE relationship_id = (SELECT relationship_id FROM session WHERE record_id = $1)`,
-    [instanceRecordId],
-  );
-  console.log(`· ${label}: method stand-in cleared (the "no card on file" state)`);
 }
 
 /**
@@ -645,10 +750,12 @@ async function main() {
   const counterparty = new Jar("counterparty");
   const stranger = new Jar("stranger");
 
-  /* 0a. the catalogue's action survives the account gate (#867) -------- */
-  // The one moment in the product where intent already exists: a stranger has chosen a template
-  // and has no account. Before this card the action was a bare `/register`, so the account was
-  // created and the person arrived on the brand's landing page with the choice gone.
+  /* 0a. the catalogue's one action is the flow's stage 1 (#1042) -------- */
+  // The moment in the product where intent already exists: a stranger has chosen a template and
+  // has no account. Before #1042 the action was `/register?next=<that stage>` — the account first,
+  // the wizard after — so a visitor never reached the flow from it. Stage 1 needs no account
+  // (#690) and the account is stage 4 of that same wizard (#825), so the card's own href is the
+  // flow's first screen for both viewers.
   const visitor = new Jar("visitor");
   const catalogue = await visitor.get("/relationship-types");
   dumpPage("catalogue", catalogue.html);
@@ -659,56 +766,90 @@ async function main() {
   );
 
   // The action's own href, read off the page — never a path typed here.
-  const startHref = catalogue.html.match(/href="(\/register\?next=[^"]+)"/)?.[1] ?? "";
-  const chosenStem =
-    (startHref === "" ? null : new URL(startHref, BASE_URL).searchParams.get("next")) ?? "";
+  const startHref =
+    catalogue.html.match(/href="(\/templates\/relationship\/[a-z-]+\/create)"/)?.[1] ?? "";
+  const chosenSlug = startHref.split("/")[3] ?? "";
   check(
-    "a card's use action carries the template it sells into the sign-up gate",
-    /^\/templates\/relationship\/[a-z-]+\/create$/.test(chosenStem),
-    startHref === "" ? "no `/register?next=` action on the page" : `href = "${startHref}"`,
+    "a card's use action is the create flow's stage 1, carrying the template it sells",
+    /^\/templates\/relationship\/[a-z-]+\/create$/.test(startHref),
+    startHref === ""
+      ? "no `/templates/relationship/<slug>/create` action on the page"
+      : `href = "${startHref}"`,
   );
-  const chosenSlug = chosenStem.split("/")[3] ?? "";
   const words = chosenSlug === "" ? null : await templateWords(chosenSlug);
 
-  // The gate promises no wall: the destination is a screen whether or not an account exists
-  // (#690 — stage 1 never asked for one).
-  const stageOneFirst = await visitor.get(chosenStem);
+  // No gate to pass: the destination is a screen whether or not an account exists (#690 — stage 1
+  // never asked for one), which is what makes the account a stage inside the wizard.
+  const stageOneFirst = await visitor.get(startHref);
+  dumpPage("stage-1-signed-out", stageOneFirst.html);
   check(
-    "the destination renders for the signed-out visitor too",
+    "and that address renders for the signed-out visitor, with no gate in front of it",
     stageOneFirst.status === 200 && stageOneFirst.html.includes('data-wizard-rail="1"'),
     `status ${stageOneFirst.status}`,
   );
-
-  // The gate remembers it. `?next=` is the one parameter `/register` reads, and it puts what it
-  // will navigate to on the page (`signInDestination`) rather than the brand's default.
-  const gate = await visitor.get(startHref);
-  const gatePayload = gate.html.replaceAll('\\"', '"');
   check(
-    "the account gate keeps that destination instead of the brand's landing page",
-    gate.status === 200 && gatePayload.includes(`"destination":"${chosenStem}"`),
-    `status ${gate.status}`,
-  );
-
-  // What the form does when it succeeds: the app's own sign-up endpoint, into the same jar.
-  await signUpCreator(visitor, { name: "Nadia Visitor" });
-
-  // …and then the view's `router.push(destination)` — the same address, now signed in.
-  const arrived = await visitor.get(chosenStem);
-  dumpPage("stage-1-after-signup", arrived.html);
-  check(
-    "signing up lands on stage 1 of the template the visitor chose",
-    arrived.status === 200 &&
-      arrived.html.includes('data-wizard-rail="1"') &&
-      arrived.html.includes('data-step-state="current"'),
-    `status ${arrived.status}`,
-  );
-  check(
-    "and that stage names the template, not an empty flow",
-    words !== null && arrived.html.includes(textOf(words.title)),
+    "as stage 1 of the template the card sells, not an empty flow",
+    stageOneFirst.status === 200 &&
+      stageOneFirst.html.includes('data-step-state="current"') &&
+      words !== null &&
+      stageOneFirst.html.includes(textOf(words.title)),
     words === null ? `no template row for "${chosenSlug}"` : `title = "${words.title}"`,
   );
+
+  // …and the same stage still draws for the same template once a session exists. The draft is a
+  // `sameSite: "lax"` cookie, so the account round trip cannot drop it (#1042). The **carried plan**
+  // is the same class of cookie (#1043), so the pricing action is taken here — signed out, before
+  // the account exists — and its presence is asserted again after the sign-up, which is the
+  // "sign-in preserves the carry" half of the acceptance.
+  const carriedBefore = await visitor.get("/pricing/start?plan=basic&interval=month");
+  check(
+    "a signed-out visitor's plan is carried onto the browser before any account exists (#1043)",
+    carriedBefore.status === 303 &&
+      new URL(carriedBefore.location ?? "/", BASE_URL).pathname === "/relationship-templates" &&
+      visitor.cookies.has("flow_plan_intent"),
+    `${carriedBefore.status} ${carriedBefore.location}`,
+  );
+  await signUpCreator(visitor, { name: "Nadia Visitor" });
+  check(
+    "and the sign-up that follows keeps it — the round trip drops no flow cookie (#1043)",
+    visitor.cookies.has("flow_plan_intent"),
+    `flow_plan_intent ${visitor.cookies.has("flow_plan_intent") ? "present" : "lost"} after sign-up`,
+  );
+  const arrived = await visitor.get(startHref);
+  dumpPage("stage-1-after-signup", arrived.html);
+  check(
+    "and the same stage draws for that visitor once signed in",
+    arrived.status === 200 &&
+      arrived.html.includes('data-step-state="current"') &&
+      words !== null &&
+      arrived.html.includes(textOf(words.title)),
+    `status ${arrived.status}`,
+  );
   note(
-    `#867 — intent carried: ${startHref} → sign-up → ${chosenStem} (stage 1 of "${words?.title ?? chosenSlug}")`,
+    `#1042 — one door: ${startHref} → stage 1 of "${words?.title ?? chosenSlug}", signed out and signed in`,
+  );
+
+  /* 0b. the generic action starts the platform's blank template (#1042) --- */
+  // "Create a relationship" is the create intent with no template behind it, and the create flow
+  // needs a template record (the draft cookie is keyed by it, stage 3 seeds its Aspects from it).
+  // So the generic action starts the platform's blank — the glossary's third line, the user's to
+  // name — and it has to render for a visitor like any other stage 1. A `draft` blank would 404
+  // here for a signed-out reader, which is the state this check exists to catch.
+  const genericCatalogue = await visitor.get("/relationship-templates");
+  const blankHref =
+    genericCatalogue.html.match(
+      /href="(\/templates\/relationship\/blank-template\/create)"/,
+    )?.[1] ?? "";
+  const blankStart = blankHref === "" ? null : await visitor.get(blankHref);
+  check(
+    "the generic create action opens the blank template's stage 1 for a signed-out visitor",
+    blankStart !== null &&
+      blankStart.status === 200 &&
+      blankStart.html.includes('data-wizard-rail="1"') &&
+      blankStart.html.includes('value="assessment-blank-template"'),
+    blankHref === ""
+      ? "no blank start on /relationship-templates"
+      : `${blankHref} → status ${blankStart?.status ?? "not fetched"}`,
   );
 
   /* 0. an account — stage 4 writes the draft for one (#844) ----------- */
@@ -718,6 +859,8 @@ async function main() {
   await signUpCreator(initiator, { name: "Avery E2E" });
 
   /* 1. create — five stages: Details, Settings, Aspects, Account, Invite (#825) --- */
+  // This creator **chose a plan on /pricing first** (#1043), so the run also proves the carry
+  // survives the four stages and the account write between the choice and stage 5.
   const firstCreate = await createThroughStages(initiator, {
     templateRecordId: TEMPLATE_ID,
     initiatorFirst: "Avery",
@@ -728,6 +871,7 @@ async function main() {
     title: "Avery and Rowan E2E",
     mode: "basic",
     aspects: templateAspects,
+    carriedPlan: { planId: "principal", interval: "year" },
   });
   if (firstCreate.instanceId === null) throw new Error("no instance id in the create redirect");
   const instanceId = firstCreate.instanceId;
@@ -742,43 +886,46 @@ async function main() {
     JSON.stringify(drafted),
   );
 
-  /* 1b. stage 5 Invite draws both acts -------------------------------- */
+  /* 1b. stage 5 Invite draws the walk, and no act until it is paid for -------- */
   const inviteStage = await initiator.get(firstCreate.location);
   check(
-    "stage 5 Invite draws the send form and the keep-as-draft way out",
+    "stage 5 Invite draws the walk and the keep-as-draft way out",
     inviteStage.status === 200 &&
-      inviteStage.html.includes('data-create-send="true"') &&
+      inviteStage.html.includes('data-pay-step="plan"') &&
+      inviteStage.html.includes('data-send-gate="locked"') &&
       inviteStage.html.includes('data-create-keep-draft="true"'),
     `status ${inviteStage.status}`,
   );
+  check(
+    "and no send control exists before the membership is live (#1014)",
+    !inviteStage.html.includes('data-create-send="true"'),
+    "a send control was drawn on an unpaid stage",
+  );
 
   /* 1c. no payment, no send: keeping the draft ------------------------ */
-  // `Continue as Draft` is a link to the dashboard, not a server act — so the proof is that the
-  // relationship is *still* an unpublished draft and that the dashboard lists it. That is the
-  // "save it and come back" path the payment posture promises.
-  // #841 — follow the control's own href rather than a remembered path. The link used to go to
-  // `/dashboard`, the fixture-driven home, where the draft it had just saved could not appear; the
-  // list that renders rows is `/dashboard/relationships`.
+  // `Continue as Draft` is a link, not a server act — so the proof is that the relationship is
+  // *still* an unpublished draft and that the control lands on the draft itself (#1014). The list
+  // the relationship appears in is one Back away, which the next block checks.
   const keepDraftTag = inviteStage.html.match(/<a[^>]*data-create-keep-draft[^>]*>/)?.[0] ?? "";
   const keepDraftHref = keepDraftTag.match(/href="([^"]+)"/)?.[1] ?? "";
   check(
-    "Continue as Draft links at the relationships list, not the dashboard home",
-    keepDraftHref === "/dashboard/relationships",
+    "Continue as Draft links at the relationship itself, not the list and not the dashboard home",
+    keepDraftHref.startsWith("/dashboard/relationships/"),
     `href = "${keepDraftHref}"`,
   );
   const dashboard = await initiator.get(
     keepDraftHref === "" ? "/dashboard/relationships" : keepDraftHref,
   );
-  dumpPage("relationships-list", dashboard.html);
+  dumpPage("relationship-draft", dashboard.html);
   check(
-    "keeping the draft lands the creator on that list",
+    "keeping the draft lands the creator on that relationship",
     dashboard.status === 200,
     `status ${dashboard.status}`,
   );
   check(
-    "and the draft is listed there by the title stages 1–3 chose",
+    "and the relationship is drawn there by the title stages 1–3 chose",
     dashboard.html.includes("Avery and Rowan E2E"),
-    "title not found in the list render",
+    "title not found in the relationship render",
   );
   const stillDraft = await relationshipState(instanceId);
   check(
@@ -804,9 +951,24 @@ async function main() {
   );
 
   /* 1e. the walk's card step, then Send and Continue publishes it ----- */
-  await captureMethodStandIn(await relationshipState(instanceId), "stage 5 · draft");
+  await membershipStandIn(await relationshipState(instanceId), "stage 5 · draft");
   const sent = await initiator.post(sendInvitationPath(instanceId), {});
   check("Send and Continue answers 303", sent.status === 303, `${sent.status} ${sent.location}`);
+  // #1014 — the send lands on the **relationship**, not the session and not the Sent screen: the flow
+  // ends where every later cycle of the relationship lives.
+  const sendLocation = String(sent.location ?? "");
+  const sendTarget = new URL(sendLocation, "http://localhost");
+  check(
+    "and it lands on the relationship it published, carrying the mailer's own outcome",
+    /^\/dashboard\/relationships\/[^/]+$/.test(sendTarget.pathname) &&
+      sendTarget.searchParams.has("invite"),
+    `location = "${sendLocation}"`,
+  );
+  check(
+    "and it does not land on the session screen or the retired Sent confirmation",
+    !/^\/assessment\/instances\//.test(sendTarget.pathname) && !/\/sent$/.test(sendTarget.pathname),
+    `location = "${sendLocation}"`,
+  );
   const published = await relationshipState(instanceId);
   check(
     "and it moves the draft to published, with the publish instant written",
@@ -1400,24 +1562,19 @@ async function main() {
     `${counterpartyAccept.status} ${counterpartyAccept.location}`,
   );
 
-  /* 6d. the fee gate — the method is taken away, and the report shuts ----- */
-  // Since #911 the send needs a card, so a published relationship always has one when it is created
-  // through the walk. The gate this section proves is the one *after* that: a method that is not on
-  // file. Removing the stand-in row is how the harness reaches it, and 6e puts it back through the
-  // provider's own capture.
-  await clearMethodStandIn(instanceId, "6d · the fee gate");
-  const reportViaAccept = await counterparty.get(counterpartyAccept.location ?? instancePath);
-  dumpPage("report", reportViaAccept.html);
-  check(
-    // #619, read from `lib/flow/screen.ts`: the fee is the last gate. Both sheets sealed and no
-    // method on file is `awaiting_payment`, and the report is built only for a `complete` session —
-    // so the acceptance lands on the *shut* report, by design. This assertion used to demand the
-    // Gap and had been failing since the fee gate shipped; the paid half is `pnpm payment:e2e`'s.
-    "the report the acceptance redirects to is the gate, not the Gap — the fee is the last gate (#619)",
-    reportViaAccept.status === 200 && reportViaAccept.html.includes('data-report-gated="true"'),
-    `status ${reportViaAccept.status}`,
-  );
-
+  /* 6d. both seats accepted — the row, and the ladder position -------- */
+  // **The fee gate that used to live here is retired (#1010 R2), and this section is what is left
+  // of it.** Three assertions were deleted rather than repaired, because the state they described
+  // no longer exists: they took the captured card back off the obligation and asserted the report
+  // stayed shut and no Gap was drawn until it was paid. Since #1010 the publish gate *is* the
+  // membership — `sendDraftInvitation()` refuses on `!membershipLive`, `lib/flow/screen.ts` derives
+  // `paymentArmed` from `membership.writable`, and the per-relationship capture that gated
+  // completion has been deleted (`dashboard/relationships/actions.ts`: "**#1010 deletes the fee**:
+  // the membership bought at stage 5 already covers every relationship"). So a published
+  // relationship always has a live membership, and "sealed and unpaid" is not a state a walk can
+  // reach — asserting it would mean inventing an unpaid relationship the product can no longer make.
+  // "No Gap while the fee is unpaid" therefore has no successor, and nothing was invented to keep
+  // the count at nine.
   const acceptanceAfter = await db.query(
     "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
     [instanceId],
@@ -1442,55 +1599,33 @@ async function main() {
     afterAcceptance.html.includes('data-stage-badge="sharing"'),
   );
 
-  // The blind rule outlives both sheets: with no method on file the report is shut, so neither
-  // party's scores may be drawn. That is the **hard gate at publish opinions** the payment posture
-  // names, and the method was taken away above for exactly this state.
-  const unpaidScreen = await initiator.get(instancePath);
-  check(
-    "no Gap is drawn while the fee is unpaid — the blind rule holds after both acceptances",
-    alignmentGaps(unpaidScreen.html, TIME).length === 0,
-    `${alignmentGaps(unpaidScreen.html, TIME).length} gap row(s) rendered before payment`,
-  );
-  check(
-    "and the counterparty's screen draws none either",
-    alignmentGaps((await counterparty.get(instancePath)).html, TIME).length === 0,
-  );
-
-  /* 6e. the payer's act — capture the method, and the Gap opens ---------- */
-  // #619: the report is built only for a `complete` session, and a session with no method on file
-  // is `awaiting_payment`. `POST /api/billing/payment` captures a method through the adapter and
-  // charges nothing, which is the act the payer's screen performs — so the script can drive the
-  // whole workflow, not just its gated half.
-  const paidState = await relationshipState(instanceId);
-  const captured = await initiator.postJson("/api/billing/payment", {
-    relationshipId: paidState?.id,
+  /* 6e. the membership the card step starts, and the Gap --------------- */
+  // **Repointed, not repaired (#912, #1010 R2).** This used to POST `/api/billing/payment`, the
+  // dashboard capture dialog's per-relationship charge. #912 deleted that dialog and its route —
+  // `app/api/billing/` carries `checkout` and `webhook` and nothing else — so the POST answered
+  // `404 null` against a correct tree. The surface that exists is the walk's own checkout
+  // (`POST /api/billing/checkout`, the route `/pricing`'s buttons and `startMembershipAction()`
+  // both go through `lib/billing`'s composition root), so that is what is driven here: the tier and
+  // interval stage 5's first plan row asks for, answered by whichever adapter the deployment
+  // configured.
+  const checkout = await initiator.postJson("/api/billing/checkout", {
+    planId: MEMBERSHIP_PLAN_ID,
+    interval: "month",
   });
-  // The request is the contract, and it was broken until the adapter carried a `currency` on both
-  // presentations: this used to answer `400 invalid-request — Missing required param: currency`,
-  // i.e. no payer could ever put a method on file. With the Stripe adapter the session is *hosted*,
-  // so finishing it needs a card typed into the provider's own page — the harness proves the
-  // capture is accepted (`captured`, or a URL to send the browser to) and stops there.
+  // The hosted adapter answers `{ url }` and the browser leaves the site for it; the mock adapter
+  // completes inline (`completed: true`) and writes the row inside the request. Either is the
+  // provider accepting the purchase; a 400, a 401, a 404 or a 503 is not.
   check(
-    "the payment capture is accepted by the provider (no refusal, no 400)",
-    captured.status === 200 &&
-      (captured.body?.captured === true || typeof captured.body?.url === "string"),
-    `${captured.status} ${JSON.stringify(captured.body)}`,
+    "the checkout the card step starts is accepted by the provider (no refusal, no 400)",
+    checkout.status === 200 &&
+      (checkout.body?.completed === true || typeof checkout.body?.url === "string"),
+    `${checkout.status} ${JSON.stringify(checkout.body)}`,
   );
 
-  // The card entry itself belongs to a browser, so the row a completed capture writes is written
-  // here instead — `relationship_payment` (`0036`), which is what `paymentArmedOf()` reads. The Gap
-  // assertions below are made against that row, and cleanup removes the relationship it belongs to.
-  await db.query(
-    `INSERT INTO relationship_payment
-       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
-        charge_due_at)
-     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
-     ON CONFLICT (relationship_id) DO UPDATE
-       SET method_captured_at = EXCLUDED.method_captured_at,
-           charge_due_at = EXCLUDED.charge_due_at`,
-    [paidState?.id, paidState?.initiator_user_id],
-  );
-
+  // **The Gap needs no payment row.** Since #1010 R2 `lib/flow/screen.ts` derives `paymentArmed`
+  // from `membership.writable`, not from `relationship_payment.method_captured_at`: the membership
+  // stage 5 bought is what opens the report, and that row was written by `membershipStandIn` before
+  // the send. The assertions below read the screen, which is the only place the rule lives.
   const paidScreen = await initiator.get(instancePath);
   const gapAttribute = alignmentGaps(paidScreen.html, TIME);
   check(
@@ -1634,9 +1769,9 @@ async function main() {
   const advPath = `/assessment/instances/${advInstanceId}`;
 
   // The draft is published the same way the first relationship's is: stage 5's send, after the
-  // walk's card step (the method stand-in — see `captureMethodStandIn`). The invitation row the
-  // create wrote holds the token the counterparty's link is built from.
-  await captureMethodStandIn(await relationshipState(advInstanceId), "stage 5 · advanced");
+  // walk's card step bought the membership (`membershipStandIn`). The invitation row the create
+  // wrote holds the token the counterparty's link is built from.
+  await membershipStandIn(await relationshipState(advInstanceId), "stage 5 · advanced");
   const advSent = await advInitiator.post(sendInvitationPath(advInstanceId), {});
   const advPublished = await relationshipState(advInstanceId);
   check(
@@ -1747,26 +1882,19 @@ async function main() {
     `${advAccept1.status} / ${advAccept2.status}`,
   );
 
-  // Same #619 gate as the free path: the eight kinds are drawn only once a method is on file.
-  const advState = await relationshipState(advInstanceId);
-  const advCaptured = await advInitiator.postJson("/api/billing/payment", {
-    relationshipId: advState?.id,
+  // The same membership the free path's stage 5 bought, and the same published surface: the
+  // Advanced relationship's Gap is open because its own walk's card step opened a membership, not
+  // because a per-relationship capture was written (`membershipStandIn`, #1010 R2). The checkout is
+  // driven through the route that exists — `POST /api/billing/payment` is gone with #912.
+  const advCheckout = await advInitiator.postJson("/api/billing/checkout", {
+    planId: MEMBERSHIP_PLAN_ID,
+    interval: "month",
   });
   check(
-    "the Advanced payer's capture is accepted too",
-    advCaptured.status === 200 &&
-      (advCaptured.body?.captured === true || typeof advCaptured.body?.url === "string"),
-    `${advCaptured.status} ${JSON.stringify(advCaptured.body)}`,
-  );
-  await db.query(
-    `INSERT INTO relationship_payment
-       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
-        charge_due_at)
-     VALUES ($1, $2, 'stripe', 'pm_e2e_harness', now(), now() + interval '7 days')
-     ON CONFLICT (relationship_id) DO UPDATE
-       SET method_captured_at = EXCLUDED.method_captured_at,
-           charge_due_at = EXCLUDED.charge_due_at`,
-    [advState?.id, advState?.initiator_user_id],
+    "the Advanced payer's checkout is accepted too",
+    advCheckout.status === 200 &&
+      (advCheckout.body?.completed === true || typeof advCheckout.body?.url === "string"),
+    `${advCheckout.status} ${JSON.stringify(advCheckout.body)}`,
   );
 
   const advReport = await advInitiator.get(advPath);
@@ -1905,10 +2033,10 @@ async function main() {
       : await author.get(authoredCreate.location);
   dumpPage("stage5-authored", authoredInvite.html);
   check(
-    "and stage 5 draws the payment walk, the send and the keep-as-draft act (#870)",
+    "and stage 5 draws the walk and the keep-as-draft act (#870, #1014)",
     authoredInvite.status === 200 &&
       authoredInvite.html.includes("data-pay-step=") &&
-      authoredInvite.html.includes('data-create-send="true"') &&
+      authoredInvite.html.includes('data-send-gate="locked"') &&
       authoredInvite.html.includes('data-create-keep-draft="true"'),
     `status ${authoredInvite.status}`,
   );
@@ -2126,6 +2254,12 @@ async function cleanup() {
         accounts,
       ]);
       await db.query("DELETE FROM user_profile WHERE user_id = ANY($1::text[])", [accounts]);
+      // #1010 R2 — the membership `membershipStandIn` opened for this run's creators. It belongs to
+      // the account, not the relationship, so it survives the relationship sweep above and would be
+      // a stray row on the shared branch (and block a later run's stand-in on the live-user index).
+      await db.query("DELETE FROM billing_subscription WHERE user_id = ANY($1::text[])", [
+        accounts,
+      ]);
       const users = await authUserTable();
       if (users !== null) {
         await db.query(`DELETE FROM neon_auth."${users}" WHERE id::text = ANY($1::text[])`, [

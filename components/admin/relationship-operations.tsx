@@ -65,6 +65,7 @@ type Phase = { readonly kind: "idle" } | { readonly kind: "done"; readonly outco
  * `Record<InstanceStatus, string>`, so a fourth status is a compile error until it has words.
  */
 const STATUS_COPY_ID: Record<InstanceStatus, string> = {
+  draft: "draft",
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
   /* #619 — sealed and unpaid: the console reads it as its own state, not as an error. */
@@ -225,11 +226,16 @@ function RepairBand({
           {emailField === undefined ? null : (
             <div className="space-y-1">
               <Label htmlFor={`${repair}-email`}>{itemLabel(section, "email")}</Label>
+              {/* Controlled, and only controlled (#980). The invitation's address is the *seed*
+                  — `useState(emailField)` above — never a second declaration of the same value:
+                  React reads `value` and `defaultValue` together as uncontrolled, keeps the first
+                  one and may ignore every later `value`, which is a field that shows one address
+                  and submits another. `submit()` already reads `email` out of state, so state is
+                  the truth and an untouched field still reissues to the party who was invited. */}
               <Input
                 id={`${repair}-email`}
                 name="email"
                 type="email"
-                defaultValue={emailField ?? ""}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
               />
@@ -340,12 +346,16 @@ export function RelationshipOperations({
                 <span className="text-muted-foreground">{itemLabel(inviteCopy, "email")}: </span>
                 {invite.email}
               </p>
-              <p>
+              {/* A `<p>` may not contain the `Badge` primitive (#980 proof): `Badge` is a `<div>`,
+                  so this row was invalid HTML the server wrote and the client refused to hydrate —
+                  React regenerated the whole tree and logged `<p> cannot contain a nested <div>`.
+                  A `<div>` row keeps the same `space-y-2 text-sm` rhythm and the same words. */}
+              <div>
                 <span className="text-muted-foreground">{itemLabel(inviteCopy, "state")}: </span>
                 <Badge variant={invite.state === "unclaimed" ? "outline" : "secondary"}>
                   {itemLabel(inviteCopy, invite.state)}
                 </Badge>
-              </p>
+              </div>
               <p>
                 {say(inviteCopy, "expires", { at: formatDate(invite.expiresAt) })} ·{" "}
                 {say(inviteCopy, "resent", { count: invite.resentCount })}

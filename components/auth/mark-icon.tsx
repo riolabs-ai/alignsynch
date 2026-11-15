@@ -96,12 +96,13 @@ export function MarkGlyph({
  * The box a mark needs inside the tile these cards draw it in — the mark's own size.
  *
  * A glyph's paths reach the edge of the box they are given; a mark *file* is ink floating in a
- * transparent canvas at `APP_GLYPH_FRACTION` (62 %), so the same box shows a smaller thing. `h-6`
- * (24 px) was right for a lucide glyph and puts the AS monogram at ≈15 px of ink, where it read as
- * a generic avatar smudge. The box the tile gives a mark is the tile itself — `h-10` (40 px) × 0.62
- * ≈ 25 px of ink, measured crisp by compositing candidates into the 64 px tile `markTileClass`
- * gives it. The card is ~400 px wide, so the mark is a seal beside the heading rather than a hero
- * image (owner, 2026-11-04: the 96 px tile the register screen drew was oversized).
+ * transparent canvas at `APP_GLYPH_FRACTION` (78 % of the ink it was drawn with), so the same box
+ * shows a smaller thing. `h-6` (24 px) was right for a lucide glyph and puts the AS monogram at
+ * ≈19 px of ink, where it read as a generic avatar smudge. The box the tile gives a mark is the
+ * tile itself — `h-10` (40 px) × 0.78 ≈ 31 px of ink, measured crisp by compositing candidates into
+ * the 64 px tile `markTileClass` gives it. The card is ~400 px wide, so the mark is a seal beside
+ * the heading rather than a hero image (owner, 2026-11-04: the 96 px tile the register screen drew
+ * was oversized).
  *
  * `glyphBox` is the caller's box for a glyph id, and it defaults to `h-6 w-6` — the size the 48 px
  * tiles have always given a glyph — so the five auth cards render the class strings they always

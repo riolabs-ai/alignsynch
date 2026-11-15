@@ -17,7 +17,7 @@
  * relationship count, and the week the publish grants.
  *
  * It is a script and not a test because the property under test is a **row**: a unit test would
- * need a database and the gate is deliberately database-free (`docs/GATE.md`). It cleans up after
+ * need a database and the gate is deliberately database-free (`docs/operations/gate.md`). It cleans up after
  * itself — the instances it creates, the subscriptions it buys and the checkout events it records
  * are deleted at the end — because `pnpm db:seed` refuses a tree carrying assessment records it
  * does not author, and a smoke that poisoned the next seed would be a trap.

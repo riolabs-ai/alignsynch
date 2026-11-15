@@ -48,12 +48,13 @@ import { registerCopyFor } from "@/lib/auth-copy";
 import { isGoogleOnlySignIn } from "@/app/(auth)/login/provider-hint-actions";
 import { startGoogleSignIn } from "@/app/(auth)/login/google-actions";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
+import type { FlowMount } from "@/components/assessment-flow/relationship-flow-shell";
 import { brand, brandIdOf } from "@/data/brand";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { loginPageCopy } from "@/data/pages/login";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { currentUserIfConfigured } from "@/lib/auth/session";
-import { loginCopyFor } from "@/lib/auth-copy";
+import { loginCopyFor, heroTilesFor } from "@/lib/auth-copy";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { parseCreateDraft } from "@/lib/flow/create-draft";
@@ -95,9 +96,17 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 export default async function TemplateCreateCommitPage({
   params,
   searchParams,
+  mount = "page",
 }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<CommitParams>;
+  /**
+   * **Where the shell mounts this stage (#979 B).** A stage's own route says nothing and gets the
+   * `page` mounting — the deep link, the refresh, the invitation link. The intercepted route under
+   * `dashboard/relationships/@flow/**` passes `dialog`, and the same render is drawn over the page
+   * the flow was started from. Nothing else in this file depends on it.
+   */
+  mount?: FlowMount;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -179,6 +188,10 @@ export default async function TemplateCreateCommitPage({
           destination: createCommitPath(slug),
           marks: AUTH_MARKS_BY_BRAND[brandId],
           markSrc: AUTH_MARK_SRC_BY_BRAND[brandId],
+          // The hero's band travels with the copy so the view keeps one prop contract (#971);
+          // this mount is `embedded`, so no panel is drawn — a stage column is a step in the
+          // flow, not a landing.
+          stats: heroTilesFor(loginPageCopy, brandId),
           initialFirst: draft?.initiatorFirst ?? "",
           initialLast: draft?.initiatorLast ?? "",
         }}
@@ -221,6 +234,7 @@ export default async function TemplateCreateCommitPage({
     <CreateRelationship
       copy={assessmentCreatePageCopy}
       stage={4}
+      mount={mount}
       template={
         detail === undefined
           ? null

@@ -41,6 +41,26 @@ export function itemLabel(section: PageCopySection, id: string): string {
 }
 
 /**
+ * The words of an item the band may not carry, or `undefined` when it does not — for a key that is
+ * **derived at runtime**, never for an id a view spells out.
+ *
+ * `itemLabel` throws, and that stays right for a literal id: E23 resolves every literal against
+ * the route's fixture at build time, so its throw is a backstop that never fires in production.
+ * A key computed from a row or from a query value cannot be resolved by E23 at all — the band is
+ * a closed table of words and the record is not — so a status this build has no sentence for took
+ * the whole document to a **500 at request time** while `typecheck`, `lint`, `data:check` and
+ * `next build` all stayed green (#998, and the single instance #988 closed).
+ *
+ * A runtime key therefore asks this reader, and the caller decides what stands in when the answer
+ * is absent: a named fallback row from the same fixture (the Sent screen's `status` band carries
+ * one), or nothing at all — an unknown refusal code draws no sentence, which is also what the
+ * route's own filter already does for a value it does not know.
+ */
+export function itemLabelOr(section: PageCopySection, id: string): string | undefined {
+  return section.items?.find((candidate) => candidate.id === id)?.label;
+}
+
+/**
  * The paragraph an item carries (`"Join tournaments, climb the leaderboards, …"`).
  * Throws when the item is a bare label: a card whose description silently renders
  * empty is the bug this reader exists to prevent.

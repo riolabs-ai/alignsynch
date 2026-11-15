@@ -4,7 +4,7 @@
  *
  * It serves **launch criterion 5** ("the Gap report renders from both answers"): it is the only
  * place in the tree a person can read a completed report without answering one, and it is what
- * the catalogue's "worked example" link and the type's own page open. `docs/V1-RETIREMENT.md`
+ * the catalogue's "worked example" link and the type's own page open. `docs/operations/history/V1-RETIREMENT.md`
  * classified this surface **release** and it has moved twice since: out of the `/v1` prototype to
  * `/assessment/demo/[type]` (#478), then here, under the catalogue noun, beside the type it
  * belongs to — the address the IA decision on the demo's card chose.

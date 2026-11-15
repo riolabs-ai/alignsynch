@@ -2,8 +2,8 @@
  * template-ancestor — every component names the surface it varies (#336).
  *
  * The repo is a base core webapp: QuizHub is the template, AlignSynch is a brand variation of it,
- * and a third is coming. The doctrine is in `docs/TEMPLATE-DOCTRINE.md`, and the audit that
- * proved it was not being followed is `docs/UI-DIVERGENCE.md` — twenty-seven files read, six
+ * and a third is coming. The doctrine is in `docs/guides/template-doctrine.md`, and the audit that
+ * proved it was not being followed is `docs/specs/ui-divergence.md` — twenty-seven files read, six
  * hand-built surfaces with a named ancestor sitting beside them, and zero variations actually
  * derived from one. Documentation did not stop it, so the claim becomes mechanical: **every file
  * under `components/` that returns JSX states, in its first comment block, which file is its
@@ -59,7 +59,7 @@ export interface TemplateAncestorExemption {
  * The approved exceptions — **this list must only shrink.**
  *
  * Every row is a surface with no template ancestor, approved in writing on issue #336, or one of
- * the bespoke files `docs/UI-DIVERGENCE.md` measured and the rebuild cards own. Adding a row for a
+ * the bespoke files `docs/specs/ui-divergence.md` measured and the rebuild cards own. Adding a row for a
  * surface that merely *looks* new is the hand-bake this rule exists to stop: the approval comes
  * first, on the issue, and the row is the record of it.
  *
@@ -69,7 +69,7 @@ export interface TemplateAncestorExemption {
  * whole point: six today, zero when the rebuild queue drains.
  *
  * The list has already shrunk once. It opened with eight rows — the five component rows
- * `docs/UI-DIVERGENCE.md` flagged as bespoke (the sixth, `app/(marketing)/layout.tsx`, is outside
+ * `docs/specs/ui-divergence.md` flagged as bespoke (the sixth, `app/(marketing)/layout.tsx`, is outside
  * this rule's walk) plus #336's three no-ancestor surfaces. `components/marketing/marketing-header.tsx`
  * and `…/marketing-footer.tsx` left it when #335 landed the public chrome: the header composes
  * `PublicNav` and its row became an ancestor header, and the footer was deleted rather than kept as

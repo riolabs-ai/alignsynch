@@ -24,11 +24,11 @@ headings (21)
   h3  "Feelings and Wishes Differ"
   h3  "Desires To Change"
 
-landmarks (6)
+landmarks (5)
   banner         2
   complementary  1
   main           1
-  navigation     2
+  navigation     1
 
 links (16 unique, 18 total)
   /                                                    2
@@ -46,11 +46,11 @@ links (16 unique, 18 total)
   /quiz-discussions                                    1
   /support                                             1
   /tournaments                                         1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.17.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.1 2
 
 counts
-  elements  1183
+  elements  1174
   images    0
-  buttons   10
+  buttons   9
   inputs    1
-  classes   284 (sha 205404c69289)
+  classes   283 (sha db1ac48c1919)

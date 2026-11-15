@@ -17,10 +17,22 @@
 import { describe, expect, it } from "vitest";
 import { type BillingPlanRow, billingPlanRows } from "@/data/billing-plans";
 import { checkoutRequestFrom } from "@/lib/billing/checkout-request";
-import { pricingPlans } from "@/lib/billing/catalogue";
+import { pricingPlans, type PricingCatalogueInput } from "@/lib/billing/catalogue";
 
 /** Every row active, as `db:seed` writes them. */
 const seeded: readonly BillingPlanRow[] = billingPlanRows();
+
+/**
+ * The grid, as a signed-out visitor sees it (#979).
+ *
+ * `startHref` is the one input these cases do not care about: it is where a tier's authored
+ * `/register` CTA goes, and a visitor's answer is the route itself. Keeping it in one helper means
+ * the eleven cases below still read as "here are the rows, what does the grid say" — and the
+ * member's answer is pinned by `tests/catalogue-start-session.test.ts`, where the subject *is* the
+ * viewer.
+ */
+const grid = (input: Omit<PricingCatalogueInput, "startHref">): ReturnType<typeof pricingPlans> =>
+  pricingPlans({ ...input, startHref: "/register" });
 
 /** One row replaced or removed, the way an operator retires a price. */
 function withRow(
@@ -45,7 +57,7 @@ function withRow(
 
 describe("the plan grid", () => {
   it("offers a checkout on exactly the two self-serve tiers, at both intervals", () => {
-    const plans = pricingPlans({ rows: seeded, source: "table", entitledPlanId: null });
+    const plans = grid({ rows: seeded, source: "table", entitledPlanId: null });
     expect(plans.map((plan) => plan.id)).toEqual(["free", "basic", "principal"]);
 
     for (const plan of plans) {
@@ -59,7 +71,7 @@ describe("the plan grid", () => {
   });
 
   it("prints the amount charged per month, and the yearly charge divided by twelve", () => {
-    const principal = pricingPlans({ rows: seeded, source: "table", entitledPlanId: null }).find(
+    const principal = grid({ rows: seeded, source: "table", entitledPlanId: null }).find(
       (plan) => plan.id === "principal",
     );
     expect(principal?.intervals.month).toEqual({
@@ -73,7 +85,7 @@ describe("the plan grid", () => {
       displayCents: 1_356,
       sellable: true,
     });
-    const basic = pricingPlans({ rows: seeded, source: "table", entitledPlanId: null }).find(
+    const basic = grid({ rows: seeded, source: "table", entitledPlanId: null }).find(
       (plan) => plan.id === "basic",
     );
     expect(basic?.intervals.month?.displayCents).toBe(895);
@@ -82,7 +94,7 @@ describe("the plan grid", () => {
 
   it("removes the CTA at the interval whose row is inactive, and keeps the price", () => {
     const rows = withRow(seeded, "basic", "year", { active: false });
-    const basic = pricingPlans({ rows, source: "table", entitledPlanId: null }).find(
+    const basic = grid({ rows, source: "table", entitledPlanId: null }).find(
       (plan) => plan.id === "basic",
     );
     expect(basic?.intervals.year).toEqual({
@@ -95,7 +107,7 @@ describe("the plan grid", () => {
 
   it("removes the CTA and the price when the row is gone entirely", () => {
     const rows = withRow(seeded, "principal", "month", null);
-    const principal = pricingPlans({ rows, source: "table", entitledPlanId: null }).find(
+    const principal = grid({ rows, source: "table", entitledPlanId: null }).find(
       (plan) => plan.id === "principal",
     );
     expect(principal?.intervals.month).toBeNull();
@@ -105,7 +117,7 @@ describe("the plan grid", () => {
   });
 
   it("sells nothing on a tree with no table — the authored rows are not an offer", () => {
-    const plans = pricingPlans({ rows: seeded, source: "fixture", entitledPlanId: null });
+    const plans = grid({ rows: seeded, source: "fixture", entitledPlanId: null });
     for (const plan of plans) {
       expect(plan.intervals.month?.sellable, `${plan.id}/month`).toBe(false);
       expect(plan.intervals.year?.sellable, `${plan.id}/year`).toBe(false);
@@ -115,19 +127,19 @@ describe("the plan grid", () => {
   });
 
   it("marks the entitled tier as current, and nobody's when there is no session", () => {
-    const signedIn = pricingPlans({ rows: seeded, source: "table", entitledPlanId: "principal" });
+    const signedIn = grid({ rows: seeded, source: "table", entitledPlanId: "principal" });
     expect(signedIn.filter((plan) => plan.current).map((plan) => plan.id)).toEqual(["principal"]);
 
-    const free = pricingPlans({ rows: seeded, source: "table", entitledPlanId: "free" });
+    const free = grid({ rows: seeded, source: "table", entitledPlanId: "free" });
     expect(free.filter((plan) => plan.current).map((plan) => plan.id)).toEqual(["free"]);
 
-    const signedOut = pricingPlans({ rows: seeded, source: "table", entitledPlanId: null });
+    const signedOut = grid({ rows: seeded, source: "table", entitledPlanId: null });
     expect(signedOut.filter((plan) => plan.current)).toEqual([]);
   });
 
   it("names the tier from the row, so a renamed price is visible on the card", () => {
     const rows = withRow(seeded, "principal", "month", { name: "Principal (2027)" });
-    const principal = pricingPlans({ rows, source: "table", entitledPlanId: null }).find(
+    const principal = grid({ rows, source: "table", entitledPlanId: null }).find(
       (plan) => plan.id === "principal",
     );
     expect(principal?.name).toBe("Principal (2027)");

@@ -3,9 +3,11 @@
  *
  * The sibling of `lib/templates-page.ts` (the directory) and `lib/template-catalogue.ts` (the
  * card): **words** from `data/pages/templates-detail.ts` and **a record** from
- * `data/relationship-types.ts`, and this module is the join. It is a pure projection — no React,
- * no Next, no filesystem, no clock, no session — so the page module can prerender every slug at
- * build time and a node test can drive the model without a router.
+ * `data/relationship-types.ts`, and this module is the join.
+ * It is a pure projection — no React, no Next, no filesystem, no clock — and it takes no session:
+ * since #1042 the page's one action is the create flow's stage 1 for **every** viewer, so there is
+ * no viewer-shaped input to resolve. Everything else is a function of the fixtures, so the page
+ * module can still prerender and a node test can drive the model without a router.
  *
  * What the page shows, and why each part is the record's rather than the view's:
  *
@@ -21,7 +23,8 @@
  *     template does not carry a price of its own and the shop does not sell a relationship at a
  *     per-relationship rate (#798, and the owner's letter on #796), so there is no `type.price`
  *     read on this page at all;
- *   - one primary action, `startPathFor()` (`/register?next=…/create`, #867), and the worked
+ *   - one primary action, `startPathFor()` — the create flow's stage 1, carrying this type's
+ *     template, for a visitor and a member alike (#867, #1042) — and the worked
  *     example **only** where
  *     `demoAnswersFor()` holds a sheet — a link to a page that answers 404 is worse than none;
  *   - a way back to the directory.

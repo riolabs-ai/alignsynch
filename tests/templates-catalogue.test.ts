@@ -1,6 +1,15 @@
 /**
  * `/relationship-templates` — the V2 catalogue's claims, in one file (#905).
  *
+ * **The route no longer mounts what most of this file checks (#1040).** #1040 restored the #889
+ * shop listing at the canonical door on both builds, so `/relationship-templates` renders
+ * `TemplatesPageView` and the V2 composition below is **retained, not deleted** — the template
+ * doctrine catalogues a surface rather than deleting it. Everything else here therefore guards a
+ * component and a model rather than a screen, which is the point: a retained composition that rots
+ * is worse than a deleted one, because it looks re-mountable and is not. The one assertion about
+ * the route itself is the first case under *the endpoint and the screen*, and `templates-page.test.ts`
+ * is the rendered proof of the listing the route now serves.
+ *
  * The page is a re-cut on the visual system `docs/specs/spec-design-page-rel-templates-v2/` draws,
  * and it is **not** a clone of a drawing: the package contains a home page and a brand profile and
  * no catalogue page, so what the card asked for is that every band be an *instance* of a drawn
@@ -27,7 +36,15 @@
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+/**
+ * The page under test resolves the request's session for its own actions (#979), and
+ * `@/lib/auth/session` reaches Neon's SDK — whose entry imports `next/headers`, which a plain node
+ * process cannot resolve. The answer here is the signed-out one, the viewer this file's assertions
+ * are written against (`VISITOR`); the member's half is `tests/catalogue-start-session.test.ts`.
+ */
+vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
 import { TemplatesCatalogueView } from "@/components/templates/templates-catalogue-v2";
 import RelationshipTemplatesPage from "@/app/(marketing)/relationship-templates/page";
@@ -36,10 +53,15 @@ import { billingPlan } from "@/data/billing-plans";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { media } from "@/data/media";
 import { templatesPageCopy } from "@/data/pages/templates";
-import { purchasableTypesByGroup, type RelationshipType } from "@/data/relationship-types";
+import {
+  purchasableRelationshipTypes,
+  purchasableTypesByGroup,
+  type RelationshipType,
+} from "@/data/relationship-types";
 import { RELATIONSHIP_TYPES_PATH, TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
 import { leafLiterals } from "@/scripts/copy-refs";
 import { catalogueDetailPath } from "@/lib/template-catalogue";
+import { visitorOf } from "@/lib/start-path";
 import { templatesCatalogue } from "@/lib/templates-catalogue";
 
 /**
@@ -48,7 +70,8 @@ import { templatesCatalogue } from "@/lib/templates-catalogue";
  * ambient value is QuizHub — whose palette names none of the seven surface roles these bands
  * paint. That refusal is itself asserted below.
  */
-const model = templatesCatalogue(alignSynchBrand, templatesPageCopy);
+const VISITOR = visitorOf("alignsynch");
+const model = templatesCatalogue(alignSynchBrand, templatesPageCopy, VISITOR);
 const html = renderToStaticMarkup(createElement(TemplatesCatalogueView, { model }));
 
 /** Every string the model hands the view, flattened — the page's words, without the markup. */
@@ -101,7 +124,7 @@ describe("the six drawn bands, and nothing else", () => {
     // QuizHub's palette has no `sand`/`pale`/`mark`/`deep`; the route sends that brand down the
     // other branch rather than painting an invisible page, and the join refuses it loudly.
     expect(() =>
-      templatesCatalogue({ ...alignSynchBrand, colors: {} } as never, templatesPageCopy),
+      templatesCatalogue({ ...alignSynchBrand, colors: {} } as never, templatesPageCopy, VISITOR),
     ).toThrow(/names no/);
   });
 });
@@ -129,7 +152,7 @@ describe("the taxonomy is the catalogue", () => {
   });
 
   it("drops a group with no purchasable type instead of drawing it empty", () => {
-    const oneGroup = templatesCatalogue(alignSynchBrand, templatesPageCopy, ["Personal"]);
+    const oneGroup = templatesCatalogue(alignSynchBrand, templatesPageCopy, VISITOR, ["Personal"]);
     expect(oneGroup.templates.groups.map((group) => group.group)).toEqual(["Personal"]);
   });
 
@@ -152,7 +175,7 @@ describe("figures are derived, never typed", () => {
     const narrower = purchasableTypesByGroup()
       .map((group) => ({ ...group, types: group.types.slice(0, 2) }))
       .flatMap((group) => group.types);
-    const smaller = templatesCatalogue(alignSynchBrand, templatesPageCopy, [
+    const smaller = templatesCatalogue(alignSynchBrand, templatesPageCopy, VISITOR, [
       "Business",
       "Personal",
     ]);
@@ -196,16 +219,22 @@ describe("the canon's words, and none of the claims it forbids", () => {
 });
 
 describe("the endpoint and the screen", () => {
-  it("renders exactly one of the two catalogue compositions, on whichever brand the build is", () => {
-    // The page switches on `brandIdOf(brand)`, which is resolved from `BRAND` at build time: this
-    // process may be either brand (CI runs both lanes). What must hold either way is that the route
-    // renders *the* catalogue and never both compositions at once — a brand that fell through the
-    // switch, or one that rendered nothing, is the failure this pins.
-    const pageHtml = renderToStaticMarkup(createElement(RelationshipTemplatesPage));
-    const isV2 = pageHtml.includes('id="relationship-templates"');
-    const is889 = pageHtml.includes("data-template-card");
-    expect(isV2 || is889).toBe(true);
-    expect(isV2 && is889).toBe(false);
+  it("renders the #889 shop listing on every brand, and never the V2 composition (#1040)", async () => {
+    // The route used to switch on `brandIdOf(brand)`: the alignment build got the V2 composition
+    // and the quiz build the #889 one. #1040 restores the shop listing at the canonical door on
+    // **both** builds, so the assertion is brand-independent — which is also what makes it mean
+    // something in either of CI's two matrix lanes instead of passing on one and being skipped on
+    // the other.
+    //
+    // It is `await`ed because the route resolves the request's session before it builds the
+    // composition (#979): a member's action is not a visitor's, so the page is an async server
+    // component and a sync render of it is a suspended component, not a screen.
+    const pageHtml = renderToStaticMarkup(await RelationshipTemplatesPage());
+    // Only the #889 composition emits these: one card per purchasable type, and the shelf's search.
+    expect(pageHtml.match(/data-template-card/g)).toHaveLength(purchasableRelationshipTypes.length);
+    expect(pageHtml).toContain('id="template-search"');
+    // …and the V2 composition's own templates band is absent, so this is one screen, not two.
+    expect(pageHtml).not.toContain('id="relationship-templates"');
   });
 
   it("answers at the catalogue's endpoint, which is not the type namespace", () => {

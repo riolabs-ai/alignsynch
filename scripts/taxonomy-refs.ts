@@ -5,7 +5,7 @@
  * can see a *label*: a component that types `<span>Science</span>` where the category
  * table already says `Science` renders text no fixture can change, so renaming the
  * subject leaves the page stale and every gate stays green. The P2 inventory measured
- * this tier: 26 hits across 6 files (docs/P2-INVENTORY.md, DUP).
+ * this tier: 26 hits across 6 files (docs/operations/history/P2-INVENTORY.md, DUP).
  *
  * A hit is a JSX text node, or a JSX attribute, whose whole value equals a schema-owned
  * label — the exact shape a re-typed label takes (`<span>Science</span>`,

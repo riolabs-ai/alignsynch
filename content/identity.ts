@@ -42,7 +42,7 @@
  *                 same way `think` and `guess` come together in `zOpinions`: a flag with no
  *                 label, or a label with no flag, is half a field.
  *
- * Numbering: this is E32 in `docs/DATA-MODEL.md`'s additive set — the profile is the first
+ * Numbering: this is E32 in `docs/reference/data-model.md`'s additive set — the profile is the first
  * table in the tree that is not authored content (no fixture authors it) and the first whose
  * rows a person writes at runtime.
  */

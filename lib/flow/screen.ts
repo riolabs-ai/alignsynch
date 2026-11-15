@@ -213,6 +213,16 @@ export interface FlowScreen {
    * Optional for the same reason the input is — absent means nobody asked, never "unpaid".
    */
   readonly paymentArmed?: boolean;
+  /**
+   * #1014 — the **Initiator holds a live subscription**, which is what stage 5's walk is paid for by.
+   *
+   * Deliberately not `paymentArmed`. That one is `membership.writable`, which is `true` for a
+   * `draft` by design (nothing sold, nothing to lapse) — so gating the walk on it opened the walk on
+   * its thank-you for every brand-new relationship and then let the server refuse the send with
+   * `no-payment-method`. This fact is read from `billing_subscription`, the same row
+   * `sendDraftInvitation()` refuses on. `undefined` means nobody asked.
+   */
+  readonly subscriptionLive?: boolean;
 }
 
 export interface FlowInstanceRows {
@@ -253,8 +263,12 @@ export interface ProjectInput {
    * still type-checks, and absent means nobody asked — never "paid" and never "unpaid".
    */
   readonly paymentArmed?: boolean;
+  /**
+   * #1014 — whether the **Initiator holds a live subscription**. The walk's gate reads this, not
+   * `paymentArmed`: a `draft` is writable while holding no subscription at all (see `FlowScreen`).
+   */
+  readonly subscriptionLive?: boolean;
 }
-
 /** The party row for a role, or `undefined` — the caller's "not your instance" branch. */
 export function partyIn(
   parties: readonly PartyRow[],
@@ -401,5 +415,8 @@ export function projectScreen(input: ProjectInput): FlowScreen {
     report,
     // #911 — the same answer the status was computed from, carried for the invite stage's gate.
     ...(input.paymentArmed === undefined ? {} : { paymentArmed: input.paymentArmed }),
+    // #1014 — the walk's own gate fact. Carried beside `paymentArmed`, never instead of it: the two
+    // answer different questions and a `draft` makes them disagree on purpose.
+    ...(input.subscriptionLive === undefined ? {} : { subscriptionLive: input.subscriptionLive }),
   };
 }

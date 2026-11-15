@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Payment · prev [Lifecycle](lifecycle.md) · next [Brand boundary](brand-boundary.md)
+[Docs hub](../README.md) › **Diagrams** › Payment · prev [Lifecycle](lifecycle.md)
 
 <!-- docs-nav:end -->
 
@@ -97,11 +97,11 @@ clicks "pay" is refused by name, not hidden behind a disabled button.
 
 - [`lib/flow/payment.ts`](../../lib/flow/payment.ts) — the phases, the windows, the refusals.
 - [`lib/flow/payment-jobs.ts`](../../lib/flow/payment-jobs.ts) — what the cron owes at one instant.
-- [`docs/billing.md`](../billing.md) — the billing port and its adapters.
-- [`docs/pay-to-complete/ADR.md`](../pay-to-complete/ADR.md) — the decisions this ladder implements.
+- [`docs/reference/billing.md`](../reference/billing.md) — the billing port and its adapters.
+- [`docs/specs/pay-to-complete/ADR.md`](../specs/pay-to-complete/ADR.md) — the decisions this ladder implements.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Payment · prev [Lifecycle](lifecycle.md) · next [Brand boundary](brand-boundary.md)
+[Docs hub](../README.md) › **Diagrams** › Payment · prev [Lifecycle](lifecycle.md)
 
 <!-- docs-nav:end -->

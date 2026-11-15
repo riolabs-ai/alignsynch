@@ -22,7 +22,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import { brands } from "../../data/brand";
-import { MASKABLE_GLYPH_FRACTION } from "../../lib/brand-icon";
+import { MASKABLE_MARK_FRACTION, markBoxOf } from "../../lib/brand-icon";
 import { alphaBBox, decodePng, encodeIco, pngSize, type RgbaImage } from "../image-bytes";
 import {
   ICON_MARK_MAX_DISTANCE,
@@ -101,8 +101,9 @@ describe("decodePng", () => {
 
   it("has no ground — the shipped icon's canvas is transparent to the corner", () => {
     // Owner, 2026-11-03: no tile behind the mark on any surface. So the icon's alpha box is its
-    // *ink* (the 64 % maskable box), not the whole raster, and the corner pixel is fully clear.
-    // Measured: 328 × 210 of ink inside 512, centred at (256, 256).
+    // *ink* (the maskable box, `MASKABLE_MARK_FRACTION` of the longest side, centred), not the
+    // whole raster, and the corner pixel is fully clear. The box is taken from the rule the
+    // generator places rather than retyped, so a fill change moves one number, not two.
     const image = generated();
     const pixel = (x: number, y: number) =>
       Array.from(image.data.subarray((y * image.width + x) * 4, (y * image.width + x) * 4 + 4));
@@ -110,8 +111,14 @@ describe("decodePng", () => {
     assert.equal(pixel(511, 511)[3], 0, "and so must the bottom-right");
     const ink = alphaBBox(image);
     assert.ok(ink !== undefined);
-    assert.equal(ink.width, 328);
-    assert.equal(ink.height, 210);
+    const expected = markBoxOf(
+      alphaBBox(mark()) ?? { x: 0, y: 0, width: 1, height: 1 },
+      MASKABLE_MARK_FRACTION,
+    );
+    // Within a pixel or two of the rule: the ink's outermost rows are antialiased, so the measured
+    // box is a hair inside the geometric one.
+    assert.ok(Math.abs(ink.width - expected.width) <= 4, `${ink.width} vs ${expected.width}`);
+    assert.ok(Math.abs(ink.height - expected.height) <= 8, `${ink.height} vs ${expected.height}`);
   });
 
   it("writes an ICO whose entries point at their own payloads", () => {
@@ -253,7 +260,7 @@ describe("the shipped icon set", () => {
       if (record.mark === undefined) continue;
       const icon = decodePng(read(`/brand/${id}-icon-512.png`));
       const source = decodePng(read(record.mark.src));
-      const measurement = measureIconAgainstMark(icon, source, MASKABLE_GLYPH_FRACTION);
+      const measurement = measureIconAgainstMark(icon, source, MASKABLE_MARK_FRACTION);
       assert.ok(
         measurement.distance <= measurement.limit,
         `${id}: ${measurement.distance.toFixed(2)} > ${measurement.limit} — ${id}-icon-512.png no longer looks like ${record.mark.src}`,

@@ -134,10 +134,26 @@ describe("the stage column", () => {
   it("is what every flow screen renders inside", () => {
     for (const path of FLOW_SCREENS) {
       const file = code(path);
+      if (path.endsWith("create-relationship.tsx")) {
+        // The five stages reach the column through the flow's one shell (#979 B): the shell draws the
+        // column and the rail, so the page mounting and the dialog mounting cannot centre or number
+        // the same stage differently.
+        expect(file, `${path} renders the one flow shell`).toContain(
+          'from "./relationship-flow-shell"',
+        );
+        expect(file, `${path} renders the one flow shell`).toContain("<RelationshipFlowShell");
+        continue;
+      }
       expect(file, `${path} imports the shared column`).toContain('from "./stage-column"');
       expect(file, `${path} renders the shared column`).toContain("<StageColumn>");
       expect(file, `${path} closes the shared column`).toContain("</StageColumn>");
     }
+
+    // …and the shell is the one that draws it, for both mountings.
+    const shell = code("components/assessment-flow/relationship-flow-shell.tsx");
+    expect(shell).toContain('from "./stage-column"');
+    expect(shell).toContain("<StageColumn>");
+    expect(shell).toContain("</StageColumn>");
   });
 
   it("leaves no stage centring a column of its own", () => {

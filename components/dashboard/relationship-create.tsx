@@ -33,10 +33,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { PageCopy } from "@/content/pages";
+import { rememberFlowOrigin, FLOW_ORIGIN_FALLBACK_SELECTOR } from "@/lib/flow/dialog-origin";
 import { createRelationshipPath } from "@/lib/flow/paths";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 /**
@@ -64,6 +65,7 @@ export function RelationshipStart({
   /** The chooser holds the template's **slug**, which is the flow's address (`#794`). */
   const [slug, setSlug] = useState("");
   const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <Card>
@@ -101,9 +103,26 @@ export function RelationshipStart({
               <Button
                 type="button"
                 data-start-in-flow="true"
+                data-create-relationship-trigger="true"
                 disabled={slug === ""}
-                onClick={() => {
-                  if (slug !== "") router.push(createRelationshipPath(slug));
+                onClick={(event) => {
+                  if (slug === "") return;
+                  /*
+                   * **Where the flow was opened from, and what opened it (#979 B).** The flow's
+                   * dialog is mounted by an intercepted route, so the address that opens it is the
+                   * stage's own and carries no origin: the page underneath is remembered here, by
+                   * the control that is standing on it, and closing returns to exactly this page
+                   * with focus back on this button. Nothing is written to storage — a reload is
+                   * not a re-entry.
+                   *
+                   * The third argument is the fallback: this button is inside the chooser, and the
+                   * intercepted render closes the chooser, so it can be gone by the time the flow is
+                   * dismissed. The Start control in the page header carries
+                   * `data-relationships-start-toggle` and is always mounted; focus goes there when
+                   * this button is no longer in the document.
+                   */
+                  rememberFlowOrigin(pathname, event.currentTarget, FLOW_ORIGIN_FALLBACK_SELECTOR);
+                  router.push(createRelationshipPath(slug));
                 }}
               >
                 {itemLabel(fresh, "submit")}

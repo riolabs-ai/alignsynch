@@ -24,13 +24,12 @@
  * that used to link `/assessment/templates/<id>/create` handed a signed-out visitor a screen he
  * had no account for yet; a marketing card must not do that.
  *
- * **The card carries which template, though (#867).** Bare `/register` threw the visitor's choice
- * away: the account was created and the person landed on the brand's landing page, with the
- * template gone. So the action is `startPathFor()` — `/register?next=<that type's create step>` —
- * the parameter `/register` already honours (`signInDestination`, `lib/auth/next-path.ts`), which
- * survives the sign-up round trip and puts stage 1 of the chosen template back in front of the
- * person who chose it. The create address is still never linked directly from a public page: it is
- * what `next` resolves to *after* the account exists.
+ * **The card carries which template, and that is the whole address (#1042).** Bare `/register`
+ * threw the visitor's choice away: the account was created and the person landed on the brand's
+ * landing page, with the template gone. #867 patched that with `/register?next=<create step>`; since
+ * #1042 the action is `startPathFor()` — the create flow's **stage 1**, with the template in the
+ * path — because stage 1 renders for a signed-out visitor (#690) and the account is stage 4 of that
+ * same wizard. One door, one address, both viewers.
  *
  * Free of React and Next so a node test can render the model, the same reason `lib/alignment-home.ts`
  * gives: the components that draw these cards hold no words and no hrefs of their own.
@@ -41,11 +40,10 @@ import { billingPlan, type BillingPlan } from "@/data/billing-plans";
 import { demoAnswersFor, isPurchasable, type RelationshipType } from "@/data/relationship-types";
 import {
   TEMPLATE_CATALOGUE_PATH,
-  createRelationshipPath,
   relationshipTypeDemoPath,
   relationshipTypePath,
 } from "@/lib/flow/paths";
-import { registerPathFor } from "@/lib/auth/paths";
+import { REGISTER_PATH, startPathFor, type StartViewer } from "@/lib/start-path";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
 
 /**
@@ -88,32 +86,30 @@ export function cataloguePriceNote(label: string): string {
  * survives for the callers that need the address itself (the sign-in checks that compare against
  * it) and so the route is spelled once.
  */
-export const START_PATH = "/register";
+export const START_PATH = REGISTER_PATH;
 
 /**
- * **Where a catalogue action starts, with the template the visitor chose** (#867).
+ * **Where a catalogue action starts, with the template the visitor chose** (#867), for **every**
+ * viewer (#1042).
  *
- * A signed-out visitor's click is the one moment in the product where intent is already expressed,
- * and `/register` on its own throws it away: the account is created, the view pushes the brand's
- * default landing page (`AFTER_SIGN_IN_BY_BRAND`), and the template has to be found again from a
- * list. So the action names the create flow's stage 1 for **this** type as the sign-up destination,
- * which `/register` already honours (`?next=`, read by `signInDestination`).
+ * The action is `lib/start-path.ts`'s: the flow's stage 1, carrying the chosen template. Until
+ * #1042 this re-export also carried the viewer, because a visitor was first sent to the account
+ * that buys the relationship (`/register?next=<this type's create step>`) and a member straight
+ * into the flow. That split made one intent three doors; stage 1 renders for a signed-out visitor
+ * (#690 — it has never required an account, and the account is stage 4 of the same wizard), so
+ * both viewers are now handed the same screen.
  *
- * The two halves are joined here rather than in a component, because the same action is drawn on
- * three surfaces — the catalogue card, the type's own page and its worked example — and a surface
- * that forgot the query would silently reintroduce the bug on one shelf. `createRelationshipPath()`
- * is `lib/flow/paths.ts`'s, so the address is authored in one module and the sign-up wrapper in
- * another; neither is spelled here.
+ * The address is joined there rather than in a component because the same action is drawn on
+ * four surfaces — the catalogue card, the type's own page, its worked example and the front page's
+ * shelf — and a surface that authored its own destination is how the three-door split happened.
+ * `createRelationshipPath()` is `lib/flow/paths.ts`'s; neither is spelled here.
  *
  * It is **not** a promise the route cannot keep: `/templates/relationship/<id>/create` renders for
- * a signed-out visitor too (#690 — stage 1 never asked for an account), so the destination is a
- * screen whether or not the sign-up completes, and the shipped-on-this-build validation
- * (`signInDestination`) falls back to the brand's page rather than honouring a path this build
- * does not render.
+ * a signed-out visitor (#690), so the destination is a screen whether or not the person has an
+ * account yet, and the draft they type there survives the sign-in at stage 4.
  */
-export function startPathFor(typeId: string): string {
-  return registerPathFor(createRelationshipPath(typeId));
-}
+export { startPathFor };
+export type { StartViewer };
 
 /**
  * The catalogue page's own route — the one a "View all" points at.
@@ -159,7 +155,7 @@ export interface TemplateCard {
   readonly priceNote: string;
   /** The worked example, **only** where the fixture holds a demo sheet for this type. */
   readonly example?: string;
-  /** Where a reader starts this relationship: `/register`. */
+  /** Where this relationship starts: the flow's stage 1, with this template (#1042). */
   readonly start: string;
   /** The template's public page: `/templates/<slug>`. The card's title links here. */
   readonly detail: string;

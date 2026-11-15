@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md)
 
 <!-- docs-nav:end -->
 
@@ -101,34 +101,34 @@ testing every transition, the same discipline as `myInstanceStateOf`.
 
 ## Sources
 
-- **USWDS, Step indicator** — https://designsystem.digital.gov/components/step-indicator/
+- **USWDS, Step indicator** — <https://designsystem.digital.gov/components/step-indicator/>
   Use for forms spanning pages with linear back/next; "When to consider something else": steps
   that change due to input, nonlinear progression, fewer than three sections. Current step =
   most prominent, `aria-current`, completion status in visually hidden text.
 - **VA.gov Design System, Segmented progress bar** —
-  https://dev-design.va.gov/3970/components/form/progress-bar-segmented
+  <https://dev-design.va.gov/3970/components/form/progress-bar-segmented>
   "Tracking progress over an extended period of time: use the Process list component"; "Steps
   can be completed in any order: consider Master/Detail… and provide status".
 - **GOV.UK Design System, Task list component/pattern** —
-  https://design-system.service.gov.uk/components/task-list/
+  <https://design-system.service.gov.uk/components/task-list/>
   For services users cannot complete in one sitting and whose tasks have order freedom; each
   task shows name + status; do not use when steps must run in a fixed order.
 - **NN/g, "Wizards: Definition and Design Recommendations"** —
-  https://www.nngroup.com/articles/wizards/
+  <https://www.nngroup.com/articles/wizards/>
   A wizard is steps the _user_ completes in a prescribed order, with the current step
   highlighted; "if there are substantial benefits to completing steps in an arbitrary sequence…
   this functionality is not suited to be provided as a wizard."
 - **NN/g, smart-device onboarding / progress indicators** —
-  https://www.nngroup.com/articles/smart-device-onboarding/ (and
-  https://www.nngroup.com/articles/progress-indicators/)
+  <https://www.nngroup.com/articles/smart-device-onboarding/> (and
+  <https://www.nngroup.com/articles/progress-indicators/>)
   "Misleading indicators quickly erode trust. A progress bar that fills up without reflecting
   actual progress creates false expectations."
-- **Material Design / MUI, Stepper** — https://mui.com/material-ui/react-stepper/ — "This
+- **Material Design / MUI, Stepper** — <https://mui.com/material-ui/react-stepper/> — "This
   component is no longer documented in the Material Design guidelines" (steppers were removed
   from M3).
-- **WCAG 2.2** — https://www.w3.org/TR/WCAG22/ SC 1.3.1 (list semantics), 1.4.1 (never
+- **WCAG 2.2** — <https://www.w3.org/TR/WCAG22/> SC 1.3.1 (list semantics), 1.4.1 (never
   check-only completion), and ARIA `aria-current="step"`.
-- **docs/SPEC-DRIFT.md §3–4** — glossary says six stages, spec says eight, ruling #4.3 says four
+- **docs/operations/spec-drift.md §3–4** — glossary says six stages, spec says eight, ruling #4.3 says four
   relationship stages with "No Stage Bar visual until the four are derived and named";
   mockups are inspiration, not requirements (§9); UC150: the initiator never learns an invite
   expired.
@@ -189,11 +189,11 @@ testing every transition, the same discipline as `myInstanceStateOf`.
 
 ## Related
 
-- [STAGES.md](../STAGES.md) — the two ladders behind the four stages.
+- [STAGES.md](stages.md) — the two ladders behind the four stages.
 - [lifecycle.md](../diagrams/lifecycle.md) — the state chart these displays follow.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Stage display · prev [The Gap report](ux-report.md) · next [Reference UX patterns](ux-reference-patterns.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Stage display · prev [The Gap report](ux-report.md)
 
 <!-- docs-nav:end -->

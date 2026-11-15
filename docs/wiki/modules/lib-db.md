@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › lib/db · prev [data](data.md) · next [lib/flow](lib-flow.md)
+[Docs hub](../../README.md) › **Code wiki** › lib/db · prev [lib/admin](lib-admin.md) · next [lib/flow](lib-flow.md)
 
 <!-- docs-nav:end -->
 
@@ -74,6 +74,6 @@ Managed Auth lives in its own `neon_auth` schema and is never migrated here.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › lib/db · prev [data](data.md) · next [lib/flow](lib-flow.md)
+[Docs hub](../../README.md) › **Code wiki** › lib/db · prev [lib/admin](lib-admin.md) · next [lib/flow](lib-flow.md)
 
 <!-- docs-nav:end -->

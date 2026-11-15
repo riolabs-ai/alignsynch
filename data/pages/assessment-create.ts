@@ -30,7 +30,66 @@
  * `SETTING_LABELS`, `SETTING_DEFINITIONS`), not a second copy of them here.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
+import { formatCurrency } from "../../content/core";
+import { billingPlan } from "../billing-plans";
+import type { PaidPlanId } from "../billing-prices";
 import { lifecycleStageSection } from "./lifecycle";
+
+/**
+ * One tier's monthly figure, from the fixture that sells it (#975).
+ *
+ * This section used to carry two typed prices — `$9.95` and `$19.85` — under a comment claiming
+ * they were "data here for the reason every other figure in this tree is: a price typed into
+ * markup is a price that can disagree with the one the pricing page sells". They were typed here,
+ * and they did disagree: `/dashboard/templates` sold `Basic · $8.95/mo` and `/pricing` sold the
+ * same, while stage 5 of the create flow asked the same person for `$9.95 /mo` and `$19.85 /mo`
+ * over the identical two choices. Three prices, one relationship, no gate anywhere that compared
+ * them.
+ *
+ * So the figure is read, never typed: `data/billing-plans.ts` is the one home for a price, and
+ * this module names a tier and prints its monthly amount. A tier that stops existing is a thrown
+ * error at import — a screen with a missing price is a screen that would otherwise print `$0.00`.
+ */
+const ONE_RELATIONSHIP_PLAN_ID = "basic";
+const UNLIMITED_PLAN_ID = "principal";
+
+/**
+ * **The tier each plan row sells — the crossing between stage 5's row ids and the catalogue.**
+ *
+ * The `plans` section below is keyed by the row ids the prototype prints (`one`, `unlimited`,
+ * `one-note`, `one-price`), and each row's figure is read from the tier named here
+ * (`monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID)`). That pair is what a checkout must be asked for, and
+ * it is declared once, here, beside the prices it produces — a second map anywhere else is how the
+ * two vocabularies drifted apart in the first place.
+ *
+ * **Why it needs saying out loud.** Both vocabularies are `string`, so nothing in the type system
+ * saw the walk posting a row id as a tier: stage 5 sent `"one"`, the adapter answered *"one" is not
+ * a plan this product sells*, the card frame never mounted, and — with `#1019`'s send behind that
+ * gate — no new relationship could be completed. `tests/plan-billing-tier.test.tsx` binds this map
+ * to `BILLING_PLAN_IDS` **and** to a Price at both intervals, so the next rename on either side
+ * fails a check instead of a checkout.
+ *
+ * `satisfies Record<string, PaidPlanId>` keeps a tier that is not sold (`free`) out of the map at
+ * compile time; the reverse direction — a row this map prices that the panel does not draw — is
+ * the key comparison the test makes, since no type can see a map entry nothing reads.
+ */
+export const PLAN_BILLING_TIER = {
+  one: ONE_RELATIONSHIP_PLAN_ID,
+  unlimited: UNLIMITED_PLAN_ID,
+} as const satisfies Record<string, PaidPlanId>;
+
+/** The plan rows the money panel draws: the keys of the map above. */
+export type PlanRowId = keyof typeof PLAN_BILLING_TIER;
+
+function monthlyPriceOf(id: typeof ONE_RELATIONSHIP_PLAN_ID | typeof UNLIMITED_PLAN_ID): string {
+  const plan = billingPlan(id);
+  if (plan === undefined) {
+    throw new Error(
+      `data/billing-plans.ts has no "${id}" plan — the create flow's stage 5 prints its monthly figure`,
+    );
+  }
+  return formatCurrency(plan.monthlyCents);
+}
 
 export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
   /**
@@ -108,11 +167,13 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
       /**
        * The two plans (#690, re-headed by #911).
        *
-       * The approved prices are data here for the reason every other figure in this tree is: a
-       * price typed into markup is a price that can disagree with the one the pricing page sells.
-       * The rows are a single-choice group (`role="radio"`, `aria-checked`) shaped like the Mode
-       * choice, and choosing one commits nothing — the card step is where a card is taken, and it
-       * charges nothing either.
+       * **The figures are read from `data/billing-plans.ts` (#975).** They were typed here as
+       * `$9.95` / `$19.85` and had drifted from the plan fixture the shelf and `/pricing` sell
+       * (`Basic · $8.95/mo`), so one person asking "what does this cost?" got three answers.
+       * `monthlyPriceOf()` above names the tier and prints its amount; nothing in this file
+       * spells a price. The rows are a single-choice group (`role="radio"`, `aria-checked`)
+       * shaped like the Mode choice, and choosing one commits nothing — the card step is where a
+       * card is taken, and it charges nothing either.
        *
        * **#911 changed what this step is for.** It used to be a soft prompt beside a send that went
        * through unpaid. Now the walk's first step is where the money is *decided*: the two things
@@ -129,19 +190,19 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
       body: "Two things the money buys: you join a membership plan, and this relationship is activated. Nothing is charged today — the trial starts when the card is saved.",
       items: [
         { id: "legend", label: "Choose a plan" },
-        { id: "one", label: "One relationship" },
+        { id: "one", label: "Basic" },
         {
           id: "one-note",
           label:
             "One open-ended relationship term. Switch relationships whenever you like; the term does not expire.",
         },
-        { id: "one-price", label: "$9.95" },
-        { id: "unlimited", label: "Unlimited relationships" },
+        { id: "one-price", label: monthlyPriceOf(ONE_RELATIONSHIP_PLAN_ID) },
+        { id: "unlimited", label: "Principal" },
         {
           id: "unlimited-note",
           label: "Every relationship you open, for as long as you keep the plan.",
         },
-        { id: "unlimited-price", label: "$19.85" },
+        { id: "unlimited-price", label: monthlyPriceOf(UNLIMITED_PLAN_ID) },
         { id: "per", label: "/mo" },
         { id: "best-value", label: "best value" },
         {
@@ -169,8 +230,7 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
          */
         {
           id: "included",
-          label:
-            "You are on {plan}. Advanced Mode is included, so there is nothing to choose here.",
+          label: "You are on {plan}. There is nothing to choose here.",
         },
         {
           id: "included-plan-label",
@@ -214,7 +274,6 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "card-charged",
           label: "Nothing is charged today. The 7-day trial starts when the card is saved.",
         },
-        { id: "card-start", label: "Enter the card" },
         { id: "card-starting", label: "Opening the card fields…" },
         { id: "card-secure", label: "Secure payment · Stripe" },
         { id: "card-test-mode", label: "test mode" },
@@ -232,11 +291,6 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           id: "thanks-body",
           label:
             "The plan is active and the card is on file. Nothing has been charged today — the trial starts when the card is saved.",
-        },
-        {
-          id: "thanks-next",
-          label:
-            "Send the invitation with the control beside this walk when you are ready, or keep the draft and send it later.",
         },
       ],
     },
@@ -318,6 +372,21 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label: "The plan is active and the card is on file. The invitation can go now.",
         },
         { id: "draft", label: "Continue as Draft" },
+        {
+          /**
+           * #1014 — the send's transport refusal, drawn in the walk's own panel. It is the one
+           * sentence this card adds: every other word on the action step already existed (the
+           * stage's heading, its body, its two labels, its unlocked line). It says the three true
+           * things — nothing was sent, nothing was charged, and the draft is still theirs — because
+           * a send that failed to reach the app must not read as a send that failed to happen.
+           *
+           * The `?resend=` band owns the codes the *endpoint* refuses with (no membership, not the
+           * Initiator, already published); this is the one the network itself can produce.
+           */
+          id: "send-refused",
+          label:
+            "The invitation did not go out — the request could not reach the app. Nothing was sent and nothing was charged. Try again, or keep the draft.",
+        },
         { id: "note-heading", label: "What you can do later" },
         {
           id: "reassure",
@@ -566,6 +635,20 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
           label:
             "Advanced Mode is included in your seven-day trial. After the trial ends, it needs a plan that includes it.",
         },
+        {
+          /**
+           * #957's server half — the create endpoint is stage 4's draft write, and a post that did
+           * not come through the stages is refused by name rather than created.
+           *
+           * The sentence names **what the product does** and not the technical fact ("the post
+           * carried no draft flag"), because the person reading it pressed something that should
+           * have started the flow: the relationship is saved as a draft first, and stage 5 decides
+           * whether the invitation goes out. The door beside it is stage 1 of that same template.
+           */
+          id: "create-not-from-flow",
+          label:
+            "A relationship is saved as a draft from the create flow, and the invitation is sent from the step after it. Start it from the template and it will be saved — nothing has gone out.",
+        },
         // #618 — the door the two plan lines above name and neither drew. One label for both
         // codes, because it points at the same page: the plan grid, which is where a tier is
         // chosen and where the checkout button for that tier lives. Neither sentence changed.
@@ -582,6 +665,12 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
          * with no fix at all (not yours, not there, already a relationship).
          */
         { id: "open-template", label: "Open this template" },
+        /**
+         * #957's server half — the door a refused bare post names: stage 1 of the template it
+         * could not copy from. It is the same address every catalogue card opens since #957, so the
+         * refusal hands the person the flow rather than the library.
+         */
+        { id: "start-the-flow", label: "Start the relationship" },
         { id: "fix-aspects", label: "Edit this template's Aspects" },
         { id: "back-to-templates", label: "Back to your templates" },
         { id: "back-to-relationships", label: "Back to my relationships" },

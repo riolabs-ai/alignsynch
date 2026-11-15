@@ -18,7 +18,7 @@
  *      rendered, the plan-at-completion claim is stated, and the one way to a price is `/pricing`
  *      (#805, and the move that brought this page into `(marketing)`).
  *
- * The starter check is `docs/V1-RETIREMENT.md`'s demo row: the surface was `/v1/...` and marked
+ * The starter check is `docs/operations/history/V1-RETIREMENT.md`'s demo row: the surface was `/v1/...` and marked
  * **release** for launch criterion 5, so it moved here rather than being deleted.
  */
 import { readFileSync } from "node:fs";
@@ -30,6 +30,14 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   },
 }));
+
+/**
+ * The page under test resolves the request's session for its own action (#979), and
+ * `@/lib/auth/session` reaches Neon's SDK — whose entry imports `next/headers`, which a plain node
+ * process cannot resolve. The answer here is the signed-out one, the viewer this file's assertions
+ * are written against (`VISITOR`); the member's half is `tests/catalogue-start-session.test.ts`.
+ */
+vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
 import DemoPage, { generateMetadata } from "@/app/(marketing)/relationship-types/[slug]/demo/page";
 import { formatCurrency } from "@/content/core";
@@ -49,6 +57,11 @@ import {
   relationshipTypePath,
 } from "@/lib/flow/paths";
 import { START_PATH, startPathFor } from "@/lib/template-catalogue";
+import { visitorOf } from "@/lib/start-path";
+
+/** Every case here is the worked example as a **visitor** reads it; the member's half is
+ *  `tests/catalogue-start-session.test.ts` (#979). */
+const VISITOR = visitorOf("alignsynch");
 
 /** The two types with an authored sheet — the demo's whole reachable set today. */
 const DEMO_IDS = Object.keys(demoAnswersByType) as readonly string[];
@@ -100,22 +113,18 @@ describe("the worked example is one type's report, through the live projection",
     }
   });
 
-  it("points the Start CTA at the public gate, carrying this type's create step", () => {
+  it("points the Start CTA at stage 1, carrying this type's template", () => {
     for (const id of DEMO_IDS) {
       const demo = assessmentDemo(id);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
-      // The example is a `(marketing)` page, so `/register` is the honest action — the account is
-      // created **first**, and since #867 the gate is told which template the reader chose, so the
-      // sign-up lands on that template's stage 1 rather than on the brand's landing page.
+      // #1042 — the example is a `(marketing)` page and the action is still public, but the door is
+      // the wizard's first screen rather than the sign-up form: a visitor types Details here and
+      // meets the account at stage 4, on the draft. The template they were just reading travels in
+      // the address, so nothing about their choice is lost.
       expect(demo.startPath).toBe(startPathFor(id));
-      expect(demo.startPath.startsWith(`${START_PATH}?next=`)).toBe(true);
-      expect(new URL(demo.startPath, "http://x").searchParams.get("next")).toBe(
-        createRelationshipPath(id),
-      );
+      expect(demo.startPath).toBe(createRelationshipPath(id));
+      expect(new URL(demo.startPath, "http://x").search).toBe("");
       expect(demo.startPath.startsWith("/v1/")).toBe(false);
-      // Never the in-app create address on its own: that is what the gate resolves to, not what a
-      // signed-out reader is handed.
-      expect(demo.startPath).not.toBe(createRelationshipPath(id));
     }
   });
 });
@@ -174,7 +183,11 @@ describe("the page draws the label and the report", () => {
     expect(html).not.toContain("/assessment/demo");
     // … the breadcrumb back is the type itself, not the signed-in library …
     expect(html).toContain(`href="${relationshipTypePath(type)}"`);
-    expect(html).not.toContain('href="/templates/');
+    // … and the one `/templates/` href on the page is the flow's stage 1 this example belongs to
+    // (#1042) — never the member library, which is the signed-in screen.
+    for (const match of html.matchAll(/href="(\/templates\/[^"]*)"/g)) {
+      expect(match[1]).toBe(createRelationshipPath(type));
+    }
     // … and the page is the public one: no sidebar, no shelf column of its own.
     expect(html).not.toContain("data-tour");
   });

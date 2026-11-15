@@ -284,17 +284,19 @@ describe("stage 5 is not a dead end", () => {
       }),
     );
 
-  it("draws the payment walk, the send and the keep-as-draft control on a clean visit", () => {
+  it("draws the walk and the keep-as-draft control on a clean visit", () => {
     const html = stage5();
     expect(html).toContain('data-pay-step="plan"');
-    expect(html).toContain('data-create-send="true"');
     expect(html).toContain('data-create-keep-draft="true"');
-    expect(html).toContain(itemLabel(sectionOf(assessmentCreatePageCopy, "invite"), "submit"));
+    expect(html).toContain(itemLabel(sectionOf(assessmentCreatePageCopy, "invite"), "draft"));
+    // #1014 — the send is the walk's last step, and the stage opens unpaid, so it is not drawn here.
+    expect(html).toContain('data-send-gate="locked"');
+    expect(html).not.toContain('data-create-send="true"');
   });
 
-  it("keeps all three when a template refusal is what brought the person here", () => {
+  it("keeps the walk and the way out when a template refusal is what brought the person here", () => {
     // The owner's exact screen: a band, and nothing else. The band is still there — the refusal is
-    // correct information — and so are the walk, the send and the way out.
+    // correct information — and so are the walk and the way out.
     const refusal = createRefusal("template-archived", undefined, CONTEXT);
     const html = stage5({
       problem: refusal?.sentence ?? null,
@@ -302,7 +304,6 @@ describe("stage 5 is not a dead end", () => {
     });
     expect(html).toContain('data-create-problem="true"');
     expect(html).toContain('data-pay-step="plan"');
-    expect(html).toContain('data-create-send="true"');
     expect(html).toContain('data-create-keep-draft="true"');
     expect(html).toContain(`data-create-problem-link="${relationshipTemplatePath(TEMPLATE.slug)}"`);
     expect(html).toContain(`data-create-problem-secondary="${RELATIONSHIPS_PATH}"`);
@@ -311,20 +312,19 @@ describe("stage 5 is not a dead end", () => {
   it("still offers a door when the page names none — the fallback is the list", () => {
     const html = stage5({ problem: itemLabel(PROBLEMS, "template-archived") });
     expect(html).toContain(`data-create-problem-link="${RELATIONSHIPS_PATH}"`);
-    expect(html).toContain('data-create-send="true"');
+    expect(html).toContain('data-create-keep-draft="true"');
   });
 
-  it("keeps Send on screen when a plan notice is set — the walk gates it, not the notice (#834, #835, #911)", () => {
+  it("keeps the way out when a plan notice is set — the notice is information (#834, #835, #911)", () => {
     const notice = createRefusal("mode-not-entitled", undefined, CONTEXT);
     const html = stage5({ notice: notice?.sentence ?? null, noticeLink: notice?.link ?? null });
     expect(html).toContain('data-create-notice="true"');
     expect(html).toContain('role="status"');
-    // The notice is information, not a wall: the send is still drawn and still posts. What keeps it
-    // disabled here is the walk (no card on file), and that is the only reason — the notice must not
-    // be the thing that greys it, which is what this asserts by naming the gate's own state.
-    expect(html).toContain('data-create-send="true"');
+    // The notice is information, not a wall: the walk still opens, and the draft it always offers is
+    // still on screen. What withholds the send here is the walk's own gate (#1014), and that is the
+    // only reason — the notice must not be the thing that removes it.
+    expect(html).toContain('data-create-keep-draft="true"');
     expect(html).toContain('data-send-gate="locked"');
-    expect(html).toContain('data-send-confirm="disabled"');
   });
 });
 
@@ -333,6 +333,7 @@ describe("the walk asks only for the decision the account still has (#870)", () 
     renderToStaticMarkup(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
+        instanceRecordId: "assessment-instance-1",
         relationshipId: "relationship-1",
         paid: false,
         onPaid: () => undefined,

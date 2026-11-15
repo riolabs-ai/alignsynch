@@ -24,17 +24,19 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
+import type { FlowMount } from "@/components/assessment-flow/relationship-flow-shell";
 import {
-  capturePaymentMethodAction,
-  resolveCaptureAction,
+  confirmMembershipAction,
+  startMembershipAction,
 } from "@/app/(mainlayout)/dashboard/relationships/actions";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import { entitlementForAccount } from "@/lib/billing";
 import { createRefusal } from "@/lib/flow/create-copy";
+import { carriedPlanOf, parsePlanIntent } from "@/lib/flow/plan-intent";
 import { createCommitPath, createRelationshipPath } from "@/lib/flow/paths";
-import { partyCookieName } from "@/lib/flow/session";
+import { partyCookieName, PLAN_INTENT_COOKIE } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
 
 export const dynamic = "force-dynamic";
@@ -58,9 +60,17 @@ function firstValue(value: string | string[] | undefined): string | undefined {
 export default async function TemplateCreateInvitePage({
   params,
   searchParams,
+  mount = "page",
 }: {
   params: Promise<{ slug: string }>;
   searchParams: Promise<InviteParams>;
+  /**
+   * **Where the shell mounts this stage (#979 B).** A stage's own route says nothing and gets the
+   * `page` mounting — the deep link, the refresh, the invitation link. The intercepted route under
+   * `dashboard/relationships/@flow/**` passes `dialog`, and the same render is drawn over the page
+   * the flow was started from. Nothing else in this file depends on it.
+   */
+  mount?: FlowMount;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -132,28 +142,53 @@ export default async function TemplateCreateInvitePage({
    * them together — but it cannot read a session, an entitlement or a row, so the three facts it
    * needs arrive as props:
    *
-   *   `capture`      the two server actions a card needs (started, then resolved by the session the
-   *                  provider minted). Passed in because a `"use client"` module that imported them
-   *                  would reach `lib/db/**` — E34's failure mode.
-   *   `initialPaid`  whether a card is already on file (`paymentArmed`). A person who paid and came
-   *                  back lands on the thank-you with the send enabled instead of being asked twice.
+   *   `capture`      the two server actions the membership needs (start the checkout, then confirm
+   *                  it by the session the provider minted). Passed in because a `"use client"`
+   *                  module that imported them would reach `lib/db/**` — E34's failure mode.
+   *   `initialPaid`  whether a membership is already live for this account. A person who paid and
+   *                  came back lands on the thank-you with the send enabled instead of being asked
+   *                  twice.
    *   `planIncluded` what the account's plan already covers, so an entitled account gets a summary
    *                  rather than a radio group selling a tier it holds.
    *
-   * **Nothing here charges, and this is the only card form.** The card is Stripe's, mounted inside
-   * the walk from `components/billing/stripe-frame.tsx` — since #912 the walk is that module's only
-   * caller, because the dashboard's capture dialog is deleted. This page hands over actions; it never
-   * draws a field.
+   * **`initialPaid` is `screen.subscriptionLive`, not `screen.paymentArmed` (#1014).** The latter is
+   * `membership.writable`, and a `draft` reads writable on purpose — nothing has been sold, so there
+   * is nothing to lapse. Stage 5 renders on exactly such a draft, so `paymentArmed` answered "paid"
+   * for every new relationship: the walk opened on its thank-you, skipped the plan and the card, and
+   * `sendDraftInvitation()` refused the send with `no-payment-method`. `subscriptionLive` is read
+   * from the same `billing_subscription` row that refusal names, so the courtesy and the rule agree.
+   *
+   * **This is the membership purchase (#1010 R2), and the only card form.** The card is Stripe's,
+   * mounted inside the walk from `components/billing/stripe-frame.tsx`, and it mounts the
+   * *subscription* checkout — one monthly membership covering both parties, seven days free. There
+   * is no "add a payment method" act on this stage or anywhere else: a card reaches an account by
+   * buying the membership. This page hands over actions; it never draws a field.
    */
   const accountPlan =
     entitlement === null
       ? undefined
       : { name: entitlement.planName, entitled: entitlement.paid && entitlement.advancedMode };
 
+  /**
+   * **The plan `/pricing` carried through the catalogue, the template and the account (#1043).**
+   *
+   * Read from the browser, not from a query string: the choice was made before a template existed and
+   * has to survive four pages that are prerendered on purpose, the sign-in at stage 4 and a reload,
+   * which is exactly what a cookie is for (`lib/flow/plan-intent.ts`). `carriedPlanOf()` is the
+   * crossing back from a *billing* tier to the *row* this panel draws, and it answers `null` for a
+   * value the catalogue does not sell — so a hand-edited cookie draws the ordinary unselected panel
+   * instead of a plan nobody can buy.
+   *
+   * A carried plan is a **preselection, never a payment**: the walk still opens on this panel, the
+   * membership still starts from it, and the send's paid gate (`sendDraftInvitation()`) is untouched.
+   */
+  const carriedPlan = carriedPlanOf(parsePlanIntent(jar.get(PLAN_INTENT_COOKIE)?.value));
+
   return (
     <CreateRelationship
       copy={assessmentCreatePageCopy}
       stage={5}
+      mount={mount}
       template={
         detail === undefined
           ? null
@@ -173,12 +208,13 @@ export default async function TemplateCreateInvitePage({
       problemLink={refusal?.link ?? null}
       notice={planNotice?.sentence ?? null}
       noticeLink={planNotice?.link ?? null}
-      capture={{
-        onCapture: capturePaymentMethodAction,
-        onResolve: resolveCaptureAction,
+      checkout={{
+        onStart: startMembershipAction,
+        onConfirm: confirmMembershipAction,
       }}
-      initialPaid={screen.paymentArmed === true}
+      initialPaid={screen.subscriptionLive === true}
       {...(accountPlan === undefined ? {} : { planIncluded: accountPlan })}
+      {...(carriedPlan === null ? {} : { carriedPlan })}
     />
   );
 }

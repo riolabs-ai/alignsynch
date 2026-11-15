@@ -31,7 +31,7 @@ import { notFound } from "next/navigation";
  * **A proof, not a destination.** The demo's Admin button lands on `/admin/instances` — the
  * console, where there is something to read — and this page stays as the one surface that shows
  * the gate itself: which session, which role, read from Postgres for this request. Nothing links
- * here from the flow; the URL is reachable and `docs/DEMO-AUTH.md` names it as the evidence. A
+ * here from the flow; the URL is reachable and `docs/getting-started/demo-auth.md` names it as the evidence. A
  * reader who did arrive here gets the console button below rather than only a way back.
  */
 export const dynamic = "force-dynamic";

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › app/api · prev [app/(marketing)](app-marketing.md) · next [components](components.md)
+[Docs hub](../../README.md) › **Code wiki** › app/api · prev [Getting started](../getting-started.md) · next [app/(mainlayout)](app-mainlayout.md)
 
 <!-- docs-nav:end -->
 
@@ -68,6 +68,6 @@ from the body), calls one library function, and maps the result to a status. The
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › app/api · prev [app/(marketing)](app-marketing.md) · next [components](components.md)
+[Docs hub](../../README.md) › **Code wiki** › app/api · prev [Getting started](../getting-started.md) · next [app/(mainlayout)](app-mainlayout.md)
 
 <!-- docs-nav:end -->

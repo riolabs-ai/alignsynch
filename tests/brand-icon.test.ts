@@ -2,24 +2,31 @@
  * The generated icon set — the template's book for a brand that has no mark of its own, and the
  * brand's own mark for one that does.
  *
- * The rule is the same on both sides: the mark fills the surface's safe fraction, centred, on the
- * brand's own `action`, and the *files* are written by `scripts/gen-brand-icons.mjs` and held to
- * the record by `pnpm data:check` (`--check` re-draws every file and compares bytes). So this test
- * pins the claims the generator cannot fail on by construction:
+ * The rule is the same on both sides: the mark's **ink** fills the surface's fraction, centred, at
+ * its own aspect ratio, on the brand's own `action`, and the *files* are written by
+ * `scripts/gen-brand-icons.mjs` and held to the record by `pnpm data:check` (`--check` re-draws
+ * every file and compares bytes). So this test pins the claims the generator cannot fail on by
+ * construction:
  *
  *   - a brand that names a mark draws **that mark** — not a glyph — on every surface, which is the
  *     defect this card fixed: a white person silhouette on the brand's blue;
  *   - the mark's ink sits inside the 80 % safe circle the OS may crop to, measured on the shipped
  *     raster rather than asserted about the SVG;
  *   - a brand with a mark paints **no ground** on any surface (owner, 2026-11-03): the corner of
- *     every shipped raster is fully transparent and the ink is the 64 % maskable box, while the
- *     template's glyph brand stays opaque full bleed, byte for byte;
+ *     every shipped raster is fully transparent and the ink is the maskable box, while the
+ *     template's glyph brand stays opaque full bleed;
  *   - the favicon embeds a downscaled copy of the mark (an SVG favicon is downloaded on every page
  *     load) and the `.ico` is a container around the same app mark;
  *   - and the two brands still differ only by their mark and their tokens.
+ *
+ * Two cases exist because of #963, and they are the point of it: the app mark's **corner** is read
+ * back from `--radius` in `app/globals.css` (so a retyped decimal turns the gate red instead of
+ * shipping), and every surface's **measured ink** is held above a floor (so the fill cannot quietly
+ * shrink back to the 51 % two earlier attempts left behind).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { Resvg } from "@resvg/resvg-js";
 import { describe, expect, it } from "vitest";
 
 import { quizHubBrand } from "@/data/brand";
@@ -27,16 +34,21 @@ import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { AUTH_MARK_SRC_BY_BRAND } from "@/lib/auth/marks";
 import {
   APP_GLYPH_FRACTION,
-  APP_RADIUS_FRACTION,
+  APP_MARK_TILE_PX,
+  MARK_INK_BOX,
   MARK_PATHS,
   MARK_SIZE,
   MASKABLE_GLYPH_FRACTION,
   MASKABLE_MARK_FRACTION,
+  MASKABLE_SAFE_RADIUS,
   markBoxOf,
   markSvg,
 } from "@/lib/brand-icon";
-import { alphaBBox, decodePng, pngSize } from "@/scripts/image-bytes";
+// The derived corner — computed from `--radius` ÷ the reference tile, never typed. The drift case
+// below does *not* trust it: it reads the sheet itself and compares with the shipped file.
+import { APP_RADIUS_FRACTION } from "@/lib/brand-radius";
 import { type GlyphMarkId, MARK_ICONS, markGroundClass } from "@/components/auth/mark-icon";
+import { alphaBBox, contrastBBox, decodePng, pngSize } from "@/scripts/image-bytes";
 
 const BRANDS = [
   { id: "quizhub", brand: quizHubBrand },
@@ -109,6 +121,55 @@ function inkRadius(image: { width: number; height: number; data: Uint8Array }): 
   }
   return farthest;
 }
+
+/**
+ * A shipped SVG, rasterised at the canvas size, so its ink can be measured the same way a raster's
+ * is — the favicon is the one surface that is not a PNG and it is the one this card moved most.
+ */
+function renderSvg(svg: string, size: number): { width: number; height: number; data: Uint8Array } {
+  return decodePng(new Resvg(svg, { fitTo: { mode: "width", value: size } }).render().asPng());
+}
+
+/**
+ * The ink a shipped surface actually draws, as a fraction of its canvas — the measurement #963 is
+ * about, taken from the file rather than from the fraction that was meant to place it.
+ *
+ * Two forms of one answer: a raster mark sits on transparency (`alphaBBox`), the template's book is
+ * white ink on the brand's opaque `action` (`contrastBBox`, its twin in the same module), and the
+ * number is the longest side of the ink box over the canvas in both cases.
+ */
+function inkFill(
+  id: keyof typeof brandsById,
+  file: string,
+): { width: number; height: number; longest: number } {
+  const image = file.endsWith(".svg")
+    ? renderSvg(text(id, file), MARK_SIZE)
+    : decodePng(read(id, file));
+  const ink = brandsById[id].mark === undefined ? contrastBBox(image) : alphaBBox(image);
+  if (ink === undefined) throw new Error(`${id}${file} draws no ink`);
+  return {
+    width: ink.width / image.width,
+    height: ink.height / image.height,
+    longest: Math.max(ink.width, ink.height) / image.width,
+  };
+}
+
+/**
+ * The floors #963 ships, as fractions of the canvas.
+ *
+ * Constants in the test, not reads of the generator's fractions: a floor that moved with the
+ * number it guards would pass when somebody put `0.62` back, which is the whole failure mode this
+ * card exists to end. They are the measured "after" values with a percent of slack for the
+ * rasteriser's edge, so a re-render cannot trip them and a real drop cannot pass them.
+ */
+const INK_FLOOR = {
+  /** The app mark, both kinds — a glyph and the monogram both measure 78.0 %. */
+  app: 0.77,
+  /** The book on the maskable set — 98 % of its safe-circle ceiling, measured 58.0 %. */
+  maskableGlyph: 0.57,
+  /** The monogram on the maskable set — 98 % of its ceiling, measured 66.1 %. */
+  maskableMark: 0.65,
+} as const;
 
 /** The ICO's directory, as sizes and payload offsets. */
 function icoEntries(bytes: Buffer): { size: number; length: number; offset: number }[] {
@@ -219,16 +280,77 @@ describe("the generated icon set", () => {
 
   it("keeps the mark inside the 80 % safe circle, measured on the shipped raster", () => {
     // Measured on `-icon-512.png`: the OS may crop a maskable icon to a 40 %-radius circle, and a
-    // mark outside it loses an edge on somebody's home screen.
-    const safeRadius = 0.4 * MARK_SIZE;
+    // mark outside it loses an edge on somebody's home screen. Both kinds pay this: the book at
+    // 0.580 and the monogram at 0.661 are each 98 % of their own aspect's ceiling, so this is the
+    // case that fails when a mark swap makes the fill too large for the new ink.
     for (const { id } of BRANDS) {
       const radius = inkRadius(decodePng(read(id, "-icon-512.png")));
       expect(
         radius,
-        `${id}'s icon ink reaches ${radius.toFixed(1)} of ${safeRadius}`,
-      ).toBeLessThanOrEqual(safeRadius);
+        `${id}'s icon ink reaches ${radius.toFixed(1)} of ${MASKABLE_SAFE_RADIUS}`,
+      ).toBeLessThanOrEqual(MASKABLE_SAFE_RADIUS);
       expect(radius, `${id} draws nothing`).toBeGreaterThan(0);
     }
+  });
+
+  it("fills every surface to its declared ink target, measured on the shipped file", () => {
+    // The number #963 is about: what a reader sees, from the bytes that ship. `0.62` of the
+    // *viewBox* measured 51 % of the tile, and two earlier attempts were signed off on the
+    // fraction rather than on this.
+    for (const { id, brand } of BRANDS) {
+      for (const surface of SURFACES) {
+        const measured = inkFill(id, surface.file);
+        const maskable =
+          brand.mark === undefined ? MASKABLE_GLYPH_FRACTION : MASKABLE_MARK_FRACTION;
+        const floor =
+          surface.file === "-icon.svg"
+            ? INK_FLOOR.app
+            : brand.mark === undefined
+              ? INK_FLOOR.maskableGlyph
+              : INK_FLOOR.maskableMark;
+        expect(
+          measured.longest,
+          `${id}${surface.file} fills ${(measured.longest * 100).toFixed(1)} %, under the ${(floor * 100).toFixed(0)} % floor`,
+        ).toBeGreaterThanOrEqual(floor);
+        // The file and the fraction that placed it agree — a stale generation fails here too.
+        expect(measured.longest).toBeCloseTo(
+          surface.file === "-icon.svg" ? APP_GLYPH_FRACTION : maskable,
+          1,
+        );
+        // Uniform scale, never distortion: the ink keeps its own aspect ratio. 5 % is measurement
+        // noise — the extreme rows of a mark are antialiased, so at 180 px an edge pixel or two
+        // can fall under INK_ALPHA and shift the box — while a stretch or a crop is far larger.
+        const aspect =
+          brand.mark === undefined
+            ? MARK_INK_BOX.width / MARK_INK_BOX.height
+            : markOf(id).ink.width / markOf(id).ink.height;
+        expect(Math.abs(measured.width / measured.height / aspect - 1)).toBeLessThan(0.05);
+      }
+    }
+  });
+
+  it("rounds the app mark at the app's own `--radius`, read from the sheet", () => {
+    // The drift this card exists to stop: `APP_RADIUS_FRACTION = 0.2` sat beside a comment calling
+    // it "the `rounded-lg` the chrome draws" while `--radius` was 5 px, and nothing compared the
+    // two. So the token is read here, independently of the module that derives the corner, and the
+    // *shipped file* is what it is compared with — retyping the decimal turns this red.
+    const css = readFileSync(join(process.cwd(), "app", "globals.css"), "utf8");
+    const declared = /^\s*--radius:\s*([\d.]+)rem;\s*$/m.exec(css)?.[1];
+    if (declared === undefined) throw new Error("app/globals.css declares no --radius");
+    const radiusPx = Number(declared) * 16; // the browser's root font size
+    const expected = (radiusPx / APP_MARK_TILE_PX) * MARK_SIZE;
+
+    const svg = text("quizhub", "-icon.svg");
+    const rx = Number(/<rect[^>]*rx="([\d.]+)"/.exec(svg)?.[1]);
+    expect(
+      rx,
+      `quizhub-icon.svg rounds at ${rx} of ${MARK_SIZE}; ${radiusPx}px on a ${APP_MARK_TILE_PX}px tile is ${expected}`,
+    ).toBeCloseTo(expected, 1);
+    // At the tile the chrome actually draws, the corner is the app's own radius — 5 px, not 8.
+    expect((rx / MARK_SIZE) * APP_MARK_TILE_PX).toBeCloseTo(radiusPx, 1);
+    // And the derived fraction is the same derivation, so the file cannot be regenerated from a
+    // number the app does not paint.
+    expect(APP_RADIUS_FRACTION * MARK_SIZE).toBeCloseTo(expected, 1);
   });
 
   it("paints no ground for a brand with a mark, and an opaque full bleed for the one without", () => {
@@ -253,7 +375,8 @@ describe("the generated icon set", () => {
       expect(alphaAt(image.width - 1, image.height - 1)).toBe(0);
       const ink = alphaBBox(image);
       if (ink === undefined) throw new Error(`alignsynch${surface.file} is empty`);
-      // The ink is the maskable box: 64 % of the canvas on its longest side, centred.
+      // The ink is the maskable box: `MASKABLE_MARK_FRACTION` of the canvas on its longest side,
+      // centred.
       const longest = Math.max(ink.width, ink.height);
       expect(longest / image.width).toBeCloseTo(MASKABLE_MARK_FRACTION, 1);
       expect(ink.x * 2 + ink.width).toBeCloseTo(image.width, -1);
@@ -301,9 +424,9 @@ describe("the generated icon set", () => {
 
   it("uses one fraction per mark *kind*, and one radius rule — identity is not a per-brand value", () => {
     // The constants are not per-brand: a mark that changed size between brands would be drift.
-    // What differs is the *kind* — a glyph is scaled from a 24-unit path (0.56 on the maskable
-    // set), a raster mark's ink is a rectangle sized to 64 % — and the quizhub SVG still states
-    // the glyph numbers literally.
+    // What differs is the *kind* — a glyph is scaled from its own 22 × 20 ink box (0.580 on the
+    // maskable set), a raster mark's ink is a rectangle sized to 66.1 % — and the quizhub SVG
+    // still states the glyph numbers literally.
     const book = text("quizhub", "-icon.svg");
     expect(book).toContain(`rx="${Math.round(APP_RADIUS_FRACTION * MARK_SIZE * 10) / 10}"`);
     const { ink } = markOf("alignsynch");

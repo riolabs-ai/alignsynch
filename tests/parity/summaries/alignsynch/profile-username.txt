@@ -12,11 +12,11 @@ headings (9)
   h4  "Perfect Score"
   h3  "Contact"
 
-landmarks (5)
+landmarks (4)
   banner         1
   complementary  1
   main           1
-  navigation     2
+  navigation     1
 
 links (8 unique, 9 total)
   /                                                    1
@@ -26,11 +26,11 @@ links (8 unique, 9 total)
   /dashboard/support                                   1
   /dashboard/templates                                 1
   /settings                                            1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.17.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.1 2
 
 counts
-  elements  372
+  elements  363
   images    2
-  buttons   17
+  buttons   16
   inputs    1
-  classes   303 (sha bc9667599059)
+  classes   302 (sha 3ae109e916cc)

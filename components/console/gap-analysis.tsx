@@ -9,7 +9,7 @@
  * what is measured: eight `gapOf` kinds, judged under each relationship's Setting. So the body
  * takes its numbers as props (`GapAggregate`) and knows no rule about what counts.
  *
- * **What it composes** (`docs/UI-DIVERGENCE.md`, one row per divergence):
+ * **What it composes** (`docs/specs/ui-divergence.md`, one row per divergence):
  *
  *   the title band  `components/ui/page-header.tsx` — `copy.heading` over `copy.subtitle`, the
  *                   primitive thirty files had hand-written before this one called it.

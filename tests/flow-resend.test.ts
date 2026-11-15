@@ -3,7 +3,7 @@
  *
  * The rules are pure (`lib/flow/resend.ts`) and the write is a transaction, so this file drives
  * both halves the way the gate has to: the rule mapping with plain arguments, and the store through
- * a **recording `PoolClient`** — the gate is database-free (`docs/GATE.md`), so what is asserted
+ * a **recording `PoolClient`** — the gate is database-free (`docs/operations/gate.md`), so what is asserted
  * about `resendInvite()` is the statements it issued, in which order, with which values. The live
  * proof (a real row, a real claim of the old token answering `unknown`) is `pnpm db:verify` plus
  * the command run recorded on the card; it cannot be a test here.

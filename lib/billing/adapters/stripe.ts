@@ -38,12 +38,8 @@
  * reads the subscription once.
  */
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import {
-  type BillingInterval,
-  BILLING_INTERVALS,
-  billingPlan,
-  planPriceCents,
-} from "@/data/billing-plans";
+import { type BillingInterval, BILLING_INTERVALS, billingPlan } from "@/data/billing-plans";
+import { billingPriceIdFor, TRIAL_PERIOD_DAYS } from "@/data/billing-prices";
 import { checkoutRefusal, entitlementOf } from "@/lib/billing/entitlements";
 import {
   billingHostFromEnv,
@@ -53,36 +49,63 @@ import {
 } from "@/lib/billing/host";
 import { BillingRefusal, type BillingPort } from "@/lib/billing/port";
 import type {
-  ChargeOutcome,
   CheckoutRequest,
   CheckoutSession,
   Entitlement,
-  MethodCaptureRequest,
-  MethodCaptureSession,
-  RelationshipChargeRequest,
-  ResolvedMethod,
   Subscription,
   SubscriptionStatus,
   WebhookOutcome,
   WebhookRequest,
 } from "@/lib/billing/types";
 import { applyBillingEventOnce, readActiveSubscription, writeSubscription } from "@/lib/db/billing";
+import {
+  sendMembershipLapsedNotices,
+  sendTrialEndingNotice,
+  type NoticeResult,
+} from "@/lib/billing/notices";
+import type { SubscriptionConsequence } from "@/lib/relationship/enforcement";
 
 /** Where the provider's API lives. A constant so a test can assert what was called, never a base. */
 export const STRIPE_API_BASE = "https://api.stripe.com/v1";
 
 /**
- * The events this receiver acts on — the ones that change a row.
+ * The events this receiver acts on — the ones that change a row, or send a notice.
  *
  * Everything else is acknowledged with a 200 and recorded nowhere: a 4xx on an event we did not
  * subscribe to makes the provider retry it for days, and a row for an event we ignore is noise in
  * the only table that is meant to be a record of what was applied.
+ *
+ * **Six, and the last three are #1055's live-money half.** The product's own state machine and its
+ * email band already assumed them:
+ *
+ *   - `invoice.paid` is the **renewal**, and `lib/relationship/status.ts` names it as the trigger of
+ *     the `expired → active` / `expired → published` system edge. Without it a pair recovered by a
+ *     renewal charge had no way back, because nothing else in the stream says money landed.
+ *   - `invoice.payment_failed` is the **refused renewal**. It lapses the account's live
+ *     relationships (`SyncDirection`'s `"lapse"`) and fires template #7 — the only event that can,
+ *     because the subscription's own status stays `past_due`, which entitles on purpose.
+ *   - `customer.subscription.trial_will_end` is the **warning before the first charge**, three days
+ *     out, and the only thing that can fire template #6.
+ *
+ * The three subscriptions events above them are unchanged. `invoice.paid` arriving on every renewal
+ * is not a subscription-status change in most cases — the row is already `active` — but it is the
+ * only delivery that dates the money, and applying it is what runs the reactivation statement.
+ *
+ * **This list is the one the dashboard must carry, and `tests/billing-webhook-events.test.ts` holds
+ * the two equal.** A member added here without the endpoints being updated is a green build on a
+ * deployment where the event never arrives — which is exactly how #1055 survived.
  */
 export const STRIPE_WEBHOOK_EVENTS = [
   "checkout.session.completed",
   "customer.subscription.updated",
   "customer.subscription.deleted",
+  "invoice.paid",
+  "invoice.payment_failed",
+  "customer.subscription.trial_will_end",
 ] as const;
+
+/** The two events whose subject is an **invoice**, and whose subscription is only named by id. */
+export const STRIPE_INVOICE_EVENTS = ["invoice.paid", "invoice.payment_failed"] as const;
 
 /**
  * How far a `Stripe-Signature` timestamp may be from now, in seconds.
@@ -282,14 +305,6 @@ interface StripeCheckoutSessionObject {
   readonly livemode?: boolean | null;
 }
 
-/** A PaymentIntent, as far as this adapter reads it (#619's charge). */
-interface StripePaymentIntentObject {
-  readonly id: string;
-  readonly status?: string | null;
-  readonly amount?: number | null;
-  readonly livemode?: boolean | null;
-}
-
 interface StripeSubscriptionItem {
   readonly current_period_end?: number | null;
   readonly price?: {
@@ -309,6 +324,13 @@ interface StripeSubscriptionObject {
    */
   readonly current_period_end?: number | null;
   /**
+   * The trial's last instant, in seconds — `customer.subscription.trial_will_end` carries it, and
+   * it is the **real** deadline the notice quotes (#1055). Read from the payload, never re-derived
+   * from `current_period_end`: the whole point of the delivery is that the provider's own instant is
+   * what the member is being warned about.
+   */
+  readonly trial_end?: number | null;
+  /**
    * The provider's own live/test flag (#505). Every Stripe object carries it, and it is the only
    * honest source for "did this checkout charge real money" — the adapter's key is a config fact,
    * this is a fact about the object that was actually created.
@@ -316,6 +338,59 @@ interface StripeSubscriptionObject {
   readonly livemode?: boolean | null;
   readonly metadata?: Record<string, string> | null;
   readonly items?: { readonly data?: readonly StripeSubscriptionItem[] } | null;
+}
+
+/**
+ * An invoice, as far as this adapter reads it — the subject of `invoice.paid` and
+ * `invoice.payment_failed` (#1055).
+ *
+ * **The invoice names its subscription and does not carry it.** `invoiceSubscriptionIdOf()` reads
+ * both shapes the API versions use: `invoice.subscription` (before `2025-04-30.basil`) and
+ * `invoice.parent.subscription_details.subscription` (after it, where the old field was removed).
+ * Whichever one is present, the object this adapter maps is the *subscription* — so the invoice is
+ * the one place besides the checkout session where a delivery needs one read of a sibling object,
+ * and `subscriptionForEvent()` says so.
+ *
+ * `parent.subscription_details.metadata` is the subscription's own metadata, copied onto the
+ * invoice by the basil family, which is why the **host claim** can still be judged from the payload
+ * for those events: the claim our checkout stamps lives in that metadata.
+ */
+interface StripeInvoiceObject {
+  readonly id: string;
+  readonly subscription?: string | { readonly id?: string } | null;
+  readonly parent?: {
+    readonly subscription_details?: {
+      readonly subscription?: string | { readonly id?: string } | null;
+      readonly metadata?: Record<string, string> | null;
+    } | null;
+  } | null;
+  readonly metadata?: Record<string, string> | null;
+  readonly livemode?: boolean | null;
+}
+
+/** The subscription an invoice names, in either API version's shape. */
+function invoiceSubscriptionIdOf(invoice: StripeInvoiceObject): string | null {
+  return (
+    idOf(invoice.subscription) ?? idOf(invoice.parent?.subscription_details?.subscription) ?? null
+  );
+}
+
+/** The host claim an invoice's payload carries, or `""` when the API version copied none. */
+function invoiceHostClaimOf(invoice: StripeInvoiceObject): string {
+  const copied = hostClaimOf(invoice.parent?.subscription_details?.metadata);
+  return copied === "" ? hostClaimOf(invoice.metadata) : copied;
+}
+
+/** Is this event one whose subject is an invoice rather than a subscription? */
+function isInvoiceEvent(type: string): boolean {
+  return (STRIPE_INVOICE_EVENTS as readonly string[]).includes(type);
+}
+
+/** The trial's last instant, in seconds, from a payload object — or `null` when it carries none. */
+function trialEndSecondsOf(object: unknown): number | null {
+  if (object === null || typeof object !== "object") return null;
+  const value = (object as { readonly trial_end?: unknown }).trial_end;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 interface StripeEvent {
@@ -344,9 +419,9 @@ export function subscriptionStatusOf(status: string | null | undefined): Subscri
     case "canceled":
     case "paused":
       return "canceled";
-    case "incomplete":
-    case "incomplete_expired":
     default:
+      // `incomplete` never became a subscription and `incomplete_expired` is its dead end, so a
+      // status this map does not name is also "not a subscription yet", never a cancellation.
       return "incomplete";
   }
 }
@@ -409,10 +484,27 @@ export class StripeBillingAdapter implements BillingPort {
   /**
    * Create a Checkout Session and return where to send the browser.
    *
-   * The line item is inline `price_data`, not a pre-created Price object: the amount a checkout
-   * charges is `data/billing-plans.ts`'s, and a dashboard Price would be a second copy of it — the
-   * drift `billing_plan` exists to prevent. Nothing in the session is provider-owned configuration
-   * beyond the API call itself.
+   * **This is the membership purchase (#1010 R2).** Stage 5's Initiator buys the membership here —
+   * one subscription that covers both parties and renews monthly — so the line item names a
+   * **Price** created in the provider's test account (`data/billing-prices.ts`), never inline
+   * `price_data`: an amount authored in the request would be a second copy of
+   * `data/billing-plans.ts`'s, and a subscription needs a Price object to renew against.
+   *
+   * **The seven-day trial is sent, not drawn.** `subscription_data[trial_period_days]=7` is the
+   * badge the UI prints; `subscription_data[trial_settings][end_behavior][missing_payment_method]=
+   * cancel` is what
+   * happens when no card is added inside those days, because a trial that ended `pause`d would
+   * activate a subscription nobody pays for. `payment_method_collection=always` is sent
+   * explicitly rather than left to the provider's default: a trial that collects no card has
+   * nothing to charge on day eight.
+   *
+   * **Two presentations, one session** (#748's split, now for the purchase rather than the
+   * capture). The default sends the browser to the provider's own page and answers a `url`.
+   * `presentation: "embedded"` asks for `ui_mode: embedded_page` instead: the provider draws its
+   * form in a frame **inside our page** — stage 5's card step, which already mounts
+   * `components/billing/stripe-frame.tsx` — so there is no `success_url` to leave for, only a
+   * `return_url` for the one case that must navigate (an SCA challenge). That session answers a
+   * `client_secret`, which is what `initEmbeddedCheckout()` needs.
    *
    * Our own vocabulary rides along in metadata, on both the session and the subscription it
    * creates. That is what makes every later `customer.subscription.*` delivery mappable without a
@@ -442,24 +534,52 @@ export class StripeBillingAdapter implements BillingPort {
         `"${request.interval}" is not a billing interval (${BILLING_INTERVALS.join(", ")})`,
       );
     }
-    if (request.successUrl === "" || request.cancelUrl === "") {
+
+    // A (tier, interval) with no Price is a checkout that cannot charge: refused with the pair
+    // named, never served by an inline amount that would disagree with the fixture.
+    const priceId = billingPriceIdFor(plan.id, interval);
+    if (priceId === undefined) {
+      throw new BillingRefusal(
+        "not-for-sale",
+        `${plan.id}/${interval} has no Price in this build — add one to data/billing-prices.ts before selling it`,
+      );
+    }
+
+    const embedded = request.presentation === "embedded";
+    const publishableKey = this.credentials.publishableKey;
+    if (embedded) {
+      if (publishableKey === null || publishableKey === "") {
+        throw new BillingRefusal(
+          "not-configured",
+          "STRIPE_TEST_PUBLISHABLE_KEY is not set — the in-page checkout has no key to load the " +
+            "provider's frame with. The hosted checkout does not need it; this one does",
+        );
+      }
+      if (request.successUrl === "") {
+        throw new BillingRefusal(
+          "invalid-request",
+          "an embedded checkout needs a return URL for the one case that must navigate (an SCA challenge)",
+        );
+      }
+    } else if (request.successUrl === "" || request.cancelUrl === "") {
       throw new BillingRefusal(
         "invalid-request",
         "a checkout needs a success URL and a cancel URL to send the browser back to",
       );
     }
 
-    const intervalLabel = interval === "year" ? "yearly" : "monthly";
     const form = new URLSearchParams({
       mode: "subscription",
-      success_url: request.successUrl,
-      cancel_url: request.cancelUrl,
       client_reference_id: request.userId,
+      "line_items[0][price]": priceId,
       "line_items[0][quantity]": "1",
-      "line_items[0][price_data][currency]": STRIPE_CURRENCY,
-      "line_items[0][price_data][unit_amount]": String(planPriceCents(plan, interval)),
-      "line_items[0][price_data][recurring][interval]": interval,
-      "line_items[0][price_data][product_data][name]": `${plan.name} — ${intervalLabel}`,
+      // Sent, never defaulted: a subscription that renews needs a card the trial collected.
+      payment_method_collection: "always",
+      "subscription_data[trial_period_days]": String(TRIAL_PERIOD_DAYS),
+      // Nested under `subscription_data`, where the provider's API puts it: sent top-level it is
+      // `parameter_unknown: trial_settings` and every purchase is a 400 (measured against the test
+      // API, 2026-11-14).
+      "subscription_data[trial_settings][end_behavior][missing_payment_method]": "cancel",
       "metadata[user_id]": request.userId,
       "metadata[plan_id]": plan.id,
       "metadata[interval]": interval,
@@ -469,102 +589,14 @@ export class StripeBillingAdapter implements BillingPort {
       "subscription_data[metadata][interval]": interval,
       "subscription_data[metadata][host]": this.host,
     });
-    if (request.email !== undefined && request.email !== "") {
-      form.set("customer_email", request.email);
-    }
-
-    const session = await this.post<StripeCheckoutSessionObject>("/checkout/sessions", form);
-    if (typeof session.url !== "string" || session.url === "") {
-      throw new Error(
-        `stripe returned a checkout session (${session.id}) with no URL to redirect to`,
-      );
-    }
-
-    return {
-      id: session.id,
-      url: session.url,
-      provider: "stripe",
-      // The subscription does not exist yet: it appears when the customer completes the hosted
-      // page and this adapter's webhook applies the event. No surface may depend on this flag.
-      completed: false,
-    };
-  }
-
-  /**
-   * Capture a payment method, charging nothing (#619), hosted or embedded (#748).
-   *
-   * `mode: "setup"` is the point: the session saves a card to a customer and takes no money, which
-   * is exactly #619's "a method on file, the fee later".
-   *
-   * **Two presentations, one session.** The default (`hosted`, and what every caller before #748
-   * asked for) sends the browser to the provider's own page: `success_url` / `cancel_url`, and
-   * `{CHECKOUT_SESSION_ID}` comes back in the return URL so `resolveMethodCapture()` can read the
-   * ids back — nothing the return URL *claims* is trusted. `presentation: "embedded"` asks for
-   * `ui_mode: embedded` instead: the provider draws the same form in a frame **inside our page**,
-   * so there is no `success_url` to leave for, only a `return_url` for the one case that must
-   * navigate (an SCA challenge). The session then answers a `client_secret`, which is what the
-   * browser's `initEmbeddedCheckout()` needs — and a session that completed in the frame is
-   * resolved through exactly the same `resolveMethodCapture()` the hosted path uses, keyed by `id`.
-   *
-   * The publishable key is required for embedded and refused by name when it is absent: the
-   * browser's loader cannot initialise a frame without it, and a capture that "started" and then
-   * rendered nothing is worse than a sentence naming the variable to set. It is not needed by the
-   * hosted path, which is why it stayed unread until now.
-   *
-   * `metadata.host` rides on the session **and** on the setup intent, for the same reason every
-   * subscription event carries it: the two hosts share one test sandbox, so a capture that did not
-   * say whose it was could be resolved by either deployment.
-   */
-  async startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession> {
-    if (request.successUrl === "" || request.cancelUrl === "") {
-      throw new BillingRefusal(
-        "invalid-request",
-        "a capture needs a success URL and a cancel URL to send the browser back to",
-      );
-    }
-    const embedded = request.presentation === "embedded";
-    const publishableKey = this.credentials.publishableKey;
-    if (embedded && (publishableKey === null || publishableKey === "")) {
-      throw new BillingRefusal(
-        "not-configured",
-        "STRIPE_TEST_PUBLISHABLE_KEY is not set — the in-page capture has no key to load the " +
-          "provider's frame with. The hosted capture does not need it; this one does",
-      );
-    }
-
-    const separator = request.successUrl.includes("?") ? "&" : "?";
-    const form = new URLSearchParams({
-      mode: "setup",
-      client_reference_id: request.userId,
-      "metadata[user_id]": request.userId,
-      "metadata[relationship_id]": request.relationshipId,
-      "metadata[host]": this.host,
-      "setup_intent_data[metadata][host]": this.host,
-      "setup_intent_data[metadata][relationship_id]": request.relationshipId,
-    });
     if (embedded) {
-      // `ui_mode: embedded_page` + `return_url` is the provider's embedded Checkout: the form is
-      // drawn in a frame on our own screen, and `if_required` means a normal save never navigates
-      // while an SCA challenge still can — the one case a frame cannot show.
-      //
-      // The value was `embedded` until the provider renamed it; a request carrying the old word is
-      // refused at the API with "The ui_mode value `embedded` is no longer supported. Use
-      // `embedded_page` instead." (measured 2026-11-08 against the test keys). The approved
-      // artifact's frame caption still reads `ui_mode: embedded` — that is the artifact's copy and
-      // this adapter does not edit copy — but the request has to carry the word the API accepts.
       form.set("ui_mode", "embedded_page");
       form.set("return_url", request.successUrl);
       form.set("redirect_on_completion", "if_required");
     } else {
-      form.set("success_url", `${request.successUrl}${separator}capture={CHECKOUT_SESSION_ID}`);
+      form.set("success_url", request.successUrl);
       form.set("cancel_url", request.cancelUrl);
     }
-    // **Both** presentations need it, not just the embedded one. A `setup` session charges nothing,
-    // but the provider's Checkout still draws an amount line and refuses the request without a
-    // currency: the hosted capture answered `400 invalid-request — the payment provider refused the
-    // POST /checkout/sessions: Missing required param: currency` until this line was moved out of
-    // the embedded branch. `STRIPE_CURRENCY` is this adapter's one authored answer.
-    form.set("currency", STRIPE_CURRENCY);
     if (request.email !== undefined && request.email !== "") {
       form.set("customer_email", request.email);
     }
@@ -575,8 +607,8 @@ export class StripeBillingAdapter implements BillingPort {
       if (typeof session.client_secret !== "string" || session.client_secret === "") {
         throw new BillingRefusal(
           "not-configured",
-          `the provider returned an embedded capture session (${session.id}) with no client secret — ` +
-            "nothing could mount the frame, and no method was saved",
+          `the provider returned an embedded checkout session (${session.id}) with no client secret — ` +
+            "nothing could mount the frame, and no membership was started",
         );
       }
       return {
@@ -591,124 +623,89 @@ export class StripeBillingAdapter implements BillingPort {
     }
 
     if (typeof session.url !== "string" || session.url === "") {
-      throw new Error(`stripe returned a setup session (${session.id}) with no URL to redirect to`);
+      throw new Error(
+        `stripe returned a checkout session (${session.id}) with no URL to redirect to`,
+      );
     }
-    return { id: session.id, url: session.url, provider: "stripe", completed: false };
-  }
 
-  /**
-   * Read a captured method back from the provider (#619).
-   *
-   * Three refusals, each a different fact: the session is not complete (the browser came back from
-   * an abandoned page), the session claims another deployment (a shared sandbox — `metadata.host`
-   * is what `handleWebhook` already filters on), or the session carries no customer/payment method
-   * (the provider saved nothing and the capture did not happen). A resolved method is the provider's
-   * own objects, never a value the return URL supplied.
-   */
-  async resolveMethodCapture(sessionId: string): Promise<ResolvedMethod> {
-    if (sessionId.trim() === "") {
-      throw new BillingRefusal("invalid-request", "a capture session id is required");
-    }
-    const session = await this.get<StripeCheckoutSessionObject>(
-      `/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=setup_intent.payment_method`,
-    );
-    if (session.status !== "complete") {
-      throw new BillingRefusal(
-        "invalid-request",
-        `capture session "${session.id}" is ${session.status ?? "in an unknown state"}: no method was saved`,
-      );
-    }
-    const metadata = session.metadata ?? {};
-    if (metadata.host !== this.host) {
-      throw new BillingRefusal(
-        "invalid-request",
-        `capture session "${session.id}" belongs to "${metadata.host ?? "no host"}", not to this deployment ("${this.host}")`,
-      );
-    }
-    const customerId =
-      typeof session.customer === "string" ? session.customer : (session.customer?.id ?? "");
-    const setupIntent =
-      typeof session.setup_intent === "object" && session.setup_intent !== null
-        ? session.setup_intent
-        : null;
-    const paymentMethodId =
-      typeof setupIntent?.payment_method === "string"
-        ? setupIntent.payment_method
-        : (setupIntent?.payment_method?.id ?? "");
-    if (customerId === "" || paymentMethodId === "") {
-      throw new BillingRefusal(
-        "invalid-request",
-        `capture session "${session.id}" completed without a customer and a payment method`,
-      );
-    }
     return {
-      relationshipId: metadata.relationship_id ?? null,
-      userId: metadata.user_id ?? null,
-      customerId,
-      paymentMethodId,
-      // The object's own flag; an absent one is test mode, never money.
-      livemode: session.livemode === true,
+      id: session.id,
+      url: session.url,
+      provider: "stripe",
+      // The subscription does not exist yet: it appears when the customer completes the provider's
+      // page and this adapter's webhook applies the event. No surface may depend on this flag.
+      completed: false,
     };
   }
 
   /**
-   * Charge the method on file — the relationship's fee (#619).
+   * Read a completed membership checkout back from the provider, and write the row (#1010 R2).
    *
-   * Off-session and confirmed in one call: the payer is not on the page, and the product's promise
-   * is that the fee is taken when both sheets are sealed. `idempotencyKey` is the caller's
-   * (`relationship-<id>`), so a retried completion cannot take the fee twice — the provider's own
-   * guarantee, beside the database's `charged_at IS NULL`.
+   * The embedded frame's `onComplete` is the browser's word, and a browser is not a source of
+   * truth. So stage 5 hands the session id here, this reads the provider's own session, refuses
+   * one that belongs to another account or another deployment, and maps the subscription it
+   * created through the same `mapSubscription()` every webhook uses — then writes it through
+   * `applyBillingEventOnce()`, keyed by the session, so a double click cannot write twice and the
+   * webhook that lands afterwards is an `ON CONFLICT DO UPDATE` on the same row.
    *
-   * A **4xx is a decline** and is returned, not thrown: a card that says no is the outcome the
-   * retry ladder exists for. A 5xx or transport failure still throws, because that is not the
-   * payer's card failing and the ladder must not count it as an attempt.
+   * `null` means "not complete yet" — the caller may ask again. A session that is complete but
+   * names another account is a refusal, not a `null`.
    */
-  async chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome> {
-    if (request.amountCents <= 0) {
+  async confirmCheckout(userId: string, sessionId: string): Promise<Subscription | null> {
+    if (sessionId.trim() === "") {
+      throw new BillingRefusal("invalid-request", "a checkout session id is required");
+    }
+    const session = await this.get<StripeCheckoutSessionObject>(
+      `/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=subscription`,
+    );
+    if (session.status !== "complete") return null;
+
+    const owner = (session.client_reference_id ?? session.metadata?.user_id ?? "").trim();
+    if (owner !== userId) {
       throw new BillingRefusal(
         "invalid-request",
-        `a relationship fee is a positive amount of cents; this charge asked for ${request.amountCents}`,
+        `checkout session "${session.id}" belongs to another account`,
       );
     }
-    if (request.customerId === "" || request.paymentMethodId === "") {
-      return {
-        ok: false,
-        code: "no-method",
-        message: "no customer and payment method are on file for this relationship",
-      };
+    if ((session.metadata?.host ?? "") !== this.host) {
+      throw new BillingRefusal(
+        "invalid-request",
+        `checkout session "${session.id}" belongs to "${session.metadata?.host ?? "no host"}", not to this deployment ("${this.host}")`,
+      );
     }
-    const form = new URLSearchParams({
-      amount: String(request.amountCents),
-      currency: STRIPE_CURRENCY,
-      customer: request.customerId,
-      payment_method: request.paymentMethodId,
-      off_session: "true",
-      confirm: "true",
-      description: request.description,
-      "metadata[user_id]": request.userId,
-      "metadata[relationship_id]": request.relationshipId,
-      "metadata[host]": this.host,
-    });
 
-    let intent: StripePaymentIntentObject;
-    try {
-      intent = await this.post<StripePaymentIntentObject>("/payment_intents", form, {
-        "idempotency-key": request.idempotencyKey,
-      });
-    } catch (error) {
-      if (error instanceof BillingRefusal) {
-        return { ok: false, code: "declined", message: error.message };
-      }
-      throw error;
+    const subscriptionId = idOf(session.subscription);
+    if (subscriptionId === null) {
+      throw new BillingRefusal(
+        "invalid-request",
+        `checkout session "${session.id}" carries no subscription`,
+      );
     }
-    if (intent.status !== "succeeded") {
-      return {
-        ok: false,
-        code: "declined",
-        message: `payment intent "${intent.id}" came back ${intent.status ?? "without a status"}`,
-      };
+    const object =
+      typeof session.subscription === "object" && session.subscription !== null
+        ? (session.subscription as StripeSubscriptionObject)
+        : await this.get<StripeSubscriptionObject>(`/subscriptions/${subscriptionId}`);
+    const mapped = this.mapSubscription(object, {
+      userId: owner,
+      planId: session.metadata?.plan_id ?? null,
+      interval: intervalOf(session.metadata?.interval),
+    });
+    if (typeof mapped === "string") {
+      throw new BillingRefusal("invalid-request", mapped);
     }
-    return { ok: true, chargeId: intent.id, amountCents: intent.amount ?? request.amountCents };
+
+    const result = await applyBillingEventOnce(
+      {
+        provider: "stripe",
+        // The session is the idempotency subject: one session, one row write, however many times
+        // the frame reports completion.
+        eventId: `checkout-confirm/${session.id}`,
+        type: "checkout.session.confirmed",
+        payloadDigest: createHash("sha256").update(session.id, "utf8").digest("hex"),
+      },
+      (client) => writeSubscription(client, mapped),
+    );
+    return result.subscription;
   }
 
   /**
@@ -770,6 +767,12 @@ export class StripeBillingAdapter implements BillingPort {
     }
 
     const mapped = await this.subscriptionForEvent(event);
+    if (mapped.kind === "foreign") {
+      // The invoice path can only judge the claim once it has read the subscription the invoice
+      // names, so the refusal is answered here rather than before the mapping.
+      console.info(`billing: refused stripe event ${event.id} ${event.type} — ${mapped.detail}`);
+      return { applied: false, kind: "foreign", detail: mapped.detail };
+    }
     if (mapped.kind === "ignored") {
       console.info(`billing: ignored stripe event ${event.id} ${event.type} — ${mapped.detail}`);
       return { applied: false, kind: "ignored", detail: mapped.detail };
@@ -782,6 +785,11 @@ export class StripeBillingAdapter implements BillingPort {
         eventId: event.id,
         type: event.type,
         payloadDigest: createHash("sha256").update(request.rawBody, "utf8").digest("hex"),
+        // #1055 — a refused renewal is the one delivery whose meaning is not its subscription's
+        // status: the status is `past_due`, which entitles, and the event says the money did not
+        // arrive. Naming the direction is what makes the lapse reach `relationship.expired_at`
+        // instead of being argued away by `membershipEntitles()`.
+        ...(event.type === "invoice.payment_failed" ? { consequence: "lapse" as const } : {}),
       },
       (client) => writeSubscription(client, subscription),
     );
@@ -799,6 +807,7 @@ export class StripeBillingAdapter implements BillingPort {
       `billing: applied stripe event ${event.id} ${event.type} → ` +
         `${subscription.providerSubscriptionId} ${subscription.planId}/${subscription.interval} ${subscription.status}`,
     );
+    await this.sendNoticesFor(event, subscription, result.consequence);
     return { applied: true, kind: event.type, subscription };
   }
 
@@ -816,10 +825,23 @@ export class StripeBillingAdapter implements BillingPort {
    * session, a `customer.subscription.*` the subscription — which is why the checkout stamps both.
    * An event with no `data.object` is not judged here: it cannot be mapped either, and
    * `subscriptionForEvent()` names that failure more precisely than "no host claim" would.
+   *
+   * **An invoice (#1055) is judged on the subscription it names.** The invoice object carries none
+   * of our metadata on the versions before `2025-04-30.basil`; from that version on, the provider
+   * copies the subscription's metadata onto `parent.subscription_details`. So a payload that carries
+   * a claim is judged here (and a foreign one is refused before any read), and a payload that carries
+   * none is not judged at all — `subscriptionForEvent()` reads the named subscription once and
+   * applies the same claim to *its* metadata, which is where our checkout put it. Reading first and
+   * judging second is the only order that both protects the other host's row and lets a pre-basil
+   * delivery through.
    */
   private foreignHostRefusalOf(event: StripeEvent): string | null {
     const object = event.data?.object;
     if (object === null || object === undefined || typeof object !== "object") return null;
+    if (isInvoiceEvent(event.type)) {
+      const claim = invoiceHostClaimOf(object as StripeInvoiceObject);
+      return claim === "" ? null : foreignHostDetail(this.host, claim);
+    }
     const metadata = (object as { readonly metadata?: Record<string, string> | null }).metadata;
     return foreignHostDetail(this.host, hostClaimOf(metadata));
   }
@@ -854,16 +876,56 @@ export class StripeBillingAdapter implements BillingPort {
    * is read once here by id — not a re-fetch of anything the payload carried, because the payload
    * carries no subscription. (When the session arrives with the subscription expanded, it is used
    * as-is and no call is made.)
+   *
+   * **`invoice.paid` / `invoice.payment_failed` are the second** (#1055), for the same reason: the
+   * subject is the *invoice*, which names its subscription and does not carry it, so the named
+   * subscription is read once by id and mapped through the same `mapSubscription()`. That read is
+   * also where the **host claim** is judged for a delivery whose invoice payload did not copy it —
+   * the subscription's own `metadata.host` is the claim our checkout stamped, so a sibling
+   * deployment's renewal is refused with `kind: "foreign"` rather than written to this database.
    */
   private async subscriptionForEvent(
     event: StripeEvent,
-  ): Promise<{ kind: "mapped"; subscription: Subscription } | { kind: "ignored"; detail: string }> {
+  ): Promise<
+    | { kind: "mapped"; subscription: Subscription }
+    | { kind: "ignored"; detail: string }
+    | { kind: "foreign"; detail: string }
+  > {
     const object = event.data?.object as
       | StripeCheckoutSessionObject
       | StripeSubscriptionObject
+      | StripeInvoiceObject
       | undefined;
     if (object === undefined || object === null) {
       return { kind: "ignored", detail: "the event carries no data.object" };
+    }
+
+    if (isInvoiceEvent(event.type)) {
+      const invoice = object as StripeInvoiceObject;
+      const subscriptionId = invoiceSubscriptionIdOf(invoice);
+      if (subscriptionId === null) {
+        return {
+          kind: "ignored",
+          detail: `invoice ${invoice.id} names no subscription — it is not a subscription invoice`,
+        };
+      }
+      const expanded =
+        typeof invoice.subscription === "object" && invoice.subscription !== null
+          ? (invoice.subscription as StripeSubscriptionObject)
+          : null;
+      const subscription =
+        expanded ?? (await this.get<StripeSubscriptionObject>(`/subscriptions/${subscriptionId}`));
+
+      const foreign = foreignHostDetail(this.host, hostClaimOf(subscription.metadata));
+      if (foreign !== null) return { kind: "foreign", detail: foreign };
+
+      const mapped = this.mapSubscription(subscription, {
+        userId: null,
+        planId: null,
+        interval: null,
+      });
+      if (typeof mapped === "string") return { kind: "ignored", detail: mapped };
+      return { kind: "mapped", subscription: mapped };
     }
 
     if (event.type === "checkout.session.completed") {
@@ -909,6 +971,71 @@ export class StripeBillingAdapter implements BillingPort {
     });
     if (typeof subscription === "string") return { kind: "ignored", detail: subscription };
     return { kind: "mapped", subscription };
+  }
+
+  /**
+   * Fire the notices the delivery exists to fire (#1055) — **after** the write committed.
+   *
+   * Two events reach a template, and they are the two the card names: a refused renewal announces
+   * the lapse it just wrote (`membership-lapsed`, both seats), and `trial_will_end` warns the
+   * account with the provider's own `trial_end` (`trial-ending`). `invoice.paid` sends nothing —
+   * there is no "you are back" template, and inventing one is a product decision nobody has made.
+   *
+   * **A notice can never fail a delivery.** The row is committed by the time this runs, so a throw
+   * here would answer 5xx, make the provider retry an event it already applied, and replay the same
+   * letter on every attempt. The catch is the whole safety property; the log line is the only trace,
+   * and it says the state changed without it.
+   *
+   * The rows mailed are `consequence.lapsedIds` — the relationships *this event* moved, not every
+   * expired row the account has. A second failed renewal for an already-lapsed account moves
+   * nothing, so it has nothing to announce.
+   */
+  private async sendNoticesFor(
+    event: StripeEvent,
+    subscription: Subscription,
+    consequence: SubscriptionConsequence | null,
+  ): Promise<void> {
+    try {
+      if (event.type === "invoice.payment_failed") {
+        const results = await sendMembershipLapsedNotices({
+          relationshipIds: consequence?.lapsedIds ?? [],
+          fetchImpl: this.fetchImpl,
+        });
+        this.logNotices(event, results);
+        return;
+      }
+      if (event.type === "customer.subscription.trial_will_end") {
+        const trialEnd = trialEndSecondsOf(event.data?.object);
+        if (trialEnd === null) {
+          console.warn(
+            `billing: stripe event ${event.id} ${event.type} carries no trial_end — no trial notice was attempted`,
+          );
+          return;
+        }
+        const result = await sendTrialEndingNotice({
+          userId: subscription.userId,
+          trialEndsAt: new Date(trialEnd * 1000),
+          fetchImpl: this.fetchImpl,
+        });
+        this.logNotices(event, [result]);
+      }
+    } catch (error) {
+      console.error(
+        `billing: stripe event ${event.id} ${event.type} applied, but its notice could not be sent ` +
+          `(${error instanceof Error ? error.message : String(error)}) — the row is written and this line is the only trace`,
+      );
+    }
+  }
+
+  /** One line per delivery: what was sent, to how many mailboxes. Never an address, a name or a link. */
+  private logNotices(event: StripeEvent, results: readonly NoticeResult[]): void {
+    if (results.length === 0) return;
+    const summary = results.map(
+      (result) => `${result.kind}:${result.outcome}/${result.recipients}`,
+    );
+    console.info(
+      `billing: notices for stripe event ${event.id} ${event.type} → ${summary.join(" ")}`,
+    );
   }
 
   /**

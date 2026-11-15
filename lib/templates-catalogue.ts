@@ -16,6 +16,11 @@
  * catalogue keeps rendering the copy it shipped with, so the two pages cannot silently re-cut each
  * other.
  *
+ * **The two authored actions are resolved for the viewer (#979).** `membership.cta` and
+ * `final-cta.cta` are fixture rows whose `href` is `/register`; a member with a live session must
+ * not be sent to the sign-up page, so both pass through `lib/start-path.ts::startHrefFor()` for the
+ * `StartViewer` the page resolved. A visitor's hrefs are byte-for-byte what they were.
+ *
  * **Records stay records.** Every template name and every link in the band is a row of
  * `data/relationship-types.ts` through `purchasableTypesByGroup()` — the same projection the front
  * page's templates band and the member library read — so a type added to the taxonomy appears here
@@ -36,6 +41,7 @@ import { media, type MediaKey } from "@/data/media";
 import { purchasableTypesByGroup, TYPE_GROUPS, type TypeGroup } from "@/data/relationship-types";
 import { brandSurfaceVars } from "@/lib/brand-theme";
 import { catalogueDetailPath, cataloguePriceNote } from "@/lib/template-catalogue";
+import { startHrefFor, type StartViewer } from "@/lib/start-path";
 import type { As2HomeModel, HomeAnchor, HomeImage } from "@/lib/home-alignsynch";
 import { itemBody, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -135,6 +141,7 @@ function groups(copy: PageCopy) {
 export function templatesCatalogue(
   brand: Brand,
   copy: PageCopy,
+  viewer: StartViewer,
   types: readonly TypeGroup[] = TYPE_GROUPS,
 ): TemplatesCatalogueModel {
   const how = sectionOf(copy, "how");
@@ -287,13 +294,16 @@ export function templatesCatalogue(
           body: itemBody(membership, "membership-pair"),
         },
       ],
-      action: membership.cta,
+      action: { label: membership.cta.label, href: startHrefFor(membership.cta.href, viewer) },
       callout: itemLabel(membership, "membership-test-mode"),
     },
     finalCta: {
       heading: finalHeading,
       body: sectionBody(finalSection),
-      action: finalSection.cta,
+      action: {
+        label: finalSection.cta.label,
+        href: startHrefFor(finalSection.cta.href, viewer),
+      },
     },
   };
 }

@@ -349,6 +349,14 @@ export const NON_EMPTY_LISTS: readonly NonEmptyList[] = [
 /** A page module's route group: the console (`/admin/**`) and the member dashboard. */
 const SCOPED_PAGE = /^app\/(?:.*\/)?(?:admin|dashboard)\/(?:.*\/)?page\.tsx$/;
 
+/**
+ * A page inside a parallel-route slot (`@flow`) or one that intercepts another route is a
+ * **mounting**, not a dashboard surface (#979 B): it renders a route that lives somewhere else, and
+ * counting its closure would drag the whole create flow into the dashboard's census under a page the
+ * member is not standing on. Same rule as `scripts/column-refs.ts` and `scripts/qa-links.ts`.
+ */
+const MOUNT_ONLY_SEGMENT = /^(?:@|\(\.{1,3}\))/;
+
 /** A page that answers 404 on this brand — `lib/brand-boundary.ts`. */
 const QUIZ_GATE = /requireQuizProduct\s*\(/;
 
@@ -356,6 +364,7 @@ const QUIZ_GATE = /requireQuizProduct\s*\(/;
 export function scopedPagePaths(files: readonly CensusSource[]): string[] {
   return files
     .filter((file) => SCOPED_PAGE.test(file.path) && !QUIZ_GATE.test(file.source))
+    .filter((file) => !file.path.split("/").some((segment) => MOUNT_ONLY_SEGMENT.test(segment)))
     .map((file) => file.path)
     .sort();
 }

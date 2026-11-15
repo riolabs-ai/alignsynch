@@ -1,7 +1,7 @@
 /**
  * template-ancestor: components/marketing/marketing-landing.tsx   (variation: the landing's one-column band plus the 320 px decision-aside lifted out as the record detail shell both detail pages render)
  *
- * The shared record detail shell (#795, card t_7fb6b908) — `docs/mockups/one-card-one-detail-v2.html`
+ * The shared record detail shell (#795, card t_7fb6b908) — `docs/reference/mockups/one-card-one-detail-v2.html`
  * §4/§5, approved on option A.
  *
  * **One shell, and the order is the spec.** Identity band → facts → content → actions. The band

@@ -3,6 +3,7 @@
 // template-ancestor: components/ui/card.tsx   (variation: the sign-in card — email, password, one submit and the Google path under it)
 
 import { AppVersion } from "@/components/layout/app-version";
+import { AuthHeroTiles } from "@/components/auth/auth-hero-tiles";
 import { AuthHomeLink } from "@/components/auth/auth-home-link";
 import { DemoEntry } from "@/components/auth/demo-entry";
 import { DemoRoles } from "@/components/auth/demo-roles";
@@ -21,8 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleMark } from "@/components/ui/provider-mark";
 import type { PageCopy } from "@/content/pages";
-import { formatCompactCount } from "@/content/metrics";
-import { metric } from "@/data/metrics";
 import { authClient } from "@/lib/auth/client";
 import { type AuthFailure, authFailureOf } from "@/lib/auth/errors";
 import { LeavingLink } from "@/components/layout/leaving-link";
@@ -30,27 +29,11 @@ import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
 import type { AuthMarkSet } from "@/lib/auth/marks";
 import { type SignInRefusal, signInRefusalItemId } from "@/lib/auth/provider-link";
 import type { DemoViewProps } from "@/lib/auth/demo-form";
-import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
-import { BookOpen, Loader2, Scale, Trophy, type LucideIcon } from "lucide-react";
+import { itemLabel, sectionOf } from "@/lib/page-copy";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
-
-/**
- * The mark each stat tile draws, by the id the build's fixture declares.
- *
- * An icon is chrome, not copy, so it stays in the view — but which tile is which belongs
- * to the fixture's ids, and a brand may word a tile the quiz build fills with a count
- * (`stats-alignsynch`). An id this map does not know gets the neutral mark rather than a
- * quiz trophy: the tiles are the same shape on both brands, and only the words move.
- */
-const STAT_MARKS: Record<string, { icon: LucideIcon; tone: string }> = {
-  players: { icon: Trophy, tone: "text-yellow-400" },
-  categories: { icon: BookOpen, tone: "text-green-400" },
-};
-
-/** The mark for a tile the map above does not name. */
-const NEUTRAL_MARK = { icon: Scale, tone: "text-white/80" };
 
 /**
  * `/login`, the client half — a real sign-in since issue #164.
@@ -227,15 +210,6 @@ export function LoginView({
   /** The way back to the site — every auth screen carries one (`auth-home-link.tsx`). */
   const home = sectionOf(copy, "home");
 
-  /**
-   * The one number this page owns: the demo's active-player count, as `data/metrics.ts`
-   * records it and `content/metrics.ts` formats it. It reaches a tile through the fixture's
-   * `{count}` placeholder — and a brand whose tile carries no placeholder renders none, which
-   * is how the alignment build's two sentences take the slots the quiz build fills with
-   * numbers.
-   */
-  const values = { count: formatCompactCount(metric("platform.activePlayers").value, "upper") };
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -357,7 +331,9 @@ export function LoginView({
 
   return (
     <div className={layout === "embedded" ? "w-full" : "min-h-screen flex"}>
-      {/* Left Side - Image. Page layout only (#824): embedded is a stage column, not a page. */}
+      {/* Left Side - Image. Page layout only (#824): embedded is a stage column, not a page.
+          The two tiles are `components/auth/auth-hero-tiles.tsx` (#971), which `/register` mounts
+          too; the panel around them is sign-in's own. */}
       <div
         className={
           layout === "embedded"
@@ -380,24 +356,7 @@ export function LoginView({
             <h2 className="text-4xl font-bold mb-4">{copy.heading}</h2>
             <p className="text-xl text-white/90 leading-relaxed">{copy.subtitle}</p>
           </div>
-          <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-            {stats.items?.map((stat) => {
-              const mark = STAT_MARKS[stat.id] ?? NEUTRAL_MARK;
-              const Icon = mark.icon;
-              return (
-                <div
-                  key={stat.id}
-                  className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center"
-                >
-                  <Icon className={`w-8 h-8 mx-auto mb-2 ${mark.tone}`} />
-                  {stat.value !== undefined && (
-                    <div className="text-2xl font-bold">{fillLabel(stat.value, values)}</div>
-                  )}
-                  <div className="text-sm text-white/80">{stat.label}</div>
-                </div>
-              );
-            })}
-          </div>
+          <AuthHeroTiles tiles={stats} />
         </div>
         {/* Decorative Elements */}
         <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>

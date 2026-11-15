@@ -1,5 +1,5 @@
 /**
- * GENERATED from the P1 fixture migration — see docs/p1-migration/MIGRATION.md §7.
+ * GENERATED from the P1 fixture migration — see docs/operations/history/p1-migration/MIGRATION.md §7.
  *
  * The 5 `CreatedQuiz` records (`lib/data/users.ts`, users 1–3). The migration could not
  * recover their content: each source fixture published a question COUNT (15–40) and no

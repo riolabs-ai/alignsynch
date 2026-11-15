@@ -102,6 +102,12 @@ const rows: readonly SurfaceColumn[] = [
   // the console family; the catch-all renders a long markdown body in the column, not wider.
   { path: "/admin/docs", mode: "column" },
   { path: "/admin/docs/[...slug]", mode: "column" },
+  // #893 — the two derived views. Both render `StageColumn`, and both are *long* pages: the
+  // features index is one card per area and the releases shelf is a 340px list beside three panes.
+  // Long is not wide — the column is the reading measure the rest of the console uses, and the
+  // shelf's own grid is inside it.
+  { path: "/admin/docs/features", mode: "column" },
+  { path: "/admin/docs/releases", mode: "column" },
   { path: "/admin/gaps", mode: "column" },
   // #920 — the growth model. The charts are `aspect`-free (a fixed height inside the column), so the
   // band that could have been wide stays at the console's width like every other admin page.

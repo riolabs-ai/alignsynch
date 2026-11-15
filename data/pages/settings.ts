@@ -123,7 +123,7 @@ export const settingsPageCopy: PageCopy = zPageCopy.parse({
     /**
      * The delete-account card (#278).
      *
-     * The words are §5 of `docs/ACCOUNT-DELETION-SPEC.md` and **nothing stronger**: deletion is
+     * The words are §5 of `docs/specs/account-deletion-spec.md` and **nothing stronger**: deletion is
      * immediate and irreversible, the survivor's assessment stays with the seat labelled
      * "Deleted account", the answers stay as part of their completed report and are no longer
      * linked to a name, an address or an account. It does not say "all your data is erased" —

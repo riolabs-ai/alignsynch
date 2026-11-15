@@ -5,7 +5,7 @@
  * used under the MIT License (the licence requires this notice in copies of the text):
  *   Privacy: templates/saas-web-app.md (13 sections) — github.com/ryuno2525/privacy-policy-templates
  *   Terms:   templates/terms-of-service-basic.md (15 sections) — same repository
- * The provenance, the removals and the assumptions are `docs/legal/PROVENANCE.md`; the
+ * The provenance, the removals and the assumptions are `docs/reference/provenance.md`; the
  * claim-by-claim evidence table is beside the draft this file was built from.
  *
  * **Draft status.** Not reviewed by a lawyer. Any view that renders this copy MUST draw the
@@ -17,7 +17,7 @@
  * product's name, its domain and its support address — and nothing here types `alignsynch.com`
  * or an address by hand, exactly as `data/pages/login.ts` reads the brand for its hero. The
  * *operating entity* is not a brand fact and is not invented per brand: it is RioLabs, the one
- * operator behind both builds, so both pages name the same entity. `docs/legal/PROVENANCE.md`
+ * operator behind both builds, so both pages name the same entity. `docs/reference/provenance.md`
  * records that decision and the facts counsel still has to confirm.
  *
  * **Removed from the templates, with the reason** (all of it is in `PROVENANCE.md`):
@@ -511,7 +511,7 @@ export function legalCopy(record: LegalBrand): { terms: PageCopy; privacy: PageC
           {
             id: "flow",
             label: "Assessment cookies",
-            body: "When you start or claim an assessment, the application sets cookies named flow_party_<instance-id> and flow_invite_<instance-id> that identify you as one of the two people answering. They are httpOnly (scripts cannot read them), sent only over HTTPS in production, and expire within 7 days.",
+            body: "When you start or claim an assessment, the application sets cookies named flow_party_<session-id> and flow_invite_<session-id> that identify you as one of the two people answering. They are httpOnly (scripts cannot read them), sent only over HTTPS in production, and expire within 7 days.",
           },
           {
             id: "none-else",

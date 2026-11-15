@@ -2,7 +2,7 @@
  * Template #12 — an unpaid relationship expired (#619, band v0.9).
  *
  * **The second half of the payment job's notice, and the reason the `expired` kind carries a
- * recipient at all.** `docs/pay-to-complete/SPEC.md` §3 tells the `expire` job to notify **both**
+ * recipient at all.** `docs/specs/pay-to-complete/SPEC.md` §3 tells the `expire` job to notify **both**
  * seats: one of them has just lost the thing they were answering, and the other is the person whose
  * fee did not arrive. The state is already terminal and readable on the relationship's own screen —
  * this message exists so nobody has to open it to find out, and it is the only notice in the fee

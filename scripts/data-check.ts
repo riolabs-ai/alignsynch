@@ -126,6 +126,7 @@ import {
   gatedPages,
   type CopySurface,
 } from "./brand-word";
+import { VOCABULARY_ALIGNMENT_COPY, VOCABULARY_ALLOWANCES, vocabularyFindings } from "./vocabulary";
 import { NON_EMPTY_LISTS, censusFindings } from "./ui-census";
 import {
   danglingEntries,
@@ -179,7 +180,7 @@ const nodeRequire = createRequire(__filename);
  * same `tsc -p tsconfig.datacheck.json` that compiled this validator — is required and its
  * exported array returned; when it is absent the generated set is simply empty. A present
  * but unloadable module is an E26 error, never a silent skip. (E20 is reserved for WU-5's
- * DUP tier — `docs/P2-INVENTORY.md` — so the generator takes the next free code.)
+ * DUP tier — `docs/operations/history/P2-INVENTORY.md` — so the generator takes the next free code.)
  */
 function loadGenerated<T>(label: string, exportName: string): readonly T[] {
   const source = join(process.cwd(), "data", "generated", `${label}.ts`);
@@ -629,10 +630,20 @@ for (const conversation of conversations) {
  * E7 — the route manifest matches the filesystem, both directions
  * ------------------------------------------------------------------ */
 
+/** A parallel-route slot (`@flow`) or an interception marker (`(.)`, `(..)`, `(...)`): no address. */
+const MOUNT_ONLY = /^(?:@|\(\.{1,3}\))/;
+
 function walkRoutes(dir: string, prefix = ""): string[] {
   const found: string[] = [];
   for (const entry of readdirSync(dir)) {
     if (entry.startsWith("_") || entry.endsWith(".test")) continue;
+    /**
+     * **A slot and an interception are mountings, not surfaces (#979 B).** `@flow` draws the create
+     * flow over `/dashboard/relationships` without adding an address, and `(...)templates/…` inside
+     * it re-renders the stage routes the browser is already on. Both have a `page.tsx` and neither
+     * owns a URL, so a manifest row for one would be a row for a screen that has its own.
+     */
+    if (entry.startsWith("@") || MOUNT_ONLY.test(entry)) continue;
     const full = join(dir, entry);
     if (!statSync(full).isDirectory()) continue;
     // Route groups `(mainlayout)` and `(auth)` do not appear in the URL.
@@ -991,7 +1002,7 @@ if (clientEntries.length === 0) {
  *
  * The repo is a base core webapp and AlignSynch is a brand variation of it, so a component that
  * was authored from scratch is a component the next brand has to author again. That was not a
- * hypothesis: `docs/UI-DIVERGENCE.md` read twenty-seven files, named six hand-built surfaces with
+ * hypothesis: `docs/specs/ui-divergence.md` read twenty-seven files, named six hand-built surfaces with
  * an ancestor sitting beside each one, and measured **zero** variations actually derived from an
  * ancestor. Docs did not stop it, so the claim is checked: the first comment block of every
  * `components/` file that renders JSX must say either
@@ -1122,6 +1133,45 @@ const brandWordResult = brandWordFindings({
 for (const problem of brandWordResult.problems) err(problem.rule, problem.message);
 
 const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fixtures, ${brandWordResult.census.strings} reader-visible strings, ${brandWordResult.census.gated} gated pages, ${brandWordResult.census.allowances} allowance${brandWordResult.census.allowances === 1 ? "" : "s"}`;
+
+/* ------------------------------------------------------------------ *
+ * E41 — the product says "session", never "instance"
+ *
+ * The owner has asked for this more than once and it kept coming back, because nothing enforced
+ * it: a fixture is prose, so no typecheck, lint rule or parity hash can see the retired noun. The
+ * word was the model's (`assessment_instance`), the product's is a session — one cycle of
+ * answering inside a published relationship — and a reader who is told they have "instances" is
+ * reading a database's vocabulary.
+ *
+ * The render set is E37's, derived from the same two facts rather than listed (an E23 budget row
+ * names the page and its fixture; a page calling `requireQuizProduct()` answers 404 here, so
+ * nothing it renders reaches an alignment reader — which is also what keeps QuizHub's own words
+ * out of scope). `scripts/vocabulary.ts` owns the extraction it shares with `brand-word.ts` and the
+ * `{token}` fill masking, and is pure, so `scripts/__tests__/vocabulary.test.ts` drives every shape
+ * and its last section asserts the real tree is clean. The same walk is runnable by name:
+ * `pnpm vocabulary:census` prints the counts and exits non-zero on a violation.
+ *
+ * `VOCABULARY_ALLOWANCES` is exact string, exact file, and a row nothing uses is a finding — the
+ * same shape as `BRAND_WORD_ALLOWANCES`, so the boundary cannot be pre-widened.
+ * ------------------------------------------------------------------ */
+
+const vocabularyResult = vocabularyFindings({
+  surfaces: brandWordSurfaces,
+  gated: brandWordGated,
+  overrides: ALIGNMENT_COPY_OVERRIDES,
+  extras: ALIGNMENT_COPY_EXTRAS,
+  files: [
+    ...brandWordFiles,
+    ...VOCABULARY_ALIGNMENT_COPY.map((fixture) => `${fixture}.ts`)
+      .filter((path) => existsSync(join(process.cwd(), path)))
+      .map((path) => ({ path, source: readFileSync(join(process.cwd(), path), "utf8") })),
+  ],
+  allowances: VOCABULARY_ALLOWANCES,
+});
+
+for (const problem of vocabularyResult.problems) err(problem.rule, problem.message);
+
+const vocabularyCensus = `${vocabularyResult.census.strings} reader-visible strings across ${vocabularyResult.census.fixtures.length} alignment fixtures, ${vocabularyResult.census.naming} naming a retired noun, ${vocabularyResult.census.allowances} allowance${vocabularyResult.census.allowances === 1 ? "" : "s"}`;
 
 /* ------------------------------------------------------------------ *
  * E38 — a brand that names its own mark draws its icon set from it
@@ -1567,7 +1617,7 @@ for (const problem of modeWiringProblems(
  * The shape it forbids is a whole node — `<span>Science</span>`, `label="Science"` —
  * because that is exactly the copy that drifts: rename the subject in
  * `content/categories.ts` and the page keeps saying the old name while typecheck, lint,
- * data:check and build all stay green (docs/P2-INVENTORY.md, DUP tier: 26 hits).
+ * data:check and build all stay green (docs/operations/history/P2-INVENTORY.md, DUP tier: 26 hits).
  *
  * The vocabulary is built from the model here, never from the component tree, so the
  * scan cannot agree with the code it is checking. Record-shaped literals inside a
@@ -1666,7 +1716,7 @@ const copyMeasured = Object.entries(pageCopyBudget).map(([route, entry]) => ({
  *   * no instant is after the fixture clock — a card dated in the future renders
  *     "in 2 days", the same defect E10 blocks for the social fixtures.
  *
- * Numbering: E20–E23 are reserved by `docs/P2-INVENTORY.md` (DUP / MOCK / METRIC /
+ * Numbering: E20–E23 are reserved by `docs/operations/history/P2-INVENTORY.md` (DUP / MOCK / METRIC /
  * PageCopy), so the next free code is E24 rather than reusing a reserved one.
  * ------------------------------------------------------------------ */
 
@@ -1786,7 +1836,7 @@ for (const review of activityReviews) {
  *             (`buildSearchIndex`, `data/chat-data.ts`), so an island there is a second
  *             catalog by construction. The other feature directories still hold islands that
  *             their own work unit removes; this check widens to all of `components/**` when
- *             the last of them lands (E21 in docs/P2-INVENTORY.md is the whole-tree rule).
+ *             the last of them lands (E21 in docs/operations/history/P2-INVENTORY.md is the whole-tree rule).
  *   copies    a quiz title from the search index, or a chat message body from
  *             `data/chat-data.ts`, written into one of the components that render them — as a
  *             literal, a JSX text node or a comment. No baseline on these files: the count is
@@ -1986,6 +2036,7 @@ console.log(
 );
 console.log(`      ${surfaceRows.length} surfaces declared: ${surfaceCensus} (E36)`);
 console.log(`      ${brandWordCensus} (E37)`);
+console.log(`      ${vocabularyCensus} (E41)`);
 console.log(`      ${leavingCensus} (E39)`);
 console.log(`      ${uiCensusSummary} (E40)`);
 console.log(

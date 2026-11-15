@@ -16,9 +16,17 @@
  *
  * **Nothing is invented.** No amount, no interval, no renewal date, no card details and no
  * discount: the facts are who bought, which plan, and where it lives. Transactional, so the band
- * refuses an unsubscribe line on it — a confirmation of a purchase is not a list either.
+ * refuses an unsubscribe line on it — a confirmation of a purchase is not a list either. The
+ * opening line is this template's section in `content/email-bodies.md`.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const PURCHASE_CONFIRMATION_BODY = {
+  id: "purchase-confirmation",
+  placeholders: ["recipient", "plan", "link"],
+} as const satisfies EmailBodySpec;
 
 /** The spec's subject, as a constant — it states the result, not the plan's name. */
 export const PURCHASE_CONFIRMATION_SUBJECT = "Your membership is active";
@@ -37,10 +45,11 @@ export function purchaseConfirmationDocument(facts: PurchaseConfirmationFacts): 
     subject: PURCHASE_CONFIRMATION_SUBJECT,
     preheader: `The ${facts.plan} plan is active on your account.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what the plan covers, in the product's own voice.`,
-      },
+      ...bodyBlocks(PURCHASE_CONFIRMATION_BODY, {
+        recipient: facts.recipient,
+        plan: facts.plan,
+        link: facts.link,
+      }),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, the ${facts.plan} plan is active on your account.`,

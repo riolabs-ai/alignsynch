@@ -51,7 +51,7 @@ import {
   resetRequestPageCopy,
 } from "@/data/pages/password-reset";
 import { registerCopy } from "@/data/pages/register";
-import { loginCopyFor, registerCopyFor } from "@/lib/auth-copy";
+import { heroTilesFor, loginCopyFor, registerCopyFor } from "@/lib/auth-copy";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
 import type { StartGoogleSignInResult } from "@/lib/auth/google-flow";
@@ -84,6 +84,8 @@ const registerView = (id: (typeof BRANDS)[number][0], record: Brand) =>
     destination: AFTER_SIGN_IN_BY_BRAND[id],
     marks: AUTH_MARKS_BY_BRAND[id],
     markSrc: AUTH_MARK_SRC_BY_BRAND[id],
+    /** The shared hero's tiles (#971) — the band `/login` owns. */
+    stats: heroTilesFor(loginCopy(record), id),
   });
 
 /** Every `href` in a rendered tree, in document order. */

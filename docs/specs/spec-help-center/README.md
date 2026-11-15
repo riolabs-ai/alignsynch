@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Help Center design spec (handoff) · prev [Brand & audience profile page (handoff)](../spec-design-page-rel-templates/README.md) · next [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Help Center design spec (handoff) · prev [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md) · next [Stages](../stages.md)
 
 <!-- docs-nav:end -->
 
@@ -46,6 +46,6 @@ One person starts and invites the other. Both answer the same Aspects privately.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Help Center design spec (handoff) · prev [Brand & audience profile page (handoff)](../spec-design-page-rel-templates/README.md) · next [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Help Center design spec (handoff) · prev [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md) · next [Stages](../stages.md)
 
 <!-- docs-nav:end -->

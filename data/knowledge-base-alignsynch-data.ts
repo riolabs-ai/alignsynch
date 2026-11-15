@@ -52,7 +52,7 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "To sign out, use the Sign out row at the foot of the sidebar, or the same button on Account Settings. Both run one step, which revokes the session with the auth service and returns you to the signed-out page only once that succeeds; if it fails, the control says so rather than leaving you half signed in. The answers you already submitted stay with the instance, because they were saved when you submitted them.",
+        text: "To sign out, use the Sign out row at the foot of the sidebar, or the same button on Account Settings. Both run one step, which revokes the session with the auth service and returns you to the signed-out page only once that succeeds; if it fails, the control says so rather than leaving you half signed in. The answers you already submitted stay with the session they were given on, because they were saved when you submitted them.",
       },
       {
         type: "heading",
@@ -97,12 +97,12 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
     body: [
       {
         type: "heading",
-        text: "Starting an instance and inviting the other person",
+        text: "Starting a session and inviting the other person",
         level: 2,
       },
       {
         type: "paragraph",
-        text: "You start from a template. The create form asks for your name, the other person's name and their email address, and one submission writes the instance, your own seat and the invitation together in a single transaction. You are the Initiator; the person you invite becomes the Counterparty when they take the seat.",
+        text: "You start from a template. The create form asks for your name, the other person's name and their email address, and one submission writes the session, your own seat and the invitation together in a single transaction. You are the Initiator; the person you invite becomes the Counterparty when they take the seat.",
       },
       {
         type: "heading",
@@ -111,7 +111,7 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "The invitation is a link carrying a single-use token. When this deployment has a mail provider configured the link is emailed; when it does not, the instance screen shows you the same link and a Copy link control so you can send it yourself. Either way the link is the credential, so send it to the person it is meant for and to nobody else.",
+        text: "The invitation is a link carrying a single-use token. When this deployment has a mail provider configured the link is emailed; when it does not, the session screen shows you the same link and a Copy link control so you can send it yourself. Either way the link is the credential, so send it to the person it is meant for and to nobody else.",
       },
       {
         type: "heading",
@@ -155,11 +155,11 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: 'The initiator can send a new invitation while the seat is still unclaimed, whether or not the first link has expired. It is a re-invite of the same invitation, not a new instance: the old token is replaced, so there is only ever one live link, and the previous one stops naming an invitation at all — it answers "No such invitation", which is a different sentence from "expired". A mistyped address can be corrected on the same form.',
+        text: 'The initiator can send a new invitation while the seat is still unclaimed, whether or not the first link has expired. It is a re-invite of the same invitation, not a new session: the old token is replaced, so there is only ever one live link, and the previous one stops naming an invitation at all — it answers "No such invitation", which is a different sentence from "expired". A mistyped address can be corrected on the same form.',
       },
       {
         type: "paragraph",
-        text: "Two limits: at most one re-invitation every 24 hours, and at most three over the life of the invitation. The screen shows the count before you send; a send inside the 24-hour window is refused and the refusal names the wait. Once the other person has claimed the seat, or you have both answered everything, a re-invite is refused too — a finished relationship needs a new instance, not a new token.",
+        text: "Two limits: at most one re-invitation every 24 hours, and at most three over the life of the invitation. The screen shows the count before you send; a send inside the 24-hour window is refused and the refusal names the wait. Once the other person has claimed the seat, or you have both answered everything, a re-invite is refused too — a finished relationship needs a new session, not a new token.",
       },
     ],
   },
@@ -233,7 +233,7 @@ export const alignSynchArticlesData: readonly KbArticle[] = [
       },
       {
         type: "paragraph",
-        text: "Each instance is read under a setting. Under Full, a Gap counts as met only at 0; under Soft, a Gap of 1 is tolerated. The setting changes which Gaps count as met — it never changes the numbers themselves.",
+        text: "Each session is read under a setting. Under Full, a Gap counts as met only at 0; under Soft, a Gap of 1 is tolerated. The setting changes which Gaps count as met — it never changes the numbers themselves.",
       },
       {
         type: "note",

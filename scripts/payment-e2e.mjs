@@ -7,10 +7,12 @@
  * because the acts are **server actions**: a script can render the screen and read the rows it
  * writes, but the clicks belong to a browser. So:
  *
- *   setup      one signed-in account, one relationship carried through the four create stages, the
- *              counterparty's claim, both sheets answered and both acceptances recorded — the
- *              state the fee is gated on, reached through the app's own requests. Then the payer's
- *              screen is fetched and asserted to **draw both acts**.
+ *   setup      one signed-in account, one relationship carried through the four create stages **and
+ *              published by stage 5's own send** (the create itself only writes the draft since
+ *              #825, and a bare post to `POST /assessment/new` is refused since #957's server
+ *              half), the counterparty's claim, both sheets answered and both acceptances
+ *              recorded — the state the fee is gated on, reached through the app's own requests.
+ *              Then the payer's screen is fetched and asserted to **draw both acts**.
  *   verify     after a browser has pressed them: the method is on file, the fee landed, the
  *              relationship is `complete`, and the instance the payer was gated out of now reads
  *              the Gap. This is the "a member can pay" column of the report.
@@ -34,6 +36,7 @@
 import { randomBytes } from "node:crypto";
 import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { Client } from "pg";
+import { sendInvitationPath } from "@/lib/flow/paths";
 
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const STATE_PATH = process.env.PAYMENT_E2E_STATE ?? ".payment-e2e.json";
@@ -163,7 +166,7 @@ function instanceIdIn(location) {
   return location?.match(/[?&]instance=([0-9a-f-]{36})/)?.[1] ?? null;
 }
 
-async function createRelationship(jar, templateAspects, label) {
+async function createRelationship(db, jar, templateAspects, label) {
   // #794 — the stage addresses carry the template's slug; the post and the draft cookie carry its
   // id, and stage 1's handler is what turns one into the other before it answers.
   const stem = (templateSlug) => `/templates/relationship/${templateSlug}/create`;
@@ -198,13 +201,78 @@ async function createRelationship(jar, templateAspects, label) {
   });
   check(`[${label}] stage 3 saves its list`, saved.status === 200 && saved.body?.ok === true);
 
-  const committed = await jar.post("/assessment/new", { templateRecordId: TEMPLATE_ID });
+  /*
+   * Stage 4 — the create is the flow's **draft** write (#825, and #957's server half).
+   *
+   * This used to post the endpoint bare, and that was a second create path: the endpoint kept a
+   * pre-#688 one-form create for a post carrying no `draft=1`, and it wrote the relationship
+   * **published** and mailed the invitation itself — past #911's plan-and-card gate. The bare post
+   * is refused now, so this run walks the flow the product has: stage 4 saves a draft, stage 5's own
+   * `…/send` publishes it behind the gate, which is the write this script was always testing.
+   */
+  const committed = await jar.post("/assessment/new", {
+    templateRecordId: TEMPLATE_ID,
+    draft: "1",
+  });
   check(
-    `[${label}] stage 4 commits`,
-    committed.status === 303,
+    `[${label}] stage 4 saves the relationship as a draft`,
+    committed.status === 303 &&
+      (committed.location ?? "").includes(`${stem(TEMPLATE_SLUG)}/invite`) &&
+      instanceIdIn(committed.location) !== null,
     `${committed.status} ${committed.location}`,
   );
-  return committed;
+  const instanceId = instanceIdIn(committed.location);
+  if (instanceId === null) throw new Error(`[${label}] the draft create named no instance`);
+  const drafted = await db.query(
+    `SELECT rel.status, rel.published_at
+       FROM relationship rel
+       JOIN session s ON s.relationship_id = rel.id
+      WHERE s.record_id = $1`,
+    [instanceId],
+  );
+  check(
+    `[${label}] and it is a draft with no publish instant`,
+    drafted.rows[0]?.status === "draft" && drafted.rows[0]?.published_at === null,
+    JSON.stringify(drafted.rows[0]),
+  );
+
+  /*
+   * #911 — the send waits for the plan and the card, and `sendDraftInvitation()` enforces it at the
+   * write. `setup` has already bought the plan through the app's checkout; the **card** is the
+   * browser's act, so this writes the row the act would write (labelled, and taken back off
+   * immediately) and publishes through stage 5's own endpoint — never by a create path.
+   */
+  await db.query(
+    `INSERT INTO relationship_payment
+       (relationship_id, payer_user_id, provider, provider_payment_method_id, method_captured_at,
+        charge_due_at)
+     SELECT s.relationship_id, r.initiator_user_id, 'stripe', 'pm_e2e_harness', now(),
+            now() + interval '7 days'
+       FROM session s JOIN relationship r ON r.id = s.relationship_id
+      WHERE s.record_id = $1
+     ON CONFLICT (relationship_id) DO UPDATE
+       SET method_captured_at = EXCLUDED.method_captured_at,
+           charge_due_at = EXCLUDED.charge_due_at`,
+    [instanceId],
+  );
+  const sent = await jar.post(sendInvitationPath(instanceId), {});
+  check(
+    `[${label}] stage 5's Send and Continue publishes it`,
+    sent.status === 303,
+    `${sent.status} ${sent.location}`,
+  );
+  /*
+   * The capture goes back off, because the fee at the Gap is gated on its **absence** and the
+   * payer's two acts are still the browser's: `verify` asserts the method landed after the browser
+   * pressed it, which a stand-in left in place would make trivially true.
+   */
+  await db.query(
+    `UPDATE relationship_payment
+        SET method_captured_at = NULL, charge_due_at = NULL
+      WHERE relationship_id = (SELECT relationship_id FROM session WHERE record_id = $1)`,
+    [instanceId],
+  );
+  return sent;
 }
 
 /** Answer both sheets and record both acceptances — the seal the fee is gated on. */
@@ -279,7 +347,7 @@ async function setup(db) {
   }));
   check(`the template carries ${aspects.length} Aspects to answer`, aspects.length > 0);
 
-  const committed = await createRelationship(initiator, aspects, `pay-${stamp}`);
+  const committed = await createRelationship(db, initiator, aspects, `pay-${stamp}`);
   // A signed-in creator closes onto the dashboard, so the id is the row, not the address.
   const newest = await db.query(
     `SELECT rel.id, s.record_id, rel.status, rel.published_at

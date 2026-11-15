@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Lifecycle · next [Payment](payment.md)
+[Docs hub](../README.md) › **Diagrams** › Lifecycle · prev [Gate](gate.md) · next [Payment](payment.md)
 
 <!-- docs-nav:end -->
 
@@ -55,7 +55,7 @@ is on file — the delay on the money is seven days, the delay on the _report_ i
 ([payment](payment.md)).
 
 `undefined` from `paymentArmedOf()` is "not measured", not "unpaid": a relationship created before
-#619 has no `relationship_payment` row and must not be flipped back into a payment state.
+\#619 has no `relationship_payment` row and must not be flipped back into a payment state.
 
 ## The branches that exist
 
@@ -76,12 +76,12 @@ reach — a dead surface, which is the defect these diagrams exist to prevent.
 
 ## Where to read the rest
 
-- [`docs/TWO-PARTY-FLOW.md`](../TWO-PARTY-FLOW.md) — the same lifecycle in prose, screen by screen.
+- [`docs/specs/two-party-flow.md`](../specs/two-party-flow.md) — the same lifecycle in prose, screen by screen.
 - [`lib/flow/store.ts`](../../lib/flow/store.ts) — the reads and writes behind each edge.
-- [`docs/pay-to-complete/SPEC.md`](../pay-to-complete/SPEC.md) — what completion costs.
+- [`docs/specs/pay-to-complete/SPEC.md`](../specs/pay-to-complete/SPEC.md) — what completion costs.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Diagrams** › Lifecycle · next [Payment](payment.md)
+[Docs hub](../README.md) › **Diagrams** › Lifecycle · prev [Gate](gate.md) · next [Payment](payment.md)
 
 <!-- docs-nav:end -->

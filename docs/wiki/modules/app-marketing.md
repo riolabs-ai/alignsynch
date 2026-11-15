@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › app/(marketing) · prev [app/(mainlayout)](app-mainlayout.md) · next [app/api](app-api.md)
+[Docs hub](../../README.md) › **Code wiki** › app/(marketing) · prev [app/(mainlayout)](app-mainlayout.md) · next [components](components.md)
 
 <!-- docs-nav:end -->
 
@@ -65,6 +65,6 @@ server actions and holds no `"use client"` state beyond the components it mounts
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › app/(marketing) · prev [app/(mainlayout)](app-mainlayout.md) · next [app/api](app-api.md)
+[Docs hub](../../README.md) › **Code wiki** › app/(marketing) · prev [app/(mainlayout)](app-mainlayout.md) · next [components](components.md)
 
 <!-- docs-nav:end -->

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 redesign — asset sources and credits · prev [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md) · next [V2 home and brand package (handoff)](../spec-design-page-rel-templates-v2/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 redesign — asset sources and credits · prev [Specifications index](../README.md) · next [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->
 
@@ -42,6 +42,6 @@ name. The credits section in `data/pages/legal.ts` changes with it — the two a
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › AS2 redesign — asset sources and credits · prev [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md) · next [V2 home and brand package (handoff)](../spec-design-page-rel-templates-v2/README.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › AS2 redesign — asset sources and credits · prev [Specifications index](../README.md) · next [AS2 home redesign — implementation brief](IMPLEMENTATION-PROMPT.md)
 
 <!-- docs-nav:end -->

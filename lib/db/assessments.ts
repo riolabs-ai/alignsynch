@@ -468,8 +468,11 @@ export async function readRelationshipRow(
  * **The stage is the screen's three, not the ladder's four.** `relationshipStage()` maps the
  * derived status onto Invited / Connected / Sharing and cannot return `aligned`, because Aligned
  * is `instanceAlignment()`'s verdict over a finished Gap and not a step (#274,
- * `docs/specs/ux-stages.md`). The list therefore offers three stage tabs and the detail's
- * sentence says the same word: one derivation, two surfaces, no disagreement.
+ * `docs/specs/ux-stages.md`). It answers `null` for a relationship that is off the ladder: a
+ * voided session (excluded by the read below) and a never-sent draft (#975), which is a card with
+ * no stage word rather than a card that claims `Invited`. The list therefore offers four stage-free
+ * state tabs and the detail's sentence says the same word: one derivation, two surfaces, no
+ * disagreement.
  *
  * **No clock is read in a render path.** The invitation's state needs an instant, so the
  * statement selects `now()` once and the mapping hands that one value to `inviteStateOf()`. The
@@ -507,8 +510,15 @@ export interface RelationshipCard {
   readonly viewerRole: PartyRole | "coach";
   readonly initiatorName: string | null;
   readonly counterpartyName: string | null;
-  /** Invited / Connected / Sharing, from the derived status. Never `aligned`. */
-  readonly stage: FlowStage;
+  /**
+   * The list's stage, or `null` when the relationship is off the ladder (#975).
+   *
+   * Three rungs for a sent relationship, mapped from the derived status; `null` for a never-sent
+   * draft, which has no rung because the ladder's first rung *is* "the invitation went out and has
+   * not been claimed". A voided session is also `null` and never reaches this type — the read
+   * excludes those rows and the mapping throws rather than drawing one.
+   */
+  readonly stage: FlowStage | null;
   /** `lib/flow/state.ts::myInstanceStateOf` — the state the console's `?filter=` counts. */
   readonly state: MyInstanceState;
   readonly unlock: UnlockMark;
@@ -585,6 +595,13 @@ export interface RelationshipCardRow {
   } | null;
   /** `session.voided_at IS NOT NULL` — the latest session, ended by an operator (#503). */
   readonly voided: boolean;
+  /**
+   * `relationship.published_at IS NOT NULL` — did the invitation ever go out? (#975)
+   *
+   * The list's one record-shaped fact, and the reason this read joins nothing new: `relationship`
+   * is its FROM row. `false` is the never-sent draft, which is `draft` in `instanceStatusOf()`.
+   */
+  readonly published: boolean;
   readonly read_at: Date;
 }
 
@@ -631,6 +648,10 @@ const RELATIONSHIP_CARDS_SQL = `
     l.name                      AS session_name,
     l.date                      AS session_date,
     l.voided                    AS voided,
+    -- #975 — did the invitation ever go out? published_at is the instant the send happened, so
+    -- NULL is the never-sent draft. A session's own rows cannot answer this: a draft and an
+    -- unclaimed invitation are identical in party, opinion and session_invite.
+    (rel.published_at IS NOT NULL) AS published,
     COALESCE(vp.role, rm.role)  AS viewer_role,
     vp.unlock_seen_at           AS viewer_unlock_seen_at,
     ip.name                     AS initiator_name,
@@ -763,6 +784,12 @@ function progressOf(
   counterpartyAccepted: boolean,
   /** `session.voided_at IS NOT NULL` (#503) — answered before any count is read. */
   voided: boolean,
+  /**
+   * `relationship.published_at IS NOT NULL` (#975) — the **relationship's** fact, so every session
+   * of one relationship is handed the same value. `false` is the never-sent draft, and it is
+   * answered right after the void (see `instanceStatusOf`).
+   */
+  published: boolean,
 ): InstanceProgress {
   return {
     aspectCount,
@@ -773,6 +800,7 @@ function progressOf(
     initiatorAccepted: initiatorAccepted ? 1 : 0,
     counterpartyAccepted: counterpartyAccepted ? 1 : 0,
     voided,
+    published,
   };
 }
 
@@ -811,15 +839,20 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     row.initiator_accepted,
     row.counterparty_accepted,
     row.voided,
+    row.published,
   );
   const status = instanceStatusOf(progress);
   const complete = status === "complete";
+  /** #975 — the relationship was never sent, so the card says so instead of naming a stage. */
+  const draft = status === "draft";
 
   const state: MyInstanceState =
     viewerRole === "coach"
-      ? complete
-        ? "complete"
-        : "awaiting-other"
+      ? draft
+        ? "draft"
+        : complete
+          ? "complete"
+          : "awaiting-other"
       : myInstanceStateOf({ ...progress, viewerRole });
 
   // Scored means complete, and only then are the session's opinions turned into a figure. A
@@ -843,6 +876,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
           session.initiatorAccepted,
           session.counterpartyAccepted,
           session.voided,
+          row.published,
         ),
       ) === "complete",
   ).length;
@@ -851,8 +885,12 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
   // ended it and the party's to-do list is not the place to report that. The read excludes them
   // (`lib/db/my-instances.ts`), which makes a `null` here drift rather than a state, and drift is
   // loud in this tree rather than a `?? "connected"` that would draw a relationship still running.
+  //
+  // #975 — a `null` for a **draft** is the other way to be off the ladder, and it is a card: the
+  // relationship exists and its creator needs to find it, it simply has no rung because the send
+  // never happened. The status, not the null, is what tells the two apart.
   const stage = relationshipStage(status);
-  if (stage === null) {
+  if (stage === null && !draft) {
     throw new Error(
       `relationship "${row.slug}": its latest session was voided — the card list must not carry it`,
     );
@@ -873,7 +911,10 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     state,
     unlock: viewerRole === "coach" ? "seen" : unlockMarkOf(state, row.viewer_unlock_seen_at),
     inviteState:
-      row.invite === null
+      // #975 — a draft has no invitation to report. The create writes an session_invite row even
+      // when nothing is sent, so the row is there; reading its state would claim an invitation
+      // that never went out. `null` is this card's "not this row's fact".
+      row.invite === null || draft
         ? null
         : inviteStateOf(
             { claimed: row.invite.claimed, expiresAt: new Date(row.invite.expiresAt) },

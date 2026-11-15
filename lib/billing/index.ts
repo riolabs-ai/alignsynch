@@ -32,15 +32,10 @@ import { livePlanGrantIds } from "@/lib/db/billing";
 import {
   BILLING_PROVIDERS,
   type BillingProvider,
-  type ChargeOutcome,
   type CheckoutRequest,
   type CheckoutSession,
   DEFAULT_BILLING_PROVIDER,
   type Entitlement,
-  type MethodCaptureRequest,
-  type MethodCaptureSession,
-  type RelationshipChargeRequest,
-  type ResolvedMethod,
   type Subscription,
   type WebhookOutcome,
   type WebhookRequest,
@@ -163,6 +158,18 @@ export async function startCheckout(request: CheckoutRequest): Promise<CheckoutS
   return (await billing()).startCheckout(request);
 }
 
+/**
+ * Read a completed checkout back from the provider — the subscription it created, or `null`.
+ *
+ * The embedded frame's completion is the browser's word; this is the server asking the provider.
+ */
+export async function confirmCheckout(
+  userId: string,
+  sessionId: string,
+): Promise<Subscription | null> {
+  return (await billing()).confirmCheckout(userId, sessionId);
+}
+
 /** The account's live subscription, or `null`. */
 export async function readAccountSubscription(userId: string): Promise<Subscription | null> {
   return (await billing()).readSubscription(userId);
@@ -171,25 +178,4 @@ export async function readAccountSubscription(userId: string): Promise<Subscript
 /** Apply a provider event, at most once. */
 export async function handleWebhook(request: WebhookRequest): Promise<WebhookOutcome> {
   return (await billing()).handleWebhook(request);
-}
-
-/* ------------------------------------------------------------------ *
- * Pay to complete (#619) — the same port, three more operations
- * ------------------------------------------------------------------ */
-
-/** Capture a payment method without charging. Answers where the browser goes. */
-export async function startMethodCapture(
-  request: MethodCaptureRequest,
-): Promise<MethodCaptureSession> {
-  return (await billing()).startMethodCapture(request);
-}
-
-/** Resolve a hosted capture once the browser returned. */
-export async function resolveMethodCapture(sessionId: string): Promise<ResolvedMethod> {
-  return (await billing()).resolveMethodCapture(sessionId);
-}
-
-/** Charge a method already on file. A decline is an outcome, not an exception. */
-export async function chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome> {
-  return (await billing()).chargeOnFile(request);
 }

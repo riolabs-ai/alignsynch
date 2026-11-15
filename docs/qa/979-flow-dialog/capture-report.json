@@ -1,0 +1,33 @@
+{
+  "base": "http://localhost:3001",
+  "beforeUrl": "/dashboard/relationships",
+  "url": "/templates/relationship/brother-sister/create",
+  "innerWidth": 1440,
+  "mountMarker": true,
+  "dialog": {
+    "x": 281,
+    "y": 25,
+    "width": 878,
+    "height": 986
+  },
+  "panel": {
+    "x": 280,
+    "y": 24,
+    "width": 880,
+    "height": 952
+  },
+  "heading": "Relationship Details",
+  "railTitle": "Relationship Details",
+  "pageHeadings": ["My Relationships", "Relationship Details"],
+  "pageStillMounted": true,
+  "fieldLabels": [
+    "Your Personalized Relationship Title*requiredThe personalized name of the created Relationship.",
+    "Initiator First Name*required",
+    "Initiator Last Name*required",
+    "Counterparty First Name*required",
+    "Counterparty Last Name",
+    "Counterparty Email for Invite*required",
+    "Personalized Relationship DescriptionA brother and a sister who want to treat each other as adults, not as their old roles.Optional. Shown to both parties, never scored."
+  ],
+  "still": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa979/flow-dialog-relationships-1440.png"
+}

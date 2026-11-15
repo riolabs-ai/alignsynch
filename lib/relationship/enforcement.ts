@@ -175,7 +175,24 @@ function readingOf(
 }
 
 /**
- * Read one relationship's membership, without writing anything.
+ * Does this account hold a **live subscription** — the fact stage 5's send is gated on?
+ *
+ * This is not `membership.writable`, and the difference is the whole reason it exists. `writable`
+ * answers "may either party write?" and deliberately reads `true` for a `draft` (nothing has been
+ * sold yet, so there is nothing to lapse). A freshly created relationship is exactly that: a draft.
+ * So a screen that asked `membership.writable` whether the walk was paid for would open the walk on
+ * its thank-you for every brand-new relationship, skip the plan and the card entirely, and then be
+ * refused by `sendDraftInvitation()` with `no-payment-method` — the UI saying "the plan is active"
+ * about an account holding no subscription.
+ *
+ * The read is the same one the send performs (`readSubscriptionFacts` filters to the entitling
+ * statuses), so the courtesy and the rule cannot disagree.
+ */
+export async function readSubscriptionLive(sql: Sql, userId: string): Promise<boolean> {
+  return (await readSubscriptionFacts(sql, userId)) !== null;
+}
+
+/** Read one relationship's membership, without writing anything.
  *
  * This is the read a screen uses. It never takes a lock and never writes, which is what makes it
  * safe inside a render — the repo's rule is that a render does not read a clock *or* write a row,
@@ -313,7 +330,34 @@ export interface SubscriptionConsequence {
   readonly reactivated: number;
   /** Relationships moved `published|active → expired`. */
   readonly lapsed: number;
+  /**
+   * The rows behind `reactivated` and `lapsed` — the **transition**, not the state.
+   *
+   * A count answers "did anything move"; a notice needs "which pair, once". #1055 mails both seats
+   * of a relationship the instant it goes read-only, and a second failed renewal for an account
+   * that is already lapsed moves nothing, so the ids are what stop the second delivery from being
+   * a second letter. `UPDATE … RETURNING id` already had them; they were being discarded.
+   */
+  readonly reactivatedIds: readonly string[];
+  readonly lapsedIds: readonly string[];
 }
+
+/**
+ * Which question a write answers — the entitlement, or the event's own verdict.
+ *
+ * `entitlement` is every caller but one: `invoice.paid`, `checkout.session.completed`,
+ * `customer.subscription.updated`/`deleted` all describe a *status*, and the status decides the
+ * direction through `membershipEntitles()`. That is the rule and it stays the default.
+ *
+ * `lapse` exists because `invoice.payment_failed` (#1055) does **not** describe a status we map
+ * onto `billing_subscription`: the failed charge leaves the subscription `past_due`, and
+ * `past_due` entitles on purpose (`lib/billing/entitlements.ts` — dunning is a grace period). A
+ * failed renewal that has to reach `membership-lapsed` therefore cannot be inferred from the row;
+ * the event says so, and the caller says so. Nothing else uses it, and no policy — no retry
+ * schedule, no grace window — is created here: one failed charge is one lapse, and a later
+ * `invoice.paid` is what reopens it.
+ */
+export type SyncDirection = "entitlement" | "lapse";
 
 /**
  * Apply one subscription write to every relationship the account started.
@@ -334,11 +378,16 @@ export interface SubscriptionConsequence {
  * Reactivation reads the seat, not a stored origin (`reactivationStatusOf`): a bound counterparty
  * means `active`, an unclaimed invitation means `published` so the link works again. Both are
  * `system` edges in `lib/relationship/status.ts`.
+ *
+ * **`direction` is how `invoice.payment_failed` reaches the second half** (#1055). The default
+ * reads the status; `"lapse"` takes the same lapse statement with the event's own reason, because
+ * a failure leaves the row `past_due` and `past_due` entitles. See `SyncDirection`.
  */
 export async function syncRelationshipsWithSubscription(
   sql: Sql,
   subscription: TrialFacts & { readonly userId: string },
   now: Date = new Date(),
+  options: { readonly direction?: SyncDirection } = {},
 ): Promise<SubscriptionConsequence> {
   /**
    * The event's own status is the provider's truth *as of the delivery*, so a `trialing` event is a
@@ -346,11 +395,16 @@ export async function syncRelationshipsWithSubscription(
    * `canceled` one is over. The clock comparison belongs on the **read** path (`membershipOf`), where
    * a row can outlive the event that last described it; applying it here would make every arrival
    * late enough to matter lapse the account the event was trying to keep alive.
+   *
+   * `lapse` is the one exception, and it is not a status question: the caller has already decided
+   * that this event ends the membership (`invoice.payment_failed`), so asking the entitlement here
+   * would answer `past_due` → entitled → reopen the pair the event just closed.
    */
   const entitled =
-    subscription.status === "active" ||
-    subscription.status === "trialing" ||
-    subscription.status === "past_due";
+    (options.direction ?? "entitlement") === "entitlement" &&
+    (subscription.status === "active" ||
+      subscription.status === "trialing" ||
+      subscription.status === "past_due");
 
   if (entitled) {
     const reactivated = await sql.query<{ id: string }>(
@@ -369,7 +423,14 @@ export async function syncRelationshipsWithSubscription(
         RETURNING r.id`,
       [subscription.userId],
     );
-    return { entitled: true, reactivated: reactivated.rows.length, lapsed: 0 };
+    const reactivatedIds = reactivated.rows.map((row) => row.id);
+    return {
+      entitled: true,
+      reactivated: reactivatedIds.length,
+      lapsed: 0,
+      reactivatedIds,
+      lapsedIds: [],
+    };
   }
 
   /**
@@ -396,7 +457,14 @@ export async function syncRelationshipsWithSubscription(
       LAPSABLE_STATUSES,
     ],
   );
-  return { entitled: false, reactivated: 0, lapsed: lapsed.rows.length };
+  const lapsedIds = lapsed.rows.map((row) => row.id);
+  return {
+    entitled: false,
+    reactivated: 0,
+    lapsed: lapsedIds.length,
+    reactivatedIds: [],
+    lapsedIds,
+  };
 }
 
 /**

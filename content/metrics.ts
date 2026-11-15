@@ -2,7 +2,7 @@
  * Metrics — the numbers a surface asserts, and the only place a number becomes a string.
  *
  * The failure this replaces: 69 rendered quantities in `components/**` and `app/**` that no
- * fixture produced (`docs/P2-INVENTORY.md` WU-4, issue #49). `+4 from last month` was six
+ * fixture produced (`docs/operations/history/P2-INVENTORY.md` WU-4, issue #49). `+4 from last month` was six
  * characters of JSX, so nothing could disagree with it — not a schema, not a fixture, not a
  * gate. A dashboard could claim a 12% month, a 78.3% completion rate and $124.50 while the
  * analytics entity held per-record completion only. The shape of the defect, not the numbers,

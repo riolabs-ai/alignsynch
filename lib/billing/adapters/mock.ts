@@ -27,14 +27,9 @@ import { billingPlan } from "@/data/billing-plans";
 import { checkoutRefusal, entitlementOf } from "@/lib/billing/entitlements";
 import { BillingRefusal, type BillingPort } from "@/lib/billing/port";
 import type {
-  ChargeOutcome,
   CheckoutRequest,
   CheckoutSession,
   Entitlement,
-  MethodCaptureRequest,
-  MethodCaptureSession,
-  RelationshipChargeRequest,
-  ResolvedMethod,
   Subscription,
   SubscriptionStatus,
   WebhookOutcome,
@@ -76,19 +71,7 @@ function mockSubscriptionId(userId: string, planId: string, interval: string): s
   return `mock-sub-${planId}-${interval}-${account}`;
 }
 
-/**
- * The payer's stand-in customer id (#619). Deterministic from the account, like every id here, so a
- * retried capture converges on one customer and a test can assert the value it will be handed.
- */
-function mockCustomerId(userId: string): string {
-  return `mock-cus-${createHash("sha256").update(userId, "utf8").digest("hex").slice(0, 12)}`;
-}
-
-/** The payer's stand-in payment-method id — one per account, and no card data anywhere. */
-function mockPaymentMethodId(userId: string): string {
-  return `mock-pm-${createHash("sha256").update(userId, "utf8").digest("hex").slice(0, 12)}`;
-}
-
+/** The payer's stand-in customer id — deterministic from the account, so a test can assert it. */
 /** The body a mock webhook carries — the smoke script and the tests use this writer. */
 export interface MockWebhookBody {
   readonly id: string;
@@ -109,25 +92,15 @@ export interface MockWebhookBody {
 export interface MockAdapterOptions {
   /** Test seam: the clock. Defaults to the real one. */
   readonly now?: () => Date;
-  /**
-   * Test seam: make every relationship charge decline (#619).
-   *
-   * Defaults to `MOCK_CHARGE_DECLINE === "1"`, so the retry ladder and the expiry path can be
-   * exercised end to end without a card. It cannot affect a subscription checkout: only
-   * `chargeOnFile` reads it.
-   */
-  readonly declineCharges?: boolean;
 }
 
 export class MockBillingAdapter implements BillingPort {
   readonly provider = "mock" as const;
 
   private readonly now: () => Date;
-  private readonly declineCharges: boolean;
 
   constructor(options: MockAdapterOptions = {}) {
     this.now = options.now ?? (() => new Date());
-    this.declineCharges = options.declineCharges ?? process.env.MOCK_CHARGE_DECLINE === "1";
   }
 
   async startCheckout(request: CheckoutRequest): Promise<CheckoutSession> {
@@ -181,66 +154,19 @@ export class MockBillingAdapter implements BillingPort {
   }
 
   /**
-   * Capture a method, inline (#619) — whatever presentation was asked for (#748).
-   *
-   * The mock has no page of any kind, so the capture is immediate and the two ids are
-   * deterministic from the payer — a test can assert them, and a retried capture converges on the
-   * same pair. `presentation: "embedded"` is answered the same way and for the same reason: there
-   * is no provider to draw a frame for, and an offline adapter that pretended to need one would
-   * make every keyless demo depend on a script tag. That is what keeps the screen's capture one
-   * click with the mock and a frame with a real key.
+   * Confirm a checkout (#1010). The mock completes inline — `startCheckout()` wrote the row in the
+   * same request — so this answers that row, and refuses a session id it did not mint.
    */
-  async startMethodCapture(request: MethodCaptureRequest): Promise<MethodCaptureSession> {
-    return {
-      id: `mock-capture-${request.relationshipId}`,
-      url: request.successUrl,
-      provider: "mock",
-      completed: true,
-      customerId: mockCustomerId(request.userId),
-      paymentMethodId: mockPaymentMethodId(request.userId),
-    };
-  }
-
-  /**
-   * There is nothing to resolve: an inline capture returned its ids already.
-   *
-   * Refused rather than answered, because a caller that reached here with a hosted session id is
-   * holding a bug — the mock never produced one, so any id is somebody else's.
-   */
-  async resolveMethodCapture(sessionId: string): Promise<ResolvedMethod> {
-    throw new BillingRefusal(
-      "invalid-request",
-      `the mock adapter captures a method inline, so "${sessionId}" cannot be a mock capture session`,
-    );
-  }
-
-  /**
-   * Charge a method on file (#619).
-   *
-   * Succeeds and charges nothing — the mock is offline by construction (`livemode: false` everywhere
-   * it writes). `MOCK_CHARGE_DECLINE=1` turns every charge into a decline, which is the seam the
-   * retry ladder and the expiry path are tested through: a declined charge is a **result** here,
-   * exactly as it is against a hosted provider.
-   */
-  async chargeOnFile(request: RelationshipChargeRequest): Promise<ChargeOutcome> {
-    if (request.amountCents <= 0) {
+  async confirmCheckout(userId: string, sessionId: string): Promise<Subscription | null> {
+    const subscription = await this.readSubscription(userId);
+    if (subscription === null) return null;
+    if (subscription.providerSubscriptionId !== sessionId) {
       throw new BillingRefusal(
         "invalid-request",
-        `a relationship fee is a positive amount of cents; this charge asked for ${request.amountCents}`,
+        `"${sessionId}" is not a checkout session this adapter minted for this account`,
       );
     }
-    if (this.declineCharges) {
-      return {
-        ok: false,
-        code: "declined",
-        message: "the mock adapter declines every charge (MOCK_CHARGE_DECLINE=1)",
-      };
-    }
-    return {
-      ok: true,
-      chargeId: `mock-charge-${request.relationshipId}`,
-      amountCents: request.amountCents,
-    };
+    return subscription;
   }
 
   async readSubscription(userId: string): Promise<Subscription | null> {

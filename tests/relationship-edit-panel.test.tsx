@@ -30,7 +30,7 @@
  *   the claim       an unclaimed seat's name and address are editable; a claimed one's are not.
  *   the pin         the version select exists only when there is more than one version to move to.
  */
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -81,11 +81,12 @@ function state(overrides: Partial<RelationshipEditState> = {}): RelationshipEdit
 /** The handlers are never called by a first paint; a never-resolving promise says so in the type. */
 const never = () => new Promise<never>(() => {});
 
-function render(editState: RelationshipEditState): string {
+function render(editState: RelationshipEditState, note?: ReactNode): string {
   return renderToStaticMarkup(
     createElement(RelationshipEditPanel, {
       copy: dashboardRelationshipDetailPageCopy,
       state: editState,
+      ...(note === undefined ? {} : { note }),
       onPreview: vi.fn(never),
       onEdit: vi.fn(never),
     }),
@@ -230,5 +231,31 @@ describe("the relationship edit panel renders the state it is handed", () => {
     // the server has counted what the change would strand.
     expect(markup).not.toContain("data-edit-costs");
     expect(markup).not.toContain('type="checkbox"');
+  });
+
+  /**
+   * #975 D12 — **the panel draws the caller's note, in the slot the dialog needs it.**
+   *
+   * The note itself (its words, its one control, the door that closes the modal) is
+   * `tests/relationship-aspects-note.test.tsx`; this case is the composition the member's dialog
+   * depends on — the node lands **between the title/summary the reader came to edit and the fields
+   * below**, and the console's mount, which passes nothing, is byte-for-byte what it was.
+   */
+  it("draws the caller's note under the summary, and nothing when a caller passes none", () => {
+    const withNote = render(
+      state(),
+      createElement("p", { "data-note-marker": "true" }, "the caller's note"),
+    );
+
+    expect(withNote).toContain('data-note-marker="true"');
+    expect(withNote.indexOf('id="edit-summary"')).toBeLessThan(
+      withNote.indexOf('data-note-marker="true"'),
+    );
+    expect(withNote.indexOf('data-note-marker="true"')).toBeLessThan(
+      withNote.indexOf(`>${itemLabel(editCopy, "mode")}<`),
+    );
+
+    // A caller with nothing to say about the record's questions draws no block at all.
+    expect(render(state())).not.toContain("data-note-marker");
   });
 });

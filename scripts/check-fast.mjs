@@ -134,7 +134,7 @@ console.log(`\ncheck:fast — ${changed.length} changed file(s) against ${BASE}\
 
 let failed = false;
 if (!run("typecheck", "pnpm", ["exec", "next", "typegen"])) failed = true;
-if (!run("tsc", "pnpm", ["exec", "tsc", "--noEmit"])) failed = true;
+if (!run("tsc", "node", ["scripts/build-cache.mjs", "tsc"])) failed = true;
 if (!run("data:check", "pnpm", ["run", "data:check"])) failed = true;
 
 const tests = relatedTests(changed);

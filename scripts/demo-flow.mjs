@@ -4,8 +4,11 @@
  * screenshots every screen it lands on, and writes the whole thing down as a committed transcript
  * (#898, card 1 of 2).
  *
- *   pnpm demo:flow          walk the three paths, write PNGs + docs/qa-demo-flow/transcript.json
+ *   pnpm demo:flow          walk the three paths, write PNGs + docs/qa/demo-flow/transcript.json
  *   pnpm demo:flow:check    re-run on an unchanged tree and diff the transcript and the PNG hashes
+ *   pnpm demo:flow:verify   read the committed transcript and the PNGs it names, and assert they
+ *                           still describe each other — no browser, no connection, so this is the
+ *                           form that runs in `bash scripts/verify.sh`
  *
  * ## Not a second `flow:e2e`
  *
@@ -19,8 +22,8 @@
  *
  * ## No browser dependency
  *
- * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa-as2-home/capture.mjs` and
- * the rest of `docs/qa-*` use — Node 24 has a global `WebSocket`, so this is a hand-rolled session
+ * Raw Chrome DevTools Protocol over a `WebSocket`, the same shape `docs/qa/as2-home/capture.mjs` and
+ * the rest of `docs/qa/**` use — Node 24 has a global `WebSocket`, so this is a hand-rolled session
  * with no Playwright and no Puppeteer in `package.json`, and there never will be one from this file.
  *
  * Two CDP details the stills convention already paid for:
@@ -33,7 +36,7 @@
  *
  * ## The transcript is the deliverable, and card 2 renders it
  *
- * `docs/qa-demo-flow/transcript.json` — `demo-flow/v1`. The schema is documented in the file's own
+ * `docs/qa/demo-flow/transcript.json` — `demo-flow/v1`. The schema is documented in the file's own
  * `about` block, because a JSON file has no comments and the second reader is a script. Fields:
  *
  *   step   1..n, contiguous across the three paths (a reader can key on it)
@@ -42,7 +45,7 @@
  *          an unchanged tree produce the same bytes
  *   action "fill" | "click" | "assert"
  *   values { field: value } — verbatim what was entered, empty for clicks and asserts
- *   shot   "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png"
+ *   shot   "docs/qa/demo-flow/<path>/<n>-<slug>-1440.png"
  *   expect the assertion this step proved, in words
  *   ok     whether it held; `actual` carries what was measured when it did not
  *
@@ -77,16 +80,35 @@
  *
  *   BASE_URL=http://localhost:3411 pnpm demo:flow
  *   pnpm demo:flow:check
+ *   pnpm demo:flow:verify           # offline: no BASE_URL, no DATABASE_URL, no Chrome
  *
  * The environment arrives through `withenv.sh` (see the repo skill): `.env.local` is the demo branch
  * and it wins over `.env`, so "which branch did this touch" is answered by the file set.
  */
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { Client } from "pg";
+import {
+  attach,
+  chooseDemoRole,
+  click,
+  configureCdp,
+  demoGateIsOpen,
+  evaluate,
+  fill,
+  launchChrome,
+  navigate,
+  shutter,
+  sleep,
+  stopChrome,
+  submitDemoPin,
+  text,
+  url,
+  waitFor,
+} from "./cdp.mjs";
 import { repoRoot } from "./load-env.mjs";
 
 /* ------------------------------------------------------------------ *
@@ -95,6 +117,12 @@ import { repoRoot } from "./load-env.mjs";
 
 const ARGS = process.argv.slice(2);
 const CHECK = ARGS.includes("--check");
+/**
+ * `--verify` is the **offline** half: it reads the committed transcript and the PNGs it names and
+ * asserts they still describe each other. It never connects, never launches a browser and never
+ * writes — which is what lets it be a `scripts/verify.sh` step, where `--check` cannot be.
+ */
+const VERIFY = ARGS.includes("--verify");
 const STRICT = ARGS.includes("--strict");
 const SKIP_SEED = process.env.DEMO_FLOW_SKIP_SEED === "1";
 /**
@@ -107,7 +135,7 @@ const ONLY = (process.env.DEMO_FLOW_ONLY ?? "")
   .filter((entry) => entry !== "");
 
 const ROOT = repoRoot;
-const CANONICAL_OUT = join(ROOT, "docs", "qa-demo-flow");
+const CANONICAL_OUT = join(ROOT, "docs", "qa", "demo-flow");
 /** Where the images are written. `--check` stages them elsewhere and diffs against the commit. */
 const OUT = CHECK
   ? join(process.env.DEMO_FLOW_OUT ?? "/tmp", "demo-flow-check")
@@ -165,8 +193,6 @@ const PERSONA = {
  * Small utilities
  * ------------------------------------------------------------------ */
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 /** Deterministic slug for a file name: lowercase, dashes, no punctuation. */
 function slugOf(text) {
   return text
@@ -182,325 +208,20 @@ function ensureDir(path) {
 }
 
 /* ------------------------------------------------------------------ *
- * Chrome, and the CDP session (the shape `docs/qa-as2-home/capture.mjs` proved)
+ * Chrome, and the CDP session
+ *
+ * The client lives in `scripts/cdp.mjs` (#945): the release atlas drives the same browser, and
+ * two copies would be two places for the shutter geometry to drift. This file keeps only what is
+ * its own — the walk, the transcript and the findings.
  * ------------------------------------------------------------------ */
 
-let chrome = null;
-
-async function launchChrome() {
-  if (!existsSync(CHROME)) throw new Error(`no Chrome at ${CHROME} — set CHROME_BIN`);
-  // **Never under the repo.** A Chrome profile is ~1 200 files, and one left in `docs/` makes
-  // `biome check` die on its own gitignore walk (`path is expected to be under the root`) — a red
-  // gate for a scratch directory nobody meant to commit.
-  const profile = mkdtempSync(join(tmpdir(), "demo-flow-profile-"));
-  chrome = spawn(
-    CHROME,
-    [
-      "--headless=new",
-      `--remote-debugging-port=${DEBUG_PORT}`,
-      `--user-data-dir=${profile}`,
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--disable-gpu",
-      "--disable-dev-shm-usage",
-      "--hide-scrollbars",
-      "--force-device-scale-factor=1",
-      `--window-size=${WIDTH},${VIEWPORT_HEIGHT}`,
-      "about:blank",
-    ],
-    { stdio: ["ignore", "ignore", "pipe"] },
-  );
-  chrome.stderr.on("data", () => {});
-
-  // `/json/version` is the readiness signal: the port is bound before the page target exists.
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/version`);
-      if (response.ok) return;
-    } catch {
-      // Not listening yet.
-    }
-    await sleep(100);
-  }
-  throw new Error(`Chrome did not answer on ${DEBUG_PORT} within 10 s`);
-}
-
-function stopChrome() {
-  if (chrome !== null && chrome.exitCode === null) chrome.kill("SIGTERM");
-  chrome = null;
-}
-
-async function json(path) {
-  const response = await fetch(`http://127.0.0.1:${DEBUG_PORT}${path}`);
-  return await response.json();
-}
-
-/**
- * A session-scoped CDP connection to the page target.
- *
- * **Targets are auto-attached, because one screen in this flow is not in this document.** Stage 5's
- * card step mounts the provider's own checkout in a cross-origin iframe (#911). Same-origin policy
- * hides its DOM from `Runtime.evaluate` on the page target, and a driver that cannot type into the
- * card cannot prove the payment step ran — so every sub-target is attached flat and reachable by
- * `sessionId`. `waitForDebuggerOnStart: false` keeps a freshly attached target running; nothing here
- * pauses one.
- */
-async function attach() {
-  const listed = await json("/json/list");
-  const targetInfos = Array.isArray(listed) ? listed : listed.targetInfos;
-  const page = targetInfos.find((target) => target.type === "page");
-  if (page === undefined) throw new Error("no page target — is Chrome headless running?");
-
-  const socket = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => {
-    socket.addEventListener("open", resolve, { once: true });
-    socket.addEventListener("error", reject, { once: true });
-  });
-
-  let nextId = 1;
-  const pending = new Map();
-  /** targetId → sessionId, and targetId → the target's own description. */
-  const sessions = new Map();
-  const targets = new Map();
-  /**
-   * Every JavaScript context the page has announced, keyed by id.
-   *
-   * A cross-origin frame is not always handed to `Target.setAutoAttach` as a sub-target; when it is
-   * not, its world is still a context `Runtime` announced, and `Runtime.evaluate` can run in it by
-   * `contextId`. This is the second door to the payment frame, and the one that works whether or not
-   * Chrome decides the frame deserves its own process.
-   */
-  const contexts = new Map();
-
-  socket.addEventListener("message", (event) => {
-    const message = JSON.parse(event.data);
-    if (message.method === "Target.attachedToTarget") {
-      sessions.set(message.params.targetInfo.targetId, message.params.sessionId);
-      targets.set(message.params.targetInfo.targetId, message.params.targetInfo);
-      // A sub-target's own contexts are announced on its session, not the page's.
-      void send("Runtime.enable", {}, message.params.sessionId).catch(() => undefined);
-      return;
-    }
-    if (message.method === "Target.detachedFromTarget") {
-      sessions.delete(message.params.targetId);
-      targets.delete(message.params.targetId);
-      return;
-    }
-    if (message.method === "Runtime.executionContextCreated") {
-      // The session is part of the context's identity: a context announced on a sub-target's session
-      // has to be evaluated on **that** session, and sending it to the page answers
-      // "Cannot find context with specified id".
-      contexts.set(message.params.context.id, {
-        ...message.params.context,
-        sessionId: message.sessionId,
-      });
-      return;
-    }
-    if (
-      message.method === "Runtime.executionContextDestroyed" ||
-      message.method === "Runtime.executionContextsCleared"
-    ) {
-      if (message.method === "Runtime.executionContextsCleared") contexts.clear();
-      else contexts.delete(message.params.executionContextId);
-      return;
-    }
-    if (message.id === undefined) return;
-    const entry = pending.get(message.id);
-    if (entry === undefined) return;
-    pending.delete(message.id);
-    if (message.error)
-      entry.reject(new Error(`${message.method ?? ""} ${JSON.stringify(message.error)}`));
-    else entry.resolve(message.result);
-  });
-
-  const send = (method, params = {}, sessionId) =>
-    new Promise((resolve, reject) => {
-      const id = nextId++;
-      pending.set(id, { resolve, reject });
-      socket.send(
-        JSON.stringify({ id, method, params, ...(sessionId === undefined ? {} : { sessionId }) }),
-      );
-    });
-
-  await send("Target.setAutoAttach", {
-    autoAttach: true,
-    waitForDebuggerOnStart: false,
-    flatten: true,
-  });
-
-  cdp = { send, sessions, targets, contexts };
-  return { send, close: () => socket.close() };
-}
-
-/** Runs an expression in the page and returns its JSON value. */
-async function evaluate(send, expression) {
-  const result = await send("Runtime.evaluate", {
-    expression,
-    returnByValue: true,
-    awaitPromise: true,
-    userGesture: true,
-  });
-  if (result.exceptionDetails !== undefined) {
-    throw new Error(
-      `page threw: ${result.exceptionDetails.text} ${String(
-        result.exceptionDetails.exception?.description ?? "",
-      ).slice(0, 300)}`,
-    );
-  }
-  return result.result.value;
-}
-
-/** Polls an expression until it is truthy. A destroyed context during navigation is a retry, not a failure. */
-async function waitFor(send, expression, { timeout = 20000, label = expression } = {}) {
-  const deadline = Date.now() + timeout;
-  let lastError = null;
-  while (Date.now() < deadline) {
-    try {
-      if (await evaluate(send, expression)) return true;
-    } catch (error) {
-      lastError = error;
-    }
-    await sleep(120);
-  }
-  throw new Error(
-    `timed out after ${timeout} ms waiting for ${label}${lastError === null ? "" : ` (last: ${lastError.message.slice(0, 160)})`}`,
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * The page helpers — one verb per thing a person does
- * ------------------------------------------------------------------ */
-
-/**
- * Fill a control the way a keyboard does, then prove the value landed.
- *
- * Focus and `Input.insertText` is a real typing path: the browser fires `input` before the value
- * exists, which is what a React controlled input listens for. The native setter is the fallback for
- * a control that `insertText` cannot reach (a `<select>`, a masked field that swallows keys); it
- * dispatches the same events React listens for. Either way the verdict is the same question —
- * `el.value === value` — so the transcript never claims a value the page did not take.
- */
-async function fill(send, selector, value) {
-  const focused = await evaluate(
-    send,
-    `(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      if (el === null) return false;
-      el.focus();
-      return document.activeElement === el;
-    })()`,
-  );
-  if (focused !== true) throw new Error(`no focusable control at ${selector}`);
-  await send("Input.insertText", { text: value });
-  const landed = await evaluate(
-    send,
-    `document.querySelector(${JSON.stringify(selector)}).value === ${JSON.stringify(value)}`,
-  );
-  if (landed === true) return value;
-
-  await evaluate(
-    send,
-    `(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, "value").set.call(el, ${JSON.stringify(value)});
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    })()`,
-  );
-  const again = await evaluate(
-    send,
-    `document.querySelector(${JSON.stringify(selector)}).value === ${JSON.stringify(value)}`,
-  );
-  if (again !== true) throw new Error(`the control at ${selector} did not take the value`);
-  return value;
-}
-
-/** Click an element and wait for the navigation it starts, when it starts one. */
-async function click(send, selector, { navigate = true, timeout = 25000 } = {}) {
-  const before = await url(send);
-  const clicked = await evaluate(
-    send,
-    `(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      if (el === null) return false;
-      el.click();
-      return true;
-    })()`,
-  );
-  if (clicked !== true) throw new Error(`no control at ${selector}`);
-  if (!navigate) return before;
-  try {
-    await waitFor(
-      send,
-      `document.readyState === "complete" && location.href !== ${JSON.stringify(before)}`,
-      { timeout, label: `navigation away from ${before}` },
-    );
-  } catch (error) {
-    // A click that legitimately stays put (a dialog opening, a validation refusal) is not a
-    // navigation failure; the caller's own assertion says what should have happened.
-    if (!/timed out/.test(error.message)) throw error;
-  }
-  return await url(send);
-}
-
-async function url(send) {
-  try {
-    return await evaluate(send, "location.href");
-  } catch {
-    return "about:blank";
-  }
-}
-
-async function navigate(send, path) {
-  await send("Page.navigate", { url: `${BASE}${path}` });
-  await waitFor(send, `document.readyState === "complete"`, { timeout: 30000, label: path });
-  // Two frames, so hydration has run and a client panel has measured itself before any shutter.
-  await evaluate(send, "new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))");
-  await sleep(250);
-}
-
-/** The page's own words, normalised — the one probe most assertions read. */
-async function text(send) {
-  return await evaluate(send, `document.body.innerText.replace(/\\s+/g, " ").trim()`);
-}
-
-/**
- * The screen, at 1440 CSS pixels wide and as tall as the document.
- *
- * `captureScreenshot` frames the viewport, so the viewport is set to the measured height first and
- * restored afterwards — otherwise every later assertion runs at the height of the last shutter.
- */
-async function shutter(send, file) {
-  // A focused input draws a blinking caret, and a caret is the difference between two identical runs.
-  // Nothing is typed between the blur and the frame, and the value stays in the control.
-  await evaluate(
-    send,
-    `(() => { const el = document.activeElement; if (el && typeof el.blur === "function") el.blur(); return true; })()`,
-  );
-  // Motion is a rendering difference too: the same tree with a spinner at frame 3 and frame 9 hashes
-  // differently. Reduced motion is the page's own switch for it.
-  const height = await evaluate(
-    send,
-    "Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, 900)",
-  );
-  await send("Emulation.setDeviceMetricsOverride", {
-    width: WIDTH,
-    height: Math.min(height, 6000),
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await sleep(250);
-  const shot = await send("Page.captureScreenshot", { format: "png", fromSurface: true });
-  writeFileSync(file, Buffer.from(shot.data, "base64"));
-  await send("Emulation.setDeviceMetricsOverride", {
-    width: WIDTH,
-    height: VIEWPORT_HEIGHT,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  return createHash("sha256").update(Buffer.from(shot.data, "base64")).digest("hex");
-}
+configureCdp({
+  chrome: CHROME,
+  port: DEBUG_PORT,
+  width: WIDTH,
+  height: VIEWPORT_HEIGHT,
+  base: BASE,
+});
 
 /* ------------------------------------------------------------------ *
  * The transcript
@@ -530,7 +251,7 @@ const transcript = {
       route: "where the step happened; run-specific ids are normalised to <instance> and <token>",
       action: "fill | click | assert",
       values: "verbatim what was entered; {} for clicks and asserts",
-      shot: "docs/qa-demo-flow/<path>/<n>-<slug>-1440.png",
+      shot: "docs/qa/demo-flow/<path>/<n>-<slug>-1440.png",
       expect: "the assertion this step proved, in words",
       ok: "whether it held; `actual` carries what was measured when it did not",
       actual: "only present when ok is false",
@@ -569,7 +290,7 @@ function normaliseRoute(href) {
 async function record(send, { action, expect, values = {}, ok, actual, name, route }) {
   stepNumber += 1;
   const shotName = `${String(stepNumber).padStart(2, "0")}-${slugOf(name ?? route)}-${WIDTH}.png`;
-  const relative = `docs/qa-demo-flow/${currentPath}/${shotName}`;
+  const relative = `docs/qa/demo-flow/${currentPath}/${shotName}`;
   const file = join(OUT, currentPath, shotName);
   ensureDir(dirname(file));
   const sha256 = await shutter(send, file);
@@ -851,51 +572,26 @@ async function advanceStage(send, formSelector, navigateTo) {
 
 /** Sign in through the demo gate — the app's own door, PIN then role (#183/#218). */
 async function demoSignIn(send, role) {
-  const pin = process.env.DEMO_PIN;
-  if (pin === undefined || pin.trim() === "") {
-    throw new Error("DEMO_PIN is not set — the demo sign-in is the one door this driver may use");
-  }
-  await navigate(send, "/demo");
-  const onGate =
-    (await text(send)).includes("demo PIN") ||
-    (await evaluate(send, `!!document.querySelector("#demo-pin")`));
+  const onGate = await demoGateIsOpen(send);
   if (onGate !== true)
     throw new Error("/demo did not render the PIN gate — is DEMO_AUTH=1 and DEMO_PIN set?");
 
-  const pinStep = await record(send, {
+  await record(send, {
     action: "assert",
     expect: "the demo gate answers /demo with a PIN field",
     name: "demo-gate",
   });
 
-  await fill(send, "#demo-pin", pin);
-  await click(send, `form button[type=submit]`);
-  await waitFor(send, `location.pathname === "/login"`, {
-    timeout: 25000,
-    label: "the PIN to unlock /login",
-  });
+  await submitDemoPin(send);
 
-  const unlocked = await record(send, {
+  await record(send, {
     action: "click",
     values: { pin: "<DEMO_PIN>" },
     expect: "the PIN unlocks /login's three demo role buttons",
     name: "demo-unlocked",
   });
-  void pinStep;
-  void unlocked;
 
-  const selector = `form:has(input[name="as"][value="${role}"]) button[type=submit]`;
-  const present = await evaluate(send, `!!document.querySelector(${JSON.stringify(selector)})`);
-  if (present !== true) {
-    throw new Error(
-      `no demo role button for "${role}" — is demo_account seeded (DEMO_AUTH=1 db:seed)?`,
-    );
-  }
-  await click(send, selector, { timeout: 30000 });
-  await waitFor(send, `location.pathname !== "/login"`, {
-    timeout: 25000,
-    label: "the demo role button to sign in",
-  });
+  await chooseDemoRole(send, role);
   await record(send, {
     action: "click",
     values: { role },
@@ -1004,8 +700,11 @@ async function accountFormDrawn(send) {
   );
 }
 
-/** The send control: the stage foot submits the send form from outside it (#825). */
-const SEND_SELECTOR = 'button[form="create-invite-form"]';
+/**
+ * The send control: it lives **inside** the walk's last panel since #1014, not in the stage foot.
+ * One act, one control — the foot carries `[Back][Cancel]` on stage 5 and no advance.
+ */
+const SEND_SELECTOR = '[data-pay-action="send"]';
 
 /** The commit control: the same shape on stage 4. */
 const COMMIT_SELECTOR = 'button[form="create-commit-form"]';
@@ -1285,7 +984,7 @@ async function waitForCardFields({ timeout = 60000 } = {}) {
  * Returns what it did, so a step can record it — the transcript carries the field names and the
  * values as they were entered, and never the client secret.
  */
-async function fillCardFrame(send, { email }) {
+async function fillCardFrame({ email }) {
   // **Wait for the checkout document, not for the panel.** The panel's marker appears the moment the
   // server mints a client secret; the provider then injects its script, fetches the session and mounts
   // its form, which is a second or two later. Surveying at marker time finds the loader, not the card.
@@ -1415,17 +1114,24 @@ async function fillCardFrame(send, { email }) {
 /**
  * Walk stage 5's left column.
  *
- * The panel is three steps in one column and the send beside it is gated by the stage (#911): before
- * a card is on file the column is `data-send-gate="locked"` and the confirm control is disabled. So
+ * The walk is four steps in one column and the send beside it is gated by the stage (#911): before a
+ * membership is live the column is `data-send-gate="locked"` and there is no send control at all. So
  * a path that means to **send** has to complete the walk first, and a path that means to show the
  * unpaid state stops at the card step on purpose.
+ *
+ * **Choosing the plan row is the act** (#1031): the reveal and the checkout are one gesture, so this
+ * presses the row (or, for a measured account, the summary's one control) and then waits for the
+ * frame — there is no `Enter the card` press between the two any more.
  */
 async function payWalk(send, { pathLabel, complete, plan }) {
   await waitFor(send, payStep("plan"), { timeout: 25000, label: "the walk's plan panel" });
 
   // A measured, already-paying account is drawn a summary instead of a radio group (#870).
   const included = await evaluate(send, `!!document.querySelector("[data-pay-plan-included]")`);
-  if (included !== true) {
+  if (included === true) {
+    // No row to choose, so the summary's own control is the act.
+    await click(send, '[data-pay-action="continue"]', { navigate: false, timeout: 25000 });
+  } else {
     const chosen = await evaluate(
       send,
       `(() => {
@@ -1440,14 +1146,23 @@ async function payWalk(send, { pathLabel, complete, plan }) {
       await record(send, {
         action: "fill",
         values: { plan: chosen },
-        expect: "the plan panel offers the membership plans and one is chosen",
+        expect:
+          "the plan panel offers the membership plans, and choosing one is the act — the walk reveals the card step and starts the checkout with no further press (#1031)",
         name: `${pathLabel}-pay-plan`,
       });
     }
   }
 
-  await click(send, '[data-pay-action="card"]', { navigate: false, timeout: 25000 });
+  // **No start control to click.** Choosing the row already advanced the walk and opened the
+  // session, so this waits for the reveal rather than pressing anything: the press that used to
+  // load the card fields is the control #1031 deleted, and clicking it would be a step that no
+  // longer exists.
   await waitFor(send, payStep("card"), { timeout: 25000, label: "the walk's card panel" });
+  await waitFor(
+    send,
+    `!!document.querySelector('[data-checkout-frame="embedded"]') || !!document.querySelector('[data-pay-refusal]') || !!document.querySelector('[data-pay-plan-included]')`,
+    { timeout: 40000, label: "the card panel's frame" },
+  );
 
   // The gate is the stage, so it is asserted here — before anything is put on file.
   const gateBefore = await evaluate(send, SEND_GATE);
@@ -1458,13 +1173,6 @@ async function payWalk(send, { pathLabel, complete, plan }) {
     actual: `data-send-gate=${String(gateBefore)}`,
     name: `${pathLabel}-send-gate-locked`,
   });
-
-  await click(send, '[data-pay-action="capture"]', { navigate: false, timeout: 40000 });
-  await waitFor(
-    send,
-    `!!document.querySelector('[data-capture-frame="embedded"]') || !!document.querySelector("[data-pay-hosted]") || !!document.querySelector("[data-pay-refusal]")`,
-    { timeout: 40000, label: "the card panel's frame" },
-  );
 
   if (!complete) {
     // The card step, left unresolved — which is the state the `unpaid` path exists to show.
@@ -1480,7 +1188,7 @@ async function payWalk(send, { pathLabel, complete, plan }) {
     return { completed: false };
   }
 
-  const card = await fillCardFrame(send, { email: PERSONA.published.email });
+  const card = await fillCardFrame({ email: PERSONA.published.email });
   await record(send, {
     action: "fill",
     values: card.typed ?? {},
@@ -1607,31 +1315,53 @@ async function walkCreatePublished(send) {
     });
   }
 
+  // **The act is the walk's own last step (#1014).** The thank-you carries one control that opens
+  // it, and the send lives inside the panel it opens: there is no send form beside the walk and no
+  // second send in the foot.
+  const actionDoor = await evaluate(send, `!!document.querySelector('[data-pay-action="action"]')`);
+  if (actionDoor !== true) {
+    finding("stage 5's thank-you draws no control into the act", {
+      expected: '[data-pay-action="action"] on the thank-you panel',
+      actual: "absent",
+    });
+    return;
+  }
+  await click(send, '[data-pay-action="action"]', { timeout: 30000 });
+  await waitFor(send, payStep("action"), { timeout: 20000, label: "the walk's action panel" });
+
   const sendButton = await evaluate(
     send,
     `!!document.querySelector(${JSON.stringify(SEND_SELECTOR)})`,
   );
   if (sendButton !== true) {
-    finding("stage 5 draws no Send control", {
+    finding("the walk's action panel draws no Send control", {
       expected: SEND_SELECTOR,
       actual: "absent",
     });
     return;
   }
   await click(send, SEND_SELECTOR, { timeout: 40000 });
-  await sleep(1200);
+  await waitFor(send, `location.pathname.startsWith("/dashboard/relationships/")`, {
+    timeout: 30000,
+    label: "/dashboard/relationships/<id> after the send",
+  });
 
-  // Send lands on the **Sent** screen — the #704 shape for a signed-in creator — not on the
-  // relationship detail. That screen is a state of its own and is captured as one.
-  const sentText = await text(send);
-  const sentRoute = normaliseRoute(await url(send));
+  // Send lands on **the relationship it published** (#1014), not on the Sent screen: the flow ends
+  // where every later cycle of the relationship lives.
+  const landedText = await text(send);
+  const landedUrl = await url(send);
+  const landedRoute = normaliseRoute(landedUrl);
+  const landedStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
   const invitation = await inviteUrlOnScreen(send);
   await record(send, {
     action: "click",
-    expect: "Send and Continue lands on the Sent screen, which draws the invitation link itself",
-    ok:
-      /Invitation sent|invitation sent/i.test(sentText) === true && typeof invitation === "string",
-    actual: `${sentRoute} · invite link ${typeof invitation === "string" ? "drawn" : "absent"}`,
+    expect:
+      "Send and Continue lands on the relationship it published, drawn as published, with the invitation link on the screen",
+    ok: landedStatus === "published" && typeof invitation === "string",
+    actual: `${landedRoute} · status ${landedStatus} · invite link ${typeof invitation === "string" ? "drawn" : "absent"} · ${landedText.slice(0, 200)}`,
     name: "invitation-sent",
   });
 
@@ -1647,51 +1377,13 @@ async function walkCreatePublished(send) {
     }
   }
 
-  // "Where to go next" carries the one door to the relationship the send created.
-  const nextHref = await evaluate(
-    send,
-    `(() => {
-      const anchor = Array.from(document.querySelectorAll('a[href^="/assessment/instances/"], a[href^="/dashboard/relationships/"]'))
-        .find((el) => !el.getAttribute("href").endsWith("/sent"));
-      if (anchor === undefined) return null;
-      anchor.click();
-      return anchor.getAttribute("href");
-    })()`,
-  );
-  await sleep(1500);
-
-  const terminalText = await text(send);
-  const terminalRoute = normaliseRoute(await url(send));
-  const doorOpened =
-    /^\/(assessment\/instances|dashboard\/relationships)\//.test(
-      new URL(await url(send)).pathname,
-    ) && terminalText.trim().length > 40;
-  await record(send, {
-    action: "click",
-    expect: "the Sent screen's door opens the record the send created",
-    ok: doorOpened,
-    actual: `${terminalRoute} · ${terminalText.slice(0, 220)}`,
-    name: "sent-door-opened",
-  });
-
-  // The card's terminal: the relationship detail, in its published state.
-  const publishedId = relationships[relationships.length - 1] ?? null;
-  void nextHref;
-  const detailPath =
-    typeof publishedId === "string"
-      ? `/dashboard/relationships/${publishedId}`
-      : `/dashboard/relationships`;
-  await navigate(send, detailPath);
   // The detail is a client surface that mounts after hydration; the row marks are what say it has.
   await waitFor(send, `!!document.querySelector('[data-record-band="relationship"]')`, {
     timeout: 20000,
     label: "the relationship detail to mount",
   }).catch(() => undefined);
   const detailText = await text(send);
-  const detailStatus = await evaluate(
-    send,
-    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
-  );
+  const detailStatus = landedStatus;
   await record(send, {
     action: "assert",
     expect: "the relationship detail reports the relationship as published",
@@ -1700,8 +1392,26 @@ async function walkCreatePublished(send) {
     name: "published-relationship-detail",
   });
 
-  // The pairing is the other half of the card's sentence, and it is asked separately: a detail page
-  // that says "published" while naming neither person is a state, not a pairing.
+  // **Back leaves the flow; it does not walk into a dead walk (#1009, #1014).** Both endings
+  // `replace` the walk's history entry, so one Back from the landed relationship goes to whatever the
+  // flow was opened from. A `push` here used to leave the invite walk (and the shell's own dismissal,
+  // which is a history pop) one Back away from a screen with nothing behind it.
+  await evaluate(send, `history.back()`);
+  await sleep(1500);
+  const backRoute = normaliseRoute(await url(send));
+  const walkRedrawn = await evaluate(
+    send,
+    `!!document.querySelector('[data-create-plans="true"]')`,
+  );
+  const backPath = new URL(await url(send)).pathname;
+  await record(send, {
+    action: "assert",
+    expect: "Back from the landed relationship leaves the flow instead of reopening the walk",
+    ok: walkRedrawn === false && !/^\/dashboard\/relationships\/[^/]+$/.test(backPath),
+    actual: `${backRoute} · walk redrawn: ${String(walkRedrawn)}`,
+    name: "back-leaves-the-flow",
+  });
+
   const named = detailText.includes("Jordan") && detailText.includes("Sam");
   await record(send, {
     action: "assert",
@@ -1767,29 +1477,43 @@ async function walkCreateDraft(send) {
     return;
   }
   await click(send, `[data-create-keep-draft]`, { timeout: 30000 });
-  await waitFor(send, `location.pathname === "/dashboard/relationships"`, {
+  // #1014 — the draft control lands on the **relationship itself**, not the list; the list is one
+  // Back away, and the row is still the way into the draft from there.
+  await waitFor(send, `location.pathname.startsWith("/dashboard/relationships/")`, {
     timeout: 30000,
-    label: "/dashboard/relationships",
+    label: "/dashboard/relationships/<id>",
   });
-  const listed = await text(send);
-  const shows = listed.includes(PERSONA.draft.title);
+  const landed = await text(send);
+  const landedStatus = await evaluate(
+    send,
+    `document.querySelector("[data-relationship-status]")?.getAttribute("data-relationship-status") ?? null`,
+  );
+  const shows = landed.includes(PERSONA.draft.title) && landedStatus === "draft";
   await record(send, {
     action: "click",
-    expect:
-      "Continue as Draft lands on /dashboard/relationships with the draft listed by its own title",
+    expect: "Continue as Draft lands on the draft's own relationship screen, showing it as a draft",
     ok: shows,
-    actual: listed.slice(0, 500),
-    name: "draft-listed",
+    actual: `status ${landedStatus} · ${landed.slice(0, 500)}`,
+    name: "draft-landed",
   });
 
   if (!shows) {
-    finding("create-draft: the draft is not listed on /dashboard/relationships", {
-      expected: `a row titled "${PERSONA.draft.title}"`,
-      actual: listed.slice(0, 600),
+    finding("create-draft: the draft control does not land on the draft", {
+      expected: `the relationship screen showing "${PERSONA.draft.title}" as a draft`,
+      actual: `status ${landedStatus} · ${landed.slice(0, 600)}`,
       shot: transcript.steps[transcript.steps.length - 1].shot,
     });
     return;
   }
+
+  // The other half of the promise: the draft is listed, and a row opens it.
+  await navigate(send, "/dashboard/relationships");
+  await waitFor(
+    send,
+    `Array.from(document.querySelectorAll('a[href^="/dashboard/relationships/"]')).length > 0`,
+    { timeout: 30000, label: "the relationships list" },
+  );
+  const listed = await text(send);
 
   const draftLink = await evaluate(
     send,
@@ -2294,7 +2018,9 @@ function seed(drift) {
 }
 
 async function main() {
-  const started = Date.now();
+  // Before `OUT`, before the connection, before Chrome: `--verify` opens nothing.
+  if (VERIFY) return verifyCommitted();
+
   ensureDir(OUT);
 
   console.log(`demo-flow · ${CHECK ? "check" : "run"} · base ${BASE} · out ${OUT}`);
@@ -2318,6 +2044,8 @@ async function main() {
 
   await launchChrome();
   const page = await attach();
+  // The frame-walking helpers below read the session's own maps, so the client is kept here.
+  cdp = page;
   try {
     await page.send("Page.enable");
     await page.send("Runtime.enable");
@@ -2430,6 +2158,229 @@ async function main() {
 }
 
 /**
+ * The geometry a PNG records about itself: the IHDR width and height, at bytes 16 and 20.
+ *
+ * Both halves of this file need it — `--check` compares a fresh run's pixels to the committed
+ * ones, `--verify` compares the committed record to the committed file — and two copies of an
+ * offset would drift into two opinions about the same screenshot.
+ */
+function pngSize(file) {
+  const bytes = readFileSync(file);
+  // 24 is the shortest a PNG's IHDR can be before the geometry at 16 and 20 — checked *before* the
+  // read, because `readUInt32BE` past the end throws a range error and a truncated image must be a
+  // named failure ("is not a PNG"), not a stack trace from a byte offset.
+  const isPng = bytes.length > 24 && bytes.toString("latin1", 1, 4) === "PNG";
+  if (!isPng) return { bytes, isPng, width: Number.NaN, height: Number.NaN };
+  return { bytes, isPng, width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+/**
+ * `--verify` — the committed transcript, held against the artifacts it names.
+ *
+ * **Why this exists beside `--check`.** `--check` is a *regeneration* diff: to answer "does the
+ * committed transcript still describe a walk of this tree" it has to walk again, so it needs the
+ * demo instance, a browser, `DATABASE_URL` and the branch's rows — and it seeds and deletes rows
+ * doing it. That is a maintainer's command and can never be a gate step, because the gate is
+ * database-free by doctrine (`AGENTS.md`) and CI has no credentials, no server and no Chrome. This
+ * is the half that can be a gate step: it reads two committed things, the transcript and the PNGs
+ * it names, and asserts they still describe each other. No connection, no browser, no write, ~0.1 s.
+ *
+ * **It pins no content, on purpose — that is what makes regeneration safe.** A re-run of
+ * `pnpm demo:flow` rewrites routes, typed values and expectation sentences whenever an honest
+ * screen changed; a check that compared those to a frozen copy would fail every regeneration and
+ * teach the reader to ignore it — the same mistake `--check`'s docstring already refuses for PNG
+ * hashes. So nothing here reads a value's *text*. What it holds is **consistency**:
+ *
+ *   1. the file declares its own schema (`$doc`), and is closed in both directions — every
+ *      top-level key it writes is declared in `$doc.topLevel`, every declared one is written;
+ *      every step key is declared in `$doc.fields`, and every declared key (bar `actual`, which
+ *      the schema itself calls conditional) is on every step. **This is the #977 lesson**: when
+ *      the generator changes, the thing that must be edited is the schema the generator writes,
+ *      and a driver that starts writing a new field cannot do it silently.
+ *   2. steps are numbered 1..n contiguously, and grouped in the order `paths[]` declares them —
+ *      the order a replay renders its sections in.
+ *   3. every `shot` exists, is a PNG, and its IHDR is the `w`×`h` the transcript records. This is
+ *      the assertion that catches a deleted screenshot, a re-cropped one, or a transcript edited
+ *      against an image nobody re-took.
+ *   4. `paths[]` and `summary` agree with the arrays they count, and findings are 1..n with the
+ *      paths and images they name.
+ *
+ * **What it cannot answer, and does not pretend to:** whether a *fresh* walk would write this. That
+ * needs the live instance, so the transcript is regenerable by a maintainer, not by CI.
+ */
+function verifyCommitted() {
+  const fail = (message) => {
+    console.error(`demo:flow:verify — ${message}`);
+    return 1;
+  };
+
+  const canonical = join(CANONICAL_OUT, "transcript.json");
+  if (!existsSync(canonical)) {
+    return fail(`no committed transcript at ${canonical}; run pnpm demo:flow first`);
+  }
+
+  let committed;
+  try {
+    committed = JSON.parse(readFileSync(canonical, "utf8"));
+  } catch (error) {
+    return fail(`the committed transcript is not JSON: ${error.message}`);
+  }
+
+  const doc = committed.$doc;
+  if (doc?.schema !== "demo-flow/v1") {
+    return fail(`$doc.schema is ${JSON.stringify(doc?.schema)}, not "demo-flow/v1"`);
+  }
+  if (!doc.topLevel || !doc.fields) {
+    return fail("$doc is missing its `topLevel` or `fields` block — the schema is the file's own");
+  }
+
+  const steps = committed.steps;
+  const paths = committed.paths;
+  const findings = committed.findings;
+  if (!Array.isArray(steps) || steps.length === 0) return fail("`steps` is not a non-empty array");
+  if (!Array.isArray(paths) || paths.length === 0) return fail("`paths` is not a non-empty array");
+  if (!Array.isArray(findings)) return fail("`findings` is not an array");
+
+  // --- 1. the declared schema, closed in both directions --------------------
+  const declaredTop = Object.keys(doc.topLevel);
+  const writtenTop = Object.keys(committed);
+  for (const key of writtenTop) {
+    if (!declaredTop.includes(key)) {
+      return fail(`the transcript writes \`${key}\`, which $doc.topLevel does not declare`);
+    }
+  }
+  for (const key of declaredTop) {
+    if (!writtenTop.includes(key)) {
+      return fail(`$doc.topLevel declares \`${key}\`, which the transcript does not write`);
+    }
+  }
+
+  const declaredFields = Object.keys(doc.fields);
+  if (declaredFields.length === 0) return fail("$doc.fields declares no step fields");
+  // The schema says `actual` is present only when a step failed; every other field is unconditional.
+  const CONDITIONAL = "actual";
+
+  const pathNames = paths.map((entry) => entry.path);
+
+  // --- 2. the steps ---------------------------------------------------------
+  for (let index = 0; index < steps.length; index++) {
+    const step = steps[index];
+    const where = `step ${index + 1} (${step.path ?? "no path"})`;
+
+    if (step.step !== index + 1) {
+      return fail(
+        `${where}: numbering is not 1..n contiguous — this record says \`${step.step}\`, the array position says ${index + 1}`,
+      );
+    }
+    for (const field of declaredFields) {
+      if (field === CONDITIONAL) continue;
+      if (!(field in step))
+        return fail(`${where} is missing \`${field}\`, which $doc.fields declares`);
+    }
+    for (const key of Object.keys(step)) {
+      if (!declaredFields.includes(key)) {
+        return fail(`${where} writes \`${key}\`, which $doc.fields does not declare`);
+      }
+    }
+    if (step.ok === false && !(CONDITIONAL in step)) {
+      return fail(`${where} records ok: false but carries no \`actual\` — the schema says it does`);
+    }
+    if (step.ok !== false && CONDITIONAL in step) {
+      return fail(
+        `${where} carries \`actual\` but did not fail — the schema says it is conditional`,
+      );
+    }
+    if (!pathNames.includes(step.path)) {
+      return fail(`${where} names path \`${step.path}\`, which paths[] does not carry`);
+    }
+
+    // --- 3. the screenshot it names ----------------------------------------
+    if (typeof step.shot !== "string" || step.shot === "") {
+      return fail(`${where} carries no \`shot\``);
+    }
+    const file = join(ROOT, step.shot);
+    if (!existsSync(file)) {
+      return fail(`the transcript names a missing image: ${step.shot} (step ${step.step})`);
+    }
+    const { isPng, width, height } = pngSize(file);
+    if (!isPng) return fail(`${step.shot} is not a PNG — the transcript records an image`);
+    if (width !== step.w || height !== step.h) {
+      return fail(`${step.shot} is ${width}×${height}, the transcript records ${step.w}×${step.h}`);
+    }
+  }
+
+  // --- 4. paths, summary and findings --------------------------------------
+  if (new Set(pathNames).size !== pathNames.length) {
+    return fail(`paths[] names a path twice: ${pathNames.join(", ")}`);
+  }
+  const counts = new Map(pathNames.map((name) => [name, 0]));
+  for (const step of steps) counts.set(step.path, counts.get(step.path) + 1);
+  for (const entry of paths) {
+    if (typeof entry.terminal !== "string" || entry.terminal.trim() === "") {
+      return fail(`paths[] entry \`${entry.path}\` has no \`terminal\` screen`);
+    }
+    if (typeof entry.reached !== "boolean") {
+      return fail(`paths[] entry \`${entry.path}\` has a \`reached\` that is not true or false`);
+    }
+    if (counts.get(entry.path) !== entry.steps) {
+      return fail(
+        `paths[] says \`${entry.path}\` has ${entry.steps} step(s); the steps array carries ${counts.get(entry.path)}`,
+      );
+    }
+  }
+
+  // The replay renders one section per path, so the grouping order in `steps` is the order of
+  // `paths[]` — a driver that interleaved two walks would render sections in an order the
+  // transcript does not claim.
+  const order = [];
+  for (const step of steps) {
+    if (order[order.length - 1] !== step.path) order.push(step.path);
+  }
+  if (order.join("|") !== pathNames.join("|")) {
+    return fail(
+      `steps are grouped ${order.join(" → ")}, paths[] declares ${pathNames.join(" → ")} — the two orders disagree`,
+    );
+  }
+
+  const summary = committed.summary;
+  if (!summary || typeof summary !== "object") return fail("no `summary` block");
+  const counted = {
+    paths: paths.length,
+    reached: paths.filter((entry) => entry.reached === true).length,
+    steps: steps.length,
+    findings: findings.length,
+  };
+  for (const [key, expected] of Object.entries(counted)) {
+    if (summary[key] !== expected) {
+      return fail(`summary.${key} is ${summary[key]}; the transcript carries ${expected}`);
+    }
+  }
+
+  for (let index = 0; index < findings.length; index++) {
+    const entry = findings[index];
+    if (entry.n !== index + 1) {
+      return fail(`finding ${index + 1} is numbered \`${entry.n}\` — findings are 1..n contiguous`);
+    }
+    if (!pathNames.includes(entry.path)) {
+      return fail(`finding ${entry.n} names path \`${entry.path}\`, which paths[] does not carry`);
+    }
+    if (typeof entry.title !== "string" || entry.title.trim() === "") {
+      return fail(`finding ${entry.n} has no title`);
+    }
+    if (entry.shot !== null) {
+      if (typeof entry.shot !== "string" || !existsSync(join(ROOT, entry.shot))) {
+        return fail(`finding ${entry.n} names a missing image: ${entry.shot}`);
+      }
+    }
+  }
+
+  console.log(
+    `✓ demo:flow:verify — ${steps.length} step(s) across ${paths.length} path(s), every image present at its recorded size, ${findings.length} finding(s); the committed transcript still describes its own screenshots`,
+  );
+  return 0;
+}
+
+/**
  * `--check`: the run above wrote a staged copy; this diffs it against what is committed.
  *
  * **Two diffs, and one of them is a measurement rather than a byte comparison — on purpose.**
@@ -2493,9 +2444,7 @@ function checkAgainstCommit() {
       );
       return 1;
     }
-    const bytes = readFileSync(file);
-    const width = bytes.readUInt32BE(16);
-    const height = bytes.readUInt32BE(20);
+    const { bytes, width, height } = pngSize(file);
     if (width !== step.w || height !== step.h) {
       console.error(
         `demo:flow:check — ${step.shot} is ${width}×${height}, the transcript records ${step.w}×${step.h}`,

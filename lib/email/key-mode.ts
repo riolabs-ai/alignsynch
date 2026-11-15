@@ -16,7 +16,7 @@
  *             is the tree's existing convention rather than a new one. **Refused**: no broadcast
  *             is attempted, whatever the screen looks like.
  *   captured  `RESEND_ENDPOINT` points somewhere other than Resend. That is the documented capture
- *             server (`lib/flow/email.ts::mailEndpoint`, used by `docs/TWO-PARTY-FLOW.md` and by
+ *             server (`lib/flow/email.ts::mailEndpoint`, used by `docs/specs/two-party-flow.md` and by
  *             #507's own proof): messages are delivered to a local endpoint, no mailbox receives
  *             them. It may send — that is what makes the path provable — and the banner says so.
  *   unset     no key at all, so `sendMail()` would return `unset` and nothing would go out.

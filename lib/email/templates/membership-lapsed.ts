@@ -17,9 +17,17 @@
  * **Nothing is invented.** No balance, no amount owed, no reinstatement promise and no claim about
  * who cancelled: the facts are which relationship, when it ended, and where it lives. The one
  * behaviour sentence is the two-seat rule — read access stays, writing stops — which is what
- * `Membership.writable` gates. Transactional, so the band refuses an unsubscribe line on it.
+ * `Membership.writable` gates. Transactional, so the band refuses an unsubscribe line on it. The
+ * opening line is this template's section in `content/email-bodies.md`.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const MEMBERSHIP_LAPSED_BODY = {
+  id: "membership-lapsed",
+  placeholders: ["recipient", "template", "ended_on", "link"],
+} as const satisfies EmailBodySpec;
 
 /** The spec's subject, as a constant — it names no party, because both seats receive it. */
 export const MEMBERSHIP_LAPSED_SUBJECT = "Your relationship is read-only";
@@ -45,10 +53,12 @@ export function membershipLapsedDocument(facts: MembershipLapsedFacts): EmailDoc
     subject: MEMBERSHIP_LAPSED_SUBJECT,
     preheader: `The membership on ${facts.template} ended on ${calendarDate(facts.endedAt)}.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what a lapsed membership means, in the product's own voice.`,
-      },
+      ...bodyBlocks(MEMBERSHIP_LAPSED_BODY, {
+        recipient: facts.recipient,
+        template: facts.template,
+        ended_on: calendarDate(facts.endedAt),
+        link: facts.link,
+      }),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, the membership on ${facts.template} ended on ${calendarDate(facts.endedAt)}.`,

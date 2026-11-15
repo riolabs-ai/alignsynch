@@ -11,11 +11,11 @@
  * about the one that is not. So this file renders the real component over a real view, twice, and
  * asserts the presence and the absence of the control by name:
  *
- *   - no method on file → the gate band (`data-publish-gate="method-required"`) and no submit;
- *   - a method on file → the publish form and its button, and no gate band;
+ *   - no live membership → the gate band (`data-publish-gate="membership-required"`) and no submit;
+ *   - a live membership → the publish form and its button, and no gate band;
  *   - already published → neither, because there is nothing left to publish.
  *
- * The fact itself is `MemberRelationshipView.hasPaymentMethod`, read from
+ * The fact itself is `MemberRelationshipView.hasMembership`, read from
  * `relationship_payment.method_captured_at` by `readMyRelationship()`; this file starts at the view
  * because that is where the component starts.
  */
@@ -49,7 +49,7 @@ const GATE_HEADING = sectionOf(dashboardRelationshipDetailPageCopy, "publish-gat
 
 function viewOf(input: {
   status: MemberRelationshipView["status"];
-  hasPaymentMethod: boolean;
+  hasMembership: boolean;
   isInitiator?: boolean;
 }): MemberRelationshipView {
   const isInitiator = input.isInitiator ?? true;
@@ -74,7 +74,7 @@ function viewOf(input: {
     template,
     aspectsEditable: isInitiator && input.status === "draft",
     publishable: isInitiator && input.status === "draft",
-    hasPaymentMethod: input.hasPaymentMethod,
+    hasMembership: input.hasMembership,
     // #739 — this file's fixture is publish-time: a relationship with no session has nothing to
     // complete, which is exactly `completion: null`.
     completion: null,
@@ -107,38 +107,38 @@ function html(view: MemberRelationshipView): string {
   );
 }
 
-describe("publish without a method on file", () => {
+describe("publish without a live membership", () => {
   it("renders no publish control at all", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: false }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: false }));
     expect(rendered).not.toContain(PUBLISH_SUBMIT);
     expect(rendered).not.toContain("data-publish-refusal");
     // The form's own fields would be a control by another name.
     expect(rendered).not.toContain('id="publish-name"');
   });
 
-  it("says why, and names the page where a method is added", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: false }));
-    expect(rendered).toContain('data-publish-gate="method-required"');
+  it("says why, and names the place where a membership is bought", () => {
+    const rendered = html(viewOf({ status: "draft", hasMembership: false }));
+    expect(rendered).toContain('data-publish-gate="membership-required"');
     expect(rendered).toContain(GATE_HEADING);
     expect(rendered).toContain(`data-publish-gate-link="pricing"`);
     expect(rendered).toContain(`href="${PRICING_PATH}"`);
   });
 });
 
-describe("publish with a method on file", () => {
+describe("publish with a live membership", () => {
   it("renders the form and its button, and no gate band", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: true }));
     expect(rendered).toContain(PUBLISH_SUBMIT);
     expect(rendered).toContain('id="publish-name"');
-    expect(rendered).not.toContain('data-publish-gate="method-required"');
+    expect(rendered).not.toContain('data-publish-gate="membership-required"');
   });
 });
 
 describe("a relationship that is already published", () => {
   it("offers neither, whatever the payment facts say", () => {
-    const rendered = html(viewOf({ status: "published", hasPaymentMethod: false }));
+    const rendered = html(viewOf({ status: "published", hasMembership: false }));
     expect(rendered).not.toContain(PUBLISH_SUBMIT);
-    expect(rendered).not.toContain('data-publish-gate="method-required"');
+    expect(rendered).not.toContain('data-publish-gate="membership-required"');
   });
 });
 
@@ -151,15 +151,15 @@ describe("a relationship that is already published", () => {
  */
 describe("a Counterparty's detail screen", () => {
   it("draws no editor, no publish form and no reissue control", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true, isInitiator: false }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: true, isInitiator: false }));
     expect(rendered).not.toContain("data-aspect-editor");
     expect(rendered).not.toContain(PUBLISH_SUBMIT);
     expect(rendered).not.toContain('id="publish-name"');
-    expect(rendered).not.toContain('data-publish-gate="method-required"');
+    expect(rendered).not.toContain('data-publish-gate="membership-required"');
   });
 
   it("says which seat it is, and that the screen is read-only", () => {
-    const rendered = html(viewOf({ status: "draft", hasPaymentMethod: true, isInitiator: false }));
+    const rendered = html(viewOf({ status: "draft", hasMembership: true, isInitiator: false }));
     expect(rendered).toContain('data-viewer-role="counterparty"');
     expect(rendered).toContain('data-relationship-read-only="counterparty"');
   });

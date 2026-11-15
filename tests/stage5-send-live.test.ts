@@ -1,7 +1,7 @@
 /**
- * #948 — stage 5's Send, against **real Postgres**.
+ * Stage 5's Send, against **real Postgres**.
  *
- * The defect this file pins is a column on the wrong table: `sendDraftInvitation()` selected
+ * The defect this file exists for is a column on the wrong table: `sendDraftInvitation()` selected
  * `r.method_captured_at` from `relationship`, which has no such column — it lives on
  * `relationship_payment` (`0036_relationship_payment.sql:65`). Postgres answered `42703` and the
  * handler threw, so **every** send on a real database was a 500, whatever the relationship's state.
@@ -9,9 +9,18 @@
  * A fake SQL surface cannot catch that: the failure is the planner's, not the code's. So this runs
  * the real function against a real schema, in a transaction-shaped fixture of its own.
  *
- * **Skipped unless `DATABASE_URL` is set**, exactly like `tests/payment-jobs-live.test.ts`: the gate
- * has no connection string by design (`docs/GATE.md`), so this costs the gate nothing and runs when
- * someone points it at a branch.
+ * **The table that owns the fact moved, and this file moved with it (#1069).** #1012 (#1010 R2)
+ * deleted the card gate from the send: a card now reaches an account by buying the membership at
+ * stage 5, so the fact the send waits for is the Initiator's live subscription in
+ * **`billing_subscription`** — `lib/flow/store.ts::sendDraftInvitation()` reads
+ * `bs.status … WHERE bs.user_id = r.initiator_user_id`. This file kept writing a
+ * `relationship_payment` row, which nothing reads any more, so its "paid" case answered
+ * `no-payment-method` exactly like its "unpaid" case: the fixture, not the product, was stale. It
+ * now writes the row the read actually owns.
+ *
+ * **Skipped unless `DATABASE_URL` is set**, exactly like the other `*-live.test.ts` files: the gate
+ * has no connection string by design (`docs/operations/gate.md`), so this costs the gate nothing
+ * and runs when someone points it at a branch.
  *
  * **It leaves nothing behind.** Every row is created under a `probe-send-…` id and deleted in
  * `afterAll`. No seeded relationship is read or written.
@@ -31,6 +40,7 @@ const NOW = new Date("2026-03-01T12:00:00.000Z");
 
 const pool = new Pool({ connectionString: databaseUrl, max: 2 });
 const created: string[] = [];
+const payerIds: string[] = [];
 
 /**
  * A draft relationship with a live session and two seats — the state stage 5's Send is pressed in.
@@ -43,7 +53,9 @@ async function draftRelationship(suffix: string): Promise<string> {
   const templateId = `${relationshipId}-template`;
   const versionId = `${relationshipId}-version`;
   const sessionId = `${relationshipId}-session`;
+  const payerId = `${relationshipId}-payer`;
   created.push(relationshipId);
+  payerIds.push(payerId);
 
   for (const [id, title] of [
     [templateId, "Send probe template"],
@@ -64,7 +76,7 @@ async function draftRelationship(suffix: string): Promise<string> {
     `INSERT INTO relationship
        (id, template_id, template_version_id, initiator_user_id, status, created_at, published_at)
      VALUES ($1, $2, $3, $4, 'draft', $5, NULL)`,
-    [relationshipId, templateId, versionId, `${relationshipId}-payer`, NOW],
+    [relationshipId, templateId, versionId, payerId, NOW],
   );
   await pool.query(
     `INSERT INTO session (record_id, template_record_id, relationship_id, name, mode, alignment_setting, round)
@@ -74,23 +86,29 @@ async function draftRelationship(suffix: string): Promise<string> {
   await pool.query(
     `INSERT INTO party (session_record_id, role, name, user_id)
      VALUES ($1, 'initiator', 'Init', $2), ($1, 'counterparty', 'Counter', NULL)`,
-    [sessionId, `${relationshipId}-payer`],
+    [sessionId, payerId],
   );
   return relationshipId;
 }
 
-/** The payment row `0036` owns — the only place `method_captured_at` lives. */
-async function paymentRow(relationshipId: string): Promise<void> {
+/**
+ * The row the send actually reads since #1012 — `billing_subscription`, keyed by user, with one of
+ * the entitling statuses (`active`, `trialing`, `past_due`). `active` on purpose: it is the value a
+ * real checkout produces, and it cannot be reached by the trial writer's default.
+ *
+ * `plan_id`/`interval` are held to a seeded `billing_plan` row by `billing_subscription_plan_fk`;
+ * `basic/month` is the tier stage 5 sells and is in every migrated database (0018).
+ */
+async function liveMembership(payerUserId: string): Promise<void> {
   await pool.query(
-    `INSERT INTO relationship_payment
-       (relationship_id, payer_user_id, provider, provider_customer_id, provider_payment_method_id,
-        method_captured_at, charge_due_at, charge_amount_cents, charge_attempts)
-     VALUES ($1, $2, 'mock', 'cus_probe', 'pm_probe', $3, $4, 1900, 0)`,
-    [relationshipId, `${relationshipId}-payer`, NOW, new Date(NOW.getTime() + 7 * 86_400_000)],
+    `INSERT INTO billing_subscription
+       (user_id, plan_id, interval, provider, provider_subscription_id, status, current_period_end)
+     VALUES ($1, 'basic', 'month', 'mock', $2, 'active', $3)`,
+    [payerUserId, `${payerUserId}-sub`, new Date(NOW.getTime() + 30 * 86_400_000)],
   );
 }
 
-live("stage 5's Send reads the payment fact from the table that owns it", () => {
+live("stage 5's Send reads the membership fact from the table that owns it", () => {
   // The hooks live **inside** the describe: `describe.skip` with no `DATABASE_URL` must not open a
   // connection, or the gate (which has no connection string by design) fails on the pool instead of
   // skipping the file.
@@ -102,6 +120,8 @@ live("stage 5's Send reads the payment fact from the table that owns it", () => 
 
   afterAll(async () => {
     if (databaseUrl === "") return;
+    // The subscription rows the fixture wrote — and any the send's own publish path granted.
+    await pool.query("DELETE FROM billing_subscription WHERE user_id LIKE $1", [`${TAG}-%`]);
     for (const id of created) {
       // Children first: payment, party, session, version, then the two records.
       await pool.query("DELETE FROM party WHERE session_record_id = $1", [`${id}-session`]);
@@ -118,9 +138,9 @@ live("stage 5's Send reads the payment fact from the table that owns it", () => 
     await pool.end();
   });
 
-  it("does not answer 42703 — the query runs, whatever the relationship's payment state", async () => {
+  it("does not answer 42703 — the query runs, whatever the relationship's membership state", async () => {
     const relationshipId = await draftRelationship("unpaid");
-    // No `relationship_payment` row at all: the normal state before a method is captured. On the
+    // No `billing_subscription` row for the Initiator: the state before a plan is bought. On the
     // pre-#948 query this call threw `42703 column r.method_captured_at does not exist`, which is
     // the 500 every send produced — the throw is what this assertion is about.
     const result = await sendDraftInvitation({
@@ -129,13 +149,16 @@ live("stage 5's Send reads the payment fact from the table that owns it", () => 
       now: NOW,
     });
     expect(result.ok).toBe(false);
-    // The absence of a payment row reads as "no card on file", never as 500 or as "not found".
+    // The absence of a live membership reads as "no card on file", never as 500 or as "not found".
     expect(result.ok === false && result.code).toBe("no-payment-method");
   });
 
-  it("finds the captured method on the payment row and proceeds past the card gate", async () => {
+  it("finds the live membership on the subscription row and proceeds past the card gate", async () => {
     const relationshipId = await draftRelationship("paid");
-    await paymentRow(relationshipId);
+    // The fact the send waits on lives on `billing_subscription` since #1012. A fixture that wrote
+    // a `relationship_payment` row instead (what this file did until #1069) reads as unpaid, and
+    // the case fails on a product that is working.
+    await liveMembership(`${relationshipId}-payer`);
     const result = await sendDraftInvitation({
       instanceRecordId: `${relationshipId}-session`,
       viewerUserId: `${relationshipId}-payer`,

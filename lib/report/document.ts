@@ -28,7 +28,7 @@
  *
  * **What cannot be computed is part of the document, not an omission.** Step-3 **Doubt** is the
  * specification's third gap step and this build cannot answer it: `opinion` stores one value per
- * kind with no history, and opinions are frozen at completion (`docs/SPEC-DRIFT.md` §4.1), so
+ * kind with no history, and opinions are frozen at completion (`docs/operations/spec-drift.md` §4.1), so
  * there is no "after the reveal" reading to compare against the prediction. A report that simply
  * printed the eight kinds would read as "there are eight kinds and all are here"; carrying
  * `not_computable` says the ninth thing out loud, with the reason, in the file and on the page.
@@ -74,7 +74,7 @@ export interface NotComputable {
  * Doubt is the only one: Surprise is the same four prediction kinds read at the *first* showing
  * (which is what `content/gaps.ts` computes today — the prediction kinds are already that
  * reading), so naming it separately would invent a distinction the data does not hold. The
- * reason is `docs/SPEC-DRIFT.md`'s finding, in the reader's words rather than the table's.
+ * reason is `docs/operations/spec-drift.md`'s finding, in the reader's words rather than the table's.
  */
 export const NOT_COMPUTABLE: readonly NotComputable[] = [
   {

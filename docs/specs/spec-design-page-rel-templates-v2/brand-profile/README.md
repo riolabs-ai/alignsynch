@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 brand and audience profile (handoff) · prev [V2 home page — asset sources and credits](../home/ASSET-SOURCES.md) · next [Admin notice banner (V2 package)](../banner/README.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 brand and audience profile (handoff) · prev [Admin notice banner (V2 package)](../banner/README.md) · next [V2 home page — asset sources and credits](../home/ASSET-SOURCES.md)
 
 <!-- docs-nav:end -->
 
@@ -25,6 +25,6 @@ Product mechanics follow the AlignSynch Project Brief dated 4 Nov 2026: two peop
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Product** › V2 brand and audience profile (handoff) · prev [V2 home page — asset sources and credits](../home/ASSET-SOURCES.md) · next [Admin notice banner (V2 package)](../banner/README.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › V2 brand and audience profile (handoff) · prev [Admin notice banner (V2 package)](../banner/README.md) · next [V2 home page — asset sources and credits](../home/ASSET-SOURCES.md)
 
 <!-- docs-nav:end -->

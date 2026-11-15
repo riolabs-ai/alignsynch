@@ -12,7 +12,7 @@
  *     read back), `no-address` (a signed-out create stored no Initiator address), `unset` (no
  *     mailer), `failed` (attempted and refused).
  *
- * The store is a stub because the gate is database-free (`docs/GATE.md`). The live claim that
+ * The store is a stub because the gate is database-free (`docs/operations/gate.md`). The live claim that
  * triggers this notice is the card's demo-branch run, not this file.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

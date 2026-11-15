@@ -6,6 +6,179 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.20.1] - 2026-11-14
+
+Seven fixes and no new surface: the billing receiver now subscribes the events its own state machine
+and email band were waiting for, the price table points at the AlignSynch test account, four doors
+open onto the thing they name, and the parity render no longer inherits the developer's shell
+environment. The ledger below the fixes is provenance — the three commits in this window that are not
+fixes, named so the entry accounts for every commit the tag covers.
+
+### Fixed
+
+- `fix(gate)` — the parity render no longer inherits the developer shell's environment (#1066) ([#1067](https://github.com/riolabs-ai/alignsynch/pull/1067))
+- `fix(pricing)` — carry the chosen plan from /pricing to stage 5 (#1043) ([#1061](https://github.com/riolabs-ai/alignsynch/pull/1061))
+- `fix(onboarding)` — #1042 — one wizard door for every create-intent action ([#1050](https://github.com/riolabs-ai/alignsynch/pull/1050))
+- `fix(health)` — the stale-record remedy names a command that runs (#696) ([#1045](https://github.com/riolabs-ai/alignsynch/pull/1045))
+- `fix(marketing)` — #1040 the canonical Templates door renders the v1 shop listing on AlignSynch ([#1048](https://github.com/riolabs-ai/alignsynch/pull/1048))
+- `fix(billing)` — subscribe the three live-money events and fire the two written notices (#1055) ([#1060](https://github.com/riolabs-ai/alignsynch/pull/1060))
+- `fix(billing)` — point the price table at the AlignSynch test account (#846) ([#1051](https://github.com/riolabs-ai/alignsynch/pull/1051))
+
+### Commits
+
+- `test(md-normalise)` — snapshot docs/operations/stripe-go-live.md (#1057) ([#1059](https://github.com/riolabs-ai/alignsynch/pull/1059))
+- `docs(billing)` — land the Stripe account dossier and the go-live pre-flight (#1054) ([#1056](https://github.com/riolabs-ai/alignsynch/pull/1056))
+- `chore(health)` — re-record platform health at v1.20.0 ([#1052](https://github.com/riolabs-ai/alignsynch/pull/1052))
+
+### Known limits
+
+- **Stripe is in test mode, and no card is charged.** The card step runs on test keys — `/pricing`
+  says so in as many words, _"Test mode: the card checkout runs on test keys, so no card is
+  charged"_ — so the price table this release points at the AlignSynch test account and the six
+  events it subscribes move no money. Going live is `#847`, and it is not in this release.
+- **The trial-ending and lapsed notices are wired and unit-proven, not observed.** `#1055`
+  subscribes six billing events and fires the two written notices; the wiring is proven by
+  `tests/billing-webhook-events.test.ts` against the endpoint's own event list. The events a
+  renewal produces come from a live clock, and no renewal has been observed on this tree — so read
+  this as "the notices exist and are tested", never as "a renewal has been seen to notify anyone".
+- **`demo.alignsynch.com` serves an older build until it is redeployed.** It answered
+  `{"version":"1.17.0","commit":"41d3efd2"}` while this release was prepared, against
+  `alignsynch.com` answering `1.20.0` at `5310f69b`. The demo host is not a deployment of this tag
+  and does not carry these six fixes yet.
+- **The atlas captures the routes, not the walk's hardest screens.** It has no auth modal, no
+  stage-form embed step and nothing for sign-in, sign-up or the Stripe card flow — the surfaces most
+  of these six fixes live in — so the v1.20.1 sweep documents that every registered route renders,
+  not that these six paths were walked. `docs/qa-atlas/README.md` states the criterion it does meet.
+- **No dependency majors.** `jsdom` 31 (`#1025`) and `swiper` 14 (`#1027`) are open and are not in
+  this version; no dependency moved in this window.
+
+## [1.20.0] - 2026-11-14
+
+### Added
+
+- `feat(flow)` — #1014 steps 4–5 — send-or-draft inside the walk, and both endings land on the relationship ([#1019](https://github.com/riolabs-ai/alignsynch/pull/1019))
+
+### Fixed
+
+- `fix(release)` — --tag-only re-records the platform health, or refuses the cut (#961) ([#1041](https://github.com/riolabs-ai/alignsynch/pull/1041))
+- `fix(test)` — flow:e2e follows the gates that exist — the membership stand-in, the checkout route ([#1039](https://github.com/riolabs-ai/alignsynch/pull/1039))
+- `fix(flow)` — #998 the Sent screen's status band renders a fallback, never throws ([#1037](https://github.com/riolabs-ai/alignsynch/pull/1037))
+- `fix(flow)` — stage 5 buys the tier the plan row names, not the row's id ([#1033](https://github.com/riolabs-ai/alignsynch/pull/1033))
+- `fix(release)` — #1011 the entry classifier reads the em dash, and a test pins all three separators ([#1021](https://github.com/riolabs-ai/alignsynch/pull/1021))
+- `fix(gate)` — #1020 — "is this a page?" is the index, not the disk ([#1023](https://github.com/riolabs-ai/alignsynch/pull/1023))
+- `ux(flow)` — #1031 the card step mounts its payment frame on reveal; the "Enter the card" button goes ([#1038](https://github.com/riolabs-ai/alignsynch/pull/1038))
+- `copy(flow)` — the plan rows read Basic and Principal, and the mode clause leaves the trial sentence ([#1036](https://github.com/riolabs-ai/alignsynch/pull/1036))
+- `copy(email)` — the 11 bodies move to content/email-bodies.md, and the marker is retired ([#1017](https://github.com/riolabs-ai/alignsynch/pull/1017))
+
+### Maintenance
+
+- `perf(gate)` — resolve the diff base before classifying ([#1008](https://github.com/riolabs-ai/alignsynch/pull/1008))
+- `ci(qa)` — #1030 — a declared deferral replaces a mandatory manifest, and the pass says so ([#1032](https://github.com/riolabs-ai/alignsynch/pull/1032))
+- `chore(health)` — re-record platform health at v1.19.0 ([#1022](https://github.com/riolabs-ai/alignsynch/pull/1022))
+- `chore(docs)` — #1024 — one retention rule for the qa/ capture shelf ([#1029](https://github.com/riolabs-ai/alignsynch/pull/1029))
+- `docs(provenance)` — #1006 — the comments outside docs/ point at the paths #965 moved ([#1028](https://github.com/riolabs-ai/alignsynch/pull/1028))
+
+### Known limits
+
+- **Production already serves this tree, under a 1.19.0 label.** `https://alignsynch.com/api/version`
+  answered `{"version":"1.19.0","commit":"ede96472"}` while this release was prepared — the head of
+  `main` this version is cut from, so all fifteen commits below are live already. 1.20.0 makes the
+  version number true; it deploys no product code.
+- **The five-stage walk is verified end to end, by a command no gate runs.** After #1039 repaired
+  `scripts/flow-e2e.mjs` — a membership stand-in instead of a real checkout, three retired fee-gate
+  assertions deleted, 6e repointed at `POST /api/billing/checkout` —
+  `BASE_URL=http://localhost:3411 pnpm flow:e2e` exits **0** with **174** passing assertions in 3m13s
+  against a local dev server on this release's tree. It needs a live demo branch and a browser, so it
+  stays out of `scripts/verify.sh` and no CI run performs it.
+- **The atlas captures the routes, not the walk's hardest screens.** It has no auth modal, no
+  stage-form embed and nothing of the sign-in, sign-up or Stripe steps, so the sweep that would
+  document the create walk is deferred to 1.20.x, or to 1.21 if it still has misses.
+- **No dependency majors.** `jsdom` 31 (#1025) and `swiper` 14 (#1027) are open and are not in this
+  version.
+
+## [1.19.0] - 2026-11-14
+
+### Added
+
+- `feat(billing)` — #1010 R2 — stage 5 buys the membership: a real subscription, a 7-day trial, Prices, and no charge at completion ([#1012](https://github.com/riolabs-ai/alignsynch/pull/1012))
+- `feat(flow)` — #979 B — every wizard-route entry opens the flow in place; marketing keeps navigating ([#1007](https://github.com/riolabs-ai/alignsynch/pull/1007))
+- `feat(flow)` — #979 B — the shell behaves like a route: Back, deep links, focus trap, Esc, full-bleed at 390 ([#1009](https://github.com/riolabs-ai/alignsynch/pull/1009))
+- `feat(ui)` — #898 /how-it-works replays the recorded demo walk ([#996](https://github.com/riolabs-ai/alignsynch/pull/996))
+- `feat(flow)` — #979 B one dialog shell hosting the five stages, mounted from the dashboard Create control ([#1004](https://github.com/riolabs-ai/alignsynch/pull/1004))
+
+### Fixed
+
+- `fix(qa)` — qa:atlas:prune drops the rows it deletes, and the capture registers its own cut ([#1016](https://github.com/riolabs-ai/alignsynch/pull/1016))
+- `fix(release)` — a cut leaves the checkout on the branch it started on ([#1013](https://github.com/riolabs-ai/alignsynch/pull/1013))
+- `fix(relationship)` — #975 D2/D9 the detail page says whose relationship it is ([#986](https://github.com/riolabs-ai/alignsynch/pull/986))
+- `fix(auth)` — #971 /register pays the two welcome tiles /login draws ([#995](https://github.com/riolabs-ai/alignsynch/pull/995))
+- `fix(auth)` — #979 a member is sent into the flow, and the shell's menu is the session's ([#992](https://github.com/riolabs-ai/alignsynch/pull/992))
+- `fix(dashboard)` — #975 D12 the Edit relationship dialog names the Aspects and hands back the page's editor ([#991](https://github.com/riolabs-ai/alignsynch/pull/991))
+- `fix(copy)` — #976 the Sent screen has words for a relationship with no invitation row ([#988](https://github.com/riolabs-ai/alignsynch/pull/988))
+- `fix(seed)` — #975 the seeded relationship now says what its own session says, and carries the invitation that put the counterparty in their seat ([#985](https://github.com/riolabs-ai/alignsynch/pull/985))
+- `fix(admin)` — the reissue address is one controlled input (#980) ([#989](https://github.com/riolabs-ai/alignsynch/pull/989))
+
+### Maintenance
+
+- `chore(qa)` — the v1.19.0 atlas
+- `chore(copy)` — "instance" is "session", and E41 keeps it that way ([#1015](https://github.com/riolabs-ai/alignsynch/pull/1015))
+- `docs(oss)` — reorganise docs/ into a by-question tree and regenerate the hub (#922c) ([#965](https://github.com/riolabs-ai/alignsynch/pull/965))
+- `perf(gate)` — the build's type check resumes from the typecheck the gate already runs ([#1005](https://github.com/riolabs-ai/alignsynch/pull/1005))
+- `copy(auth)` — the welcome panel takes the owner's tagline and the Aspects/Opinions tiles ([#1001](https://github.com/riolabs-ai/alignsynch/pull/1001))
+- `chore(qa)` — the demo transcript cannot go stale — demo:flow:verify as a gate step (#898) ([#1003](https://github.com/riolabs-ai/alignsynch/pull/1003))
+- `chore(qa)` — the atlas holds current + 2 past cuts, and the check enforces it ([#1002](https://github.com/riolabs-ai/alignsynch/pull/1002))
+- `docs(oss)` — the README states the four OSS questions before the feature tour (#922) ([#993](https://github.com/riolabs-ai/alignsynch/pull/993))
+- `test(demo)` — demo:verify expectations match the shipped routes and read a marker, not copy ([#946](https://github.com/riolabs-ai/alignsynch/pull/946))
+- `docs(qa)` — the v1.17.1 atlas is a capture of an unreleased tree — say so ([#997](https://github.com/riolabs-ai/alignsynch/pull/997))
+- `chore(health)` — re-record platform health at v1.18.0 ([#994](https://github.com/riolabs-ai/alignsynch/pull/994))
+- `chore(qa)` — publish the refreshed v1.17.1 atlas (77/74/71) and make a capture refuse a version mismatch (#983) ([#990](https://github.com/riolabs-ai/alignsynch/pull/990))
+
+### Known limits
+
+- **`demo.alignsynch.com` serves v1.17.0, not this release.** Measured while cutting 1.19.0: the hostname answers `200` and its `/api/version` reports `1.17.0` at `41d3efd2`. The demo dataset is reachable through `pnpm demo:verify` and the review rig; the public demo address is a stale deployment, deferred by owner decision (#833).
+- **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
+- **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
+- **The dialog shell has not been audited screen by screen.** This version mounts it at every wizard entry and at the dashboard's Create control, and makes it behave like a route — Back, deep links, focus trap, Esc, full-bleed at 390. It does not claim an audit of the modal rule across the rest of the app; #913 was closed by the narrower fix it produced.
+- **Two v1.19.0 milestone items are not in this release.** #921 (comments on aspect opinions, assessments and relationships) is still at its mockup-first stage, and #854 (the AS2 visual language across the public routes) has not started. Both stay open in the milestone, and neither is half-landed here.
+- **The docs reorganisation left stale provenance pointers outside `docs/`.** #965 moved the pages into a tree grouped by question; five comments in code still name the directories it moved (#1006). Every page resolves, so this is a docs-only follow-up rather than a broken link.
+- **`/how-it-works` replays a recording, not the live app.** The page plays the committed walk under `docs/qa/demo-flow/` (#996), and `pnpm demo:flow:verify` fails when the transcript stops matching those screenshots — but re-recording needs a live demo instance and a browser, which no gate run has. A UI change after this release is replayed as the version that was recorded.
+- **The QA atlas is a capture of the tagged commit, and its checks are static.** `pnpm qa:atlas:check` proves every registered route has a row and a thumbnail, and that each row states what the boundary table derives — it does not re-screenshot. The images in the release's atlas directory describe the tree at the tag, not the commits after it.
+
+## [1.18.0] - 2026-11-13
+
+### Added
+
+- `feat(qa)` — #945 the release atlas — capture and verify every surface, backfilled for v1.17.0 ([#968](https://github.com/riolabs-ai/alignsynch/pull/968))
+- `feat(docs)` — report a problem from the page into the next release (#894) ([#973](https://github.com/riolabs-ai/alignsynch/pull/973))
+
+### Fixed
+
+- `fix(seed)` — publish the templates the catalogue marks published (#962) ([#974](https://github.com/riolabs-ai/alignsynch/pull/974))
+- `fix(flow)` — POST /assessment/new writes the draft and nothing else (#957) ([#969](https://github.com/riolabs-ai/alignsynch/pull/969))
+- `fix(brand)` — the icons fill their box and round at the app's own --radius (#963) ([#967](https://github.com/riolabs-ai/alignsynch/pull/967))
+- `fix(flow)` — /assessment's one-click create is the flow's door, not a publish (#957) ([#964](https://github.com/riolabs-ai/alignsynch/pull/964))
+- `fix(relationships)` — one create path, and it is the flow's modal (#913) ([#959](https://github.com/riolabs-ai/alignsynch/pull/959))
+- `fix(flow)` — the edit panel posts no Aspect list, and the server leaves an omitted list alone (#943) ([#960](https://github.com/riolabs-ai/alignsynch/pull/960))
+
+### Maintenance
+
+- fix(modal) · #975 stage 2 says why it will not advance — the D7 refusal is visible ([#984](https://github.com/riolabs-ai/alignsynch/pull/984))
+- fix(relationships) · #958 a relationship with no initiator member has an initiator ([#981](https://github.com/riolabs-ai/alignsynch/pull/981))
+- feat(admin) — /admin/docs gains a features index and a release shelf, both derived (#893) ([#978](https://github.com/riolabs-ai/alignsynch/pull/978))
+- `chore(gate)` — the slot covers the heavy section, not just the build (default 3, measured) ([#951](https://github.com/riolabs-ai/alignsynch/pull/951))
+- `perf(gate)` — share the Turbopack and tsc caches across worktrees ([#952](https://github.com/riolabs-ai/alignsynch/pull/952))
+- `docs(specs)` — publish the owner's spec packages and manuals, registered in the hub (#931) ([#940](https://github.com/riolabs-ai/alignsynch/pull/940))
+- `docs(release)` — v1.17.0's Known limits name the fix that did not ship ([#956](https://github.com/riolabs-ai/alignsynch/pull/956))
+- `chore(health)` — re-record platform health at v1.17.0 ([#955](https://github.com/riolabs-ai/alignsynch/pull/955))
+
+### Known limits
+
+- **`demo.alignsynch.com` is still down.** The hostname answers `DEPLOYMENT_NOT_FOUND` (#833); the demo dataset is reachable through `pnpm demo:verify` and the review rig, not through that address. Deferred by owner decision, not by oversight.
+- **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
+- **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
+- **The modal rule has not been audited screen by screen.** This version applies it where it touched a surface — the create path and the pay step — and does not claim the audit. #913 was closed by the narrower fix it produced, so the screen-by-screen pass is still owed.
+- **The docs tree is not reorganised yet.** #922's by-question move (PR #965) is still in flight, so `docs/` is the flat tree this release's pages live in. #922 moved to the v1.19.0 milestone and lands as its own change; nothing in this version renumbers or moves a docs path.
+
 ## [1.17.0] - 2026-11-13
 
 ### Added
@@ -50,7 +223,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - **Stripe runs in test mode, structurally.** `lib/billing/adapters/stripe.ts` refuses any credential that is not an `sk_test_…` key, and the webhook endpoints still belong to the test account (#846, #847). The payment walk is the real three-step UI; the capture it performs is a test capture.
 - **Production has no admin seat yet.** `ADMIN_EMAILS` is unset on the production branch, so no operator reaches `/admin/**` there; the demo branch carries two (#423).
 - **The modal rule has not been audited screen by screen.** #913 asks for every screen, page, menu and button to be validated against it. This version applies the rule where it touched a surface — the relationship edit form is a dialog and the pay step is a modal — and does not claim the audit.
-- **The edit panel still posts a snapshot of the Aspects.** Reorder in the detail's list, then save the panel in the same page session without a refresh, and the pre-reorder order is written back (#943). It was scheduled to land before this release and is not in it; the fix ships in the next patch.
+- **The edit panel still posts a snapshot of the Aspects.** Reorder in the detail's list, then save the panel in the same page session without a refresh, and the pre-reorder order is written back (#943). It was scheduled to land before this release and is not in it; the fix ships in the next release.
 
 ## [1.16.0] - 2026-11-12
 
@@ -798,7 +971,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - `chore(deps)` — bump next from 16.1.6 to 16.4.1 ([#563](https://github.com/riolabs-ai/alignsynch/pull/563))
 - `chore(ci)` — dependabot.yml and CODEOWNERS for the security surfaces (#441) ([#567](https://github.com/riolabs-ai/alignsynch/pull/567))
 - `docs(ops)` — the twelve non-main branches, triaged by what proves each removal safe ([#560](https://github.com/riolabs-ai/alignsynch/pull/560))
-- `docs(agents)` — ## Numbers points at docs/GATE.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
+- `docs(agents)` — ## Numbers points at docs/operations/gate.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
 - `docs(gate)` — re-measure the baseline over 2026-11-04 — 156 s a run, 176 s to the last job ([#557](https://github.com/riolabs-ai/alignsynch/pull/557))
 - feat(email) — the release note: one band, plain text first, sent once per tag (#548) ([#551](https://github.com/riolabs-ai/alignsynch/pull/551))
 - feat(dashboard) — support, help and the library live in the console (#542) ([#546](https://github.com/riolabs-ai/alignsynch/pull/546))
@@ -818,7 +991,7 @@ with a **Known limits** block, because a release that does not say what it canno
 - `docs(registry)` — the answer sheet's inbound paths name the report's CTA too ([#490](https://github.com/riolabs-ai/alignsynch/pull/490))
 - `docs(release)` — the v1.3.0 Known limit said the answer sheet had no link — it has one ([#487](https://github.com/riolabs-ai/alignsynch/pull/487))
 - fix(shell) — the surface registry calls create and answer live, because they are ([#485](https://github.com/riolabs-ai/alignsynch/pull/485))
-- `docs(v1)` — disposition all 118 /v1 items into docs/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
+- `docs(v1)` — disposition all 118 /v1 items into docs/operations/history/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
 - `docs(release)` — a merge deploys production, measured during the v1.3.0 cut ([#483](https://github.com/riolabs-ai/alignsynch/pull/483))
 - `docs(gate)` — the 2026-10-29 → 2026-11-03 comparison states the per-step numbers, not a ratio ([#482](https://github.com/riolabs-ai/alignsynch/pull/482))
 - `docs(gate)` — a measured baseline — 97.4 % yield / 144 s on 2026-11-02, and how to re-derive it ([#480](https://github.com/riolabs-ai/alignsynch/pull/480))
@@ -1013,16 +1186,16 @@ with a **Known limits** block, because a release that does not say what it canno
 - `chore(deps)` — bump next from 16.1.6 to 16.4.1 ([#563](https://github.com/riolabs-ai/alignsynch/pull/563))
 - `chore(ci)` — dependabot.yml and CODEOWNERS for the security surfaces (#441) ([#567](https://github.com/riolabs-ai/alignsynch/pull/567))
 - `docs(ops)` — the twelve non-main branches, triaged by what proves each removal safe ([#560](https://github.com/riolabs-ai/alignsynch/pull/560))
-- `docs(agents)` — ## Numbers points at docs/GATE.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
+- `docs(agents)` — ## Numbers points at docs/operations/gate.md instead of copying the figures ([#559](https://github.com/riolabs-ai/alignsynch/pull/559))
 - `docs(gate)` — re-measure the baseline over 2026-11-04 — 156 s a run, 176 s to the last job ([#557](https://github.com/riolabs-ai/alignsynch/pull/557))
 
 ### Known limits
 
 - **Account deletion needs a live session.** The control lives on `/settings` and acts on the signed-in person. Anyone whose managed-auth user is already gone cannot self-serve it, and there is no operator tool in the product for that case.
-- **A failed scrub is resumable, not automatic.** When the auth deletion succeeds and the sweep then throws, the intent survives in `account_deletion_job`, an operator finishes it with the command in `docs/ACCOUNT-DELETION-SPEC.md`, and `scripts/db-verify.mjs` fails on a row still open after 24 hours. That is a check somebody runs, not a pager: nothing alerts on its own and nothing retries automatically, so an abandoned row is visible only to whoever runs the verify.
+- **A failed scrub is resumable, not automatic.** When the auth deletion succeeds and the sweep then throws, the intent survives in `account_deletion_job`, an operator finishes it with the command in `docs/specs/account-deletion-spec.md`, and `scripts/db-verify.mjs` fails on a row still open after 24 hours. That is a check somebody runs, not a pager: nothing alerts on its own and nothing retries automatically, so an abandoned row is visible only to whoever runs the verify.
 - **The marketing opt-out row keeps the email address on purpose.** It is the one retained identifier, it exists so the address is never mailed again, and the privacy policy says so rather than claiming no address is kept. Billing records (7 years) and security audit entries (24 months) carry no name or address.
-- **A shared assessment survives the deletion of one participant.** The other person keeps their report; the deleted person's seat reads "Deleted account" and their answers remain inside that completed report with the identifying prose rewritten. That is the product decision, recorded in `docs/ACCOUNT-DELETION-SPEC.md`.
-- **The dependency cohort moved major versions with no application change.** react 19.3.1, recharts 3.10.1 and swiper 12.2.0 all landed without source edits; the carousel screenshots in `docs/qa-swiper-12/` are the visual evidence, and the two pairs that differ are autoplay timing rather than regressions.
+- **A shared assessment survives the deletion of one participant.** The other person keeps their report; the deleted person's seat reads "Deleted account" and their answers remain inside that completed report with the identifying prose rewritten. That is the product decision, recorded in `docs/specs/account-deletion-spec.md`.
+- **The dependency cohort moved major versions with no application change.** react 19.3.1, recharts 3.10.1 and swiper 12.2.0 all landed without source edits; the carousel screenshots in `docs/qa/swiper-12/` are the visual evidence, and the two pairs that differ are autoplay timing rather than regressions.
 
 ## [1.4.0] - 2026-11-04
 
@@ -1114,7 +1287,7 @@ The admin console, and relationship templates become products.
 - `docs(registry)` — the answer sheet's inbound paths name the report's CTA too ([#490](https://github.com/riolabs-ai/alignsynch/pull/490))
 - `docs(release)` — the v1.3.0 Known limit said the answer sheet had no link — it has one ([#487](https://github.com/riolabs-ai/alignsynch/pull/487))
 - fix(shell) — the surface registry calls create and answer live, because they are ([#485](https://github.com/riolabs-ai/alignsynch/pull/485))
-- `docs(v1)` — disposition all 118 /v1 items into docs/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
+- `docs(v1)` — disposition all 118 /v1 items into docs/operations/history/V1-RETIREMENT.md (#478) ([#484](https://github.com/riolabs-ai/alignsynch/pull/484))
 - `docs(release)` — a merge deploys production, measured during the v1.3.0 cut ([#483](https://github.com/riolabs-ai/alignsynch/pull/483))
 - **Stripe is test mode only** — no `sk_live` path exists in the code; checkout cannot charge
 - **Chat has no persistence** — `/chat` is a mocked surface with no tables behind it.
@@ -1515,3 +1688,4 @@ The admin console, and relationship templates become products.
 [1.8.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.7.0...v1.8.0
 [1.14.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.13.0...v1.14.0
 [1.16.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.15.0...v1.16.0
+[1.19.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.18.0...v1.19.0

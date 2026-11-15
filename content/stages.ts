@@ -15,7 +15,7 @@
  * were **never relationship stages**. They are slotted under A–D — the *stage of the User*:
  * A Play (unregistered), B Registered (free trial week), C Parties Locked (Account Bank at
  * zero), D Subscribed. Those are **billing and account states**, and they are out of scope
- * (`docs/SPEC-DRIFT.md` §4.2, §4.3). So the relationship ladder is the specification's **1–4**,
+ * (`docs/operations/spec-drift.md` §4.2, §4.3). So the relationship ladder is the specification's **1–4**,
  * and it is exactly the four stages the glossary names:
  *
  *   number  short name   definition, verbatim
@@ -32,7 +32,7 @@
  * the specification shows that gap is a different ladder's numbering, not silence. There is no
  * fifth relationship stage to add, no stage to renumber, and the A–D billing ladder is not
  * modelled at all — a stage of the *User* is a fact about a billing product this build does not
- * have. `docs/STAGES.md` records both ladders for a reader who has the documents open.
+ * have. `docs/specs/stages.md` records both ladders for a reader who has the documents open.
  *
  * **Derived, never stored.** A stage is a function of facts the rows already carry — whether
  * the Counterparty's seat exists (the invite has been claimed), whether both parties have

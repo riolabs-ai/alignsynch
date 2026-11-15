@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › Sequence walks · prev [Class diagram](class-diagram.md)
+[Docs hub](../../README.md) › **Code wiki** › Sequence walks · prev [Class diagram](class-diagram.md) · next [Getting started](../getting-started.md)
 
 <!-- docs-nav:end -->
 
@@ -216,6 +216,6 @@ sequenceDiagram
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Code wiki** › Sequence walks · prev [Class diagram](class-diagram.md)
+[Docs hub](../../README.md) › **Code wiki** › Sequence walks · prev [Class diagram](class-diagram.md) · next [Getting started](../getting-started.md)
 
 <!-- docs-nav:end -->

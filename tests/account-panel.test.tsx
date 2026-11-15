@@ -48,7 +48,7 @@ import { alignSynchBrand } from "@/data/brands/alignsynch";
 import type { Brand } from "@/content/brand";
 import { loginCopy } from "@/data/pages/login";
 import { registerCopy } from "@/data/pages/register";
-import { loginCopyFor, registerCopyFor } from "@/lib/auth-copy";
+import { heroTilesFor, loginCopyFor, registerCopyFor } from "@/lib/auth-copy";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -99,6 +99,9 @@ const panelProps = (names?: { first?: string; last?: string }) => ({
     destination: STAGE,
     marks: AUTH_MARKS_BY_BRAND.alignsynch,
     markSrc: AUTH_MARK_SRC_BY_BRAND.alignsynch,
+    // The page hands the hero's band over with the copy; this mount is embedded, so it is never
+    // drawn — the panel's own case for that is `tests/auth-hero.test.tsx`.
+    stats: heroTilesFor(loginCopy(brand), "alignsynch"),
     initialFirst: names?.first,
     initialLast: names?.last,
   },

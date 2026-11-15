@@ -1,10 +1,13 @@
 /**
  * The two-party flow's state — derived from rows, never stored (#146).
  *
- * The instance's status is four values, and every one of them is a function of the rows
- * that already exist:
+ * The instance's status is five values, and every one of them is a function of the rows that
+ * already exist:
  *
- *   awaiting_counterparty   the Initiator exists, the Counterparty has not claimed yet
+ *   draft                   the relationship has never been sent (#975). Nothing was invited and
+ *                           nothing was charged, so there is nothing to wait for — see the field
+ *                           `published` below.
+ *   awaiting_counterparty   the invitation went out, and the Counterparty has not claimed yet
  *   answering               both parties exist, and at least one Aspect is unanswered or
  *                           at least one acceptance is still missing
  *   awaiting_payment        both answered every Aspect and both accepted, and the relationship's
@@ -13,6 +16,14 @@
  *                           the fee is armed or the relationship predates the obligation (#619)
  *   voided                  an operator ended the session (#503) — terminal, and answered
  *                           before any count is read
+ *
+ * **`draft` is answered from the record, and the record is the only place that fact lives (#975).**
+ * A session's own rows cannot tell a never-sent relationship from a sent one whose invitation is
+ * still unclaimed: both have an Initiator seat, no Counterparty seat, and an `session_invite` row
+ * the create wrote. `relationship.published_at` is the instant the invitation went out, so
+ * `published: false` is the one fact that separates "waiting to be claimed" from "never sent", and
+ * it is supplied by the reads that join the relationship row. A read that does not measure it
+ * leaves it absent, which is not `false` — see the field's own doc.
  *
  * There is no `status` column anywhere (#145's `session` has two columns, and
  * `0002_two_party_flow.sql` adds none). A stored status would be a second authored copy of
@@ -48,6 +59,12 @@ import {
  * ------------------------------------------------------------------ */
 
 export const INSTANCE_STATUSES = [
+  /**
+   * The relationship has never been published (#975): no invitation went out and nothing was
+   * charged, so the session is not waiting on anybody. Answered **before** the Counterparty check,
+   * because a draft has no seat to be waiting for.
+   */
+  "draft",
   "awaiting_counterparty",
   "answering",
   /**
@@ -111,6 +128,25 @@ export interface InstanceProgress {
    * is what produces it.
    */
   readonly paymentArmed?: boolean;
+  /**
+   * Did the invitation ever go out? (#975)
+   *
+   * `true` — the relationship has a `published_at`: the invite was sent, and the Counterparty
+   * simply has not claimed it yet.
+   * `false` — `relationship.published_at IS NULL`. Nothing was invited and nothing was charged, so
+   * the session is a **draft**, never "awaiting" anybody.
+   * **`undefined` — not measured**, which is the answer for every read that does not join the
+   * `relationship` row (the flow screen, the answer/submit paths, the fixtures written before this
+   * field). Absent is deliberately not `false`: a read that has not been taught the fact must keep
+   * answering exactly what it answered before, or adding the field would move every status in the
+   * tree at once.
+   *
+   * The fact lives on the relationship, not the session, and that is why it is an input here at
+   * all rather than something the counts could imply: a never-sent draft and a sent-but-unclaimed
+   * invitation are byte-identical in `party`/`opinion`/`session_invite`. Only the record's own
+   * instant separates them.
+   */
+  readonly published?: boolean;
 }
 
 /**
@@ -128,9 +164,16 @@ export interface InstanceProgress {
  *
  * A copy with 0 Aspects is never complete: there is nothing to answer, so "both accepted" would
  * unlock a report with no rows.
+ *
+ * `draft` is answered second, straight after the void and **before** `hasCounterparty` (#975). The
+ * old order was the defect: every session with no Counterparty seat was `awaiting_counterparty`,
+ * which claimed an invitation had been sent. A draft is the one case where that seat's absence
+ * means nothing was sent at all, and it is decided by the record's own `published_at` — supplied as
+ * `published: false`. `undefined` (not measured) falls through to the old answer unchanged.
  */
 export function instanceStatusOf(progress: InstanceProgress): InstanceStatus {
   if (progress.voided === true) return "voided";
+  if (progress.published === false) return "draft";
   if (!progress.hasCounterparty) return "awaiting_counterparty";
   if (progress.aspectCount <= 0) return "answering";
   const everyoneAnswered =
@@ -200,7 +243,10 @@ export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus
  * **A voided session is frozen for both seats (#503).** `voided` is not `complete` and not
  * `answering`: an operator ended it, so there is nothing left to submit. Spelled as an allow-list
  * of the two statuses that accept a write rather than as a third `!==` — the next status added to
- * the union must decide here instead of inheriting "yes" by accident.
+ * the union must decide here instead of inheriting "yes" by accident. `draft` (#975) is therefore
+ * **not** open, which is the decision that allow-list was written to force: a relationship that was
+ * never sent has no invitation for a sheet to belong to, and the write paths that could reach it
+ * read their own row rather than this predicate.
  */
 export function maySubmit(status: InstanceStatus, viewerAccepted: boolean): boolean {
   const open = status === "answering" || status === "awaiting_counterparty";
@@ -367,10 +413,20 @@ export function waitingOn(progress: InstanceProgress, hasInitiator: boolean): Pa
  * other id in the content model, so the view joins on them with `itemLabel(state, state)` the way
  * the instance screen joins a `?problem=` code.
  *
+ * `draft` is the fourth, and it is not a thing the viewer owes (#975): the relationship has never
+ * been sent, so nothing is waiting on them and nothing is waiting on anybody else. It is answered
+ * from the record's `published_at` (via `instanceStatusOf`), which is why it exists here rather
+ * than as a sentence the view invented.
+ *
  * Pure, like the rest of this module: both counts come from rows the caller already read, and
  * `instanceStatusOf` is reused so the list and the screen can never disagree about `complete`.
  */
-export const MY_INSTANCE_STATES = ["yours-to-answer", "awaiting-other", "complete"] as const;
+export const MY_INSTANCE_STATES = [
+  "draft",
+  "yours-to-answer",
+  "awaiting-other",
+  "complete",
+] as const;
 
 export type MyInstanceState = (typeof MY_INSTANCE_STATES)[number];
 
@@ -392,9 +448,14 @@ export function viewerAnsweredCount(progress: MyInstanceProgress): number {
  * A copy with no Aspects is never `complete` (`instanceStatusOf`), and it is not
  * `yours_to_answer` either — there is nothing to answer, so the honest row is `awaiting_other`
  * rather than an invitation to fill in a form that does not exist.
+ *
+ * **A draft is answered first (#975).** Nothing was sent, so "you owe the sheet" and "they owe the
+ * sheet" are both false statements about it; the row's own word is that it has not gone out.
  */
 export function myInstanceStateOf(progress: MyInstanceProgress): MyInstanceState {
-  if (instanceStatusOf(progress) === "complete") return "complete";
+  const status = instanceStatusOf(progress);
+  if (status === "draft") return "draft";
+  if (status === "complete") return "complete";
   const answered = viewerAnsweredCount(progress);
   if (progress.aspectCount > 0 && answered < progress.aspectCount) return "yours-to-answer";
   return "awaiting-other";

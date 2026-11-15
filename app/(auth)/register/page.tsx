@@ -1,10 +1,11 @@
 import { RegisterView } from "@/components/auth/register-view";
 import { brand, brandIdOf } from "@/data/brand";
+import { loginPageCopy } from "@/data/pages/login";
 import { registerPageCopy } from "@/data/pages/register";
 import { AUTH_MARK_SRC_BY_BRAND, AUTH_MARKS_BY_BRAND } from "@/lib/auth/marks";
 import { signInDestination } from "@/lib/auth/next-path";
 import { AFTER_SIGN_IN_BY_BRAND } from "@/lib/auth/paths";
-import { registerCopyFor } from "@/lib/auth-copy";
+import { heroTilesFor, registerCopyFor } from "@/lib/auth-copy";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -34,6 +35,15 @@ export const metadata: Metadata = {
  * quiz book and a quiz trophy. `AUTH_MARKS_BY_BRAND` names the mark ids per brand, and it is read
  * here because the view is a client module: the table is `lib/auth/marks.ts` (ids, no zod, no
  * components), but the choice belongs to the server half.
+ *
+ * **The tiles are `/login`'s band, under this page's own headline (#971).** The owner's decision
+ * (2026-11-13) is that the two welcome tiles appear on both full-page auth routes while each page
+ * keeps its own sentence, and that the create flow's Account stage stays compact. So `/register`
+ * keeps the panel it has always drawn — its `h1`, its mark, its step rail — and mounts the pair
+ * `login-view.tsx` used to own alone (`components/auth/auth-hero-tiles.tsx`) beneath it.
+ * `heroTilesFor(loginPageCopy, brandId)` reads the brand's band, which is why
+ * `data/pages/register.ts` is untouched: the claims about the product have one home, and a tile is
+ * reworded once.
  */
 export default async function AuthPage({
   searchParams,
@@ -58,6 +68,7 @@ export default async function AuthPage({
       destination={destination}
       marks={AUTH_MARKS_BY_BRAND[brandId]}
       markSrc={AUTH_MARK_SRC_BY_BRAND[brandId]}
+      stats={heroTilesFor(loginPageCopy, brandId)}
     />
   );
 }

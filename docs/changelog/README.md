@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.0](v1-17-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.0.0](v1-0-0.md)
 
 <!-- docs-nav:end -->
 
@@ -43,6 +43,38 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
+
+### [v1.20.1](v1-20-1.md)
+
+- **Released** 2026-11-14
+- **Tag** [`v1.20.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.1)
+- **Pull requests named** 10
+- **Theme:** the release where the billing wiring caught up with its own notices — six fixes, no new surface, and the second cut in a row whose code was already live
+- **Headline:** fix(pricing) — carry the chosen plan from /pricing to stage 5 (#1043) (#1061)
+
+### [v1.20.0](v1-20-0.md)
+
+- **Released** 2026-11-14
+- **Tag** [`v1.20.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.0)
+- **Pull requests named** 15
+- **Theme:** the release that makes the version label true — the create walk can be paid and sent, its card step mounts on the choice, and the code it names was already live
+- **Headline:** feat(flow) · #1014 steps 4–5 — send-or-draft inside the walk, and both endings land on the relationship (#1019)
+
+### [v1.19.0](v1-19-0.md)
+
+- **Released** 2026-11-14
+- **Tag** [`v1.19.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.19.0)
+- **Pull requests named** 25
+- **Theme:** the flow stops being a page — one dialog shell at every wizard entry, behaving like a route — and the docs tree is grouped by the question it answers
+- **Headline:** feat(flow) · #979 B — every wizard-route entry opens the flow in place; marketing keeps navigating (#1007)
+
+### [v1.18.0](v1-18-0.md)
+
+- **Released** 2026-11-13
+- **Tag** [`v1.18.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.18.0)
+- **Pull requests named** 16
+- **Theme:** the patch that became a minor
+- **Headline:** `feat(qa)` — #945 the release atlas — capture and verify every surface, backfilled for v1.17.0 (#968)
 
 ### [v1.17.0](v1-17-0.md)
 
@@ -214,6 +246,6 @@ history should read v1.3.0 (the flow closes), v1.4.0 (the console and the audite
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.17.0](v1-17-0.md)
+[Docs hub](../README.md) › **Release notes** › Release blog · next [v1.0.0](v1-0-0.md)
 
 <!-- docs-nav:end -->

@@ -19,7 +19,7 @@
  *                    narrowed to the seat, not deleted.
  *
  * **Skipped unless `DATABASE_URL` is set**, like every other `*-live.test.ts`: the gate has no
- * connection string by design (`docs/GATE.md`). Point it at the **demo** branch — production is
+ * connection string by design (`docs/operations/gate.md`). Point it at the **demo** branch — production is
  * refused outright rather than trusted to the caller's memory:
  *
  *     DATABASE_URL=<demo url> npx vitest run tests/relationship-fork-live.test.ts

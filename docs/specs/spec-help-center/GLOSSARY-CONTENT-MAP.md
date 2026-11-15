@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Glossary source map · prev [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Glossary source map · prev [Brand & audience profile page (handoff)](../spec-design-page-rel-templates/README.md) · next [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md)
 
 <!-- docs-nav:end -->
 
@@ -47,6 +47,6 @@ The proposed page says one person starts and invites the other; both people answ
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Product** › Glossary source map · prev [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md)
+[Docs hub](../../README.md) › **Specs & design briefs** › Glossary source map · prev [Brand & audience profile page (handoff)](../spec-design-page-rel-templates/README.md) · next [Help Center — implementation brief](IMPLEMENTATION-BRIEF.md)
 
 <!-- docs-nav:end -->

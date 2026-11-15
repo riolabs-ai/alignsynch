@@ -125,14 +125,15 @@ export const inviteBandSection: PageCopySection = {
     { id: "not-initiator", label: "Only the Initiator can send a new invitation." },
     { id: "no-invite", label: "This relationship has no invitation to send again." },
     /**
-     * #911 — the send's own refusal, in the same band. The stage's send waits for the walk, and a
-     * request that skips it is answered here rather than published: the sentence says what is
-     * missing (the card), what was not done (nothing was sent), and what costs nothing (the draft).
+     * #911 / #1010 R2 — the send's own refusal, in the same band. The stage's send waits for the
+     * membership bought on that stage, and a request that skips it is answered here rather than
+     * published: the sentence says what is missing (a running membership), what was not done
+     * (nothing was sent), and what costs nothing (the draft).
      */
     {
       id: "no-payment-method",
       label:
-        "The invitation was not sent: this relationship has no card on file yet. Finish the plan and the card on the invite screen, or keep the draft — nothing has been charged.",
+        "The invitation was not sent: this account has no running membership yet. Buy the membership on the invite screen, or keep the draft — nothing was sent and nothing was charged.",
     },
   ],
 };
@@ -460,11 +461,11 @@ export const assessmentInstancePageCopy: PageCopy = zPageCopy.parse({
           label:
             "The membership behind this relationship ended, so both sheets are read-only until the initiator's payment lands.",
         },
-        // #619's code: the fee is taken when the sheets are published, and this is the sentence a
-        // reader gets when the account that started the relationship has no method on file.
+        // #1010 R2 — the publish gate's sentence. It used to name a payment method; the gate is the
+        // membership now, and a card arrives only by buying it, so there is nothing separate to add.
         {
           id: "payment-method-required",
-          label: "This relationship needs a payment method before its sheets can be published.",
+          label: "This relationship needs a running membership before its sheets can be published.",
         },
         // #478 — the Steps endpoint's two codes. A tick can name a row this relationship does not
         // hold (`no-such-step`), and a party can write a status the model does not allow (`invalid`).

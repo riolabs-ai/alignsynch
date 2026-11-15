@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
 
 <!-- docs-nav:end -->
 
@@ -146,37 +146,37 @@ _is_ an invitation, and the `sent|unset|failed` outcome vocabulary and the redir
 ## 5. Sources
 
 - Slack, "Manage pending invitations and invite links"
-  (https://slack.com/help/articles/360060363633): invitations expire (30 days); admins **Extend**,
+  (<https://slack.com/help/articles/360060363633>): invitations expire (30 days); admins **Extend**,
   **Resend** or **Delete**; invite links can be **deactivated** (immediate invalidation) or
   **renewed**. Shows the extend/resend/revoke triad and immediate invalidation on revocation.
-- Claude (Anthropic), org invite links (https://support.claude.com/en/articles/13776697):
+- Claude (Anthropic), org invite links (<https://support.claude.com/en/articles/13776697>):
   **Regenerate** "creates a new link and immediately invalidates the previous one"; **Disable**
   invalidates without replacing; email invites expire in 21 days and are resent from a Pending
   tab. The canonical revoke-and-replace contract.
-- MirrorWeb (https://help.mirrorweb.com/en/articles/15204535): "Resending an invitation cancels
+- MirrorWeb (<https://help.mirrorweb.com/en/articles/15204535>): "Resending an invitation cancels
   the old link and issues a fresh one with a new 7-day window" — used for both expiry and
   lost-email; expired links show a generic error page. Exactly the single-action design adopted
   here.
-- Ramp (https://support.ramp.com/inviting-users-to-ramp): **Resend resets the expiration timer**;
+- Ramp (<https://support.ramp.com/inviting-users-to-ramp>): **Resend resets the expiration timer**;
   "the invitee should use the link from the most recent invite email"; for a bounced address:
   "correct the email address, revoke the old invite, and send a new one". Typo-correction via
   revoke + new send, same as this recommendation.
-- GitHub orgs (https://docs.github.com/en/organizations/managing-membership-in-your-organization/inviting-users-to-join-your-organization):
+- GitHub orgs (<https://docs.github.com/en/organizations/managing-membership-in-your-organization/inviting-users-to-join-your-organization>):
   invitations expire after 7 days; **Retry** or **Cancel** expired invitations from a "Failed
   invitations" view; invitations can be edited/cancelled any time before acceptance.
-- Discord (https://support.discord.com/hc/en-us/articles/208866998): invite links carry expiry
+- Discord (<https://support.discord.com/hc/en-us/articles/208866998>): invite links carry expiry
   and max-uses; removed invites cannot be remade with the same code — revocation is terminal.
 - dev.to/lunealabs, "Team invite email template"
-  (https://dev.to/lunealabs/team-invite-email-template-what-to-include-and-how-to-send-it-96e):
+  (<https://dev.to/lunealabs/team-invite-email-template-what-to-include-and-how-to-send-it-96e>):
   "Resend: create a new token and a new expiry, and invalidate the old link. Then a resent invite
   is never already expired"; "a mistyped address should not hold a working link for a week"
   (the void motivation, satisfied by revoke-and-replace).
-- Leantime PR #3661 (https://github.com/Leantime/leantime/pull/3661): invite-email spam fixed by
+- Leantime PR #3661 (<https://github.com/Leantime/leantime/pull/3661>): invite-email spam fixed by
   rate limits enforced inside create **and** resend — per-user/hour, per-installation/day, plus a
   per-invite resend cooldown with a distinct "too soon" code. Evidence that resend is the
   spam vector and that limit-refusal copy must name the limit.
 - AppMaster, "Transactional email flows that work"
-  (https://appmaster.io/blog/transactional-email-flows-tokens-expiration-deliverability): "A
+  (<https://appmaster.io/blog/transactional-email-flows-tokens-expiration-deliverability>): "A
   resend button turns into a way to spam your system"; guardrails (cooldowns, daily caps per
   address and per user); "when a limit triggers, tell the user exactly what happened and what to
   do next… rather than silently disabling the button."
@@ -256,11 +256,11 @@ _is_ an invitation, and the `sent|unset|failed` outcome vocabulary and the redir
 
 ## Related
 
-- [TWO-PARTY-FLOW.md](../TWO-PARTY-FLOW.md) — the invitation half of the flow this recovers.
+- [TWO-PARTY-FLOW.md](two-party-flow.md) — the invitation half of the flow this recovers.
 - [flow-emails.md](flow-emails.md) — the mail a re-invite sends.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Re-invite · prev [Transactional email lifecycle](flow-emails.md) · next [The five flow stages (binding spec)](flow-stages.md)
 
 <!-- docs-nav:end -->

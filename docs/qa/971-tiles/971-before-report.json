@@ -1,0 +1,144 @@
+{
+  "phase": "before",
+  "base": "http://localhost:3439",
+  "routes": {
+    "/login": {
+      "390": {
+        "innerWidth": 390,
+        "requested": 390,
+        "panel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "panelHidden": true,
+        "heading": {
+          "tag": "h2",
+          "text": "Welcome to QuizHub",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        "tiles": [
+          {
+            "text": "10K+Active Players",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            }
+          },
+          {
+            "text": "500+Quiz Categories",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0
+            }
+          }
+        ],
+        "splitClasses": "hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden",
+        "still": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa-971/971-before-login-390.png"
+      },
+      "1440": {
+        "innerWidth": 1440,
+        "requested": 1440,
+        "panel": {
+          "x": 0,
+          "y": 0,
+          "w": 720,
+          "h": 1000
+        },
+        "panelHidden": false,
+        "heading": {
+          "tag": "h2",
+          "text": "Welcome to QuizHub",
+          "box": {
+            "x": 136,
+            "y": 414,
+            "w": 448,
+            "h": 40
+          }
+        },
+        "tiles": [
+          {
+            "text": "10K+Active Players",
+            "box": {
+              "x": 136,
+              "y": 567,
+              "w": 216,
+              "h": 124
+            }
+          },
+          {
+            "text": "500+Quiz Categories",
+            "box": {
+              "x": 368,
+              "y": 567,
+              "w": 216,
+              "h": 124
+            }
+          }
+        ],
+        "splitClasses": "hidden lg:flex justify-center lg:w-1/2 bg-action relative overflow-hidden",
+        "still": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa-971/971-before-login-1440.png"
+      }
+    },
+    "/register": {
+      "390": {
+        "innerWidth": 390,
+        "requested": 390,
+        "panel": {
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0
+        },
+        "panelHidden": true,
+        "heading": {
+          "tag": "h1",
+          "text": "Join the Quiz Revolution",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        "tiles": [],
+        "splitClasses": "hidden lg:flex lg:w-1/2 bg-action relative overflow-hidden",
+        "still": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa-971/971-before-register-390.png"
+      },
+      "1440": {
+        "innerWidth": 1440,
+        "requested": 1440,
+        "panel": {
+          "x": 0,
+          "y": 0,
+          "w": 720,
+          "h": 1000
+        },
+        "panelHidden": false,
+        "heading": {
+          "tag": "h1",
+          "text": "Join the Quiz Revolution",
+          "box": {
+            "x": 48,
+            "y": 404,
+            "w": 624,
+            "h": 40
+          }
+        },
+        "tiles": [],
+        "splitClasses": "hidden lg:flex lg:w-1/2 bg-action relative overflow-hidden",
+        "still": "/home/jadenblack/.hermes/profiles/alignsynch-ops/cache/scratch/qa-971/971-before-register-1440.png"
+      }
+    }
+  }
+}

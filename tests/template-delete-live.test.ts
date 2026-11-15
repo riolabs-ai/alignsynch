@@ -15,7 +15,7 @@
  *                  and it is also what keeps the delete control off a live relationship's copy.
  *
  * **Skipped unless `DATABASE_URL` is set**, like every other `*-live.test.ts`: the gate has no
- * connection string by design (`docs/GATE.md`), so this costs CI nothing and runs when somebody
+ * connection string by design (`docs/operations/gate.md`), so this costs CI nothing and runs when somebody
  * points it at a branch. Point it at the **demo** branch — the production host is refused outright
  * rather than trusted to the caller's memory:
  *

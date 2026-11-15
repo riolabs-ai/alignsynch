@@ -34,7 +34,9 @@ import {
   type EditedRecord,
 } from "@/lib/admin/template-draft";
 import { currentUser } from "@/lib/auth/session";
+import { confirmCheckout, startCheckout } from "@/lib/billing";
 import { BillingRefusal } from "@/lib/billing/port";
+import { billingPlan } from "@/data/billing-plans";
 import { zAlignmentSetting, zAssessmentMode } from "@/content/assessment";
 import { baseUrl } from "@/lib/flow/email";
 import { forkRelationshipTemplate } from "@/lib/flow/templates";
@@ -48,20 +50,14 @@ import {
 import { editRelationship, previewRelationshipEdit } from "@/lib/member/relationship-edit";
 import { MemberRefused } from "@/lib/member/publish-basis";
 import type { EditDraft } from "@/lib/relationship/edit-view";
-import {
-  capturePaymentMethod,
-  completeRelationship,
-  MemberPaymentRequired,
-  captureReturnPath,
-  resolveCapturedMethod,
-} from "@/lib/member/payment";
+import { completeRelationship } from "@/lib/member/payment";
 import type {
   AspectsOutcome,
-  CaptureOutcome,
   CompleteOutcome,
   EditOutcome,
   EditPreviewOutcome,
   ForkOutcome,
+  MembershipOutcome,
   PublishOutcome,
   RepublishOutcome,
 } from "@/lib/member/outcomes";
@@ -414,104 +410,102 @@ function previewFailure(error: unknown): EditPreviewOutcome {
 }
 
 /* ------------------------------------------------------------------ *
- * #619 — pay to complete: the capture and the completion
+ * #1010 R2 — the membership stage 5 buys, and the completion it frees
  * ------------------------------------------------------------------ */
 
 /**
- * Put a payment method on this relationship — the "pay now / later" half.
+ * Buy the membership — stage 5's card step.
  *
- * Nothing is charged and nothing is unlocked: this only makes the completion possible.
+ * **This is the only way a payment method reaches an account.** #1010 retires the per-relationship
+ * capture: there is no "add a card" act anywhere, because a card exists to be charged, and the only
+ * thing charged is this subscription, bought on this stage, by the Initiator, once.
  *
- * **Two presentations, chosen by the caller (#748).** `embedded` asks the adapter for a session the
- * screen mounts in a frame, and answers `clientSecret` + `captureSessionId`; nothing navigates, and
- * the frame's completion calls `resolveCaptureAction` below. No `presentation` (or `hosted`) is the
- * path that shipped: the route a hosted adapter sends the browser to is this deployment's own
- * return endpoint, which resolves the provider's session before landing the payer back here. The
- * `presentation` value is a word this module recognises, never one it invents: anything else is
- * the documented default rather than a refusal, because the hosted path is a working fallback.
+ * The tier is the walk's own choice (defaulting to Basic when the account is already entitled and
+ * the radio group was replaced by a summary) and the interval is monthly — the membership renews
+ * monthly, which is what the card says. The account is the session's, never the body's.
+ *
+ * The answer is the provider's client secret for the frame the walk already mounts
+ * (`components/billing/stripe-frame.tsx`) — or, for the offline adapter, `completed: true` because
+ * it wrote the row inside this request.
  */
-export async function capturePaymentMethodAction(payload: {
-  relationshipId?: string;
-  reason?: string;
-  presentation?: string;
-}): Promise<CaptureOutcome> {
+export async function startMembershipAction(payload: {
+  planId?: string;
+  interval?: string;
+}): Promise<MembershipOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const relationshipId = text(payload.relationshipId);
-  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+  const asked = text(payload.planId);
+  const planId = asked === "" ? "basic" : asked;
+  const interval = text(payload.interval) === "year" ? "year" : "month";
+  const origin = baseUrl().replace(/\/+$/, "");
 
   try {
-    const result = await capturePaymentMethod({
-      actorUserId: user.userId,
-      relationshipId,
-      returnUrl: `${baseUrl().replace(/\/+$/, "")}${captureReturnPath(relationshipId)}`,
+    const session = await startCheckout({
+      userId: user.userId,
+      planId,
+      interval,
+      // The frame is inside the stage, so nobody leaves the page: this is the `return_url` the
+      // provider needs for the one case a frame cannot draw (an SCA challenge), and it lands the
+      // payer back on their relationships rather than on a pricing page.
+      successUrl: `${origin}${MEMBER_RELATIONSHIPS_PATH}`,
+      cancelUrl: `${origin}${MEMBER_RELATIONSHIPS_PATH}`,
       email: user.email ?? undefined,
-      presentation: text(payload.presentation) === "embedded" ? "embedded" : "hosted",
+      presentation: "embedded",
     });
     return {
       ok: true,
-      url: result.url,
-      captured: result.captured,
-      clientSecret: result.clientSecret,
-      publishableKey: result.publishableKey,
-      captureSessionId: result.captureSessionId,
+      clientSecret: session.clientSecret ?? null,
+      publishableKey: session.publishableKey ?? null,
+      checkoutSessionId: session.id,
+      completed: session.completed,
     };
   } catch (error) {
-    return captureFailure(error);
+    return membershipFailure(error);
   }
 }
 
 /**
- * Record the method an embedded frame just saved (#748).
+ * Confirm the membership the frame just bought — the provider's answer, not the browser's.
  *
- * The frame has no return URL to hand the session id to, so the browser hands it back here and
- * this resolves it through `resolveCapturedMethod()` — the same function, and the same
- * "the provider's objects, never the caller's claim" rule, that `/api/billing/payment/return` uses
- * for the hosted path. The relationship id is taken from the payload and compared with the session's
- * own metadata inside the write, so a session id lifted from elsewhere is refused by name.
+ * The frame's `onComplete` says the form was submitted; `confirmCheckout()` asks the provider,
+ * writes the `billing_subscription` row through the same idempotent path the webhook uses, and
+ * answers the tier. `pending` means the provider has not finished, and the walk asks again rather
+ * than claiming a membership nobody bought.
  */
-export async function resolveCaptureAction(payload: {
-  relationshipId?: string;
-  captureSessionId?: string;
-}): Promise<CaptureOutcome> {
+export async function confirmMembershipAction(payload: {
+  checkoutSessionId?: string;
+}): Promise<MembershipOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const relationshipId = text(payload.relationshipId);
-  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
-  const captureSessionId = text(payload.captureSessionId);
-  if (captureSessionId === "") return { ok: false, code: "invalid-request" };
+  const checkoutSessionId = text(payload.checkoutSessionId);
+  if (checkoutSessionId === "") return { ok: false, code: "invalid-request" };
 
   try {
-    const result = await resolveCapturedMethod({
-      actorUserId: user.userId,
-      relationshipId,
-      captureSessionId,
-    });
-    return {
-      ok: true,
-      url: result.url,
-      captured: result.captured,
-      clientSecret: null,
-      publishableKey: null,
-      captureSessionId: result.captureSessionId,
-    };
+    const subscription = await confirmCheckout(user.userId, checkoutSessionId);
+    if (subscription === null) {
+      return {
+        ok: false,
+        code: "pending",
+        message: "The provider has not confirmed this checkout yet. Try again in a moment.",
+      };
+    }
+    return { ok: true, planName: billingPlan(subscription.planId)?.name };
   } catch (error) {
-    return captureFailure(error);
+    return membershipFailure(error);
   }
 }
 
 /**
- * The capture's two handled failures, one sentence each — never a 500.
+ * The membership's handled failures, one code each — never a 500.
  *
- * `MemberRefused` is the member's own code (`not-yours`, `no-such-relationship`); `BillingRefusal`
- * is `not-configured` when the deployment has no key for this path (the card's own requirement: a
- * missing `STRIPE_TEST_SECRET_KEY` is a sentence, not a thrown error), plus the adapter's own
- * sentences. Anything else is a real server failure and stays a throw, because swallowing it would
- * report "billing is not configured" for a database that is down.
+ * `MemberRefused` is the member's own code; `BillingRefusal` carries the adapter's sentence
+ * (`not-for-sale` for a tier with no Price, `not-configured` for a deployment with no key).
+ * Anything else is a real server failure and stays a throw, because swallowing it would report
+ * "billing is not configured" for a database that is down.
  */
-function captureFailure(error: unknown): CaptureOutcome {
+function membershipFailure(error: unknown): MembershipOutcome {
   if (error instanceof MemberRefused) {
     return { ok: false, code: error.reason, message: error.message };
   }
@@ -522,19 +516,15 @@ function captureFailure(error: unknown): CaptureOutcome {
 }
 
 /**
- * Take the fee and complete the relationship — the payer's one act.
+ * Complete the relationship — the Initiator's one act, and it charges nothing.
  *
- * Two outcomes that are not failures: `payment-method-required` carries the url of a capture that
- * has to happen first (nothing was charged, the sheets stay sealed), and a declined card answers
- * `charge-declined` with the provider's sentence, which the retry ladder is already handling.
- *
- * The actor and the price are not the body's: the payer is the session's account and the fee is
- * `data/billing-plans.ts`'s amount for the tier the call names — the library compares both against
- * the relationship's own row under the lock.
+ * #1010 deletes the fee: the membership bought at stage 5 already covers every relationship the
+ * account runs, so sealing is a state change and a Gap and no money. The ordering is the
+ * library's — refuse early, then one transaction that re-reads the row under the lock — and the
+ * actor is the session's account, compared with the relationship's own initiator.
  */
 export async function completeRelationshipAction(payload: {
   relationshipId?: string;
-  planId?: string;
   reason?: string;
 }): Promise<CompleteOutcome> {
   const user = await currentUser();
@@ -543,34 +533,22 @@ export async function completeRelationshipAction(payload: {
   const relationshipId = text(payload.relationshipId);
   if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
   const reason = text(payload.reason);
-  const planId = text(payload.planId);
 
   try {
     const result = await completeRelationship({
       actorUserId: user.userId,
       relationshipId,
-      reason: reason === "" ? "publish the assessment and take the relationship fee" : reason,
-      ...(planId === "" ? {} : { planId }),
-      returnUrl: `${baseUrl().replace(/\/+$/, "")}${captureReturnPath(relationshipId)}`,
-      email: user.email ?? undefined,
+      reason: reason === "" ? "seal the relationship and open the Gap" : reason,
     });
     return {
       ok: true,
       actionId: result.actionId,
       status: result.after.status,
-      chargedAt: result.after.chargedAt,
-      amountCents: result.after.amountCents,
+      completedAt: result.after.completedAt,
     };
   } catch (error) {
-    if (error instanceof MemberPaymentRequired) {
-      // Not a refusal: the browser has somewhere to go, and no state changed.
-      return { ok: false, code: "payment-method-required", url: error.url };
-    }
     if (error instanceof MemberRefused) {
       return { ok: false, code: error.reason, message: error.message };
-    }
-    if (error instanceof BillingRefusal) {
-      return { ok: false, code: error.code, message: error.message };
     }
     if (error instanceof ActRefused) return { ok: false, code: error.reason };
     throw error;

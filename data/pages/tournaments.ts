@@ -7,8 +7,8 @@
  * `Tournament` entity in `content/`, no bracket, no standings. The six cards the
  * list renders are the mock rows already inside `tournament-list.tsx` and they stay
  * there — moving them into a fixture would be the domain, and the domain is a P4
- * question (`docs/DATA-MODEL.md` keeps tournaments out of scope; W9 in
- * `docs/P2-INVENTORY.md`).
+ * question (`docs/reference/data-model.md` keeps tournaments out of scope; W9 in
+ * `docs/operations/history/P2-INVENTORY.md`).
  *
  * Two conventions this route adds to the WU-6 shape, both forced by bytes:
  *

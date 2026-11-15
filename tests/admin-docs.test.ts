@@ -133,9 +133,9 @@ describe("/admin/docs — the manifest is the tree's", () => {
   });
 
   it("derives every address from the row's own path", () => {
-    const row = findDoc(realManifest(), ["GATE.md"]);
-    expect(row?.href).toBe(docHref("GATE.md"));
-    expect(row?.href).toBe("/admin/docs/GATE.md");
+    const row = findDoc(realManifest(), ["operations", "gate.md"]);
+    expect(row?.href).toBe(docHref("operations/gate.md"));
+    expect(row?.href).toBe("/admin/docs/operations/gate.md");
     // A nested document keeps its segments: the catch-all route is why this works.
     const nested = findDoc(realManifest(), ["wiki", "modules", "app-api.md"]);
     expect(nested?.href).toBe("/admin/docs/wiki/modules/app-api.md");
@@ -187,10 +187,10 @@ describe("/admin/docs — the manifest is the tree's", () => {
     expect(searchDocs(rows, "")).toHaveLength(rows.length);
     expect(searchDocs(rows, "   ")).toHaveLength(rows.length);
 
-    const gateRow = rows.find((row) => row.path === "GATE.md");
+    const gateRow = rows.find((row) => row.path === "operations/gate.md");
     expect(gateRow).toBeDefined();
     const byTitle = searchDocs(rows, gateRow?.title.toUpperCase() ?? "");
-    expect(byTitle.map((row) => row.path)).toContain("GATE.md");
+    expect(byTitle.map((row) => row.path)).toContain("operations/gate.md");
 
     const byQuestion = searchDocs(rows, "verify.sh");
     expect(byQuestion.length).toBeGreaterThan(0);
@@ -207,13 +207,13 @@ describe("/admin/docs — the manifest is the tree's", () => {
 
 describe("/admin/docs — what a link inside a document becomes", () => {
   it("rewrites a sibling document to its address, keeping the fragment", () => {
-    expect(resolveDocsTarget("GATE.md", "ENV-SPEC.md")).toEqual({
+    expect(resolveDocsTarget("operations/gate.md", "../reference/env-spec.md")).toEqual({
       kind: "doc",
-      href: "/admin/docs/ENV-SPEC.md",
+      href: "/admin/docs/reference/env-spec.md",
     });
-    expect(resolveDocsTarget("wiki/modules/app.md", "../../GATE.md#step-4")).toEqual({
+    expect(resolveDocsTarget("wiki/modules/app.md", "../../operations/gate.md#step-4")).toEqual({
       kind: "doc",
-      href: "/admin/docs/GATE.md#step-4",
+      href: "/admin/docs/operations/gate.md#step-4",
     });
     expect(resolveDocsTarget("wiki/modules/app.md", "./content.md")).toEqual({
       kind: "doc",
@@ -222,39 +222,43 @@ describe("/admin/docs — what a link inside a document becomes", () => {
   });
 
   it("serves an image through the asset route, and drops the fragment it cannot mean", () => {
-    expect(resolveDocsTarget("qa-stage5/README.md", "stage5-entitled-390.png")).toEqual({
+    expect(resolveDocsTarget("qa/stage5/README.md", "stage5-entitled-390.png")).toEqual({
       kind: "asset",
-      href: "/api/docs/asset/qa-stage5/stage5-entitled-390.png",
+      href: "/api/docs/asset/qa/stage5/stage5-entitled-390.png",
     });
   });
 
   it("leaves external addresses and in-page anchors alone", () => {
-    expect(resolveDocsTarget("GATE.md", "https://example.com/x")).toEqual({
+    expect(resolveDocsTarget("operations/gate.md", "https://example.com/x")).toEqual({
       kind: "external",
       href: "https://example.com/x",
     });
-    expect(resolveDocsTarget("GATE.md", "//example.com/x")).toEqual({
+    expect(resolveDocsTarget("operations/gate.md", "//example.com/x")).toEqual({
       kind: "external",
       href: "//example.com/x",
     });
-    expect(resolveDocsTarget("GATE.md", "#the-gate")).toEqual({
+    expect(resolveDocsTarget("operations/gate.md", "#the-gate")).toEqual({
       kind: "anchor",
       href: "#the-gate",
     });
-    expect(resolveDocsTarget("GATE.md", "/dashboard")).toEqual({
+    expect(resolveDocsTarget("operations/gate.md", "/dashboard")).toEqual({
       kind: "route",
       href: "/dashboard",
     });
   });
 
   it("refuses a path that leaves docs/, and a file this reader cannot serve", () => {
-    expect(resolveDocsTarget("GATE.md", "../../../etc/passwd")).toEqual({ kind: "unresolved" });
+    expect(resolveDocsTarget("operations/gate.md", "../../../etc/passwd")).toEqual({
+      kind: "unresolved",
+    });
     expect(resolveDocsTarget("wiki/modules/app.md", "../../../../package.json")).toEqual({
       kind: "unresolved",
     });
     // A script, not a page: the label renders as plain text instead of an anchor that 404s.
-    expect(resolveDocsTarget("GATE.md", "../scripts/verify.sh")).toEqual({ kind: "unresolved" });
-    expect(resolveDocsTarget("GATE.md", "")).toEqual({ kind: "unresolved" });
+    expect(resolveDocsTarget("operations/gate.md", "../scripts/verify.sh")).toEqual({
+      kind: "unresolved",
+    });
+    expect(resolveDocsTarget("operations/gate.md", "")).toEqual({ kind: "unresolved" });
   });
 });
 
@@ -293,7 +297,9 @@ describe("/admin/docs — the gates, in order", () => {
 
     expect(await digestOf(async () => AdminDocsPage())).toBe("NEXT_HTTP_ERROR_FALLBACK;404");
     expect(
-      await digestOf(async () => AdminDocPage({ params: Promise.resolve({ slug: ["GATE.md"] }) })),
+      await digestOf(async () =>
+        AdminDocPage({ params: Promise.resolve({ slug: ["operations", "gate.md"] }) }),
+      ),
     ).toBe("NEXT_HTTP_ERROR_FALLBACK;404");
     gate.role = "admin";
   });
@@ -322,11 +328,11 @@ describe("/admin/docs — what the pages render", () => {
     const { default: AdminDocPage } = await import("@/app/(mainlayout)/admin/docs/[...slug]/page");
 
     const page = (await AdminDocPage({
-      params: Promise.resolve({ slug: ["GATE.md"] }),
+      params: Promise.resolve({ slug: ["operations", "gate.md"] }),
     })) as ReactElement;
     const html = renderToStaticMarkup(page);
 
-    const title = findDoc(realManifest(), ["GATE.md"])?.title ?? "";
+    const title = findDoc(realManifest(), ["operations", "gate.md"])?.title ?? "";
     expect(html).toContain(title);
     // A relative link inside the document is now an address this reader serves.
     expect(html).toMatch(/href="\/admin\/docs\/[A-Za-z0-9._/-]+\.md/);
@@ -354,7 +360,7 @@ describe("/admin/docs — what the pages render", () => {
     for (const slug of [
       ["does-not-exist.md"],
       ["..", "..", "package.json"],
-      ["GATE.md", "extra"],
+      ["operations", "gate.md", "extra"],
     ]) {
       let digest: string | undefined;
       try {
@@ -372,7 +378,7 @@ describe("/admin/docs — the asset route", () => {
     gate.role = "admin";
     const { GET } = await import("@/app/api/docs/asset/[...path]/route");
     const response = await GET(new Request("http://localhost/api/docs/asset"), {
-      params: Promise.resolve({ path: ["qa-stage5", "stage5-entitled-390.png"] }),
+      params: Promise.resolve({ path: ["qa", "stage5", "stage5-entitled-390.png"] }),
     });
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/png");
@@ -392,7 +398,7 @@ describe("/admin/docs — the asset route", () => {
 
     // A member's `<img>` gets the 404 the page would give, not a redirect into a login page.
     gate.role = "member";
-    expect((await ask(["qa-stage5", "stage5-entitled-390.png"])).status).toBe(404);
+    expect((await ask(["qa", "stage5", "stage5-entitled-390.png"])).status).toBe(404);
     gate.role = "admin";
   });
 });

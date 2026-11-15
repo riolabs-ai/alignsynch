@@ -46,6 +46,7 @@
  */
 import { Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +56,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { PageCopy, PageCopySection } from "@/content/pages";
 import { formatDate } from "@/content/core";
-import { createInviteForPath, instancePath, relationshipPath } from "@/lib/flow/paths";
+import {
+  createInviteForPath,
+  createRelationshipPath,
+  instancePath,
+  relationshipPath,
+} from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
 import { Archive, Copy, Eye, MoreHorizontal } from "lucide-react";
@@ -132,7 +138,19 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
     row.sessionRecordId === null
       ? null
       : createInviteForPath(row.templateSlug, row.sessionRecordId);
-  const payWhy = itemLabel(card, "invite-members-why");
+  /**
+   * #958 — **the one draft that cannot reach the modal, and what the card says instead.**
+   *
+   * `payHref` is `null` only for a relationship with **no session**, and stage 5 is keyed by one
+   * (`?instance=<session>`), so there is genuinely nothing for the pay modal to open. That shape
+   * came from the list's own create band, which #913 deleted, so no new row can have it — but a
+   * tree that still holds one must not answer with a greyed-out control: an inert `Invite Members`
+   * with the reason in a `title` is the pattern the owner rejected ("use the modal", not "explain
+   * why you cannot"). The card draws the reason in words and a door to the surface that fixes it —
+   * the template's own create flow, which is the product's only writer of a session.
+   */
+  const modalUnreachable = isDraft && row.isInitiator && payHref === null;
+  const restartHref = createRelationshipPath(row.templateSlug);
   /**
    * #913 — **publishing a draft is the pay modal's own Send, so that is where this goes.** The row
    * used to send the reader to the relationship's screen, one click before the modal that carries
@@ -140,6 +158,15 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
    * A draft with no session has no modal to open, so it keeps the screen as its destination.
    */
   const publishHref = isDraft && row.isInitiator && payHref !== null ? payHref : relationshipHref;
+  /** The row's primary action's words — one resolution, whichever door draws it (#979 B). */
+  const publishLabel =
+    isDraft && row.isInitiator
+      ? itemLabel(card, "publish-to-counterparty")
+      : row.isInitiator
+        ? row.sessionRecordId === null
+          ? itemLabel(card, "publish-assessment")
+          : itemLabel(card, "complete-relationship")
+        : itemLabel(card, "open-relationship");
 
   return (
     <li
@@ -197,6 +224,29 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
       </div>
 
       <div className="mt-auto flex flex-col gap-2 border-t border-gray-200 px-4 py-3 dark:border-gray-700">
+        {/*
+          #958 — **the sentence that replaces the inert control.** Drawn above the action row, in
+          the fixture's words, with its door beside it: a draft whose relationship has no session
+          cannot open the pay modal, and the person who owns it is told why and sent to the flow
+          that writes one. Never a greyed-out button with a tooltip.
+        */}
+        {modalUnreachable ? (
+          <p
+            data-invite-blocked-why="no-session"
+            className="text-xs text-gray-600 dark:text-gray-300"
+          >
+            {itemLabel(card, "invite-members-why")}{" "}
+            {/* A flow door like the two below (#979 B): the draft with no session has to go
+                through stage 1 again, and that happens in the dialog over this list. */}
+            <FlowEntryLink
+              href={restartHref}
+              className="font-medium text-action underline underline-offset-4"
+              data-invite-blocked-door="restart"
+            >
+              {itemLabel(card, "invite-members-why-door")}
+            </FlowEntryLink>
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {/* The secondary the row keeps: a link once there is a session, and nothing before it —
               the disabled control is the menu's item, which can carry the reason in words. */}
@@ -212,44 +262,42 @@ function RelationshipCard({ copy, row }: { copy: PageCopy; row: MemberRelationsh
 
             `Invite Members` is the pay modal and nothing else: no card is taken here, and the
             relationship detail no longer opens a capture of its own (`payment-capture-dialog.tsx`
-            is deleted). A draft that came through the flow always has a session; the inert branch
-            below is the shape of data written by the list-create path #913 deleted, and it says so
-            rather than linking somewhere stage 5 would bounce.
+            is deleted). A draft that came through the flow always has a session.
+
+            #958 — **the one draft that does not is a sentence, not a dead control.** Its reason and
+            its door are drawn above this row; here the control is simply absent, because a control
+            that cannot act is the thing the owner named as the failure mode.
           */}
-          {isDraft && row.isInitiator ? (
-            payHref === null ? (
-              <span
-                className={`${ACTION} cursor-not-allowed text-gray-400 dark:text-gray-500`}
-                aria-disabled="true"
-                data-invite-blocked={payWhy}
-                title={payWhy}
-              >
-                {itemLabel(card, "invite-members")}
-              </span>
-            ) : (
-              <Link
-                href={payHref}
-                className={ACTION}
-                data-invite-members="true"
-                data-pay-modal="true"
-              >
-                {itemLabel(card, "invite-members")}
-              </Link>
-            )
+          {isDraft && row.isInitiator && payHref !== null ? (
+            /* Stage 5 in the flow's dialog over this list (#979 B) — not a navigation. */
+            <FlowEntryLink
+              href={payHref}
+              className={ACTION}
+              data-invite-members="true"
+              data-pay-modal="true"
+            >
+              {itemLabel(card, "invite-members")}
+            </FlowEntryLink>
           ) : null}
-          <Link
-            href={publishHref}
-            className={ACTION_PRIMARY}
-            {...(isDraft && row.isInitiator ? { "data-publish-to-counterparty": "true" } : {})}
-          >
-            {isDraft && row.isInitiator
-              ? itemLabel(card, "publish-to-counterparty")
-              : row.isInitiator
-                ? row.sessionRecordId === null
-                  ? itemLabel(card, "publish-assessment")
-                  : itemLabel(card, "complete-relationship")
-                : itemLabel(card, "open-relationship")}
-          </Link>
+          {/*
+            `Publish to Counterparty` on a draft is the pay modal's own send, so it opens stage 5 in
+            the dialog too (#979 B); every other row's primary is a relationship screen, which is a
+            navigation and stays one — so the two are different components, not one with a branch
+            inside it. The label is resolved once, above.
+          */}
+          {isDraft && row.isInitiator && payHref !== null ? (
+            <FlowEntryLink
+              href={publishHref}
+              className={ACTION_PRIMARY}
+              data-publish-to-counterparty="true"
+            >
+              {publishLabel}
+            </FlowEntryLink>
+          ) : (
+            <Link href={publishHref} className={ACTION_PRIMARY}>
+              {publishLabel}
+            </Link>
+          )}
         </div>
       </div>
 

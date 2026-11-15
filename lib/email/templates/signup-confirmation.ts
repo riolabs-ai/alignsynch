@@ -21,9 +21,18 @@
  * **Nothing is invented.** No frequency promise, no send date, no "exclusive" claim and no
  * preview of what the list will say: the facts are the address that was written down and the way
  * out that every message from this list carries. Marketing, so the band's footer carries the
- * unsubscribe line — and its absence would be a defect, which is why the band throws.
+ * unsubscribe line — and its absence would be a defect, which is why the band throws. The opening
+ * line is this template's section in `content/email-bodies.md`, which carries a `TODO(owner)`:
+ * nothing in the tree says what this list sends or how often.
  */
-import { CONTENT_TO_REFINE, type EmailDocument } from "@/lib/email/band";
+import type { EmailDocument } from "@/lib/email/band";
+import { bodyBlocks, type EmailBodySpec } from "@/lib/email/body";
+
+/** This template's section in `content/email-bodies.md`, and the facts it may say. */
+export const SIGNUP_CONFIRMATION_BODY = {
+  id: "signup-confirmation",
+  placeholders: ["address"],
+} as const satisfies EmailBodySpec;
 
 /** The spec's subject, as a constant: it confirms the form, not a campaign. */
 export const SIGNUP_CONFIRMATION_SUBJECT = "You're on the list";
@@ -38,10 +47,7 @@ export function signupConfirmationDocument(facts: SignupConfirmationFacts): Emai
     subject: SIGNUP_CONFIRMATION_SUBJECT,
     preheader: `The list holds ${facts.address}.`,
     blocks: [
-      {
-        kind: "paragraph",
-        text: `${CONTENT_TO_REFINE} One sentence on what this list sends and when, in the product's own voice.`,
-      },
+      ...bodyBlocks(SIGNUP_CONFIRMATION_BODY, { address: facts.address }),
       { kind: "paragraph", text: `The address on the list is ${facts.address}.` },
       {
         kind: "paragraph",

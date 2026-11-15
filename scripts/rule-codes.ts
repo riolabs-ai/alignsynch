@@ -217,6 +217,16 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     },
   },
   {
+    owner: "the product's vocabulary (scripts/vocabulary.ts)",
+    // Two files for the same reason the brand-word group has two: the code is *minted* where the
+    // rule lives (a finding carries `rule: "E41"`), and `data-check.ts` runs the walk beside the
+    // other copy rules and prints its census line.
+    files: ["vocabulary.ts", "data-check.ts"],
+    codes: {
+      E41: 'no reader-visible string the alignment build renders names a retired product noun — the model says `instance`, the product says "session", and the exact strings that may keep a noun are the shrink-only `VOCABULARY_ALLOWANCES` table',
+    },
+  },
+  {
     owner:
       "bundle import/export (scripts/bundles.ts, scripts/bundle-platform.ts, content/bundle.ts — issues #147, #899)",
     // Three files, because each code is minted where its rule lives: `content/bundle.ts`

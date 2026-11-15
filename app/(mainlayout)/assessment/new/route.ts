@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { templateSlugOf } from "@/lib/db/template-library";
+import { CREATE_NOT_FROM_FLOW } from "@/lib/flow/create-copy";
 import {
   counterpartyNameOf,
   initiatorNameOf,
@@ -14,7 +15,6 @@ import {
   type CreatedInstance,
   type FlowErrorCode,
 } from "@/lib/flow/store";
-import { invitationMessage, sendInvitation } from "@/lib/flow/email";
 import {
   createCommitPath,
   createInviteForPath,
@@ -32,6 +32,9 @@ import {
   partyCookieName,
 } from "@/lib/flow/session";
 
+/** The two reasons this route refuses: the store's own codes, and the one the endpoint raises. */
+type CreateRefusalCode = FlowErrorCode | typeof CREATE_NOT_FROM_FLOW;
+
 /**
  * Where a refusal sends the browser: back to the create screen for the template it refused.
  *
@@ -43,8 +46,9 @@ import {
  * **Which step it returns to is the draft's own fact (#688, #689, #690).** A post that came through
  * the flow (the draft cookie exists) was sent from **stage 4, Create** — the conversion is the
  * last screen before the create since #690 — so the refusal belongs there, above the review card
- * the person just pressed. A post that never went through the draft — `scripts/flow-e2e.mjs`, a
- * `curl`, the pre-#688 form — is returned to the Who screen, which is the only stage it ever saw.
+ * the person just pressed. A post that never went through the draft is refused as
+ * `create-not-from-flow` (#957's server half) and returned to the Who screen, which is the only
+ * stage it ever saw — and is where the create it wanted actually starts.
  *
  * **The target is built from the slug (#794).** An empty slug — no template named, or a row this
  * build could not resolve — is the library.
@@ -52,7 +56,7 @@ import {
 function refusalTarget(
   request: Request,
   templateSlug: string,
-  code: FlowErrorCode,
+  code: CreateRefusalCode,
   fromDraft: boolean,
 ): URL {
   const slug = templateSlug.trim();
@@ -94,12 +98,23 @@ function fieldTarget(request: Request, templateSlug: string, field: string, reas
  * proved by two browser sessions doing exactly what a person does.
  *
  * One transaction does the work — copy the Aspects, the Initiator's party row, the
- * invitation — and only after the commit is the email attempted. A mail failure is
- * therefore *not* a failed creation: the redirect carries `invite=sent|unset|failed`, and the
- * instance screen shows the link whenever the mail did not carry it (#220). The three values
- * are the send's own outcome, not a boolean guess: `unset` means no mailer is configured,
- * `failed` means one was and it refused, and the screen's sentence — and the operator's
- * response — differ.
+ * invitation — and this route sends nothing: the relationship it writes is a `draft`, and stage 5 is
+ * what either sends it or keeps it (#825). So there is no mail failure to report here. The three
+ * outcomes `invite=sent|unset|failed` still exist and still mean what they meant (#146, #220) —
+ * `unset` is no mailer configured, `failed` is one that refused — but they are now stage 5's fact,
+ * reported by `POST /assessment/instances/[id]/send` onto the confirmation screen.
+ *
+ * **`POST /assessment/new` is stage 4's draft write, and nothing else (#825, #957).** The stages
+ * before it collect the relationship; this is the write that saves it, and it saves it as a
+ * `draft`. The invitation is **stage 5's** act (`POST /assessment/instances/[id]/send` →
+ * `sendDraftInvitation()`), which is where the gate that keeps a send behind a plan and a card is
+ * enforced (#911) and where the `invite=sent|unset|failed` outcome is reported.
+ *
+ * A post that carries no `draft=1` never came through the stages, so it is refused with a named
+ * reason and redirected — `?problem=create-not-from-flow` — rather than created. Until #957's
+ * server half this endpoint still kept the pre-#688 one-form create for such a post, and that path
+ * wrote a relationship **published** and mailed it with no plan and no card on file. The catalogue
+ * that could reach it is gone since #957; this is the half a `curl` could still reach.
  *
  * **The creator's account is read from the session, not from the post** (#213 follow-up). The
  * form carries two names, an address, a mode and a setting; it carries no identity, and none is
@@ -120,15 +135,15 @@ export async function POST(request: Request): Promise<Response> {
   const form = await request.formData();
   const value = (name: string) => String(form.get(name) ?? "");
   const templateRecordId = value("templateRecordId").trim();
-  // #825 — stage 4's form carries `draft=1`: write the relationship as a draft and send nothing,
-  // because stage 5 is where the send is decided. Every other caller (a `curl`, `flow-e2e.mjs`, the
-  // pre-v9 one-form create) omits it and keeps the create-and-send it always got.
+  // #825 — stage 4's form carries `draft=1`, and that flag is now the **only** way through: this
+  // endpoint writes a draft and sends nothing, so the fact that the post came from the flow's own
+  // stage is what the create is. A post without it is refused below (#957's server half).
   const asDraft = value("draft") === "1";
   const viewer = await currentUserIfConfigured();
 
-  // #688 — the draft stage 1 wrote, when this post came through the two-stage flow. A post
-  // that carries no draft is the pre-#688 one-form create (and every script that posts the
-  // endpoint directly): its values come from the form, exactly as they always did.
+  // #688 — the draft stage 1 wrote, when this post came through the two-stage flow. A post that
+  // carries a draft cookie but no `draft=1` is refused all the same: the draft is what stage 4
+  // saves, and publishing is stage 5's decision, never a form field.
   const jar = await cookies();
   const draft =
     templateRecordId === ""
@@ -139,10 +154,22 @@ export async function POST(request: Request): Promise<Response> {
   // the draft cookie carry its **id**. Resolved once, before anything can refuse.
   const templateSlug = await templateSlugOf(templateRecordId);
 
+  // #957's server half — **the bare create is gone.** A post that carries no `draft=1` did not come
+  // through the stages, and the create it asked for no longer exists: the invitation goes out from
+  // stage 5, behind the plan-and-card gate (#911), so a relationship must not be published here.
+  // The refusal is the house shape (#427) — a 303 with a **named reason**, never a JSON body and
+  // never a 500 — and it lands on stage 1 of this template, which is where the flow starts.
+  if (!asDraft) {
+    return NextResponse.redirect(
+      refusalTarget(request, templateSlug, CREATE_NOT_FROM_FLOW, draft !== null),
+      303,
+    );
+  }
+
   // #825 — a draft belongs to an account, so there is nothing to write without one. The stage's
   // page only draws the form for a signed-in reader, so this is the crafted post's answer: the
   // sign-in screen, with this stage as the place to come back to.
-  if (asDraft && viewer === null && templateSlug !== "") {
+  if (viewer === null && templateSlug !== "") {
     return NextResponse.redirect(
       new URL(loginPathFor(createCommitPath(templateSlug)), request.url),
       303,
@@ -252,44 +279,19 @@ export async function POST(request: Request): Promise<Response> {
   if (templateRecordId !== "") jar.delete(createDraftCookieName(templateRecordId));
 
   // #825 — stage 4 stops here. Nothing is sent, the row is a draft, and stage 5 is the screen that
-  // asks whether it goes out. The `?invite=` outcome has nothing to report yet, so it is not set.
-  if (asDraft) {
-    const slug = templateSlug.trim();
-    return NextResponse.redirect(
-      new URL(
-        slug === ""
-          ? instancePath(created.instanceRecordId)
-          : createInviteForPath(slug, created.instanceRecordId),
-        request.url,
-      ),
-      303,
-    );
-  }
-
-  // `sendInvitation` reports three outcomes and never throws. The `.catch` is a belt and not
-  // a path: if this function ever did throw, the creation already committed, so the screen
-  // must still offer the link — which it does whenever `screen.invite.link` exists — and the
-  // notice says only that the send failed, because a thrown error is not a diagnosis.
-  const outcome = await sendInvitation(
-    invitationMessage({
-      to: who.email.trim(),
-      initiatorName: who.initiatorName.trim(),
-      counterpartyName: who.counterpartyName.trim(),
-      templateTitle: created.templateTitle,
-      token: created.inviteToken,
-    }),
-  ).catch(() => {
-    console.error("[invite] the send threw, which it must not — the link is shown in the app");
-    return { outcome: "failed" as const };
-  });
-
-  // #825 — the gate that used to follow this create is retired, so a post that did not come from
-  // stage 4's draft form lands on the relationship itself, which draws the invitation's own state
-  // and its notice (#220). `afterCreateTarget()` is deleted with the gate: a destination that
-  // depended on which flow shape posted is a decision with no screen behind it now.
-  const target = new URL(instancePath(created.instanceRecordId), request.url);
-  target.searchParams.set("invite", outcome.outcome);
-  // 303: the browser follows with a GET, so a reload of the instance screen cannot create
-  // a second instance.
-  return NextResponse.redirect(target, 303);
+  // asks whether it goes out. That is also why no `?invite=` value is set: the send has not been
+  // attempted yet, and the visit that attempts it is stage 5's, on the confirmation screen.
+  //
+  // 303 so the browser follows with a GET, and a reload of stage 5 cannot create a second
+  // relationship.
+  const slug = templateSlug.trim();
+  return NextResponse.redirect(
+    new URL(
+      slug === ""
+        ? instancePath(created.instanceRecordId)
+        : createInviteForPath(slug, created.instanceRecordId),
+      request.url,
+    ),
+    303,
+  );
 }

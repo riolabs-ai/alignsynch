@@ -16,9 +16,12 @@
  *   4. **The class decides the footer, in both directions.** #9 is the only marketing template: it
  *      carries the unsubscribe line and the band refuses to render it without a URL. The other
  *      eleven carry none and the band refuses to be handed one.
- *   5. **Nothing is invented.** The body is the `{{content_to_refine}}` marker plus the facts it was
- *      handed, and the message carries only the addresses it names — no metric, no rating, no
- *      customer name, no promise.
+ *   5. **Nothing is invented, and nothing is left unfilled.** The body is the prose
+ *      `content/email-bodies.md` holds for that template, filled with the facts it was handed, and
+ *      the message carries only the addresses it names — no metric, no rating, no customer name, no
+ *      promise. A `{{…}}` that survived the fill, or an owner's `TODO(owner)` note reaching the
+ *      mail, is a defect: the first is a fact the template forgot, the second is a sentence nobody
+ *      wrote.
  *
  * The facts are fixtures, the addresses are `.test`, and no transport is involved: this file is
  * pure rendering and runs in the database-free gate. The live sends are each sending card's own
@@ -26,19 +29,12 @@
  */
 import { describe, expect, it } from "vitest";
 import { brand } from "@/data/brand";
-import {
-  CONTENT_TO_REFINE,
-  htmlFromText,
-  renderEmail,
-  type EmailClass,
-  type EmailDocument,
-} from "@/lib/email/band";
+import { htmlFromText, renderEmail, type EmailClass, type EmailDocument } from "@/lib/email/band";
 import {
   EMAIL_TEMPLATES,
   invitationTemplate,
   joinedTemplate,
   membershipLapsedTemplate,
-  paymentReminderTemplate,
   purchaseConfirmationTemplate,
   relationshipExpiredTemplate,
   releaseNoteTemplate,
@@ -91,8 +87,6 @@ interface Sample {
   /** The addresses the body names, in order — the site line and the unsubscribe line excluded. */
   readonly links: readonly string[];
   readonly mustSay: readonly string[];
-  /** Does this body carry the `{{content_to_refine}}` marker in this pass? */
-  readonly marker: boolean;
   readonly unsubscribeUrl?: string;
   readonly document: () => EmailDocument;
   readonly render: () => RenderedTemplate;
@@ -107,7 +101,6 @@ function sample<Facts>(
     readonly subject: string;
     readonly links: readonly string[];
     readonly mustSay: readonly string[];
-    readonly marker?: boolean;
     readonly unsubscribeUrl?: string;
   },
 ): Sample {
@@ -116,7 +109,6 @@ function sample<Facts>(
     subject: expected.subject,
     links: expected.links,
     mustSay: expected.mustSay,
-    marker: expected.marker ?? true,
     ...(expected.unsubscribeUrl === undefined ? {} : { unsubscribeUrl: expected.unsubscribeUrl }),
     id: template.id,
     numeral: template.numeral,
@@ -137,8 +129,6 @@ const SAMPLES: readonly Sample[] = [
     subject: `${brand.name} 9.9.9 is live`,
     links: [],
     mustSay: ["Version 9.9.9", "Known limits", "One shell, and the plain text is its source."],
-    // The note carries the marker only when the entry has no intro of its own; this entry has one.
-    marker: false,
   }),
   sample(
     invitationTemplate,
@@ -254,26 +244,6 @@ const SAMPLES: readonly Sample[] = [
     },
   ),
   sample(
-    paymentReminderTemplate,
-    {
-      recipient: "Avery",
-      template: "Relationship Basics",
-      day: 3,
-      amountCents: 1900,
-      expiresAt: new Date("2026-11-15T12:00:00.000Z"),
-      link: RELATIONSHIP,
-    },
-    {
-      name: "payment reminder (#11)",
-      subject: "The fee for Relationship Basics is still unpaid",
-      links: [RELATIONSHIP],
-      // Every sentence is a fact from the row — the amount the job will charge, the deadline the
-      // obligation expires at — so this one carries no `{{content_to_refine}}` marker.
-      mustSay: ["Avery", "Relationship Basics", "2026-11-15", "$19.00"],
-      marker: false,
-    },
-  ),
-  sample(
     relationshipExpiredTemplate,
     {
       recipient: "payer",
@@ -283,11 +253,10 @@ const SAMPLES: readonly Sample[] = [
       link: RELATIONSHIP,
     },
     {
-      name: "relationship expired (#12)",
+      name: "relationship expired (#11)",
       subject: "The relationship Relationship Basics expired",
       links: [RELATIONSHIP],
       mustSay: ["Avery", "Relationship Basics", "2026-11-15"],
-      marker: false,
     },
   ),
 ];
@@ -345,9 +314,14 @@ describe("every template renders both parts, text first", () => {
       expect(item.render().text).toContain(document.preheader.trim());
     });
 
-    it(`${item.name}: keeps {{content_to_refine}} where the prose is not written`, () => {
-      if (!item.marker) return;
-      expect(item.render().text).toContain(CONTENT_TO_REFINE);
+    it(`${item.name}: ships no placeholder and no owner note`, () => {
+      const { text } = item.render();
+      // A `{{…}}` that survived the fill is a fact the template forgot to hand the body; a
+      // `TODO(owner)` is the note that sits above a fence in `content/email-bodies.md` and must
+      // never travel. Both are caught here, on the rendered text, not on the source.
+      expect(text).not.toContain("{{");
+      expect(text).not.toContain("}}");
+      expect(text).not.toContain("TODO(owner)");
     });
   }
 });
@@ -401,7 +375,7 @@ describe("the class rule holds in both directions", () => {
   });
 
   it("every transactional template carries none", () => {
-    expect(TRANSACTIONAL).toHaveLength(11);
+    expect(TRANSACTIONAL).toHaveLength(10);
     for (const item of TRANSACTIONAL) {
       const rendered = item.render();
       expect(rendered.text).not.toContain("Unsubscribe");
@@ -423,9 +397,9 @@ describe("the class rule holds in both directions", () => {
 });
 
 describe("the register", () => {
-  it("holds templates 1–12, in order, once each", () => {
+  it("holds templates 1–11, in order, once each", () => {
     expect(EMAIL_TEMPLATES.map((template) => template.numeral)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
     ]);
     const ids = EMAIL_TEMPLATES.map((template) => template.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -433,7 +407,7 @@ describe("the register", () => {
     expect([...ids].sort()).toEqual(SAMPLES.map((item) => item.id).sort());
   });
 
-  it("is transactional for eleven of them and marketing for the signup confirmation only", () => {
+  it("is transactional for ten of them and marketing for the signup confirmation only", () => {
     for (const item of SAMPLES) {
       expect(templateById(item.id)?.emailClass).toBe(item.emailClass);
     }

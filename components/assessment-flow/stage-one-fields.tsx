@@ -21,7 +21,17 @@
  * **The five required fields are marked twice, on purpose.** The asterisk is `aria-hidden` — a
  * glyph is not a word — with the fixture's own "required" beside it in a visually hidden span, so
  * a screen reader says the requirement; the input's own `required` attribute is what refuses the
- * post in the browser before `whoDraft()` ever sees it. Both marks cover the same five fields.
+ * post in the browser before `whoDraft()` ever sees it. Both marks cover the same five fields, and
+ * both stay: `noValidate` on the form (`stage-one-form.tsx`) suppresses the browser's bubble, never
+ * the mark or the contract.
+ *
+ * **A refused field prints its own sentence, inside its own label (#975 D8).** `problems` maps a
+ * field's `data-field` id to the sentence the fixture composes for it (`lib/flow/create-copy.ts`'s
+ * `fieldSentence`, resolved by the page); the control carries `aria-describedby` to the sentence
+ * and `aria-invalid` while it stands, so a screen reader reads the refusal as part of the question
+ * that was refused — the same shape stage 2 already ships (`stage-choice-form.tsx`, #984). The
+ * sentences are `<span>`s, not `<p>`s: this control's label is the wrapper, and a `label` may only
+ * hold phrasing content.
  *
  * **The layout is the artifact's**, not a 6/6 grid of five: row 1 is the title beside the
  * Initiator pair, row 2 the Counterparty pair beside the address, and the description closes the
@@ -95,15 +105,83 @@ function RequiredMark({ note }: { note: string }) {
   );
 }
 
+/**
+ * The five required controls' `data-field` handles, named once (#975 D8).
+ *
+ * They are **handles, not copy**: the ids `StageOneForm` locates a control by and the key its
+ * refusal sentence is filed under — never a word a reader sees. They are named here rather than
+ * retyped at each of the ten call sites (the aria pair and the sentence, per control) because E23
+ * counts a string written at a JSX attribute as copy and this route's budget is 0: the ids already
+ * live on each `label` as `data-field`, which E23 exempts, so the rest of the file agrees with that
+ * one place instead of spelling `"initiator-first"` a third time.
+ */
+export const STAGE_ONE_FIELDS = {
+  title: "title",
+  initiatorFirst: "initiator-first",
+  initiatorLast: "initiator-last",
+  counterpartyFirst: "counterparty-first",
+  email: "email",
+} as const;
+
+/**
+ * The sentence a refused field points at, under its own control (#975 D8).
+ *
+ * `<span>` and not `<p>`: the control's `<label>` is the wrapper here, and a `label` may only hold
+ * phrasing content — a `<p>` inside it is invalid markup that browsers re-parent.
+ */
+function FieldProblem({
+  field,
+  problems,
+}: {
+  field: string;
+  problems: Readonly<Record<string, string>>;
+}) {
+  const sentence = problems[field];
+  // An empty string means the fixture lost the row: the press is still refused, nothing is drawn.
+  if (sentence === undefined || sentence === "") return null;
+  return (
+    <span
+      id={problemId(field)}
+      role="alert"
+      className="block text-xs font-medium text-amber-700 dark:text-amber-300"
+    >
+      {sentence}
+    </span>
+  );
+}
+
+/** The `id` a field's sentence carries, so the control can describe itself with it. */
+function problemId(field: string): string {
+  return `${field}-problem`;
+}
+
+/**
+ * The aria pair an invalid control carries — empty when nothing refused it, so a clean stage draws
+ * no `aria-invalid` at all rather than `"false"` on every field.
+ */
+function invalidProps(
+  field: string,
+  problems: Readonly<Record<string, string>>,
+): { "aria-describedby"?: string; "aria-invalid"?: true } {
+  if (problems[field] === undefined) return {};
+  return { "aria-describedby": problemId(field), "aria-invalid": true };
+}
+
 export function StageOneFields({
   copy,
   values,
   descriptionDefault,
+  problems = {},
 }: {
   copy: StageOneCopy;
   values: StageOneValues;
   /** The template's own summary — the description's default, never a second fixture. */
   descriptionDefault: string;
+  /**
+   * The refused fields, keyed by `data-field` id, each with the sentence the fixture composes for
+   * it. Absent on arrival: the stage is quiet until somebody presses the advance.
+   */
+  problems?: Readonly<Record<string, string>>;
 }) {
   const [names, setNames] = useState({
     initiatorFirst: values.initiatorFirst,
@@ -142,12 +220,14 @@ export function StageOneFields({
           name="title"
           value={shownTitle}
           required
+          {...invalidProps(STAGE_ONE_FIELDS.title, problems)}
           onChange={(event) => {
             setTitle(event.target.value);
             setTitleTouched(true);
           }}
           className={INPUT_CLASSES}
         />
+        <FieldProblem field={STAGE_ONE_FIELDS.title} problems={problems} />
         <span className={HELP_CLASSES}>{copy.titleHelp}</span>
       </label>
 
@@ -168,9 +248,11 @@ export function StageOneFields({
               name="initiatorFirst"
               value={names.initiatorFirst}
               required
+              {...invalidProps(STAGE_ONE_FIELDS.initiatorFirst, problems)}
               onChange={setPart("initiatorFirst")}
               className={INPUT_CLASSES}
             />
+            <FieldProblem field={STAGE_ONE_FIELDS.initiatorFirst} problems={problems} />
           </label>
           <label
             className="grid min-w-0 gap-1 text-sm"
@@ -187,9 +269,11 @@ export function StageOneFields({
               value={names.initiatorLast}
               placeholder={copy.initiatorLastPlaceholder}
               required
+              {...invalidProps(STAGE_ONE_FIELDS.initiatorLast, problems)}
               onChange={setPart("initiatorLast")}
               className={INPUT_CLASSES}
             />
+            <FieldProblem field={STAGE_ONE_FIELDS.initiatorLast} problems={problems} />
           </label>
         </div>
         <span className={HELP_CLASSES}>{copy.initiatorHelp}</span>
@@ -213,9 +297,11 @@ export function StageOneFields({
               value={names.counterpartyFirst}
               placeholder={copy.counterpartyFirstPlaceholder}
               required
+              {...invalidProps(STAGE_ONE_FIELDS.counterpartyFirst, problems)}
               onChange={setPart("counterpartyFirst")}
               className={INPUT_CLASSES}
             />
+            <FieldProblem field={STAGE_ONE_FIELDS.counterpartyFirst} problems={problems} />
           </label>
           <label
             className="grid min-w-0 gap-1 text-sm"
@@ -249,8 +335,10 @@ export function StageOneFields({
           defaultValue={values.email}
           placeholder={copy.emailPlaceholder}
           required
+          {...invalidProps(STAGE_ONE_FIELDS.email, problems)}
           className={INPUT_CLASSES}
         />
+        <FieldProblem field={STAGE_ONE_FIELDS.email} problems={problems} />
       </label>
 
       {/* 5 — the description closes the form, full width, defaulted from the template. */}

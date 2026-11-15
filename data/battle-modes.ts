@@ -20,7 +20,7 @@
  * `playersMin`/`playersMax` moved here from `data/metrics.ts`, where they had been
  * `battle.group.minPlayers`/`maxPlayers`: a metric snapshot is a rendered *quantity*,
  * and a roster bound is a domain fact the mode owns. `metricTable` no longer carries
- * them and E25's range check now reads the record (see `docs/P2-INVENTORY.md`, WU-10).
+ * them and E25's range check now reads the record (see `docs/operations/history/P2-INVENTORY.md`, WU-10).
  */
 import {
   zBattleModes,

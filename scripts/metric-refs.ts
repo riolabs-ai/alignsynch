@@ -5,7 +5,7 @@
  * `+4 from last month`, `500 Coins`, `Save 20%` all *resolve* — there is no route to 404, no
  * asset to miss, no schema key to reject — so every other check stayed green while 40 nodes
  * of the dashboard, the reward table and the affiliate page asserted numbers nothing in
- * `data/` produced (issue #49, `docs/P2-INVENTORY.md` WU-4). E10 proved a link works; this
+ * `data/` produced (issue #49, `docs/operations/history/P2-INVENTORY.md` WU-4). E10 proved a link works; this
  * proves a number is owned.
  *
  * Deliberately limited to what is *rendered*:
@@ -39,7 +39,7 @@
  *     visible instead of being quietly folded into the metric rule.
  *   - **Durations** — `5 seconds`, `Last 30 days`, `4m 12s`, `28 days left`. A duration is a
  *     form option or a window label, and the units spell that: `seconds|minutes|hours|days|
- *     weeks|months|years`. `docs/DATA-MODEL.md` owns durations; E22 does not.
+ *     weeks|months|years`. `docs/reference/data-model.md` owns durations; E22 does not.
  *   - **Form enumerations** — a node inside `<SelectItem>`/`<option>` lists what a control
  *     *accepts* (`10 seconds`, `20 questions`), it does not assert a product fact. The option
  *     set belongs to the control, and a record stored in the component is E21's failure.

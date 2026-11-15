@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Specifications index · prev [Account deletion](../ACCOUNT-DELETION-SPEC.md) · next [Template catalogue](catalogue.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Specifications index · prev [Prototype wiring](prototype-wiring.md) · next [AS2 redesign — asset sources and credits](spec-as2-style-home-redesign/ASSET-SOURCES.md)
 
 <!-- docs-nav:end -->
 
@@ -11,17 +11,18 @@ These are research specifications produced during a drift review of the two docu
 question, surveys what the accessibility, design-system and survey-methodology literature says about
 it, states a recommendation, and records the alternatives that were rejected and why. **They are
 recommendations, not decisions already taken** — nothing here is built, and where a choice carries a
-product or schema consequence the decision still belongs to §4 of `docs/SPEC-DRIFT.md`.
+product or schema consequence the decision still belongs to §4 of `docs/operations/spec-drift.md`.
 
-| file                                             | one line                                                                                                                 |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| [`ux-input.md`](ux-input.md)                     | The answer input: a five-segment radio group over the spec's slider — accessibility, cost and survey-method evidence.    |
-| [`ux-report.md`](ux-report.md)                   | The Gap report: three named groups per Aspect, verdict summary first, no composite "alignment score".                    |
-| [`ux-stages.md`](ux-stages.md)                   | The stage display: no stepper — one derived status sentence, with Aligned shown as the report's verdict.                 |
-| [`flow-reinvite.md`](flow-reinvite.md)           | Expired invitations: one action, re-invite (revoke-and-replace), with no void and no delete.                             |
-| [`flow-emails.md`](flow-emails.md)               | The email lifecycle: the two senders that exist (invitation, unlock) are the complete set; ship no new types.            |
-| [`catalogue.md`](catalogue.md)                   | The template catalogue: six entries — five playable, one blank starting point — in three categories, with no search.     |
-| [`maintenance-fields.md`](maintenance-fields.md) | Relationship maintenance fields: keep today's create form, add one optional relationship name pre-filled from the title. |
+| file                                               | one line                                                                                                                               |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [`ux-defect-inventory.md`](ux-defect-inventory.md) | **The record, not a recommendation:** the 16 UX defects measured for #975, each mapped to the commit that shipped it or to `uncarded`. |
+| [`ux-input.md`](ux-input.md)                       | The answer input: a five-segment radio group over the spec's slider — accessibility, cost and survey-method evidence.                  |
+| [`ux-report.md`](ux-report.md)                     | The Gap report: three named groups per Aspect, verdict summary first, no composite "alignment score".                                  |
+| [`ux-stages.md`](ux-stages.md)                     | The stage display: no stepper — one derived status sentence, with Aligned shown as the report's verdict.                               |
+| [`flow-reinvite.md`](flow-reinvite.md)             | Expired invitations: one action, re-invite (revoke-and-replace), with no void and no delete.                                           |
+| [`flow-emails.md`](flow-emails.md)                 | The email lifecycle: the two senders that exist (invitation, unlock) are the complete set; ship no new types.                          |
+| [`catalogue.md`](catalogue.md)                     | The template catalogue: six entries — five playable, one blank starting point — in three categories, with no search.                   |
+| [`maintenance-fields.md`](maintenance-fields.md)   | Relationship maintenance fields: keep today's create form, add one optional relationship name pre-filled from the title.               |
 
 ## Design and audience handoffs
 
@@ -51,6 +52,6 @@ reason — a handbook is read, not cloned.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Product** › Specifications index · prev [Account deletion](../ACCOUNT-DELETION-SPEC.md) · next [Template catalogue](catalogue.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Specifications index · prev [Prototype wiring](prototype-wiring.md) · next [AS2 redesign — asset sources and credits](spec-as2-style-home-redesign/ASSET-SOURCES.md)
 
 <!-- docs-nav:end -->

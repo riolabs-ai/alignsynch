@@ -64,12 +64,12 @@ that refusal by working detached in the shared checkout.
 
 | Command                          | Verified             | Notes                                                                                                                  |
 | -------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/REPO-LAYERS.md)                                               |
+| `bash scripts/verify.sh`         | exit 0, 1–95 s       | the gate; depth follows the diff, see [REPO-LAYERS](docs/operations/repo-layers.md)                                    |
 | `pnpm install --frozen-lockfile` | exit 0, ~0.1 s warm  | pnpm `12.16.1`; CI installs the same way                                                                               |
 | `pnpm typecheck`                 | exit 0, 4–5 s        | `next typegen && tsc --noEmit`, `strict: true`                                                                         |
 | `pnpm data:check`                | exit 0, 5–6 s        | tsc → 171 `node:test` cases → validator; prints record counts                                                          |
 | `pnpm gen`                       | exit 0, ~0.1 s       | `node scripts/gen-fixtures.mjs`; bulk fixtures → `data/generated/` (gitignored, validated by `data:check`)             |
-| `pnpm bundles <cmd>`             | exit 0, ~4 s         | `scripts/bundles.ts`; export/import a template or the demo dataset (#147) — see [BUNDLES](docs/BUNDLES.md)             |
+| `pnpm bundles <cmd>`             | exit 0, ~4 s         | `scripts/bundles.ts`; export/import a template or the demo dataset (#147) — see [BUNDLES](docs/guides/bundles.md)      |
 | `pnpm glossary`                  | exit 0, ~0.1 s       | `node scripts/gen-glossary.mjs`; writes `docs/glossary.md` from the schema comments — never edit the page (#138)       |
 | `pnpm glossary:check`            | exit 0, ~0.1 s       | the read-only form the gate runs in every lane; exit 1 plus the first difference when the page is stale                |
 | `pnpm db:migrate`                | exit 0, ~1 s         | `node scripts/db-migrate.mjs`; applies `db/migrations/*.sql` in order via `schema_migrations`; wants the unpooled URL  |
@@ -117,7 +117,7 @@ schema comments, so a stale page is drift no typecheck can see, and the three fi
 `release:check` sits beside it for the same reason: `CHANGELOG.md` is generated from the
 commits and is also the published release notes, so an entry that names a version
 `package.json` does not carry, or that has lost its Known limits block, is drift in a document
-people read. The runbook is [`docs/RELEASING.md`](docs/RELEASING.md).
+people read. The runbook is [`docs/operations/releasing.md`](docs/operations/releasing.md).
 
 The gate costs what the change costs: it prints `lane=docs|content|config|code` and drops
 the steps that cannot see a file in the diff — a `docs/`-only change is ~2 s, a
@@ -125,7 +125,7 @@ the steps that cannot see a file in the diff — a `docs/`-only change is ~2 s, 
 pay for the build. A lane is depth, never a different check, and CI's job name is
 unchanged. Force the full gate with `GATE_LANE=full bash scripts/verify.sh` (after a
 dependency bump, a `tsconfig` change, or any diff you do not trust). Layer table,
-classifier and build semaphore: **`docs/REPO-LAYERS.md`**.
+classifier and build semaphore: **`docs/operations/repo-layers.md`**.
 
 CI (`.github/workflows/ci.yml`) runs **only** `bash scripts/verify.sh`. Never add a check
 step to the YAML — a check that lives only in CI is a guaranteed red push, and a check
@@ -240,7 +240,7 @@ process bug.
   E0–E21 plus W1–W6 warnings. `scripts/__tests__/data-model.test.ts` is the negative-case suite and
   `scripts/__tests__/promotion-invariants.test.ts` is the negative-case suite for E14–E17/W6,
   and `scripts/__tests__/explore-curation.test.ts` pins which authored tab block each explore
-  shelf owns (the 3-vs-6 decision in `docs/p1-migration/MIGRATION.md`).
+  shelf owns (the 3-vs-6 decision in `docs/operations/history/p1-migration/MIGRATION.md`).
   E10 is the one that reads the UI tree: it extracts every literal `href`,
   `router.push`/`replace`/`redirect` in `components/` + `app/` and every `public/` asset literal,
   and fails on a route the manifest cannot match or a file `public/` does not have.
@@ -269,7 +269,7 @@ process bug.
   bundle is committed at `data/bundles/demo-dataset.alignsynch.json`; an import writes the tenant
   store to `data/generated/assessments.json` (gitignored, the active set when present). Refusals
   are `B1`–`B6`, and `data:check` E32 keeps the committed bundle equal to the fixtures. Read
-  `docs/BUNDLES.md` before changing either.
+  `docs/guides/bundles.md` before changing either.
 - `app/(mainlayout)/**` — every product page behind the header/sidebar shell; `app/(auth)/**` —
   login/register, no shell; `app/(marketing)/**` — the public surfaces (`/`, `/welcome`,
   `/pricing`, `/support`, `/terms`, `/privacy`), behind a marketing header and footer and **never**
@@ -279,7 +279,7 @@ process bug.
   `my-quizzes/[id]/{statistics}`, `categories/[slug]`, `news/[slug]`, `creator-tips/[slug]`,
   `profile/[username]`, `support/articles/[slug]`, `tournaments/[id]`.
 - `components/<feature>/` — one directory per feature; `components/ui/` is shadcn primitives.
-- `docs/p1-migration/{MIGRATION.md,ledger.json}` — what the P1 model changed, field by field.
+- `docs/operations/history/p1-migration/{MIGRATION.md,ledger.json}` — what the P1 model changed, field by field.
 - Generated, not part of the build: `.next/`, `.datacheck/`, `node_modules/`, `.migration/`.
 - `db/migrations/` — plain SQL, one file per migration; `lib/db/` — the `pg` pool
   (`client.ts`), the row→model mapping (`rows.ts`, pure and testable) and the assessment reads
@@ -344,7 +344,7 @@ if nothing fits, the generic version of a new surface, named generically and reg
 `templates: []` so the next expression reuses it. Nothing is deleted for being unused by the current
 brand — it is catalogued in `docs/ui-registry.md` with its `status` and its adoption cost. An AlignSynch
 noun in a component's name is the sign that question 3 was skipped. Full text:
-[`docs/TEMPLATE-DOCTRINE.md`](docs/TEMPLATE-DOCTRINE.md).
+[`docs/guides/template-doctrine.md`](docs/guides/template-doctrine.md).
 
 ## Pitfalls
 
@@ -401,7 +401,7 @@ noun in a component's name is the sign that question 3 was skipped. Full text:
   are the opposite way round from the pages that render them — the six-card tabs are
   `/explore/featured`'s, the three-card block is `/explore`'s. `explore-page/popular[3]` is not
   the fourth card of `/explore`. `explore-curation.test.ts` states the mapping and
-  `docs/p1-migration/MIGRATION.md` records the decision to keep `/explore` at three cards a tab.
+  `docs/operations/history/p1-migration/MIGRATION.md` records the decision to keep `/explore` at three cards a tab.
 - **`params` is a Promise in Next 16.** Every dynamic route must take
   `params: Promise<{ id: string }>` and unwrap it (`await params` in an `async` page, or
   `use(params)`); a synchronous `params.id` logs `params is a Promise and must be unwrapped with
@@ -439,7 +439,7 @@ noun in a component's name is the sign that question 3 was skipped. Full text:
   `publishedAt`; `W4` 32 — a prize with no window); every published quiz now carries its questions, a
   date and a reward window, so the census is empty and `W3`/`W5` were already 0. From here a non-zero
   `W` count is a regression, not the baseline: no date, question or window is invented to silence one,
-  and the record of what each repair changed is in `docs/p1-migration/MIGRATION.md`.
+  and the record of what each repair changed is in `docs/operations/history/p1-migration/MIGRATION.md`.
 - 221 lint warnings / 37 infos are the current baseline (`main` at `4d581704`), measured with
   `pnpm exec biome check 2>&1 | tail -3` — re-run it rather than trusting it, because a stale tree
   reports its own count and not `main`'s. Compare counts, not vibes: a new warning is a
@@ -527,16 +527,16 @@ Cards that depend on another card's output branch from that branch and open the 
 it, so the stack stays linear. Do not rebase or reorder someone else's open PR to get your
 own branch moving; land the parent first. `main` requires the `typecheck / lint / build`
 check through a repository **ruleset** (strict: branch must be up to date), so a red or stale
-head cannot merge — see `docs/GATE.md` for the evidence and for why the classic
+head cannot merge — see `docs/operations/gate.md` for the evidence and for why the classic
 `/branches/main/protection` endpoint returns 404 and must not be trusted.
 
 ## Numbers
 
-Baseline and how to re-measure: `docs/GATE.md` — that file is the one home for these numbers,
+Baseline and how to re-measure: `docs/operations/gate.md` — that file is the one home for these numbers,
 because a figure copied here has already gone stale once. It carries the current window, the
 command that produced each figure, and the history rows; read it rather than a copy. The budget
 those figures are read against: **CI under 4 min holds**, and the local ceiling is the one
-`docs/ITERATION.md` states — `pnpm check:fast` for the inner loop, the full gate as the boundary
+`docs/operations/iteration.md` states — `pnpm check:fast` for the inner loop, the full gate as the boundary
 at **≤ 3 min**. Do not make a step optional to buy time.
 
 ## Docs
@@ -548,10 +548,10 @@ in that manifest then `pnpm docs:nav`, and `pnpm docs:check` (a gate step in eve
 name when a page is missing from the hub, listed twice, has no nav block, or carries a link or image
 that does not resolve.
 
-`docs/ENV-SPEC.md` is the environment, team, integration and P1–P4 gate spec, and carries the P1
+`docs/reference/env-spec.md` is the environment, team, integration and P1–P4 gate spec, and carries the P1
 completion record and QA evidence. Read it before adding tooling or a dependency.
 
-`docs/ORCHESTRATION.md` is the orchestrator's behavioural contract: decisions arrive as `clarify`
+`docs/operations/orchestration.md` is the orchestrator's behavioural contract: decisions arrive as `clarify`
 forms (never prose option lists), blocked cards carry the `❓ DECISION REQUIRED` block, block kinds
 are declared, the board is re-carded when it drains, and it records the traps that have already cost
 this repo a day — a PR URL in a kanban comment freezes that card for 24 h, after a reboot every

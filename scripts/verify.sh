@@ -11,7 +11,7 @@
 # Usage:   bash scripts/verify.sh
 #          GATE_LANE=full bash scripts/verify.sh   # force the code lane
 #
-# LANES — the gate costs what the change costs (docs/REPO-LAYERS.md)
+# LANES — the gate costs what the change costs (docs/operations/repo-layers.md)
 #
 # One job, one script, four depths. The lane is resolved once, up front, from
 # the files that differ from $GATE_REF (default origin/main), highest wins:
@@ -60,16 +60,49 @@
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
-# logged "no origin/main to diff against — full gate (conservative)"). The
-# fallback is unchanged and stays conservative: no ref, or an empty diff — a
-# push to main, where HEAD *is* origin/main — means the full gate, because "I
-# could not tell what changed" is never evidence that a change is cheap.
+# logged "no origin/main to diff against — full gate (conservative)"). A
+# worktree pays the same way now: gate-lanes.sh resolves the base itself before
+# classifying — the local ref, else one bounded `git fetch --no-tags origin main`
+# (no checkout, no pull, no branch — see scripts/gate-lanes.sh), and the lane
+# line names the sha and the path that resolved it: `base origin/main@abc1234
+# (local ref)` / `(fetched in 0.4s)`. The fallback is unchanged and stays
+# conservative: no ref, no merge base, or an empty diff — a push to main, where
+# HEAD *is* origin/main — means the full gate, because "I could not tell what
+# changed" is never evidence that a change is cheap. A failed fetch is a reason
+# to run MORE gate, never a reason to fail it.
 #
-# BUILD SEMAPHORE — the build is 90 % of the code lane, and eight workers each
-# compiling 34 routes took load average from ~6 to 39.5 on this 8-core box,
-# which is why the same gate measured 145 s here and 50–71 s on CI. `next build`
-# now runs inside one of QUIZHUB_BUILD_SLOTS (default 2) flock slots under
-# ~/.cache/quizhub/, and the step prints whether it waited.
+# GATE SLOTS — one CPU budget for the whole heavy section, not just the build.
+# `next typegen`, `tsc --noEmit`, `biome check`, `biome format --check`, the `data:check`
+# compile, `parity` and `next build` are the phases that saturate the box. The slot used to
+# wrap `next build` alone — one step out of nineteen — so two gate runs in flight measured
+# **load 20.7 / 15.9 / 13.7** on this 8-core host with every one of those phases running 5–10x
+# its documented cost, workers heartbeating for 55 min without progress, and cards reclaimed
+# while their process kept compiling.
+#
+# One slot is now taken at the first heavy step and held for the whole section — not
+# re-acquired per step, because a run that released after `tsc` and re-acquired for `next build`
+# would interleave with another run's build, which is the interleaving the slot exists to
+# prevent. The section ends when the run finishes its build (or fails — the EXIT trap hands the
+# slot back either way), and every wait is printed with the seconds it cost.
+#
+# The lock *files* keep their old names (`build.lock.N`) on purpose: a gate running from an
+# older tree still holds them during its `next build`, so a mixed fleet budgets one set of slots
+# rather than two that cannot see each other.
+#
+# SHARED BUILD CACHE — the slot buys ordering, not warmth, so the cache is shared
+# too (`scripts/build-cache.mjs`). `.next` is per-worktree, so every worktree used
+# to start `next build` with an empty Turbopack cache and recompile all 34 routes:
+# 70 worktrees held 64 separate caches totalling 27 GB. While the slot is held, the
+# step links `.next/cache` to `~/.cache/quizhub/next/<key>/` and unlinks it after,
+# so a worktree with nothing built yet reads what the last build left there — and a
+# dev server never opens a store a build holds. `pnpm typecheck` does the same for
+# its `tsc` buildinfo. The key is a hash of the `next` version, the `typescript`
+# version, the Node major and the `pnpm-lock.yaml` digest, so a bump lands on a
+# different directory and misses; every directory carries a `.cache-key` sentinel
+# and one that does not match is deleted, never read. Slot 1 uses the key's own
+# directory and the other slots use siblings, because the store is a single-writer
+# RocksDB and a second concurrent build on it fails rather than merges.
+# `node scripts/build-cache.mjs status` prints the key, the paths and their sizes.
 #
 # TEST RUNNERS — `pnpm test` is `vitest run` over `tests/**/*.test.ts` (#8): app-side
 # units that import `lib/quiz-cards.ts` and `data/searchdata.ts` through the `@/` alias.
@@ -98,9 +131,12 @@
 #   lane=content  16–30 s   (n=3: 15.6 / 27.9 / 30.4) — typecheck + data:check, no build
 #   lane=config   20–31 s   (n=4: 20.5 / 21.0 / 31.2 / 31.3) — content depth + bash -n
 #   lane=code     65 s warm .next (n=1), 82 s cold (n=1), and 95–150 s when a
-#                 sibling build holds the other slot (n=2: 94.5 / 147.5 — the
-#                 difference is the lock wait, printed by the build step).
+#                 sibling run holds the other slot (n=2: 94.5 / 147.5 — the
+#                 difference is the lock wait, printed by the gate-slot step).
 #                 Target: p50 < 90 s. The flat gate was 145 s under the same load.
+#                 The gate slot now covers the whole heavy section rather than the
+#                 build alone; the measured table and why the default is 3 are in
+#                 docs/operations/repo-layers.md ("The gate slot").
 #
 # If a lane gets slower than its row, measure before adding a step: the build is
 # the only expensive one, and it is the only one a cheaper lane is allowed to
@@ -268,10 +304,11 @@ check_shell_syntax() {
 }
 
 # Whitespace errors in what this branch adds (and in the working tree), the way
-# `git am` / a reviewer would see them.
+# `git am` / a reviewer would see them. The base is the one `resolve_lane` already
+# resolved (cached for the run) — a second resolution here would be a second fetch.
 check_whitespace() {
-  local ref="${GATE_REF:-origin/main}" rc=0
-  if git rev-parse --verify --quiet "${ref}^{commit}" >/dev/null 2>&1; then
+  local ref="${GATE_BASE_REF:-}" rc=0
+  if [ -n "$ref" ]; then
     git diff --check "${ref}...HEAD" || rc=$?
   fi
   git diff --check HEAD || rc=$?
@@ -279,68 +316,120 @@ check_whitespace() {
   return "$rc"
 }
 
-# --- next build, at most QUIZHUB_BUILD_SLOTS at a time ------------------------
-BUILD_LOCK_DIR="${QUIZHUB_BUILD_LOCK_DIR:-$HOME/.cache/quizhub}"
-BUILD_SLOTS="${QUIZHUB_BUILD_SLOTS:-2}"
-BUILD_LOCK_WAIT="${QUIZHUB_BUILD_LOCK_WAIT:-1800}" # seconds before giving up
-BUILD_FD=""
+# --- gate slots: one CPU budget for the whole heavy section -------------------
+# Taken once, at the first heavy step, and held to the end of the build. See the header for why
+# the section is not re-acquired per step and why the lock files kept their old names.
+GATE_LOCK_DIR="${QUIZHUB_GATE_LOCK_DIR:-${QUIZHUB_BUILD_LOCK_DIR:-$HOME/.cache/quizhub}}"
+# Default 3, not 2: measured on this 8-core host (docs/operations/repo-layers.md carries the table). Two slots
+# cost a whole extra wave the moment a third run arrives — 3 runs at 2 slots took 315 s against
+# 200 s with no cap — while three slots never queue at the concurrency the fleet reaches and beat
+# the uncapped gate at five: 333 s against 358 s, peak 1-min load 29.9 against 41.3.
+GATE_SLOTS="${QUIZHUB_GATE_SLOTS:-${QUIZHUB_BUILD_SLOTS:-3}}"
+GATE_LOCK_WAIT="${QUIZHUB_GATE_LOCK_WAIT:-${QUIZHUB_BUILD_LOCK_WAIT:-1800}}" # seconds before giving up
+GATE_FD=""
+GATE_SLOT=""
+GATE_WAIT_S=0
+GATE_HOLD_0=0
 
-build_slot_try() { # $1 = slot number; on success sets BUILD_FD
+gate_slot_try() { # $1 = slot number; on success sets GATE_FD/GATE_SLOT
   local slot="$1" fd
   fd=$((40 + slot))
-  eval "exec ${fd}>>\"${BUILD_LOCK_DIR}/build.lock.${slot}\""
+  eval "exec ${fd}>>\"${GATE_LOCK_DIR}/build.lock.${slot}\""
   if flock -n -x "$fd" 2>/dev/null; then
-    BUILD_FD="$fd"
+    GATE_FD="$fd"
+    GATE_SLOT="$slot"
     return 0
   fi
   eval "exec ${fd}>&-"
   return 1
 }
 
-build_release() {
-  [ -n "$BUILD_FD" ] || return 0
-  eval "exec ${BUILD_FD}>&-" 2>/dev/null || true
-  BUILD_FD=""
-}
+gate_slot_acquire() {
+  [ -z "$GATE_FD" ] || return 0 # already held: one slot for the whole section
+  case "$GATE_SLOTS" in
+    '' | *[!0-9]*)
+      printf '✗ gate slot: the slot count must be a positive integer, got "%s"\n' "$GATE_SLOTS" >&2
+      return 1
+      ;;
+  esac
+  if [ "$GATE_SLOTS" -lt 1 ] || [ "$GATE_SLOTS" -gt 16 ]; then
+    printf '✗ gate slot: %s slot(s) is outside 1..16\n' "$GATE_SLOTS" >&2
+    return 1
+  fi
+  mkdir -p "$GATE_LOCK_DIR"
 
-build_with_lock() {
-  local waited=0 slot deadline rc
-  mkdir -p "$BUILD_LOCK_DIR"
-
-  for slot in $(seq 1 "$BUILD_SLOTS"); do
-    if build_slot_try "$slot"; then
-      printf '  build lock: slot %s/%s free, building now (%s/build.lock.%s)\n' \
-        "$slot" "$BUILD_SLOTS" "$BUILD_LOCK_DIR" "$slot"
-      break
+  local slot start waited note_at
+  for slot in $(seq 1 "$GATE_SLOTS"); do
+    if gate_slot_try "$slot"; then
+      GATE_HOLD_0="$(date +%s)"
+      printf '  gate slot: slot %s/%s free, heavy section starts now (%s/build.lock.%s)\n' \
+        "$slot" "$GATE_SLOTS" "$GATE_LOCK_DIR" "$slot"
+      return 0
     fi
   done
 
-  if [ -z "$BUILD_FD" ]; then
-    waited=1
-    printf '%s  build lock: all %s slot(s) busy — waiting (this is the queue, not a failure)%s\n' \
-      "$C_YEL" "$BUILD_SLOTS" "$C_OFF"
-    deadline=$(($(date +%s) + BUILD_LOCK_WAIT))
-    while [ -z "$BUILD_FD" ]; do
-      if [ "$(date +%s)" -ge "$deadline" ]; then
-        printf '✗ build lock: waited %ss for a slot, giving up\n' "$BUILD_LOCK_WAIT" >&2
-        return 1
+  start="$(date +%s)"
+  note_at="$start"
+  printf '%s  gate slot: all %s slot(s) busy — waiting (this is the queue, not a failure)%s\n' \
+    "$C_YEL" "$GATE_SLOTS" "$C_OFF"
+  while :; do
+    waited=$(($(date +%s) - start))
+    if [ "$waited" -ge "$GATE_LOCK_WAIT" ]; then
+      printf '✗ gate slot: waited %ss for a slot, giving up\n' "$GATE_LOCK_WAIT" >&2
+      return 1
+    fi
+    sleep 1
+    for slot in $(seq 1 "$GATE_SLOTS"); do
+      if gate_slot_try "$slot"; then
+        GATE_WAIT_S=$(($(date +%s) - start))
+        GATE_HOLD_0="$(date +%s)"
+        printf '  gate slot: waited %ss, now holds slot %s/%s — heavy section starts\n' \
+          "$GATE_WAIT_S" "$slot" "$GATE_SLOTS"
+        return 0
       fi
-      sleep 1
-      for slot in $(seq 1 "$BUILD_SLOTS"); do
-        if build_slot_try "$slot"; then break; fi
-      done
     done
-    printf '  build lock: waited, now holds slot %s/%s (waited lock)\n' "$slot" "$BUILD_SLOTS"
-  fi
+    # A wait long enough to matter says so while it happens, not only when it ends.
+    if [ $(($(date +%s) - note_at)) -ge 15 ]; then
+      note_at="$(date +%s)"
+      printf '%s  gate slot: still waiting (%ss) — all %s slot(s) held%s\n' \
+        "$C_DIM" "$((note_at - start))" "$GATE_SLOTS" "$C_OFF"
+    fi
+  done
+}
 
+gate_slot_release() { # idempotent: explicit release at the end of the section, trap on failure
+  local held
+  [ -n "$GATE_FD" ] || return 0
+  # A gate that stopped anywhere after the typecheck link must not leave the tree's
+  # `.next/cache` pointing at the shared store: a dev server would then open the
+  # store a later gate build holds. Idempotent — nothing is linked on the normal path.
+  node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
+  eval "exec ${GATE_FD}>&-" 2>/dev/null || true
+  held=$(( $(date +%s) - GATE_HOLD_0 ))
+  printf '  gate slot: released slot %s/%s (held %ss, waited %ss)\n' \
+    "$GATE_SLOT" "$GATE_SLOTS" "$held" "$GATE_WAIT_S"
+  GATE_FD=""
+  GATE_SLOT=""
+}
+
+build_in_slot() { # the slot is already held by the section; this is a guard, not a second lock
+  local rc
+  gate_slot_acquire || return 1
+  # The shared cache is keyed per slot (scripts/build-cache.mjs): the store is a
+  # single-writer RocksDB, so the slot that is held decides which directory it opens.
+  export QUIZHUB_BUILD_SLOT="$GATE_SLOT"
+  node scripts/build-cache.mjs link
   set +e
   pnpm build
   rc=$?
   set -e
-  build_release
-  [ "$waited" -eq 1 ] && printf '  build lock: released slot after %s\n' "$([ "$rc" -eq 0 ] && echo green || echo failure)"
+  # A dev server keeps its own cache under the same path and must never open the
+  # shared store a build holds; put the tree's own empty directory back.
+  node scripts/build-cache.mjs unlink || true
   return "$rc"
 }
+
+trap gate_slot_release EXIT
 
 # --- run ---------------------------------------------------------------------
 preflight
@@ -352,6 +441,22 @@ fi
 
 printf '%s%s lane=%s%s %s(%s — %s)%s\n' "$C_BOLD" "$C_CYN" "$LANE" "$C_OFF" \
   "$C_DIM" "$(lane_paths "$LANE")" "$LANE_REASON" "$C_OFF"
+
+# WHICH BASE, AND HOW IT GOT HERE. The lane line above names the sha; this line
+# names the path that resolved it whenever the answer was not simply "it was
+# already here" — a silent fetch, or a silent fallback, is the failure mode this
+# resolution exists to remove.
+case "${GATE_BASE_HOW:-}" in
+  fetched)
+    printf '%s  base: %s was not in this clone — %s%s\n' \
+      "$C_DIM" "${GATE_REF:-origin/main}" "$(gate_base_label)" "$C_OFF"
+    ;;
+  '')
+    printf '%s! base: %s — full gate (conservative)%s\n' \
+      "$C_YEL" "${GATE_BASE_WHY:-no base ref}" "$C_OFF" >&2
+    ;;
+esac
+
 if [ "$LANE" = "code" ] && [ -n "$LANE_FILES" ]; then
   printf '%s  deepest match: %s%s\n' "$C_DIM" \
     "$(printf '%s\n' "$LANE_FILES" | while IFS= read -r f; do
@@ -439,6 +544,73 @@ else
   skip_step "docs:check" "no docs:check script in package.json"
 fi
 
+# Markdown style (#937). `docs/` is 142 pages and nothing enforced their shape: Biome formats them
+# (wrapping, table padding) but a fence with no language tag, an issue number at the start of a line
+# GitHub renders as an `<h1>`, or a `#620`-style heading that swallowed a sentence all stayed green.
+# `pnpm md:check` is `markdownlint-cli2` (the rules in `.markdownlint-cli2.jsonc`, none of them a
+# line-length rule — paragraphs are never re-wrapped) plus `scripts/md-style.mjs --check`, the two
+# rewrites no linter can autofix. It runs in **every lane beside `docs:check`**, not only in the
+# content lane: a formatting defect lands in a `docs/**` diff, which classifies as the docs lane,
+# and a step that only ran for `content/**` would be green over exactly the change it exists to
+# catch. Measured on this host: 106 files linted in 4.8–9.6 s (markdownlint-cli2, a fresh process each
+# run and 8–19 MB of dependencies to resolve) plus 0.15 s for the codemod — the docs lane is the one
+# that pays it most, and it is still seconds, not the build.
+if has_script "md:check"; then
+  run_step "md:check (markdownlint-cli2 + md-style: fences, escapes, alerts)" pnpm md:check || fail
+else
+  skip_step "md:check" "no md:check script in package.json"
+fi
+
+# The email bodies. `content/email-bodies.md` is where every template's prose is written and
+# `lib/email/bodies.generated.ts` is what the build imports, so a body edited without regenerating
+# — or a template with no section — is drift no typecheck can see: the type is a string either way.
+# Same placement as the glossary step and for the same reason: the markdown is content, the
+# generator is scripts, the generated module is lib, and those three paths classify into three
+# different lanes. It also fails by name on a body that still carries the retired marker, an orphan
+# section, a duplicate id and an undeclared placeholder. ~0.4 s.
+if has_script "email:bodies:check"; then
+  run_step "email:bodies (content/email-bodies.md generates lib/email/bodies.generated.ts)" pnpm email:bodies:check || fail
+else
+  skip_step "email:bodies" "no email:bodies:check script in package.json"
+fi
+
+# The release atlas (#945): every route `data/pages/budget.ts` registers has a row in the current
+# version's `docs/qa-atlas/<version>/manifest.json`, every claimed status agrees with the boundary
+# table (`tests/parity/boundary.ts`), every thumbnail the manifest points at exists, and the atlas
+# directory stays inside its 5 MB budget. **Static on purpose** — no browser, no connection, nothing
+# from `lib/db/**` — because the capture needs a server and the demo branch's rows, which CI has not
+# got, while the *claim* that every route was captured is exactly what a gate can hold. In every lane
+# for the fifth time and the same reason as the steps above: the registry is `data/`, the boundary is
+# `tests/`, the generator is `scripts/`, the manifest is `docs/`, and a lane that skipped it would be
+# green over a stale atlas. ~0.2 s. A route the manifest does not carry fails **by route name**.
+if has_script "qa:atlas:check"; then
+  run_step "qa:atlas:check (the registry and the atlas manifest agree)" pnpm qa:atlas:check || fail
+else
+  skip_step "qa:atlas:check" "no qa:atlas:check script in package.json"
+fi
+
+# The recorded demo walk (#898). `docs/qa/demo-flow/transcript.json` + its 55 committed PNGs are
+# what `/how-it-works` replays, so a transcript that has drifted from the screenshots it names is a
+# page describing a walk nobody took — and nothing above can see it: the JSON parses, `typecheck`
+# never reads it and `data:check` has no invariant over it. **Static on purpose** — no browser, no
+# connection, nothing from `lib/db/**` — because `pnpm demo:flow` (and its `--check`) drive a live
+# demo instance through a real Chrome and seed the demo branch, which CI has not got. That makes the
+# transcript regenerable by a maintainer and not by CI; what a gate *can* hold is that the committed
+# transcript still describes its own screenshots, which is exactly what `--verify` asserts: the
+# schema the file declares about itself (`$doc.fields`), 1..n contiguous steps grouped in the order
+# `paths[]` carries, every `shot` present as a PNG whose IHDR matches its recorded `w`×`h` (the check
+# behind the missing/re-cropped image), and `paths[]`/`summary`/`findings` agreeing with the arrays
+# they count. It pins **no text**, so a re-record that moves routes or typed values stays green, and
+# it needs no other step to notice a driver that starts writing a field the schema does not declare.
+# In every lane for the sixth time and the same reason as the steps above: the transcript is
+# `docs/`, the driver is `scripts/`, the entry is `package.json` — three lanes, one check, and a
+# docs-only diff is exactly the one that can edit a transcript. ~0.2 s.
+if has_script "demo:flow:verify"; then
+  run_step "demo:flow:verify (the replay transcript still describes its own screenshots)" pnpm demo:flow:verify || fail
+else
+  skip_step "demo:flow:verify" "no demo:flow:verify script in package.json"
+fi
+
 # The rail's document (`data/nav-menu.json`, #861) is the Admin sidebar: the groups, their rows,
 # their order, their rung and their visibility. The schema is `content/nav.ts`; this step is the
 # other half — every href resolves in `content/routes.ts`, every icon is a `NavIconName`, every
@@ -457,10 +629,29 @@ if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi
 
+# The heavy section starts here and holds one gate slot to the end of the build: `next typegen`,
+# `tsc --noEmit`, `biome check`, `biome format --check`, the `data:check` compile, `parity` and
+# `next build` all saturate the box, and two runs of them at once cost more than they save.
+STEP="gate slot (heavy section)"
+gate_slot_acquire || fail
+
 if [ "$LANE" = "docs" ]; then
   run_step "whitespace (git diff --check)" check_whitespace || fail
 else
-  run_step "typecheck (next typegen && tsc --noEmit)" pnpm typecheck || fail
+  # The typecheck writes the **build's own** buildinfo, so `next build` later in this
+  # section resumes from the program this step already checked instead of repeating
+  # it: one pass, two verdicts, nothing skipped. That only works while `.next/cache`
+  # is linked at this slot (scripts/build-cache.mjs names the path), so the link is
+  # taken here and handed straight back — narrower than the build's own window, and
+  # restored on failure by the trap as well. Measured: 63.9 s → 16.1 s wall for the
+  # build's check, docs/operations/gate.md.
+  export QUIZHUB_BUILD_SLOT="$GATE_SLOT"
+  node scripts/build-cache.mjs link
+  if ! run_step "typecheck (next typegen && tsc --noEmit, shared with build)" pnpm typecheck; then
+    node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
+    fail
+  fi
+  node scripts/build-cache.mjs unlink >/dev/null 2>&1 || true
 fi
 
 # Biome formats markdown too, so this is the docs lane's real gate as well as
@@ -524,10 +715,14 @@ if [ "$LANE" != "docs" ]; then
 fi
 
 if [ "$LANE" = "code" ]; then
-  run_step "build (next build, flock slot)" build_with_lock || fail
+  run_step "build (next build)" build_in_slot || fail
 else
   skip_step "build (next build)" "lane=$LANE has no build step — CI re-runs the full gate on the merge head"
 fi
+
+# End of the heavy section: hand the slot back before the summary prints. The EXIT trap is the
+# same call, so a failing step releases it too — a crashed gate must not hold a slot.
+gate_slot_release
 
 STEP=""
 summary

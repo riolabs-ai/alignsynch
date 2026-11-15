@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
  * **The link is the exact tag, deliberately** — `releases/tag/v<version>`, never
  * `releases/latest`. If `package.json` says a version nobody tagged, the badge 404s, and that
  * is the point: a badge that always resolves but never names the deployed build identifies
- * nothing. `docs/RELEASING.md` makes tagging before deploying the release step's job.
+ * nothing. `docs/operations/releasing.md` makes tagging before deploying the release step's job.
  *
  * The words are fixtures, not literals (E23): each surface's `PageCopy` carries a `version`
  * section whose two items are the visible label and the accessible title, with `{version}`

@@ -125,6 +125,35 @@ export function loginCopyFor(copy: PageCopy, brandId: BrandId): PageCopy {
 }
 
 /**
+ * The hero's two tiles, for one brand, read out of the fixture that owns them.
+ *
+ * The band lives in `data/pages/login.ts` — `stats` on the quiz build, `stats-alignsynch` on the
+ * alignment one — and `loginCopyFor` already normalises whichever it read to the id `stats`. This
+ * is that lookup as a callable, for the one other surface that draws the same band: `/register`,
+ * which mounts the pair under its own headline since #971 (`components/auth/auth-hero-tiles.tsx`).
+ *
+ * It takes the copy as an **argument** rather than importing the fixture, for the reason this
+ * module's header gives: the views are handed resolved copy as a prop and never read a fixture
+ * themselves, and the caller is the server page that already imports `data/pages/login.ts`.
+ *
+ * The register fixture is deliberately untouched — `/register` draws the band `/login` draws, from
+ * one home, so a tile is reworded once. Nothing here writes a word: every string is the fixture's.
+ */
+export function heroTilesFor(copy: PageCopy, brandId: BrandId): PageCopySection {
+  switch (brandId) {
+    case "quizhub":
+      return sectionOf(copy, "stats");
+    case "alignsynch":
+      return sectionOf(copy, "stats-alignsynch");
+    default: {
+      // A brand added to `data/brand.ts` without a hero band lands here and fails `tsc`.
+      const unhandled: never = brandId;
+      throw new Error(`no hero tiles for brand ${String(unhandled)}`);
+    }
+  }
+}
+
+/**
  * `/register`'s copy for one brand.
  *
  * The quiz build's hero is the fixture's own page-level `heading`/`subtitle`, so that
