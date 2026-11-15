@@ -1,17 +1,17 @@
 /**
- * The restore request's body, proved without a Neon key or a network call (t_d39323cc).
+ * The restore request's body, proved without a Neon key or a network call (t_d39323cc, t_3dcd262b).
  *
  * The nightly `Demo reset` job died on
  * `POST …/branches/br-wispy-frog-b43188n8/restore answered HTTP 422 — Branch has children,
  * preserve_under_name is required`: the demo branch has children, and the API refuses a restore of
- * such a branch unless the body says where to preserve them. The two things that have to be right
- * are both pure and both here — the parameter is sent when (and only when) the branch has children,
- * and the name it carries is unique, safe and short enough for the API to accept.
+ * such a branch unless the body says where to preserve them.
  *
- * The "and only when" half is not tidiness: `preserve_under_name` creates a branch, so sending it
- * on every run would leave a preserved branch behind every night. The first restore moves the
- * children under the preserved branch, so the demo branch has none afterwards and the second run's
- * body is the plain one — which is the case asserted at the bottom.
+ * The body **always** carries the parameter, and that is the point of the cases below. The branch it
+ * creates holds the demo's pre-reset state, which is the only way back from a trusted-origin step
+ * that cannot converge after the restore has emptied the branch — so a body without it is a reset
+ * with no undo. The alternative the first version tried, creating that branch *before* the restore,
+ * is self-defeating: the branch it creates is a child of the branch being restored, so the restore is
+ * refused with the very `422` the parameter answers. The last case is that regression.
  */
 import { describe, expect, it } from "vitest";
 
@@ -55,28 +55,39 @@ describe("the restore request for the demo branch", () => {
     expect(plan.children.map((entry) => entry.name)).toEqual(["preview-x", "preview-y"]);
   });
 
-  it("sends the plain body when the branch has no children", () => {
+  it("preserves the pre-reset state even when the branch has no children", () => {
+    // Measured against the live project on a scratch branch: `200`, and the preserved branch
+    // appears. Without it, a run whose origin step fails has emptied a branch it cannot put back.
     const plan = restoreRequest(branch({ children: [] }), source, at);
 
-    // Exactly the pre-fix body: an unnecessary preserve_under_name would create a branch nightly.
-    expect(plan.body).toEqual({ source_branch_id: source.id });
-    expect(plan.body).not.toHaveProperty("preserve_under_name");
-    expect(plan.preservedUnder).toBeNull();
+    expect(plan.body).toEqual({
+      source_branch_id: source.id,
+      preserve_under_name: "demo-preserved-20261106-163146",
+    });
+    expect(plan.preservedUnder).toBe("demo-preserved-20261106-163146");
   });
 
   it("treats a branch with no children field the same as no children", () => {
     // `resolveBranch()` always sets it; a branch resolved elsewhere may not.
-    expect(restoreRequest(branch(), source, at).body).toEqual({ source_branch_id: source.id });
+    expect(restoreRequest(branch(), source, at).body).toHaveProperty("preserve_under_name");
   });
 
-  it("converges: after the children move, the next run's body is the plain one", () => {
-    // The API moves every child under the preserved branch, so the same target handed back with
-    // the children gone (which is what `resolveBranch()` re-resolves after the restore) needs no
-    // parameter at all — the repair happens once, not every night.
-    const afterRepair = restoreRequest(branch({ children: [] }), source, at);
+  it("keeps the parameter after a recovery point exists — the regression this fixes", () => {
+    // The defect: the reset created `demo-preserved-<stamp>` as a child of `demo` *before* the
+    // restore, then sent the body planned from the childless branch. The child it had just created
+    // made that body illegal (`422 — Branch has children, preserve_under_name is required`), so the
+    // reset could not run at all. Whatever the topology, the body has to carry the name.
+    const withRecoveryPoint = restoreRequest(
+      branch({
+        children: [{ id: "br-spring-field-b42ny50c", name: "demo-preserved-20261115-201312" }],
+      }),
+      source,
+      at,
+    );
 
-    expect(afterRepair.body).toEqual({ source_branch_id: source.id });
-    expect(afterRepair.preservedUnder).toBeNull();
+    expect(withRecoveryPoint.body.preserve_under_name).toBe("demo-preserved-20261106-163146");
+    // And the plan says which child moves, so the run log cannot claim it preserved nothing.
+    expect(withRecoveryPoint.children).toHaveLength(1);
   });
 });
 
