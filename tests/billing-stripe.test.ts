@@ -13,14 +13,18 @@ import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BILLING_PRICE_IDS } from "@/data/billing-prices";
+import { billingPriceLookupKeyFor } from "@/data/billing-prices";
 import { POST as checkoutRoute } from "@/app/api/billing/checkout/route";
 import { POST as webhookRoute } from "@/app/api/billing/webhook/route";
 import {
+  BILLING_KEY_SETS,
   STRIPE_API_BASE,
+  STRIPE_API_VERSION,
   STRIPE_WEBHOOK_EVENTS,
   StripeBillingAdapter,
+  billingKeySetFromEnv,
   parseStripeSignatureHeader,
+  stripeApiVersionFromEnv,
   stripeCredentialsFromEnv,
   subscriptionStatusOf,
   verifyStripeSignature,
@@ -122,23 +126,47 @@ function adapter(fetchImpl?: typeof fetch) {
   });
 }
 
-/** A `fetch` that answers with one JSON payload and records what it was asked. */
-function fakeFetch(payload: unknown, status = 200) {
+/**
+ * A `fetch` that answers with one JSON payload and records what it was asked.
+ *
+ * The Price lookup is answered here too, because a checkout now resolves its lookup key against the
+ * account before it creates the session: the returned id carries the key it was asked for, so a test
+ * can tell that the id in the session came from the provider's answer and not from a table in the
+ * tree. Pass `priceId` to model an account whose id differs.
+ */
+function fakeFetch(payload: unknown, status = 200, priceId: string | null = "price_resolved") {
   const calls: { url: string; method: string; headers: Record<string, string>; body: string }[] =
     [];
   const impl = (async (url: string, init: RequestInit = {}) => {
+    const target = String(url);
     calls.push({
-      url: String(url),
+      url: target,
       method: String(init.method ?? "GET"),
       headers: (init.headers ?? {}) as Record<string, string>,
       body: typeof init.body === "string" ? init.body : "",
     });
+    if (target.includes("/prices?lookup_keys[]=")) {
+      const lookupKey = decodeURIComponent(
+        target.slice(target.indexOf("lookup_keys[]=") + "lookup_keys[]=".length).split("&")[0] ??
+          "",
+      );
+      const data = priceId === null ? [] : [{ id: `${priceId}_${lookupKey}` }];
+      return new Response(JSON.stringify({ data }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify(payload), {
       status,
       headers: { "content-type": "application/json" },
     });
   }) as unknown as typeof fetch;
   return { impl, calls };
+}
+
+/** The session creation among the calls: a checkout now resolves a Price first. */
+function sessionCalls<T extends { url: string }>(calls: readonly T[]): readonly T[] {
+  return calls.filter((call) => call.url === `${STRIPE_API_BASE}/checkout/sessions`);
 }
 
 /** A checkout session payload, shaped the way a Snapshot delivery carries one. */
@@ -245,6 +273,277 @@ describe("the credentials are test-mode or nothing", () => {
     expect(stripeCredentialsFromEnv(ENV).publishableKey).toBe(ENV.STRIPE_TEST_PUBLISHABLE_KEY);
     const { STRIPE_TEST_PUBLISHABLE_KEY: _omitted, ...rest } = ENV;
     expect(stripeCredentialsFromEnv(rest).publishableKey).toBeNull();
+  });
+});
+
+/**
+ * Fixture key material, one object per key set. Shaped like the provider's own (the prefix checks are
+ * part of what is under test) and obviously not a credential.
+ */
+const VENTURE_ENV = {
+  BILLING_KEY_SET: "ventureio-test",
+  STRIPE_VENTURE_TEST_SECRET_KEY: "sk_test_venture_fixture",
+  STRIPE_VENTURE_TEST_WEBHOOK_SECRET: "whsec_venture_fixture",
+  STRIPE_VENTURE_TEST_PUBLISHABLE_KEY: "pk_test_venture_fixture",
+  BILLING_HOST: "demo",
+} as const;
+
+const ALIGNSYNCH_ENV = {
+  BILLING_KEY_SET: "alignsynch-test",
+  STRIPE_ALIGNSYNCH_TEST_SECRET_KEY: "sk_test_alignsynch_fixture",
+  STRIPE_ALIGNSYNCH_TEST_WEBHOOK_SECRET: "whsec_alignsynch_fixture",
+  STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE_KEY: "pk_test_alignsynch_fixture",
+  BILLING_HOST: "demo",
+} as const;
+
+const CHECKOUT = {
+  userId: "account-avery",
+  planId: "principal",
+  interval: "month",
+  successUrl: "https://example.test/return",
+  cancelUrl: "https://example.test/cancel",
+} as const;
+
+function adapterFor(env: Readonly<Record<string, string | undefined>>, fetchImpl?: typeof fetch) {
+  return new StripeBillingAdapter({
+    env,
+    now: () => NOW,
+    ...(fetchImpl === undefined ? {} : { fetch: fetchImpl }),
+  });
+}
+
+describe("the API version is pinned in code, never left to the account", () => {
+  it("sends Stripe-Version on the checkout request, so ui_mode depends on the API and not the account", async () => {
+    const { impl, calls } = fakeFetch({
+      id: "cs_test_1",
+      client_secret: "cs_test_1_secret",
+    });
+
+    const session = await adapterFor(ENV, impl).startCheckout({
+      ...CHECKOUT,
+      presentation: "embedded",
+    });
+
+    // The field the provider version-gates. Without a `Stripe-Version` header this is evaluated
+    // against whatever the account's dashboard happens to be set to — which is how one test
+    // account accepted it and another answered `Invalid ui_mode: embedded_page`.
+    const [posted] = sessionCalls(calls);
+    expect(new URLSearchParams(posted?.body).get("ui_mode")).toBe("embedded_page");
+    expect(posted?.headers["stripe-version"]).toBe("2026-03-25.dahlia");
+    expect(posted?.headers["stripe-version"]).toBe(STRIPE_API_VERSION);
+    // Including the Price resolution, which is a request too.
+    expect(calls[0]?.headers["stripe-version"]).toBe(STRIPE_API_VERSION);
+    expect(session.clientSecret).toBe("cs_test_1_secret");
+  });
+
+  it("sends it on reads too, and STRIPE_API_VERSION is the only override", async () => {
+    const read = fakeFetch({ id: "cs_test_1", status: "open" });
+    // An incomplete session is a `null`, not a caller error — the read is what is under test.
+    expect(
+      await adapterFor(ENV, read.impl).confirmCheckout("account-avery", "cs_test_1"),
+    ).toBeNull();
+    expect(read.calls[0]?.headers["stripe-version"]).toBe(STRIPE_API_VERSION);
+
+    const overridden = fakeFetch({
+      id: "cs_test_1",
+      url: "https://checkout.example.test/cs_test_1",
+      client_secret: "cs_test_1_secret",
+    });
+    await adapterFor(
+      { ...ENV, STRIPE_API_VERSION: "2099-01-02.beta" },
+      overridden.impl,
+    ).startCheckout(CHECKOUT);
+    expect(sessionCalls(overridden.calls)[0]?.headers["stripe-version"]).toBe("2099-01-02.beta");
+
+    // A blank value is the pin, never "send nothing and let the account decide".
+    expect(stripeApiVersionFromEnv({ STRIPE_API_VERSION: "   " })).toBe(STRIPE_API_VERSION);
+    expect(stripeApiVersionFromEnv({})).toBe(STRIPE_API_VERSION);
+    expect(STRIPE_API_VERSION).toBe("2026-03-25.dahlia");
+  });
+});
+
+describe("one selector, two key sets, and the Price is resolved on the selected account", () => {
+  it("uses the keys of the set BILLING_KEY_SET names, and resolves its Price there", async () => {
+    // Each account answers a lookup key with its own id — the real shape, because an id exists on
+    // one account only. The session must carry the id the provider returned for the selected
+    // account, which is what makes the switch one variable instead of an id table.
+    const venture = fakeFetch(
+      { id: "cs_v", url: "https://checkout.example.test/cs_v" },
+      200,
+      "price_venture",
+    );
+    await adapterFor(VENTURE_ENV, venture.impl).startCheckout(CHECKOUT);
+    const ventureLookup = venture.calls.find((call) => call.url.includes("/prices?"));
+    expect(ventureLookup?.headers.authorization).toBe(
+      `Bearer ${VENTURE_ENV.STRIPE_VENTURE_TEST_SECRET_KEY}`,
+    );
+    expect(ventureLookup?.url).toContain(
+      `lookup_keys[]=${encodeURIComponent("alignsynch_principal_month")}`,
+    );
+    const [ventureSession] = sessionCalls(venture.calls);
+    expect(new URLSearchParams(ventureSession?.body).get("line_items[0][price]")).toBe(
+      "price_venture_alignsynch_principal_month",
+    );
+
+    const alignsynch = fakeFetch(
+      { id: "cs_a", url: "https://checkout.example.test/cs_a" },
+      200,
+      "price_alignsynch",
+    );
+    await adapterFor(ALIGNSYNCH_ENV, alignsynch.impl).startCheckout(CHECKOUT);
+    const alignsynchLookup = alignsynch.calls.find((call) => call.url.includes("/prices?"));
+    expect(alignsynchLookup?.headers.authorization).toBe(
+      `Bearer ${ALIGNSYNCH_ENV.STRIPE_ALIGNSYNCH_TEST_SECRET_KEY}`,
+    );
+    const [alignsynchSession] = sessionCalls(alignsynch.calls);
+    expect(new URLSearchParams(alignsynchSession?.body).get("line_items[0][price]")).toBe(
+      "price_alignsynch_alignsynch_principal_month",
+    );
+
+    // Two accounts, two ids for the same key: that is the property the lookup buys, and the reason
+    // no id is written into the tree.
+    expect(stripeCredentialsFromEnv(VENTURE_ENV).keySet).toBe("ventureio-test");
+    expect(stripeCredentialsFromEnv(ALIGNSYNCH_ENV).keySet).toBe("alignsynch-test");
+  });
+
+  it("refuses a lookup key that resolves to nothing, naming the plan and the key set, before any session", async () => {
+    // The selected account does not sell this plan: the answer is a sentence, not a silent inline
+    // amount and not the other account's Price.
+    const { impl, calls } = fakeFetch({}, 200, null);
+    try {
+      await adapterFor(VENTURE_ENV, impl).startCheckout(CHECKOUT);
+      throw new Error("a checkout was created from a lookup key the account does not carry");
+    } catch (error) {
+      expect((error as BillingRefusal).code).toBe("not-configured");
+      expect((error as Error).message).toContain("alignsynch_principal_month");
+      expect((error as Error).message).toContain("ventureio-test");
+    }
+    // The resolution happened; the session never did.
+    expect(sessionCalls(calls)).toHaveLength(0);
+  });
+
+  it("keeps the legacy STRIPE_TEST_* path when no selector is set, so three deployments do not move", () => {
+    const legacy = stripeCredentialsFromEnv(ENV);
+    expect(legacy.secretKey).toBe(ENV.STRIPE_TEST_SECRET_KEY);
+    expect(legacy.webhookSecret).toBe(ENV.STRIPE_TEST_WEBHOOK_SECRET);
+    expect(legacy.publishableKey).toBe(ENV.STRIPE_TEST_PUBLISHABLE_KEY);
+    expect(legacy.keySet).toBeNull();
+    expect(billingKeySetFromEnv(ENV)).toBeNull();
+  });
+
+  it("refuses a selected set with no keys, naming the variable, instead of falling through", () => {
+    // The selector is set, the set is empty, and the legacy trio is present: the answer is a
+    // refusal naming the venture variable, never a quiet checkout against the other account.
+    const env = { ...ENV, BILLING_KEY_SET: "ventureio-test" };
+    try {
+      stripeCredentialsFromEnv(env);
+      throw new Error("the adapter fell through to another account's keys");
+    } catch (error) {
+      expect(error).toBeInstanceOf(BillingRefusal);
+      expect((error as BillingRefusal).code).toBe("not-configured");
+      expect((error as Error).message).toContain("STRIPE_VENTURE_TEST_SECRET_KEY is not set");
+      // Never the value, never its length.
+      expect((error as Error).message).not.toContain(ENV.STRIPE_TEST_SECRET_KEY);
+    }
+  });
+
+  it("refuses a selected set with one member missing rather than using three-quarters of it", () => {
+    const { STRIPE_VENTURE_TEST_PUBLISHABLE_KEY: _noPublishable, ...withoutPublishable } =
+      VENTURE_ENV;
+    expect(() => stripeCredentialsFromEnv(withoutPublishable)).toThrowError(
+      /STRIPE_VENTURE_TEST_PUBLISHABLE_KEY is not set/,
+    );
+
+    const { STRIPE_VENTURE_TEST_WEBHOOK_SECRET: _noWebhook, ...withoutWebhook } = VENTURE_ENV;
+    expect(() => stripeCredentialsFromEnv(withoutWebhook)).toThrowError(
+      /STRIPE_VENTURE_TEST_WEBHOOK_SECRET is not set/,
+    );
+  });
+
+  it("refuses a key whose prefix disagrees with the mode the set promises", () => {
+    expect(() =>
+      stripeCredentialsFromEnv({ ...VENTURE_ENV, STRIPE_VENTURE_TEST_SECRET_KEY: "key-of-a-kind" }),
+    ).toThrowError(/STRIPE_VENTURE_TEST_SECRET_KEY is not a test-mode secret key/);
+    expect(() =>
+      stripeCredentialsFromEnv({
+        ...ALIGNSYNCH_ENV,
+        STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE_KEY: "pk_live_fixture",
+      }),
+    ).toThrowError(/STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE_KEY is not a test-mode publishable key/);
+    // A live key pasted into a test set is refused, not quietly spent in test mode.
+    expect(() =>
+      stripeCredentialsFromEnv({
+        ...VENTURE_ENV,
+        STRIPE_VENTURE_TEST_SECRET_KEY: "sk_live_fixture",
+      }),
+    ).toThrowError(/STRIPE_VENTURE_TEST_SECRET_KEY is not a test-mode secret key/);
+  });
+
+  it("refuses the live secret and publishable keys by name, because there is no live path at all", () => {
+    // The product runs every environment in the provider's sandbox. These refusals ARE the feature:
+    // a `sk_live_…` or `pk_live_…` value is refused at configuration, naming the variable, so no
+    // request is ever made with one and nothing can reach a live account.
+    expect(() =>
+      stripeCredentialsFromEnv({
+        ...VENTURE_ENV,
+        STRIPE_VENTURE_TEST_SECRET_KEY: "«redacted:sk_live_…»",
+      }),
+    ).toThrowError(/STRIPE_VENTURE_TEST_SECRET_KEY is not a test-mode secret key/);
+    expect(() =>
+      stripeCredentialsFromEnv({
+        ...VENTURE_ENV,
+        STRIPE_VENTURE_TEST_PUBLISHABLE_KEY: "«redacted:pk_live_…»",
+      }),
+    ).toThrowError(/STRIPE_VENTURE_TEST_PUBLISHABLE_KEY is not a test-mode publishable key/);
+    // The legacy trio is guarded the same way — its publishable key used to go unchecked.
+    expect(() =>
+      stripeCredentialsFromEnv({ ...ENV, STRIPE_TEST_PUBLISHABLE_KEY: "«redacted:pk_live_…»" }),
+    ).toThrowError(/STRIPE_TEST_PUBLISHABLE_KEY is not a test-mode publishable key/);
+  });
+
+  it("verifies a delivery with the selected set's own webhook secret, and refuses the other set's", () => {
+    const body = JSON.stringify({ hello: "world" });
+    const selected = stripeCredentialsFromEnv(VENTURE_ENV);
+    const other = stripeCredentialsFromEnv(ALIGNSYNCH_ENV);
+    // Both accounts run their own endpoint, so the two secrets are different strings; a key swap
+    // that left the other account's whsec in place would fail every delivery.
+    expect(selected.webhookSecret).not.toBe(other.webhookSecret);
+
+    expect(() =>
+      verifyStripeSignature({
+        rawBody: body,
+        signature: signatureFor(body, NOW_SECONDS, selected.webhookSecret),
+        secret: selected.webhookSecret,
+        now: NOW,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      verifyStripeSignature({
+        rawBody: body,
+        signature: signatureFor(body, NOW_SECONDS, other.webhookSecret),
+        secret: selected.webhookSecret,
+        now: NOW,
+      }),
+    ).toThrowError(/signature/);
+  });
+
+  it("refuses a selector this build does not carry, listing the sets it does", () => {
+    expect(() => stripeCredentialsFromEnv({ ...ENV, BILLING_KEY_SET: "venture" })).toThrowError(
+      /BILLING_KEY_SET="venture" is not a key set this build carries \(ventureio-test, alignsynch-test\)/,
+    );
+    expect(() => billingKeySetFromEnv({ BILLING_KEY_SET: "VentureIO-Test" })).not.toThrow();
+    expect(billingKeySetFromEnv({ BILLING_KEY_SET: " VentureIO-Test " })).toBe("ventureio-test");
+  });
+
+  it("names the selected set's publishable variable when an embedded checkout has no key", async () => {
+    const { impl } = fakeFetch({ id: "cs_test_1", client_secret: "cs_test_1_secret" });
+    // A named set always carries its publishable key, so the refusal is reached by dropping the
+    // key from the set the *adapter* was given — which is the legacy path's shape — and asserting
+    // the sentence names the variable that was actually missing.
+    const { STRIPE_TEST_PUBLISHABLE_KEY: _dropped, ...noKey } = ENV;
+    await expect(
+      adapterFor(noKey, impl).startCheckout({ ...CHECKOUT, presentation: "embedded" }),
+    ).rejects.toThrowError(/STRIPE_TEST_PUBLISHABLE_KEY is not set/);
   });
 });
 
@@ -384,8 +683,11 @@ describe("a checkout session is created from the fixture's price", () => {
       completed: false,
     });
 
-    expect(calls).toHaveLength(1);
-    const [call] = calls;
+    // Two requests now: the Price resolution, then the session. The session is the one that bills.
+    const [lookup] = calls;
+    expect(lookup?.url).toContain("/prices?lookup_keys[]=");
+    const [call] = sessionCalls(calls);
+    expect(calls).toHaveLength(2);
     expect(call?.url).toBe(`${STRIPE_API_BASE}/checkout/sessions`);
     expect(call?.method).toBe("POST");
     expect(call?.headers.authorization).toBe(`Bearer ${ENV.STRIPE_TEST_SECRET_KEY}`);
@@ -393,8 +695,11 @@ describe("a checkout session is created from the fixture's price", () => {
     const form = new URLSearchParams(call?.body);
     expect(form.get("mode")).toBe("subscription");
     // #1010 R2 — the line item is a Price, not an inline amount: a subscription renews against a
-    // Price object, and the amount lives in `data/billing-plans.ts` behind it.
-    expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.principal.month);
+    // Price object, and the amount lives in `data/billing-plans.ts` behind it. The id is the one the
+    // provider returned for the account-independent lookup key, never a value from this tree.
+    expect(form.get("line_items[0][price]")).toBe(
+      `price_resolved_${billingPriceLookupKeyFor("principal", "month")}`,
+    );
     expect(form.get("line_items[0][quantity]")).toBe("1");
     expect(form.get("customer_email")).toBe("avery@example.test");
     // The account rides on the session and on the subscription, so every later
@@ -422,10 +727,12 @@ describe("a checkout session is created from the fixture's price", () => {
       successUrl: "https://example.test/ok",
       cancelUrl: "https://example.test/no",
     });
-    const form = new URLSearchParams(calls[0]?.body);
+    const form = new URLSearchParams(sessionCalls(calls)[0]?.body);
     // The yearly interval is sold on the yearly Price — the fixture's yearly figure is what that
     // Price charges once, not the monthly equivalent.
-    expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.principal.year);
+    expect(form.get("line_items[0][price]")).toBe(
+      `price_resolved_${billingPriceLookupKeyFor("principal", "year")}`,
+    );
     expect(form.get("customer_email")).toBeNull();
   });
 
@@ -523,7 +830,7 @@ describe("the deployment's host is claimed, never defaulted", () => {
       successUrl: "https://demo.example.test/ok",
       cancelUrl: "https://demo.example.test/no",
     });
-    const form = new URLSearchParams(calls[0]?.body);
+    const form = new URLSearchParams(sessionCalls(calls)[0]?.body);
     expect(form.get("metadata[host]")).toBe("demo");
     expect(form.get("subscription_data[metadata][host]")).toBe("demo");
   });
@@ -569,7 +876,7 @@ describe("the deployment's host is claimed, never defaulted", () => {
     expect(await created.json()).toMatchObject({
       url: "https://checkout.example.test/cs_test_created",
     });
-    const form = new URLSearchParams(calls[0]?.body);
+    const form = new URLSearchParams(sessionCalls(calls)[0]?.body);
     expect(form.get("metadata[host]")).toBe("alignsynch");
   });
 });

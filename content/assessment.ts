@@ -584,6 +584,42 @@ export function seededLifecycleOf(instance: {
   }
 }
 
+/**
+ * How many `party` and `opinion` rows one instance writes (#1079, #1083).
+ *
+ * A bundle authors the **whole sheet** — both parties, every Aspect — and the lifecycle decides how
+ * much of it a demo carries: `seats` says whether the counterparty has taken theirs yet, and
+ * `answers` says whose sheet was filled in. So counting the bundle's authored arrays over-counts
+ * what a seed installs, and by a lot: the demo bundle authors 62 parties / 310 opinions and the
+ * seed writes 56 / 205. That gap is not drift, and `scripts/demo-reset.mjs` reporting it as one is
+ * how a successful seed came to be reported as a failed reset.
+ *
+ * One home: `scripts/db-seed.mjs` writes these rows by the same two predicates, and this reads
+ * them from `seededLifecycleOf()` — the single derivation the seed, `db:verify` (V21/V31) and the
+ * dataset tests all share. Pure: no clock, no database.
+ */
+export function seededRowTotals(instance: {
+  readonly date: string;
+  readonly lifecycle?: SeededLifecycle | undefined;
+  readonly parties: readonly {
+    readonly role: string;
+    readonly opinions: readonly unknown[];
+  }[];
+}): { parties: number; opinions: number } {
+  const lifecycle = seededLifecycleOf(instance);
+  let parties = 0;
+  let opinions = 0;
+  for (const party of instance.parties) {
+    if (lifecycle.seats !== "both" && party.role !== "initiator") continue;
+    parties += 1;
+    const answered =
+      lifecycle.answers === "both" ||
+      (lifecycle.answers === "initiator" && party.role === "initiator");
+    if (answered) opinions += party.opinions.length;
+  }
+  return { parties, opinions };
+}
+
 export const zAssessmentInstanceObject = zTemplateObject
   .extend({
     type: z.literal("assessment"),

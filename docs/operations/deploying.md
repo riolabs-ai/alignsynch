@@ -270,17 +270,28 @@ The whole reading, measured on 2026-11-12 before and after the run that fixed it
 **The auth whitelist is per branch, and it was empty.** `demo.alignsynch.com` is on the
 **production** branch's `redirect_uri` whitelist and was on the demo branch's list **not at all**, so
 every sign-in from the demo URL answered `403 INVALID_ORIGIN` while the deployment itself was fine —
-a demo nobody can enter. The branch list is one call, and it is worth re-reading after any
-`pnpm demo:reset`, which replaces the branch wholesale:
+a demo nobody can enter. **The list does not survive a `pnpm demo:reset`**: a restore is a branch
+creation, the Managed Auth _integration_ comes back but its trusted-domain list comes back empty
+(measured 2026-11-15 — `[{"domain":"https://demo.alignsynch.com",…}]` at 09:41Z, `{"domains":[]}` at
+09:47Z, with `/auth` answering `200` throughout). So the reset **re-applies it and proves it**: it
+`GET`s the list, `POST`s the demo origin only when it is missing, and then signs in from
+`DEMO_ORIGIN` with a deliberately wrong credential, requiring `401 INVALID_EMAIL_OR_PASSWORD` — a
+`403` fails the run. The manual repair, for a branch a reset did not touch, is:
 
 ```bash
-# GET, then POST when the domain is absent (project and branch ids are the demo branch's)
+pnpm demo:reset -- --verify-origin   # re-apply DEMO_ORIGIN, then probe it (rescues nothing else)
+pnpm demo:reset -- --probe-origin https://demo.alignsynch.com   # ask only; change nothing
+
+# or the same two calls by hand (project and branch ids are the demo branch's)
 curl -s -H "Authorization: Bearer $NEON_API_KEY" \
   "https://console.neon.tech/api/v2/projects/$PROJECT/branches/$BRANCH/auth/domains"
 curl -s -X POST -H "Authorization: Bearer $NEON_API_KEY" -H "content-type: application/json" \
   -d '{"domain":"https://demo.alignsynch.com","auth_provider":"better_auth"}' \
   "https://console.neon.tech/api/v2/projects/$PROJECT/branches/$BRANCH/auth/domains"
 ```
+
+One origin, exactly: a wildcard, a path or a second entry is refused by the script, because a demo
+auth server that trusts any origin is a phishing surface.
 
 ### The demo's admin seats: the one copy of the password that counts
 

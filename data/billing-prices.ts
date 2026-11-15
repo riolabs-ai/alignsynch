@@ -1,5 +1,5 @@
 /**
- * The provider's Price ids — one per (tier, interval), **test mode only** (#1010 R2).
+ * The provider's Price **lookup keys** — one per (tier, interval), **test mode only** (#1010 R2).
  *
  * A subscription needs a Price object to renew against, so stage 5's purchase names one of these
  * instead of writing an inline `price_data` amount into the request. The amount is still authored
@@ -7,33 +7,40 @@
  * that amount and nothing else, which is why it is a config module beside the fixture rather than
  * a column on it (the `billing_plan` mirror is a price, not a dashboard id).
  *
- * **What these are.** Created 2026-11-14 in the AlignSynch test account
- * `acct_1If98uIxC4rz96cc` (`settings.dashboard.display_name = "AlignSynch"`), one Product per tier
- * and a recurring Price per interval, each Price carrying its `lookup_key`:
+ * **Why a lookup key and not a Price id.** A Price id is account-scoped and does not travel: the
+ * same id resolves on exactly one account and answers `resource_missing: No such price` on the
+ * other, in the middle of the flow. A table of ids per account is therefore a table that has to be
+ * edited on every key-set switch, and its failure mode is a checkout that silently names the wrong
+ * account's Price. A `lookup_key` is **account-independent** — the same four keys resolve on both
+ * test accounts, measured 2026-11-15 with `GET /v1/prices?lookup_keys[]=…` against each — so this
+ * file names four strings, and `lib/billing/adapters/stripe.ts` resolves each against whichever
+ * account `BILLING_KEY_SET` selected.
  *
- *   Basic      prod_Vd1JwLLr4gRqE9   month  price_1UblGqIxC4rz96ccmAumC406   $8.95   (895)
- *                                    year   price_1UblGqIxC4rz96ccmptGY2EQ   $85.92  (8_592)
- *   Principal  prod_Vd1JHMddelStiz   month  price_1UblGrIxC4rz96cc1Zt530Ir   $16.95  (1_695)
- *                                    year   price_1UblGsIxC4rz96ccA1IrDjSA   $162.72 (16_272)
+ * The four keys, and what each resolves to on each account (same amounts, different ids):
  *
- * They replace the Venture I/O pair (`acct_19bZw7KKtWHoLhLR`, `prod_VcoKngMHfNjvvh` /
- * `prod_VcoK6IzuL7qcx9`) this file used to name: the key the deployment holds now belongs to the
- * AlignSynch account, and a Price id is account-scoped, so the old ids resolve nowhere there
- * (`No such price`). Every id below carries the target account's suffix group, `IxC4rz96cc`.
+ *   plan/interval   lookup key                   $      current account   Venture I/O
+ *   Basic month     alignsynch_basic_month      8.95   …GqIxC4rz96cc…    …htKKtWHoLhLR…
+ *   Basic year      alignsynch_basic_year      85.92   …GqIxC4rz96cc…    …huKKtWHoLhLR…
+ *   Principal month alignsynch_principal_month 16.95   …GrIxC4rz96cc…    …hvKKtWHoLhLR…
+ *   Principal year  alignsynch_principal_year 162.72   …GsIxC4rz96cc…    …hwKKtWHoLhLR…
+ *
+ * Ids are deliberately not written here: an id in this file is a value that belongs to one account,
+ * and the whole point of the lookup key is that no such value lives in the tree.
  *
  * The yearly pair exists because `/pricing` sells both intervals (`pricing-plans.ts`'s switch posts
- * `interval: "year"`); a tier/interval with no Price here is a checkout this adapter **refuses**
- * (`startCheckout` answers `not-for-sale`), so the fixture and this file have to agree row for row.
- * `tests/billing-prices.test.ts` asserts that they do, and that every id is a Price (never a live
- * one, never a Product).
+ * `interval: "year"`); a tier/interval this file has no key for is a checkout the adapter refuses
+ * (`not-for-sale`), so the fixture and this file have to agree row for row.
+ * `tests/billing-prices.test.ts` asserts that they do, that every key is unique, and that the key
+ * names the plan and interval it is filed under.
  *
- * **Live mode is not a configuration this file can hold.** There is no `livemode` switch, no second
- * map and no fallback: creating the live Prices is a release decision with its own card, and until
- * it happens a live-key deployment refuses at `stripeCredentialsFromEnv()` (which accepts
- * `sk_test_…` and nothing else). A missing id is a refused checkout, never a silent inline amount.
+ * **Test mode is not a switch this file can hold.** There is no `livemode` key, no live map and no
+ * fallback: this product runs every environment in the provider's test mode, and
+ * `stripeCredentialsFromEnv()` refuses any credential that is not `sk_test_` / `pk_test_` / `whsec_`.
+ * A key that resolves to nothing on the selected account is a refused checkout (`not-configured`,
+ * naming the plan) — never an inline amount, and never another account's Price.
  *
- * Each Price carries a `lookup_key` (`alignsynch_<tier>_<interval>`) so a re-run of the creation
- * command is recognisable in the dashboard instead of making a fourth copy of the same amount.
+ * Each Price also carries a Product, and those are account-scoped too (`prod_…` on one account
+ * resolves nowhere on the other). Nothing in this build names a Product: a checkout buys a Price.
  */
 
 import type { BillingInterval, BillingPlanId } from "./billing-plans";
@@ -50,28 +57,37 @@ export type PaidPlanId = Exclude<BillingPlanId, "free">;
  */
 export const TRIAL_PERIOD_DAYS = 7;
 
-/** The provider's Price id per interval. `undefined` would be a checkout that cannot charge. */
-export type PlanPriceIds = Readonly<Record<BillingInterval, string>>;
+/** The provider's lookup key per interval. `undefined` would be a checkout that cannot charge. */
+export type PlanPriceLookupKeys = Readonly<Record<BillingInterval, string>>;
 
-/** The ids, in the order `BILLING_PLAN_IDS` draws the tiers. */
-export const BILLING_PRICE_IDS: Readonly<Record<PaidPlanId, PlanPriceIds>> = {
+/**
+ * The lookup keys, one row per sold tier.
+ *
+ * Spelled out rather than assembled from the plan id, so a key renamed in the dashboard fails a
+ * test here instead of at a customer's click, and so this table is the one place a name is edited.
+ */
+export const BILLING_PRICE_LOOKUP_KEYS: Readonly<Record<PaidPlanId, PlanPriceLookupKeys>> = {
   basic: {
-    month: "price_1UblGqIxC4rz96ccmAumC406",
-    year: "price_1UblGqIxC4rz96ccmptGY2EQ",
+    month: "alignsynch_basic_month",
+    year: "alignsynch_basic_year",
   },
   principal: {
-    month: "price_1UblGrIxC4rz96cc1Zt530Ir",
-    year: "price_1UblGsIxC4rz96ccA1IrDjSA",
+    month: "alignsynch_principal_month",
+    year: "alignsynch_principal_year",
   },
 };
 
 /**
- * The Price for a (tier, interval), or `undefined` — never a fallback id.
+ * The lookup key for a (tier, interval), or `undefined` — never a guessed key.
  *
- * `undefined` is the answer for the free tier, for a tier this build does not sell, and for a pair
- * nobody has created a Price for; the caller refuses with that pair named.
+ * `undefined` is the answer for the free tier and for a tier this build does not sell; the caller
+ * refuses with that pair named. A key that is present but resolves to nothing on the account in use
+ * is the adapter's refusal, because only the provider can answer that question.
  */
-export function billingPriceIdFor(planId: string, interval: BillingInterval): string | undefined {
+export function billingPriceLookupKeyFor(
+  planId: string,
+  interval: BillingInterval,
+): string | undefined {
   if (planId !== "basic" && planId !== "principal") return undefined;
-  return BILLING_PRICE_IDS[planId][interval];
+  return BILLING_PRICE_LOOKUP_KEYS[planId][interval];
 }

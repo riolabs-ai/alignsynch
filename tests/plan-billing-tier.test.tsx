@@ -54,7 +54,7 @@ vi.mock("next/navigation", () => ({
 import { PLAN_IDS } from "@/components/assessment-flow/plan-choices";
 import { InviteWalk, type PayFlowStep } from "@/components/assessment-flow/invite-walk";
 import { BILLING_INTERVALS, BILLING_PLAN_IDS } from "@/data/billing-plans";
-import { BILLING_PRICE_IDS, billingPriceIdFor } from "@/data/billing-prices";
+import { BILLING_PRICE_LOOKUP_KEYS, billingPriceLookupKeyFor } from "@/data/billing-prices";
 import { assessmentCreatePageCopy, PLAN_BILLING_TIER } from "@/data/pages/assessment-create";
 import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
@@ -175,21 +175,23 @@ describe("the plan choice's ids are not billing tiers — the map is the only cr
     expect(new Set(tiers).size).toBe(tiers.length);
   });
 
-  it("maps only to tiers that are actually sold: a Price at every interval", () => {
+  it("maps only to tiers that are actually sold: a Price lookup key at every interval", () => {
     for (const plan of PLAN_IDS) {
       const tier = PLAN_BILLING_TIER[plan];
       for (const interval of BILLING_INTERVALS) {
         // The lookup, not just the list: `free` is a member of `BILLING_PLAN_IDS` and has no Price,
         // so a mapping to it type-checks and is exactly the mapping this line rejects.
-        expect(billingPriceIdFor(tier, interval)).toBe(BILLING_PRICE_IDS[tier][interval]);
+        expect(billingPriceLookupKeyFor(tier, interval)).toBe(
+          BILLING_PRICE_LOOKUP_KEYS[tier]?.[interval],
+        );
       }
     }
   });
 
   it("would fail such a mapping: free is a member of the catalogue and not for sale", () => {
     expect(BILLING_PLAN_IDS).toContain("free");
-    expect(billingPriceIdFor("free", "month")).toBeUndefined();
-    expect(billingPriceIdFor("free", "year")).toBeUndefined();
+    expect(billingPriceLookupKeyFor("free", "month")).toBeUndefined();
+    expect(billingPriceLookupKeyFor("free", "year")).toBeUndefined();
   });
 });
 
