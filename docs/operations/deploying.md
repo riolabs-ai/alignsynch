@@ -282,6 +282,57 @@ curl -s -X POST -H "Authorization: Bearer $NEON_API_KEY" -H "content-type: appli
   "https://console.neon.tech/api/v2/projects/$PROJECT/branches/$BRANCH/auth/domains"
 ```
 
+### The demo's admin seats: the one copy of the password that counts
+
+The two `ADMIN_NN_*` pairs are **applied by `pnpm db:seed`, not by the deployment**: no code under
+`app/`, `lib/` or `components/` reads `ADMIN_01_PASS`/`ADMIN_02_PASS` — the only reader is
+`scripts/db-seed.mjs`, which creates or reconciles the auth user through the branch's own
+`sign-up/email`. `ADMIN_EMAILS` is the exception, and it is read by the running app for the
+sign-in grant.
+
+That makes the seat password a secret with **two hand-maintained homes**, and only one of them is
+the one the branch answers to:
+
+| Home                                            | Read by                         | Authority                                         |
+| ----------------------------------------------- | ------------------------------- | ------------------------------------------------- |
+| `.env.local` (the seed's own environment)       | `pnpm db:seed`                  | **this one** — the seed converges the seat on it  |
+| the `demo` branch's **Preview** scope on Vercel | nothing (a human, and the card) | a mirror; stale the moment the local file rotates |
+
+Measured 2026-11-15 against `https://demo.alignsynch.com`, with the seats signed in through
+`/api/auth/sign-in/email` and the session used to read `/admin/instances` and `/admin/billing`:
+
+| Credential used                        | `walt1@alignsynch.com`          | `alignsynch@riolabs.ai`         | `/admin/console` |
+| -------------------------------------- | ------------------------------- | ------------------------------- | ---------------- |
+| `.env.local` (`ADMIN_01/02_PASS`)      | `200`                           | `200`                           | `200`, rendering |
+| the Preview scope's `ADMIN_01/02_PASS` | `401 INVALID_EMAIL_OR_PASSWORD` | `401 INVALID_EMAIL_OR_PASSWORD` | —                |
+
+Both auth users existed throughout, with a password credential and `user_profile.role = 'admin'` —
+so this is not "the seats were never created". The local file was rotated twice (2026-11-01,
+2026-11-14) and the Vercel copy has not moved since 2026-11-04, so **the credential in the
+dashboard is the stale one**: anyone who reads the demo's env there and tries to sign in gets a
+401 on a seat that works.
+
+Three rules follow, and the first two are enforced by the seed rather than remembered:
+
+- **The seed proves every seat.** After converging the seats it signs each one in through the
+  branch's own `/sign-in/email` and prints `○ admins: <email> sign-in 200`, then
+  `· admins: 2 of 2 seat(s) sign in`. A `401`/`403` there fails the run — a row is a grant, not an
+  account, and `created`/`reconciled` beside an unauthenticated seat is the state this was written
+  for. A `429`/`5xx` is printed as `unproven` and does not fail a content seed
+  (`scripts/db-seed-admin-proof.mjs`).
+- **A rotation announces itself.** When phase 1 removed a seat because the env password changed,
+  the run prints that the credential it ran with is now the only one that answers and that every
+  other copy — this scope included — is stale until it is updated.
+- **Never edit one copy and leave the other.** Either update this scope when the local pair rotates,
+  or keep the demo's only copy in `.env.local` and read it there; a half-updated pair is silent
+  until somebody tries to sign in.
+
+`ADMIN_EMAILS` is **Production-only** in this project, so the demo deployment never promotes an
+address at sign-in. That is not what makes the two seats admins — the seed writes
+`user_profile.role = 'admin'` for them — but it does mean a seat whose profile row is lost cannot
+be restored by signing in on demo; the repair is a seed, or adding the allowlist to the `demo`
+scope.
+
 The Vercel schema caps `ignoreCommand` at 256 characters; this rule is 105, measured from the file
 (109 as written in the JSON, where each `"` inside the command is escaped). The branch test is the
 43 characters that were added to the 62-character production-only rule.

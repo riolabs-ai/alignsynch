@@ -87,6 +87,14 @@
  * lone `ADMIN_02_EMAIL` warns, names the missing variable and is skipped, because a platform admin
  * is opt-in and a half-copied environment must not fail a content seed. The password comes from
  * the environment and is written nowhere: no `demo_account` row, no log line, no file.
+ * **Each seat is then signed in through the branch's own `/sign-in/email` with the credential the
+ * run just wrote**, because a row is a grant and not an account: `-01`/`-02` once carried
+ * `user_profile.role = 'admin'` on the demo while every sign-in answered
+ * `401 INVALID_EMAIL_OR_PASSWORD`, and the seed printed `reconciled` throughout. A `200` is the
+ * only proof; a `401`/`403` fails the run (see `db-seed-admin-proof.mjs` for what each means and
+ * why any other status is printed rather than fatal), and a rotation announces that this run's
+ * credential is now the only one that answers — every other copy of it, a deployment's Preview
+ * scope included, is stale from that moment.
  * With no `ADMIN_*` set (CI, a fresh clone, the gate) the pass is skipped with a printed line,
  * which is the point — a platform admin is opt-in, not a default.
  */
@@ -96,6 +104,13 @@ import { join, relative } from "node:path";
 import { Client } from "pg";
 import { syncBillingPlans } from "./billing-plans.mjs";
 import { reconcileAllowlistedAdmins } from "./db-admin-allowlist.mjs";
+import {
+  rotationNotice,
+  seatProofFailure,
+  seatProofLine,
+  seatProofSummary,
+  seatProofVerdict,
+} from "./db-seed-admin-proof.mjs";
 import {
   SEED_LOCK_ID,
   SEED_LOCK_NAMESPACE,
@@ -1113,22 +1128,34 @@ async function findAuthUserId(client, email) {
 }
 
 /**
- * Is the env password the one the auth service has? Answered by signing in with it, never by
- * reading or writing a hash: a 200 means the credentials match, a 401 means they do not, and
- * anything else is a failure to report rather than a password to guess at.
+ * The answer the auth service gives for this credential, as `{ status, code }` — `200` is the
+ * password the account has, `401` is a different one, and any other status is reported rather than
+ * treated as a password to guess at. The body's Better Auth `code` rides along so a refusal can be
+ * named exactly (`INVALID_ORIGIN` is a different problem from `INVALID_EMAIL_OR_PASSWORD`).
  */
-async function adminPasswordMatches(email, password) {
+async function adminSignInStatus(email, password) {
   const base = requireVariable(["NEON_AUTH_BASE_URL"]).replace(/\/+$/, "");
   const response = await fetch(`${base}/sign-in/email`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: DEMO_ORIGIN },
     body: JSON.stringify({ email, password }),
   });
-  if (response.ok) return true;
-  if (response.status === 401) return false;
+  if (response.ok) return { status: response.status, code: "" };
   const body = await response.json().catch(() => ({}));
+  return { status: response.status, code: body.code ?? "" };
+}
+
+/**
+ * Is the env password the one the auth service has? Answered by signing in with it, never by
+ * reading or writing a hash: a 200 means the credentials match, a 401 means they do not, and
+ * anything else is a failure to report rather than a password to guess at.
+ */
+async function adminPasswordMatches(email, password) {
+  const { status, code } = await adminSignInStatus(email, password);
+  if (status === 200) return true;
+  if (status === 401) return false;
   throw new Error(
-    `admin ${email}: sign-in answered HTTP ${response.status}${body.code ? ` (${body.code})` : ""} — cannot tell whether the password matches`,
+    `admin ${email}: sign-in answered HTTP ${status}${code ? ` (${code})` : ""} — cannot tell whether the password matches`,
   );
 }
 
@@ -1176,9 +1203,11 @@ async function removeStaleAdmins(client, accounts) {
  * password is written nowhere — no `demo_account` row, no log line, no return value.
  *
  * The log is safe by construction and says one line per seat, `○ admins: <email> created` or
- * `○ admins: <email> reconciled`, plus the count of passwords rotated. An address is not a
+ * `○ admins: <email> reconciled`, then one `sign-in` line per seat and the count that signed in
+ * (`seatProofLine` / `seatProofSummary`), plus the count of passwords rotated. An address is not a
  * credential (it is already in `.env.local` and in the operator's head); the password never
- * appears in any line, in whole or in part.
+ * appears in any line, in whole or in part — the proof functions take an address and a status and
+ * nothing else, so the shape of the call is the guarantee rather than a review of the strings.
  */
 async function seedAdminAccounts(client, { accounts, warnings, configured }, rotatedEmails) {
   for (const warning of warnings) console.log(`  ! admins: ${warning}`);
@@ -1236,6 +1265,26 @@ async function seedAdminAccounts(client, { accounts, warnings, configured }, rot
       rotatedCount > 0 ? `, ${rotatedCount} password(s) rotated` : ""
     }`,
   );
+
+  // The proof, and the reason `created` / `reconciled` is not the end of this pass: a row was
+  // written, which says nothing about whether anybody can get in. Every configured seat signs in
+  // through the branch's own `/sign-in/email` with the credential this run converged it on, and a
+  // refusal fails the seed before phase 2 commits (`seatProofFailure` says what a 401 and a 403
+  // each mean). Anything the auth service answers that is neither proof nor refusal is printed and
+  // not fatal — a rate-limited probe is not evidence about a credential.
+  const proofs = [];
+  for (const seat of results) {
+    const { status } = await adminSignInStatus(seat.email, seat.password);
+    proofs.push({ email: seat.email, status });
+    console.log(seatProofLine({ email: seat.email, status }));
+  }
+  console.log(seatProofSummary(proofs));
+  if (!seatProofVerdict(proofs).ok) throw new Error(seatProofFailure(proofs));
+
+  // A rotation is correct on a password change and its side effect is invisible: the seat now
+  // answers to this run's credential only, so every other copy of it is stale from here.
+  if (rotatedCount > 0) console.log(rotationNotice(rotatedEmails));
+
   return results;
 }
 
