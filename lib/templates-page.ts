@@ -28,6 +28,16 @@
  * this module only carries the `StartViewer` the page resolved, which is why the model stays free
  * of React, Next and the session module.
  *
+ * ## The shelf is the taxonomy **filtered by what the platform serves** (#1099)
+ *
+ * The cards' words are the taxonomy's (`data/relationship-types.ts`), but which cards exist is
+ * `lib/platform-templates.ts`'s set — the templates `data/assessments.ts` authors and the seed
+ * writes to `record`. A type with no template is not drawn, because its "use this template" link
+ * would resolve to nothing: on production, 25 of the 27 advertised links answered 404 for exactly
+ * that reason, and the catalogue is what told a stranger they were there. `templates` is a
+ * parameter so the test can hand the page a set missing one and watch the shelf shrink; the
+ * default is the served set, so the page cannot be handed a wider one by accident.
+ *
  * The one number the approved artifact prints that this module deliberately does **not** copy is
  * the example's "1 of 6": the Aspect the artifact illustrates is the **third** of six in
  * `data/relationship-types.ts`, so the ordinal is derived and renders "3 of 6". The data wins, and
@@ -44,6 +54,7 @@
  * `components/templates/**` holds no string and no number of its own (E23 keeps the route at 0
  * leaf literals).
  */
+import type { Assessment } from "@/content/assessment";
 import { isFileMedia } from "@/content/media";
 import type { PageCopy } from "@/content/pages";
 import { media } from "@/data/media";
@@ -62,6 +73,7 @@ import {
   sectionBody,
   sectionOf,
 } from "@/lib/page-copy";
+import { platformTemplates } from "@/lib/platform-templates";
 import { realmArt, twoPartyMark, type RealmArt } from "@/lib/relationship-art";
 import { cataloguePriceNote, templateCard, type TemplateCard } from "@/lib/template-catalogue";
 import { startHrefFor, type StartViewer } from "@/lib/start-path";
@@ -312,12 +324,19 @@ function stepsOf(copy: PageCopy, sectionId: string, ids: readonly string[]): Tem
  * `relationshipTypes` defaults to the purchasable gate in `data/relationship-types.ts`, so the
  * page cannot be handed a wider list by accident, and it is a parameter so a test can prove every
  * count on the page follows the fixture instead of agreeing with a constant.
+ *
+ * `templates` is the platform's served set (`lib/platform-templates.ts`) and the shelf is its
+ * intersection with the taxonomy — one card per purchasable type that has a template the create
+ * route can resolve (#1099). It is a parameter for the same reason and in the same direction: a
+ * test hands it a shorter set to prove a card disappears with its template, and the default is
+ * never wider than what the platform serves.
  */
 export function templatesPage(
   copy: PageCopy,
   viewer: StartViewer,
   relationshipTypes: readonly RelationshipType[] = purchasableRelationshipTypes,
   realms: readonly string[] = REALMS,
+  templates: readonly Pick<Assessment, "slug">[] = platformTemplates,
 ): TemplatesPageModel {
   const how = sectionOf(copy, "how");
   const membership = sectionOf(copy, "membership");
@@ -330,8 +349,21 @@ export function templatesPage(
     );
   }
 
-  /** The purchasable records, in taxonomy order, each projected into this surface's card. */
-  const cards = relationshipTypes.map((type) => {
+  /**
+   * The purchasable types this build can actually open, in taxonomy order (#1099).
+   *
+   * A type whose template the platform does not serve is **not drawn**: its card's action is
+   * `/templates/relationship/<id>/create`, and advertising an address the create route answers with
+   * a 404 is how production promised 27 templates and served 2. The set is the served one, so the
+   * page cannot claim a template that is not there — and
+   * `tests/catalogue-served-templates.test.ts` fails the build when the two sets drift, so the
+   * missing card is a red test rather than a shelf that quietly shrank.
+   */
+  const servedSlugs = new Set(templates.map((template) => template.slug));
+  const servedTypes = relationshipTypes.filter((type) => servedSlugs.has(type.id));
+
+  /** The served records, in taxonomy order, each projected into this surface's card. */
+  const cards = servedTypes.map((type) => {
     if (type.purchasable !== true) {
       throw new Error(
         `templatesPage: "${type.id}" is not purchasable — a catalogue card for a type the shop will not sell is a price nobody can pay`,
