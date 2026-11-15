@@ -34,8 +34,9 @@ import { currentUserIfConfigured } from "@/lib/auth/session";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import { entitlementForAccount } from "@/lib/billing";
 import { createRefusal } from "@/lib/flow/create-copy";
+import { carriedPlanOf, parsePlanIntent } from "@/lib/flow/plan-intent";
 import { createCommitPath, createRelationshipPath } from "@/lib/flow/paths";
-import { partyCookieName } from "@/lib/flow/session";
+import { partyCookieName, PLAN_INTENT_COOKIE } from "@/lib/flow/session";
 import { readFlowScreen } from "@/lib/flow/store";
 
 export const dynamic = "force-dynamic";
@@ -168,6 +169,21 @@ export default async function TemplateCreateInvitePage({
       ? undefined
       : { name: entitlement.planName, entitled: entitlement.paid && entitlement.advancedMode };
 
+  /**
+   * **The plan `/pricing` carried through the catalogue, the template and the account (#1043).**
+   *
+   * Read from the browser, not from a query string: the choice was made before a template existed and
+   * has to survive four pages that are prerendered on purpose, the sign-in at stage 4 and a reload,
+   * which is exactly what a cookie is for (`lib/flow/plan-intent.ts`). `carriedPlanOf()` is the
+   * crossing back from a *billing* tier to the *row* this panel draws, and it answers `null` for a
+   * value the catalogue does not sell — so a hand-edited cookie draws the ordinary unselected panel
+   * instead of a plan nobody can buy.
+   *
+   * A carried plan is a **preselection, never a payment**: the walk still opens on this panel, the
+   * membership still starts from it, and the send's paid gate (`sendDraftInvitation()`) is untouched.
+   */
+  const carriedPlan = carriedPlanOf(parsePlanIntent(jar.get(PLAN_INTENT_COOKIE)?.value));
+
   return (
     <CreateRelationship
       copy={assessmentCreatePageCopy}
@@ -198,6 +214,7 @@ export default async function TemplateCreateInvitePage({
       }}
       initialPaid={screen.subscriptionLive === true}
       {...(accountPlan === undefined ? {} : { planIncluded: accountPlan })}
+      {...(carriedPlan === null ? {} : { carriedPlan })}
     />
   );
 }

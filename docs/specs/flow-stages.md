@@ -92,9 +92,26 @@ once at `(mainlayout)/layout.tsx` it would also intercept one stage navigating t
 "Continue" is a link) and draw a modal over the flow itself.
 
 **Marketing keeps navigating.** `/relationship-types`, `/relationship-types/<slug>[/demo]`,
-`/relationship-templates` and `/pricing` live in `app/(marketing)/**`; their controls resolve through
-`lib/start-path.ts` to `/register?next=<stage>` for a visitor and the stage for a member, and they are
-**not** converted. A dialog there would put an app shell on a crawlable page for a count.
+`/relationship-templates` and `/pricing` live in `app/(marketing)/**`; their create controls resolve
+through `lib/start-path.ts` to **stage 1 of the wizard, for every viewer**, and they are **not**
+converted into the flow's dialog. A dialog there would put an app shell on a crawlable page for a
+count.
+
+**One intent, one door (#1042).** Every action whose intent is to create a relationship opens stage 1
+— for a visitor, a returning signed-out user and a member alike — and the account is settled at
+**stage 4**, inside the wizard where the draft already is:
+
+| the action's fixture                                                   | where it goes                                                                                                            |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| a template's own action (`template-use`, a catalogue card)             | `/templates/relationship/<slug>/create` — the chosen template travels in the path                                        |
+| a **generic** create action ("Create a relationship")                  | `/templates/relationship/blank-template/create` — the platform's blank template; the person names it at Details          |
+| an **account-only** action (`/register`: Sign Up, "Start your 7 days") | `/register` for a visitor, the brand's account home for a member — a membership or account intent is not a create intent |
+
+`/register?next=<stage>` was the old form of the first row (#867): the account first, the stage
+after sign-up. It landed a signed-out visitor on a sign-up form for a flow whose own first screen
+needs no session, so the draft could not survive the round trip and one intent had three doors. The
+`next=` unwrapping still exists in `lib/start-path.ts` for an authored link that carries one, and it
+now resolves to the same screen for both viewers.
 
 ### The invitation is the response path, and it enters at Account
 
@@ -292,6 +309,18 @@ Gap.
 **The purchase charges nothing today.** The membership is a subscription with a seven-day trial: the
 card is the plan's, and the walk's card step says so in as many words.
 
+**A plan chosen on `/pricing` arrives here already selected (#1043).** The pricing page sells nothing
+itself: every action on it opens the public template catalogue, and a plan card's action carries the
+tier and the interval (`/pricing/start` → `303` → `/relationship-templates`). The pair is recorded on
+the browser as one small intent (`lib/flow/plan-intent.ts`), because the pages between — the
+catalogue, the twenty-seven taxonomy pages, stage 1, the sign-in at stage 4 — are prerendered on
+purpose and must not learn about it to pass it along. When stage 5 mounts, the matching row is
+**already checked** (`data-plan-carried` on the walk, the row's own radio `checked`) and its panel
+carries the one control that opens the card step, since a checked radio fires no `change`. Choosing
+the other row still starts the checkout directly, exactly as it does when nothing was carried; a
+choice that arrived is reviewable, changeable, and **never charged here** — the membership still
+starts from this panel, and `sendDraftInvitation()` still refuses an unpaid send.
+
 **The words are the product**: _join membership plan_, _activate relationship_, _send email to
 counterparty now_. `purchase`, `buy` and `save payment method` appear nowhere in the stage — the
 thing being paid for is a membership plan and an activated relationship, and not a checkout.
@@ -311,6 +340,10 @@ thing being paid for is a membership plan and an activated relationship, and not
   storage, so the derivation cannot survive a reload by writing one.
 - `data:check` E10 still holds every flow `href` to the route manifest, so a retired
   `/…/create/account` route cannot quietly return, and a `/…/ongoing` route cannot arrive.
+- `tests/pricing-plan-carry.test.tsx` holds the whole carry (#1043): which pairs a card may carry,
+  the cookie round trip, the tier→row crossing read backwards off `PLAN_BILLING_TIER`, the route's
+  `303` and its clear-on-nothing policy, and the walk drawing the carried row checked with the
+  carried interval in the checkout it starts.
 - `tests/invite-response-shell.test.tsx` renders the response stage through `StageShell` and fails
   if it stops drawing the five-stage rail at Account, drops off the shared stage column, gains a
   second progress band, or exits onto anything but the screens `afterClaimTarget()` names.

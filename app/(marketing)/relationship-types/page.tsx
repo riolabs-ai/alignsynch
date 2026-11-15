@@ -31,18 +31,15 @@ import type { Metadata } from "next";
  * artifact's static header and footer are not reproduced here, which is the one thing about the
  * bundle that cannot survive contact with the real app.
  *
- * **And the actions are the viewer's (#979).** A member with a live session was offered `/register`
- * on all twenty-seven cards — asked to create the account they already had, on the front door of the
- * product's only paid flow. The page therefore resolves the session (once, here) and hands
- * `startViewer()`'s answer to the join: a card's action is the create flow's stage 1 for a member and
- * `/register?next=<that stage>` for a visitor, and the membership band's authored CTA is resolved the
- * same way (`lib/start-path.ts` owns both rules). A signed-out visitor's markup is byte-identical to
- * what this page shipped before (#317's rule: the chrome is chosen by route group, never by session;
- * only the *destination of an action* follows the session).
- *
- * The extra cost is one session read on a route whose layout already makes one for the account slot
- * (`shellSession()`); a page cannot read its layout's answer, and the alternative — patching the href
- * in the browser after paint — shows a member the sign-up page for a moment, which is the defect.
+ * **And every action is the flow's first screen (#1042).** A member with a live session used to be
+ * offered `/register` on all twenty-seven cards — asked to create the account they already had —
+ * and, once #979 fixed that, a visitor was still sent to the sign-up form. Stage 1 renders for a
+ * signed-out visitor (#690) and the account is stage 4 of that same wizard, so a card's action is
+ * the create flow's stage 1 for **every** viewer, carrying the template. What still follows the
+ * session is the *authored* membership CTA: a bare `/register` means an account to a visitor and an
+ * account home to a member, and `lib/start-path.ts` owns that rule. A signed-out visitor's markup is
+ * byte-identical to what this page shipped before (#317's rule: the chrome is chosen by route group,
+ * never by session).
  *
  * **Nothing here reads a clock, a store or the database.** The page is a projection of
  * `data/relationship-types.ts` through `data/pages/templates.ts`, so with no auth environment (the

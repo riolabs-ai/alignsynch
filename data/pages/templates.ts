@@ -307,14 +307,22 @@ export const templatesPageCopy: PageCopy = zPageCopy.parse({
 
     /**
      * The closing band. One outcome, one supporting sentence, one action — the drawn band's shape.
-     * The action is `/register`, because the creator signs up before the relationship exists
-     * (`docs/specs/flow-stages.md`, stage 4).
+     *
+     * The action is the flow's **blank** start (#1042), not `/register`: every create intent opens
+     * stage 1 of the one wizard, the account is stage 4 of that same wizard, and a reader who
+     * presses this has chosen no template — so they land on Details with the platform's blank one.
+     * The address is carried as a literal because a fixture may not import `lib/` (the fixtures are
+     * the base `data:check` compiles); `tests/blank-start.test.ts` pins it to
+     * `blankRelationshipPath()` so a move of the route is a red build rather than a dead link.
      */
     {
       id: "final-cta",
       heading: "Start with the relationship in front of you.",
       body: "Choose a template, answer privately, and open the report when you are both ready.",
-      cta: { label: "Create a relationship", href: "/register" },
+      cta: {
+        label: "Create a relationship",
+        href: "/templates/relationship/blank-template/create",
+      },
     },
   ],
 });

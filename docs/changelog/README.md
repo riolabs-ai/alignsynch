@@ -44,6 +44,22 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.20.1](v1-20-1.md)
+
+- **Released** 2026-11-14
+- **Tag** [`v1.20.1`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.1)
+- **Pull requests named** 10
+- **Theme:** the release where the billing wiring caught up with its own notices — six fixes, no new surface, and the second cut in a row whose code was already live
+- **Headline:** fix(pricing) — carry the chosen plan from /pricing to stage 5 (#1043) (#1061)
+
+### [v1.20.0](v1-20-0.md)
+
+- **Released** 2026-11-14
+- **Tag** [`v1.20.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.0)
+- **Pull requests named** 15
+- **Theme:** the release that makes the version label true — the create walk can be paid and sent, its card step mounts on the choice, and the code it names was already live
+- **Headline:** feat(flow) · #1014 steps 4–5 — send-or-draft inside the walk, and both endings land on the relationship (#1019)
+
 ### [v1.19.0](v1-19-0.md)
 
 - **Released** 2026-11-14

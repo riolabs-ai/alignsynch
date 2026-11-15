@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**143 documents in 9 sections.** Every page carries the same nav block, generated
+**146 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -40,12 +40,12 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
-- [Operations](#operations) — 16 documents
+- [Operations](#operations) — 17 documents
 - [Specs & design briefs](#specs-design-briefs) — 44 documents
 - [Records & QA](#records-qa) — 24 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
-- [Release notes](#release-notes) — 22 documents
+- [Release notes](#release-notes) — 24 documents
 
 ## Start here
 
@@ -99,6 +99,7 @@ The gate, releasing, deploying, iteration and the history behind them.
 - [`operations/repo-layers.md`](operations/repo-layers.md) — **Repo layers** — Why does the gate cost what my change costs, and which lane am I in?
 - [`operations/resend-inbound.md`](operations/resend-inbound.md) — **Resend inbound** — How do bounces, complaints and suppression marks reach us?
 - [`operations/spec-drift.md`](operations/spec-drift.md) — **Spec drift** — Where has the build moved away from the specification, and is that deliberate?
+- [`operations/stripe-go-live.md`](operations/stripe-go-live.md) — **Stripe go-live** — What exists in the Stripe account, where does every key live, and what must pass before a real card is charged?
 
 ## Specs & design briefs
 
@@ -174,9 +175,9 @@ What was measured, on which tree, and what it looked like.
 - [`qa/v1x-ui-cohort/README.md`](qa/v1x-ui-cohort/README.md) — **v1.x UI cohort** — Were all ten owner items measured in a real browser?
 - [`qa-atlas/README.md`](qa-atlas/README.md) — **QA atlas** — How is every registered surface captured, asserted and checked, and what is committed?
 - [`qa-atlas/DEFERRED.md`](qa-atlas/DEFERRED.md) — **Deferred sweeps** — Which release shipped without a QA atlas sweep, and what could the atlas not cover?
-- [`qa-atlas/v1.17.1/index.md`](qa-atlas/v1.17.1/index.md) — **QA atlas — the 1.17.1 tree (never released)** — What did every registered surface render in the 1.17.1 tree, which was never released, and what changed since v1.17.0?
-- [`qa-atlas/v1.18.0/index.md`](qa-atlas/v1.18.0/index.md) — **QA atlas — v1.18.0** — What did every registered surface render in v1.18.0, and what changed since the 1.17.1 capture?
 - [`qa-atlas/v1.19.0/index.md`](qa-atlas/v1.19.0/index.md) — **QA atlas — v1.19.0** — What did every registered surface render in v1.19.0, and what changed since the 1.18.0 capture?
+- [`qa-atlas/v1.20.0/index.md`](qa-atlas/v1.20.0/index.md) — **QA atlas — v1.20.0** — What did every registered surface render in v1.20.0, and what changed since the 1.19.0 capture?
+- [`qa-atlas/v1.20.1/index.md`](qa-atlas/v1.20.1/index.md) — **QA atlas — v1.20.1** — What did every registered surface render in v1.20.1, and what changed since the 1.20.0 capture?
 
 ## Code wiki
 
@@ -226,6 +227,8 @@ One page per release, a view of `CHANGELOG.md`.
 - [`changelog/v1-18-0.md`](changelog/v1-18-0.md) — **v1.18.0** — Which release paid v1.17.0's written promise, and why did the prepared patch become a minor?
 - [`changelog/v1-19-0.md`](changelog/v1-19-0.md) — **v1.19.0** — The release where the create flow became one dialog shell that behaves like a route.
 - [`changelog/v1-2-0.md`](changelog/v1-2-0.md) — **v1.2.0** — The release where five surfaces read the database.
+- [`changelog/v1-20-0.md`](changelog/v1-20-0.md) — **v1.20.0** — The release that made the version label true — the walk can be paid and sent, and the code it names was already live.
+- [`changelog/v1-20-1.md`](changelog/v1-20-1.md) — **v1.20.1** — Which release connected the billing state machine to the events it was waiting for, and shipped no new surface?
 - [`changelog/v1-3-0.md`](changelog/v1-3-0.md) — **v1.3.0** — The release where the flow closed.
 - [`changelog/v1-4-0.md`](changelog/v1-4-0.md) — **v1.4.0** — The release where the console arrived and templates became products.
 - [`changelog/v1-5-0.md`](changelog/v1-5-0.md) — **v1.5.0** — The release where a person could delete their account.

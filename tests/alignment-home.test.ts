@@ -177,15 +177,13 @@ describe("the templates band: a capped shelf, one call to action", () => {
 
   it("points every card at a public destination, and offers an example only where one exists", () => {
     for (const card of model.templates.featured) {
-      // `/register` makes the account that buys the relationship, and since #867 it carries which
-      // template the visitor picked as the sign-up destination — so the gate hands them back to
-      // stage 1 of that template instead of the brand's landing page. Never a create form on its
-      // own behind a session: that is the sign-in wall this page exists to remove.
-      expect(card.start).toBe(startPathFor(card.id, visitorOf("alignsynch")));
-      expect(card.start.startsWith(`${START_PATH}?next=`)).toBe(true);
-      expect(new URL(card.start, "http://x").searchParams.get("next")).toBe(
-        createRelationshipPath(card.id),
-      );
+      // Since #1042 the action is the create flow's stage 1, carrying the template — one door for
+      // a visitor and a member alike (the account is stage 4 of that same wizard, so a signed-out
+      // reader is not sent to a sign-up form first). The address is a public screen: stage 1
+      // renders with no session.
+      expect(card.start).toBe(startPathFor(card.id));
+      expect(card.start).toBe(createRelationshipPath(card.id));
+      expect(new URL(card.start, "http://x").search).toBe("");
       if (card.example === undefined) continue;
       expect(card.example).toBe(relationshipTypeDemoPath(card.id));
       expect(demoAnswersByType[card.id]).toBeDefined();

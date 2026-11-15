@@ -77,7 +77,7 @@ describe("the worked example is one type's report, through the live projection",
 
   it("draws one row per Aspect, titled by the type, with the two demo seats", () => {
     for (const id of DEMO_IDS) {
-      const demo = assessmentDemo(id, VISITOR);
+      const demo = assessmentDemo(id);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
       const type = purchasableRelationshipType(id);
       if (type === undefined) throw new Error(`no type for "${id}"`);
@@ -97,7 +97,7 @@ describe("the worked example is one type's report, through the live projection",
 
   it("computes every Gap from the two sheets instead of storing one", () => {
     for (const id of DEMO_IDS) {
-      const demo = assessmentDemo(id, VISITOR);
+      const demo = assessmentDemo(id);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
       const type = purchasableRelationshipType(id);
       if (type === undefined) throw new Error(`no type for "${id}"`);
@@ -113,29 +113,25 @@ describe("the worked example is one type's report, through the live projection",
     }
   });
 
-  it("points the Start CTA at the public gate, carrying this type's create step", () => {
+  it("points the Start CTA at stage 1, carrying this type's template", () => {
     for (const id of DEMO_IDS) {
-      const demo = assessmentDemo(id, VISITOR);
+      const demo = assessmentDemo(id);
       if (demo === undefined) throw new Error(`no demo for "${id}"`);
-      // The example is a `(marketing)` page, so `/register` is the honest action — the account is
-      // created **first**, and since #867 the gate is told which template the reader chose, so the
-      // sign-up lands on that template's stage 1 rather than on the brand's landing page.
-      expect(demo.startPath).toBe(startPathFor(id, VISITOR));
-      expect(demo.startPath.startsWith(`${START_PATH}?next=`)).toBe(true);
-      expect(new URL(demo.startPath, "http://x").searchParams.get("next")).toBe(
-        createRelationshipPath(id),
-      );
+      // #1042 — the example is a `(marketing)` page and the action is still public, but the door is
+      // the wizard's first screen rather than the sign-up form: a visitor types Details here and
+      // meets the account at stage 4, on the draft. The template they were just reading travels in
+      // the address, so nothing about their choice is lost.
+      expect(demo.startPath).toBe(startPathFor(id));
+      expect(demo.startPath).toBe(createRelationshipPath(id));
+      expect(new URL(demo.startPath, "http://x").search).toBe("");
       expect(demo.startPath.startsWith("/v1/")).toBe(false);
-      // Never the in-app create address on its own: that is what the gate resolves to, not what a
-      // signed-out reader is handed.
-      expect(demo.startPath).not.toBe(createRelationshipPath(id));
     }
   });
 });
 
 describe("a type with no example is a 404, not a fabricated report", () => {
   it("answers undefined for an unknown id", () => {
-    expect(assessmentDemo("no-such-type", VISITOR)).toBeUndefined();
+    expect(assessmentDemo("no-such-type")).toBeUndefined();
   });
 
   it("answers undefined for a type whose sheet is still unwritten", () => {
@@ -143,7 +139,7 @@ describe("a type with no example is a 404, not a fabricated report", () => {
       (type) => demoAnswersFor(type.id) === undefined,
     );
     if (withoutDemo === undefined) throw new Error("every purchasable type carries a sheet now");
-    expect(assessmentDemo(withoutDemo.id, VISITOR)).toBeUndefined();
+    expect(assessmentDemo(withoutDemo.id)).toBeUndefined();
   });
 
   it("turns that into notFound() on the page", async () => {
@@ -159,7 +155,7 @@ describe("a type with no example is a 404, not a fabricated report", () => {
 describe("the page draws the label and the report", () => {
   it("renders the type's finished report under an Example label", async () => {
     const type = "staff-manager";
-    const demo = assessmentDemo(type, VISITOR);
+    const demo = assessmentDemo(type);
     if (demo === undefined) throw new Error(`no demo for "${type}"`);
 
     const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ slug: type }) }));
@@ -177,7 +173,7 @@ describe("the page draws the label and the report", () => {
 
   it("sits one segment below the type's own public page, and links no app-shell route", async () => {
     const type = "staff-manager";
-    const demo = assessmentDemo(type, VISITOR);
+    const demo = assessmentDemo(type);
     if (demo === undefined) throw new Error(`no demo for "${type}"`);
 
     const html = renderToStaticMarkup(await DemoPage({ params: Promise.resolve({ slug: type }) }));
@@ -187,13 +183,17 @@ describe("the page draws the label and the report", () => {
     expect(html).not.toContain("/assessment/demo");
     // … the breadcrumb back is the type itself, not the signed-in library …
     expect(html).toContain(`href="${relationshipTypePath(type)}"`);
-    expect(html).not.toContain('href="/templates/');
+    // … and the one `/templates/` href on the page is the flow's stage 1 this example belongs to
+    // (#1042) — never the member library, which is the signed-in screen.
+    for (const match of html.matchAll(/href="(\/templates\/[^"]*)"/g)) {
+      expect(match[1]).toBe(createRelationshipPath(type));
+    }
     // … and the page is the public one: no sidebar, no shelf column of its own.
     expect(html).not.toContain("data-tour");
   });
 
   it("titles the tab and the description from the report", async () => {
-    const demo = assessmentDemo("co-founders", VISITOR);
+    const demo = assessmentDemo("co-founders");
     if (demo === undefined) throw new Error("no demo for co-founders");
     await expect(
       generateMetadata({ params: Promise.resolve({ slug: "co-founders" }) }),

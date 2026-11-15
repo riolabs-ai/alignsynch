@@ -31,12 +31,23 @@
  * anything that falls back to the host zone would render differently on a developer's machine and
  * on a UTC runner, and a hash that only matches on one box is a coin-flip gate. The render clock is
  * frozen separately, inside the suite (`harness.ts::freezeClock`), at `DEMO_NOW_ISO`.
+ *
+ * ## The child env is hermetic (#1066)
+ *
+ * The same rule as `TZ`, one layer out: a render must not be able to read something only the
+ * caller's shell has. `DATABASE_URL` in the environment made the boundary render of
+ * `/admin/billing` draw the demo branch's live rows, while CI — with no connection string, by
+ * design — drew the page's own "could not be read" band, so the step a developer ran was a
+ * statement about their shell. `./parity-env.mjs` is what the child gets instead: the caller's
+ * environment minus the connection string, the driver's fallbacks and the Neon namespaces. What
+ * was dropped is printed by name (never by value), so a run says whether it had anything to drop.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import nextConfig from "../next.config.mjs";
+import { hermeticEnv, strippedKeys } from "./parity-env.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const VITEST = join(ROOT, "node_modules", "vitest", "vitest.mjs");
@@ -109,6 +120,19 @@ mkdirSync(ARTIFACTS, { recursive: true });
 
 const results = [];
 
+/**
+ * Say what had to be dropped, by **name**, before the first brand runs — and say nothing when
+ * there was nothing to drop, which is the CI case. A run that printed this line measured the tree
+ * on a machine that also had a connection string; a run that did not had nothing to strip. Only
+ * key names are printed: a value here would be a secret in a gate log.
+ */
+const dropped = strippedKeys(process.env);
+if (dropped.length > 0) {
+  process.stdout.write(
+    `\nparity: hermetic child env — dropped ${dropped.length} variable(s) the render must not read: ${dropped.join(", ")}\n`,
+  );
+}
+
 for (const brand of BRANDS) {
   const started = Date.now();
   process.stdout.write(
@@ -121,7 +145,7 @@ for (const brand of BRANDS) {
     cwd: ROOT,
     stdio: "inherit",
     env: {
-      ...process.env,
+      ...hermeticEnv(process.env),
       // `BRAND` is what `data/brand.ts` reads; `PARITY_BRAND` is what the test believes it is.
       // Setting both from one variable is what makes "this run is the brand it claims" true.
       BRAND: brand,
