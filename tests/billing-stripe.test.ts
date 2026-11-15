@@ -13,19 +13,35 @@ import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BILLING_PRICE_IDS } from "@/data/billing-prices";
+import {
+  BILLING_PRICE_IDS,
+  BILLING_PRICE_IDS_BY_KEY_SET,
+  BILLING_PRICE_KEY_SETS,
+  billingPriceIdFor,
+} from "@/data/billing-prices";
 import { POST as checkoutRoute } from "@/app/api/billing/checkout/route";
 import { POST as webhookRoute } from "@/app/api/billing/webhook/route";
 import {
+  BILLING_KEY_SETS,
+  LIVE_KEY_SET,
   STRIPE_API_BASE,
+  STRIPE_API_VERSION,
   STRIPE_WEBHOOK_EVENTS,
   StripeBillingAdapter,
+  billingKeySetFromEnv,
+  liveKeySetConfirmed,
   parseStripeSignatureHeader,
+  stripeApiVersionFromEnv,
   stripeCredentialsFromEnv,
   subscriptionStatusOf,
   verifyStripeSignature,
 } from "@/lib/billing/adapters/stripe";
-import { billing, CARRIED_BILLING_PROVIDERS, resetBillingAdapter } from "@/lib/billing";
+import {
+  billing,
+  billingTestMode,
+  CARRIED_BILLING_PROVIDERS,
+  resetBillingAdapter,
+} from "@/lib/billing";
 import { billingHostFromEnv, foreignHostDetail, hostClaimOf } from "@/lib/billing/host";
 import { BillingRefusal } from "@/lib/billing/port";
 import type { Subscription } from "@/lib/billing/types";
@@ -245,6 +261,282 @@ describe("the credentials are test-mode or nothing", () => {
     expect(stripeCredentialsFromEnv(ENV).publishableKey).toBe(ENV.STRIPE_TEST_PUBLISHABLE_KEY);
     const { STRIPE_TEST_PUBLISHABLE_KEY: _omitted, ...rest } = ENV;
     expect(stripeCredentialsFromEnv(rest).publishableKey).toBeNull();
+  });
+});
+
+/**
+ * Fixture key material, one object per key set. Shaped like the provider's own (the prefix checks are
+ * part of what is under test) and obviously not a credential.
+ */
+const VENTURE_ENV = {
+  BILLING_KEY_SET: "ventureio-test",
+  STRIPE_VENTUREIO_TEST_SECRET: "sk_test_venture_fixture",
+  STRIPE_VENTUREIO_TEST_WEBHOOK: "whsec_venture_fixture",
+  STRIPE_VENTUREIO_TEST_PUBLISHABLE: "pk_test_venture_fixture",
+  BILLING_HOST: "demo",
+} as const;
+
+const ALIGNSYNCH_ENV = {
+  BILLING_KEY_SET: "alignsynch-test",
+  STRIPE_ALIGNSYNCH_TEST_SECRET: "sk_test_alignsynch_fixture",
+  STRIPE_ALIGNSYNCH_TEST_WEBHOOK: "whsec_alignsynch_fixture",
+  STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE: "pk_test_alignsynch_fixture",
+  BILLING_HOST: "demo",
+} as const;
+
+/** The live set: its own three variables, and the paired confirmation a live set always needs. */
+const LIVE_ENV = {
+  BILLING_KEY_SET: "alignsynch-live",
+  BILLING_LIVE_KEYS_CONFIRM: "alignsynch-live",
+  STRIPE_ALIGNSYNCH_LIVE_SECRET: "sk_live_fixture",
+  STRIPE_ALIGNSYNCH_LIVE_WEBHOOK: "whsec_live_fixture",
+  STRIPE_ALIGNSYNCH_LIVE_PUBLISHABLE: "pk_live_fixture",
+  BILLING_HOST: "demo",
+} as const;
+
+const CHECKOUT = {
+  userId: "account-avery",
+  planId: "principal",
+  interval: "month",
+  successUrl: "https://example.test/return",
+  cancelUrl: "https://example.test/cancel",
+} as const;
+
+function adapterFor(env: Readonly<Record<string, string | undefined>>, fetchImpl?: typeof fetch) {
+  return new StripeBillingAdapter({
+    env,
+    now: () => NOW,
+    ...(fetchImpl === undefined ? {} : { fetch: fetchImpl }),
+  });
+}
+
+describe("the API version is pinned in code, never left to the account", () => {
+  it("sends Stripe-Version on the checkout request, so ui_mode depends on the API and not the account", async () => {
+    const { impl, calls } = fakeFetch({
+      id: "cs_test_1",
+      client_secret: "cs_test_1_secret",
+    });
+
+    const session = await adapterFor(ENV, impl).startCheckout({
+      ...CHECKOUT,
+      presentation: "embedded",
+    });
+
+    // The field the provider version-gates. Without a `Stripe-Version` header this is evaluated
+    // against whatever the account's dashboard happens to be set to — which is how one test
+    // account accepted it and another answered `Invalid ui_mode: embedded_page`.
+    expect(new URLSearchParams(calls[0]?.body).get("ui_mode")).toBe("embedded_page");
+    expect(calls[0]?.headers["stripe-version"]).toBe("2026-03-25.dahlia");
+    expect(calls[0]?.headers["stripe-version"]).toBe(STRIPE_API_VERSION);
+    expect(session.clientSecret).toBe("cs_test_1_secret");
+  });
+
+  it("sends it on reads too, and STRIPE_API_VERSION is the only override", async () => {
+    const read = fakeFetch({ id: "cs_test_1", status: "open" });
+    // An incomplete session is a `null`, not a caller error — the read is what is under test.
+    expect(
+      await adapterFor(ENV, read.impl).confirmCheckout("account-avery", "cs_test_1"),
+    ).toBeNull();
+    expect(read.calls[0]?.headers["stripe-version"]).toBe(STRIPE_API_VERSION);
+
+    const overridden = fakeFetch({
+      id: "cs_test_1",
+      url: "https://checkout.example.test/cs_test_1",
+      client_secret: "cs_test_1_secret",
+    });
+    await adapterFor(
+      { ...ENV, STRIPE_API_VERSION: "2099-01-02.beta" },
+      overridden.impl,
+    ).startCheckout(CHECKOUT);
+    expect(overridden.calls[0]?.headers["stripe-version"]).toBe("2099-01-02.beta");
+
+    // A blank value is the pin, never "send nothing and let the account decide".
+    expect(stripeApiVersionFromEnv({ STRIPE_API_VERSION: "   " })).toBe(STRIPE_API_VERSION);
+    expect(stripeApiVersionFromEnv({})).toBe(STRIPE_API_VERSION);
+    expect(STRIPE_API_VERSION).toBe("2026-03-25.dahlia");
+  });
+});
+
+describe("one selector, three key sets, and everything account-scoped follows it", () => {
+  it("uses the keys and the Price of the set BILLING_KEY_SET names", async () => {
+    const venture = fakeFetch({ id: "cs_v", url: "https://checkout.example.test/cs_v" });
+    await adapterFor(VENTURE_ENV, venture.impl).startCheckout(CHECKOUT);
+    expect(venture.calls[0]?.headers.authorization).toBe(
+      `Bearer ${VENTURE_ENV.STRIPE_VENTUREIO_TEST_SECRET}`,
+    );
+    // A Price id is account-scoped: the venture set must name the venture id, or the request
+    // answers `No such price` inside the flow.
+    expect(new URLSearchParams(venture.calls[0]?.body).get("line_items[0][price]")).toBe(
+      BILLING_PRICE_IDS_BY_KEY_SET["ventureio-test"].principal.month,
+    );
+
+    const alignsynch = fakeFetch({ id: "cs_a", url: "https://checkout.example.test/cs_a" });
+    await adapterFor(ALIGNSYNCH_ENV, alignsynch.impl).startCheckout(CHECKOUT);
+    expect(alignsynch.calls[0]?.headers.authorization).toBe(
+      `Bearer ${ALIGNSYNCH_ENV.STRIPE_ALIGNSYNCH_TEST_SECRET}`,
+    );
+    expect(new URLSearchParams(alignsynch.calls[0]?.body).get("line_items[0][price]")).toBe(
+      BILLING_PRICE_IDS_BY_KEY_SET["alignsynch-test"].principal.month,
+    );
+
+    // Two sets, two ids: a single shared id would make the selector decorative.
+    expect(BILLING_PRICE_IDS_BY_KEY_SET["ventureio-test"].principal.month).not.toBe(
+      BILLING_PRICE_IDS_BY_KEY_SET["alignsynch-test"].principal.month,
+    );
+    expect(stripeCredentialsFromEnv(VENTURE_ENV).keySet).toBe("ventureio-test");
+    expect(stripeCredentialsFromEnv(ALIGNSYNCH_ENV).keySet).toBe("alignsynch-test");
+  });
+
+  it("carries a Price row only for key sets the selector carries, and no row for live yet", () => {
+    // Two vocabularies name the same accounts: the credential sets (`BILLING_KEY_SET`) and the Price
+    // rows. A set with keys and no Price refuses at the checkout, so every row must be a real set —
+    // and `alignsynch-live` must have no row, because no live Price exists to name.
+    for (const keySet of BILLING_PRICE_KEY_SETS) {
+      expect([...BILLING_KEY_SETS], keySet).toContain(keySet);
+    }
+    expect(BILLING_PRICE_IDS_BY_KEY_SET).not.toHaveProperty(LIVE_KEY_SET);
+    expect(billingPriceIdFor("principal", "month", LIVE_KEY_SET)).toBeUndefined();
+  });
+
+  it("keeps the legacy STRIPE_TEST_* path when no selector is set, so three deployments do not move", () => {
+    const legacy = stripeCredentialsFromEnv(ENV);
+    expect(legacy.secretKey).toBe(ENV.STRIPE_TEST_SECRET_KEY);
+    expect(legacy.webhookSecret).toBe(ENV.STRIPE_TEST_WEBHOOK_SECRET);
+    expect(legacy.publishableKey).toBe(ENV.STRIPE_TEST_PUBLISHABLE_KEY);
+    expect(legacy.keySet).toBeNull();
+    expect(billingKeySetFromEnv(ENV)).toBeNull();
+  });
+
+  it("refuses a selected set with no keys, naming the variable, instead of falling through", () => {
+    // The selector is set, the set is empty, and the legacy trio is present: the answer is a
+    // refusal naming the venture variable, never a quiet checkout against the other account.
+    const env = { ...ENV, BILLING_KEY_SET: "ventureio-test" };
+    try {
+      stripeCredentialsFromEnv(env);
+      throw new Error("the adapter fell through to another account's keys");
+    } catch (error) {
+      expect(error).toBeInstanceOf(BillingRefusal);
+      expect((error as BillingRefusal).code).toBe("not-configured");
+      expect((error as Error).message).toContain("STRIPE_VENTUREIO_TEST_SECRET is not set");
+      // Never the value, never its length.
+      expect((error as Error).message).not.toContain(ENV.STRIPE_TEST_SECRET_KEY);
+    }
+  });
+
+  it("refuses a selected set with one member missing rather than using three-quarters of it", () => {
+    const { STRIPE_VENTUREIO_TEST_PUBLISHABLE: _noPublishable, ...withoutPublishable } =
+      VENTURE_ENV;
+    expect(() => stripeCredentialsFromEnv(withoutPublishable)).toThrowError(
+      /STRIPE_VENTUREIO_TEST_PUBLISHABLE is not set/,
+    );
+
+    const { STRIPE_VENTUREIO_TEST_WEBHOOK: _noWebhook, ...withoutWebhook } = VENTURE_ENV;
+    expect(() => stripeCredentialsFromEnv(withoutWebhook)).toThrowError(
+      /STRIPE_VENTUREIO_TEST_WEBHOOK is not set/,
+    );
+  });
+
+  it("refuses a key whose prefix disagrees with the mode the set promises", () => {
+    expect(() =>
+      stripeCredentialsFromEnv({ ...VENTURE_ENV, STRIPE_VENTUREIO_TEST_SECRET: "key-of-a-kind" }),
+    ).toThrowError(/STRIPE_VENTUREIO_TEST_SECRET is not a test-mode secret key/);
+    expect(() =>
+      stripeCredentialsFromEnv({
+        ...ALIGNSYNCH_ENV,
+        STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE: "pk_live_fixture",
+      }),
+    ).toThrowError(/STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE is not a test-mode publishable key/);
+    // A live key pasted into a test set is refused, not quietly spent in test mode.
+    expect(() =>
+      stripeCredentialsFromEnv({ ...VENTURE_ENV, STRIPE_VENTUREIO_TEST_SECRET: "sk_live_fixture" }),
+    ).toThrowError(/STRIPE_VENTUREIO_TEST_SECRET is not a test-mode secret key/);
+  });
+
+  it("refuses the live set without its paired confirmation, so one variable can never spend money", () => {
+    const { BILLING_LIVE_KEYS_CONFIRM: _unpaired, ...unconfirmed } = LIVE_ENV;
+    try {
+      stripeCredentialsFromEnv(unconfirmed);
+      throw new Error("the live key set was reachable on one variable");
+    } catch (error) {
+      expect((error as BillingRefusal).code).toBe("not-configured");
+      expect((error as Error).message).toContain("BILLING_LIVE_KEYS_CONFIRM");
+      expect((error as Error).message).toContain("never reachable on one variable");
+    }
+    // A confirmation that says something else is the same refusal: this is an echo, not a flag.
+    expect(() =>
+      stripeCredentialsFromEnv({ ...LIVE_ENV, BILLING_LIVE_KEYS_CONFIRM: "yes" }),
+    ).toThrowError(/BILLING_LIVE_KEYS_CONFIRM is not "alignsynch-live"/);
+    expect(liveKeySetConfirmed(unconfirmed)).toBe(false);
+    expect(liveKeySetConfirmed(LIVE_ENV)).toBe(true);
+  });
+
+  it("reads the live set only when both variables agree, and then requires live-mode keys", () => {
+    // The gate that is meant to pass: the pair is present, so the adapter goes as far as the
+    // prefix check — and a test key in the live slots is refused there.
+    expect(stripeCredentialsFromEnv(LIVE_ENV).keySet).toBe("alignsynch-live");
+    expect(stripeCredentialsFromEnv(LIVE_ENV).secretKey).toBe(
+      LIVE_ENV.STRIPE_ALIGNSYNCH_LIVE_SECRET,
+    );
+    expect(() =>
+      stripeCredentialsFromEnv({ ...LIVE_ENV, STRIPE_ALIGNSYNCH_LIVE_SECRET: "sk_test_fixture" }),
+    ).toThrowError(/STRIPE_ALIGNSYNCH_LIVE_SECRET is not a live-mode secret key/);
+
+    // `/pricing`'s "no money moves" sentence is the server's answer, not the component's guess: a
+    // live set must stop it promising test mode, and the test sets must keep it.
+    expect(
+      billingTestMode({ BILLING_PROVIDER: "stripe", BILLING_KEY_SET: "alignsynch-live" }),
+    ).toBe(false);
+    expect(billingTestMode({ BILLING_PROVIDER: "stripe", BILLING_KEY_SET: "ventureio-test" })).toBe(
+      true,
+    );
+    // Legacy, and the keyless default, are unchanged.
+    expect(billingTestMode({ BILLING_PROVIDER: "stripe" })).toBe(true);
+    expect(billingTestMode({})).toBe(false);
+  });
+
+  it("verifies a delivery with the selected set's own webhook secret, and refuses the other set's", () => {
+    const body = JSON.stringify({ hello: "world" });
+    const selected = stripeCredentialsFromEnv(VENTURE_ENV);
+    const other = stripeCredentialsFromEnv(ALIGNSYNCH_ENV);
+    // Both accounts run their own endpoint, so the two secrets are different strings; a key swap
+    // that left the other account's whsec in place would fail every delivery.
+    expect(selected.webhookSecret).not.toBe(other.webhookSecret);
+
+    expect(() =>
+      verifyStripeSignature({
+        rawBody: body,
+        signature: signatureFor(body, NOW_SECONDS, selected.webhookSecret),
+        secret: selected.webhookSecret,
+        now: NOW,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      verifyStripeSignature({
+        rawBody: body,
+        signature: signatureFor(body, NOW_SECONDS, other.webhookSecret),
+        secret: selected.webhookSecret,
+        now: NOW,
+      }),
+    ).toThrowError(/signature/);
+  });
+
+  it("refuses a selector this build does not carry, listing the sets it does", () => {
+    expect(() => stripeCredentialsFromEnv({ ...ENV, BILLING_KEY_SET: "venture" })).toThrowError(
+      /BILLING_KEY_SET="venture" is not a key set this build carries \(ventureio-test, alignsynch-test, alignsynch-live\)/,
+    );
+    expect(() => billingKeySetFromEnv({ BILLING_KEY_SET: "VentureIO-Test" })).not.toThrow();
+    expect(billingKeySetFromEnv({ BILLING_KEY_SET: " VentureIO-Test " })).toBe("ventureio-test");
+  });
+
+  it("names the selected set's publishable variable when an embedded checkout has no key", async () => {
+    const { impl } = fakeFetch({ id: "cs_test_1", client_secret: "cs_test_1_secret" });
+    // A named set always carries its publishable key, so the refusal is reached by dropping the
+    // key from the set the *adapter* was given — which is the legacy path's shape — and asserting
+    // the sentence names the variable that was actually missing.
+    const { STRIPE_TEST_PUBLISHABLE_KEY: _dropped, ...noKey } = ENV;
+    await expect(
+      adapterFor(noKey, impl).startCheckout({ ...CHECKOUT, presentation: "embedded" }),
+    ).rejects.toThrowError(/STRIPE_TEST_PUBLISHABLE_KEY is not set/);
   });
 });
 
