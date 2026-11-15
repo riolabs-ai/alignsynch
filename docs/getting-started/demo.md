@@ -134,6 +134,41 @@ tables and `neon_auth.user`/`session`/`account`, keep `project_config` and `jwks
 The reset is the **only** bound on the demo. There is no session expiry and no TTL, by decision on
 \#185: a visitor's state does not decay, and the next nightly reset is what ends every session.
 
+## The trusted-domain list, which a restore empties
+
+`demo.alignsynch.com` has to be on the **demo branch's** Managed Auth trusted-origin list, or every
+sign-in answers `403 INVALID_ORIGIN` — the origin is refused _before_ any password is compared, so no
+identity can enter, admin seats included, while `/api/version` reads `200` and every gate stays
+green. **That list is branch configuration, and a restore does not preserve it.** A restore is a
+branch creation; the Managed Auth _integration_ comes back (measured: `/auth` answered `200` with its
+2026-10-30 `created_at` on both sides of a reset) but the list comes back empty:
+
+```text
+GET …/branches/<demo>/auth/domains
+  09:41Z  {"domains":[{"domain":"https://demo.alignsynch.com","auth_provider":"better_auth"}]}
+  09:47Z  {"domains":[]}                                    ← a demo:reset ran in between
+```
+
+So a completed reset **re-applies it and proves it**, as steps 3 and 5 of the script: a `POST` of
+`DEMO_ORIGIN` (default `https://demo.alignsynch.com`) only when the list does not already carry it,
+then one sign-in from that origin with a **deliberately wrong** credential for an address that cannot
+exist. `401 INVALID_EMAIL_OR_PASSWORD` means the origin was accepted; `403` fails the run with a
+named error, because a branch that refuses the site is not a reset demo whatever its row counts say.
+The re-apply runs **before** the reseed: the seed creates its accounts through the branch's own
+sign-up endpoint with `Origin: $DEMO_ORIGIN`, so on an emptied list it would be creating them from an
+origin the branch refuses.
+
+Two consequences worth knowing:
+
+- **A loopback `DEMO_ORIGIN` proves nothing.** Neon Auth trusts `http://localhost:*` implicitly on a
+  branch whose list is empty — measured: an empty list answers `401` for `http://localhost:3000` and
+  `403` for `https://demo.alignsynch.com` in the same window — so a run that trusted loopback would
+  print a green probe every night on a demo nobody can enter. The nightly workflow passes the demo
+  origin for exactly this reason, and the script warns when the origin is loopback.
+- **One origin, exactly.** A wildcard, a path, a query or plain `http` on a public host is refused
+  before anything is written. The list is never widened, replaced or trimmed: an auth server that
+  trusts any origin is a phishing surface wearing a test badge.
+
 ## What it prints
 
 Row counts before the reset, after the reset and after the reseed; then the six counts the bundle
@@ -168,8 +203,15 @@ NEON_API_KEY=napi_… node scripts/demo-reset.mjs --dry-run     # resolve and pr
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --skip-migrate  # trust the base's ledger
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --skip-reset  # reseed only (empties first)
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --branch demo-scratch   # another branch
+NEON_API_KEY=napi_… node scripts/demo-reset.mjs --verify-origin  # re-apply + probe, reset nothing
+NEON_API_KEY=napi_… node scripts/demo-reset.mjs --probe-origin https://demo.alignsynch.com  # ask only
 DEMO_SOURCE_BRANCH=demo-base node scripts/demo-reset.mjs      # name the source explicitly
 ```
+
+`--verify-origin` is the maintenance run for a branch a reset did not touch: it re-applies
+`DEMO_ORIGIN` and probes it, and resets and reseeds nothing. `--probe-origin <origin>` changes
+nothing at all — it asks the branch whether it trusts that origin, which is how the `403` failure path
+is demonstrated on a live branch without breaking it.
 
 The source is `DEMO_SOURCE_BRANCH` (or `--source <name>`) when it is set, and the branch's own
 parent otherwise. Set it in CI and for any manual run: without it, a `demo` branch whose parent is
@@ -206,6 +248,14 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
   there is nothing to reset it from.
 - **A source with no read-write compute.** The migrate step writes to `demo-base`, so a source
   without an endpoint is named and refused before the restore, not half-run.
+- **A branch with no Managed Auth integration.** The trusted-origin list hangs off the integration,
+  so a branch without one is named (`GET …/auth/domains` answered `404`) rather than repaired by
+  inventing configuration — enabling Neon Auth on a branch is a decision, not a retry.
+- **A `DEMO_ORIGIN` that is not one exact origin.** A wildcard, a path, a query, a credential in the
+  URL, or plain `http` on a public host is refused before anything is written.
+- **A sign-in probe that does not answer `401`.** `403` fails the run with a named error (the branch
+  trusts no such origin); a `429` or `5xx` is retried once and then fails too, because an
+  inconclusive probe is not a pass.
 - **A missing branch.** Creating infrastructure is a decision, not a retry; the message says how to
   create it and exits.
 - **A connection string from the environment.** Both the write URL and the auth host are derived

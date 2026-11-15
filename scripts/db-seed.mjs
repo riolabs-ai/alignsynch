@@ -111,6 +111,7 @@ import {
   seatProofSummary,
   seatProofVerdict,
 } from "./db-seed-admin-proof.mjs";
+import { DEMO_ACCOUNTS, inviteEmailFor } from "./db-seed-invite.mjs";
 import {
   SEED_LOCK_ID,
   SEED_LOCK_NAMESPACE,
@@ -277,49 +278,6 @@ async function publishTemplateVersion(client, template, reason) {
  */
 function demoInviteToken(instanceId) {
   return createHash("sha256").update(`algnsynch demo invitation:${instanceId}`).digest("base64url");
-}
-
-/**
- * The address the invitation was sent to (#975).
- *
- * A `session_invite` row requires one (`email` is NOT NULL with an `@` check), and the fixture
- * authors none — a party is a name and a sheet, never a mailbox. Two sources, in order, and
- * neither invents a person:
- *
- *   1. **the demo account that owns the seat**, when this instance is the one the demo identities
- *      answer (`counterparty@demo.alignsynch.test` for `assessment-instance-avery-rowan`). That
- *      address is the identity the demo signs in with, so the invitation names the real invitee.
- *   2. **the counterparty's own fixture name** at `demo.alignsynch.test` — `sam@demo.alignsynch.test`
- *      for the instance a five-party catalogue says belongs to Sam. `.test` is reserved by RFC
- *      6761 and can never route anywhere, so a derived demo address cannot deliver mail to a
- *      stranger.
- */
-function inviteEmailFor(instance) {
-  const account = DEMO_ACCOUNTS.find(
-    (candidate) =>
-      candidate.party !== null &&
-      candidate.party.instance === instance.id &&
-      candidate.party.role === "counterparty",
-  );
-  if (account !== undefined) return account.email;
-
-  const counterparty = instance.parties.find((party) => party.role === "counterparty");
-  if (counterparty === undefined) {
-    throw new Error(
-      `instance "${instance.id}" has no counterparty party — an invitation needs somebody to invite`,
-    );
-  }
-  const stem = counterparty.name
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  if (stem === "") {
-    throw new Error(
-      `instance "${instance.id}": the counterparty's name "${counterparty.name}" yields no address stem`,
-    );
-  }
-  return `${stem}@${DEMO_DOMAIN}`;
 }
 
 /**
@@ -651,42 +609,8 @@ async function readDemoDataset() {
   return parsed.bundle.payload;
 }
 
-const DEMO_DOMAIN = "demo.alignsynch.test";
-
 /** Better Auth rejects a server-side sign-up with no `Origin`; this is the app's own. */
 const DEMO_ORIGIN = process.env.DEMO_ORIGIN ?? "http://localhost:3000";
-
-/**
- * The three accounts, and the seats they hold.
- *
- * The handles are `demo-`prefixed so a leftover row is identifiable by name, and the display
- * names are the party names the dataset carries (`Avery`, `Rowan`) — which is the **binding key**:
- * `bindDemoParties` binds every `party` row whose name is that person, so the demo identities hold
- * every relationship their name appears in rather than one fixture instance (#1079). Avery is the
- * Initiator on four of them and Rowan is the Counterparty on one and the Initiator on two, which is
- * what makes both demo buttons show a populated screen — the requirement the issue states as "at
- * least one relationship where they are the initiator/counterparty".
- */
-const DEMO_ACCOUNTS = [
-  {
-    email: `initiator@${DEMO_DOMAIN}`,
-    name: "Avery",
-    handle: "demo-initiator",
-    role: "member",
-  },
-  {
-    email: `counterparty@${DEMO_DOMAIN}`,
-    name: "Rowan",
-    handle: "demo-counterparty",
-    role: "member",
-  },
-  {
-    email: `admin@${DEMO_DOMAIN}`,
-    name: "Demo Admin",
-    handle: "demo-admin",
-    role: "admin",
-  },
-];
 
 const DEMO_HANDLES = DEMO_ACCOUNTS.map((account) => account.handle);
 
@@ -922,6 +846,11 @@ async function seedDemoAccounts(client) {
 async function bindDemoParties(client, accounts) {
   const bound = [];
   for (const account of accounts) {
+    // The operator holds no seat — `holdsSeat: false` is the whole reason this loop can skip an
+    // identity. Before #1083 the same skip was `if (account.party === null) continue;`: a field
+    // that no longer exists, so #1083 deleted the field and the branch together and the seed then
+    // demanded a `party` row named "Demo Admin" on every run.
+    if (account.holdsSeat === false) continue;
     const { rows } = await client.query(
       `UPDATE party SET user_id = $1 WHERE name = $2
         RETURNING session_record_id, role, name`,

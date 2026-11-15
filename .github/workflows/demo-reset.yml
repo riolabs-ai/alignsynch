@@ -116,6 +116,12 @@ jobs:
           # because a branch cannot be re-parented, so the source is passed instead of inherited.
           # The script refuses this value if it ever resolves to the project's default branch.
           DEMO_SOURCE_BRANCH: demo-base
-          # A scheduled run has no browser origin; the seed's sign-ups carry the app's own.
-          DEMO_ORIGIN: ${{ vars.DEMO_ORIGIN || 'http://localhost:3000' }}
+          # **The origin the reset trusts, and the one it proves.** It must be the demo's own site:
+          # the branch's trusted-domain list is branch configuration that a restore empties, so the
+          # reset re-applies this origin and then signs in from it with a deliberately wrong
+          # credential (`401` required, `403` fails the run). A loopback default would make that
+          # probe meaningless — Neon Auth trusts `http://localhost:*` implicitly on any branch — and
+          # the nightly would report a green, enterable demo that answers `403 INVALID_ORIGIN` to
+          # every real visitor. `vars.DEMO_ORIGIN` may override it, but only with one exact origin.
+          DEMO_ORIGIN: ${{ vars.DEMO_ORIGIN || 'https://demo.alignsynch.com' }}
         run: node scripts/demo-reset.mjs
