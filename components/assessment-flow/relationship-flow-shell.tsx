@@ -70,7 +70,7 @@
  * longer describes.
  */
 import { usePathname, useRouter } from "next/navigation";
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent, MouseEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { PageCopy } from "@/content/pages";
 import { takeFlowOrigin } from "@/lib/flow/dialog-origin";
@@ -119,7 +119,13 @@ export interface FlowShellProps {
   title: string | undefined;
   /** The close control's accessible name, from the caller's fixture. */
   closeLabel: string;
-  /** Where `Cancel` leaves to. The address the flow was started from is what *closing* uses. */
+  /**
+   * Where `Cancel` leaves to **on the stage's own page** — the template library the flow was started
+   * from. The dialog mounting has one exit instead, and it is the dismissal: `Esc`, the X, the
+   * overlay and `Cancel` all land on the page the flow was opened from (#975 D10). `Cancel` keeps
+   * this href in the page mounting, where it is right: a reader who followed a stage address is on a
+   * page, and leaving it goes to the library.
+   */
   closeHref: string;
   /** The stage: its heading, its bands and its body. Never re-drawn here. */
   children: ReactNode;
@@ -226,6 +232,32 @@ function FlowDialogMount({ title, closeLabel, closeHref, body }: FrameProps & { 
   };
 
   /**
+   * **`Cancel` leaves the flow the way a dismissal does whenever the flow is a dialog (#975 D10).**
+   *
+   * The stage foot's `Cancel` is a link to `closeHref` — the template library, the gallery the
+   * artifact closes onto — and on a stage's own page that is right: the reader followed an address
+   * and `Cancel` takes them to the library. Inside the dialog it is wrong, and it gave one modal two
+   * exits to two different pages: `Esc`, the X and the overlay close onto `takeFlowOrigin()` (the
+   * page underneath), while `Cancel` a row below them navigated off that page entirely. Measured on
+   * `/dashboard/relationships/<id> → Open the payment step` (#975 D10): the payment arrives as a
+   * dialog over the relationship, and `Cancel` threw the reader out to the library.
+   *
+   * So the foot's control is caught before the link acts and handed to `dismiss()` — one exit, one
+   * destination, no second address. The href is untouched, because the page mounting still renders
+   * that same link, and a modified click (a new tab, a copied address) is left to the browser: it
+   * lands on the stage's own address, which is a page and is supposed to behave like one.
+   */
+  const leaveFlow = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest("[data-create-cancel]") === null) return;
+    event.preventDefault();
+    dismiss();
+  };
+
+  /**
    * Post the stage's own form and follow the answer softly.
    *
    * The body is posted exactly as the browser would post it — `application/x-www-form-urlencoded`,
@@ -272,7 +304,12 @@ function FlowDialogMount({ title, closeLabel, closeHref, body }: FrameProps & { 
       presentation={FLOW_MOUNT_DIALOG}
       onDismiss={dismiss}
     >
-      <div data-flow-mount="dialog" aria-busy={busy} onSubmitCapture={submit}>
+      <div
+        data-flow-mount="dialog"
+        aria-busy={busy}
+        onSubmitCapture={submit}
+        onClickCapture={leaveFlow}
+      >
         {body}
       </div>
     </StageShell>

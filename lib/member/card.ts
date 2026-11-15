@@ -107,7 +107,14 @@ export interface RelationshipMemberCard {
   readonly relationshipId: string;
   /** The latest session — the card's link target, and the `data-instance` hook. */
   readonly instanceRecordId: string;
-  readonly stage: FlowStage;
+  /**
+   * The ladder rung this relationship is on, or `null` for a never-sent draft (#975).
+   *
+   * `null` is not "unknown": the ladder's first rung is an invitation that has gone out and not
+   * been claimed, so a relationship that has sent nothing has no rung to be on and the cover draws
+   * `stageLabel`'s draft word instead.
+   */
+  readonly stage: FlowStage | null;
   readonly stageLabel: string;
   readonly state: MyInstanceState;
   readonly unlock: UnlockMark;
@@ -323,7 +330,12 @@ export function relationshipCard(copy: PageCopy, row: RelationshipCard): Relatio
       relationshipId: row.relationshipId,
       instanceRecordId: row.instanceRecordId,
       stage: row.stage,
-      stageLabel: STAGE_LABELS[row.stage],
+      // #975 — a draft has no rung (`row.stage` is `null`), so the cover draws the word the
+      // fixture owns instead of borrowing `Invited` from the ladder. The stage words for a sent
+      // relationship stay `content/stages.ts`'s: they are the glossary's own four names, and only
+      // the pre-ladder state needed a page word.
+      stageLabel:
+        row.stage === null ? itemLabel(sectionOf(copy, "stage"), "draft") : STAGE_LABELS[row.stage],
       state: row.state,
       unlock: row.unlock,
       templateTitle: row.templateTitle,

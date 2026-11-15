@@ -132,6 +132,20 @@ const askingRow = cardOf({
   alignment: null,
 });
 
+/** A relationship its creator has not sent — off the ladder, so no stage word and no invitation. */
+const draftRow = cardOf({
+  relationshipId: "relationship-assessment-instance-draft",
+  instanceRecordId: "assessment-instance-draft",
+  slug: "spouses-1a2b3c4d",
+  name: "Our first pass",
+  templateTitle: "Relationship Basics",
+  counterpartyName: null,
+  stage: null,
+  state: "draft",
+  sessionsCompleted: 0,
+  alignment: null,
+});
+
 async function render(params: Record<string, string> = {}): Promise<string> {
   return renderToStaticMarkup(await MyAssessmentsPage({ searchParams: Promise.resolve(params) }));
 }
@@ -263,13 +277,16 @@ describe("the row's destinations are the ones that already exist", () => {
 
 describe("the shell's narrowings only narrow", () => {
   it("counts the rows behind each tab, and `all` counts every row", () => {
-    const rows = [completeRow, awaitingRow, askingRow];
+    const rows = [completeRow, awaitingRow, askingRow, draftRow];
 
-    expect(stateCount(rows, "all")).toBe(3);
+    expect(stateCount(rows, "all")).toBe(4);
     expect(stateCount(rows, "complete")).toBe(1);
     expect(stateCount(rows, "awaiting-other")).toBe(1);
     expect(stateCount(rows, "yours-to-answer")).toBe(1);
-    expect(SESSION_STATES).toEqual(["yours-to-answer", "awaiting-other", "complete"]);
+    // #975 — the never-sent draft is its own tab, counted like any other row: a label that stopped
+    // saying "yours to answer" without giving the row a tab of its own would lose it behind `all`.
+    expect(stateCount(rows, "draft")).toBe(1);
+    expect(SESSION_STATES).toEqual(["draft", "yours-to-answer", "awaiting-other", "complete"]);
   });
 
   it("filters by state, searches the session and both parties, and orders by instant", () => {
