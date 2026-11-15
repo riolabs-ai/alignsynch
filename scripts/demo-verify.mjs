@@ -112,6 +112,10 @@ const COUNT_SQL = {
   response_option: "SELECT count(*)::int AS n FROM response_option",
   relationship: "SELECT count(*)::int AS n FROM relationship",
   session: "SELECT count(*)::int AS n FROM session",
+  // #1079 — the invitations and the subscription are counts now: a draft has no link (30
+  // relationships, 27 sent) and an `active` relationship is read against a live subscription.
+  session_invite: "SELECT count(*)::int AS n FROM session_invite",
+  billing_subscription: "SELECT count(*)::int AS n FROM billing_subscription",
   party: "SELECT count(*)::int AS n FROM party",
   opinion: "SELECT count(*)::int AS n FROM opinion",
   billing_plan: "SELECT count(*)::int AS n FROM billing_plan",

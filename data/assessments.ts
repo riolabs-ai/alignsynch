@@ -57,8 +57,10 @@
  * catalogue: editing a question in the taxonomy edits the template it belongs to, and
  * `data:check` refuses a record whose items a type does not author.
  */
-import type { Assessment, AssessmentInstance } from "../content/assessment";
+import type { Assessment, AssessmentInstance, Aspect, AspectOpinions } from "../content/assessment";
+import { MODE_LABELS } from "../content/assessment";
 import { DEMO_NOW_ISO } from "../content/core";
+import { populationRows, type PopulationRow, type PopulationSeat } from "./assessment-population";
 import { purchasableRelationshipTypes } from "./relationship-types";
 
 /** One assessment template: five Aspects, each with a Left Value and a Right Value. */
@@ -344,7 +346,7 @@ export const starterTemplates: readonly Assessment[] = authoredTemplates;
  * `noor-iris` is Full ("No Gap OK" — only In Synch passes). The setting changes no Gap
  * number; it only decides which of them are tolerated.
  */
-export const assessmentInstances: readonly AssessmentInstance[] = [
+const authoredInstances: readonly AssessmentInstance[] = [
   {
     id: "assessment-instance-avery-rowan",
     slug: "avery-rowan",
@@ -728,4 +730,114 @@ export const assessmentInstances: readonly AssessmentInstance[] = [
       },
     ],
   },
+];
+
+/* ------------------------------------------------------------------ *
+ * The population — 27 relationships drawn from compact rows (#1079)
+ * ------------------------------------------------------------------ */
+
+/** One seat's `"feel/wish"` (or `"f/w/t/g"`) groups, resolved against the template's Aspects. */
+function seatOpinions(
+  row: PopulationRow,
+  seat: PopulationSeat,
+  items: readonly Aspect[],
+): AspectOpinions[] {
+  const groups = seat.answers.trim().split(/\s+/);
+  const widths = row.mode === "basic" ? 2 : 4;
+  if (groups.length !== items.length) {
+    throw new Error(
+      `population "${row.slug}": ${seat.name} gives ${groups.length} answer group(s) for ${items.length} Aspect(s)`,
+    );
+  }
+  return groups.map((group, index) => {
+    const scores = group.split("/").map((value) => Number(value));
+    const item = items[index] as Aspect;
+    if (scores.length !== widths) {
+      throw new Error(
+        `population "${row.slug}": ${seat.name}'s answer "${group}" for "${item.id}" carries ${scores.length} score(s), ${MODE_LABELS[row.mode]} asks ${widths}`,
+      );
+    }
+    if (scores.some((score) => !Number.isInteger(score) || score < 1 || score > 5)) {
+      throw new Error(
+        `population "${row.slug}": ${seat.name}'s answer "${group}" for "${item.id}" is not a 1..5 score`,
+      );
+    }
+    const [feel, wish, think, guess] = scores as [number, number, number?, number?];
+    const answers =
+      row.mode === "basic"
+        ? { feel, wish }
+        : { feel, wish, think: think as number, guess: guess as number };
+    return { itemId: item.id, opinions: answers };
+  });
+}
+
+/**
+ * One population row as an instance, with the template's own Aspects copied in.
+ *
+ * The copy is what E31 checks and it is taken from the template rather than restated, so a row can
+ * never answer an Aspect its template does not hold. The name, mode, setting and lifecycle are the
+ * row's; the title and summary are the template's, exactly as a created relationship's are.
+ */
+function populationInstance(row: PopulationRow): AssessmentInstance {
+  const template = assessments.find((record) => record.id === row.templateId);
+  if (template === undefined) {
+    throw new Error(
+      `population "${row.slug}" names template "${row.templateId}", which is not a record here`,
+    );
+  }
+  return {
+    id: `assessment-instance-${row.slug}`,
+    slug: row.slug,
+    type: "assessment",
+    status: "published",
+    date: row.date,
+    ...(row.name === undefined ? {} : { name: row.name }),
+    templateId: template.id,
+    mode: row.mode,
+    setting: row.setting,
+    lifecycle: row.lifecycle,
+    title: template.title,
+    summary: `${template.title}, answered by ${row.initiator.name} and ${row.counterparty.name}.`,
+    items: template.items,
+    parties: [
+      {
+        role: "initiator",
+        name: row.initiator.name,
+        opinions: seatOpinions(row, row.initiator, template.items),
+      },
+      {
+        role: "counterparty",
+        name: row.counterparty.name,
+        opinions: seatOpinions(row, row.counterparty, template.items),
+      },
+    ],
+  };
+}
+
+/** The population as instances, in authored order. Built once, at module load, and validated by E0. */
+function populationInstances(): readonly AssessmentInstance[] {
+  return populationRows.map(populationInstance);
+}
+
+/**
+ * The four hand-authored demonstrations, alone — the set the model's own tests pin.
+ *
+ * `avery-rowan`, `ruth-sam`, `marco-priya` and `noor-iris` are the records that *define* what an
+ * instance can say: one per Skill/Mode/Gap shape (#128, #219, #259). The population below them is
+ * **data** — thirty relationships a demo renders — so an assertion that reads "the fixtures name
+ * exactly one Advanced Mode instance" is about this four, not about the population. Same split as
+ * `starterTemplates` against the catalogue: a demonstration is authored, a row is data.
+ */
+export const starterInstances: readonly AssessmentInstance[] = authoredInstances;
+
+/**
+ * Every instance: the four hand-authored demonstrations, then the population (#1079).
+ *
+ * The order matters twice. `avery-rowan` stays **first** because it is the instance the parity
+ * snapshot, the report tests and the demo's own URL name; and the population follows in authored
+ * order, which is the recency order the lists sort by under `DEMO_NOW_ISO`.
+ */
+export const assessmentInstances: readonly AssessmentInstance[] = [
+  ...authoredInstances,
+  ...populationInstances(),
 ];

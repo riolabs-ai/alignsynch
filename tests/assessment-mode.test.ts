@@ -22,7 +22,7 @@ import {
   zAssessmentInstance,
   zAssessmentMode,
 } from "@/content/assessment";
-import { assessmentInstances } from "@/data/assessments";
+import { assessmentInstances, starterInstances } from "@/data/assessments";
 
 /** The Advanced fixture: five Aspects, four opinions each, on both sides. */
 const advanced = assessmentInstances.find((instance) => instance.slug === "noor-iris");
@@ -134,8 +134,10 @@ describe("the instance's mode is a parse-time fact", () => {
 });
 
 describe("the fixtures name their mode", () => {
-  it("gives every seeded instance exactly one mode, authored rather than defaulted", () => {
-    const modes = assessmentInstances.map((instance) => [instance.slug, instance.mode]);
+  it("gives every authored demonstration exactly one mode, authored rather than defaulted", () => {
+    // The four demonstrations (#1079 added a population of rows beneath them, which is data, not the
+    // set that defines the shape — `starterInstances` is that set, and it is what this pins).
+    const modes = starterInstances.map((instance) => [instance.slug, instance.mode]);
     expect(modes).toEqual([
       ["avery-rowan", "basic"],
       ["ruth-sam", "basic"],
@@ -145,7 +147,7 @@ describe("the fixtures name their mode", () => {
   });
 
   it("keeps exactly one Advanced demonstration, and it is noor-iris", () => {
-    const advancedOnes = assessmentInstances.filter((instance) => instance.mode === "advanced");
+    const advancedOnes = starterInstances.filter((instance) => instance.mode === "advanced");
     expect(advancedOnes.map((instance) => instance.slug)).toEqual(["noor-iris"]);
   });
 });

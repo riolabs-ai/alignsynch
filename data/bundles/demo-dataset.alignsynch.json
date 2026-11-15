@@ -2,7 +2,7 @@
   "format": "alignsynch-bundle",
   "bundleVersion": 1,
   "kind": "dataset",
-  "appVersion": "1.19.0",
+  "appVersion": "1.20.1",
   "payload": {
     "templates": [
       {
@@ -2624,6 +2624,4301 @@
                   "wish": 5,
                   "think": 3,
                   "guess": 5
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-esme-walt",
+        "slug": "esme-walt",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-27T09:20:00.000Z",
+        "title": "Customer–Vendor Product",
+        "summary": "Customer–Vendor Product, answered by Esme and Walt.",
+        "items": [
+          {
+            "id": "expectation-fit",
+            "prompt": "How close is what the product does to what the customer expected?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far off",
+            "rightValue": "As expected"
+          },
+          {
+            "id": "support-access",
+            "prompt": "When something goes wrong, how reachable is real help?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "No path",
+            "rightValue": "Direct and answered"
+          },
+          {
+            "id": "price-value",
+            "prompt": "How does the price compare to the value each side thinks it delivers?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Mismatched",
+            "rightValue": "Fair on both sides"
+          },
+          {
+            "id": "roadmap-influence",
+            "prompt": "How much can the customer influence what gets built next?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "No channel",
+            "rightValue": "Directly and visibly"
+          },
+          {
+            "id": "renewal-intent",
+            "prompt": "How likely is each of you to continue the arrangement?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Looking for an exit",
+            "rightValue": "Renewing without debate"
+          }
+        ],
+        "templateId": "assessment-customer-vendor-product",
+        "name": "Renewal with the vendor",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "draft"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Esme",
+            "opinions": [
+              {
+                "itemId": "expectation-fit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "support-access",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "price-value",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "roadmap-influence",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 3
+                }
+              },
+              {
+                "itemId": "renewal-intent",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Walt",
+            "opinions": [
+              {
+                "itemId": "expectation-fit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "support-access",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "price-value",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "roadmap-influence",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "renewal-intent",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-pia-greta",
+        "slug": "pia-greta",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-26T15:05:00.000Z",
+        "title": "Project Teammate A–Project Teammate B",
+        "summary": "Project Teammate A–Project Teammate B, answered by Pia and Greta.",
+        "items": [
+          {
+            "id": "interfaces",
+            "prompt": "How well-defined is the boundary where your work meets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Vague",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "interruptions",
+            "prompt": "How much are your own priorities disrupted by each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Rarely"
+          },
+          {
+            "id": "quality-bar",
+            "prompt": "How close is the standard each of you holds to the other's?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Same bar"
+          },
+          {
+            "id": "credit",
+            "prompt": "When the project lands, how is credit shared?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unequal",
+            "rightValue": "As contributed"
+          },
+          {
+            "id": "repair",
+            "prompt": "When one of you drops something, how is it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Blamed",
+            "rightValue": "Fixed and learned from"
+          }
+        ],
+        "templateId": "assessment-team",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "draft"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Pia",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Greta",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-ivan-ada",
+        "slug": "ivan-ada",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-22T11:40:00.000Z",
+        "title": "Project Teammate A–Project Teammate B",
+        "summary": "Project Teammate A–Project Teammate B, answered by Ivan and Ada.",
+        "items": [
+          {
+            "id": "interfaces",
+            "prompt": "How well-defined is the boundary where your work meets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Vague",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "interruptions",
+            "prompt": "How much are your own priorities disrupted by each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Rarely"
+          },
+          {
+            "id": "quality-bar",
+            "prompt": "How close is the standard each of you holds to the other's?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Same bar"
+          },
+          {
+            "id": "credit",
+            "prompt": "When the project lands, how is credit shared?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unequal",
+            "rightValue": "As contributed"
+          },
+          {
+            "id": "repair",
+            "prompt": "When one of you drops something, how is it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Blamed",
+            "rightValue": "Fixed and learned from"
+          }
+        ],
+        "templateId": "assessment-team",
+        "mode": "basic",
+        "setting": "full",
+        "lifecycle": {
+          "status": "draft"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Ivan",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 3
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Ada",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-kenji-yusuf",
+        "slug": "kenji-yusuf",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-25T08:15:00.000Z",
+        "title": "Project Teammate A–Project Teammate B",
+        "summary": "Project Teammate A–Project Teammate B, answered by Kenji and Yusuf.",
+        "items": [
+          {
+            "id": "interfaces",
+            "prompt": "How well-defined is the boundary where your work meets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Vague",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "interruptions",
+            "prompt": "How much are your own priorities disrupted by each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Rarely"
+          },
+          {
+            "id": "quality-bar",
+            "prompt": "How close is the standard each of you holds to the other's?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Same bar"
+          },
+          {
+            "id": "credit",
+            "prompt": "When the project lands, how is credit shared?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unequal",
+            "rightValue": "As contributed"
+          },
+          {
+            "id": "repair",
+            "prompt": "When one of you drops something, how is it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Blamed",
+            "rightValue": "Fixed and learned from"
+          }
+        ],
+        "templateId": "assessment-team",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "pending"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Kenji",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Yusuf",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-lena-yusuf",
+        "slug": "lena-yusuf",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-18T19:30:00.000Z",
+        "title": "Parent & Child",
+        "summary": "Parent & Child, answered by Lena and Yusuf.",
+        "items": [
+          {
+            "id": "aspect-check-ins",
+            "prompt": "How often do you check in about their day?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Every day"
+          },
+          {
+            "id": "aspect-house-rules",
+            "prompt": "How are the house rules agreed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Handed down",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "aspect-trust",
+            "prompt": "How much do you trust their judgement?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not yet",
+            "rightValue": "Completely"
+          },
+          {
+            "id": "aspect-one-to-one",
+            "prompt": "How much one-to-one time do you spend?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "Every day"
+          },
+          {
+            "id": "aspect-privacy",
+            "prompt": "How much privacy do they get?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "As much as they ask for"
+          }
+        ],
+        "templateId": "assessment-personal-parent-child",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "pending",
+          "publishedAfterDays": 0
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Lena",
+            "opinions": [
+              {
+                "itemId": "aspect-check-ins",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-house-rules",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-trust",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-one-to-one",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-privacy",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Yusuf",
+            "opinions": [
+              {
+                "itemId": "aspect-check-ins",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-house-rules",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-trust",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 3
+                }
+              },
+              {
+                "itemId": "aspect-one-to-one",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-privacy",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-hugo-selma",
+        "slug": "hugo-selma",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-12T10:00:00.000Z",
+        "title": "Relationship Basics",
+        "summary": "Relationship Basics, answered by Hugo and Selma.",
+        "items": [
+          {
+            "id": "aspect-time-together",
+            "prompt": "How much time do you spend together in a normal week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rare",
+            "rightValue": "Constant"
+          },
+          {
+            "id": "aspect-housework",
+            "prompt": "How is the work of the household divided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All mine",
+            "rightValue": "Evenly split"
+          },
+          {
+            "id": "aspect-money",
+            "prompt": "How are money and the decisions about it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Kept separate",
+            "rightValue": "Fully shared"
+          },
+          {
+            "id": "aspect-conflict",
+            "prompt": "When there is a disagreement, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Left unsaid",
+            "rightValue": "Said plainly"
+          },
+          {
+            "id": "aspect-affection",
+            "prompt": "How often do you show affection?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Often"
+          }
+        ],
+        "templateId": "assessment-relationship-basics",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "pending"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Hugo",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Selma",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-esme-jules",
+        "slug": "esme-jules",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-20T13:45:00.000Z",
+        "title": "Coworker–Colleague",
+        "summary": "Coworker–Colleague, answered by Esme and Jules.",
+        "items": [
+          {
+            "id": "handoffs",
+            "prompt": "How well do work handovers between you actually work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Things get dropped",
+            "rightValue": "Nothing dropped"
+          },
+          {
+            "id": "shared-context",
+            "prompt": "How much do you each know about what the other is working on?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing",
+            "rightValue": "Current picture on both sides"
+          },
+          {
+            "id": "credit",
+            "prompt": "When a shared result lands, how is credit handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One name on it",
+            "rightValue": "Both named"
+          },
+          {
+            "id": "conflict",
+            "prompt": "When you disagree about how to do something, how does it get resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or escalated",
+            "rightValue": "Talked through directly"
+          },
+          {
+            "id": "reliability",
+            "prompt": "How reliably do the commitments you make to each other hold?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Frequently slip",
+            "rightValue": "Held as agreed"
+          }
+        ],
+        "templateId": "assessment-colleagues",
+        "name": "Handover with Esme",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "published",
+          "answers": "both",
+          "publishedAfterDays": 0
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Esme",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Jules",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-rowan-avery-review",
+        "slug": "rowan-avery-review",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-19T09:05:00.000Z",
+        "title": "Coworker–Colleague",
+        "summary": "Coworker–Colleague, answered by Rowan and Avery.",
+        "items": [
+          {
+            "id": "handoffs",
+            "prompt": "How well do work handovers between you actually work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Things get dropped",
+            "rightValue": "Nothing dropped"
+          },
+          {
+            "id": "shared-context",
+            "prompt": "How much do you each know about what the other is working on?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing",
+            "rightValue": "Current picture on both sides"
+          },
+          {
+            "id": "credit",
+            "prompt": "When a shared result lands, how is credit handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One name on it",
+            "rightValue": "Both named"
+          },
+          {
+            "id": "conflict",
+            "prompt": "When you disagree about how to do something, how does it get resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or escalated",
+            "rightValue": "Talked through directly"
+          },
+          {
+            "id": "reliability",
+            "prompt": "How reliably do the commitments you make to each other hold?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Frequently slip",
+            "rightValue": "Held as agreed"
+          }
+        ],
+        "templateId": "assessment-colleagues",
+        "name": "The performance review",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "published",
+          "plan": "principal",
+          "answers": "both"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Rowan",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Avery",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-tomas-ada",
+        "slug": "tomas-ada",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-15T09:10:00.000Z",
+        "title": "Customer–Vendor Services",
+        "summary": "Customer–Vendor Services, answered by Tomas and Ada.",
+        "items": [
+          {
+            "id": "scope-clarity",
+            "prompt": "How clearly is the scope of the work written down?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing in writing",
+            "rightValue": "Explicit and current"
+          },
+          {
+            "id": "delivery-reliability",
+            "prompt": "How reliably are the committed dates met?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Routinely missed",
+            "rightValue": "Met"
+          },
+          {
+            "id": "change-handling",
+            "prompt": "When the customer wants something added, how does that get handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Ad hoc, resentfully",
+            "rightValue": "A stated process"
+          },
+          {
+            "id": "communication-cadence",
+            "prompt": "How predictable are the updates each side gets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Silence until asked",
+            "rightValue": "Regular and expected"
+          },
+          {
+            "id": "payment-terms",
+            "prompt": "How well do the payment terms match what each side expected?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Contested",
+            "rightValue": "Clear and met"
+          }
+        ],
+        "templateId": "assessment-customer-vendor-services",
+        "mode": "basic",
+        "setting": "full",
+        "lifecycle": {
+          "status": "published",
+          "plan": "principal",
+          "answers": "both"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Tomas",
+            "opinions": [
+              {
+                "itemId": "scope-clarity",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "delivery-reliability",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "change-handling",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "communication-cadence",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "payment-terms",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Ada",
+            "opinions": [
+              {
+                "itemId": "scope-clarity",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "delivery-reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "change-handling",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "communication-cadence",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "payment-terms",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-theo-lena",
+        "slug": "theo-lena",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-09T16:20:00.000Z",
+        "title": "Teacher–Student",
+        "summary": "Teacher–Student, answered by Theo and Lena.",
+        "items": [
+          {
+            "id": "expectation-clarity",
+            "prompt": "How clear is what is expected of the student, week to week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Guessed",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "feedback-usefulness",
+            "prompt": "How useful is the feedback each of you gets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Generic",
+            "rightValue": "Specific and actionable"
+          },
+          {
+            "id": "ask-safety",
+            "prompt": "How safe is it for the student to say they do not understand?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Risky",
+            "rightValue": "Normal"
+          },
+          {
+            "id": "pace-fit",
+            "prompt": "How well does the pace match what the student can actually absorb?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far off",
+            "rightValue": "Matches"
+          },
+          {
+            "id": "effort-recognition",
+            "prompt": "How much is genuine effort noticed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Invisible",
+            "rightValue": "Recognised"
+          }
+        ],
+        "templateId": "assessment-teacher-student",
+        "name": "This term's plan",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "published",
+          "plan": "basic",
+          "answers": "initiator"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Theo",
+            "opinions": [
+              {
+                "itemId": "expectation-clarity",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "feedback-usefulness",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "ask-safety",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "pace-fit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "effort-recognition",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Lena",
+            "opinions": [
+              {
+                "itemId": "expectation-clarity",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "feedback-usefulness",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "ask-safety",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "pace-fit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "effort-recognition",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-bea-anouk",
+        "slug": "bea-anouk",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-06T18:00:00.000Z",
+        "title": "Parent & Child",
+        "summary": "Parent & Child, answered by Bea and Anouk.",
+        "items": [
+          {
+            "id": "aspect-check-ins",
+            "prompt": "How often do you check in about their day?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Every day"
+          },
+          {
+            "id": "aspect-house-rules",
+            "prompt": "How are the house rules agreed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Handed down",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "aspect-trust",
+            "prompt": "How much do you trust their judgement?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not yet",
+            "rightValue": "Completely"
+          },
+          {
+            "id": "aspect-one-to-one",
+            "prompt": "How much one-to-one time do you spend?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "Every day"
+          },
+          {
+            "id": "aspect-privacy",
+            "prompt": "How much privacy do they get?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "As much as they ask for"
+          }
+        ],
+        "templateId": "assessment-personal-parent-child",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "published",
+          "answers": "initiator"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Bea",
+            "opinions": [
+              {
+                "itemId": "aspect-check-ins",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-house-rules",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-trust",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-one-to-one",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-privacy",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Anouk",
+            "opinions": [
+              {
+                "itemId": "aspect-check-ins",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-house-rules",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-trust",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-one-to-one",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-privacy",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-dario-fatima",
+        "slug": "dario-fatima",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-30T08:50:00.000Z",
+        "title": "Coworker–Colleague",
+        "summary": "Coworker–Colleague, answered by Dario and Fatima.",
+        "items": [
+          {
+            "id": "handoffs",
+            "prompt": "How well do work handovers between you actually work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Things get dropped",
+            "rightValue": "Nothing dropped"
+          },
+          {
+            "id": "shared-context",
+            "prompt": "How much do you each know about what the other is working on?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing",
+            "rightValue": "Current picture on both sides"
+          },
+          {
+            "id": "credit",
+            "prompt": "When a shared result lands, how is credit handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One name on it",
+            "rightValue": "Both named"
+          },
+          {
+            "id": "conflict",
+            "prompt": "When you disagree about how to do something, how does it get resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or escalated",
+            "rightValue": "Talked through directly"
+          },
+          {
+            "id": "reliability",
+            "prompt": "How reliably do the commitments you make to each other hold?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Frequently slip",
+            "rightValue": "Held as agreed"
+          }
+        ],
+        "templateId": "assessment-colleagues",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "published",
+          "answers": "initiator"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Dario",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Fatima",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-avery-rowan-flat",
+        "slug": "avery-rowan-flat",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-21T07:30:00.000Z",
+        "title": "Relationship Basics",
+        "summary": "Relationship Basics, answered by Avery and Rowan.",
+        "items": [
+          {
+            "id": "aspect-time-together",
+            "prompt": "How much time do you spend together in a normal week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rare",
+            "rightValue": "Constant"
+          },
+          {
+            "id": "aspect-housework",
+            "prompt": "How is the work of the household divided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All mine",
+            "rightValue": "Evenly split"
+          },
+          {
+            "id": "aspect-money",
+            "prompt": "How are money and the decisions about it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Kept separate",
+            "rightValue": "Fully shared"
+          },
+          {
+            "id": "aspect-conflict",
+            "prompt": "When there is a disagreement, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Left unsaid",
+            "rightValue": "Said plainly"
+          },
+          {
+            "id": "aspect-affection",
+            "prompt": "How often do you show affection?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Often"
+          }
+        ],
+        "templateId": "assessment-relationship-basics",
+        "name": "The flat on Mill Street",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "active",
+          "plan": "basic"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Avery",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Rowan",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-nadia-omar",
+        "slug": "nadia-omar",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-17T12:00:00.000Z",
+        "title": "Parent–Teacher",
+        "summary": "Parent–Teacher, answered by Nadia and Omar.",
+        "items": [
+          {
+            "id": "progress-visibility",
+            "prompt": "How clear a picture does the parent have of how the child is doing?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing until reports",
+            "rightValue": "Current and specific"
+          },
+          {
+            "id": "contact",
+            "prompt": "How easy is it for either of you to raise something?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Only at set events",
+            "rightValue": "When it matters"
+          },
+          {
+            "id": "support-at-home",
+            "prompt": "How well does what happens at home match what the classroom needs?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unconnected",
+            "rightValue": "Consistent"
+          },
+          {
+            "id": "expectations",
+            "prompt": "How aligned are your expectations of the child?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Shared"
+          },
+          {
+            "id": "concern-handling",
+            "prompt": "When there is a concern, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Late or through others",
+            "rightValue": "Early and direct"
+          }
+        ],
+        "templateId": "assessment-parent-teacher",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "active",
+          "plan": "principal"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Nadia",
+            "opinions": [
+              {
+                "itemId": "progress-visibility",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "contact",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "support-at-home",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "expectations",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "concern-handling",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Omar",
+            "opinions": [
+              {
+                "itemId": "progress-visibility",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "contact",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "support-at-home",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "expectations",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "concern-handling",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-omar-tomas",
+        "slug": "omar-tomas",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-11T10:15:00.000Z",
+        "title": "Staff & Manager",
+        "summary": "Staff & Manager, answered by Omar and Tomas.",
+        "items": [
+          {
+            "id": "aspect-work-priorities",
+            "prompt": "How are the week's priorities agreed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Set for me",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "aspect-feedback",
+            "prompt": "How is feedback on the work given?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never said",
+            "rightValue": "Said directly"
+          },
+          {
+            "id": "aspect-workload",
+            "prompt": "How is the workload split between the two of you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on me",
+            "rightValue": "Evenly shared"
+          },
+          {
+            "id": "aspect-decisions",
+            "prompt": "How are the decisions about the work made?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Manager decides",
+            "rightValue": "Decided together"
+          },
+          {
+            "id": "aspect-development",
+            "prompt": "How much do you talk about growth and what comes next?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Every review"
+          }
+        ],
+        "templateId": "assessment-business-staff-manager",
+        "name": "Q4 priorities",
+        "mode": "advanced",
+        "setting": "full",
+        "lifecycle": {
+          "status": "active",
+          "plan": "principal"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Omar",
+            "opinions": [
+              {
+                "itemId": "aspect-work-priorities",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 5,
+                  "think": 4,
+                  "guess": 2
+                }
+              },
+              {
+                "itemId": "aspect-feedback",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4,
+                  "think": 3,
+                  "guess": 3
+                }
+              },
+              {
+                "itemId": "aspect-workload",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-decisions",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 5,
+                  "think": 3,
+                  "guess": 2
+                }
+              },
+              {
+                "itemId": "aspect-development",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 3
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Tomas",
+            "opinions": [
+              {
+                "itemId": "aspect-work-priorities",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 3,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-feedback",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 3
+                }
+              },
+              {
+                "itemId": "aspect-workload",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-decisions",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 3,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-development",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 3,
+                  "think": 3,
+                  "guess": 3
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-milo-ines",
+        "slug": "milo-ines",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-10-03T20:40:00.000Z",
+        "title": "Relationship Basics",
+        "summary": "Relationship Basics, answered by Milo and Ines.",
+        "items": [
+          {
+            "id": "aspect-time-together",
+            "prompt": "How much time do you spend together in a normal week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rare",
+            "rightValue": "Constant"
+          },
+          {
+            "id": "aspect-housework",
+            "prompt": "How is the work of the household divided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All mine",
+            "rightValue": "Evenly split"
+          },
+          {
+            "id": "aspect-money",
+            "prompt": "How are money and the decisions about it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Kept separate",
+            "rightValue": "Fully shared"
+          },
+          {
+            "id": "aspect-conflict",
+            "prompt": "When there is a disagreement, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Left unsaid",
+            "rightValue": "Said plainly"
+          },
+          {
+            "id": "aspect-affection",
+            "prompt": "How often do you show affection?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Often"
+          }
+        ],
+        "templateId": "assessment-relationship-basics",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "active",
+          "plan": "basic"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Milo",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Ines",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-ines-marcus",
+        "slug": "ines-marcus",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-24T17:00:00.000Z",
+        "title": "Parent–Teacher",
+        "summary": "Parent–Teacher, answered by Ines and Marcus.",
+        "items": [
+          {
+            "id": "progress-visibility",
+            "prompt": "How clear a picture does the parent have of how the child is doing?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing until reports",
+            "rightValue": "Current and specific"
+          },
+          {
+            "id": "contact",
+            "prompt": "How easy is it for either of you to raise something?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Only at set events",
+            "rightValue": "When it matters"
+          },
+          {
+            "id": "support-at-home",
+            "prompt": "How well does what happens at home match what the classroom needs?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unconnected",
+            "rightValue": "Consistent"
+          },
+          {
+            "id": "expectations",
+            "prompt": "How aligned are your expectations of the child?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Shared"
+          },
+          {
+            "id": "concern-handling",
+            "prompt": "When there is a concern, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Late or through others",
+            "rightValue": "Early and direct"
+          }
+        ],
+        "templateId": "assessment-parent-teacher",
+        "mode": "basic",
+        "setting": "full",
+        "lifecycle": {
+          "status": "active",
+          "plan": "basic"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Ines",
+            "opinions": [
+              {
+                "itemId": "progress-visibility",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "contact",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "support-at-home",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "expectations",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "concern-handling",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Marcus",
+            "opinions": [
+              {
+                "itemId": "progress-visibility",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "contact",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "support-at-home",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "expectations",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "concern-handling",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-avery-rowan-summer",
+        "slug": "avery-rowan-summer",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-28T09:00:00.000Z",
+        "title": "Parent & Child",
+        "summary": "Parent & Child, answered by Avery and Rowan.",
+        "items": [
+          {
+            "id": "aspect-check-ins",
+            "prompt": "How often do you check in about their day?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Every day"
+          },
+          {
+            "id": "aspect-house-rules",
+            "prompt": "How are the house rules agreed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Handed down",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "aspect-trust",
+            "prompt": "How much do you trust their judgement?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Not yet",
+            "rightValue": "Completely"
+          },
+          {
+            "id": "aspect-one-to-one",
+            "prompt": "How much one-to-one time do you spend?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "Every day"
+          },
+          {
+            "id": "aspect-privacy",
+            "prompt": "How much privacy do they get?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "None",
+            "rightValue": "As much as they ask for"
+          }
+        ],
+        "templateId": "assessment-personal-parent-child",
+        "name": "Summer rules",
+        "mode": "advanced",
+        "setting": "full",
+        "lifecycle": {
+          "status": "complete",
+          "plan": "principal",
+          "completedAfterDays": 9
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Avery",
+            "opinions": [
+              {
+                "itemId": "aspect-check-ins",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5,
+                  "think": 4,
+                  "guess": 2
+                }
+              },
+              {
+                "itemId": "aspect-house-rules",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 3,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-trust",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5,
+                  "think": 3,
+                  "guess": 2
+                }
+              },
+              {
+                "itemId": "aspect-one-to-one",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4,
+                  "think": 2,
+                  "guess": 3
+                }
+              },
+              {
+                "itemId": "aspect-privacy",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Rowan",
+            "opinions": [
+              {
+                "itemId": "aspect-check-ins",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-house-rules",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-trust",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 4
+                }
+              },
+              {
+                "itemId": "aspect-one-to-one",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4,
+                  "think": 3,
+                  "guess": 3
+                }
+              },
+              {
+                "itemId": "aspect-privacy",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4,
+                  "think": 4,
+                  "guess": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-kenji-rosa",
+        "slug": "kenji-rosa",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-19T14:25:00.000Z",
+        "title": "Coworker–Colleague",
+        "summary": "Coworker–Colleague, answered by Kenji and Rosa.",
+        "items": [
+          {
+            "id": "handoffs",
+            "prompt": "How well do work handovers between you actually work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Things get dropped",
+            "rightValue": "Nothing dropped"
+          },
+          {
+            "id": "shared-context",
+            "prompt": "How much do you each know about what the other is working on?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing",
+            "rightValue": "Current picture on both sides"
+          },
+          {
+            "id": "credit",
+            "prompt": "When a shared result lands, how is credit handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One name on it",
+            "rightValue": "Both named"
+          },
+          {
+            "id": "conflict",
+            "prompt": "When you disagree about how to do something, how does it get resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or escalated",
+            "rightValue": "Talked through directly"
+          },
+          {
+            "id": "reliability",
+            "prompt": "How reliably do the commitments you make to each other hold?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Frequently slip",
+            "rightValue": "Held as agreed"
+          }
+        ],
+        "templateId": "assessment-colleagues",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "complete",
+          "plan": "basic",
+          "completedAfterDays": 12
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Kenji",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Rosa",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-greta-hugo",
+        "slug": "greta-hugo",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-12T11:30:00.000Z",
+        "title": "Parent–Teacher",
+        "summary": "Parent–Teacher, answered by Greta and Hugo.",
+        "items": [
+          {
+            "id": "progress-visibility",
+            "prompt": "How clear a picture does the parent have of how the child is doing?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing until reports",
+            "rightValue": "Current and specific"
+          },
+          {
+            "id": "contact",
+            "prompt": "How easy is it for either of you to raise something?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Only at set events",
+            "rightValue": "When it matters"
+          },
+          {
+            "id": "support-at-home",
+            "prompt": "How well does what happens at home match what the classroom needs?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unconnected",
+            "rightValue": "Consistent"
+          },
+          {
+            "id": "expectations",
+            "prompt": "How aligned are your expectations of the child?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Shared"
+          },
+          {
+            "id": "concern-handling",
+            "prompt": "When there is a concern, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Late or through others",
+            "rightValue": "Early and direct"
+          }
+        ],
+        "templateId": "assessment-parent-teacher",
+        "name": "The reading plan",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "complete",
+          "plan": "principal",
+          "completedAfterDays": 14
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Greta",
+            "opinions": [
+              {
+                "itemId": "progress-visibility",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "contact",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "support-at-home",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "expectations",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "concern-handling",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 5
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Hugo",
+            "opinions": [
+              {
+                "itemId": "progress-visibility",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "contact",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "support-at-home",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "expectations",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "concern-handling",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-ada-milo",
+        "slug": "ada-milo",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-02T09:45:00.000Z",
+        "title": "Coworker–Colleague",
+        "summary": "Coworker–Colleague, answered by Ada and Milo.",
+        "items": [
+          {
+            "id": "handoffs",
+            "prompt": "How well do work handovers between you actually work?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Things get dropped",
+            "rightValue": "Nothing dropped"
+          },
+          {
+            "id": "shared-context",
+            "prompt": "How much do you each know about what the other is working on?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Nothing",
+            "rightValue": "Current picture on both sides"
+          },
+          {
+            "id": "credit",
+            "prompt": "When a shared result lands, how is credit handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "One name on it",
+            "rightValue": "Both named"
+          },
+          {
+            "id": "conflict",
+            "prompt": "When you disagree about how to do something, how does it get resolved?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Avoided or escalated",
+            "rightValue": "Talked through directly"
+          },
+          {
+            "id": "reliability",
+            "prompt": "How reliably do the commitments you make to each other hold?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Frequently slip",
+            "rightValue": "Held as agreed"
+          }
+        ],
+        "templateId": "assessment-colleagues",
+        "mode": "basic",
+        "setting": "full",
+        "lifecycle": {
+          "status": "complete",
+          "plan": "basic",
+          "completedAfterDays": 20
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Ada",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Milo",
+            "opinions": [
+              {
+                "itemId": "handoffs",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "shared-context",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "reliability",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-jules-pia",
+        "slug": "jules-pia",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-26T17:10:00.000Z",
+        "title": "Relationship Basics",
+        "summary": "Relationship Basics, answered by Jules and Pia.",
+        "items": [
+          {
+            "id": "aspect-time-together",
+            "prompt": "How much time do you spend together in a normal week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rare",
+            "rightValue": "Constant"
+          },
+          {
+            "id": "aspect-housework",
+            "prompt": "How is the work of the household divided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All mine",
+            "rightValue": "Evenly split"
+          },
+          {
+            "id": "aspect-money",
+            "prompt": "How are money and the decisions about it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Kept separate",
+            "rightValue": "Fully shared"
+          },
+          {
+            "id": "aspect-conflict",
+            "prompt": "When there is a disagreement, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Left unsaid",
+            "rightValue": "Said plainly"
+          },
+          {
+            "id": "aspect-affection",
+            "prompt": "How often do you show affection?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Often"
+          }
+        ],
+        "templateId": "assessment-relationship-basics",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "void",
+          "voidReason": "Both people asked for it to be closed — they moved out of the flat."
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Jules",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Pia",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-yusuf-bea",
+        "slug": "yusuf-bea",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-08T15:35:00.000Z",
+        "title": "Teacher–Student",
+        "summary": "Teacher–Student, answered by Yusuf and Bea.",
+        "items": [
+          {
+            "id": "expectation-clarity",
+            "prompt": "How clear is what is expected of the student, week to week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Guessed",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "feedback-usefulness",
+            "prompt": "How useful is the feedback each of you gets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Generic",
+            "rightValue": "Specific and actionable"
+          },
+          {
+            "id": "ask-safety",
+            "prompt": "How safe is it for the student to say they do not understand?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Risky",
+            "rightValue": "Normal"
+          },
+          {
+            "id": "pace-fit",
+            "prompt": "How well does the pace match what the student can actually absorb?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far off",
+            "rightValue": "Matches"
+          },
+          {
+            "id": "effort-recognition",
+            "prompt": "How much is genuine effort noticed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Invisible",
+            "rightValue": "Recognised"
+          }
+        ],
+        "templateId": "assessment-teacher-student",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "void",
+          "voidReason": "Created against the wrong template — support closed it rather than delete the answers."
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Yusuf",
+            "opinions": [
+              {
+                "itemId": "expectation-clarity",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "feedback-usefulness",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "ask-safety",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "pace-fit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "effort-recognition",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Bea",
+            "opinions": [
+              {
+                "itemId": "expectation-clarity",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "feedback-usefulness",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "ask-safety",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "pace-fit",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "effort-recognition",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-selma-dario",
+        "slug": "selma-dario",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-08-29T10:05:00.000Z",
+        "title": "Project Teammate A–Project Teammate B",
+        "summary": "Project Teammate A–Project Teammate B, answered by Selma and Dario.",
+        "items": [
+          {
+            "id": "interfaces",
+            "prompt": "How well-defined is the boundary where your work meets?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Vague",
+            "rightValue": "Explicit"
+          },
+          {
+            "id": "interruptions",
+            "prompt": "How much are your own priorities disrupted by each other?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Constantly",
+            "rightValue": "Rarely"
+          },
+          {
+            "id": "quality-bar",
+            "prompt": "How close is the standard each of you holds to the other's?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Far apart",
+            "rightValue": "Same bar"
+          },
+          {
+            "id": "credit",
+            "prompt": "When the project lands, how is credit shared?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Unequal",
+            "rightValue": "As contributed"
+          },
+          {
+            "id": "repair",
+            "prompt": "When one of you drops something, how is it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Blamed",
+            "rightValue": "Fixed and learned from"
+          }
+        ],
+        "templateId": "assessment-team",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "void",
+          "voidReason": "The project was reassigned; neither person needed the sheet any more."
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Selma",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Dario",
+            "opinions": [
+              {
+                "itemId": "interfaces",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "interruptions",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "quality-bar",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "credit",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "repair",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-avery-rowan-trial",
+        "slug": "avery-rowan-trial",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-21T08:00:00.000Z",
+        "title": "Staff & Manager",
+        "summary": "Staff & Manager, answered by Avery and Rowan.",
+        "items": [
+          {
+            "id": "aspect-work-priorities",
+            "prompt": "How are the week's priorities agreed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Set for me",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "aspect-feedback",
+            "prompt": "How is feedback on the work given?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never said",
+            "rightValue": "Said directly"
+          },
+          {
+            "id": "aspect-workload",
+            "prompt": "How is the workload split between the two of you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on me",
+            "rightValue": "Evenly shared"
+          },
+          {
+            "id": "aspect-decisions",
+            "prompt": "How are the decisions about the work made?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Manager decides",
+            "rightValue": "Decided together"
+          },
+          {
+            "id": "aspect-development",
+            "prompt": "How much do you talk about growth and what comes next?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Every review"
+          }
+        ],
+        "templateId": "assessment-business-staff-manager",
+        "name": "The quarterly review",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "expired",
+          "plan": "basic",
+          "lapseReason": "trial-ended"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Avery",
+            "opinions": [
+              {
+                "itemId": "aspect-work-priorities",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-feedback",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-workload",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-decisions",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-development",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Rowan",
+            "opinions": [
+              {
+                "itemId": "aspect-work-priorities",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-feedback",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-workload",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-decisions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-development",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-rosa-ivan",
+        "slug": "rosa-ivan",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-09-05T19:20:00.000Z",
+        "title": "Relationship Basics",
+        "summary": "Relationship Basics, answered by Rosa and Ivan.",
+        "items": [
+          {
+            "id": "aspect-time-together",
+            "prompt": "How much time do you spend together in a normal week?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rare",
+            "rightValue": "Constant"
+          },
+          {
+            "id": "aspect-housework",
+            "prompt": "How is the work of the household divided?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All mine",
+            "rightValue": "Evenly split"
+          },
+          {
+            "id": "aspect-money",
+            "prompt": "How are money and the decisions about it handled?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Kept separate",
+            "rightValue": "Fully shared"
+          },
+          {
+            "id": "aspect-conflict",
+            "prompt": "When there is a disagreement, how is it raised?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Left unsaid",
+            "rightValue": "Said plainly"
+          },
+          {
+            "id": "aspect-affection",
+            "prompt": "How often do you show affection?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Rarely",
+            "rightValue": "Often"
+          }
+        ],
+        "templateId": "assessment-relationship-basics",
+        "mode": "basic",
+        "setting": "soft",
+        "lifecycle": {
+          "status": "expired",
+          "plan": "basic",
+          "lapseReason": "payment-failed"
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Rosa",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 5
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Ivan",
+            "opinions": [
+              {
+                "itemId": "aspect-time-together",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-housework",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-money",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-conflict",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-affection",
+                "opinions": {
+                  "feel": 4,
+                  "wish": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "assessment-instance-anouk-pavel",
+        "slug": "anouk-pavel",
+        "type": "assessment",
+        "status": "published",
+        "date": "2026-08-25T13:15:00.000Z",
+        "title": "Staff & Manager",
+        "summary": "Staff & Manager, answered by Anouk and Pavel.",
+        "items": [
+          {
+            "id": "aspect-work-priorities",
+            "prompt": "How are the week's priorities agreed?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Set for me",
+            "rightValue": "Agreed together"
+          },
+          {
+            "id": "aspect-feedback",
+            "prompt": "How is feedback on the work given?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never said",
+            "rightValue": "Said directly"
+          },
+          {
+            "id": "aspect-workload",
+            "prompt": "How is the workload split between the two of you?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "All on me",
+            "rightValue": "Evenly shared"
+          },
+          {
+            "id": "aspect-decisions",
+            "prompt": "How are the decisions about the work made?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Manager decides",
+            "rightValue": "Decided together"
+          },
+          {
+            "id": "aspect-development",
+            "prompt": "How much do you talk about growth and what comes next?",
+            "scale": {
+              "kind": "score",
+              "min": 1,
+              "max": 5
+            },
+            "leftValue": "Never",
+            "rightValue": "Every review"
+          }
+        ],
+        "templateId": "assessment-business-staff-manager",
+        "mode": "basic",
+        "setting": "full",
+        "lifecycle": {
+          "status": "expired",
+          "plan": "principal",
+          "lapseReason": "subscription-canceled",
+          "expiredAfterDays": 30
+        },
+        "parties": [
+          {
+            "role": "initiator",
+            "name": "Anouk",
+            "opinions": [
+              {
+                "itemId": "aspect-work-priorities",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-feedback",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-workload",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 5
+                }
+              },
+              {
+                "itemId": "aspect-decisions",
+                "opinions": {
+                  "feel": 2,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-development",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              }
+            ]
+          },
+          {
+            "role": "counterparty",
+            "name": "Pavel",
+            "opinions": [
+              {
+                "itemId": "aspect-work-priorities",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-feedback",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-workload",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-decisions",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
+                }
+              },
+              {
+                "itemId": "aspect-development",
+                "opinions": {
+                  "feel": 3,
+                  "wish": 4
                 }
               }
             ]
