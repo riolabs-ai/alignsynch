@@ -11,7 +11,13 @@
  */
 import { describe, expect, it } from "vitest";
 import { BILLING_INTERVALS, billingPlans } from "@/data/billing-plans";
-import { BILLING_PRICE_IDS, billingPriceIdFor, TRIAL_PERIOD_DAYS } from "@/data/billing-prices";
+import {
+  BILLING_PRICE_IDS,
+  BILLING_PRICE_IDS_BY_KEY_SET,
+  BILLING_PRICE_KEY_SETS,
+  billingPriceIdFor,
+  TRIAL_PERIOD_DAYS,
+} from "@/data/billing-prices";
 
 describe("the Price table", () => {
   it("holds an id for every tier and interval the fixture will sell", () => {
@@ -26,6 +32,40 @@ describe("the Price table", () => {
         }
       }
     }
+  });
+
+  it("holds a complete row for every key set, because an id does not travel between them", () => {
+    for (const keySet of BILLING_PRICE_KEY_SETS) {
+      for (const plan of billingPlans) {
+        if (!plan.checkout || plan.id === "free") continue;
+        for (const interval of BILLING_INTERVALS) {
+          const id = billingPriceIdFor(plan.id, interval, keySet);
+          expect(id, `${keySet}/${plan.id}/${interval}`).toMatch(/^price_[A-Za-z0-9]+$/);
+        }
+      }
+    }
+  });
+
+  it("shares no id between key sets — a shared id would make the selector decorative", () => {
+    const seen = new Set<string>();
+    for (const keySet of BILLING_PRICE_KEY_SETS) {
+      for (const byInterval of Object.values(BILLING_PRICE_IDS_BY_KEY_SET[keySet])) {
+        for (const id of Object.values(byInterval)) {
+          expect(seen.has(id), `${keySet} reuses ${id}`).toBe(false);
+          seen.add(id);
+        }
+      }
+    }
+  });
+
+  it("answers the default set when no key set is named, which is what ships today", () => {
+    expect(billingPriceIdFor("principal", "month", null)).toBe(BILLING_PRICE_IDS.principal.month);
+    expect(billingPriceIdFor("principal", "month")).toBe(BILLING_PRICE_IDS.principal.month);
+    expect(billingPriceIdFor("principal", "month", "alignsynch-test")).toBe(
+      BILLING_PRICE_IDS.principal.month,
+    );
+    // A name this table does not carry is `undefined`, never another set's row.
+    expect(billingPriceIdFor("principal", "month", "nobody")).toBeUndefined();
   });
 
   it("names Prices, not Products, and names no live object", () => {
