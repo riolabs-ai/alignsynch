@@ -87,12 +87,17 @@ const OUTLINE =
   "inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800";
 
 /**
- * The three stored states a tab can select, in the order they happen.
+ * The four stored states a tab can select, in the order they happen.
  *
  * These are `MyInstanceState`'s values — `lib/flow/state.ts` owns the derivation and this file
  * does not re-decide it. `all` is the default, so no row is hidden behind a tab nobody clicked.
+ *
+ * `draft` leads because it happens first: it is a relationship the creator has not sent yet
+ * (#975), and it is a state in its own right rather than a kind of "waiting" — nothing was
+ * invited, so nobody is waiting on anybody.
  */
 export const SESSION_STATES: readonly MyInstanceState[] = [
+  "draft",
   "yours-to-answer",
   "awaiting-other",
   "complete",
