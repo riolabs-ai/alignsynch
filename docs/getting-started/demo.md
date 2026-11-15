@@ -37,7 +37,7 @@ refused in production without `DEMO_ALLOW_PRODUCTION=1` as well).
 
 ## What a reset is
 
-Three operations, in this order, and nothing else:
+Four operations, in this order, and nothing else:
 
 1. **Migrate the source (`demo-base`).** `node scripts/db-migrate.mjs` against the base's own
    unpooled connection string, run from inside the reset script with `DATABASE_URL_UNPOOLED` set to
@@ -49,7 +49,16 @@ Three operations, in this order, and nothing else:
    migrates it before every restore, in the same run.** `--skip-migrate` is the manual/offline
    opt-out, and the step is skipped entirely on `--skip-reset`.
 
-2. **Restore the branch from the source.** One call —
+2. **Take a recovery point — the state the reset is about to destroy.** A plain branch created from
+   `demo`'s own head, named `<branch>-preserved-<UTC stamp>` (`preservedUnderName()`), copy-on-write,
+   no compute: exactly the rows, the auth configuration and the trusted-origin list the demo holds at
+   that instant. It exists because the restore below empties the branch and the trusted-origin step
+   after it runs _after_ the emptiness — see [the trusted origin](#the-trusted-origin). It is deleted
+   once the run converges; the preserved-branch policy retires one that is not. Cost: one branch
+   against the project's limit while the run is live, which is why the pre-flight asks for **two**
+   free slots.
+
+3. **Restore the branch from the source.** One call —
    `POST /projects/<id>/branches/<branch>/restore` with `source_branch_id` = `demo-base`. It is
    atomic: there is no window in which half the data is gone. A script of `DELETE`s would have as
    many half-finished states as it has statements, and one of them always looks like a valid demo
@@ -77,7 +86,7 @@ Three operations, in this order, and nothing else:
    `DEMO_PRESERVED_MAX_AGE_DAYS` (7). See [the branch ceiling](#the-branch-ceiling) for why that
    bound exists and what it never touches.
 
-3. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
+4. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
    `DEMO_AUTH=1`, pointed at _that branch's_ connection string and _that branch's_ auth host. The
    seed reads the bundle through the importer's own reader, asserts it is still the canonical export
    of `data/assessments.ts` (E32's rule, at the point of use), writes the six content tables and
@@ -149,14 +158,49 @@ GET …/branches/<demo>/auth/domains
   09:47Z  {"domains":[]}                                    ← a demo:reset ran in between
 ```
 
-So a completed reset **re-applies it and proves it**, as steps 3 and 5 of the script: a `POST` of
-`DEMO_ORIGIN` (default `https://demo.alignsynch.com`) only when the list does not already carry it,
-then one sign-in from that origin with a **deliberately wrong** credential for an address that cannot
-exist. `401 INVALID_EMAIL_OR_PASSWORD` means the origin was accepted; `403` fails the run with a
-named error, because a branch that refuses the site is not a reset demo whatever its row counts say.
-The re-apply runs **before** the reseed: the seed creates its accounts through the branch's own
-sign-up endpoint with `Origin: $DEMO_ORIGIN`, so on an emptied list it would be creating them from an
-origin the branch refuses.
+So a completed reset **re-applies it and proves it**, as the script's origin step and its probe: a
+`POST` of `DEMO_ORIGIN` (default `https://demo.alignsynch.com`) only when the list does not already
+carry it, then one sign-in from that origin with a **deliberately wrong** credential for an address
+that cannot exist. `401 INVALID_EMAIL_OR_PASSWORD` means the origin was accepted; `403` fails the run
+with a named error, because a branch that refuses the site is not a reset demo whatever its row
+counts say. The re-apply runs **before** the reseed: the seed creates its accounts through the
+branch's own sign-up endpoint with `Origin: $DEMO_ORIGIN`, so on an emptied list it would be
+creating them from an origin the branch refuses.
+
+### Because it runs after the restore, it is the step that can empty the demo
+
+Measured twice on 2026-11-15, in a row:
+
+```text
+pnpm demo:reset                     # restore OK → trusted-origin step → 500 AUTH_FAILURE → branch EMPTY, exit 1
+pnpm demo:reset                     # same
+pnpm demo:reset --skip-reset        # exit 0 — the only path that converged the dataset
+```
+
+The request was not the problem: `GET …/auth/domains` answered `200` with the origin in it, the same
+`POST` with the same body answered `400 "Domain already exists"` (the shape is accepted), and the
+key is project-scoped exactly as the workflow sets it. The `500` is the branch's auth server **not
+being ready for the integration call in the seconds after a restore** — a manual `GET` twenty
+seconds later answered `200`. A step with no retry turned that window into a demo with zero rows
+behind a deployment that still answered `200`, so the reset now does two more things:
+
+1. **It retries, within a named budget.** `ORIGIN_ATTEMPTS` (5) attempts, a `2s → 4s → 8s → 16s`
+   backoff, a **45s ceiling** for the whole step, and only a `5xx` or a fetch that never answered is
+   retried. The window is 30s of waiting on purpose: the outage this exists for was measured over
+   about twenty seconds, and a budget shorter than that gives up inside it. A `4xx` — a bad shape, a
+   refused key, a branch with no integration — is a fact about the request and fails at once;
+   retrying it is how a refusal becomes a timeout. Every attempt prints its status and elapsed time,
+   and the step ends with the trace, so the log reads
+   `attempts  attempt 1: 500 (0.3s) → attempt 2: 200 (0.4s)`.
+2. **A failure no longer leaves the branch empty.** The run took its [recovery point](#what-a-reset-is)
+   before the restore; if every attempt fails, it restores the branch **from that point**, reads the
+   row counts back against the pre-reset census, re-applies the origin best-effort, and exits
+   non-zero with a named error that says where the state is. A failed reset ends where it started.
+
+Both paths are provable without an outage, with two test-only switches — `--fail-origin-once`
+(attempt 1 answers 500, attempt 2 succeeds) and `--fail-origin-always` (every attempt fails, so the
+restore-back runs). They are CLI switches and not environment variables on purpose: the nightly
+workflow cannot set them, and a production run has no way to reach them.
 
 Two consequences worth knowing:
 
@@ -205,6 +249,8 @@ NEON_API_KEY=napi_… node scripts/demo-reset.mjs --skip-reset  # reseed only (e
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --branch demo-scratch   # another branch
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --verify-origin  # re-apply + probe, reset nothing
 NEON_API_KEY=napi_… node scripts/demo-reset.mjs --probe-origin https://demo.alignsynch.com  # ask only
+NEON_API_KEY=napi_… node scripts/demo-reset.mjs --fail-origin-once    # prove the retry (test only)
+NEON_API_KEY=napi_… node scripts/demo-reset.mjs --fail-origin-always  # prove the restore-back (test only)
 DEMO_SOURCE_BRANCH=demo-base node scripts/demo-reset.mjs      # name the source explicitly
 ```
 
@@ -227,9 +273,10 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
 
 ### What it refuses
 
-- **A project with no free branch slot.** A restore spends one, so at the ceiling the run stops
-  before it writes anything, in words that name the branches holding the slots — never with the
-  API's raw `422 — branches limit exceeded`. See [the branch ceiling](#the-branch-ceiling).
+- **A project with no free branch slot.** A restore spends one and the pre-reset recovery point
+  spends another, so the run needs **two** free slots and stops before it writes anything, in words
+  that name the branches holding the slots — never with the API's raw `422 — branches limit
+  exceeded`. See [the branch ceiling](#the-branch-ceiling).
 - **The project's default branch** (`production`), by id and by name. The demo reset never touches
   it, and the check is the API's own `default` flag rather than a string, so a renamed default is
   still refused.
@@ -282,10 +329,10 @@ So the reset checks capacity **before** it writes anything (`scripts/demo-branch
    (`DELETE /projects/{id}/branches/{id}`). The clock is the **stamp in the name**, not
    `created_at` — a preserved branch reports its parent's creation date, which for
    `demo-preserved-20261106-111855` is the day `demo-base` was cut.
-2. It re-reads the list and, if the project is still at or over its limit, **refuses by name**: the
-   count, the ceiling, every branch that holds a slot and why it was kept. The raw 422 is never
-   surfaced; if the API answers one anyway (a slot filled between the two reads) the error is
-   translated into the same sentence.
+2. It re-reads the list and, if the run cannot fit **two** free slots — the restore, and the
+   pre-reset recovery point taken before it — it **refuses by name**: the count, the ceiling, every
+   branch that holds a slot and why it was kept. The raw 422 is never surfaced; if the API answers
+   one anyway (a slot filled between the two reads) the error is translated into the same sentence.
 
 What it never deletes, whatever the name looks like: `production`, `demo`, `demo-base`, the
 project's default branch by its own flag, anything in `DEMO_KEEP_BRANCHES`, and the experiment

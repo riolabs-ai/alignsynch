@@ -31,16 +31,22 @@ import { describe, expect, it } from "vitest";
 
 import {
   AUTH_PROVIDER,
+  attemptTrace,
   authDomainsPath,
   DEFAULT_DEMO_ORIGIN,
   domainPlan,
   isLoopbackOrigin,
+  isRetryableOriginFailure,
   ORIGIN_ACCEPTED,
+  ORIGIN_ATTEMPTS,
   ORIGIN_REFUSED,
+  ORIGIN_RETRY_CEILING_MS,
   originRefusal,
+  originRetryDelayMs,
   probeFailure,
   probeLine,
   probeOutcome,
+  retryOriginStep,
   trustedOrigins,
 } from "../scripts/demo-auth-domains.mjs";
 
@@ -210,6 +216,157 @@ describe("the sign-in probe", () => {
       expect(line).not.toMatch(/password\s*[:=]/i);
       expect(line).not.toContain("not-a-credential");
     }
+  });
+});
+
+describe("retrying the origin step", () => {
+  /**
+   * A `run` that fails the first `failures` attempts with `status`, then answers `ok`.
+   * The clock is injected, so a four-attempt budget costs this file nothing.
+   */
+  function harness(status: number, failures: number) {
+    const sleeps: number[] = [];
+    let clock = 0;
+    let calls = 0;
+    const run = async ({ attempt }: { attempt: number }) => {
+      calls += 1;
+      if (attempt <= failures) {
+        const failure = Object.assign(new Error(`GET … answered HTTP ${status}`), { status });
+        throw failure;
+      }
+      return { status: 200, value: { added: true } };
+    };
+    return {
+      run,
+      sleeps,
+      calls: () => calls,
+      now: () => clock,
+      sleep: async (ms: number) => {
+        sleeps.push(ms);
+        clock += ms;
+      },
+    };
+  }
+
+  /** The error a call that must fail threw, typed for the fields this file asserts on. */
+  type Failure = Error & {
+    status?: number;
+    attempts?: { attempt: number; status: number | null }[];
+  };
+  async function rejection(run: Promise<unknown>): Promise<Failure> {
+    try {
+      await run;
+    } catch (error) {
+      return error as Failure;
+    }
+    throw new Error("expected this call to fail, and it did not");
+  }
+
+  it("names its budget: five attempts, 30s of waiting, a 45s ceiling", () => {
+    // The card's rule is "a small number of attempts, over a short window, and never past the
+    // stated ceiling". Both numbers are constants so a run log can quote them — and the waiting
+    // has to cover the ~20s the outage was measured over, or the retry gives up inside it.
+    expect(ORIGIN_ATTEMPTS).toBe(5);
+    expect(ORIGIN_RETRY_CEILING_MS).toBe(45_000);
+    const planned = [1, 2, 3, 4].reduce((total, n) => total + originRetryDelayMs(n), 0);
+    expect(planned).toBe(30_000);
+    expect(planned).toBeGreaterThan(20_000);
+    // And the waits always fit inside the ceiling, so the budget is coherent.
+    expect(planned).toBeLessThan(ORIGIN_RETRY_CEILING_MS);
+  });
+
+  it("recovers from the 500 the restore leaves behind, and prints the attempts", async () => {
+    const probe = harness(500, 1);
+
+    const result = await retryOriginStep(probe.run, {
+      sleep: probe.sleep,
+      now: probe.now,
+    });
+
+    expect(result.value).toEqual({ added: true });
+    expect(result.entries.map((entry) => entry.status)).toEqual([500, 200]);
+    expect(probe.sleeps).toEqual([2_000]);
+    // The line the next reader needs: which attempt said what, in order.
+    expect(attemptTrace(result.entries)).toBe("attempt 1: 500 (0.0s) → attempt 2: 200 (0.0s)");
+  });
+
+  it("retries a fetch that never answered, and nothing else", async () => {
+    // Status 0 is the transport failure this script reports as "no HTTP answer".
+    const probe = harness(0, 1);
+    const result = await retryOriginStep(probe.run, { sleep: probe.sleep, now: probe.now });
+    expect(result.entries.map((entry) => entry.status)).toEqual([0, 200]);
+    expect(attemptTrace(result.entries)).toContain("attempt 1: no answer");
+  });
+
+  it("never retries a 4xx — an auth refusal is a fact, not a flake", async () => {
+    for (const status of [400, 401, 403, 404, 422]) {
+      const probe = harness(status, ORIGIN_ATTEMPTS);
+      await expect(
+        retryOriginStep(probe.run, { sleep: probe.sleep, now: probe.now }),
+      ).rejects.toMatchObject({ status });
+      expect(probe.calls(), String(status)).toBe(1);
+      expect(probe.sleeps, String(status)).toEqual([]);
+    }
+  });
+
+  it("never retries a refusal the script raised itself", async () => {
+    // A `Refused` carries an exit code; retrying a decision is how a bad shape becomes a timeout.
+    let calls = 0;
+    const run = async () => {
+      calls += 1;
+      throw Object.assign(new Error("no Neon Auth integration on this branch"), { exitCode: 2 });
+    };
+    await expect(retryOriginStep(run, { sleep: async () => {}, now: () => 0 })).rejects.toThrow(
+      "no Neon Auth integration",
+    );
+    expect(calls).toBe(1);
+  });
+
+  it("gives up after five attempts and carries the whole log on the error", async () => {
+    const probe = harness(500, ORIGIN_ATTEMPTS);
+
+    const failure = await rejection(
+      retryOriginStep(probe.run, { sleep: probe.sleep, now: probe.now }),
+    );
+
+    expect(probe.calls()).toBe(5);
+    // 2s, 4s, 8s, 16s — four waits for five attempts, and nothing after the last one.
+    expect(probe.sleeps).toEqual([2_000, 4_000, 8_000, 16_000]);
+    expect(failure.attempts?.map((entry) => entry.status)).toEqual([500, 500, 500, 500, 500]);
+    expect(attemptTrace(failure.attempts ?? [])).toBe(
+      "attempt 1: 500 (0.0s) → attempt 2: 500 (0.0s) → attempt 3: 500 (0.0s) → attempt 4: 500 (0.0s) → attempt 5: 500 (0.0s)",
+    );
+  });
+
+  it("stops at the ceiling instead of sleeping past it", async () => {
+    // A 3s ceiling with a 2/4/8s backoff: the first wait fits (2s), the second would overrun, so
+    // the run stops after two attempts rather than hanging for thirty seconds.
+    const probe = harness(500, 5);
+    const failure = await rejection(
+      retryOriginStep(probe.run, {
+        attempts: 5,
+        ceilingMs: 3_000,
+        sleep: probe.sleep,
+        now: probe.now,
+      }),
+    );
+
+    expect(probe.calls()).toBe(2);
+    expect(probe.sleeps).toEqual([2_000]);
+    expect(failure.message).toContain("HTTP 500");
+  });
+
+  it("reads a status the way the classification does", () => {
+    const shaped = (status: number) => Object.assign(new Error("x"), { status });
+    expect(isRetryableOriginFailure(shaped(500))).toBe(true);
+    expect(isRetryableOriginFailure(shaped(503))).toBe(true);
+    expect(isRetryableOriginFailure(shaped(0))).toBe(true);
+    expect(isRetryableOriginFailure(shaped(400))).toBe(false);
+    expect(isRetryableOriginFailure(shaped(403))).toBe(false);
+    expect(isRetryableOriginFailure(shaped(404))).toBe(false);
+    // A `Refused` is a decision whatever status it carries.
+    expect(isRetryableOriginFailure(Object.assign(shaped(500), { exitCode: 2 }))).toBe(false);
+    expect(isRetryableOriginFailure(null)).toBe(false);
   });
 });
 
