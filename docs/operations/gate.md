@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › The gate · prev [Deploying](deploying.md) · next [P1 migration](history/p1-migration/MIGRATION.md)
+[Docs hub](../README.md) › **Operations** › The gate · prev [Env manifest](env-manifest.md) · next [P1 migration](history/p1-migration/MIGRATION.md)
 
 <!-- docs-nav:end -->
 
@@ -534,6 +534,6 @@ Rules that keep this file honest:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Operations** › The gate · prev [Deploying](deploying.md) · next [P1 migration](history/p1-migration/MIGRATION.md)
+[Docs hub](../README.md) › **Operations** › The gate · prev [Env manifest](env-manifest.md) · next [P1 migration](history/p1-migration/MIGRATION.md)
 
 <!-- docs-nav:end -->

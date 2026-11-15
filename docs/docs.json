@@ -128,6 +128,11 @@
           "question": "How does this repository reach `alignsynch.com`?"
         },
         {
+          "path": "operations/env-manifest.md",
+          "title": "Env manifest",
+          "question": "Which environment variable is required where, and where does its value come from?"
+        },
+        {
           "path": "operations/gate.md",
           "title": "The gate",
           "question": "What does `scripts/verify.sh` run, in what order, and what are its current numbers?"

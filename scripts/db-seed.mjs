@@ -77,8 +77,13 @@
  * days, never from `now()`. The three demo identities are the only credentials, and they are
  * generated per run and stored only in `demo_account`; the other thirty people are party rows, not
  * accounts. An `active` relationship needs an entitling subscription to read as live rather than
- * lapsed (`membershipOf()`), so the demo writes **one** `billing_subscription` for the initiator's
- * account — the one billing row this seed owns, and the reason an `active` demo is not a status lie.
+ * lapsed (`membershipOf()`), so the demo writes **one** `billing_subscription` per demo account that
+ * initiates a plan-bearing relationship — two over this population (Avery and Rowan), keyed
+ * `demo-${email}` so a re-seed updates rather than stacks. Which accounts those are is
+ * `scripts/db-seed-subscriptions.mjs::planInitiatingAccounts()`: the seed refuses when its own
+ * `relationship.plan` query disagrees with it, and `data/verify/demo-expectations.json` is held
+ * equal to the same derivation by `tests/db-seed-subscriptions.test.ts`. Those two rows are the
+ * reason an `active` demo is not a status lie.
  *
  * **The platform admins.** With `ADMIN_NN_EMAIL` / `ADMIN_NN_PASS` present, this script also
  * ensures each pair is a durable `admin` account: created through the same sign-up path when
@@ -121,6 +126,7 @@ import {
   lockWaitNotice,
   waitBudgetMs,
 } from "./db-seed-lock.mjs";
+import { planInitiatingAccounts, subscriptionIdFor } from "./db-seed-subscriptions.mjs";
 import {
   assertExactCount,
   checkReport,
@@ -902,15 +908,29 @@ async function bindDemoParties(client, accounts) {
  * refused to make (it wrote every row `complete` instead), and it is why this has to exist before
  * the dataset can carry an `active` word at all: a status lie is not fixed by a billing lie.
  *
- * One row per demo account that initiates a live relationship, on the tier that relationship was
- * bought on (`relationship.plan`), `status: 'active'` — so the period end cannot expire the demo —
- * and the deterministic `provider_subscription_id` is the idempotency key, as a provider's would
- * be. The partial unique index (`one live subscription per account`) is what keeps a re-seed from
- * stacking a second one.
+ * One row per demo account that initiates a **plan-bearing** relationship, on the tier that
+ * relationship was bought on (`relationship.plan`), `status: 'active'` — so the period end cannot
+ * expire the demo — and the deterministic `provider_subscription_id` is the idempotency key, as a
+ * provider's would be. The partial unique index (`one live subscription per account`) is what keeps
+ * a re-seed from stacking a second one. Which accounts those are is
+ * `db-seed-subscriptions.mjs::planInitiatingAccounts()`, derived from the dataset; the query here
+ * reads the tier back from the seeded rows and refuses when the two disagree.
  */
-async function seedDemoSubscriptions(client, accounts) {
+async function seedDemoSubscriptions(client, accounts, instances) {
   const { DEMO_NOW_ISO } = await import("../content/core.ts");
+  const { seededLifecycleOf } = await import("../content/assessment.ts");
   const periodEnd = new Date(Date.parse(DEMO_NOW_ISO) + 30 * 24 * 60 * 60 * 1000).toISOString();
+  // Who gets a row is derived from the dataset the seed is installing, not decided here
+  // (`db-seed-subscriptions.mjs`). The query below stays authoritative for **which tier** the row
+  // is written on — it reads the relationship's own `plan`, the fact the product bills against —
+  // and this set is the check that the query still names the same accounts the dataset authors. A
+  // disagreement is a refusal: a silently smaller demo reads an `active` relationship as `lapsed`,
+  // and a silently larger one bills an account that bought nothing.
+  const expected = new Set(
+    planInitiatingAccounts(instances, (instance) => seededLifecycleOf(instance).plan).map(
+      (account) => account.email,
+    ),
+  );
   const written = [];
   for (const account of accounts) {
     const { rows } = await client.query(
@@ -923,6 +943,13 @@ async function seedDemoSubscriptions(client, accounts) {
       [account.userId],
     );
     const plan = rows[0]?.plan;
+    if (expected.has(account.email) !== (plan !== undefined)) {
+      throw new Error(
+        plan === undefined
+          ? `demo identity ${account.email} initiates a plan-bearing relationship in the dataset, but holds none in the seeded rows — the party binding and the dataset disagree (see data/assessment-population.ts)`
+          : `demo identity ${account.email} holds a seeded relationship on plan "${plan}", but the dataset authors none it initiates — ${account.email} would be billed for a demo it did not buy`,
+      );
+    }
     if (plan === undefined) continue;
     await client.query(
       `INSERT INTO billing_subscription
@@ -935,9 +962,17 @@ async function seedDemoSubscriptions(client, accounts) {
          status             = EXCLUDED.status,
          current_period_end = EXCLUDED.current_period_end,
          updated_at         = now()`,
-      [account.userId, plan, `demo-${account.email}`, periodEnd],
+      [account.userId, plan, subscriptionIdFor(account.email), periodEnd],
     );
     written.push({ email: account.email, plan });
+  }
+  if (written.length !== expected.size) {
+    // Every account the derivation names is one this run was given; a mismatch means an identity
+    // arrived without a row (or a row arrived for an identity the dataset does not author), which
+    // is exactly the drift `data/verify/demo-expectations.json` would then record as correct.
+    throw new Error(
+      `the dataset authors ${expected.size} plan-initiating demo account(s) (${[...expected].join(", ")}), but this run wrote ${written.length} subscription(s) — the demo would show an under- or over-entitled membership`,
+    );
   }
   return written;
 }
@@ -1515,8 +1550,10 @@ async function main() {
       const bound = await bindDemoParties(client, accounts);
       await syncRelationshipMembers(client);
       // #1079 — the same subscription the full seed writes, so the narrow repair leaves an
-      // `active` relationship reading entitled rather than lapsed.
-      const subscriptions = await seedDemoSubscriptions(client, accounts);
+      // `active` relationship reading entitled rather than lapsed. The derivation is read from the
+      // fixtures, which `data:check` E32 holds the bundle equal to.
+      const { assessmentInstances } = await import("../data/assessments.ts");
+      const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
       console.log(
         `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s)`,
       );
@@ -1747,7 +1784,7 @@ async function main() {
       await syncRelationshipMembers(client);
       // #1079 — the subscription an `active` relationship is read against, written after the
       // accounts exist and after `billing_plan` (phase 1) so the tier resolves.
-      const subscriptions = await seedDemoSubscriptions(client, accounts);
+      const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
       console.log(
         `  · demo accounts created: ${accounts.length} (${accounts.map((account) => `${account.email}=${account.role}`).join(", ")}) — in phase 2, committed only at the end of it`,
       );
