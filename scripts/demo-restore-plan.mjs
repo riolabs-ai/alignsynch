@@ -1,5 +1,6 @@
 /**
- * The restore request `scripts/demo-reset.mjs` sends, as a pure function (#185 follow-up, t_d39323cc).
+ * The restore request `scripts/demo-reset.mjs` sends, as a pure function (#185 follow-up, t_d39323cc,
+ * t_3dcd262b).
  *
  * `POST /projects/{p}/branches/{b}/restore` refuses a branch that **has children** unless the body
  * carries `preserve_under_name`:
@@ -12,14 +13,28 @@
  * preserve_under_name is required` for as long as the demo branch had any branch cut from it. That
  * is a defect in this request, not a flake: the same body is refused every time.
  *
- * Two things follow from the parameter's own definition, and they are the whole design here:
+ * **The body always carries it, and that is the second half of the same fix.** The reset has to be
+ * able to put the demo back if the trusted-origin step fails *after* the restore has emptied it
+ * (`scripts/demo-reset.mjs` §3b), and the only branch that holds the pre-reset state is the one this
+ * parameter creates. Taking that state *before* the restore instead — a `demo-preserved-<stamp>`
+ * branch created as a child of the branch about to be restored — is not a way around it: the child
+ * it creates is itself a child, so the restore it was taken for is then refused with the very `422`
+ * above. Measured on 2026-11-15: pre-creating the recovery point and sending the plain body left
+ * `pnpm demo:reset` failing at the restore with a stray preserved branch and no reset. The parameter
+ * is legal when the branch has no children as well — measured against the live project on a scratch
+ * branch, `POST /restore {source_branch_id, preserve_under_name}` answered `200` and created the
+ * preserved branch — so the requested body does not have to depend on the branch's topology at all.
  *
- * 1. **The children move.** A restore with `preserve_under_name` creates that branch holding the
- *    target's *pre-restore* state and re-parents every child onto it. So this is a one-time
- *    topology repair per incident: the branch the reset targets comes out of the restore with no
- *    children, and the next nightly run needs nothing different. `restoreRequest()` still decides
- *    from the branch it was handed rather than from a remembered flag, so a child created later
- *    (a preview branch, a manual `neon branches create`) is handled the same night it appears.
+ * Two things follow from the parameter's own definition:
+ *
+ * 1. **The children move, and the preserved branch is the way back.** A restore with
+ *    `preserve_under_name` creates that branch holding the target's *pre-restore* state and
+ *    re-parents every child onto it. So the branch the reset targets comes out of the restore with
+ *    no children, and the preserved branch holds exactly what it held a second earlier — rows, the
+ *    auth integration and everything else — which is what `restorePreResetState()` restores from
+ *    when the origin step cannot converge. The run deletes it once it has reseeded and proved
+ *    sign-in, so a healthy nightly does not leave one behind; a run that died leaves it, and
+ *    `demo-branch-prune.mjs` retires it later.
  *
  * 2. **The name has to be new.** The preserved branch is a normal branch in the project, so a name
  *    already in use is a collision — the API answers `409`, and the reset fails on a request that
@@ -37,8 +52,9 @@
  * never touches is in that module's header.
  *
  * This lives in its own module because it is the part of the reset that can be wrong without a
- * Neon key: `tests/demo-restore-plan.test.ts` proves both bodies — with children and without — and
- * the script's own `restoreFromSource()` only sends what this returns.
+ * Neon key: `tests/demo-restore-plan.test.ts` proves the body, the name and the reason the request
+ * cannot be preceded by a child, and the script's own `restoreFromSource()` only sends what this
+ * returns.
  */
 
 /** Neon branch names: letters, digits, `-`, `_`, `.` — anything else is folded to `-`. */
@@ -97,27 +113,27 @@ export function preservedUnderName(branchName, now, taken = []) {
 }
 
 /**
- * The body of the restore call, and the name chosen when the branch has children.
+ * The body of the restore call, and the name the pre-reset state is preserved under.
  *
  * `children` is reported back so the caller can print which branches are about to move: a reset
  * that silently re-parents somebody's preview branch is a surprise, and the run log is the only
  * place that can say it first.
  *
- * With no children the body is exactly what it was before this module existed — the parameter is
- * only legal-when-required, and omitting it is what makes "the previous state is not preserved" the
- * normal case rather than a nightly accumulation of preserved branches.
+ * `preserve_under_name` is sent on **every** call, children or not. It is what holds the demo's
+ * pre-reset state, which is the only way back from an origin step that cannot converge after the
+ * restore has emptied the branch — so a body that omits it is a reset with no undo. It is also
+ * legal without children (measured 2026-11-15 on a scratch branch: `200` and the preserved branch
+ * appears), which is what makes the request independent of the branch's topology. The alternative,
+ * creating that branch *before* the restore, cannot work: the branch it creates is a child, and a
+ * restore of a branch with children is the `422` this parameter exists to answer.
  *
  * @param {{ id: string, name: string, children?: {id: string, name: string}[], allNames?: string[] }} branch
  * @param {{ id: string }} source
  * @param {Date} now
- * @returns {{ body: { source_branch_id: string, preserve_under_name?: string }, preservedUnder: string | null, children: {id: string, name: string}[] }}
+ * @returns {{ body: { source_branch_id: string, preserve_under_name: string }, preservedUnder: string, children: {id: string, name: string}[] }}
  */
 export function restoreRequest(branch, source, now) {
   const children = branch.children ?? [];
-  if (children.length === 0) {
-    return { body: { source_branch_id: source.id }, preservedUnder: null, children };
-  }
-
   const preservedUnder = preservedUnderName(branch.name, now, branch.allNames ?? []);
   return {
     body: { source_branch_id: source.id, preserve_under_name: preservedUnder },
