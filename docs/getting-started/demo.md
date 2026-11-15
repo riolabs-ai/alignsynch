@@ -37,7 +37,7 @@ refused in production without `DEMO_ALLOW_PRODUCTION=1` as well).
 
 ## What a reset is
 
-Four operations, in this order, and nothing else:
+Three operations, in this order, and nothing else:
 
 1. **Migrate the source (`demo-base`).** `node scripts/db-migrate.mjs` against the base's own
    unpooled connection string, run from inside the reset script with `DATABASE_URL_UNPOOLED` set to
@@ -49,17 +49,9 @@ Four operations, in this order, and nothing else:
    migrates it before every restore, in the same run.** `--skip-migrate` is the manual/offline
    opt-out, and the step is skipped entirely on `--skip-reset`.
 
-2. **Take a recovery point — the state the reset is about to destroy.** A plain branch created from
-   `demo`'s own head, named `<branch>-preserved-<UTC stamp>` (`preservedUnderName()`), copy-on-write,
-   no compute: exactly the rows, the auth configuration and the trusted-origin list the demo holds at
-   that instant. It exists because the restore below empties the branch and the trusted-origin step
-   after it runs _after_ the emptiness — see [the trusted origin](#the-trusted-origin). It is deleted
-   once the run converges; the preserved-branch policy retires one that is not. Cost: one branch
-   against the project's limit while the run is live, which is why the pre-flight asks for **two**
-   free slots.
-
-3. **Restore the branch from the source.** One call —
-   `POST /projects/<id>/branches/<branch>/restore` with `source_branch_id` = `demo-base`. It is
+2. **Restore the branch from the source, preserving the state it is about to destroy.** One call —
+   `POST /projects/<id>/branches/<branch>/restore` with `source_branch_id` = `demo-base` and
+   `preserve_under_name` = `<branch>-preserved-<UTC stamp>` (`preservedUnderName()`). It is
    atomic: there is no window in which half the data is gone. A script of `DELETE`s would have as
    many half-finished states as it has statements, and one of them always looks like a valid demo
    until you read it.
@@ -71,22 +63,27 @@ Four operations, in this order, and nothing else:
    **source**, not on the target's parent: the parent of a branch cut before the base existed is a
    historical accident, and a rule that refused it would refuse every scheduled run.
 
-   **A branch with children needs `preserve_under_name`.** The API answers `422 — Branch has
-   children, preserve_under_name is required` to a restore of a branch that has any branch cut from
-   it, which is how the nightly job failed every night for as long as the demo had one. The body is
-   built by `scripts/demo-restore-plan.mjs` (pure, proved by `tests/demo-restore-plan.test.ts`):
-   with no children it sends `source_branch_id` alone, and with children it also sends the branch's
-   state to be preserved as `<branch>-preserved-<UTC stamp>`. The API moves every child under that
-   preserved branch, so the demo comes out of the restore with none and the next run needs nothing
-   different — the repair is once per child, not once per night. A preserved branch is a real
-   branch: one against the project's branch limit, the storage its rows occupy, no compute. It is a
-   recovery point, so the newest one per branch is kept — but it is not kept forever: the reset's
-   pre-flight (`scripts/demo-branch-prune.mjs`, proved by `tests/demo-branch-prune.test.ts`) retires
-   a preserved branch that is not the newest for its parent, and any older than
-   `DEMO_PRESERVED_MAX_AGE_DAYS` (7). See [the branch ceiling](#the-branch-ceiling) for why that
-   bound exists and what it never touches.
+   **`preserve_under_name` is on every restore**, and the branch it creates is this run's way back:
+   it holds the demo's pre-reset state — the rows, the auth configuration and the trusted-origin
+   list the demo had at that instant — and the trusted-origin step runs _after_ the restore has
+   emptied the branch ([the trusted origin](#the-trusted-origin)). The API also requires it
+   (`422 — Branch has children, preserve_under_name is required`) when the branch has any branch cut
+   from it, and moves every child under the preserved branch, so the demo comes out of the restore
+   with none. The body is built by `scripts/demo-restore-plan.mjs` (pure, proved by
+   `tests/demo-restore-plan.test.ts`) and always carries the name, children or not — the parameter is
+   legal with no children too, measured against the project on a scratch branch on 2026-11-15.
 
-4. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
+   Taking the state **before** the restore instead does not work, and the first version of this step
+   tried it: a `demo-preserved-<stamp>` branch created ahead of the restore is itself a child of the
+   branch being restored, so the restore is refused with that same `422`. The state has to be
+   preserved _by_ the call that destroys it. Then it costs a branch — one against the project's
+   limit while the run is live, the storage its rows occupy, no compute — and it is a recovery point
+   either way: the run deletes it once it has converged, and the pre-flight
+   (`scripts/demo-branch-prune.mjs`, proved by `tests/demo-branch-prune.test.ts`) retires one a dead
+   run left behind — anything that is not the newest for its parent, and anything older than
+   `DEMO_PRESERVED_MAX_AGE_DAYS` (7). See [the branch ceiling](#the-branch-ceiling).
+
+3. **Reseed from `data/bundles/demo-dataset.alignsynch.json`.** `scripts/db-seed.mjs` with
    `DEMO_AUTH=1`, pointed at _that branch's_ connection string and _that branch's_ auth host. The
    seed reads the bundle through the importer's own reader, asserts it is still the canonical export
    of `data/assessments.ts` (E32's rule, at the point of use), writes the six content tables and
@@ -192,10 +189,11 @@ behind a deployment that still answered `200`, so the reset now does two more th
    retrying it is how a refusal becomes a timeout. Every attempt prints its status and elapsed time,
    and the step ends with the trace, so the log reads
    `attempts  attempt 1: 500 (0.3s) → attempt 2: 200 (0.4s)`.
-2. **A failure no longer leaves the branch empty.** The run took its [recovery point](#what-a-reset-is)
-   before the restore; if every attempt fails, it restores the branch **from that point**, reads the
-   row counts back against the pre-reset census, re-applies the origin best-effort, and exits
-   non-zero with a named error that says where the state is. A failed reset ends where it started.
+2. **A failure no longer leaves the branch empty.** The restore preserves the demo's
+   [pre-reset state](#what-a-reset-is) as it runs; if every attempt fails, the run restores the
+   branch **from that preserved branch**, reads the row counts back against the pre-reset census,
+   re-applies the origin best-effort, and exits non-zero with a named error that says where the
+   state is. A failed reset ends where it started.
 
 Both paths are provable without an outage, with two test-only switches — `--fail-origin-once`
 (attempt 1 answers 500, attempt 2 succeeds) and `--fail-origin-always` (every attempt fails, so the
@@ -273,7 +271,7 @@ reported) · `2` usage, or a refused target · `3` no `NEON_API_KEY`.
 
 ### What it refuses
 
-- **A project with no free branch slot.** A restore spends one and the pre-reset recovery point
+- **A project with no free branch slot.** A restore spends one and the preserved branch it creates
   spends another, so the run needs **two** free slots and stops before it writes anything, in words
   that name the branches holding the slots — never with the API's raw `422 — branches limit
   exceeded`. See [the branch ceiling](#the-branch-ceiling).
@@ -329,17 +327,20 @@ So the reset checks capacity **before** it writes anything (`scripts/demo-branch
    (`DELETE /projects/{id}/branches/{id}`). The clock is the **stamp in the name**, not
    `created_at` — a preserved branch reports its parent's creation date, which for
    `demo-preserved-20261106-111855` is the day `demo-base` was cut.
-2. It re-reads the list and, if the run cannot fit **two** free slots — the restore, and the
-   pre-reset recovery point taken before it — it **refuses by name**: the count, the ceiling, every
-   branch that holds a slot and why it was kept. The raw 422 is never surfaced; if the API answers
-   one anyway (a slot filled between the two reads) the error is translated into the same sentence.
+2. It re-reads the list and, if the run cannot fit **two** free slots — the restore itself, and the
+   preserved branch it creates and can restore from — it **refuses by name**: the count, the
+   ceiling, every branch that holds a slot and why it was kept. The raw 422 is never surfaced; if
+   the API answers one anyway (a slot filled between the two reads) the error is translated into the
+   same sentence.
 
 What it never deletes, whatever the name looks like: `production`, `demo`, `demo-base`, the
 project's default branch by its own flag, anything in `DEMO_KEEP_BRANCHES`, and the experiment
 branches `coach-card`, `rel-schema-533-p1`, `initiator-crud-533-p2`, `lapse-533-p3`. Those four are
-the owner's work in progress: they are named in the code so that a later reader who notices they
-occupy four of the ten slots does not "fix" the problem by deleting them. Anything whose name is not
-a preserved branch is kept too — the policy prunes what the reset created, never what a person made.
+named in the code as never-this-job's, and on 2026-11-15 they were retired by hand — their work is
+on `main` (#534, #535, #537 for #533's three phases, #358 for the coach) and they were holding the
+slots a restore needs — while the names stay in the code so that a recreated branch of the same name
+is still never pruned by this job. Anything whose name is not a preserved branch is kept too — the
+policy prunes what the reset created, never what a person made.
 
 `--dry-run` prints the same plan and the count it would delete (`would prune N`), deletes nothing,
 and decides capacity as if the deletions had happened — so it answers "is tomorrow's run wedged?"
