@@ -23,14 +23,14 @@
  *
  *   quizhub                the index above, unchanged — every public quiz, category, creator
  *                          and page row the template build has always searched
- *   alignsynch, platform   the assessment instances this build actually holds
+ *   alignsynch, platform   the assessment sessions this build actually holds
  *                          (`data/assessments.ts`) plus the three pages an alignment visitor
  *                          can reach (`lib/nav.ts`'s `ALIGNMENT_ROUTES`). No quizzes, no quiz
  *                          categories, no creators: there are no records behind them here.
- *   alignsynch, elevated   the quiz index plus the instance rows. An admin still finds
+ *   alignsynch, elevated   the quiz index plus the session rows. An admin still finds
  *                          everything; that is the visibility rule, not a deletion.
  *
- * `searchIndex` stays the shipped template's instance, because that is what `data:check` and
+ * `searchIndex` stays the shipped template's session, because that is what `data:check` and
  * `tests/search-index.test.ts` prove resolves; a second brand's index must not weaken that.
  */
 import {
@@ -43,7 +43,7 @@ import { isValidRoute, routeTitle, type RouteManifest } from "../content/route-m
 import { routeManifest } from "../content/routes";
 import { users } from "../lib/data/users";
 import { ALIGNMENT_ROUTES, type NavViewer, PLATFORM_VIEWER, sees } from "../lib/nav";
-import { assessmentInstances } from "./assessments";
+import { assessmentSessions } from "./assessments";
 import type { BrandId } from "./brand";
 import { categories } from "./categories";
 import { quizzes } from "./quizzes";
@@ -67,25 +67,25 @@ export const searchIndex = buildSearchIndex(
 );
 
 /**
- * One row per assessment instance — the records an alignment build actually holds.
+ * One row per assessment session — the records an alignment build actually holds.
  *
- * The title is derived, never authored: the instance's own title (the template's) and the two
+ * The title is derived, never authored: the session's own title (the template's) and the two
  * parties the schema requires. That is what a person types — the template's name ("Parent &
- * Child") or a name on it ("Iris") — and the path is the instance's real route, so a hit is a
+ * Child") or a name on it ("Iris") — and the path is the session's real route, so a hit is a
  * door rather than a 404. `buildSearchIndex` validates the rows it builds; these are validated
  * here instead, against the same manifest.
  */
-function instanceResults(): SearchPageRow[] {
-  return assessmentInstances.map((instance) => {
-    const path = `/assessment/${instance.slug}`;
+function sessionResults(): SearchPageRow[] {
+  return assessmentSessions.map((session) => {
+    const path = `/assessment/${session.slug}`;
     if (!isValidRoute(routeManifest, path)) {
       throw new Error(
-        `data/searchdata: "${instance.slug}" has no route — ${path} does not resolve`,
+        `data/searchdata: "${session.slug}" has no route — ${path} does not resolve`,
       );
     }
     return {
-      id: `assessment-${instance.slug}`,
-      title: `${instance.title} — ${instance.parties.map((party) => party.name).join(" and ")}`,
+      id: `assessment-${session.slug}`,
+      title: `${session.title} — ${session.parties.map((party) => party.name).join(" and ")}`,
       path,
     };
   });
@@ -93,7 +93,7 @@ function instanceResults(): SearchPageRow[] {
 
 const byPath = (a: SearchPageRow, b: SearchPageRow): number => (a.path < b.path ? -1 : 1);
 
-/** The alignment build's index: the instances, and the pages its visitors can reach. */
+/** The alignment build's index: the sessions, and the pages its visitors can reach. */
 function alignmentIndex(): SearchIndex {
   const manifest: RouteManifest = routeManifest;
   const pages: SearchPageRow[] = ALIGNMENT_ROUTES.map((path) => {
@@ -117,7 +117,7 @@ function alignmentIndex(): SearchIndex {
     quizzes: [],
     categories: [],
     creators: [],
-    pages: [...pages, ...instanceResults()].sort(byPath),
+    pages: [...pages, ...sessionResults()].sort(byPath),
   });
 }
 
@@ -136,7 +136,7 @@ export function searchIndexFor(brandId: BrandId, viewer: NavViewer): SearchIndex
       return searchIndex;
     case "alignsynch":
       return sees(viewer, "quiz-surfaces")
-        ? { ...searchIndex, pages: [...searchIndex.pages, ...instanceResults()].sort(byPath) }
+        ? { ...searchIndex, pages: [...searchIndex.pages, ...sessionResults()].sort(byPath) }
         : alignment;
     default: {
       const unhandled: never = brandId;

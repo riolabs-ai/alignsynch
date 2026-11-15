@@ -3,12 +3,12 @@
  *
  * The "open" action has to open something. Editing is a separate decision (the spec puts the
  * editor at this same route later), so what this page does is *show* the template: its Aspects in
- * order, each with its two Values, the instances made from it and whether it is archived. Nothing
+ * order, each with its two Values, the sessions made from it and whether it is archived. Nothing
  * here writes, and no field is editable — a template that could be edited from a page somebody
  * reached by accident is a worse answer than a page that only reads.
  *
- * Read-only also means the page can say the one thing that matters about archiving: an instance
- * copies its Aspects when it is created, so archiving the template does not reach an instance
+ * Read-only also means the page can say the one thing that matters about archiving: a session
+ * copies its Aspects when it is created, so archiving the template does not reach a session
  * anyone has answered (`archive-note` below).
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
@@ -58,7 +58,7 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
       heading: "What you can do with it",
       items: [
         // #618 — the owner's words, verbatim. This page was drawing "Start an instance" and
-        // pointing at the library, which is instance language on a product page and a link back to
+        // pointing at the library, which is session language on a product page and a link back to
         // where the reader came from. The control now names the thing that gets created.
         { id: "create", label: "Create Relationship" },
         {
@@ -76,7 +76,7 @@ export const templateDetailPageCopy: PageCopy = zPageCopy.parse({
       /**
        * The landing's identity band (#409). The v1 template page opens with a band naming the
        * realm, the group, the Relationship Type and the two **roles** — never a person: a
-       * template holds Aspects, and names are instance facts. `who-its-for` / `who-its-not-for`
+       * template holds Aspects, and names are session facts. `who-its-for` / `who-its-not-for`
        * label the descriptor the catalogue already authored for the type
        * (`data/relationship-types.ts::descriptor`); a template whose slug names no catalogue
        * type has no descriptor, and says so instead of having one written for it.

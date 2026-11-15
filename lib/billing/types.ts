@@ -181,12 +181,12 @@ export interface Entitlement {
   readonly planName: string;
   readonly paid: boolean;
   /**
-   * How many assessment instances may be active at once. `null` is unlimited.
+   * How many assessment sessions may be active at once. `null` is unlimited.
    *
    * Free is 1; every paid tier is `null`. It is a number, not a boolean, because the refusal's
    * sentence has to say *how many* are allowed.
    */
-  readonly maxActiveInstances: number | null;
+  readonly maxActiveSessions: number | null;
   /**
    * How many relationships this account may have **open at once**. `null` is unlimited (#505).
    *

@@ -15,7 +15,7 @@
  * The Gap is not here either. It is `gapOf()` over two scores, computed later by
  * `lib/assessment-report.ts`; no row carries it and no column exists for it.
  */
-import { zAssessment, zAssessmentInstance, zAspect } from "@/content/assessment";
+import { zAssessment, zAssessmentSession, zAspect } from "@/content/assessment";
 import { SCORE_MAX, SCORE_MIN, zRecordType, type ResponseScale } from "@/content/record";
 import type { z } from "zod";
 
@@ -62,8 +62,8 @@ export interface OptionRow {
   readonly text: string;
 }
 
-/** One `session` row: the row that makes a record an instance. */
-export interface InstanceRow {
+/** One `session` row: the row that makes a record a session. */
+export interface SessionRow {
   readonly record_id: string;
   readonly template_record_id: string;
   /**
@@ -73,7 +73,7 @@ export interface InstanceRow {
   readonly relationship_id: string;
   /**
    * `basic` or `advanced`, as text — the schema decides whether it is a mode, so a row that
-   * says `nonsense` fails the parse with the instance named rather than rendering as one.
+   * says `nonsense` fails the parse with the session named rather than rendering as one.
    */
   readonly mode: string;
   /**
@@ -84,7 +84,7 @@ export interface InstanceRow {
   readonly setting: string;
   /**
    * The relationship's own name (`0011_console_columns.sql`); `NULL` is **unnamed**, and the
-   * surface falls back to the template's title via `instanceNameOf()`. Never a generated copy of
+   * surface falls back to the template's title via `sessionNameOf()`. Never a generated copy of
    * that title — a value here is a name a person chose.
    */
   readonly name?: string | null;
@@ -102,7 +102,7 @@ export interface PartyRow {
   readonly submitted_at?: Date | string | null;
   /**
    * When this seat **accepted** the session, or `NULL`/absent for "not yet" (#R2,
-   * `0016_party_acceptance.sql`). Acceptance is the completion hinge: `instanceStatusOf()` reads
+   * `0016_party_acceptance.sql`). Acceptance is the completion hinge: `sessionStatusOf()` reads
    * this column and the opinion rows together, so `complete` is never a stored status.
    */
   readonly accepted_at?: Date | string | null;
@@ -156,12 +156,12 @@ export interface OpinionRow {
   readonly guess: number | null;
 }
 
-/** Everything one instance is read from. */
-export interface AssessmentInstanceRows {
+/** Everything one session is read from. */
+export interface AssessmentSessionRows {
   readonly record: RecordRow;
   readonly items: readonly ItemRow[];
   readonly options: readonly OptionRow[];
-  readonly instance: InstanceRow;
+  readonly session: SessionRow;
   readonly parties: readonly PartyRow[];
   readonly opinions: readonly OpinionRow[];
 }
@@ -202,7 +202,7 @@ export function isoInstantOf(value: Date | string): string {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString();
 }
 
-/** The record's shared fields — everything a template and an instance both have. */
+/** The record's shared fields — everything a template and a session both have. */
 function recordFields(row: RecordRow): {
   id: string;
   slug: string;
@@ -370,15 +370,15 @@ export function assessmentTemplateFromPayload(
 }
 
 /**
- * One instance's rows → `zAssessmentInstance`.
+ * One session's rows → `zAssessmentSession`.
  *
- * The instance's own items are the **copy**, read from the instance record's rows, not from
- * the template it names: an instance that drifted must fail on its own rows, which is what
+ * The session's own items are the **copy**, read from the session record's rows, not from
+ * the template it names: a session that drifted must fail on its own rows, which is what
  * makes the copy a copy (`copyDriftProblems` below).
  */
-export function assessmentInstanceFromRows(
-  rows: AssessmentInstanceRows,
-): z.infer<typeof zAssessmentInstance> {
+export function assessmentSessionFromRows(
+  rows: AssessmentSessionRows,
+): z.infer<typeof zAssessmentSession> {
   const items = itemCandidates(rows.items, rows.options);
   const parties = [...rows.parties]
     .sort((left, right) => roleRank(left.role) - roleRank(right.role))
@@ -406,28 +406,28 @@ export function assessmentInstanceFromRows(
     }));
 
   return parseOrThrow(
-    zAssessmentInstance,
+    zAssessmentSession,
     {
       ...recordFields(rows.record),
-      templateId: rows.instance.template_record_id,
-      // Unnamed is the absence of a name, not a generated one: `instanceNameOf()` falls back to
+      templateId: rows.session.template_record_id,
+      // Unnamed is the absence of a name, not a generated one: `sessionNameOf()` falls back to
       // the template's title at the surface that draws the row.
-      ...(rows.instance.name === null || rows.instance.name === undefined
+      ...(rows.session.name === null || rows.session.name === undefined
         ? {}
-        : { name: rows.instance.name }),
-      mode: rows.instance.mode,
-      setting: rows.instance.setting,
+        : { name: rows.session.name }),
+      mode: rows.session.mode,
+      setting: rows.session.setting,
       items,
       parties,
     },
-    `instance "${rows.record.slug}"`,
+    `session "${rows.record.slug}"`,
   );
 }
 
 /**
- * The collection rule one instance cannot see — the DB port of E31.
+ * The collection rule one session cannot see — the DB port of E31.
  *
- * `instanceTemplateProblems()` in `content/assessment.ts` compares a fixture's copy to its
+ * `sessionTemplateProblems()` in `content/assessment.ts` compares a fixture's copy to its
  * template; this compares rows to rows, and `db:verify` calls it. The comparison is on ids
  * **and order**, because order is load-bearing: a copy with the same Aspects in a different
  * order is a rewrite of what someone answered, not a copy of it.
@@ -435,14 +435,14 @@ export function assessmentInstanceFromRows(
 export const ID_SEPARATOR = "\u0000";
 
 export function copyDriftProblems(input: {
-  readonly instanceId: string;
+  readonly sessionId: string;
   readonly templateId: string;
   readonly copyIds: readonly string[];
   readonly templateIds: readonly string[];
 }): string[] {
   if (input.copyIds.join(ID_SEPARATOR) === input.templateIds.join(ID_SEPARATOR)) return [];
   return [
-    `instance "${input.instanceId}" is a copy of "${input.templateId}" but its Aspects are [${input.copyIds.join(", ")}], the template's are [${input.templateIds.join(", ")}]`,
+    `session "${input.sessionId}" is a copy of "${input.templateId}" but its Aspects are [${input.copyIds.join(", ")}], the template's are [${input.templateIds.join(", ")}]`,
   ];
 }
 
@@ -460,23 +460,23 @@ export function itemIdsOf(items: readonly ItemRow[]): string[] {
  * report can score. So this validates the copy against the model and against the two properties
  * an Aspect list carries structurally —
  *
- *   1. **it is a list**: at least one row (`zAssessmentInstance.items` is `.min(1)`), ids that do
+ *   1. **it is a list**: at least one row (`zAssessmentSession.items` is `.min(1)`), ids that do
  *      not repeat, and positions `0..n-1` with no gap — the order both seats answer in;
  *   2. **every row is an Aspect**: the schema's own rule (`zAspect`: a non-blank question, both
  *      opinion labels, the 1..5 score scale), which is also what the console's editor would let
  *      somebody type.
  *
  * Returns one sentence per violation, the same shape as `copyDriftProblems`, so `db:verify` names
- * the instance and the Aspect instead of printing a zod object.
+ * the session and the Aspect instead of printing a zod object.
  */
 export function authoredAspectProblems(input: {
-  readonly instanceId: string;
+  readonly sessionId: string;
   readonly items: readonly ItemRow[];
 }): string[] {
   const ordered = orderedItems(input.items);
   if (ordered.length === 0) {
     return [
-      `instance "${input.instanceId}" authored its own Aspects but holds none — a relationship asks at least one`,
+      `session "${input.sessionId}" authored its own Aspects but holds none — a relationship asks at least one`,
     ];
   }
 
@@ -485,7 +485,7 @@ export function authoredAspectProblems(input: {
   for (const item of ordered) {
     if (seen.has(item.item_id)) {
       problems.push(
-        `instance "${input.instanceId}" authored its own Aspects but names "${item.item_id}" twice`,
+        `session "${input.sessionId}" authored its own Aspects but names "${item.item_id}" twice`,
       );
     }
     seen.add(item.item_id);
@@ -497,7 +497,7 @@ export function authoredAspectProblems(input: {
   const dense = positions.every((position, at) => position === at);
   if (!dense) {
     problems.push(
-      `instance "${input.instanceId}" authored its own Aspects but their positions are [${positions.join(", ")}] — a list numbered 0..n-1 in order`,
+      `session "${input.sessionId}" authored its own Aspects but their positions are [${positions.join(", ")}] — a list numbered 0..n-1 in order`,
     );
   }
 
@@ -508,7 +508,7 @@ export function authoredAspectProblems(input: {
       const [issue] = parsed.error.issues;
       const field = issue === undefined ? "" : issue.path.join(".");
       problems.push(
-        `instance "${input.instanceId}" authored Aspect "${item.item_id}" at position ${at}, which is not an Aspect: ${field === "" ? "" : `${field} — `}${issue?.message ?? "invalid"}`,
+        `session "${input.sessionId}" authored Aspect "${item.item_id}" at position ${at}, which is not an Aspect: ${field === "" ? "" : `${field} — `}${issue?.message ?? "invalid"}`,
       );
       continue;
     }
@@ -521,7 +521,7 @@ export function authoredAspectProblems(input: {
       item.right_value?.trim() === ""
     ) {
       problems.push(
-        `instance "${input.instanceId}" authored Aspect "${item.item_id}" at position ${at} with a blank question or opinion label`,
+        `session "${input.sessionId}" authored Aspect "${item.item_id}" at position ${at} with a blank question or opinion label`,
       );
     }
   }

@@ -1,5 +1,5 @@
 /**
- * `/assessment/[slug]` — the report's words, and the ones the instance screen borrows when
+ * `/assessment/[slug]` — the report's words, and the ones the session screen borrows when
  * it draws the same report below its "You have both answered" band (#274).
  *
  * Three sections, and each one exists because the alternative was a literal in a component:

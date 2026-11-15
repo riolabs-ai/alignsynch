@@ -1,17 +1,17 @@
 /**
- * The Gap population read — every **complete** instance, nameless (#289 follow-up).
+ * The Gap population read — every **complete** session, nameless (#289 follow-up).
  *
  * This is the one statement `/admin/gaps` needs: for each completed relationship, both parties'
- * four answers on every Aspect of the instance's own copy. `gapOf` is applied to those answers
+ * four answers on every Aspect of the session's own copy. `gapOf` is applied to those answers
  * in `lib/admin/gap-aggregates.ts`, so nothing here computes or stores a Gap: the read is the
  * rows, the aggregate is the function, and the screen is a projection of the two.
  *
  * **Complete is decided in SQL, and it is the same rule the flow uses.** Completeness is
- * `instanceStatusOf`'s derivation (`lib/flow/state.ts`): a counterparty exists, the copy holds
+ * `sessionStatusOf`'s derivation (`lib/flow/state.ts`): a counterparty exists, the copy holds
  * at least one Aspect, and both parties have answered at least every Aspect. The inner joins
  * below repeat that statement structurally — one row per Aspect requires an `opinion` on both
  * sides — and the `complete` CTE states it in words so a reader can check the intent instead of
- * inferring it from a join. An incomplete instance contributes no row, so it cannot contribute
+ * inferring it from a join. An incomplete session contributes no row, so it cannot contribute
  * a number: a partial relationship has no Gap.
  *
  * **Names never leave Postgres.** The statement selects no `party.name`, no `session_invite`
@@ -19,9 +19,9 @@
  * joined only for their Opinions. That is the population rule held structurally rather than by
  * a promise: the aggregate's input type has no field a name could travel in.
  *
- * **The Setting is carried, not applied.** `alignment_setting` travels with each instance so the
+ * **The Setting is carried, not applied.** `alignment_setting` travels with each session so the
  * screen can judge each one under the lens its parties chose; this module never collapses Soft
- * and Full. The verdict (`instanceAlignment`) is derived per instance in the aggregate.
+ * and Full. The verdict (`sessionAlignment`) is derived per session in the aggregate.
  *
  * Reads through `queryRows` (`lib/db/client.ts`), so this route gets the same dead-socket retry
  * and the same `DatabaseUnavailableError` the assessment screen has, and the page prints that
@@ -31,7 +31,7 @@ import type { AlignmentSetting } from "@/content/assessment";
 import type { Score } from "@/content/record";
 import type {
   GapAspect,
-  GapInstance,
+  GapSession,
   GapOpinions,
   GapPopulation,
 } from "@/lib/admin/gap-aggregates";
@@ -43,7 +43,7 @@ interface PopulationCountRow {
   readonly complete: number;
 }
 
-/** One answered Aspect of one complete instance: both parties' four scores. */
+/** One answered Aspect of one complete session: both parties' four scores. */
 interface GapAspectRow {
   readonly session_record_id: string;
   readonly alignment_setting: string;
@@ -97,7 +97,7 @@ const POPULATION_SQL = `
 `;
 
 /**
- * The rows: one per (complete instance × Aspect), with both parties' answers side by side.
+ * The rows: one per (complete session × Aspect), with both parties' answers side by side.
  *
  * `ORDER BY r.date DESC, r.slug, i.position` is a stable order and nothing else — the aggregate
  * is order-independent, but a read that returns the same rows in the same order makes a
@@ -149,35 +149,35 @@ const GAP_ROWS_SQL = `
 
 /** A score the schema allows (1..5). Anything else is a row the CHECK constraints should have
  *  refused, so it is thrown rather than rendered — a Gap of a value nothing authored is a bug. */
-function scoreOf(value: number, column: string, instanceId: string): Score {
+function scoreOf(value: number, column: string, sessionId: string): Score {
   if (!Number.isInteger(value) || value < 1 || value > 5) {
     throw new Error(
-      `gap rows: ${column} = ${String(value)} on instance ${instanceId} is not a score 1..5`,
+      `gap rows: ${column} = ${String(value)} on session ${sessionId} is not a score 1..5`,
     );
   }
   return value as Score;
 }
 
-/** The optional half of an Advanced instance's answers: think and guess come together. */
+/** The optional half of an Advanced session's answers: think and guess come together. */
 function predictionOf(
   think: number | null,
   guess: number | null,
-  instanceId: string,
+  sessionId: string,
 ): { think?: Score; guess?: Score } {
   if (think === null && guess === null) return {};
   if (think === null || guess === null) {
-    throw new Error(`gap rows: instance ${instanceId} carries half a prediction (think/guess)`);
+    throw new Error(`gap rows: session ${sessionId} carries half a prediction (think/guess)`);
   }
   return {
-    think: scoreOf(think, "think", instanceId),
-    guess: scoreOf(guess, "guess", instanceId),
+    think: scoreOf(think, "think", sessionId),
+    guess: scoreOf(guess, "guess", sessionId),
   };
 }
 
 /** The Setting column: two values exist, and the screen has a section for each. */
-function settingOf(value: string, instanceId: string): AlignmentSetting {
+function settingOf(value: string, sessionId: string): AlignmentSetting {
   if (value === "soft" || value === "full") return value;
-  throw new Error(`gap rows: instance ${instanceId} carries setting "${value}"`);
+  throw new Error(`gap rows: session ${sessionId} carries setting "${value}"`);
 }
 
 /**
@@ -185,7 +185,7 @@ function settingOf(value: string, instanceId: string): AlignmentSetting {
  *
  * Two statements on one pooled socket (~2 RTT): the counters, then the rows. The rows are
  * grouped here rather than in SQL because the grouping is the aggregate's input contract —
- * instance → Aspect → two parties' answers — and expressing it once means the pure module and
+ * session → Aspect → two parties' answers — and expressing it once means the pure module and
  * the screen never disagree about what one row is.
  */
 export async function readGapPopulation(): Promise<GapPopulation> {
@@ -197,10 +197,10 @@ export async function readGapPopulation(): Promise<GapPopulation> {
   const counters = counts[0];
   const total = counters?.total ?? 0;
 
-  const byInstance = new Map<string, { setting: AlignmentSetting; aspects: GapAspect[] }>();
+  const bySession = new Map<string, { setting: AlignmentSetting; aspects: GapAspect[] }>();
   const order: string[] = [];
   for (const row of rows) {
-    const existing = byInstance.get(row.session_record_id);
+    const existing = bySession.get(row.session_record_id);
     const aspect = {
       itemId: row.item_id,
       initiator: {
@@ -215,7 +215,7 @@ export async function readGapPopulation(): Promise<GapPopulation> {
       } satisfies GapOpinions,
     };
     if (existing === undefined) {
-      byInstance.set(row.session_record_id, {
+      bySession.set(row.session_record_id, {
         setting: settingOf(row.alignment_setting, row.session_record_id),
         aspects: [aspect],
       });
@@ -225,15 +225,15 @@ export async function readGapPopulation(): Promise<GapPopulation> {
     existing.aspects.push(aspect);
   }
 
-  const instances: GapInstance[] = order.map((instanceId) => {
-    const entry = byInstance.get(instanceId);
-    if (entry === undefined) throw new Error(`gap rows: instance ${instanceId} lost its aspects`);
-    return { instanceId, setting: entry.setting, aspects: entry.aspects };
+  const sessions: GapSession[] = order.map((sessionId) => {
+    const entry = bySession.get(sessionId);
+    if (entry === undefined) throw new Error(`gap rows: session ${sessionId} lost its aspects`);
+    return { sessionId, setting: entry.setting, aspects: entry.aspects };
   });
 
   return {
-    instances,
-    excluded: Math.max(total - (counters?.complete ?? instances.length), 0),
+    sessions,
+    excluded: Math.max(total - (counters?.complete ?? sessions.length), 0),
     total,
   };
 }

@@ -12,7 +12,7 @@
  *     own name and address are not copy this fixture can print, because the read never selects
  *     them.
  *   - **A stage is a name, never a distance.** `stages` carries the ladder's four words exactly as
- *     `content/stages.ts` authors them; the screen may say an instance is `aligned`, and it may
+ *     `content/stages.ts` authors them; the screen may say a session is `aligned`, and it may
  *     not say by how much. That is the blind rule in an operator's hands, and `gap-analysis`
  *     (4/5) is where measures get an argument of their own.
  *
@@ -23,13 +23,13 @@
  * is "there are no relationships in this database yet". A single empty state would tell an
  * operator to change the filters on a database that has no rows to filter.
  *
- * `unreadable` is the failure panel, for the same reason `assessment-instances.ts` has one: this
+ * `unreadable` is the failure panel, for the same reason `assessment-sessions.ts` has one: this
  * list is a database read on every visit, and a database that does not answer is a state the
  * screen can describe instead of Next's 500 with a digest.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
-export const adminInstancesPageCopy: PageCopy = zPageCopy.parse({
+export const adminSessionsPageCopy: PageCopy = zPageCopy.parse({
   heading: "Relationships",
   subtitle:
     "Every relationship in this database, across accounts — who is stuck, which template is being used, and where an invitation died. This screen reads; it does not act on anybody's relationship.",

@@ -4,16 +4,16 @@
  *
  * This module is pure — no `pg`, no React, no clock of its own (`now` is an argument) — for the
  * reason `lib/flow/state.ts` and `content/stages.ts` are: every question the screen can be asked
- * is answerable without a request. `tests/admin-instance-registry.test.ts` drives the seat
+ * is answerable without a request. `tests/admin-session-registry.test.ts` drives the seat
  * vocabulary, the stage derivation and each filter over made-up rows, and the page hands the same
  * function the rows it read.
  *
  * **What a row may carry, and what it may not.** An operator sees *that* a seat was claimed, the
  * mode, the Setting and the derived stage. A stage is the one measure derived from opinions —
- * `stageOf()` reads the Gaps of a **complete** instance to tell `sharing` from `aligned` — and
- * that is exactly as far as a value from the opinion table may travel: `AdminInstanceRow` has a
+ * `stageOf()` reads the Gaps of a **complete** session to tell `sharing` from `aligned` — and
+ * that is exactly as far as a value from the opinion table may travel: `AdminSessionRow` has a
  * `stage`, and no field on it can hold a score, a Gap, a count of answers or a per-Aspect row.
- * The read (`lib/db/admin-instances.ts`) computes the stage and drops the scores, so this shape
+ * The read (`lib/db/admin-sessions.ts`) computes the stage and drops the scores, so this shape
  * is the whole of what crosses to the browser. An "operator needs the answers" screen is a
  * different card with its own argument; this type is where that argument would have to start.
  *
@@ -29,7 +29,7 @@
 import {
   type AlignmentSetting,
   type AssessmentMode,
-  instanceNameOf,
+  sessionNameOf,
   MODE_LABELS,
   type Opinions,
   SETTING_LABELS,
@@ -37,15 +37,15 @@ import {
 import { gapKindsOf, type AspectGaps } from "@/content/gaps";
 import { STAGE_LABELS, stageOf, type RelationshipStage } from "@/content/stages";
 import { inviteStateOf, type InviteDisplayState, type InviteFacts } from "@/lib/flow/invite-state";
-import { instanceStatusOf, type InstanceStatus } from "@/lib/flow/state";
+import { sessionStatusOf, type SessionStatus } from "@/lib/flow/state";
 
 /** The route. One spelling, read by the page, the gate's `next` and the nav row. */
-export const ADMIN_INSTANCES_PATH = "/admin/instances";
+export const ADMIN_SESSIONS_PATH = "/admin/instances";
 
 /**
  * What a seat is, from an operator's side.
  *
- *   claimed   a party row bound to an account — this person can open the instance
+ *   claimed   a party row bound to an account — this person can open the session
  *   seat      a party row with no account: the seeded demo rows, and nothing a flow creates
  *   invited   no party row; the invitation is live and unclaimed
  *   expired   no party row; the invitation's window closed unclaimed
@@ -100,15 +100,15 @@ export function seatStateOf(
  * for ("unclaimed past its invite expiry") written once instead of in the filter and in the
  * badge.
  */
-export interface AdminInstanceRow {
-  readonly instanceRecordId: string;
+export interface AdminSessionRow {
+  readonly sessionRecordId: string;
   readonly slug: string;
   /** The relationship's own name when it has one, the template's title when it does not. */
   readonly name: string;
   readonly templateTitle: string;
   readonly mode: AssessmentMode;
   readonly setting: AlignmentSetting;
-  readonly status: InstanceStatus;
+  readonly status: SessionStatus;
   readonly stage: RelationshipStage;
   /**
    * `session.voided_at IS NOT NULL` (#503) — an operator ended this session.
@@ -129,7 +129,7 @@ export interface AdminInstanceRow {
 
 /** Everything the derivation needs, in the shape the read hands over. */
 export interface RegistryFacts {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   readonly slug: string;
   readonly name: string | null;
   readonly templateTitle: string;
@@ -153,7 +153,7 @@ export interface RegistryFacts {
 /**
  * One row: status, seats, stage — each from the one function that owns it.
  *
- * `aspects` is the Gaps of a complete instance and is ignored on an unfinished one, which is
+ * `aspects` is the Gaps of a complete session and is ignored on an unfinished one, which is
  * what `stageOf`'s union enforces at the call site instead of trusting the caller: the
  * `bothSubmitted: false` branch is constructed first, so no Setting can reach a pre-submit stage.
  */
@@ -161,8 +161,8 @@ export function registryRowOf(
   facts: RegistryFacts,
   aspects: readonly AspectGaps[],
   now: Date,
-): AdminInstanceRow {
-  const status = instanceStatusOf({
+): AdminSessionRow {
+  const status = sessionStatusOf({
     aspectCount: facts.aspectCount,
     hasCounterparty: facts.counterparty !== null,
     initiatorAnswered: facts.initiatorAnswered,
@@ -188,9 +188,9 @@ export function registryRowOf(
   const initiator = seatStateOf(facts.initiator, null, now);
 
   return {
-    instanceRecordId: facts.instanceRecordId,
+    sessionRecordId: facts.sessionRecordId,
     slug: facts.slug,
-    name: instanceNameOf(
+    name: sessionNameOf(
       { ...(facts.name === null ? {} : { name: facts.name }) },
       facts.templateTitle,
     ),
@@ -236,7 +236,7 @@ export const NO_FILTER: RegistryFilter = {
  * Does one row pass? One predicate, so the count line and the table cannot disagree about what
  * "filtered" means — the failure a second `.filter(...)` in the view would introduce.
  */
-export function registryRowPasses(row: AdminInstanceRow, filter: RegistryFilter): boolean {
+export function registryRowPasses(row: AdminSessionRow, filter: RegistryFilter): boolean {
   if (filter.stalled && !row.stalled) return false;
   if (filter.stage !== "all" && row.stage !== filter.stage) return false;
   if (filter.mode !== "all" && row.mode !== filter.mode) return false;
@@ -246,9 +246,9 @@ export function registryRowPasses(row: AdminInstanceRow, filter: RegistryFilter)
 
 /** The rows the table draws, in the order the read returned them (newest first). */
 export function filterRegistry(
-  rows: readonly AdminInstanceRow[],
+  rows: readonly AdminSessionRow[],
   filter: RegistryFilter,
-): readonly AdminInstanceRow[] {
+): readonly AdminSessionRow[] {
   return rows.filter((row) => registryRowPasses(row, filter));
 }
 
@@ -276,9 +276,9 @@ export interface AspectOpinions {
 }
 
 /**
- * The Gaps of one instance, from the opinions of its two parties.
+ * The Gaps of one session, from the opinions of its two parties.
  *
- * An Aspect either party did not answer is **absent**, not zero: a complete instance has every
+ * An Aspect either party did not answer is **absent**, not zero: a complete session has every
  * pair, so absence here means the rows are not what `complete` claimed, and a Gap invented for
  * it would be the "aligned about a question nobody asked" defect `gapKindsOf` avoids.
  */

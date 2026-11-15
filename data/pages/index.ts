@@ -31,7 +31,7 @@ import { adminGapsPageCopy } from "./admin-gaps";
 import { adminGrowthPageCopy } from "./admin-growth";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
-import { adminInstancesPageCopy } from "./admin-instances";
+import { adminSessionsPageCopy } from "./admin-instances";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 // #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
 import { adminReviewPageCopy } from "./admin-review";
@@ -40,7 +40,7 @@ import { adminTemplatesPageCopy } from "./admin-templates";
 import { adminReportPageCopy } from "./admin-report";
 import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
-import { assessmentInstancePageCopy } from "./assessment-instance";
+import { assessmentSessionPageCopy } from "./assessment-instance";
 import { assessmentsPageCopy } from "./assessments";
 import { assessmentTemplatePageCopy } from "./assessment-template-new";
 import { templateDetailPageCopy } from "./assessment-template-detail";
@@ -115,7 +115,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // #920 — the growth model and the sampled operational set beside it.
   "/admin/growth": adminGrowthPageCopy,
   "/admin/health": adminHealthPageCopy,
-  "/admin/instances": adminInstancesPageCopy,
+  "/admin/instances": adminSessionsPageCopy,
   "/admin/instances/[id]": adminRelationshipPageCopy,
   // #665 — the review shelf, grouped by release; the manifest is the catalogue.
   "/admin/review": adminReviewPageCopy,
@@ -130,7 +130,7 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // relationships`. It replaced `/assessment/instances`, which is a 308 here now; the three
   // session routes below it did not move.
   "/assessments": assessmentsPageCopy,
-  "/assessment/instances/[instanceId]": assessmentInstancePageCopy,
+  "/assessment/instances/[instanceId]": assessmentSessionPageCopy,
   "/assessment/instances/[instanceId]/report": relationshipReportPageCopy,
   // R1-E (#409) — the three write surfaces, shipped as in-progress UI.
   "/assessment/instances/[instanceId]/answer": assessmentAnswerPageCopy,

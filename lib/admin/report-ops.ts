@@ -1,7 +1,7 @@
 /**
  * The three report operations an operator may take, each one audited (#504, epic #500).
  *
- *   regenerateReport()  re-derive a complete instance's report and record why it was reissued
+ *   regenerateReport()  re-derive a complete session's report and record why it was reissued
  *   readSubmission()    read one seat's raw answers behind the PII gate, recording the read
  *   exportReport()      the same read as a whole report, also recorded, answering the document
  *
@@ -79,7 +79,7 @@ export class ReportOpRefused extends Error {
   }
 }
 
-/** Why an instance has no report, as the refusal code a screen has a sentence for. */
+/** Why a session has no report, as the refusal code a screen has a sentence for. */
 function refusalFor(source: ReportSource): ReportOpRefusal {
   switch (source.unavailable) {
     case "voided":
@@ -98,7 +98,7 @@ function refusalFor(source: ReportSource): ReportOpRefusal {
 /** What an operator is doing, and why. `actorUserId` comes from the session, never from a body. */
 export interface ReportOpRequest {
   readonly actorUserId: string;
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /** Why, when the screen had one. Optional since #732: `act()` records `NULL` otherwise. */
   readonly reason?: string;
 }
@@ -139,11 +139,11 @@ export function sha256Of(text: string): string {
 }
 
 /**
- * The previous regeneration's digest for this instance, or `null`.
+ * The previous regeneration's digest for this session, or `null`.
  *
  * Read inside the transaction so the audit row can say what this reissue replaced. It is a read
  * of `admin_action` — the one table this epic is allowed to grow — and it is what makes "the same
- * instance regenerated twice hashes the same" visible in the log rather than only in a test.
+ * session regenerated twice hashes the same" visible in the log rather than only in a test.
  */
 const LAST_REGENERATION_SQL = `
   SELECT after->>'json_sha256' AS json_sha256
@@ -164,7 +164,7 @@ interface RegenerationAudit {
   readonly gaps: number;
 }
 
-/** One instance's report, regenerated. */
+/** One session's report, regenerated. */
 export interface RegeneratedReport extends RegenerationAudit {
   /** The document, so a caller that also wants to show it does not rebuild it. */
   readonly document: ReportDocument;
@@ -175,7 +175,7 @@ export interface RegeneratedReport extends RegenerationAudit {
  * ------------------------------------------------------------------ */
 
 /**
- * Re-derive a complete instance's report and record the reissue.
+ * Re-derive a complete session's report and record the reissue.
  *
  * **Idempotent, and the audit row is the only thing that differs.** Regenerating twice produces
  * the same bytes (`sha256` equal) because the report is a pure function of the opinion rows and
@@ -183,7 +183,7 @@ export interface RegeneratedReport extends RegenerationAudit {
  * whose `before` is the first row's digest and whose `after` is the same digest again. That pair
  * is the log's own proof of idempotency, and it is why `before` is worth reading at all.
  *
- * **An incomplete instance is refused, not rendered.** `not-complete` (or `voided`, or
+ * **An incomplete session is refused, not rendered.** `not-complete` (or `voided`, or
  * `template-missing`) comes from `readReportSource()` inside the transaction, so a report is
  * never "regenerated" into a state nobody can draw — and the refusal leaves no audit row.
  */
@@ -202,22 +202,22 @@ export async function regenerateReport(
     {
       actorUserId: request.actorUserId,
       action: "report.regenerate",
-      target: { table: "session", id: request.instanceRecordId },
+      target: { table: "session", id: request.sessionRecordId },
       reason: request.reason,
       mutate: async (sql) => {
-        const source = await readReportSource(request.instanceRecordId, readersOn(sql));
+        const source = await readReportSource(request.sessionRecordId, readersOn(sql));
         if (source === undefined) {
           throw new ReportOpRefused("no-such-instance", "no session has that id");
         }
         if (source.document === null) {
           throw new ReportOpRefused(
             refusalFor(source),
-            `that instance has no report to regenerate (${source.unavailable ?? "unknown"})`,
+            `that session has no report to regenerate (${source.unavailable ?? "unknown"})`,
           );
         }
 
         const document = reportDocument(
-          source.document.instance,
+          source.document.session,
           source.document.report,
           templateVersion,
         );
@@ -225,7 +225,7 @@ export async function regenerateReport(
         captured.document = document;
 
         const previous = await sql.query<{ json_sha256: string | null }>(LAST_REGENERATION_SQL, [
-          request.instanceRecordId,
+          request.sessionRecordId,
         ]);
         const before = previous.rows[0]?.json_sha256 ?? null;
 
@@ -299,18 +299,18 @@ export async function readSubmission(
     {
       actorUserId: request.actorUserId,
       action: "read_submission",
-      target: { table: "party", id: `${request.instanceRecordId}:${request.role}` },
+      target: { table: "party", id: `${request.sessionRecordId}:${request.role}` },
       reason: (request.reason ?? "").trim() === "" ? DEFAULT_READ_REASON : request.reason,
       mutate: async (sql) => {
         const submission = await readPartySubmission(
-          request.instanceRecordId,
+          request.sessionRecordId,
           request.role,
           readersOn(sql),
         );
         if (submission === undefined) {
           throw new ReportOpRefused(
             "no-such-party",
-            `no ${request.role} holds a seat on that instance`,
+            `no ${request.role} holds a seat on that session`,
           );
         }
         captured.submission = submission;
@@ -377,21 +377,21 @@ export async function exportReport(
     {
       actorUserId: request.actorUserId,
       action: "read_submission",
-      target: { table: "session", id: request.instanceRecordId },
+      target: { table: "session", id: request.sessionRecordId },
       reason: request.reason,
       mutate: async (sql) => {
-        const source = await readReportSource(request.instanceRecordId, readersOn(sql));
+        const source = await readReportSource(request.sessionRecordId, readersOn(sql));
         if (source === undefined) {
           throw new ReportOpRefused("no-such-instance", "no session has that id");
         }
         if (source.document === null) {
           throw new ReportOpRefused(
             refusalFor(source),
-            `that instance has no report to export (${source.unavailable ?? "unknown"})`,
+            `that session has no report to export (${source.unavailable ?? "unknown"})`,
           );
         }
         const document = reportDocument(
-          source.document.instance,
+          source.document.session,
           source.document.report,
           templateVersion,
         );

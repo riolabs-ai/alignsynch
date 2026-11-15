@@ -48,7 +48,7 @@ import type { Brand } from "../../content/brand";
 import { zPageCopy, type PageCopy } from "../../content/pages";
 
 /**
- * The relationship the front page leads with — the instance slug the hero links to.
+ * The relationship the front page leads with — the session slug the hero links to.
  *
  * Avery and Rowan's Relationship Basics is the worked example: two parties, five Aspects,
  * Basic Mode on three of them and Advanced on two, and a Feel Gap of 3 on the first. It is a
@@ -98,7 +98,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
    * Two CTAs, and the order is the argument: creating the first relationship is what the reader
    * came to do, and the worked example is how they check the product can do it. Both are
    * destinations a reader without an account can reach — `/register` makes one, and the
-   * instance route is public — which is why neither points into the console.
+   * session route is public — which is why neither points into the console.
    */
   cta: { label: "Create your first assessment", href: "/register" },
   secondaryCta: { label: "See a worked example", href: "/assessment/avery-rowan" },
@@ -133,7 +133,7 @@ export const alignSynchHomeCopy: PageCopy = zPageCopy.parse({
     /**
      * The mode, as a caption rather than a pill: "Answered in Basic mode" says what it qualifies,
      * where a bare "Basic" badge in a hero reads as a plan tier — or as a verdict on the product.
-     * It is the instance's own `mode` field, so the words are the record's and not a design's.
+     * It is the session's own `mode` field, so the words are the record's and not a design's.
      */
     { id: "worked-example-mode-basic", label: "Answered in Basic mode" },
     { id: "worked-example-mode-advanced", label: "Answered in Advanced mode" },

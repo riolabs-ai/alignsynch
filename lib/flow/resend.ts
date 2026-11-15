@@ -11,12 +11,12 @@
  *   not-initiator       the viewer is the Counterparty, or nobody. The role comes from Postgres
  *                       (cookie then account, exactly as `readFlowScreen` resolves it), never from
  *                       the request.
- *   no-invite           the instance has no invitation row to reissue
+ *   no-invite           the session has no invitation row to reissue
  *   instance-complete   both parties have answered: the relationship is finished, and an
  *                       invitation to it has nothing left to do. Its honest next step is a new
- *                       instance, not a new link.
+ *                       session, not a new link.
  *   already-claimed     the Counterparty already holds the seat. Checked *after* completeness so a
- *                       finished instance says so, and a claimed-but-unanswered one says this.
+ *                       finished session says so, and a claimed-but-unanswered one says this.
  *   cap-reached         `resent_count` is at `RESEND_LIFETIME_CAP`; the action is over for good
  *   cooldown            the last re-invite is less than `RESEND_COOLDOWN_MS` old
  *   invalid-email       a corrected address was posted and it is not deliverable-shaped. Checked
@@ -65,16 +65,16 @@ export function resendRefusalOf(value: string | undefined): ResendRefusal | unde
 /**
  * The facts a re-invite is decided from — one row, the viewer, and the invitation's own history.
  *
- * `complete` is the derived status (`instanceStatusOf() === "complete"`), not a column: the
+ * `complete` is the derived status (`sessionStatusOf() === "complete"`), not a column: the
  * Counterparty's answers are the only thing that can make a relationship finished, and the store
  * computes it from the same counts the screen does, inside the transaction.
  */
 export interface ResendFacts {
-  /** The role this request answers as on the instance, or `undefined` for a stranger. */
+  /** The role this request answers as on the session, or `undefined` for a stranger. */
   readonly viewerRole: PartyRole | undefined;
-  /** Whether an `session_invite` row exists for the instance at all. */
+  /** Whether an `session_invite` row exists for the session at all. */
   readonly inviteExists: boolean;
-  /** `instanceStatusOf(progress) === "complete"` — both parties answered every Aspect. */
+  /** `sessionStatusOf(progress) === "complete"` — both parties answered every Aspect. */
   readonly complete: boolean;
   /** `claimed_at IS NOT NULL`. */
   readonly claimed: boolean;
@@ -126,7 +126,7 @@ export function resendAllowed(facts: ResendFacts, now: Date): boolean {
  * would bounce anyway.
  *
  * It lives here, and only here, so the create form's address and a corrected one cannot disagree
- * about what is deliverable: `createInstanceFromTemplate` imports it from this module.
+ * about what is deliverable: `createSessionFromTemplate` imports it from this module.
  */
 export function emailLooksDeliverable(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);

@@ -21,7 +21,7 @@ export type RepairName = (typeof REPAIR_NAMES)[number];
 /** What the form posts. `role` and `email` are only read by the repairs that use them. */
 export interface RepairInput {
   readonly repair: string;
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /**
    * Why, when the caller has one. Optional since #732: the console no longer asks for a reason on
    * any action form, and `act()` records `NULL` when nobody states one.

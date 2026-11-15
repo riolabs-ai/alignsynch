@@ -4,7 +4,7 @@
  * The table below is what a **tier includes**, computable from columns the schema already has,
  * because a gate that needs a new subsystem is a gate that ships as a mock screen:
  *
- * | plan   | active assessment instances | modes                                     |
+ * | plan   | active assessment sessions | modes                                     |
  * | ------ | --------------------------- | ----------------------------------------- |
  * | Free   | 1                           | Basic Mode only (Feel and Wish)           |
  * | Paid   | unlimited                   | Basic and Advanced (adds Think and Guess) |
@@ -18,8 +18,8 @@
  * The hard gate the owner's posture names is the fee at the Gap (`awaiting_payment`), not a plan
  * check at create.
  *
- * "Active" is the count `lib/db/billing.ts` reads: the account holds a party row on an instance
- * and that instance is not complete yet (`instanceStatusOf`'s definition, written as SQL). A
+ * "Active" is the count `lib/db/billing.ts` reads: the account holds a party row on a session
+ * and that session is not complete yet (`sessionStatusOf`'s definition, written as SQL). A
  * finished assessment does not hold a slot, so a free account can keep using the product for
  * ever — one relationship at a time.
  *
@@ -36,7 +36,7 @@ import type { Entitlement, Subscription, SubscriptionStatus } from "./types";
 export const FREE_PLAN_ID: BillingPlanId = "free";
 
 /** The free plan's one active assessment. A named constant, because prose quotes it. */
-export const FREE_ACTIVE_INSTANCE_LIMIT = 1;
+export const FREE_ACTIVE_SESSION_LIMIT = 1;
 
 /**
  * The free plan's one active **relationship** (#505).
@@ -44,7 +44,7 @@ export const FREE_ACTIVE_INSTANCE_LIMIT = 1;
  * The fixture sells it in the reader's words — Free is "For one relationship at a time", its
  * limitation is "One active relationship at a time", and every paid tier lists "Unlimited active
  * relationships" — so the number here is the fixture's, not a second opinion. It is a separate
- * limit from `FREE_ACTIVE_INSTANCE_LIMIT` because the two count different things: an *instance* is
+ * limit from `FREE_ACTIVE_SESSION_LIMIT` because the two count different things: a *session* is
  * one session on a relationship, and an account may hold a session as the Counterparty on somebody
  * else's relationship without ever having started one. What a plan sells is the number of
  * relationships you may **start**; being invited is not a purchase.
@@ -99,7 +99,7 @@ export function entitlementForPlan(planId: BillingPlanId): Entitlement {
     planId: plan.id,
     planName: plan.name,
     paid,
-    maxActiveInstances: paid ? null : FREE_ACTIVE_INSTANCE_LIMIT,
+    maxActiveSessions: paid ? null : FREE_ACTIVE_SESSION_LIMIT,
     maxActiveRelationships: paid ? null : FREE_ACTIVE_RELATIONSHIP_LIMIT,
     advancedMode: paid,
     allowedModes: paid ? [BASIC_MODE, ADVANCED_MODE] : [BASIC_MODE],
@@ -150,7 +150,7 @@ export interface GateRefusal {
  *
  * **The plan sells relationships, so this is the question the create form asks.** An account that
  * has used the one relationship its tier includes is refused with a sentence about the
- * relationship it holds, not about an "assessment instance" it never saw named on the pricing
+ * relationship it holds, not about an "assessment session" it never saw named on the pricing
  * page. `activeRelationships` counts the relationships this account **started**; an account may
  * be the Counterparty on several without initiating one, and those do not spend its slot.
  *
@@ -159,7 +159,7 @@ export interface GateRefusal {
  * entitlement's own `planName` and numbers, so a renamed tier cannot leave a sentence pointing at
  * a plan that no longer exists.
  *
- * **This is the whole create-time gate (#835).** It used to sit beside `instanceGateRefusal`,
+ * **This is the whole create-time gate (#835).** It used to sit beside `sessionGateRefusal`,
  * which asked the count of open sessions and refused Advanced Mode on Free. The mode leg went
  * because the publish trial *is* the Advanced entitlement — a Free account that publishes is
  * granted the entry paid tier for seven days, and that tier plays both modes — and the
@@ -218,16 +218,16 @@ export function checkoutRefusal(planId: string): string | null {
  */
 export function gateSummary(): readonly {
   readonly plan: string;
-  readonly activeInstances: string;
+  readonly activeSessions: string;
   readonly relationships: string;
   readonly modes: string;
 }[] {
   return BILLING_PLAN_IDS.map(entitlementForPlan).map((entitlement) => ({
     plan: entitlement.planName,
-    activeInstances:
-      entitlement.maxActiveInstances === null
+    activeSessions:
+      entitlement.maxActiveSessions === null
         ? "unlimited"
-        : String(entitlement.maxActiveInstances),
+        : String(entitlement.maxActiveSessions),
     // #505 — what the tier sells in the reader's words. `null` is "unlimited", never "0".
     relationships:
       entitlement.maxActiveRelationships === null

@@ -23,7 +23,7 @@ export type ReportOperation = (typeof REPORT_OPERATIONS)[number];
  * optional since #732 — the screen asks for none. */
 export interface ReportOperationInput {
   readonly operation: string;
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   readonly reason?: string;
   readonly role?: string;
 }

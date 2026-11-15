@@ -39,7 +39,7 @@
  * Five accounts and three tickets seed the Service queue. A relationship's Aspects are a
  * **copy** of the template it names (never a reference), and its parties' answers are maps
  * keyed by Aspect id, which is what lets an invitation sit at `{}` without violating the real
- * `zAssessmentInstance` (which requires every party to answer every Aspect).
+ * `zAssessmentSession` (which requires every party to answer every Aspect).
  *
  * Imported through relative paths on purpose: `tsconfig.datacheck.json` compiles this file
  * under `module: commonjs`, and the `@/` alias is not resolved there.
@@ -49,7 +49,7 @@
  */
 import { z } from "zod";
 import {
-  INSTANCE_NAME_MAX,
+  SESSION_NAME_MAX,
   MODE_LABELS,
   zAlignmentSetting,
   zAssessment,
@@ -382,7 +382,7 @@ export type V1SessionRecord = z.infer<typeof zSessionRecord>;
 
 /**
  * One relationship through its whole life. The parties' answers are maps keyed by the Aspect id
- * they answer, which is what lets an invite sit at `{}` without violating the real instance
+ * they answer, which is what lets an invite sit at `{}` without violating the real session
  * schema; the stage is derived from the two `*Submitted` flags and the copies of the Aspects.
  */
 export const zV1Relationship = z
@@ -411,7 +411,7 @@ export const zV1Relationship = z
      * only lets a surface say who the seat is waiting for, so the create entry can record the name
      * without pretending the other person has joined.
      */
-    inviteeName: z.string().min(1).max(INSTANCE_NAME_MAX).nullable(),
+    inviteeName: z.string().min(1).max(SESSION_NAME_MAX).nullable(),
     initiatorAnswers: z.record(z.string(), zOpinions),
     counterpartyAnswers: z.record(z.string(), zOpinions),
     initiatorSubmitted: z.boolean(),
@@ -518,7 +518,7 @@ function aspectCopy(templateId: string): Aspect[] {
   return template.items.map((item) => ({ ...item, scale: { ...item.scale } }));
 }
 
-/** The Answers maps the seeded instances use, keyed by Aspect id. */
+/** The Answers maps the seeded sessions use, keyed by Aspect id. */
 type AnswerMap = Record<string, Opinions>;
 
 /** Relationship Basics answered by Avery and Rowan, in Basic Mode: Feel and Wish only — a Feel
@@ -1022,7 +1022,7 @@ export const seedRelationships: readonly V1Relationship[] = z.array(zV1Relations
 );
 
 /**
- * A relationship's mode and its answers agree — the same rule `zAssessmentInstance` enforces
+ * A relationship's mode and its answers agree — the same rule `zAssessmentSession` enforces
  * for the live model, restated for the prototype's answer maps so a fixture cannot drift a
  * Basic sheet into Advanced answers (or the reverse) without a red build. `zOpinions` already
  * makes Think and Guess come together, so checking `think` decides it.

@@ -1,12 +1,12 @@
 /**
  * Writing a template — the one operation that makes a record with Aspects and no parties (#255).
  *
- * Everything else in `lib/flow/` assumes a template exists: `createInstanceFromTemplate` copies
+ * Everything else in `lib/flow/` assumes a template exists: `createSessionFromTemplate` copies
  * one, the answer screen reads a copy, the report draws a copy. This module is where the template
  * itself comes from, and it writes exactly what the model already describes
  * (`content/assessment.ts::zAssessment`): a `record` row of type `assessment`, `published`, and its
  * `item` rows — **no `session` row, no `party` row, no `response_option` row**. That
- * absence is not a missing feature: a template with parties is an instance by definition, which is
+ * absence is not a missing feature: a template with parties is a session by definition, which is
  * `strict()` in the schema and a foreign key in SQL.
  *
  * No new table, no new column beyond the author: `record.author_user_id` exists since
@@ -19,7 +19,7 @@
  *
  * The Aspect ids are `aspect-1`…`aspect-n` in authored order, and `position` is that order. Order
  * is part of what a party answers, and the copy carries both (`INSERT … SELECT` in `store.ts`), so
- * an instance made from this template asks the questions in the order they were typed.
+ * a session made from this template asks the questions in the order they were typed.
  */
 import { getPool } from "@/lib/db/client";
 import { readTemplateRowsWithin } from "@/lib/db/assessments";
@@ -64,7 +64,7 @@ function templateRecordId(): string {
  * Write v1 of a template this module just created, in the caller's transaction (#502b).
  *
  * A template is created here already **published** — that has been this module's rule since #255,
- * because `listPublishedTemplates()` filters on the status and `createInstanceFromTemplate()`
+ * because `listPublishedTemplates()` filters on the status and `createSessionFromTemplate()`
  * refuses anything else. Since #502b "published" also means "a version exists": a relationship is
  * created *from* a version and is bound to it, so a published template with no version would be a
  * template nothing could copy.
@@ -102,7 +102,7 @@ async function writeFirstVersion(
  * Save a draft as a published template, in one transaction, and answer with its record.
  *
  * `published` and not `draft`: `listPublishedTemplates()` filters on it and
- * `createInstanceFromTemplate()` refuses a draft, so a template saved as a draft would exist and be
+ * `createSessionFromTemplate()` refuses a draft, so a template saved as a draft would exist and be
  * unusable — a worse answer than the form refusing the save. Nothing in this version edits or
  * unpublishes a template (there is no edit surface at all), so "published" is the only state a
  * saved template can be in.
@@ -188,8 +188,8 @@ export async function createAssessmentTemplate(
 
 /**
  * Why a write on a template was refused. Two codes, because the screen has two different
- * things to say and a third ("that record is an instance") is answered as "no such template":
- * an id that names an instance is not a template the caller asked about, and telling a stranger
+ * things to say and a third ("that record is a session") is answered as "no such template":
+ * an id that names a session is not a template the caller asked about, and telling a stranger
  * which ids exist is the one thing a 404 is for.
  */
 export type TemplateWriteRefusal = "unknown-template" | "template-not-yours";
@@ -222,15 +222,15 @@ interface WritableTemplateRow {
 /**
  * Archive or unarchive a template — the only write this screen performs on an existing one.
  *
- * **Archiving is not deletion, and it cannot break an instance.** An instance copies its Aspects
+ * **Archiving is not deletion, and it cannot break a session.** A session copies its Aspects
  * into its own `item` rows when it is created (`INSERT … SELECT` in `store.ts`), and
  * `/assessment/[slug]` renders from those copies; nothing joins back to the template to draw an
- * answered instance. The template row keeps existing, so `session.template_record_id`
+ * answered session. The template row keeps existing, so `session.template_record_id`
  * still resolves and the report still opens. What changes is two reads that ask for `published`:
- * the catalogue at `/assessment` stops listing it, and `createInstanceFromTemplate` refuses it —
- * so archiving hides it from pickers and blocks new instances, while leaving every existing one
+ * the catalogue at `/assessment` stops listing it, and `createSessionFromTemplate` refuses it —
+ * so archiving hides it from pickers and blocks new sessions, while leaving every existing one
  * exactly as it was. `tests/template-library.test.ts` pins the rule and the live probe in the
- * PR's acceptance creates an instance, archives the template, and opens the instance again.
+ * PR's acceptance creates a session, archives the template, and opens the session again.
  *
  * **Only the author may archive.** The `WHERE` names `author_user_id = $2`, so a built-in
  * (author NULL) and another account's template are both refused by the query itself rather than
@@ -296,8 +296,8 @@ export async function setTemplateStatus(
  * **A duplicate is a new record with copied items, never a pointer.** The copy carries the
  * source's title with " (copy)" appended, its summary, and its Aspects with their order; the
  * copy's ids are its own (`assessment-<uuid>`, `aspect-1…n`), so editing or archiving either one
- * later cannot reach the other, and an instance already made from the source is untouched. This
- * is the same "instances are copies" rule the flow has always used, one level up.
+ * later cannot reach the other, and a session already made from the source is untouched. This
+ * is the same "sessions are copies" rule the flow has always used, one level up.
  *
  * **The copy is published and authored by the caller**, whichever state the source is in: the
  * point of duplicating an archived template is to get a usable one back, and unarchiving is the

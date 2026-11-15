@@ -384,8 +384,8 @@ function field(key: string, full: string): AuditChangeField {
  * **One entry, and it is a *list*.** `/assessment/instances/[instanceId]` exists, and it resolves
  * the viewer from a cookie or a session and answers 404 to anyone who is not a party (`app/
  * (mainlayout)/assessment/instances/[instanceId]/page.tsx` records why), so linking an operator
- * there is a link to a refusal. The registry lists every instance across accounts and takes no
- * relationship parameter, which makes it the honest destination: the row says which instance, and
+ * there is a link to a refusal. The registry lists every session across accounts and takes no
+ * relationship parameter, which makes it the honest destination: the row says which session, and
  * the link opens the table that can show it.
  *
  * `record` deliberately has no entry. A `record` id is a quiz *or* a template, and the two live at

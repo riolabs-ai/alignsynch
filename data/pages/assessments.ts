@@ -68,7 +68,7 @@ export const assessmentsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The tabs are the **four stored states** (`MyInstanceState`), and nothing else: a
+       * The tabs are the **four stored states** (`MySessionState`), and nothing else: a
        * relationship the creator has not sent, a session waiting on this reader, one waiting on
        * the other party, or one complete and accepted — which is the state that opens the Gap.
        * `all` is the default, so a row is never hidden behind a tab nobody clicked.
@@ -142,7 +142,7 @@ export const assessmentsPageCopy: PageCopy = zPageCopy.parse({
       id: "invite",
       items: [
         // These ids are `INVITE_STATES` (`lib/flow/invite-state.ts`), and they are the only
-        // source: the row renders `itemLabel(inviteCopy, instance.inviteState)`, so a state with
+        // source: the row renders `itemLabel(inviteCopy, session.inviteState)`, so a state with
         // no item here throws PageCopy at render time and takes the whole list down.
         { id: "unclaimed", label: "Not claimed yet" },
         { id: "expired", label: "Expired" },
@@ -179,7 +179,7 @@ export const assessmentsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       // #252. Drawn only on a row that is already `complete` and whose party has not opened it
-      // since: the row says *where the instance stands* and this says *that it moved while you
+      // since: the row says *where the session stands* and this says *that it moved while you
       // were away*. No count, no score, no Gap value.
       id: "marker",
       items: [{ id: "unseen", label: "Complete since you last looked — open it to read the Gap" }],

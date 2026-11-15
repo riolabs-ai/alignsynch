@@ -823,7 +823,7 @@ export function serializeDatasetPayload(payload: DatasetPayload): string {
  */
 export function canonicalDemoBundle(
   templates: readonly Assessment[],
-  instances: readonly AssessmentSession[],
+  sessions: readonly AssessmentSession[],
   appVersion: string,
 ): DatasetBundle {
   const envelope = {

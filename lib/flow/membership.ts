@@ -65,7 +65,7 @@ export class MembershipError extends Error {
  * The whole resolution of who a viewer is on a relationship, in one query-shaped order.
  *
  * A party proves themselves two ways, in the same order `readFlowScreen` has always used: the
- * bearer token the instance gave them (`party.access_token_hash`), then the account they signed
+ * bearer token the session gave them (`party.access_token_hash`), then the account they signed
  * in as (`party.user_id`) — both scoped to this relationship through the sessions it holds. A
  * coach proves themselves only by membership, because that is the only row that can name one.
  * `undefined` means "this viewer is not a party to, and not a member of, this relationship".

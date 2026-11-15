@@ -58,7 +58,7 @@ export const ADMIN_ACTIONS = [
   "invite.revoke",
   /** Move somebody up or down the ladder — the action #501's test refuses `support`. */
   "role.change",
-  /** Delete an instance and its rows. Destructive, so `admin`, never `support`. */
+  /** Delete a session and its rows. Destructive, so `admin`, never `support`. */
   "instance.delete",
   /** Hand the one owner seat on. `owner` only: an `admin` cannot make themselves an `owner`. */
   "owner.transfer",
@@ -431,7 +431,7 @@ export function atLeast(role: UserRole | null, needed: UserRole): boolean {
  * `information_schema` — a table this app does not audit is not a target.
  *
  * **The names are the tables as 0013 left them.** `0013_relationship_sessions.sql` renamed
- * `assessment_instance` to `session` and `instance_invite` to `session_invite`, and #503's repairs
+ * `assessment_session` to `session` and `session_invite` to `session_invite`, and #503's repairs
  * write those rows: an entry naming the pre-0013 spelling would refuse every relationship repair
  * with `unknown-target-table` while type-checking perfectly. The audit log's own vocabulary is the
  * live table names or it is nothing a reader can join back to. `relationship_member` is here for

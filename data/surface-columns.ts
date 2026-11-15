@@ -8,7 +8,7 @@
  * `/dashboard/relationships`, `/dashboard/help`, `/assessment/instances`,
  * `/assessment/instances/[instanceId]`, `/my-quizzes` and `/settings` had **no page-level wrapper
  * at all**, and the centring was drawn inside the views — `dashboard-page.tsx`,
- * `relationship-cards.tsx`, `quiz-statistics.tsx`, `instance-view.tsx`, `report-view.tsx`,
+ * `relationship-cards.tsx`, `quiz-statistics.tsx`, `session-view.tsx`, `report-view.tsx`,
  * `stage-shell.tsx`, `invite-view.tsx`, `template-shelf.tsx` — so three pages had three different
  * left edges and a fourth changed its edge at `md`.
  *

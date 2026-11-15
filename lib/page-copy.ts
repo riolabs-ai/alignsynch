@@ -49,7 +49,7 @@ export function itemLabel(section: PageCopySection, id: string): string {
  * A key computed from a row or from a query value cannot be resolved by E23 at all — the band is
  * a closed table of words and the record is not — so a status this build has no sentence for took
  * the whole document to a **500 at request time** while `typecheck`, `lint`, `data:check` and
- * `next build` all stayed green (#998, and the single instance #988 closed).
+ * `next build` all stayed green (#998, and the single session #988 closed).
  *
  * A runtime key therefore asks this reader, and the caller decides what stands in when the answer
  * is absent: a named fallback row from the same fixture (the Sent screen's `status` band carries

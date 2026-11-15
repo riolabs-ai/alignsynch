@@ -86,9 +86,9 @@ function aspectsLabel(card: PageCopySection, count: number): string {
  * A catalogue card: what this account may start a relationship from.
  *
  * `View Details` opens the template's own screen (`/templates/relationship/<slug>`), which is the
- * page that lists its Aspects and its instances; `Create Relationship` opens the create step
+ * page that lists its Aspects and its sessions; `Create Relationship` opens the create step
  * under the same handle (`/templates/relationship/<slug>/create`), which is the shipped flow — the
- * catalogue never says "start an instance", because a relationship is what a person starts and
+ * catalogue never says "start a session", because a relationship is what a person starts and
  * a session is what a published relationship opens.
  *
  * The price line is the plan's, on every card: a template the taxonomy does not name (the

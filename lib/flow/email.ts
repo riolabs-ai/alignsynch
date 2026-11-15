@@ -29,9 +29,9 @@
  * (`lib/email/band.ts`, #548): plain text composed first, the HTML derived from that string. The
  * message carries exactly one link, and the link is the only place the token appears.
  *
- * **The second message (#258)** is the report-ready notice: when the acceptance that completes an
- * instance commits, the other party is told, once, and on that transition only. Its words are
- * template #5 (`lib/email/templates/report-ready.ts`) and its link is the instance's own screen —
+ * **The second message (#258)** is the report-ready notice: when the acceptance that completes a
+ * session commits, the other party is told, once, and on that transition only. Its words are
+ * template #5 (`lib/email/templates/report-ready.ts`) and its link is the session's own screen —
  * no token, no answer, no score and no Gap value, because the blind rule does not stop at the
  * browser. **The third (#548)** is the join notice (`lib/flow/join-notice.ts`), sent to the
  * Initiator when a claim commits. All of them go through `sendMail()`, so there is one transport,
@@ -42,7 +42,7 @@ import { brand } from "@/data/brand";
 import { resetRequestPageCopy } from "@/data/pages/password-reset";
 import { invitationTemplate, renderTemplate } from "@/lib/email/templates";
 import { RESET_TTL_MINUTES } from "@/lib/auth/reset-token";
-import { instancePath, relationshipScreenPath } from "@/lib/flow/paths";
+import { sessionPath, relationshipScreenPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 
 /** Resend's documented send endpoint. `fetch` is the client; no SDK, no dependency. */
@@ -99,15 +99,15 @@ export function invitationLink(token: string, base = baseUrl()): string {
 }
 
 /**
- * The link an unlock notice carries: the instance's own screen, and **no token in the path**.
+ * The link an unlock notice carries: the session's own screen, and **no token in the path**.
  *
- * The recipient already holds the credential that opens that instance — the party cookie their
+ * The recipient already holds the credential that opens that session — the party cookie their
  * browser was given when they claimed, or the account they answered with — so the notice never
  * mints, repeats or needs one. A link with a token in it would be a second bearer credential in
  * a mailbox, which is the thing `lib/flow/tokens.ts` refuses to store anywhere but a hash.
  */
-export function instanceLink(instanceRecordId: string, base = baseUrl()): string {
-  return `${base.replace(/\/+$/, "")}${instancePath(instanceRecordId)}`;
+export function sessionLink(sessionRecordId: string, base = baseUrl()): string {
+  return `${base.replace(/\/+$/, "")}${sessionPath(sessionRecordId)}`;
 }
 
 /**
@@ -273,16 +273,16 @@ const LOG_COPY: Record<MailSender, { readonly noun: string; readonly unsent: str
   invite: { noun: "invitation", unsent: "the link is shown in the app instead" },
   /**
    * The join notice (#548 template #4). Its `unsent` tail says what the app does instead: the
-   * Initiator's own screen already moves the instance out of `awaiting_counterparty`, so a mail
+   * Initiator's own screen already moves the session out of `awaiting_counterparty`, so a mail
    * that did not go out costs them a prompt, not the fact.
    */
   joined: {
     noun: "join notice",
-    unsent: "the instance screen already shows both seats exist",
+    unsent: "the session screen already shows both seats exist",
   },
   unlock: {
     noun: "unlock notice",
-    unsent: "the instance stays marked as complete in the app instead",
+    unsent: "the session stays marked as complete in the app instead",
   },
   /**
    * The password reset. Its `unsent` tail is the same sentence the invitation uses, because the

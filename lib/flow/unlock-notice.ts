@@ -1,8 +1,8 @@
 /**
  * The unlock notice (#258) — the one email the other party gets when the second acceptance completes
- * an instance.
+ * a session.
  *
- * #252 made a complete instance *visible* on `/assessment/instances` ("complete since you last
+ * #252 made a complete session *visible* on `/assessment/instances` ("complete since you last
  * looked"). Visible only reaches a person who opens the list, and the party who accepted first may
  * not come back for days. This module is the other half: when the second sheet **is accepted**, the
  * person who is not looking is told once, and the in-app marker stays the record of whether they
@@ -19,12 +19,12 @@
  * that decides it and it is total over the two roles, so there is no branch where a party could
  * be told about their own answer.
  *
- * **What this module may carry.** The instance's title, the two party names, and a link to
+ * **What this module may carry.** The session's title, the two party names, and a link to
  * `/assessment/instances/<id>`. Not an answer, not a score, not a Gap value, and not the
  * invitation token — the blind rule is a rule about who may read the numbers, and a mailbox is not
  * a party. `readUnlockFacts()` (`lib/flow/store.ts`) reads no `opinion` row at all, so there is
  * nothing in scope here that could leak even by accident; the link carries no token because the
- * recipient already holds the credential (their party cookie) that opens that instance.
+ * recipient already holds the credential (their party cookie) that opens that session.
  *
  * **A send that cannot happen is not an error.** No address on the seat, or no mailer on the
  * deployment: nothing is sent, one operator line is logged, and the caller's submit has already
@@ -33,7 +33,7 @@
  */
 import type { PartyRole } from "@/content/assessment";
 import { reportReadyTemplate, renderTemplate } from "@/lib/email/templates";
-import { instanceLink, sendMail, type MailMessage, type MailOutcome } from "@/lib/flow/email";
+import { sessionLink, sendMail, type MailMessage, type MailOutcome } from "@/lib/flow/email";
 import { readUnlockFacts } from "@/lib/flow/store";
 
 /**
@@ -47,15 +47,15 @@ export function otherRoleOf(submittedBy: PartyRole): PartyRole {
   return submittedBy === "initiator" ? "counterparty" : "initiator";
 }
 
-/** Everything the words need: who is reading, who answered, what the instance is called. */
+/** Everything the words need: who is reading, who answered, what the session is called. */
 export interface UnlockNoticeFields {
   readonly to: string;
   /** The name of the party being told. */
   readonly recipientName: string;
-  /** The name of the party whose answer completed the instance. */
+  /** The name of the party whose answer completed the session. */
   readonly otherName: string;
   readonly templateTitle: string;
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /** `NEXT_PUBLIC_BASE_URL` by default; a test pins it. */
   readonly base?: string;
 }
@@ -74,7 +74,7 @@ export interface UnlockNoticeMessage extends MailMessage {
  * unchanged — the template is handed no score, no Gap value and no token.
  */
 export function unlockNoticeMessage(fields: UnlockNoticeFields): UnlockNoticeMessage {
-  const link = instanceLink(fields.instanceRecordId, fields.base);
+  const link = sessionLink(fields.sessionRecordId, fields.base);
   const rendered = renderTemplate(reportReadyTemplate, {
     recipient: fields.recipientName,
     other: fields.otherName,
@@ -94,7 +94,7 @@ export function unlockNoticeMessage(fields: UnlockNoticeFields): UnlockNoticeMes
  * What happened to the notice.
  *
  * `sent` / `unset` / `failed` are the transport's three (`lib/flow/email.ts`), and the two extras
- * are this module's own *no message was attempted* answers: there was no instance to read, or the
+ * are this module's own *no message was attempted* answers: there was no session to read, or the
  * seat to tell holds no address. Neither is a failure of the submit — the answers are committed
  * either way — and neither is rendered anywhere: the screen after a submit is the report, which
  * says the Gap is open because it is.
@@ -102,24 +102,24 @@ export function unlockNoticeMessage(fields: UnlockNoticeFields): UnlockNoticeMes
 export type UnlockNoticeOutcome = MailOutcome | "no-such-instance" | "no-address";
 
 /**
- * Tell the other party that an acceptance completed the instance, or say why no message went out.
+ * Tell the other party that an acceptance completed the session, or say why no message went out.
  *
  * Called by the accepts route **after** `acceptSession` has committed and only when its result is
  * `{ ok: true, completed: true }`. The row is already stored by then, so nothing here can cost
  * a person their acceptance; the only thing at stake is whether a mailbox hears about it.
  */
 export async function sendUnlockNotice(input: {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   readonly submittedBy: PartyRole;
   readonly base?: string;
   readonly fetchImpl?: typeof fetch;
 }): Promise<UnlockNoticeOutcome> {
-  const facts = await readUnlockFacts(input.instanceRecordId);
+  const facts = await readUnlockFacts(input.sessionRecordId);
   if (facts === undefined) {
-    // The submit just committed against these rows, so an instance that cannot be read back is
+    // The submit just committed against these rows, so a session that cannot be read back is
     // drift, not a missing page. One operator line, no recipient, no address, no link.
     console.error(
-      "[unlock] the instance could not be read back after a submit completed it — no unlock notice was attempted",
+      "[unlock] the session could not be read back after a submit completed it — no unlock notice was attempted",
     );
     return "no-such-instance";
   }
@@ -127,10 +127,10 @@ export async function sendUnlockNotice(input: {
   const recipient = facts[otherRoleOf(input.submittedBy)];
   if (recipient.email === null) {
     // The honest answer for a seat the app holds no address for (a signed-out create, or an
-    // instance older than 0008). The in-app marker is the delivery, so this is a degraded path
+    // session older than 0008). The in-app marker is the delivery, so this is a degraded path
     // and not a failure — and the line names the seat, never a guess at an address.
     console.warn(
-      `[unlock] the ${recipient.role} holds no address on this instance — no unlock notice was attempted; the instance stays marked as complete in the app instead`,
+      `[unlock] the ${recipient.role} holds no address on this session — no unlock notice was attempted; the session stays marked as complete in the app instead`,
     );
     return "no-address";
   }
@@ -141,7 +141,7 @@ export async function sendUnlockNotice(input: {
       recipientName: recipient.name,
       otherName: facts[input.submittedBy].name,
       templateTitle: facts.title,
-      instanceRecordId: facts.instanceRecordId,
+      sessionRecordId: facts.sessionRecordId,
       ...(input.base === undefined ? {} : { base: input.base }),
     }),
     { sender: "unlock", ...(input.fetchImpl === undefined ? {} : { fetchImpl: input.fetchImpl }) },

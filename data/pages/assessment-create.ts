@@ -23,7 +23,7 @@
  * **The create itself still refuses in codes.** A store refusal comes back as
  * `?problem=<FlowErrorCode>`; the `problems` section is the one sentence per code, and `refused`
  * is the screen drawn when the code means the template itself cannot be read (somebody else's,
- * an instance, an id that names nothing).
+ * a session, an id that names nothing).
  *
  * `{count}` is the template's own Aspect count, filled by `fillLabel()` from the record the
  * page read. The Mode and Setting option names are the model's own glossary (`MODE_LABELS`,

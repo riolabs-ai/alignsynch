@@ -127,7 +127,7 @@ export function createAttemptLimiter(options: {
 /**
  * The process's limiter. Module scope, because a fresh one per request would limit nothing.
  *
- * `tests/demo-pin.test.ts` builds its own with an injected clock; this instance is only ever
+ * `tests/demo-pin.test.ts` builds its own with an injected clock; this session is only ever
  * touched by the server action.
  */
 export const demoPinLimiter: AttemptLimiter = createAttemptLimiter({

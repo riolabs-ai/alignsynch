@@ -1,10 +1,10 @@
 /**
- * template-ancestor: lib/admin/instance-registry.ts   (variation: the v1 store's registry — seat state derived from an invite token rather than a `party` row, an archived column the DB registry does not have, and a session list that prints only whether a sheet is scored)
+ * template-ancestor: lib/admin/session-registry.ts   (variation: the v1 store's registry — seat state derived from an invite token rather than a `party` row, an archived column the DB registry does not have, and a session list that prints only whether a sheet is scored)
  *
  * The admin console's derivations, as one pure module — the v1 store's answer to
- * `lib/admin/instance-registry.ts`, which does the same job over Postgres rows.
+ * `lib/admin/session-registry.ts`, which does the same job over Postgres rows.
  *
- * **What this module may carry, and what it may not.** `lib/admin/instance-registry.ts` decided
+ * **What this module may carry, and what it may not.** `lib/admin/session-registry.ts` decided
  * one thing and this file inherits it unchanged: an operator sees *that* a session was scored,
  * never a party's answer values, a Gap or a report figure. `AdminRelationshipRow` has a `stage`
  * (the one measure derived from opinions, and only on a complete sheet, through
@@ -27,7 +27,7 @@
  * (`lib/v1/store.tsx`) because a template is an `Assessment` — the strict content model — and an
  * operator decision about a record is not a property of the record.
  *
- * **No clock.** `now` is an argument, exactly as it is in `lib/admin/instance-registry.ts`: the
+ * **No clock.** `now` is an argument, exactly as it is in `lib/admin/session-registry.ts`: the
  * invite's `expired` state is derived from it, and a module that read `Date.now()` itself could
  * not be tested against a fixed day.
  *
