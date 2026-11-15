@@ -74,6 +74,10 @@ which validates with `zGrowthModel` — a missing or unparseable file draws a pa
 the command that writes it, never a page of zeroes. Gates: `requireAdminProduct()` then
 `requireAdmin()`, the same order as `/admin/health`.
 
+**The page is URL-only** (#1095): it is reachable at `/admin/growth` and is deliberately absent from
+the admin navigation, because a screen charting a _simulated_ business does not belong in an
+operator's rail — no redirect stands in for the row and no hub gained a link.
+
 Charts are `recharts` through `components/ui/chart.tsx`; no dependency was added.
 
 ## Limits, stated
