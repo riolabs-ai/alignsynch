@@ -147,8 +147,11 @@ const ALIGNMENT_MENU = [
 /**
  * The operator's group, in the owner's order restored by #929: the inbox first (the one queue a
  * support seat works, now the group's lead row), then the console hub — the row that had no home
- * anywhere in the UI before #542 phase 2 — then the console's destinations, the growth model and
- * the docs home, and the audit log last.
+ * anywhere in the UI before #542 phase 2 — then the console's destinations and the docs home, and
+ * the audit log last.
+ *
+ * #1095 removed the growth row this group used to carry between the Gap and Billing: the page
+ * charts a *modelled* business, so the owner kept the screen and made it URL-only.
  *
  * The review shelf and the health page are **not** here: #929 put them inside Support, and they are
  * asserted there, in `ADMIN_RAIL` below.
@@ -158,8 +161,8 @@ const ADMIN_GROUP = [
   "/admin/console",
   "/admin/instances",
   "/admin/gaps",
-  // #920 — the growth model, between the Gap and Billing.
-  "/admin/growth",
+  // #1095 — no growth row between the Gap and Billing: the page charts a simulated business, so
+  // the owner kept the screen and made it URL-only.
   "/admin/billing",
   "/admin/broadcast",
   // #901 — the docs home, after Broadcast and before the log.
@@ -342,6 +345,18 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     // (`requireRole("admin")` is a rank comparison). A menu that keyed on `role === "admin"`
     // would have hidden the whole group from the one person who can reach all of it.
     expect(navHrefs("alignsynch", navViewer("owner"))).toContain("/admin/console");
+  });
+
+  /**
+   * #1095 — `/admin/growth` is URL-only. The page still answers (it is a route in
+   * `content/routes.ts` and its own suite still runs); what the branded rail must not do is draw a
+   * row for it. Asserted on the descriptor, on the reader's own href list and in the markup, for
+   * both staff rungs — a negative claim that only held for one of the three would still ship.
+   */
+  it("draws no growth row, on either staff rung, in the rectangle or in the markup", () => {
+    expect(adminHrefs).not.toContain("/admin/growth");
+    expect(navHrefs("alignsynch", navViewer("owner"))).not.toContain("/admin/growth");
+    expect(navHtml("alignsynch", navViewer("admin"))).not.toContain('href="/admin/growth"');
   });
 
   it("gives a support seat the one staff row it works, and no page it would be refused", () => {

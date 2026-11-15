@@ -169,8 +169,19 @@
  *       rows**, so `/dashboard/relationships/<id>` said "Not sent yet — nothing has been invited or
  *       charged" while `/assessments` said the pair had accepted, and `/invite/<token>` could only
  *       answer "No such invitation". Numbered after #962's V30.
+ *   V32 the invitation belongs to a relationship, and a session waits for an acceptance
+ *       (`0040_session_invite_relationship.sql`, #1100a): every `session_invite` row carries a
+ *       `relationship_id` — filled by 0040 from the session it already pointed at — and the count of
+ *       sessions sitting on a relationship whose `counterparty_user_id` is still NULL is reported.
+ *       **This one does not fail**: it prints two report lines and their counts in the census. The
+ *       card that adds the column changes no behaviour, so the two writers still write the old shape
+ *       and the old create still opens a session at Stage 5; failing here would paint the branch red
+ *       for work that card has not done. #1100b makes the writers supply the column and stops the
+ *       early session, and in that same change both numbers become `fail()`s — the second one is
+ *       that card's before-count, measured here.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
+ * V32 is the one check that reports without failing, and it says so in its own output line.
  */
 import { Client } from "pg";
 import { readdirSync, readFileSync } from "node:fs";
@@ -923,6 +934,69 @@ async function main() {
         relationshipOrphans += 1;
         fail("V17", `session "${row.record_id}" points at a relationship that does not exist`);
       }
+    }
+
+    // V32 — the invitation's own relationship (0040, #1100a). Two facts, both **reported and not
+    // yet enforced**, on purpose: this card adds the column and fills it, and the behaviour card
+    // behind #1100 is the change that makes the two writers supply it and the create stop opening a
+    // session at Stage 5. Flipping either line to a `fail()` before that would paint `db:verify` red
+    // on a branch whose writer is still the old one — a red check for work nobody has done yet.
+    //
+    // `sessionsWithoutAcceptance` is the number that card is measured against: every session on a
+    // relationship whose `counterparty_user_id` is NULL is a session opened before the pair agreed
+    // to anything, and the cohort is printed rather than failed so the next card has a before-count
+    // instead of a vibe.
+    let invitesChecked = 0;
+    let invitesWithoutRelationship = 0;
+    let sessionsWithoutAcceptance = 0;
+    let sessionsWithoutAcceptanceDraft = 0;
+    if (present.includes("session_invite")) {
+      const { rows: inviteRelationshipColumn } = await client.query(
+        `SELECT 1 AS present FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'session_invite'
+            AND column_name = 'relationship_id'`,
+      );
+      if (inviteRelationshipColumn.length === 0) {
+        console.log(
+          "  · invite: session_invite.relationship_id does not exist — run `pnpm db:migrate` (0040, #1100a)",
+        );
+      } else {
+        const { rows: inviteCensus } = await client.query(
+          `SELECT count(*)::int AS invites,
+                  count(*) FILTER (WHERE relationship_id IS NULL)::int AS without_relationship
+             FROM session_invite`,
+        );
+        invitesChecked = inviteCensus[0]?.invites ?? 0;
+        invitesWithoutRelationship = inviteCensus[0]?.without_relationship ?? 0;
+        console.log(
+          `  · invite: ${invitesChecked} invitation(s), ${invitesWithoutRelationship} with no relationship_id (0040 fills every one; want 0)`,
+        );
+      }
+    } else {
+      console.log("  · invite: public.session_invite does not exist — nothing to report");
+    }
+
+    if (present.includes("relationship") && hasRelationshipColumn) {
+      // `status` arrives in 0030; a database migrated before it has no column to count a draft by,
+      // so the draft half is reported as 0 rather than read from a column that is not there.
+      const { rows: statusColumn } = await client.query(
+        `SELECT 1 AS present FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'relationship'
+            AND column_name = 'status'`,
+      );
+      const draftFilter = statusColumn.length > 0 ? "r.status = 'draft'" : "false";
+      const { rows: acceptanceCensus } = await client.query(
+        `SELECT count(*)::int AS sessions,
+                count(*) FILTER (WHERE ${draftFilter})::int AS drafts
+           FROM session s
+           JOIN relationship r ON r.id = s.relationship_id
+          WHERE r.counterparty_user_id IS NULL`,
+      );
+      sessionsWithoutAcceptance = acceptanceCensus[0]?.sessions ?? 0;
+      sessionsWithoutAcceptanceDraft = acceptanceCensus[0]?.drafts ?? 0;
+      console.log(
+        `  · acceptance: ${sessionsWithoutAcceptance} session(s) sit on a relationship with no acceptance (counterparty_user_id IS NULL), ${sessionsWithoutAcceptanceDraft} of them on a draft — the population #1100b stops creating (reported, not enforced yet)`,
+      );
     }
 
     // V19 + V20 — the membership's two invariants (coach card). The rows are grouped per
@@ -2157,7 +2231,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${sessionsWithoutAcceptance} session(s) on a relationship with no acceptance, ${sessionsWithoutAcceptanceDraft} of them on a draft (V32 reports; #1100b's target), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that
