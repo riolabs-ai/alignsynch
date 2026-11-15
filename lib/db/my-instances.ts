@@ -84,6 +84,8 @@ interface MyInstanceRow {
   readonly viewer_accepted: boolean;
   readonly other_accepted: boolean;
   readonly viewer_unlock_seen_at: Date | null;
+  /** `relationship.published_at IS NOT NULL` (#975) — `false` is a never-sent draft. */
+  readonly published: boolean;
 }
 
 /**
@@ -110,10 +112,16 @@ const MY_INSTANCES_SQL = `
              WHERE cp.session_record_id = r.id AND cp.role = 'counterparty') AS has_counterparty,
     (vp.accepted_at IS NOT NULL)            AS viewer_accepted,
     COALESCE((op.accepted_at IS NOT NULL), false) AS other_accepted,
-    vp.unlock_seen_at                       AS viewer_unlock_seen_at
+    vp.unlock_seen_at                       AS viewer_unlock_seen_at,
+    -- #975 — did the invitation ever go out? A draft is not "needs your answers": nothing was sent,
+    -- so nothing is waiting. COALESCE to true is the not-measured answer for a session whose
+    -- relationship row is missing (a row written before 0013 bound sessions to relationships), and
+    -- it keeps that row counting exactly as it counted before this column existed.
+    COALESCE(rel.published_at IS NOT NULL, true) AS published
   FROM party vp
   JOIN record r             ON r.id = vp.session_record_id AND r.record_type = 'assessment'
   JOIN session ai ON ai.record_id = r.id
+  LEFT JOIN relationship rel ON rel.id = ai.relationship_id
   JOIN record t             ON t.id = ai.template_record_id
                            AND t.record_type = 'assessment'
                            AND NOT EXISTS (SELECT 1 FROM session ti
@@ -176,6 +184,11 @@ export async function listMyInstances(userId: string): Promise<MyInstance[]> {
       initiatorAccepted: acceptedBy.initiator,
       counterpartyAccepted: acceptedBy.counterparty,
       viewerRole,
+      // #975 — the record's own fact, so this list's state and `/assessments`' row agree about a
+      // draft. Without it the Overview would count a draft as "needs your answers" and link to a
+      // list that no longer shows one, which is the card-vs-list drift `lib/flow/overview.ts` exists
+      // to prevent.
+      published: row.published,
     });
 
     return {

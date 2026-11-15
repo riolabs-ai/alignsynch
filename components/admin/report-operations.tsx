@@ -65,6 +65,7 @@ import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
 /** The status the derivation answers, mapped onto the copy id that names it. */
 const STATUS_COPY_ID: Record<InstanceStatus, string> = {
+  draft: "draft",
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
   /* #619 — sealed and unpaid: the report reads it as its own locked state. */
