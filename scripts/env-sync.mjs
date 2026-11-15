@@ -3,18 +3,30 @@
  * env-sync — push a local env file into Vercel env targets, idempotently, and report
  * drift without writing.
  *
- * The env FILE is the source of truth; this script is the only thing in the repo that
- * talks to the dashboard. It prints key NAMES only — never a value, never a prefix of one
- * — on every path, including errors. A value is used in exactly one place: the body of a
- * write request.
+ * Two modes, one subject:
  *
- *   node scripts/env-sync.mjs --from .env.demo --target preview --branch demo
- *   node scripts/env-sync.mjs --from .env.demo --target preview --branch demo --apply
+ *   MANIFEST MODE (`pnpm env:sync`) — no `--from`. The **names and scope coverage** come from
+ *   `scripts/env-manifest.ts` and the values from the rendered file for that target, so the table
+ *   that decides what the app reads also decides what a deployment is given. It **defaults to a
+ *   check** (`--check`, names and scope only, never a value); `--write` is the only path that
+ *   changes a target, and `--write --target production` additionally needs `--confirm-production`.
+ *
+ *   FILE MODE (`--from <file>`) — the older shape, kept because a one-off file is sometimes the
+ *   honest input: `--from .env.demo --target preview --branch demo --diff` reports drift,
+ *   `--apply` writes it, and `--apply --target production` needs `--confirm-production`.
+ *
+ * The env FILE is the value source in both modes; this script is the only thing in the repo that
+ * talks to the dashboard. It prints key NAMES only — never a value, never a prefix of one — on
+ * every path, including errors. A value is used in exactly one place: the body of a write request.
+ *
+ *   pnpm env:sync --target production --check
+ *   pnpm env:sync --target preview --branch demo --check
+ *   pnpm env:sync --target preview --branch demo --write
  *   node scripts/env-sync.mjs --from .env.demo --target preview --branch demo --diff
- *   node scripts/env-sync.mjs --from .env.production --target production --diff
+ *   node scripts/env-sync.mjs --from .env.demo --target preview --branch demo --apply
  *   node scripts/env-sync.mjs --from .env.production --target production --apply --confirm-production
  *
- * A run without --apply (and without --diff) is a dry run. `--apply` against
+ * A file-mode run without --apply (and without --diff) is a dry run. `--apply` against
  * `--target production` is refused unless --confirm-production is also given: rewriting
  * the live project's environment is the one mistake a typo can make expensive, and a flag
  * nobody types by accident is the cheapest guard against it.
@@ -27,13 +39,20 @@
  * Exit codes: 0 ok (a --diff that found drift included) · 1 usage/config error ·
  *             2 apply failed on at least one key.
  */
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PROJECT = "prj_jvt3U5GpGv5TnmWfyqkQ5kbbou5k";
 const TEAM = "team_kA2uEuTmRU2RhACF1Len0GES";
 const API = "https://api.vercel.com";
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, "..");
+
+/** The file each target's values are read from when one is written (the manifest's own table). */
+const TARGET_FILE = { production: ".env", preview: ".env.demo", development: ".env.local" };
 
 /**
  * Keys that must never be synced to a preview/demo target, even when the file carries
@@ -93,6 +112,7 @@ const branch = arg("branch");
 const apply = Boolean(arg("apply", false));
 const force = Boolean(arg("force", false));
 const diff = Boolean(arg("diff", false));
+const write = Boolean(arg("write", false));
 const confirmProduction = Boolean(arg("confirm-production", false));
 
 function refuse(message) {
@@ -100,9 +120,6 @@ function refuse(message) {
   process.exit(1);
 }
 
-if (!from || !fs.existsSync(from)) {
-  refuse(`--from <file> is required and must exist (got ${from ?? "nothing"})`);
-}
 if (!["preview", "production", "development"].includes(target)) {
   refuse(`--target must be preview|production|development (got ${target})`);
 }
@@ -112,11 +129,27 @@ if (branch === true) {
 if (target === "preview" && !branch) {
   refuse("--target preview needs --branch <git branch> so it cannot leak to other previews");
 }
+
+/* --- manifest mode: the table decides the names, the rendered file carries the values ------ */
+/* `pnpm env:sync --check` (the default) compares names and scope coverage only: Vercel masks a
+   value, so a value comparison is not available, and a check that needs a vault token could never
+   run from a machine that has none. `--write` is the only path that changes a target. */
+if (!from) {
+  await manifestMode();
+  process.exit(0);
+}
+
+if (!fs.existsSync(from)) {
+  refuse(`--from <file> must exist (got ${from})`);
+}
 if (diff && apply) {
   refuse("--diff reports drift and never writes — use one of --diff or --apply, not both");
 }
 if (diff && force) {
   refuse("--diff never writes, so --force has nothing to do — drop it");
+}
+if (write) {
+  refuse("--write belongs to manifest mode (no --from); the file mode writes with --apply");
 }
 if (apply && target === "production" && !confirmProduction) {
   refuse(
@@ -175,6 +208,157 @@ async function call(method, url, body, tok) {
     throw new Error(`${res.status}${code} ${msg}`);
   }
   return json;
+}
+
+/**
+ * Manifest mode — `pnpm env:sync --target <t> [--branch demo] [--check|--write]`.
+ *
+ * The **names and scope coverage** come from `scripts/env-manifest.ts`, so the table that decides
+ * what the app reads also decides what a deployment is given. The **values** come from the
+ * rendered file for that target (`.env` for production, `.env.demo` for a preview) — one artefact,
+ * produced by `pnpm env:render` from the same rows — and are never printed, only sent.
+ *
+ * `--check` is the default and the only mode that runs without a value on disk: it compares which
+ * names the table says a scope carries against which names the scope actually holds, plus the two
+ * policies the table owns (a row marked `forbidden` for that environment, and a key no row
+ * declares). Presence and scope only — Vercel encrypts a value and an encrypted value cannot be
+ * compared, so this is not a value check and says so on the last line of every run.
+ */
+async function manifestMode() {
+  const envId = target === "production" ? "production" : "preview";
+  const child = spawnSync(process.execPath, [path.join(HERE, "env-manifest.ts"), "--json"], {
+    cwd: ROOT,
+    encoding: "utf8",
+    maxBuffer: 8 * 1024 * 1024,
+  });
+  if (child.status !== 0) {
+    refuse(
+      `the manifest could not be read (${(child.stderr ?? "").split("\n")[0] || "no output"})`,
+    );
+  }
+  const { rows } = JSON.parse(child.stdout);
+  const declared = rows.filter((row) => row.environments[envId] !== "forbidden");
+  const forbidden = rows.filter((row) => row.environments[envId] === "forbidden");
+
+  const tok = token();
+  const existing = await call("GET", `/v9/projects/${PROJECT}/env?teamId=${TEAM}`, null, tok);
+  const rowsOnTarget = (existing.envs ?? []).filter(
+    (entry) =>
+      (entry.target ?? []).includes(target) &&
+      (target !== "preview" || (entry.gitBranch ?? "") === branch),
+  );
+  const present = new Map(rowsOnTarget.map((entry) => [entry.key, entry]));
+
+  const where = `${target}${target === "preview" ? ` (branch ${branch})` : ""}`;
+  const known = new Set(rows.map((row) => row.name));
+  const extra = [...present].filter(([key]) => !known.has(key));
+  const policy = forbidden.filter((row) => present.has(row.name));
+  const missingRequired = declared.filter(
+    (row) => row.environments[envId] === "required" && !present.has(row.name),
+  );
+  const missingOptional = declared.filter(
+    (row) => row.environments[envId] !== "required" && !present.has(row.name),
+  );
+
+  console.log(
+    `env-sync: manifest mode · ${where} · ${declared.length} declared name(s) · ` +
+      `${present.size} present · ${missingRequired.length} required-but-missing · ` +
+      `${envId} requirements`,
+  );
+  for (const row of missingRequired) {
+    console.log(`  missing ${row.name.padEnd(38)} required for ${envId}, not on the target`);
+  }
+  for (const row of missingOptional) {
+    console.log(`  absent  ${row.name.padEnd(38)} optional — the app's own default applies`);
+  }
+  for (const [key, entry] of extra) {
+    console.log(
+      `  extra   ${key.padEnd(38)} on the target, no row declares it (${entry.type ?? "unknown"})`,
+    );
+  }
+  for (const row of policy) {
+    console.log(`  policy  ${row.name.padEnd(38)} forbidden for ${envId} (${row.why})`);
+  }
+  for (const key of NEVER_AT_ALL.keys()) {
+    if (present.has(key)) console.log(`  policy  ${key.padEnd(38)} never a deployment's config`);
+  }
+
+  if (write !== true) {
+    console.log(
+      `env-sync: --check — names and scope coverage only (${missingRequired.length} required ` +
+        `missing, ${missingOptional.length} optional absent, ${extra.length} on the target only, ` +
+        `${policy.length} forbidden-but-present). Nothing was written. Values are encrypted on the ` +
+        "target and never readable back, so this is not a value comparison; `--write` pushes the " +
+        "rendered file.",
+    );
+    return;
+  }
+
+  if (target === "production" && confirmProduction !== true) {
+    refuse(
+      "--write --target production rewrites the live project; add --confirm-production to mean it",
+    );
+  }
+  const file = path.join(ROOT, TARGET_FILE[target]);
+  if (!fs.existsSync(file)) {
+    refuse(
+      `${TARGET_FILE[target]} is not rendered yet — run \`pnpm env:render\` first (or --from)`,
+    );
+  }
+  const values = parseEnv(fs.readFileSync(file, "utf8"));
+  const blocked = new Set([...NEVER_AT_ALL.keys(), ...forbidden.map((row) => row.name)]);
+  const todo = [];
+  for (const row of declared) {
+    if (blocked.has(row.name)) {
+      console.log(`  drop    ${row.name.padEnd(38)} policy — never synced to ${where}`);
+      continue;
+    }
+    const value = values.get(row.name);
+    if (value === undefined || value === "") {
+      if (row.environments[envId] === "required") {
+        refuse(
+          `${TARGET_FILE[target]} has no ${row.name} and ${envId} requires it — nothing was written`,
+        );
+      }
+      console.log(`  skip    ${row.name.padEnd(38)} not in ${TARGET_FILE[target]} (optional)`);
+      continue;
+    }
+    const have = present.get(row.name);
+    if (have && force !== true) {
+      console.log(
+        `  keep    ${row.name.padEnd(38)} already present (${have.type}) — --force overwrites`,
+      );
+      continue;
+    }
+    todo.push({ verb: have ? "replace" : "create", key: row.name, value, id: have?.id });
+  }
+
+  let failed = 0;
+  for (const { verb, key, value, id } of todo) {
+    const body = {
+      key,
+      value,
+      type: typeFor(key),
+      target: [target],
+      ...(target === "preview" ? { gitBranch: branch } : {}),
+    };
+    try {
+      if (verb === "create") {
+        await call("POST", `/v10/projects/${PROJECT}/env?teamId=${TEAM}`, body, tok);
+      } else {
+        await call("PATCH", `/v9/projects/${PROJECT}/env/${id}?teamId=${TEAM}`, { value }, tok);
+      }
+      console.log(`  wrote   ${key}`);
+    } catch (error) {
+      failed += 1;
+      console.log(`  FAILED  ${key}: ${error.message}`);
+    }
+  }
+  console.log(
+    `env-sync: ${todo.length - failed}/${todo.length} written to ${where} — a new deployment is ` +
+      "required for these to take effect",
+  );
+  if (failed > 0) process.exit(2);
 }
 
 const tok = token();

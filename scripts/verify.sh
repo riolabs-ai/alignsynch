@@ -625,6 +625,20 @@ else
   skip_step "nav:menu" "no nav:menu script in package.json"
 fi
 
+# The environment table (#1088). `scripts/env-manifest.ts` is one row per variable the code reads,
+# and this step holds it against the tree in both directions: a read with no row, a row nothing
+# reads, a boot variable that a deployment could not hold, and a live-mode credential — every
+# environment here is the provider's test sandbox. It reads names and source text only — **no BWS,
+# no network, no credential** — because CI holds no vault token and a gate that needs one fails on
+# someone else's laptop. In every lane for the seventh time and the same reason as the steps above:
+# the table is `scripts/`, the values are read from `lib/`, `app/` and `data/`, and the docs page is
+# `docs/` — three lanes, one check, ~0.1 s.
+if has_script "env:check"; then
+  run_step "env:check (the env table matches the code, in both directions)" pnpm env:check || fail
+else
+  skip_step "env:check" "no env:check script in package.json"
+fi
+
 if [ "$LANE" = "config" ]; then
   run_step "bash -n (every script parses)" check_shell_syntax || fail
 fi
