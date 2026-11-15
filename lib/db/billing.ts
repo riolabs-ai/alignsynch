@@ -33,7 +33,11 @@ import {
   publishTrialEndsAt,
   publishTrialSubscriptionId,
 } from "@/lib/billing/publish-trial";
-import { syncRelationshipsWithSubscription } from "@/lib/relationship/enforcement";
+import {
+  syncRelationshipsWithSubscription,
+  type SubscriptionConsequence,
+  type SyncDirection,
+} from "@/lib/relationship/enforcement";
 import {
   type BillingProvider,
   type Plan,
@@ -241,6 +245,15 @@ export interface BillingEventInput {
   readonly type: string;
   /** SHA-256 of the exact body, so a replay with different bytes is visible in the row. */
   readonly payloadDigest: string;
+  /**
+   * Which question the relationship consequence answers (#1055).
+   *
+   * Absent — the default — is `"entitlement"`: the subscription's own status decides whether the
+   * account's relationships reopen or lapse. `"lapse"` is `invoice.payment_failed`, whose status is
+   * `past_due` (entitling, because dunning is a grace period) while the event's meaning is that the
+   * membership ended. See `SyncDirection` in `lib/relationship/enforcement.ts`.
+   */
+  readonly consequence?: SyncDirection;
 }
 
 /**
@@ -250,11 +263,18 @@ export interface BillingEventInput {
  * insert means the event was already recorded and `work` is never called. A throw in `work` rolls
  * the event row back with it, so the provider's retry is a first attempt again — the two facts
  * cannot disagree.
+ *
+ * The consequence is returned, not just counted (#1055): the rows it moved are what a notice is
+ * mailed for, and "the account is lapsed" is not the same fact as "this delivery lapsed this pair".
  */
 export async function applyBillingEventOnce(
   event: BillingEventInput,
   work: (client: PoolClient) => Promise<Subscription | null>,
-): Promise<{ readonly applied: boolean; readonly subscription: Subscription | null }> {
+): Promise<{
+  readonly applied: boolean;
+  readonly subscription: Subscription | null;
+  readonly consequence: SubscriptionConsequence | null;
+}> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
@@ -266,7 +286,7 @@ export async function applyBillingEventOnce(
     );
     if (rowCount === 0) {
       await client.query("COMMIT");
-      return { applied: false, subscription: null };
+      return { applied: false, subscription: null, consequence: null };
     }
     const subscription = await work(client);
     // #533 phase 3 — the subscription's consequence on the relationships it pays for, in **this**
@@ -276,11 +296,17 @@ export async function applyBillingEventOnce(
     // the claim's `published → active`), which is why it is not an `act()`-audited write: an
     // operator did not decide anything, the provider did. A `work` that returns `null` (an event
     // that changed no subscription) has no consequence to apply.
-    if (subscription !== null) {
-      await syncRelationshipsWithSubscription(client, subscription);
-    }
+    const consequence =
+      subscription === null
+        ? null
+        : await syncRelationshipsWithSubscription(
+            client,
+            subscription,
+            new Date(),
+            event.consequence === undefined ? {} : { direction: event.consequence },
+          );
     await client.query("COMMIT");
-    return { applied: true, subscription };
+    return { applied: true, subscription, consequence };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;

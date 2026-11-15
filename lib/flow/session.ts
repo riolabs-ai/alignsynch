@@ -1,5 +1,5 @@
 /**
- * The two cookies a browser carries through the flow (#146).
+ * The cookies a browser carries through the flow (#146, and one more since #1043).
  *
  * **One party cookie per instance.** `flow_party_<instanceRecordId>` holds the party's
  * session token; the token's hash is what `party.access_token_hash` carries, so the cookie
@@ -24,6 +24,16 @@
 export const PARTY_COOKIE_PREFIX = "flow_party_";
 export const INVITE_COOKIE_PREFIX = "flow_invite_";
 export const DRAFT_COOKIE_PREFIX = "flow_draft_";
+
+/**
+ * The plan chosen on `/pricing`, carried to stage 5 (#1043).
+ *
+ * One per browser, not per template: the choice is made **before** a template is chosen, and the
+ * whole point of the carry is that it outlives the catalogue browsing between the two. The value is
+ * `lib/flow/plan-intent.ts`'s base64url JSON, `httpOnly` like every other flow cookie because only
+ * a server read needs it — the card that writes it does so through a route handler, never a script.
+ */
+export const PLAN_INTENT_COOKIE = "flow_plan_intent";
 
 export function partyCookieName(instanceRecordId: string): string {
   return `${PARTY_COOKIE_PREFIX}${instanceRecordId}`;
@@ -91,3 +101,12 @@ export const FLOW_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
  * the cookie when the relationship is committed, so this is only the backstop.
  */
 export const CREATE_DRAFT_COOKIE_MAX_AGE = 24 * 60 * 60;
+
+/**
+ * One day, the carried plan's lifetime (#1043) — the draft's, and for the draft's reason.
+ *
+ * The choice is a preference made in one sitting: long enough for the five stages and the account
+ * round-trip inside them, short enough that a plan picked yesterday does not quietly preselect
+ * itself on a stage 5 somebody reached from another door.
+ */
+export const PLAN_INTENT_COOKIE_MAX_AGE = 24 * 60 * 60;

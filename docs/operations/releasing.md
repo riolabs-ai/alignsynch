@@ -72,6 +72,21 @@ A subject with no prefix counts as maintenance — it is a commit the generator 
 the gate, the bump guard and the publish step share, so the number decided here is the number the
 script will accept. A candidate is the same decision with a semver suffix (`1.7.0-rc1`).
 
+**Let the script decide, not the hand.** `pnpm release:cut --check` computes the number from the
+commits by that rule — widened to the three separators the repo's own subjects use: the colon, the
+middot and the em dash, each followed by a space (#1021) — and holds the seven places that record a
+version to one answer: the milestone title,
+`package.json`, the absence of the tag it would take, `CHANGELOG.md`'s newest entry,
+`data/health/platform-health.json`'s `tree.packageVersion`, the newest
+`docs/qa-atlas/<v>/manifest.json`, and the newest `docs/changelog/v<X-Y-Z>.md` title. It writes
+nothing (`git status --short` is empty afterwards), it names **both** values and **both** sources on
+every refusal, and it prints the milestone name the number implies, so the milestone is named from
+the number rather than edited by hand and then reconciled. A typed version is refused outright; the
+one exit is `--override <version> --reason "<why>"`, which prints a banner and writes it into the
+entry, so a declared override is a public artefact. It refuses to run at all inside a dispatched
+worker (`HERMES_KANBAN_TASK` set) and `--execute` needs an interactive TTY — a cut is one actor, and
+a card is not it.
+
 ### 3. CHANGELOG entry, at that version
 
 `package.json` and `CHANGELOG.md` have to agree before anything else can be checked, so the bump
@@ -194,6 +209,11 @@ bash scripts/release.sh --tag-only 1.7.0
 just tagged (step 5), so the cut is not done while `/admin/health` still names the previous release.
 A machine without the demo branch's credentials uses `--no-record`, which prints the command instead
 of running it.
+
+`pnpm release:cut --execute` is the same cut with the number already decided and the actor already
+proven: it re-checks the seven values, refuses outside an interactive TTY, asks for the version to be
+typed back, and then runs exactly `bash scripts/release.sh --tag-only <v>` — the composition is the
+point, so `--tag-only` keeps its #1041 record step and its refusal of a stale record.
 
 Then the release mail — with the key hydrated at call time, because a spawned shell has no
 `RESEND_API_KEY`:

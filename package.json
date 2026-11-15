@@ -1,6 +1,6 @@
 {
   "name": "quizhub",
-  "version": "1.19.0",
+  "version": "1.20.1",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "engines": {
@@ -40,6 +40,7 @@
     "columns:check": "node scripts/column-refs.ts --check",
     "worktrees:prune": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/worktree-prune.mjs",
     "release": "bash scripts/release.sh",
+    "release:cut": "node scripts/release-cut.mjs",
     "release:check": "bash scripts/release.sh --check",
     "changelog": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs",
     "changelog:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/changelog-view.mjs --check",
@@ -62,6 +63,7 @@
     "demo:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo-verify.mjs",
     "billing:smoke": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/billing-smoke.mjs",
     "billing:stripe:smoke": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/stripe-smoke.mjs",
+    "billing:webhooks": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/stripe-webhook-events.mjs",
     "billing:on-switch": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/billing-adapter-graph.mjs",
     "demo:reset": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo-reset.mjs",
     "flow:e2e": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/flow-e2e.mjs",
