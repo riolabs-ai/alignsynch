@@ -45,6 +45,7 @@ import {
 } from "@/lib/flow/paths";
 import { REGISTER_PATH, startPathFor, type StartViewer } from "@/lib/start-path";
 import { fillLabel, pageItemOf } from "@/lib/page-copy";
+import { isPlatformTemplate } from "@/lib/platform-templates";
 
 /**
  * The plan that includes every catalogue type, and so the one price a card prints.
@@ -185,8 +186,21 @@ const CARD_IDS = {
  * `copy` is the *surface's* fixture (`data/pages/templates.ts` on the page,
  * `data/pages/home-alignsynch.ts` on the front page), so each surface owns its own wording for
  * the same action and the two cannot drift into two spellings of one button.
+ *
+ * **A card for a type the platform does not serve is a red build (#1099).** The card's action is
+ * the flow's stage 1 for this template (`start` below), and that route resolves the template from
+ * the **database** (`readLibraryTemplate`) while this projection reads the taxonomy — two sources
+ * that used to disagree silently, which is how `/relationship-templates` came to advertise 27
+ * create links on a database that could serve 2. `lib/platform-templates.ts` is the one set that
+ * both ends share, so a card outside it throws here, while the page is being prerendered, instead
+ * of shipping as a 404 behind a working-looking button.
  */
 export function templateCard(copy: PageCopy, type: RelationshipType): TemplateCard {
+  if (!isPlatformTemplate(type.id)) {
+    throw new Error(
+      `templateCard: "${type.id}" is not a template the platform serves — its "use this template" action is /templates/relationship/${type.id}/create, which the create route would answer with a 404 (data/assessments.ts authors no published template with that slug)`,
+    );
+  }
   return {
     id: type.id,
     slug: type.id,
