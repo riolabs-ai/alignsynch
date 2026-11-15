@@ -282,17 +282,17 @@ describe("the credentials are test-mode or nothing", () => {
  */
 const VENTURE_ENV = {
   BILLING_KEY_SET: "ventureio-test",
-  STRIPE_VENTUREIO_TEST_SECRET: "sk_test_venture_fixture",
-  STRIPE_VENTUREIO_TEST_WEBHOOK: "whsec_venture_fixture",
-  STRIPE_VENTUREIO_TEST_PUBLISHABLE: "pk_test_venture_fixture",
+  STRIPE_VENTURE_TEST_SECRET_KEY: "sk_test_venture_fixture",
+  STRIPE_VENTURE_TEST_WEBHOOK_SECRET: "whsec_venture_fixture",
+  STRIPE_VENTURE_TEST_PUBLISHABLE_KEY: "pk_test_venture_fixture",
   BILLING_HOST: "demo",
 } as const;
 
 const ALIGNSYNCH_ENV = {
   BILLING_KEY_SET: "alignsynch-test",
-  STRIPE_ALIGNSYNCH_TEST_SECRET: "sk_test_alignsynch_fixture",
-  STRIPE_ALIGNSYNCH_TEST_WEBHOOK: "whsec_alignsynch_fixture",
-  STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE: "pk_test_alignsynch_fixture",
+  STRIPE_ALIGNSYNCH_TEST_SECRET_KEY: "sk_test_alignsynch_fixture",
+  STRIPE_ALIGNSYNCH_TEST_WEBHOOK_SECRET: "whsec_alignsynch_fixture",
+  STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE_KEY: "pk_test_alignsynch_fixture",
   BILLING_HOST: "demo",
 } as const;
 
@@ -375,7 +375,7 @@ describe("one selector, two key sets, and the Price is resolved on the selected 
     await adapterFor(VENTURE_ENV, venture.impl).startCheckout(CHECKOUT);
     const ventureLookup = venture.calls.find((call) => call.url.includes("/prices?"));
     expect(ventureLookup?.headers.authorization).toBe(
-      `Bearer ${VENTURE_ENV.STRIPE_VENTUREIO_TEST_SECRET}`,
+      `Bearer ${VENTURE_ENV.STRIPE_VENTURE_TEST_SECRET_KEY}`,
     );
     expect(ventureLookup?.url).toContain(
       `lookup_keys[]=${encodeURIComponent("alignsynch_principal_month")}`,
@@ -393,7 +393,7 @@ describe("one selector, two key sets, and the Price is resolved on the selected 
     await adapterFor(ALIGNSYNCH_ENV, alignsynch.impl).startCheckout(CHECKOUT);
     const alignsynchLookup = alignsynch.calls.find((call) => call.url.includes("/prices?"));
     expect(alignsynchLookup?.headers.authorization).toBe(
-      `Bearer ${ALIGNSYNCH_ENV.STRIPE_ALIGNSYNCH_TEST_SECRET}`,
+      `Bearer ${ALIGNSYNCH_ENV.STRIPE_ALIGNSYNCH_TEST_SECRET_KEY}`,
     );
     const [alignsynchSession] = sessionCalls(alignsynch.calls);
     expect(new URLSearchParams(alignsynchSession?.body).get("line_items[0][price]")).toBe(
@@ -441,39 +441,42 @@ describe("one selector, two key sets, and the Price is resolved on the selected 
     } catch (error) {
       expect(error).toBeInstanceOf(BillingRefusal);
       expect((error as BillingRefusal).code).toBe("not-configured");
-      expect((error as Error).message).toContain("STRIPE_VENTUREIO_TEST_SECRET is not set");
+      expect((error as Error).message).toContain("STRIPE_VENTURE_TEST_SECRET_KEY is not set");
       // Never the value, never its length.
       expect((error as Error).message).not.toContain(ENV.STRIPE_TEST_SECRET_KEY);
     }
   });
 
   it("refuses a selected set with one member missing rather than using three-quarters of it", () => {
-    const { STRIPE_VENTUREIO_TEST_PUBLISHABLE: _noPublishable, ...withoutPublishable } =
+    const { STRIPE_VENTURE_TEST_PUBLISHABLE_KEY: _noPublishable, ...withoutPublishable } =
       VENTURE_ENV;
     expect(() => stripeCredentialsFromEnv(withoutPublishable)).toThrowError(
-      /STRIPE_VENTUREIO_TEST_PUBLISHABLE is not set/,
+      /STRIPE_VENTURE_TEST_PUBLISHABLE_KEY is not set/,
     );
 
-    const { STRIPE_VENTUREIO_TEST_WEBHOOK: _noWebhook, ...withoutWebhook } = VENTURE_ENV;
+    const { STRIPE_VENTURE_TEST_WEBHOOK_SECRET: _noWebhook, ...withoutWebhook } = VENTURE_ENV;
     expect(() => stripeCredentialsFromEnv(withoutWebhook)).toThrowError(
-      /STRIPE_VENTUREIO_TEST_WEBHOOK is not set/,
+      /STRIPE_VENTURE_TEST_WEBHOOK_SECRET is not set/,
     );
   });
 
   it("refuses a key whose prefix disagrees with the mode the set promises", () => {
     expect(() =>
-      stripeCredentialsFromEnv({ ...VENTURE_ENV, STRIPE_VENTUREIO_TEST_SECRET: "key-of-a-kind" }),
-    ).toThrowError(/STRIPE_VENTUREIO_TEST_SECRET is not a test-mode secret key/);
+      stripeCredentialsFromEnv({ ...VENTURE_ENV, STRIPE_VENTURE_TEST_SECRET_KEY: "key-of-a-kind" }),
+    ).toThrowError(/STRIPE_VENTURE_TEST_SECRET_KEY is not a test-mode secret key/);
     expect(() =>
       stripeCredentialsFromEnv({
         ...ALIGNSYNCH_ENV,
-        STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE: "pk_live_fixture",
+        STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE_KEY: "pk_live_fixture",
       }),
-    ).toThrowError(/STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE is not a test-mode publishable key/);
+    ).toThrowError(/STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE_KEY is not a test-mode publishable key/);
     // A live key pasted into a test set is refused, not quietly spent in test mode.
     expect(() =>
-      stripeCredentialsFromEnv({ ...VENTURE_ENV, STRIPE_VENTUREIO_TEST_SECRET: "sk_live_fixture" }),
-    ).toThrowError(/STRIPE_VENTUREIO_TEST_SECRET is not a test-mode secret key/);
+      stripeCredentialsFromEnv({
+        ...VENTURE_ENV,
+        STRIPE_VENTURE_TEST_SECRET_KEY: "sk_live_fixture",
+      }),
+    ).toThrowError(/STRIPE_VENTURE_TEST_SECRET_KEY is not a test-mode secret key/);
   });
 
   it("refuses the live secret and publishable keys by name, because there is no live path at all", () => {
@@ -483,15 +486,15 @@ describe("one selector, two key sets, and the Price is resolved on the selected 
     expect(() =>
       stripeCredentialsFromEnv({
         ...VENTURE_ENV,
-        STRIPE_VENTUREIO_TEST_SECRET: "«redacted:sk_live_…»",
+        STRIPE_VENTURE_TEST_SECRET_KEY: "«redacted:sk_live_…»",
       }),
-    ).toThrowError(/STRIPE_VENTUREIO_TEST_SECRET is not a test-mode secret key/);
+    ).toThrowError(/STRIPE_VENTURE_TEST_SECRET_KEY is not a test-mode secret key/);
     expect(() =>
       stripeCredentialsFromEnv({
         ...VENTURE_ENV,
-        STRIPE_VENTUREIO_TEST_PUBLISHABLE: "«redacted:pk_live_…»",
+        STRIPE_VENTURE_TEST_PUBLISHABLE_KEY: "«redacted:pk_live_…»",
       }),
-    ).toThrowError(/STRIPE_VENTUREIO_TEST_PUBLISHABLE is not a test-mode publishable key/);
+    ).toThrowError(/STRIPE_VENTURE_TEST_PUBLISHABLE_KEY is not a test-mode publishable key/);
     // The legacy trio is guarded the same way — its publishable key used to go unchecked.
     expect(() =>
       stripeCredentialsFromEnv({ ...ENV, STRIPE_TEST_PUBLISHABLE_KEY: "«redacted:pk_live_…»" }),

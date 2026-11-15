@@ -229,14 +229,14 @@ export const BILLING_KEY_SET_VARIABLES: Readonly<
   >
 > = {
   "ventureio-test": {
-    secretKey: "STRIPE_VENTUREIO_TEST_SECRET",
-    publishableKey: "STRIPE_VENTUREIO_TEST_PUBLISHABLE",
-    webhookSecret: "STRIPE_VENTUREIO_TEST_WEBHOOK",
+    secretKey: "STRIPE_VENTURE_TEST_SECRET_KEY",
+    publishableKey: "STRIPE_VENTURE_TEST_PUBLISHABLE_KEY",
+    webhookSecret: "STRIPE_VENTURE_TEST_WEBHOOK_SECRET",
   },
   "alignsynch-test": {
-    secretKey: "STRIPE_ALIGNSYNCH_TEST_SECRET",
-    publishableKey: "STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE",
-    webhookSecret: "STRIPE_ALIGNSYNCH_TEST_WEBHOOK",
+    secretKey: "STRIPE_ALIGNSYNCH_TEST_SECRET_KEY",
+    publishableKey: "STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE_KEY",
+    webhookSecret: "STRIPE_ALIGNSYNCH_TEST_WEBHOOK_SECRET",
   },
 };
 
