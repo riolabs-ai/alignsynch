@@ -205,6 +205,12 @@ describe("the marketing surfaces keep navigating", () => {
       "components/assessment-flow/template-card.tsx",
       "components/assessment-flow/template-detail.tsx",
       "components/dashboard/relationship-cards.tsx",
+      /*
+       * #975 D10 — a relationship's own screen draws the same doors its card does (the publish gate's
+       * two, and `Invite Members` on the panel below it). They were bare anchors until this row: a
+       * document load, which loses the interception, the dashboard page and the flow's origin at once.
+       */
+      "components/dashboard/relationship-detail.tsx",
       "components/dashboard/template-shelf.tsx",
     ]);
   });

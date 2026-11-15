@@ -52,6 +52,7 @@
  * posts at it gets `not-yours` — #533's "enforce in the server action, not by hiding a button".
  */
 import { AspectList, type AspectSaveResult } from "@/components/assessment-flow/aspect-list";
+import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
 import {
   DetailBand,
   DetailFacts,
@@ -210,6 +211,15 @@ export function RelationshipDetail({
    * when the relationship has no session — with no session there is no invitation for stage 5 to
    * shape, so the band draws the copy that says so instead of a link that would bounce the reader
    * back to stage 1.
+   *
+   * **#975 D10 (`t_90026133`) — the address is entered by a flow entry, not a document load.** This
+   * page declares the create flow's `@flow` slot (`app/(mainlayout)/dashboard/relationships/
+   * layout.tsx`), so a *soft* navigation to this address is intercepted and stage 5 renders as a
+   * dialog over this relationship. A bare `<a>` is a document load: the interception never runs,
+   * the reader loses the page they were reading, and the stage draws as a page whose `Cancel`
+   * leaves to the template library. Every door below is therefore a `FlowEntryLink` — the same one
+   * the list's card already used — which also remembers this page as the flow's origin, so the
+   * dialog's close returns here instead of to the library.
    */
   const payHref =
     relationship.sessionRecordId === null
@@ -592,21 +602,21 @@ export function RelationshipDetail({
                 </a>
               ) : (
                 <div className="flex flex-wrap items-center gap-3">
-                  <a
+                  <FlowEntryLink
                     className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                     href={payHref}
                     data-publish-gate-link="pay-modal"
                     data-invite-members="true"
                   >
                     {itemLabel(publishGateCopy, "invite-members")}
-                  </a>
-                  <a
+                  </FlowEntryLink>
+                  <FlowEntryLink
                     className="inline-flex h-9 items-center justify-center rounded-md bg-action px-3 text-sm font-semibold text-action-foreground hover:bg-action-hover"
                     href={payHref}
                     data-publish-to-counterparty="true"
                   >
                     {itemLabel(publishGateCopy, "publish-to-counterparty")}
-                  </a>
+                  </FlowEntryLink>
                 </div>
               )}
             </DetailPanel>
@@ -620,19 +630,20 @@ export function RelationshipDetail({
                 publish panel *is* "Publish to Counterparty"; this is the other half of the pair the
                 card asks for, and it is the pay modal rather than a capture. It sits above the
                 fields because the money decision comes before the counterparty's address, and it is
-                a plain link: the modal owns the card, this screen owns nothing payment-shaped.
+                a flow entry — the modal owns the card, this screen owns nothing payment-shaped, and
+                opening the modal must not navigate this page away (#975 D10, `t_90026133`).
 
                 A relationship with no session has no invitation to shape, so the control is not
                 drawn here — `payHref` is the same fact the list's card reads.
               */}
               {payHref === null ? null : (
-                <a
+                <FlowEntryLink
                   href={payHref}
                   data-invite-members="true"
                   className="inline-flex h-9 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 >
                   {itemLabel(publishCopy, "invite-members")}
-                </a>
+                </FlowEntryLink>
               )}
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
