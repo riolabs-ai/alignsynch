@@ -73,6 +73,24 @@
  *      just emptied it would be creating them from an untrusted origin. (Loopback is implicitly
  *      trusted, which is why a local run has never shown this.)
  *
+ *      **Because it runs after the restore, it is also the step that can destroy the demo**, and it
+ *      has done: measured twice on 2026-11-15, `demo:reset` restored the branch from `demo-base`,
+ *      answered `500 AUTH_FAILURE` on this call, and left the demo **empty** behind a deployment
+ *      still answering 200. The `500` is the branch's auth server not being ready for the
+ *      integration call in the seconds after a restore — a manual `GET` twenty seconds later
+ *      answered 200 — so two things follow, and both are this step's:
+ *
+ *      3a. **It is retried.** `ORIGIN_ATTEMPTS` (5) attempts, `2s → 4s → 8s → 16s` backoff, a
+ *          45s ceiling for the whole step, and only a `5xx` or a fetch that never answered is
+ *          retried. A `4xx` — a bad shape, a refused key, a branch with no integration — is a fact
+ *          and fails at once. Every attempt is printed with its status and elapsed time.
+ *      3b. **A failure no longer leaves the branch empty.** The run takes a **recovery point** (a
+ *          `<branch>-preserved-<stamp>` branch holding exactly the pre-reset state) immediately
+ *          before the restore; if every attempt fails, it restores the branch from that point, reads
+ *          the counts back against the pre-reset census, and exits non-zero. A failed reset ends
+ *          where it started. The point is deleted once the run converges, and the preserved-branch
+ *          policy (`scripts/demo-branch-prune.mjs`) retires one that was not.
+ *
  *   4. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
  *      branch's* connection string and *this branch's* auth host. The seed reads
  *      `data/bundles/demo-dataset.alignsynch.json` as the bundle it is (asserting it is still
@@ -157,10 +175,18 @@
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --skip-reset    # reseed only (empties first)
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --verify-origin # re-apply + prove, reset nothing
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --probe-origin https://alignsynch.com  # probe only
+ *   NEON_API_KEY=… node scripts/demo-reset.mjs --fail-origin-once    # prove the retry (test only)
+ *   NEON_API_KEY=… node scripts/demo-reset.mjs --fail-origin-always  # prove the restore-back (test only)
  *
  * Flags: --branch <name> (default `demo`), --source <name> (default `$DEMO_SOURCE_BRANCH`, else
  * the branch's parent), --project <id> (default: the only project the key can see), --dry-run,
- * --skip-migrate, --skip-reset, --skip-seed, --verify-origin, --probe-origin <origin>, --help.
+ * --skip-migrate, --skip-reset, --skip-seed, --verify-origin, --probe-origin <origin>,
+ * --fail-origin-once, --fail-origin-always, --help.
+ *
+ * `--fail-origin-once` and `--fail-origin-always` are **test-only**: they answer the trusted-origin
+ * step with the synthetic `500 AUTH_FAILURE` the live API answered in the seconds after a restore,
+ * so the retry and the restore-back are both provable without waiting for an outage. They are
+ * switches and not environment variables because an environment variable is a production knob.
  *
  * `--verify-origin` is the maintenance run: it re-applies the origin and probes it, and touches
  * nothing else, so the repair after a hand-made reset is one command instead of a remembered curl.
@@ -193,18 +219,22 @@ import {
   prunePreservedBranches,
 } from "./demo-branch-prune.mjs";
 import { sourceRefusal } from "./demo-source-guard.mjs";
-import { restoreRequest } from "./demo-restore-plan.mjs";
+import { preservedUnderName, restoreRequest } from "./demo-restore-plan.mjs";
 import {
   AUTH_PROVIDER,
+  attemptTrace,
   authDomainsPath,
   DEFAULT_DEMO_ORIGIN,
   domainPlan,
   isLoopbackOrigin,
+  ORIGIN_ATTEMPTS,
+  ORIGIN_RETRY_CEILING_MS,
   originRefusal,
   PROBE_EMAIL,
   PROBE_PASSWORD,
   probeFailure,
   probeLine,
+  retryOriginStep,
   trustedOrigins,
 } from "./demo-auth-domains.mjs";
 
@@ -245,6 +275,7 @@ class Refused extends Error {
 const USAGE = `usage: node scripts/demo-reset.mjs [--branch <name>] [--source <name>] [--project <id>]
                                 [--dry-run] [--skip-migrate] [--skip-reset] [--skip-seed]
                                 [--verify-origin] [--probe-origin <origin>]
+                                [--fail-origin-once | --fail-origin-always]
 
   --branch <name>   the branch to reset (default: demo)
   --source <name>   the branch to restore from (default: $DEMO_SOURCE_BRANCH, else the branch's parent)
@@ -256,10 +287,25 @@ const USAGE = `usage: node scripts/demo-reset.mjs [--branch <name>] [--source <n
   --verify-origin   re-apply the branch's trusted origin and prove sign-in; reset and reseed nothing
   --probe-origin    ask the branch whether it trusts <origin>; change nothing at all
 
+  --fail-origin-once    TEST ONLY — answer the first trusted-origin attempt with a synthetic 500
+  --fail-origin-always  TEST ONLY — answer every trusted-origin attempt with a synthetic 500
+
 The branch's trusted-domain list is branch configuration that a restore does not preserve, so a
 completed reset re-applies DEMO_ORIGIN (default https://demo.alignsynch.com) to it and then proves
 sign-in from that origin with a deliberately wrong credential. A 403 fails the run: a branch that
 refuses the site is not a reset demo, whatever its row counts say.
+
+That re-apply runs *after* the restore, so a failure in it would leave an emptied branch. It is
+therefore attempted ${ORIGIN_ATTEMPTS} times with a 2s → 4s → 8s → 16s backoff inside a
+${ORIGIN_RETRY_CEILING_MS / 1000}s ceiling, retrying only a 5xx or a fetch that never answered — a
+4xx is a fact about the request and fails at once. If every attempt fails, the run restores the
+branch from the recovery point it took before the restore (a <branch>-preserved-<stamp> branch
+holding exactly the pre-reset state) and exits non-zero: a failed reset ends where it started, never
+emptier than it began.
+
+--fail-origin-once and --fail-origin-always inject the 500 the live API answered in the seconds
+after a restore, so both paths are provable without an outage. They are switches rather than
+environment variables on purpose: the nightly workflow never sets them.
 
 The source is a branch name — \`DEMO_SOURCE_BRANCH=demo-base\`, or \`--source demo-base\` — and it
 must be the schema-only base: a source that is the project's default branch is refused, because a
@@ -284,7 +330,14 @@ function parseArgs(argv) {
     skipSeed: false,
     verifyOrigin: false,
     probeOrigin: null,
+    // Test-only: inject the 500 the live API answered in the seconds after a restore, so both the
+    // retry and the restore-back are provable without waiting for an outage to happen again. A
+    // switch rather than an environment variable, deliberately — the nightly workflow cannot set it
+    // by accident, and a production run has no way to reach it.
+    failOrigin: null,
   };
+  /** Both switches name a different fault, so asking for both is a mistake rather than a last-win. */
+  const failFlags = [];
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     const next = () => {
@@ -323,6 +376,14 @@ function parseArgs(argv) {
       case "--probe-origin":
         options.probeOrigin = next();
         break;
+      case "--fail-origin-once":
+        options.failOrigin = "once";
+        failFlags.push(arg);
+        break;
+      case "--fail-origin-always":
+        options.failOrigin = "always";
+        failFlags.push(arg);
+        break;
       case "-h":
       case "--help":
         say(USAGE);
@@ -331,6 +392,19 @@ function parseArgs(argv) {
       default:
         throw new Refused(`unknown argument ${arg}\n\n${USAGE}`);
     }
+  }
+  if (failFlags.length > 1) {
+    throw new Refused(
+      "--fail-origin-once and --fail-origin-always inject two different faults — ask for one",
+    );
+  }
+  // The injection lands in the trusted-origin step, so a run that does not write that step has
+  // nothing for it to prove — and a `--dry-run` that fails on a simulated outage is a worse answer
+  // than the plan it was asked for.
+  if (options.failOrigin !== null && (options.dryRun || options.probeOrigin !== null)) {
+    throw new Refused(
+      "--fail-origin-once and --fail-origin-always inject a failure into the trusted-origin step, which --dry-run and --probe-origin do not run — use them on a reset, or with --verify-origin",
+    );
   }
   if (options.skipReset && options.skipSeed) {
     throw new Refused("--skip-reset and --skip-seed together are a no-op");
@@ -362,18 +436,33 @@ function parseArgs(argv) {
  * trusted-domain route answers `404` on a branch with no Neon Auth integration, and that is an
  * answer ("this branch has no integration") rather than a transport error. It is a list of numbers
  * rather than a boolean so a caller cannot accidentally accept a `500`.
+ *
+ * Every failure carries `status`: the number the server sent, or **`0` for a fetch that never
+ * answered at all**. That one field is what lets the trusted-origin step tell a service that is not
+ * ready (`5xx`, `0` — worth another attempt) from a request that is wrong (`4xx` — a fact, and the
+ * retry loop in `demo-auth-domains.mjs` refuses to touch it).
  */
 async function request(method, path, body, allow = []) {
   const key = process.env.NEON_API_KEY?.trim() ?? "";
-  const response = await fetch(`${API}${path}`, {
-    method,
-    headers: {
-      authorization: `Bearer ${key}`,
-      accept: "application/json",
-      ...(body === undefined ? {} : { "content-type": "application/json" }),
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  let response;
+  try {
+    response = await fetch(`${API}${path}`, {
+      method,
+      headers: {
+        authorization: `Bearer ${key}`,
+        accept: "application/json",
+        ...(body === undefined ? {} : { "content-type": "application/json" }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+  } catch (error) {
+    const transport = new Error(
+      `${method} ${path.split("?")[0]} got no HTTP answer — ${error.message}`,
+    );
+    transport.status = 0;
+    transport.cause = error;
+    throw transport;
+  }
 
   const text = await response.text();
   let payload = null;
@@ -385,9 +474,11 @@ async function request(method, path, body, allow = []) {
 
   if (!response.ok && !allow.includes(response.status)) {
     const detail = payload?.message ?? (text === "" ? "" : text.slice(0, 200));
-    throw new Error(
+    const failure = new Error(
       `${method} ${path.split("?")[0]} answered HTTP ${response.status}${detail ? ` — ${detail}` : ""}`,
     );
+    failure.status = response.status;
+    throw failure;
   }
   return { status: response.status, payload };
 }
@@ -589,8 +680,12 @@ async function capacityRefusalNow(projectId, branchName) {
  *
  * `--dry-run` deletes nothing: it prints the same plan and the count it would remove, then decides
  * capacity as if the deletes had happened, so a dry run answers "is tomorrow's run wedged?".
+ *
+ * `needed` is what this run has to fit, and the demo reset needs **two** free slots since #1090: one
+ * for the restore itself and one for the pre-reset recovery point the restore is preceded by. A run
+ * refused here has written nothing, which is the whole point of deciding it before `db:migrate`.
  */
-async function preflightCapacity({ projectId, branch, dryRun }) {
+async function preflightCapacity({ projectId, branch, dryRun, needed = 1 }) {
   const ceiling = branchLimit();
   const maxAgeDays = preservedMaxAgeDays();
   const plan = prunePlan({
@@ -603,7 +698,9 @@ async function preflightCapacity({ projectId, branch, dryRun }) {
   });
 
   step(
-    `branch capacity — ${plan.count} branch(es), limit ${plan.ceiling}; a restore needs 1 free slot`,
+    `branch capacity — ${plan.count} branch(es), limit ${plan.ceiling}; this run needs ${needed} free slot(s)${
+      needed > 1 ? " (the restore, and the pre-reset recovery point before it)" : ""
+    }`,
   );
   for (const candidate of plan.candidates) {
     say(`  prune     ${candidate.name} — ${candidate.reason}`);
@@ -666,6 +763,7 @@ async function preflightCapacity({ projectId, branch, dryRun }) {
     branchName: branch.name,
     count: remaining,
     ceiling,
+    needed,
     prunable: result.failed.map((failure) => ({
       name: failure.name,
       reason: `the DELETE failed: ${failure.error}`,
@@ -675,11 +773,10 @@ async function preflightCapacity({ projectId, branch, dryRun }) {
   if (refusal !== null) throw new Refused(refusal);
 
   say(`  capacity  ${remaining} of ${ceiling} — ${ceiling - remaining} free`);
-  if (branch.childCount > 0 && ceiling - remaining < 2) {
-    warn(
-      `"${branch.name}" has ${branch.childCount} child branch(es), so this restore also creates a preserved branch and ${ceiling - remaining} free slot(s) may not be enough`,
-    );
-  }
+  // The old warning here ("this restore also creates a preserved branch, N free slots may not be
+  // enough") was a guess made after the fact. `needed` is now 2 on every reset path, so a run that
+  // could not fit the restore *and* the recovery point is refused above, by name, before the first
+  // write — a warning that the next step will fail is not a pre-flight.
   return { count: remaining, ceiling, pruned: plan.candidates.length };
 }
 
@@ -812,39 +909,14 @@ function authBaseUrlFor(endpointHost, database) {
 }
 
 /**
- * Resets the branch to the source's head — the single operation.
+ * Waits for the operations a Neon call started.
  *
- * `POST /projects/{p}/branches/{b}/restore` with `source_branch_id` = the resolved source and no
- * LSN or timestamp is "restore to the source's head", i.e. `neon branches restore <branch>
- * <source>`. The source does not have to be the branch's parent: the API restores from any branch
- * in the project, which is what lets a demo whose parent cannot be changed restore from the
- * schema-only base. The API answers with operations; the reset is not done until the last one
- * reports `finished`, which is why this waits instead of returning on a 200.
- *
- * The body is not built here: `restoreRequest()` in `demo-restore-plan.mjs` decides whether the
- * branch's children force a `preserve_under_name` (the API answers `422 — Branch has children,
- * preserve_under_name is required` without one) and which name to use, and
- * `tests/demo-restore-plan.test.ts` proves both bodies without a key. The children move under the
- * preserved branch, so the branch this restores comes out with none — that is checked after the
- * reset in `main()`, not assumed here.
+ * A `200` is not the work being done: the restore is finished when the last operation reports
+ * `finished`, which is why this polls rather than returning on the response. `label` names the
+ * operation in the two failures this can raise, so a failure reads as what actually stopped.
  */
-async function restoreFromSource(projectId, branch, plan) {
-  let started;
-  try {
-    started = await neon("POST", `/projects/${projectId}/branches/${branch.id}/restore`, plan.body);
-  } catch (error) {
-    // The pre-flight ran seconds ago, so this is a slot that filled up between the two calls (a
-    // sibling job, a preview branch). The API's `422 — branches limit exceeded` names nothing;
-    // the policy's sentence names the branches, and a refusal is the honest shape for it.
-    if (!/branches limit/i.test(error?.message ?? "")) throw error;
-    const refusal = await capacityRefusalNow(projectId, branch.name);
-    throw refusal === null ? error : new Refused(refusal);
-  }
-
-  const operations = started?.operations ?? [];
-  if (operations.length === 0) {
-    return { operations: 0, waitedMs: 0, preservedUnder: plan.preservedUnder };
-  }
+async function awaitOperations(projectId, operations, label) {
+  if (operations.length === 0) return { operations: 0, waitedMs: 0 };
 
   const deadline = Date.now() + OPERATION_TIMEOUT_MS;
   const t0 = Date.now();
@@ -854,7 +926,7 @@ async function restoreFromSource(projectId, branch, plan) {
   while (pending.size > 0) {
     if (Date.now() > deadline) {
       throw new Error(
-        `the reset is still running after ${Math.round(OPERATION_TIMEOUT_MS / 1000)}s (${[...pending.entries()].map(([id, action]) => `${action}:${id}`).join(", ")}) — it will finish on its own; re-run to confirm`,
+        `the ${label} is still running after ${Math.round(OPERATION_TIMEOUT_MS / 1000)}s (${[...pending.entries()].map(([id, action]) => `${action}:${id}`).join(", ")}) — it will finish on its own; re-run to confirm`,
       );
     }
     await delay(500);
@@ -873,12 +945,46 @@ async function restoreFromSource(projectId, branch, plan) {
     }
   }
 
-  if (lastError !== null) throw new Error(`the reset failed: ${lastError}`);
-  return {
-    operations: operations.length,
-    waitedMs: Date.now() - t0,
-    preservedUnder: plan.preservedUnder,
-  };
+  if (lastError !== null) throw new Error(`the ${label} failed: ${lastError}`);
+  return { operations: operations.length, waitedMs: Date.now() - t0 };
+}
+
+/**
+ * Resets the branch to the source's head — the single operation.
+ *
+ * `POST /projects/{p}/branches/{b}/restore` with `source_branch_id` = the resolved source and no
+ * LSN or timestamp is "restore to the source's head", i.e. `neon branches restore <branch>
+ * <source>`. The source does not have to be the branch's parent: the API restores from any branch
+ * in the project, which is what lets a demo whose parent cannot be changed restore from the
+ * schema-only base. The API answers with operations; the reset is not done until the last one
+ * reports `finished`, which is why this waits instead of returning on a 200.
+ *
+ * The body is not built here: `restoreRequest()` in `demo-restore-plan.mjs` decides whether the
+ * branch's children force a `preserve_under_name` (the API answers `422 — Branch has children,
+ * preserve_under_name is required` without one) and which name to use, and
+ * `tests/demo-restore-plan.test.ts` proves both bodies without a key. The children move under the
+ * preserved branch, so the branch this restores comes out with none — that is checked after the
+ * reset in `main()`, not assumed here.
+ *
+ * The same call is what restores the branch **back** to its pre-reset state when the trusted-origin
+ * step fails (`restorePreResetState`), with the recovery point as the source and the timestamped
+ * preserve left out: two callers, one shape.
+ */
+async function restoreFromSource(projectId, branch, plan) {
+  let started;
+  try {
+    started = await neon("POST", `/projects/${projectId}/branches/${branch.id}/restore`, plan.body);
+  } catch (error) {
+    // The pre-flight ran seconds ago, so this is a slot that filled up between the two calls (a
+    // sibling job, a preview branch). The API's `422 — branches limit exceeded` names nothing;
+    // the policy's sentence names the branches, and a refusal is the honest shape for it.
+    if (!/branches limit/i.test(error?.message ?? "")) throw error;
+    const refusal = await capacityRefusalNow(projectId, branch.name);
+    throw refusal === null ? error : new Refused(refusal);
+  }
+
+  const waited = await awaitOperations(projectId, started?.operations ?? [], "reset");
+  return { ...waited, preservedUnder: plan.preservedUnder };
 }
 
 /**
@@ -928,6 +1034,27 @@ function resolveOrigin(raw) {
 }
 
 /**
+ * The synthetic 500 the live API answered in the seconds after a restore.
+ *
+ * Test-only, and reachable only from `--fail-origin-once` / `--fail-origin-always`: it has the same
+ * shape as a real failure (`status: 500`, a message that reads like the API's), so the retry and the
+ * restore-back are exercised by exactly the code that runs in production. There is no environment
+ * variable for this, because an environment variable is a production knob.
+ *
+ * @param {string} path the domain-list route
+ * @param {number} attempt which attempt is being simulated
+ * @param {"once" | "always"} mode
+ */
+function injectedOriginFailure(path, attempt, mode) {
+  const failure = new Error(
+    `GET ${path} answered HTTP 500 — AUTH_FAILURE (injected by --fail-origin-${mode}, attempt ${attempt})`,
+  );
+  failure.status = 500;
+  failure.injected = true;
+  return failure;
+}
+
+/**
  * Re-applies the branch's trusted origin — the step a restore makes necessary.
  *
  * One `GET` of the list, and one `POST` only when the origin is not already in it, then a `GET`
@@ -936,62 +1063,282 @@ function resolveOrigin(raw) {
  * the allowlist — or deletes somebody else's entry — is a second defect wearing the first one's
  * clothes.
  *
+ * The whole sequence is attempted `ORIGIN_ATTEMPTS` (5) times with a `2s → 4s → 8s → 16s` backoff
+ * inside a 45s ceiling, because it runs **after** the restore: measured on 2026-11-15, `GET
+ * …/auth/domains` answered `500 AUTH_FAILURE` for a window of a few seconds after a restore and
+ * `200` twenty seconds later, and a step with no retry turned that window into a demo with zero
+ * rows. Only a `5xx` and a fetch that never answered are retried
+ * (`demo-auth-domains.mjs::isRetryableOriginFailure`); a `4xx` — a bad shape, a key the project
+ * refuses, a branch with no integration — fails at once, because retrying a fact is how a refusal
+ * becomes a timeout.
+ *
+ * Each attempt is printed with its status and elapsed time, and the step ends with the whole trace,
+ * so the next person reads `attempt 1: 500 → attempt 2: 200` instead of guessing what happened.
+ *
  * A branch with no Managed Auth integration answers `404` rather than an empty list, and that is a
  * refusal: there is no list to re-apply, and enabling Neon Auth on a branch is a decision rather
  * than a retry. (The demo branch keeps its integration across a restore — measured — so this is the
  * case a `--branch` on some other branch hits, not the nightly one.)
  */
-async function ensureTrustedOrigin({ projectId, branch, origin, dryRun }) {
+async function ensureTrustedOrigin({
+  projectId,
+  branch,
+  origin,
+  dryRun,
+  failOrigin = null,
+  attempts = ORIGIN_ATTEMPTS,
+}) {
   const path = authDomainsPath(projectId, branch.id);
-  step(`trusted origin — ${origin} on ${branch.name}`);
+  step(`trusted origin — ${origin} on ${branch.name}${dryRun ? " (--dry-run)" : ""}`);
 
-  const before = await request("GET", path, undefined, [404]);
-  if (before.status === 404) {
-    throw new Refused(
-      `branch "${branch.name}" (${branch.id}) has no Neon Auth integration — GET ${path} answered 404 (${before.payload?.message ?? "not found"}), so there is no trusted-domain list to re-apply. Enabling Neon Auth on a branch is a decision, not a retry. Nothing was changed.`,
+  const run = async ({ attempt }) => {
+    // The injected fault lands where the live one did: before the list is read.
+    if (failOrigin === "always" || (failOrigin === "once" && attempt === 1)) {
+      throw injectedOriginFailure(path, attempt, failOrigin);
+    }
+
+    const lines = [];
+    const before = await request("GET", path, undefined, [404]);
+    if (before.status === 404) {
+      throw new Refused(
+        `branch "${branch.name}" (${branch.id}) has no Neon Auth integration — GET ${path} answered 404 (${before.payload?.message ?? "not found"}), so there is no trusted-domain list to re-apply. Enabling Neon Auth on a branch is a decision, not a retry. Nothing was changed.`,
+      );
+    }
+
+    const trusted = trustedOrigins(before.payload);
+    lines.push(
+      `  before    ${
+        trusted.length === 0
+          ? "no origin is trusted — every sign-in from a site answers 403 INVALID_ORIGIN"
+          : trusted.join(", ")
+      }`,
     );
+
+    const plan = domainPlan({ trusted, origin });
+    if (plan.action === "present") {
+      lines.push(`  applied   nothing — ${plan.reason}`);
+      return { status: before.status, value: { added: false, trusted }, lines };
+    }
+    if (dryRun) {
+      lines.push(`  would add ${origin} — --dry-run, nothing is written`);
+      return { status: before.status, value: { added: false, trusted, wouldAdd: true }, lines };
+    }
+
+    const posted = await request(
+      "POST",
+      path,
+      { domain: origin, auth_provider: AUTH_PROVIDER },
+      [404],
+    );
+    if (posted.status === 404) {
+      throw Object.assign(
+        new Error(
+          `POST ${path} answered 404 for ${origin} — the branch has no Managed Auth integration after the operation, so the origin could not be re-applied`,
+        ),
+        { status: 404 },
+      );
+    }
+
+    // Read back rather than trust the POST's own answer: the question is what the branch carries.
+    const afterReply = await request("GET", path);
+    const after = trustedOrigins(afterReply.payload);
+    if (!after.some((domain) => domain.toLowerCase() === origin.toLowerCase())) {
+      // The API accepted the write and the list does not carry it yet: the one non-HTTP lag that is
+      // worth another attempt rather than a failure, because the next read usually has it.
+      throw Object.assign(
+        new Error(
+          `the API accepted ${origin} on "${branch.name}" but the list it now reports does not carry it (${after.join(", ") || "empty"}) — the origin is still untrusted, so sign-in would answer 403 INVALID_ORIGIN`,
+        ),
+        { status: afterReply.status, transient: true },
+      );
+    }
+    lines.push(`  applied   added ${origin} — the branch now trusts ${after.join(", ")}`);
+    return { status: afterReply.status, value: { added: true, trusted: after }, lines };
+  };
+
+  let result;
+  try {
+    result = await retryOriginStep(run, {
+      attempts,
+      onAttempt: ({ entry, retryInMs }) => {
+        const status = entry.status === 0 ? "no answer" : String(entry.status ?? "ok");
+        say(
+          `  attempt ${String(entry.attempt).padEnd(2)} ${status} in ${(entry.ms / 1000).toFixed(1)}s${
+            retryInMs === null ? "" : ` — retrying in ${(retryInMs / 1000).toFixed(0)}s`
+          }`,
+        );
+      },
+    });
+  } catch (error) {
+    const entries = error.attempts ?? [];
+    say(`  attempts  ${attemptTrace(entries)}`);
+    throw error;
   }
 
-  const trusted = trustedOrigins(before.payload);
-  say(
-    `  before    ${
-      trusted.length === 0
-        ? "no origin is trusted — every sign-in from a site answers 403 INVALID_ORIGIN"
-        : trusted.join(", ")
-    }`,
-  );
+  for (const line of result.lines) say(line);
+  const trace = attemptTrace(result.entries);
+  say(`  attempts  ${trace}`);
+  return { ...result.value, attempts: result.entries.length, trace };
+}
 
-  const plan = domainPlan({ trusted, origin });
-  if (plan.action === "present") {
-    say(`  applied   nothing — ${plan.reason}`);
-    return { added: false, trusted };
-  }
+/* ------------------------------------------------------------------ *\
+ * The pre-reset state — taken before the restore, put back if the origin step cannot converge
+ * ------------------------------------------------------------------ */
+
+/**
+ * The branch that holds the state this run is about to destroy.
+ *
+ * The origin step runs **after** the restore, and the restore is what empties the branch, so a
+ * failure there is not a no-op: measured twice on 2026-11-15, `pnpm demo:reset` restored `demo` from
+ * `demo-base`, answered `500 AUTH_FAILURE` on the trusted-origin call, and left the demo with zero
+ * rows behind a deployment that still answered `200`. Retrying closes the window
+ * (`ensureTrustedOrigin`); this closes the consequence, because a retry can still be exhausted.
+ *
+ * The recovery point is a plain branch created from `demo`'s own head before the restore — copy on
+ * write, no compute, exactly the rows, the auth configuration and the trusted list the demo holds at
+ * that instant. It is named with the preserved-branch convention (`<branch>-preserved-<UTC stamp>`,
+ * `demo-restore-plan.mjs::preservedUnderName`, checked against the project's existing names so a
+ * collision cannot fail the run), which is what makes the existing policy
+ * (`demo-branch-prune.mjs`) the thing that retires one this script failed to delete.
+ *
+ * It is deleted on the path where the run converged (`deleteRecoveryPoint`), so a healthy nightly
+ * does not spend a branch slot permanently; the capacity pre-flight counts it while the run is live.
+ *
+ * @param {{ projectId: string, branch: { id: string, name: string, allNames?: string[] }, dryRun: boolean }} input
+ * @returns {Promise<{ id: string, name: string } | null>} `null` on `--dry-run`
+ */
+async function createRecoveryPoint({ projectId, branch, dryRun }) {
+  const name = preservedUnderName(branch.name, new Date(), branch.allNames ?? []);
+  step(`recovery point — the state ${branch.name} holds now, kept as ${name}`);
   if (dryRun) {
-    say(`  would add ${origin} — --dry-run, nothing is written`);
-    return { added: false, trusted };
+    say(`  would create ${name} — --dry-run, nothing is written`);
+    return null;
   }
 
-  const posted = await request(
-    "POST",
-    path,
-    { domain: origin, auth_provider: AUTH_PROVIDER },
-    [404],
+  const created = await neon("POST", `/projects/${projectId}/branches`, {
+    branch: { name, parent_id: branch.id },
+    endpoints: [],
+  });
+  await awaitOperations(projectId, created?.operations ?? [], "recovery point");
+
+  // Read back: the state has to exist before the restore destroys what it holds, and a branch list
+  // that does not carry it is a reason to stop rather than to restore onto nothing.
+  const found = (await listBranches(projectId)).find((candidate) => candidate.name === name);
+  if (found === undefined) {
+    throw new Refused(
+      `the API accepted the recovery point "${name}" but the project's branch list does not carry it, so ${branch.name}'s current state was not preserved — refusing to restore over a state there is no way back from. Nothing was changed.`,
+    );
+  }
+  say(
+    `  recovery  ${name} (${found.id}) — the pre-reset state, restorable until the run converges`,
   );
-  if (posted.status === 404) {
+  return { id: found.id, name };
+}
+
+/**
+ * Deletes the recovery point once the run has converged.
+ *
+ * A failure to delete is a warning, never a failure: the branch is a valid preserved snapshot and
+ * `demo-branch-prune.mjs` retires it on a later run. What would be wrong is failing a green reset
+ * over the cleanup of a recovery point nobody needed.
+ */
+async function deleteRecoveryPoint({ projectId, recovery }) {
+  try {
+    await neon("DELETE", `/projects/${projectId}/branches/${recovery.id}`);
+    say(
+      `  recovery  ${recovery.name} deleted — the run converged, so the pre-reset state is not needed`,
+    );
+  } catch (error) {
+    warn(
+      `could not delete the recovery branch ${recovery.name} (${recovery.id}): ${error.message} — the preserved-branch policy retires it on a later run`,
+    );
+  }
+}
+
+/**
+ * Puts the branch back to the state `before` describes, from the recovery point.
+ *
+ * This is the promise the card makes: **a failed reset ends where it started, not emptier than it
+ * began.** The restore is the same call the reset used, with the recovery point as its source, and
+ * the counts are read back and compared with the pre-reset census rather than assumed — a restore
+ * that landed on the wrong state is worth saying out loud, not worth a green line.
+ *
+ * The restored branch's trusted-origin list is empty again (a restore does not preserve it, which is
+ * the whole reason this step can fail in the first place), so the origin is re-applied best-effort
+ * afterwards. It is expected to fail — the auth service is why we are here — and that is reported as
+ * `originProven: false` rather than thrown, so the data recovery is not reported as a data loss.
+ *
+ * @param {{
+ *   projectId: string,
+ *   branch: { id: string, name: string },
+ *   recovery: { id: string, name: string },
+ *   before: Record<string, number | string>,
+ *   database: string,
+ *   role: string,
+ *   origin: string,
+ * }} input
+ */
+async function restorePreResetState({
+  projectId,
+  branch,
+  recovery,
+  before,
+  database,
+  role,
+  origin,
+}) {
+  step(
+    `restore ${branch.name} back to its pre-reset state — from ${recovery.name} (${recovery.id})`,
+  );
+
+  try {
+    const restored = await restoreFromSource(projectId, branch, {
+      body: { source_branch_id: recovery.id },
+      preservedUnder: null,
+      children: [],
+    });
+    say(
+      `  restored  finished after ${(restored.waitedMs / 1000).toFixed(1)}s (${restored.operations} operation(s))`,
+    );
+  } catch (error) {
     throw new Error(
-      `POST ${path} answered 404 for ${origin} — the branch has no Managed Auth integration after the operation, so the origin could not be re-applied`,
+      [
+        `the trusted-origin step failed AND the branch could not be put back: ${error.message}`,
+        `  · "${branch.name}" is EMPTY. The pre-reset state is held by "${recovery.name}" (${recovery.id}) — restore it by hand:`,
+        `    POST /projects/${projectId}/branches/${branch.id}/restore  {"source_branch_id":"${recovery.id}"}`,
+      ].join("\n"),
     );
   }
 
-  // Read back rather than trust the POST's own answer: the question is what the branch carries.
-  const after = trustedOrigins((await request("GET", path)).payload);
-  if (!after.some((domain) => domain.toLowerCase() === origin.toLowerCase())) {
-    throw new Error(
-      `the API accepted ${origin} on "${branch.name}" but the list it now reports does not carry it (${after.join(", ") || "empty"}) — the origin is still untrusted, so sign-in would answer 403 INVALID_ORIGIN`,
+  const after = await resolveBranch(projectId, branch.name);
+  const strings = await resolveConnectionStrings(projectId, after, database, role);
+  const state = await counts(strings.direct);
+  printCounts("after restoring the pre-reset state", state);
+
+  const drifted = Object.entries(before).filter(([label, value]) => state[label] !== value);
+  if (drifted.length === 0) {
+    say(
+      `  verified  ${branch.name} holds exactly the row counts it held before this run — a failed reset ended where it started`,
+    );
+  } else {
+    warn(
+      `${drifted.length} count(s) differ from the pre-reset census: ${drifted
+        .map(([label, value]) => `${label} ${value} → ${state[label]}`)
+        .join(", ")} — the restore landed, but this is not the state the run began with`,
     );
   }
-  say(`  applied   added ${origin} — the branch now trusts ${after.join(", ")}`);
-  return { added: true, trusted: after };
+
+  let originProven = false;
+  try {
+    await ensureTrustedOrigin({ projectId, branch: after, origin, dryRun: false });
+    originProven = true;
+  } catch (error) {
+    warn(
+      `the trusted origin could not be re-applied after the restore-back (${error.message.split("\n")[0]}) — the rows are back, but sign-in from ${origin} is unproven; fix the auth service and run --verify-origin`,
+    );
+  }
+
+  return { state, drifted, originProven };
 }
 
 /**
@@ -1438,6 +1785,7 @@ async function main() {
 
   let branch = await resolveBranch(project.id, options.branch);
   assertTargetResettable(branch);
+  progress.branchId = branch.id;
   let source = await resolveSource(project.id, branch, options.source);
   assertSourceResettable(branch, source);
 
@@ -1475,7 +1823,13 @@ async function main() {
     if (options.verifyOrigin) {
       // `--verify-origin` re-applies and then proves; `--probe-origin` only asks, and changes
       // nothing, which is what makes it usable to demonstrate a refused origin on a live branch.
-      await ensureTrustedOrigin({ projectId: project.id, branch, origin, dryRun: options.dryRun });
+      await ensureTrustedOrigin({
+        projectId: project.id,
+        branch,
+        origin,
+        dryRun: options.dryRun,
+        failOrigin: options.failOrigin,
+      });
     }
     const status = await probeOrigin({ authBaseUrl, origin });
     say(
@@ -1502,13 +1856,16 @@ async function main() {
   // ceiling is refused here — with the branches named — rather than by a raw 422 after the source
   // has already been migrated.
   if (!options.skipReset) {
-    await preflightCapacity({ projectId: project.id, branch, dryRun: options.dryRun });
+    await preflightCapacity({ projectId: project.id, branch, dryRun: options.dryRun, needed: 2 });
   }
 
   if (options.dryRun) {
     if (!options.skipReset) {
       step("the restore this run would send");
       printRestorePlan(restoreRequest(branch, source, new Date()), branch.name);
+      // The recovery point is planned too: a dry run has to answer "could tomorrow's run put the
+      // branch back if the origin step failed after the restore?".
+      await createRecoveryPoint({ projectId: project.id, branch, dryRun: true });
     }
     // The origin step is planned too: "--dry-run" has to answer "would tomorrow's run leave the
     // demo enterable?", and that answer is the list it would write.
@@ -1522,6 +1879,11 @@ async function main() {
   const before = await counts(connectionStrings.direct);
   printCounts("before", before);
 
+  // The state this run is about to destroy. It has to be taken **before** the restore, because the
+  // trusted-origin step runs after it: a failure there is not a no-op on a branch the restore has
+  // already emptied, and without this there would be nothing to put back.
+  let recovery = null;
+
   if (!options.skipReset) {
     // The source first: a base that is three migrations behind restores a schema the app no
     // longer matches, and the reseed would fail on tables the base does not have. This writes to
@@ -1532,6 +1894,10 @@ async function main() {
     } else {
       await migrateSource({ branch, source: prepared });
     }
+
+    // The way back, taken while the current state still exists (#1090).
+    recovery = await createRecoveryPoint({ projectId: project.id, branch, dryRun: false });
+    progress.recovery = recovery;
 
     step(`reset ${branch.name} from ${source.name} (one restore, not a delete)`);
     // The body comes from `restoreRequest()`: with children the API refuses a restore that does
@@ -1580,7 +1946,49 @@ async function main() {
   // measurement). It runs after the restore and before the reseed on purpose: the seed creates its
   // accounts through this branch's own sign-up endpoint with `Origin: $DEMO_ORIGIN`, so on a branch
   // whose list was just emptied it would be creating them from an origin the branch refuses.
-  await ensureTrustedOrigin({ projectId: project.id, branch, origin, dryRun: false });
+  //
+  // Because the restore has already emptied the branch by this point, failing here is not a no-op —
+  // so this is where the run puts the branch back (#1090). Retries first: the measured failure was
+  // a few-second window of `500 AUTH_FAILURE` after a restore, which a second attempt usually
+  // clears. If every attempt fails, the branch is restored from the recovery point taken above and
+  // the run exits non-zero having ended where it started.
+  let originOutcome;
+  try {
+    originOutcome = await ensureTrustedOrigin({
+      projectId: project.id,
+      branch,
+      origin,
+      dryRun: false,
+      failOrigin: options.failOrigin,
+    });
+  } catch (error) {
+    // `--skip-reset` never emptied the branch, so there is nothing to put back and the failure
+    // stands on its own.
+    if (recovery === null) throw error;
+
+    const putBack = await restorePreResetState({
+      projectId: project.id,
+      branch,
+      recovery,
+      before,
+      database,
+      role,
+      origin,
+    });
+    const failedAttempts = error.attempts ?? [];
+    throw new Error(
+      [
+        `the trusted-origin step failed after ${failedAttempts.length} attempt(s) (${attemptTrace(failedAttempts)}) on "${branch.name}", after the restore had already emptied it.`,
+        `"${branch.name}" was put back from the recovery point ${recovery.name} (${recovery.id}) and now holds its pre-reset row counts${
+          putBack.drifted.length === 0
+            ? " exactly"
+            : ` apart from ${putBack.drifted.length} count(s) — see the report above`
+        }, so a failed reset ended where it started instead of leaving the demo empty.`,
+        `It is NOT reseeded, and sign-in from ${origin} is ${putBack.originProven ? "proved" : "NOT proved"} — fix the auth service for this branch and re-run; nothing has to be un-done first.`,
+        `The underlying failure: ${error.message.split("\n").join("\n  ")}`,
+      ].join("\n"),
+    );
+  }
 
   const afterReset = await counts(connectionStrings.direct);
   printCounts(
@@ -1663,12 +2071,19 @@ async function main() {
   say(
     `  accounts    ${afterSeed.demo_account} demo account(s) + ${afterSeed["platform admin"]} platform admin(s) — ${accountsAgree ? "one profile and one auth user each" : "INCONSISTENT with the seed's accounts"}`,
   );
-  say(`  origin      ${origin} — trusted, sign-in from it answered ${proofStatus}`);
+  say(
+    `  origin      ${origin} — trusted, sign-in from it answered ${proofStatus} (trusted on attempt ${originOutcome.attempts} of ${ORIGIN_ATTEMPTS}; ${originOutcome.trace})`,
+  );
   say(`  elapsed     ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
   if (mismatches > 0) {
     throw new Error(`${mismatches} table(s) do not match ${BUNDLE} after the reseed`);
   }
+
+  // Converged: the pre-reset state is not needed any more, and the next run takes its own. Deleted
+  // here rather than on the failure paths, so a failed reset keeps the way back it was given.
+  if (recovery !== null) await deleteRecoveryPoint({ projectId: project.id, recovery });
+
   say(`\n✓ demo:reset — ${branch.name} reset and reseeded from ${BUNDLE}`);
 }
 
@@ -1687,6 +2102,9 @@ const progress = {
   database: null,
   role: null,
   origin: null,
+  // The branch holding the state this run took before the restore, when one was taken: a failure
+  // anywhere after it can name the way back instead of leaving the reader with an empty branch.
+  recovery: null,
   // `--verify-origin` and `--probe-origin` change no content, so a failure there has no branch
   // state to report: nothing was reset, nothing was seeded, and reading the counts would dress a
   // one-line refusal up as a partial reset.
@@ -1713,6 +2131,14 @@ main().catch(async (error) => {
       printCounts("the branch after the failure (still serving, reported not repaired)", state);
     } catch (reportError) {
       console.error(`  (the branch state could not be read: ${reportError.message})`);
+    }
+    // A branch emptied by a restore that then failed has a way back, and the person reading this
+    // log is the only one who can find it — so the last line names it rather than leaving them with
+    // zeros and no next step.
+    if (progress.recovery !== null) {
+      console.error(
+        `  · the pre-reset state is held by "${progress.recovery.name}" (${progress.recovery.id}) — put it back with: POST /projects/${progress.projectId}/branches/${progress.branchId ?? "<branch id>"}/restore {"source_branch_id":"${progress.recovery.id}"}`,
+      );
     }
   }
 

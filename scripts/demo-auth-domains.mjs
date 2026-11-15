@@ -264,3 +264,173 @@ export function probeFailure(reply) {
     "  · 5xx or a network failure is the auth service itself; the branch's state was reported above and nothing was weakened.",
   ].join("\n");
 }
+
+/* ------------------------------------------------------------------ *\
+ * Retrying the origin step — a bounded wait for a service that is not ready
+ * ------------------------------------------------------------------ */
+
+/**
+ * Why this exists (#1090). The origin step runs **after** the restore, so a failure in it is not a
+ * no-op: the branch has already been emptied. Measured twice in a row on 2026-11-15 —
+ *
+ *   GET …/branches/br-wispy-frog-b43188n8/auth/domains → 500 AUTH_FAILURE
+ *   (a manual GET twenty seconds later answered 200)
+ *
+ * — and the request itself was proved correct: the same `POST` with the same body answers
+ * `400 "Domain already exists"` when the origin is already listed, and `400 … auth_provider (field
+ * required)` without the field the script sends. So the `500` is the branch's auth server not being
+ * ready for the integration call in the seconds after a restore, and a script with no retry turned
+ * that transient condition into a demo with zero rows.
+ *
+ * Two rules follow, and they are the whole design:
+ *
+ *   1. **Retry, but only what can succeed.** `5xx` and a fetch that never answered are a server
+ *      that may be ready in a second; `4xx` is a fact about the request (a bad shape, a key the
+ *      project does not accept, a branch with no integration) and retrying it turns a refusal into
+ *      a timeout.
+ *   2. **Name the budget, and make it cover the measured window.** Five attempts, `2s → 4s → 8s →
+ *      16s` between them — **30s of waiting** and a **45s ceiling** for the whole step. The window
+ *      this was measured in was about twenty seconds (a manual `GET` answered `200` twenty seconds
+ *      after the `500`), so a budget shorter than that would have been a retry that gives up inside
+ *      the outage it exists for. A run that has not converged by then is a repair for a human, not a
+ *      longer sleep.
+ *
+ * The loop is here rather than in `demo-reset.mjs` because it is a decision with an elapsed-time
+ * dimension, and `tests/demo-auth-domains.test.ts` proves it with an injected clock and no key.
+ */
+
+/** How many times the origin step is attempted before the run gives up. */
+export const ORIGIN_ATTEMPTS = 5;
+
+/** The first wait between attempts. Each later wait doubles: 2s, 4s, 8s, 16s. */
+export const ORIGIN_RETRY_BASE_MS = 2_000;
+
+/** The ceiling for the whole step, waits included. Past it, a retry is a hang, not a repair. */
+export const ORIGIN_RETRY_CEILING_MS = 45_000;
+
+/**
+ * The wait after the `completedAttempt`-th failure: 1000, 2000, 4000…
+ *
+ * @param {number} completedAttempt 1 for the first failure
+ * @param {number} [base] the first wait; `ORIGIN_RETRY_BASE_MS` unless a caller injects one
+ * @returns {number} milliseconds
+ */
+export function originRetryDelayMs(completedAttempt, base = ORIGIN_RETRY_BASE_MS) {
+  if (!Number.isFinite(completedAttempt) || completedAttempt < 1) return 0;
+  return base * 2 ** (completedAttempt - 1);
+}
+
+/**
+ * Whether another attempt could turn this failure into a success.
+ *
+ * `status` is what `request()` in the reset attaches: a number the server sent, or `0` for a fetch
+ * that never landed. A refusal the script raised itself (`exitCode`, a `Refused`) is never retried
+ * — it is a decision about this project, not a flake. `transient: true` covers the one non-HTTP case
+ * that really is a lag: the API accepted the origin but the list it read back did not carry it yet.
+ *
+ * @param {unknown} error
+ * @returns {boolean}
+ */
+export function isRetryableOriginFailure(error) {
+  if (error === null || typeof error !== "object") return false;
+  if (error.exitCode !== undefined) return false;
+  if (error.transient === true) return true;
+  const status = error.status;
+  if (status === 0) return true;
+  if (typeof status !== "number") return false;
+  return status >= 500;
+}
+
+/**
+ * The attempt log, in the form the card asks for:
+ *
+ *   attempt 1: 500 (0.4s) → attempt 2: 500 (0.5s) → attempt 3: 200 (0.3s)
+ *
+ * `0` prints as "no answer", because "attempt 1: 0" would read as the server having said `0`.
+ *
+ * @param {{ attempt: number, status: number | null, ms?: number }[]} entries
+ * @returns {string}
+ */
+export function attemptTrace(entries) {
+  if (entries.length === 0) return "no attempt completed";
+  return entries
+    .map((entry) => {
+      const status =
+        entry.status === null || entry.status === undefined
+          ? "ok"
+          : entry.status === 0
+            ? "no answer"
+            : String(entry.status);
+      const elapsed = typeof entry.ms === "number" ? ` (${(entry.ms / 1000).toFixed(1)}s)` : "";
+      return `attempt ${entry.attempt}: ${status}${elapsed}`;
+    })
+    .join(" → ");
+}
+
+/**
+ * Runs `run({ attempt })` until it answers or the budget is spent.
+ *
+ * `run` returns `{ status, value, lines }`: the status of the request that decided the attempt (so
+ * the trace can print it), whatever the caller wants back, and the lines to print once the attempt
+ * has actually succeeded — a retried attempt's "before: the list is empty" is not worth reading
+ * three times.
+ *
+ * On exhaustion the last error is rethrown with `attempts` attached, so the caller can print the
+ * same trace for a failure that it prints for a success.
+ *
+ * @template T
+ * @param {(input: { attempt: number }) => Promise<{ status: number, value: T, lines?: string[] }>} run
+ * @param {{
+ *   attempts?: number,
+ *   baseMs?: number,
+ *   ceilingMs?: number,
+ *   sleep?: (ms: number) => Promise<void>,
+ *   now?: () => number,
+ *   onAttempt?: (input: { entry: { attempt: number, status: number | null, ms: number }, retryInMs: number | null }) => void,
+ * }} [options]
+ * @returns {Promise<{ value: T, entries: { attempt: number, status: number | null, ms: number }[], lines: string[] }>}
+ */
+export async function retryOriginStep(
+  run,
+  {
+    attempts = ORIGIN_ATTEMPTS,
+    baseMs = ORIGIN_RETRY_BASE_MS,
+    ceilingMs = ORIGIN_RETRY_CEILING_MS,
+    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    now = Date.now,
+    onAttempt = () => {},
+  } = {},
+) {
+  const entries = [];
+  const startedAt = now();
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const attemptStarted = now();
+    try {
+      const outcome = await run({ attempt });
+      const entry = { attempt, status: outcome?.status ?? null, ms: now() - attemptStarted };
+      entries.push(entry);
+      onAttempt({ entry, retryInMs: null });
+      return { value: outcome?.value, entries, lines: outcome?.lines ?? [] };
+    } catch (error) {
+      const entry = { attempt, status: error?.status ?? null, ms: now() - attemptStarted };
+      entries.push(entry);
+      lastError = error;
+
+      const retryable = isRetryableOriginFailure(error);
+      const delay = originRetryDelayMs(attempt, baseMs);
+      const elapsed = now() - startedAt;
+      // The ceiling is about the step, not about one wait: a run that has already spent its window
+      // stops with the failure it has rather than sleeping one more time.
+      const fits = retryable && attempt < attempts && elapsed + delay <= ceilingMs;
+      onAttempt({ entry, retryInMs: fits ? delay : null });
+      if (!fits) break;
+      await sleep(delay);
+    }
+  }
+
+  const failure = lastError ?? new Error("the origin step did not run");
+  failure.attempts = entries;
+  throw failure;
+}
