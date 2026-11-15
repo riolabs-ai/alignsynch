@@ -61,7 +61,7 @@ async function store() {
   return import("@/lib/flow/store");
 }
 
-const INSTANCE = "inst-revoked";
+const SESSION = "inst-revoked";
 /** 43 base64url characters — `tokenIsWellFormed()`'s shape, so the token reaches the query. */
 const TOKEN = "a".repeat(43);
 const NOW = new Date("2026-11-03T00:00:00.000Z");
@@ -71,7 +71,7 @@ const EXPIRED_INSTANT = new Date("2026-11-01T09:32:00.000Z");
 
 function inviteRow(over: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    session_record_id: INSTANCE,
+    session_record_id: SESSION,
     counterparty_name: "Rowan",
     claimed_at: null,
     expires_at: EXPIRED_INSTANT,

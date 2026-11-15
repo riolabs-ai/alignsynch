@@ -38,7 +38,7 @@ const ADDED_PROMPT = "Do we say thank you?";
 
 describe("#936 · which record a relationship's Aspects live on", () => {
   it("is the session's copy when the flow created the relationship", () => {
-    // `createInstanceFromTemplate()`: `template_id` names the template it copied, the list is the
+    // `createSessionFromTemplate()`: `template_id` names the template it copied, the list is the
     // session's record. This is the pair that made the added Aspect invisible.
     expect(
       aspectsRecordOf({
@@ -74,13 +74,13 @@ function viewOf(input: {
     status: input.status,
     viewerRole: "initiator",
     isInitiator,
-    templateId: "instance-copy-936",
+    templateId: "session-copy-936",
     templateSlug: template.slug,
     title: template.title,
     summary: template.summary,
     createdAt: "2026-11-01T00:00:00.000Z",
     publishedAt: draft ? null : "2026-11-02T00:00:00.000Z",
-    sessionRecordId: "instance-copy-936",
+    sessionRecordId: "session-copy-936",
     aspectCount: input.items.length,
     invite: null,
     counterpartyName: "Rowan",

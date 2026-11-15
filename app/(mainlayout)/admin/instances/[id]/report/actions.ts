@@ -52,8 +52,7 @@ export async function performReportOperation(
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const sessionRecordId =
-    typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
+  const sessionRecordId = typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
   const reason = typeof input?.reason === "string" ? input.reason : "";
   const base = { actorUserId: user.userId, sessionRecordId, reason };
 

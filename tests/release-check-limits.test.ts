@@ -110,7 +110,7 @@ function probe(): string {
     "components/assessment-flow/card.tsx": "export function Card() {\n  return null;\n}\n",
     "components/layout/nav-menus.tsx": "export function NavMenus() {\n  return null;\n}\n",
     "app/(mainlayout)/assessment/instances/[instanceId]/accept/page.tsx": "export default 1;\n",
-    "app/(mainlayout)/instances/page.tsx": "export default 1;\n",
+    "app/(mainlayout)/sessions/page.tsx": "export default 1;\n",
     "app/(mainlayout)/settings/layout.tsx": "export default 1;\n",
     "app/(mainlayout)/templates/relationship/layout.tsx": "export default 1;\n",
   };

@@ -191,11 +191,11 @@ describe("act() — a successful write", () => {
       {
         actorUserId: "auth-actor",
         action: "instance.delete",
-        target: { table: "session", id: "instance-1" },
+        target: { table: "session", id: "session-1" },
         reason: "removed at the owner's request",
         mutate: async (sql) => {
-          await sql.query("DELETE FROM session WHERE record_id = $1", ["instance-1"]);
-          return { before: { id: "instance-1" }, after: undefined };
+          await sql.query("DELETE FROM session WHERE record_id = $1", ["session-1"]);
+          return { before: { id: "session-1" }, after: undefined };
         },
       },
       transactionRunner(async () => db),

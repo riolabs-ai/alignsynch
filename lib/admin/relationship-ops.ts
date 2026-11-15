@@ -316,12 +316,7 @@ export async function resendInvite(
                 resent_count = resent_count + 1
           WHERE session_record_id = $1
           RETURNING expires_at, resent_count`,
-        [
-          request.sessionRecordId,
-          hashToken(token),
-          email ?? invite.email,
-          expiresAt.toISOString(),
-        ],
+        [request.sessionRecordId, hashToken(token), email ?? invite.email, expiresAt.toISOString()],
       );
       const after = written.rows[0];
       if (after === undefined) {

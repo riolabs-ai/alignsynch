@@ -2,7 +2,7 @@
  * Stage 6, **Align** — the Alignment, Aspect by Aspect (#692, named by #735).
  *
  * The issue's acceptance is a claim about a surface a person reaches, so the cases below render the
- * real `AssessmentInstanceView` over a real `projectScreen()` projection and read the markup:
+ * real `AssessmentSessionView` over a real `projectScreen()` projection and read the markup:
  *
  *   reach      the completed relationship draws the Alignment band, and the band links to the
  *              report the app already has (`reportPath()`), so the per-Gap tables are one click
@@ -11,25 +11,25 @@
  *              each seat gave, not a summary of them;
  *   difference every Gap the Aspect has prints **the two Opinions it subtracts** beside the number;
  *   verdict    the per-Aspect word and the relationship's count come from `gapMeetsSetting()` and
- *              `instanceAlignment()`'s single `unmet` list, so they cannot disagree;
+ *              `sessionAlignment()`'s single `unmet` list, so they cannot disagree;
  *   no-metric  nothing on the band is a total, an average or a composite — `docs/specs/ux-report.md`
  *              names the grep as the acceptance, so the test runs the same one;
  *   blind      before both seats accept there is no band at all: not an empty one, not a hidden one.
  *
  * No database and no server: the rows are `lib/db/rows.ts` shapes, exactly as
- * `tests/instance-stage.test.ts` builds them.
+ * `tests/session-stage.test.ts` builds them.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import type { Assessment, PartyRole } from "@/content/assessment";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
 import { reportPath } from "@/lib/flow/paths";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -37,14 +37,14 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-alignment-view";
+const SESSION_ID = "session-alignment-view";
 const ACCEPTED_AT = new Date("2026-11-08T09:00:00.000Z");
 const ASPECTS = template.items.length;
 /** The Aspect the two seats disagree on: Feel 2 against Feel 5 is a Gap of 3. */
 const TIME = template.items[0]?.id ?? "";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -54,8 +54,8 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery", accepted_at: ACCEPTED_AT },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan", accepted_at: ACCEPTED_AT },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery", accepted_at: ACCEPTED_AT },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan", accepted_at: ACCEPTED_AT },
 ];
 
 /**
@@ -65,7 +65,7 @@ const parties: PartyRow[] = [
  */
 function opinionsFor(role: PartyRole): OpinionRow[] {
   return template.items.map((item, position) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     item_id: item.id,
     feel: role === "initiator" ? (position === 0 ? 2 : 4) : position === 0 ? 5 : 4,
@@ -76,9 +76,9 @@ function opinionsFor(role: PartyRole): OpinionRow[] {
 }
 
 function screenWith(answered: { initiator: number; counterparty: number }) {
-  const rows: FlowInstanceRows = {
+  const rows: FlowSessionRows = {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "relationship-basics-alignment",
       record_type: "assessment",
       status: "draft",
@@ -88,8 +88,8 @@ function screenWith(answered: { initiator: number; counterparty: number }) {
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-alignment",
       mode: "basic",
@@ -107,9 +107,9 @@ function screenWith(answered: { initiator: number; counterparty: number }) {
 
 const complete = screenWith({ initiator: ASPECTS, counterparty: ASPECTS });
 const html = renderToStaticMarkup(
-  createElement(AssessmentInstanceView, {
+  createElement(AssessmentSessionView, {
     screen: complete,
-    copy: assessmentInstancePageCopy,
+    copy: assessmentSessionPageCopy,
   }),
 );
 
@@ -133,7 +133,7 @@ describe("stage 6 — the Alignment, Aspect by Aspect", () => {
     expect(html).toContain('data-alignment-sheet-party="Rowan"');
     expect(html).toContain('data-alignment-opinion="feel" data-alignment-value="2"');
     expect(html).toContain('data-alignment-opinion="feel" data-alignment-value="5"');
-    // A Basic instance asks two Opinions, so the sheet carries two and never a prediction kind.
+    // A Basic session asks two Opinions, so the sheet carries two and never a prediction kind.
     expect(html).not.toContain('data-alignment-opinion="think"');
   });
 
@@ -174,8 +174,8 @@ describe("stage 6 — the Alignment, Aspect by Aspect", () => {
 
   it("links to the report the app already has", () => {
     expect(html).toContain('data-alignment-report="true"');
-    expect(html).toContain(`href="${reportPath(INSTANCE_ID)}"`);
-    expect(reportPath(INSTANCE_ID)).toBe(`/assessment/instances/${INSTANCE_ID}/report`);
+    expect(html).toContain(`href="${reportPath(SESSION_ID)}"`);
+    expect(reportPath(SESSION_ID)).toBe(`/assessment/instances/${SESSION_ID}/report`);
   });
 
   it("shows no total, average or composite metric", () => {
@@ -193,9 +193,9 @@ describe("stage 6 — the Alignment, Aspect by Aspect", () => {
     expect(answering.status).toBe("answering");
     expect(answering.report).toBeNull();
     const markup = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen: answering,
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
       }),
     );
     expect(markup).not.toContain("data-alignment=");

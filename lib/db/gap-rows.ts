@@ -29,12 +29,7 @@
  */
 import type { AlignmentSetting } from "@/content/assessment";
 import type { Score } from "@/content/record";
-import type {
-  GapAspect,
-  GapSession,
-  GapOpinions,
-  GapPopulation,
-} from "@/lib/admin/gap-aggregates";
+import type { GapAspect, GapSession, GapOpinions, GapPopulation } from "@/lib/admin/gap-aggregates";
 import { queryRows } from "@/lib/db/client";
 
 /** How many rows exist at all, and how many are complete — the screen states both. */

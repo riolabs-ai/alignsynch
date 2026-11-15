@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const TEMPLATE_SLUG = "relationship-basics";
-const INSTANCE_ID = "assessment-instance-audit-ready";
+const SESSION_ID = "assessment-instance-audit-ready";
 
 const TEMPLATE = {
   slug: TEMPLATE_SLUG,
@@ -60,7 +60,7 @@ function stage5Html(extra: Record<string, unknown> = {}): string {
       stage: 5,
       template: TEMPLATE,
       draft: DRAFT,
-      instanceRecordId: INSTANCE_ID,
+      sessionRecordId: SESSION_ID,
       backHref: createCommitPath(TEMPLATE_SLUG),
       problem: null,
       problemLink: null,

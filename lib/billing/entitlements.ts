@@ -225,9 +225,7 @@ export function gateSummary(): readonly {
   return BILLING_PLAN_IDS.map(entitlementForPlan).map((entitlement) => ({
     plan: entitlement.planName,
     activeSessions:
-      entitlement.maxActiveSessions === null
-        ? "unlimited"
-        : String(entitlement.maxActiveSessions),
+      entitlement.maxActiveSessions === null ? "unlimited" : String(entitlement.maxActiveSessions),
     // #505 — what the tier sells in the reader's words. `null` is "unlimited", never "0".
     relationships:
       entitlement.maxActiveRelationships === null

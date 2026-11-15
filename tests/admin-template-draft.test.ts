@@ -74,7 +74,7 @@ describe("a template draft is validated by content/assessment.ts", () => {
   });
 
   it("refuses an OpinionKind on a template, naming the key it does not have", () => {
-    // A template has no opinions: `zOpinionKind` belongs to an instance's answer sheet
+    // A template has no opinions: `zOpinionKind` belongs to a session's answer sheet
     // (`content/assessment.ts::zOpinions`). `strict()` is what makes a body that carries one a
     // refusal with the key named, instead of a record that silently dropped it.
     const result = outcomeOf(bodyOf({ opinionKind: "love" }));

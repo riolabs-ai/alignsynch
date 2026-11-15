@@ -178,7 +178,7 @@ function alignSynchFaqRows(brand: Pick<Brand, "name">): SupportFaqRows {
       {
         question: "How do I get started?",
         answer:
-          "Create an account at /register, then open /assessment and choose a template. The form asks for your name, the other person's name and their email address, and one submission creates the instance and an invitation for them. The invitation is a single-use link that stays claimable for seven days, and the instance screen shows it to you to pass on, emailed or not. You answer every question before either of you can read the other's answers.",
+          "Create an account at /register, then open /assessment and choose a template. The form asks for your name, the other person's name and their email address, and one submission creates the session and an invitation for them. The invitation is a single-use link that stays claimable for seven days, and the session screen shows it to you to pass on, emailed or not. You answer every question before either of you can read the other's answers.",
       },
       {
         question: "How do I contact support?",

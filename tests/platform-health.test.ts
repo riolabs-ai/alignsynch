@@ -74,12 +74,12 @@ function record(overrides: Record<string, unknown> = {}): PlatformHealthRecord {
         {
           code: "V11",
           message:
-            'instance "avery-rowan" (answering): the initiator\'s unlock_seen_at is set, but the instance is not complete — the marker would never show',
+            'session "avery-rowan" (answering): the initiator\'s unlock_seen_at is set, but the session is not complete — the marker would never show',
         },
         {
           code: "V21",
           message:
-            'seeded instance "avery-rowan" reads "answering" — db:seed writes a finished session, and the counterparty answered 4 of 5 Aspect(s)',
+            'seeded session "avery-rowan" reads "answering" — db:seed writes a finished session, and the counterparty answered 4 of 5 Aspect(s)',
         },
       ],
     },
@@ -360,7 +360,7 @@ describe("/admin/health — what the page renders", () => {
 
     expect(html).toContain("Rule V11");
     expect(html).toContain("Rule V21");
-    expect(html).toContain("unlock_seen_at is set, but the instance is not complete");
+    expect(html).toContain("unlock_seen_at is set, but the session is not complete");
     expect(html).toContain("4 of 5 Aspect(s)");
     // Every card's numbers are followed by a provenance line: a live command or a recorded instant.
     expect(html).toContain("· this checkout");

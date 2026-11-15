@@ -32,7 +32,7 @@ import type { AnswerGate } from "@/lib/flow/answer-gate";
 import type { FlowAspect } from "@/lib/flow/screen";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
-const INSTANCE_ID = "instance-answer-progress-test";
+const SESSION_ID = "session-answer-progress-test";
 
 /**
  * The five approved names, in order — the spec's own words (`data/pages/lifecycle.ts`, #825).
@@ -70,7 +70,7 @@ const GATES: readonly { readonly name: string; readonly gate: AnswerGate }[] = [
     gate: {
       state: "sheet",
       role: "counterparty",
-      action: `/assessment/instances/${INSTANCE_ID}/answers`,
+      action: `/assessment/instances/${SESSION_ID}/answers`,
       answered: 0,
       aspects: ASPECTS.length,
     },
@@ -113,7 +113,7 @@ function render(gate: AnswerGate): string {
           ? { role: "coach", name: "" }
           : { role: gate.role ?? "initiator", name: "Rowan" },
       mode: "basic",
-      backHref: `/assessment/instances/${INSTANCE_ID}`,
+      backHref: `/assessment/instances/${SESSION_ID}`,
     }),
   );
 }

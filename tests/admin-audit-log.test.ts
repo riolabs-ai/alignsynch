@@ -255,7 +255,7 @@ async function seededLedger(): Promise<Ledger> {
     {
       actorUserId: OWNER,
       action: "instance.delete",
-      target: { table: "session", id: "instance-1" },
+      target: { table: "session", id: "session-1" },
       reason: "removed at the owner's request",
       mutate: async () => ({
         // A party's name in `before` is the case the screen must not print unopened.
@@ -593,12 +593,12 @@ describe("a row the read cannot parse is a defect, not a blank cell", () => {
 
 describe("a target links only where an operator's click answers", () => {
   it("points a session at the registry and nothing else anywhere", () => {
-    expect(auditTargetHref("session", "instance-1")).toBe("/admin/instances");
+    expect(auditTargetHref("session", "session-1")).toBe("/admin/instances");
     // A `record` id is a quiz or a template, and the two live at different routes: a link that is
     // right half the time is worse than a cell that does not link.
     expect(auditTargetHref("record", "quiz-1")).toBeNull();
     expect(auditTargetHref("party", "party-1")).toBeNull();
     expect(auditTargetHref("gap", "x")).toBeNull();
-    expect(auditTargetLabel("session", "instance-1")).toBe("session#instance-1");
+    expect(auditTargetLabel("session", "session-1")).toBe("session#session-1");
   });
 });

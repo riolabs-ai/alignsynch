@@ -159,7 +159,7 @@ describe("/admin/audit — what the page renders", () => {
         actorRole: "owner",
         action: "instance.delete",
         targetTable: "session",
-        targetId: "instance-1",
+        targetId: "session-1",
         reason: "removed at the owner's request",
         before: { name: "Avery Chen", paragraph: "y".repeat(200) },
         after: null,
@@ -176,7 +176,7 @@ describe("/admin/audit — what the page renders", () => {
     // Who, in which capacity, what they touched, and the link that answers for an operator.
     expect(html).toContain("owner@example.com");
     expect(html).toContain(">owner<");
-    expect(html).toContain("session#instance-1");
+    expect(html).toContain("session#session-1");
     expect(html).toContain('href="/admin/instances"');
     expect(html).toContain("removed at the owner&#x27;s request");
 
@@ -203,7 +203,7 @@ describe("/admin/audit — what the page renders", () => {
         actorRole: "owner",
         action: "role.change",
         targetTable: "session",
-        targetId: "instance-2",
+        targetId: "session-2",
         reason: null,
         before: null,
         after: null,
@@ -220,7 +220,7 @@ describe("/admin/audit — what the page renders", () => {
     expect(html).toContain("No reason stated");
     // The row itself still renders: a missing reason is one absent column, never a missing row.
     expect(html).toContain("owner@example.com");
-    expect(html).toContain("session#instance-2");
+    expect(html).toContain("session#session-2");
     expect(html).not.toContain(">null<");
   });
 });

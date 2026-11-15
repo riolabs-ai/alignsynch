@@ -3,8 +3,8 @@
  * into — proved without a database, over the bundle `pnpm demo:reset` actually seeds.
  *
  * This is the coverage hole `#1083` fell through. The seed's suite stayed green while `main`'s
- * seed threw `TypeError: Cannot read properties of undefined (reading 'instance')` on the first
- * instance that needed an invitation address, because nothing in the suite seeded an invited
+ * seed threw `TypeError: Cannot read properties of undefined (reading 'session')` on the first
+ * session that needed an invitation address, because nothing in the suite seeded an invited
  * relationship: every case exercised rows that never ask `inviteEmailFor()` a question. The crash
  * therefore reached the demo branch, which the seed had already emptied — a failed run that is
  * worse than a stale one.
@@ -13,18 +13,18 @@
  *
  *   1. the bundle carries invitations at all — a dataset that stops inviting has to fail here
  *      rather than quietly narrow this test to nothing;
- *   2. every instance whose lifecycle says an invitation went out (and only those) resolves to
+ *   2. every session whose lifecycle says an invitation went out (and only those) resolves to
  *      exactly one address, in the demo domain, without throwing;
  *   3. a seat a demo identity owns names that identity — the persona signs in with it, so the
  *      invitation has to name the mailbox a person can actually take the seat from;
  *   4. a seat nobody on this machine owns names the counterparty's own fixture address, and
  *      `.test` is reserved by RFC 6761 so it cannot deliver mail to a stranger;
- *   5. an instance with nobody to invite is a named refusal, never a `TypeError` about a
+ *   5. a session with nobody to invite is a named refusal, never a `TypeError` about a
  *      property of `undefined` — the shape of the failure that broke the demo.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { zAssessmentInstance, seededLifecycleOf, seededRowTotals } from "@/content/assessment";
+import { zAssessmentSession, seededLifecycleOf, seededRowTotals } from "@/content/assessment";
 import { DEMO_ACCOUNTS, DEMO_DOMAIN, inviteEmailFor } from "../scripts/db-seed-invite.mjs";
 
 const BUNDLE_PATH = new URL("../data/bundles/demo-dataset.alignsynch.json", import.meta.url);
@@ -35,12 +35,12 @@ interface DatasetBundle {
 
 const bundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as DatasetBundle;
 
-/** The bundle's instances, through the model — a bundle that drifts fails here, not in a seed. */
-const instances = zAssessmentInstance.array().parse(bundle.payload.instances);
+/** The bundle's sessions, through the model — a bundle that drifts fails here, not in a seed. */
+const sessions = zAssessmentSession.array().parse(bundle.payload.instances);
 
-/** The instances that carry an invitation, which is what makes `inviteEmailFor` run at all. */
-const invited = instances
-  .map((instance) => ({ instance, lifecycle: seededLifecycleOf(instance) }))
+/** The sessions that carry an invitation, which is what makes `inviteEmailFor` run at all. */
+const invited = sessions
+  .map((session) => ({ session, lifecycle: seededLifecycleOf(session) }))
   .filter(({ lifecycle }) => lifecycle.invite !== "none");
 
 const personaByName = new Map(DEMO_ACCOUNTS.map((account) => [account.name, account]));
@@ -52,13 +52,13 @@ describe("the seeded bundle's invitations", () => {
     // And the dataset is a population, not one demo row — `#1079`'s claim, re-measured here
     // because a seed that invites once and thirty times are the same crash and very different
     // demos.
-    expect(instances.length).toBeGreaterThanOrEqual(30);
+    expect(sessions.length).toBeGreaterThanOrEqual(30);
     expect(invited.length).toBeGreaterThanOrEqual(20);
   });
 
-  it("resolves an address for every invited instance and throws for none", () => {
+  it("resolves an address for every invited session and throws for none", () => {
     // The run that emptied the demo: one throw on any row here aborts the whole seed.
-    const addresses = invited.map(({ instance }) => inviteEmailFor(instance));
+    const addresses = invited.map(({ session }) => inviteEmailFor(session));
     expect(addresses).toHaveLength(invited.length);
     for (const address of addresses) {
       expect(address).toMatch(/^[^@\s]+@[^@\s]+$/);
@@ -67,73 +67,70 @@ describe("the seeded bundle's invitations", () => {
   });
 
   it("names the seat's own identity when a demo account holds it", () => {
-    const personaSeats = invited.filter(({ instance }) =>
-      personaByName.has(
-        instance.parties.find((party) => party.role === "counterparty")?.name ?? "",
-      ),
+    const personaSeats = invited.filter(({ session }) =>
+      personaByName.has(session.parties.find((party) => party.role === "counterparty")?.name ?? ""),
     );
     // Both PIN personas own at least one counterparty seat; without that the demo button lands
     // on nothing, so an empty set is a regression in the dataset rather than a thin test.
     expect(personaSeats.length).toBeGreaterThan(0);
-    for (const { instance } of personaSeats) {
+    for (const { session } of personaSeats) {
       const account = personaByName.get(
-        instance.parties.find((party) => party.role === "counterparty")?.name ?? "",
+        session.parties.find((party) => party.role === "counterparty")?.name ?? "",
       );
-      expect(inviteEmailFor(instance)).toBe(account?.email);
+      expect(inviteEmailFor(session)).toBe(account?.email);
     }
   });
 
   it("names the counterparty's own fixture address when nobody on this machine owns the seat", () => {
     const stranger = invited.find(
-      ({ instance }) =>
+      ({ session }) =>
         !personaByName.has(
-          instance.parties.find((party) => party.role === "counterparty")?.name ?? "",
+          session.parties.find((party) => party.role === "counterparty")?.name ?? "",
         ),
     );
     expect(stranger).toBeDefined();
-    const counterparty = stranger?.instance.parties.find((party) => party.role === "counterparty");
+    const counterparty = stranger?.session.parties.find((party) => party.role === "counterparty");
     const stem = (counterparty?.name ?? "")
       .toLowerCase()
       .normalize("NFKD")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
     // Derived, not authored: the fixture names a person, never a mailbox.
-    expect(inviteEmailFor(stranger?.instance as never)).toBe(`${stem}@${DEMO_DOMAIN}`);
+    expect(inviteEmailFor(stranger?.session as never)).toBe(`${stem}@${DEMO_DOMAIN}`);
   });
 
-  it("refuses an instance with nobody to invite by name, not by reading a property of undefined", () => {
-    const orphan = { ...instances[0], parties: [], id: "assessment-instance-nobody" };
+  it("refuses a session with nobody to invite by name, not by reading a property of undefined", () => {
+    const orphan = { ...sessions[0], parties: [], id: "assessment-instance-nobody" };
     expect(() => inviteEmailFor(orphan as never)).toThrow(/has no counterparty party/);
     expect(() => inviteEmailFor(orphan as never)).not.toThrow(TypeError);
   });
 
   it("asks the question of the lifecycle, so a draft's absent invitation is not a missing address", () => {
-    const drafts = instances.filter((instance) => seededLifecycleOf(instance).invite === "none");
+    const drafts = sessions.filter((session) => seededLifecycleOf(session).invite === "none");
     // A draft never had a link (the seed deletes the row instead of writing one), so these
-    // instances are deliberately *not* in `invited` — that is what makes the filter above a
+    // sessions are deliberately *not* in `invited` — that is what makes the filter above a
     // statement about the dataset rather than about every row in the file.
     expect(drafts.length).toBeGreaterThan(0);
-    expect(invited.some(({ instance }) => drafts.includes(instance))).toBe(false);
+    expect(invited.some(({ session }) => drafts.includes(session))).toBe(false);
   });
   it("counts the rows a seed installs, not the rows the bundle authors", () => {
     // `#1079`'s census: 31 relationships over 56 party rows and 205 answers. The authored bundle
     // carries 62 and 310 — a lifecycle with one seat or one answered sheet writes less, and a
     // checker that compared the branch against the authored number reported a green seed as a
     // failed reset.
-    const total = instances.reduce(
-      (sum, instance) => {
-        const rows = seededRowTotals(instance);
+    const total = sessions.reduce(
+      (sum, session) => {
+        const rows = seededRowTotals(session);
         return { parties: sum.parties + rows.parties, opinions: sum.opinions + rows.opinions };
       },
       { parties: 0, opinions: 0 },
     );
     expect(total).toEqual({ parties: 56, opinions: 205 });
-    const authored = instances.reduce(
-      (sum, instance) => ({
-        parties: sum.parties + instance.parties.length,
+    const authored = sessions.reduce(
+      (sum, session) => ({
+        parties: sum.parties + session.parties.length,
         opinions:
-          sum.opinions +
-          instance.parties.reduce((count, party) => count + party.opinions.length, 0),
+          sum.opinions + session.parties.reduce((count, party) => count + party.opinions.length, 0),
       }),
       { parties: 0, opinions: 0 },
     );
@@ -152,7 +149,7 @@ describe("the seeded bundle's invitations", () => {
  */
 describe("the demo identities the party binding has to resolve", () => {
   const partyNames = new Set(
-    instances.flatMap((instance) => instance.parties.map((party) => party.name)),
+    sessions.flatMap((session) => session.parties.map((party) => party.name)),
   );
 
   it("names a party row for every account that holds a seat", () => {

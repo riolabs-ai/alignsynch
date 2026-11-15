@@ -37,7 +37,7 @@ function draftTemplate(slug: string): PublicationRow {
   return { slug, status: "draft", is_session: false, versions: 0 };
 }
 
-/** An instance's own record — a played copy. It carries `published` and can never own a version. */
+/** A session's own record — a played copy. It carries `published` and can never own a version. */
 function sessionRecord(slug: string): PublicationRow {
   return { slug, status: "published", is_session: true, versions: 0 };
 }
@@ -72,13 +72,13 @@ describe("V30 — a published template has a version", () => {
     expect(publishedWithoutVersionProblems([draftTemplate("blank-template")])).toEqual([]);
   });
 
-  it("is silent for an instance's own record, which is a copy and never a template", () => {
+  it("is silent for a session's own record, which is a copy and never a template", () => {
     expect(publishedWithoutVersionProblems([sessionRecord("avery-rowan")])).toEqual([]);
   });
 
   it("reports every template in the demo branch's measured shape", () => {
     // The branch as #962 found it: 28 published templates, none with a version, plus the four
-    // instance records that are published and must not be counted. 29 rows answered the card's
+    // session records that are published and must not be counted. 29 rows answered the card's
     // own query; 28 of them were templates.
     const rows = [
       ...Array.from({ length: 28 }, (_, index) => ({
@@ -87,7 +87,7 @@ describe("V30 — a published template has a version", () => {
         is_session: false,
         versions: 0,
       })),
-      ...Array.from({ length: 4 }, (_, index) => sessionRecord(`instance-${index}`)),
+      ...Array.from({ length: 4 }, (_, index) => sessionRecord(`session-${index}`)),
     ];
 
     const problems = publishedWithoutVersionProblems(rows);
@@ -100,7 +100,7 @@ describe("V30 — a published template has a version", () => {
     const rows = [
       ...Array.from({ length: 28 }, (_, index) => publishedTemplate(`catalogue-${index}`)),
       draftTemplate("blank-template"),
-      ...Array.from({ length: 4 }, (_, index) => sessionRecord(`instance-${index}`)),
+      ...Array.from({ length: 4 }, (_, index) => sessionRecord(`session-${index}`)),
     ];
 
     expect(publishedWithoutVersionProblems(rows)).toEqual([]);

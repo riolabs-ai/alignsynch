@@ -22,12 +22,7 @@
  * Pure: no React, no Next. `app/(marketing)/relationship-types/[slug]/demo/page.tsx` draws it and
  * `tests/assessment-demo.test.ts` reads it in a node environment.
  */
-import type {
-  Assessment,
-  AssessmentSession,
-  AspectOpinions,
-  Opinions,
-} from "@/content/assessment";
+import type { Assessment, AssessmentSession, AspectOpinions, Opinions } from "@/content/assessment";
 import { DEMO_NOW_ISO } from "@/content/core";
 import {
   demoAnswersFor,

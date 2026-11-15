@@ -85,7 +85,7 @@ const detail: LibraryTemplateDetail = {
     status: "published",
     createdAt: "2026-10-26T09:00:00.000Z",
     aspectCount: record.items.length,
-    instanceCount: 2,
+    sessionCount: 2,
     authorship: "built-in",
   },
   aspects: record.items.map((item, index) => ({

@@ -4,11 +4,11 @@
  * "Create a relationship" is the create intent with no template behind it, and every such action
  * now opens it. That needs something to open: the create flow resolves a template record (the
  * draft cookie is keyed by it, stage 3 seeds its Aspect list from it, and
- * `createInstanceFromTemplate()` binds the relationship to its version), so the platform's blank
+ * `createSessionFromTemplate()` binds the relationship to its version), so the platform's blank
  * template is the record — the glossary's third line, "the user's to name".
  *
  * **It is `published`, and that is the reversal this file pins.** The fixture used to keep it a
- * `draft` that no instance could copy, because "nobody has played a template that has not been
+ * `draft` that no session could copy, because "nobody has played a template that has not been
  * named yet". That was sound while the only way into the flow was choosing a named template, and it
  * left the generic action with nowhere to go but `/register`. A draft is also *unreadable* to a
  * signed-out visitor (`readLibraryTemplate`'s `status <> 'draft'` clause) and **unrefusable-free** at

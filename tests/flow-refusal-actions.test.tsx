@@ -276,7 +276,7 @@ describe("stage 5 is not a dead end", () => {
         template: TEMPLATE,
         draft: DRAFT,
         backHref: "/back",
-        instanceRecordId: "assessment-instance-brother",
+        sessionRecordId: "assessment-instance-brother",
         problem: extra.problem ?? null,
         ...(extra.problemLink === undefined ? {} : { problemLink: extra.problemLink }),
         ...(extra.notice === undefined ? {} : { notice: extra.notice }),
@@ -333,7 +333,7 @@ describe("the walk asks only for the decision the account still has (#870)", () 
     renderToStaticMarkup(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: "relationship-1",
         paid: false,
         onPaid: () => undefined,

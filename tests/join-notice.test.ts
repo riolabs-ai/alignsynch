@@ -5,7 +5,7 @@
  *
  *   * it goes to the **Initiator** — the person who published and then had nothing to do until the
  *     other seat existed — and never to the person who just claimed, who is already looking at the
- *     instance. The read is `readUnlockFacts()` (stubbed here), which selects no `opinion` row;
+ *     session. The read is `readUnlockFacts()` (stubbed here), which selects no `opinion` row;
  *   * the body names the joiner, the template and one link, and carries **no** score, no Gap value
  *     and no invitation token;
  *   * a send that cannot happen is an outcome, never a throw: `no-such-instance` (the rows cannot be
@@ -29,12 +29,12 @@ vi.mock("@/lib/flow/store", () => ({
 
 import { sendJoinNotice } from "@/lib/flow/join-notice";
 
-const INSTANCE = "11111111-2222-4333-8444-555555555555";
+const SESSION = "11111111-2222-4333-8444-555555555555";
 const BASE = "http://localhost:3000";
 
 function facts(over: { initiatorEmail?: string | null } = {}) {
   return {
-    instanceRecordId: INSTANCE,
+    sessionRecordId: SESSION,
     title: "Relationship Basics",
     initiator: {
       role: "initiator" as const,
@@ -89,7 +89,7 @@ afterEach(() => {
 describe("the notice goes to the Initiator", () => {
   it("mails the Initiator's recorded address, not the claimer's", async () => {
     const { calls, fetchImpl } = capture();
-    const outcome = await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    const outcome = await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
 
     expect(outcome).toBe("sent");
     expect(calls).toHaveLength(1);
@@ -99,7 +99,7 @@ describe("the notice goes to the Initiator", () => {
 
   it("composes both parts: the html is the band's derivation of the text", async () => {
     const { calls, fetchImpl } = capture();
-    await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
 
     expect(calls[0].html).toContain("<!doctype html>");
     expect(calls[0].html).toContain("Rowan claimed the invitation to Relationship Basics");
@@ -108,15 +108,15 @@ describe("the notice goes to the Initiator", () => {
     expect(calls[0].html).toContain("max-width:560px");
   });
 
-  it("links to the instance, carries no token and no digit beyond the id in the link", async () => {
+  it("links to the session, carries no token and no digit beyond the id in the link", async () => {
     const { calls, fetchImpl } = capture();
-    await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
 
-    const text = calls[0].text.replace(`${BASE}/assessment/instances/${INSTANCE}`, "");
+    const text = calls[0].text.replace(`${BASE}/assessment/instances/${SESSION}`, "");
     expect(text).not.toContain("/invite/");
     expect(text).not.toMatch(/\d/);
     expect(calls[0].text.match(/https?:\/\/localhost:3000\/assessment\/instances\/\S+/g)).toEqual([
-      `${BASE}/assessment/instances/${INSTANCE}`,
+      `${BASE}/assessment/instances/${SESSION}`,
     ]);
     // The footer's site line is the band's; nothing else that looks like a URL is in the body.
     expect(
@@ -126,7 +126,7 @@ describe("the notice goes to the Initiator", () => {
 
   it("carries no unsubscribe line", async () => {
     const { calls, fetchImpl } = capture();
-    await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
     expect(calls[0].text).not.toContain("Unsubscribe");
     expect(calls[0].html).not.toContain("Unsubscribe");
   });
@@ -138,7 +138,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { calls, fetchImpl } = capture();
 
-    const outcome = await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    const outcome = await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
 
     expect(outcome).toBe("no-address");
     expect(calls).toHaveLength(0);
@@ -153,7 +153,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const { calls, fetchImpl } = capture();
 
-    const outcome = await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    const outcome = await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
 
     expect(outcome).toBe("no-such-instance");
     expect(calls).toHaveLength(0);
@@ -165,7 +165,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { calls, fetchImpl } = capture();
 
-    const outcome = await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    const outcome = await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
 
     expect(outcome).toBe("unset");
     expect(calls).toHaveLength(0);
@@ -179,7 +179,7 @@ describe("a send that cannot happen is an outcome, never a throw", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const { calls, fetchImpl } = capture(() => new Response("nope", { status: 429 }));
 
-    const outcome = await sendJoinNotice({ instanceRecordId: INSTANCE, base: BASE, fetchImpl });
+    const outcome = await sendJoinNotice({ sessionRecordId: SESSION, base: BASE, fetchImpl });
 
     expect(outcome).toBe("failed");
     expect(calls).toHaveLength(1);

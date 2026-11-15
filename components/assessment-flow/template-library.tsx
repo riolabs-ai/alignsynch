@@ -490,10 +490,7 @@ export function TemplateLibrary({
               ) : null}
 
               {template.sessionCount > 0 ? (
-                <span
-                  className={`${MUTED} text-xs`}
-                  data-template-sessions={template.sessionCount}
-                >
+                <span className={`${MUTED} text-xs`} data-template-sessions={template.sessionCount}>
                   {fillLabel(itemLabel(row, "instances"), { count: template.sessionCount })}
                 </span>
               ) : null}

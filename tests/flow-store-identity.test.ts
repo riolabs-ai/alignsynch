@@ -4,19 +4,19 @@
  *
  * The hole these cases close: `/assessment/instances` filters `party.user_id`, and until this
  * card **nothing wrote that column except `db:seed`** — so a signed-in person who created an
- * instance, or claimed an invitation, did not appear in their own list. The list worked for the
- * four seeded instances and for nobody else.
+ * session, or claimed an invitation, did not appear in their own list. The list worked for the
+ * four seeded sessions and for nobody else.
  *
  * Three rules come out of the card, and each has a case here:
  *
  *   the writer      creation writes the caller's account on the **Initiator's** row and never
  *                   on the Counterparty's (they are not the person creating it); a claim writes
  *                   it on the **Counterparty's** row. Both ride in the INSERT, inside the same
- *                   transaction that creates the row, so an instance cannot exist with a party
+ *                   transaction that creates the row, so a session cannot exist with a party
  *                   row that says nobody was there when somebody was.
  *   the signed-out  `null` is a value, not a missing feature: a creator or claimer with no
  *                   session leaves `party.user_id` NULL, exactly as #146 shipped it.
- *   the refusal     a session that already answers as a party of the instance cannot claim the
+ *   the refusal     a session that already answers as a party of the session cannot claim the
  *                   other seat (`already-a-party`), and a seat that is already taken cannot be
  *                   taken again (`already-bound`). Nothing on any path `UPDATE`s `party`, so an
  *                   existing non-NULL `user_id` is never overwritten — and one account cannot
@@ -29,9 +29,9 @@
  * binding names an account that exists), and the two-browser proof is a live probe, not a test.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { claimInvite, createInstanceFromTemplate } from "@/lib/flow/store";
+import { claimInvite, createSessionFromTemplate } from "@/lib/flow/store";
 import { hashToken, mintToken } from "@/lib/flow/tokens";
-import type { ClaimInput, CreateInstanceInput } from "@/lib/flow/store";
+import type { ClaimInput, CreateSessionInput } from "@/lib/flow/store";
 
 /* ------------------------------------------------------------------ *\
  * The stub client
@@ -67,17 +67,17 @@ const stub = vi.hoisted(() => {
           readonly expires_at: Date;
         }
       | undefined;
-    /** The instance's existing party rows — the seats a browser or an account may already hold. */
+    /** The session's existing party rows — the seats a browser or an account may already hold. */
     seats: PartySeat[];
     /** `true` makes the claim's INSERT … ON CONFLICT DO NOTHING report a conflict. */
     seatTaken: boolean;
     /**
-     * The billing gate's three reads (#289, #505): how many active instances the account already
+     * The billing gate's three reads (#289, #505): how many active sessions the account already
      * holds, how many relationships it has started, and whether any grant is running. `0`, `0` and
      * "no grant" is "nothing open, nothing bought", which is what every pre-#289 case in this file
      * is — and the live subscription read is answered `null` (no row), i.e. the Free plan.
      */
-    activeInstances: number;
+    activeSessions: number;
     activeRelationships: number;
   } = {
     templatePresent: true,
@@ -85,7 +85,7 @@ const stub = vi.hoisted(() => {
     invite: undefined,
     seats: [],
     seatTaken: false,
-    activeInstances: 0,
+    activeSessions: 0,
     activeRelationships: 0,
   };
 
@@ -99,7 +99,7 @@ const stub = vi.hoisted(() => {
     state.invite = undefined;
     state.seats = [];
     state.seatTaken = false;
-    state.activeInstances = 0;
+    state.activeSessions = 0;
     state.activeRelationships = 0;
   }
 
@@ -124,7 +124,7 @@ const stub = vi.hoisted(() => {
                 // by anybody". A row fixture without the column would read as somebody else's.
                 author_user_id: state.templateAuthorId,
                 aspects: 3,
-                is_instance: false,
+                is_session: false,
               },
             ]
           : [],
@@ -215,7 +215,7 @@ const stub = vi.hoisted(() => {
     // No subscription row: the account is on the Free plan.
     if (sql.includes("FROM billing_subscription")) return [] as T[];
     if (sql.includes("FROM party vp") && sql.includes("JOIN session ai")) {
-      return [{ n: state.activeInstances }] as T[];
+      return [{ n: state.activeSessions }] as T[];
     }
     // #505 — the plan's own count, and the grants that could raise the tier. No grant here: this
     // fixture is about identity binding, and an empty grant list is the Free plan's own answer.
@@ -260,7 +260,7 @@ function onlyIndex(pattern: RegExp): number {
 
 const TEMPLATE = "assessment-relationship-basics";
 
-function createInput(over: Partial<CreateInstanceInput> = {}): CreateInstanceInput {
+function createInput(over: Partial<CreateSessionInput> = {}): CreateSessionInput {
   return {
     templateRecordId: TEMPLATE,
     initiatorName: "Avery",
@@ -293,9 +293,9 @@ function claimInput(over: Partial<ClaimInput> = {}): ClaimInput {
 
 beforeEach(() => stub.reset());
 
-describe("createInstanceFromTemplate binds the creator", () => {
+describe("createSessionFromTemplate binds the creator", () => {
   it("writes the session's account on the Initiator's party row, inside the transaction", async () => {
-    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+    await createSessionFromTemplate(createInput({ viewerUserId: "account-avery" }));
 
     const [insert] = partyInserts();
     expect(insert).toBeDefined();
@@ -311,8 +311,8 @@ describe("createInstanceFromTemplate binds the creator", () => {
     expect(insertAt).toBeLessThan(committedAt);
   });
 
-  it("does not bind the Counterparty — they are not the person creating the instance", async () => {
-    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+  it("does not bind the Counterparty — they are not the person creating the session", async () => {
+    await createSessionFromTemplate(createInput({ viewerUserId: "account-avery" }));
 
     expect(partyInserts()).toHaveLength(1);
     expect(stub.narrow(partyInserts()[0].text)).not.toContain("'counterparty'");
@@ -323,7 +323,7 @@ describe("createInstanceFromTemplate binds the creator", () => {
   });
 
   it("leaves user_id NULL for a signed-out create, exactly as #146 shipped it", async () => {
-    await createInstanceFromTemplate(createInput());
+    await createSessionFromTemplate(createInput());
 
     const [insert] = partyInserts();
     expect(insert.values[3]).toBeNull();
@@ -331,11 +331,11 @@ describe("createInstanceFromTemplate binds the creator", () => {
   });
 
   it("normalises a blank or padded id — a binding is an account or it is NULL", async () => {
-    await createInstanceFromTemplate(createInput({ viewerUserId: "   " }));
+    await createSessionFromTemplate(createInput({ viewerUserId: "   " }));
     expect(partyInserts()[0].values[3]).toBeNull();
 
     stub.reset();
-    await createInstanceFromTemplate(createInput({ viewerUserId: "  account-avery  " }));
+    await createSessionFromTemplate(createInput({ viewerUserId: "  account-avery  " }));
     expect(partyInserts()[0].values[3]).toBe("account-avery");
   });
 
@@ -348,9 +348,9 @@ describe("createInstanceFromTemplate binds the creator", () => {
       userId: "posted-by-the-browser",
       account: "posted-by-the-browser",
       user: "posted-by-the-browser",
-    } as CreateInstanceInput;
+    } as CreateSessionInput;
 
-    await createInstanceFromTemplate(crafted);
+    await createSessionFromTemplate(crafted);
 
     expect(partyInserts()[0].values[3]).toBeNull();
     for (const call of stub.calls) expect(call.values).not.toContain("posted-by-the-browser");
@@ -360,7 +360,7 @@ describe("createInstanceFromTemplate binds the creator", () => {
     stub.state.templateAuthorId = "account-rowan";
 
     await expect(
-      createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" })),
+      createSessionFromTemplate(createInput({ viewerUserId: "account-avery" })),
     ).rejects.toMatchObject({ code: "template-not-yours" });
 
     // Refused inside the transaction, before anything was written: no record, no party, no
@@ -374,7 +374,7 @@ describe("createInstanceFromTemplate binds the creator", () => {
   it("allows the account that wrote the template to copy it", async () => {
     stub.state.templateAuthorId = "account-avery";
 
-    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+    await createSessionFromTemplate(createInput({ viewerUserId: "account-avery" }));
 
     expect(partyInserts()).toHaveLength(1);
     expect(partyInserts()[0].values[3]).toBe("account-avery");
@@ -383,7 +383,7 @@ describe("createInstanceFromTemplate binds the creator", () => {
   it("refuses a signed-out caller copying an authored template", async () => {
     stub.state.templateAuthorId = "account-avery";
 
-    await expect(createInstanceFromTemplate(createInput())).rejects.toMatchObject({
+    await expect(createSessionFromTemplate(createInput())).rejects.toMatchObject({
       code: "template-not-yours",
     });
   });
@@ -393,7 +393,7 @@ describe("createInstanceFromTemplate binds the creator", () => {
  * Create — the Setting the form chose (#427)
  * ------------------------------------------------------------------ */
 
-describe("createInstanceFromTemplate writes the Setting the form chose", () => {
+describe("createSessionFromTemplate writes the Setting the form chose", () => {
   /** The one `session` INSERT, with whitespace collapsed so the column list reads as a line. */
   function sessionInsert() {
     const [insert] = callsMatching(/^INSERT INTO session \(record_id, template_record_id/);
@@ -402,7 +402,7 @@ describe("createInstanceFromTemplate writes the Setting the form chose", () => {
   }
 
   it("writes `full` on the session row when the form chose Full", async () => {
-    await createInstanceFromTemplate(createInput({ alignmentSetting: "full" }));
+    await createSessionFromTemplate(createInput({ alignmentSetting: "full" }));
 
     // The settings are the fourth bound parameter: record_id, template_record_id, mode, setting.
     expect(sessionInsert().values[3]).toBe("full");
@@ -411,14 +411,14 @@ describe("createInstanceFromTemplate writes the Setting the form chose", () => {
   it("writes `soft` when the form was not given a Setting at all", async () => {
     // The five-field post the endpoint has always accepted: the schema's documented default
     // (`0008_alignment_setting.sql`), never a refusal.
-    await createInstanceFromTemplate(createInput());
+    await createSessionFromTemplate(createInput());
 
     expect(sessionInsert().values[3]).toBe("soft");
   });
 
   it("refuses a Setting the model does not name, before the transaction opens", async () => {
     await expect(
-      createInstanceFromTemplate(createInput({ alignmentSetting: "bogus" })),
+      createSessionFromTemplate(createInput({ alignmentSetting: "bogus" })),
     ).rejects.toMatchObject({ code: "invalid-input" });
 
     // Not "wrote nothing and rolled back": the parse happens before `getPool()`, so the stub
@@ -445,7 +445,7 @@ describe("a create that publishes opens the trial", () => {
   }
 
   it("grants it for the account that published, after the relationship is committed", async () => {
-    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+    await createSessionFromTemplate(createInput({ viewerUserId: "account-avery" }));
 
     const [grant] = trialInserts();
     expect(grant).toBeDefined();
@@ -458,13 +458,13 @@ describe("a create that publishes opens the trial", () => {
   });
 
   it("writes none for a draft — the send is what publishes, and it grants there", async () => {
-    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery", draft: true }));
+    await createSessionFromTemplate(createInput({ viewerUserId: "account-avery", draft: true }));
 
     expect(trialInserts()).toHaveLength(0);
   });
 
   it("writes none for a signed-out create — there is no account to hold a trial", async () => {
-    await createInstanceFromTemplate(createInput({ viewerUserId: null }));
+    await createSessionFromTemplate(createInput({ viewerUserId: null }));
 
     expect(trialInserts()).toHaveLength(0);
   });
@@ -480,7 +480,7 @@ describe("claimInvite binds the claimer", () => {
 
     const result = await claimInvite(claimInput({ viewerUserId: "account-rowan" }));
 
-    expect(result).toMatchObject({ ok: true, instanceRecordId: "assessment-instance-fresh" });
+    expect(result).toMatchObject({ ok: true, sessionRecordId: "assessment-instance-fresh" });
     const [insert] = partyInserts();
     expect(stub.narrow(insert.text)).toContain("'counterparty'");
     expect(stub.narrow(insert.text)).toContain("user_id)");
@@ -554,7 +554,7 @@ describe("a seat already held is not taken twice", () => {
 
   it("refuses a seat that a second signed-in person cannot take, and never rebinds it", async () => {
     // The invitation is unclaimed while the Counterparty's row already exists — a seeded
-    // instance, or a row a previous claim left behind. Inserting under it is the only write
+    // session, or a row a previous claim left behind. Inserting under it is the only write
     // this path makes, and it reports a conflict instead of updating the binding.
     stub.state.invite = invite();
     stub.state.seats = [
@@ -579,7 +579,7 @@ describe("a seat already held is not taken twice", () => {
     await claimInvite(claimInput({ viewerUserId: "account-rowan" }));
 
     stub.reset();
-    await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+    await createSessionFromTemplate(createInput({ viewerUserId: "account-avery" }));
 
     expect(callsMatching(/UPDATE party/i)).toHaveLength(0);
   });
@@ -602,11 +602,11 @@ describe("a seat already held is not taken twice", () => {
  * The cases below read the arrays the `INSERT … SELECT unnest()` is handed (id, position, prompt,
  * left, right) and the session INSERT's sixth parameter.
  */
-describe("createInstanceFromTemplate writes stage 3's list", () => {
+describe("createSessionFromTemplate writes stage 3's list", () => {
   /** The item INSERT's bound arrays, in the order the statement names them. */
-  async function itemCopy(over: Partial<CreateInstanceInput>) {
+  async function itemCopy(over: Partial<CreateSessionInput>) {
     stub.reset();
-    await createInstanceFromTemplate(createInput(over));
+    await createSessionFromTemplate(createInput(over));
     const [insert] = callsMatching(/^INSERT INTO item/);
     expect(insert).toBeDefined();
     return {
@@ -716,7 +716,7 @@ describe("createInstanceFromTemplate writes stage 3's list", () => {
 
   it("refuses an emptied list before the transaction opens — a relationship asks at least one", async () => {
     stub.reset();
-    await expect(createInstanceFromTemplate(createInput({ aspects: [] }))).rejects.toMatchObject({
+    await expect(createSessionFromTemplate(createInput({ aspects: [] }))).rejects.toMatchObject({
       code: "aspects-none",
     });
 
@@ -727,7 +727,7 @@ describe("createInstanceFromTemplate writes stage 3's list", () => {
   it("refuses a blank row the person added — nothing can stand in for its question", async () => {
     stub.reset();
     await expect(
-      createInstanceFromTemplate(
+      createSessionFromTemplate(
         createInput({
           aspects: [
             { id: "aspect-one", prompt: "Aspect One", leftValue: "Low", rightValue: "High" },

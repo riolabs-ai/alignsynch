@@ -36,7 +36,7 @@ import { isValidRoute } from "@/content/route-manifest";
 import { routeManifest } from "@/content/routes";
 import { querySearchIndex } from "@/content/search";
 import type { BrandId } from "@/data/brand";
-import { assessmentInstances, assessments } from "@/data/assessments";
+import { assessmentSessions, assessments } from "@/data/assessments";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { ALIGN_SYNCH_FEATURED_SLUG, alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { shellPageCopy } from "@/data/pages/shell";
@@ -223,7 +223,7 @@ describe("the alignment brand's menu is alignment destinations", () => {
       alignSynchBrand,
       alignSynchHomeCopy,
       assessments,
-      assessmentInstances,
+      assessmentSessions,
       ALIGN_SYNCH_FEATURED_SLUG,
     );
     const home = renderToStaticMarkup(createElement(AlignmentHomeView, { model }));
@@ -482,11 +482,11 @@ describe("the palette searches the brand's records, not the other product's", ()
     expect(index.creators).toEqual([]);
   });
 
-  it("indexes the instances the build holds, at their real routes", () => {
+  it("indexes the sessions the build holds, at their real routes", () => {
     const index = searchIndexFor("alignsynch", PLATFORM_VIEWER);
     const paths = index.pages.map((row) => row.path);
-    for (const instance of assessmentInstances) {
-      expect(paths).toContain(`/assessment/${instance.slug}`);
+    for (const session of assessmentSessions) {
+      expect(paths).toContain(`/assessment/${session.slug}`);
     }
     for (const path of paths) {
       expect(isValidRoute(routeManifest, path)).toBe(true);

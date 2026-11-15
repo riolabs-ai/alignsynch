@@ -5,7 +5,7 @@
  * This is not part of `scripts/verify.sh`: the gate must stay database-free and build-free.
  * It is the dogfood the issue asks for, written down so it can be repeated:
  *
- *   1. create      an Instance from a published Template through the **four stages** the create
+ *   1. create      an Session from a published Template through the **four stages** the create
  *                  is (#688 Who → Mode, #689 Aspects, #690 Create), then follow whichever of the
  *                  two redirect shapes the endpoint answers with: **Sent** for a signed-in
  *                  creator, the **account gate** for a signed-out one (#704)
@@ -26,7 +26,7 @@
  *                  lands on the same shell, and the completed claim leaves onto a screen that
  *                  is never an `Ongoing` surface — `/dashboard` signed in, the relationship
  *                  signed out
- *   3b. named      the instance screen names the answering party on every visit (#202)
+ *   3b. named      the session screen names the answering party on every visit (#202)
  *   3c. cross-post a session bound as the Initiator that POSTs `role=counterparty` is
  *                  refused 403 and writes no Counterparty opinion (#202)
  *   4. blind       the Counterparty's screen shows no report and no Gap while only the
@@ -39,22 +39,22 @@
  *   6b. accept     the Initiator accepts (still locked), the Counterparty accepts (the Gap opens);
  *                  the completing acceptance is the one that mails the other seat. Both arrive
  *                  through links and form actions **the app drew** — the confirmation band, the
- *                  instance screen, the accept page — because posting `/accepts` by hand is what
+ *                  session screen, the accept page — because posting `/accepts` by hand is what
  *                  let the accept step ship with no entry point at all (#617)
  *   6c. locked     an edit after the seat accepted is a 409 and the stored row is unchanged
  *   6d. gap        both parties now see a Feel Gap of 3 where Feel 2 meets Feel 5 (the
  *                  `data-alignment-gap` rows of stage 6, #692), and
- *                  "In synch" where they agree; an Advanced instance draws all eight kinds,
+ *                  "In synch" where they agree; an Advanced session draws all eight kinds,
  *                  the four prediction ones against the other party's actual (#219)
- *   8. copy        editing the Template's prompt afterwards does not change the instance
+ *   8. copy        editing the Template's prompt afterwards does not change the session
  *   9. hashes      the invitation row stores the SHA-256 of the token, never the token
  *
  * Usage:
  *   BASE_URL=http://localhost:3100 DATABASE_URL=postgres://… node --import ./scripts/ts-modules.mjs scripts/flow-e2e.mjs
  *
- * It creates its own instance and deletes it (and the Template edit) before it exits, so it
+ * It creates its own session and deletes it (and the Template edit) before it exits, so it
  * is safe to re-run against a database another process is reading. **What it deletes is what it
- * created, and all of it (#865):** the instance `record`, the `relationship` the create wrote (not
+ * created, and all of it (#865):** the session `record`, the `relationship` the create wrote (not
  * a child of the record — `DELETE FROM record` never took it), its payment/membership rows, and the
  * account it signed up. Cleanup runs in a `finally`, and on `SIGINT`/`SIGTERM` too, because the
  * runs that drifted the shared branch were killed rather than failed. A `kill -9` still cannot be
@@ -63,7 +63,7 @@
  * **A failed run prints what the demo branch looks like (#704).** The create commits a `record`
  * row on the branch every card shares, so a throw before that row is registered for cleanup
  * leaves it behind — and `pnpm db:seed` then refuses ("record holds assessment row(s) this seed
- * does not author") until somebody deletes it by hand. The instance id is therefore registered the
+ * does not author") until somebody deletes it by hand. The session id is therefore registered the
  * moment it is parsed, and a failure ends with the branch's own `session` / `party` / `record`
  * counts, so "did this run leave a row" is answered by the output.
  */
@@ -298,7 +298,7 @@ function planRowOf(tier) {
 }
 
 /**
- * The instance id in a create redirect, in **either** shape it has (#704).
+ * The session id in a create redirect, in **either** shape it has (#704).
  *
  * `…/assessment/instances/<id>` is the committed relationship (where a post that names no
  * template lands, and where a signed-in creator is sent on from), and
@@ -306,10 +306,10 @@ function planRowOf(tier) {
  * #690. The id is in both addresses, so the flow continues from it either way — which shape the
  * app answers with is the app's decision, and this reads it rather than picking one.
  */
-function instanceIdIn(location) {
+function sessionIdIn(location) {
   return (
-    location.match(/\/assessment\/instances\/([0-9a-f-]{36})/)?.[1] ??
-    location.match(/[?&]instance=([0-9a-f-]{36})/)?.[1] ??
+    location.match(/\/assessment\/sessions\/([0-9a-f-]{36})/)?.[1] ??
+    location.match(/[?&]session=([0-9a-f-]{36})/)?.[1] ??
     null
   );
 }
@@ -443,12 +443,12 @@ async function createThroughStages(
   // with `published_at` NULL and sends nothing, then hands the person to stage 5.
   const committed = await jar.post("/assessment/new", { templateRecordId, draft: "1" });
   const location = committed.location ?? "";
-  const instanceId = instanceIdIn(location);
-  if (instanceId !== null) created.push(instanceId);
+  const sessionId = sessionIdIn(location);
+  if (sessionId !== null) created.push(sessionId);
   check(
     "stage 4 writes the draft and answers 303 to stage 5 Invite",
     committed.status === 303 &&
-      instanceId !== null &&
+      sessionId !== null &&
       new URL(location, BASE_URL).pathname.endsWith(`${stem}/invite`),
     `${committed.status} ${location}`,
   );
@@ -458,7 +458,7 @@ async function createThroughStages(
   // the account write to arrive here, so this is the assertion the card exists for — and when the
   // run carried nothing, the same screen is where the **absence** is proved: a panel that preselects
   // a tier nobody chose is the defect the card removed.
-  if (instanceId !== null) {
+  if (sessionId !== null) {
     const stageFive = await jar.get(location);
     const carried = carriedPlan === undefined ? null : planRowOf(carriedPlan.planId);
     // The panel's radios, read as tags rather than as one regex over the page: React prints `checked`
@@ -522,11 +522,11 @@ async function createThroughStages(
   // `DELETE FROM record` and used to survive every run on the shared branch. Read back rather than
   // assumed: the id is minted by the app (`cryptoRandomId()`), so a guess is exactly the kind of
   // assumption this harness exists to avoid.
-  if (instanceId !== null) {
-    const state = await relationshipState(instanceId);
+  if (sessionId !== null) {
+    const state = await relationshipState(sessionId);
     if (state?.id) relationships.push(state.id);
   }
-  return { location, instanceId };
+  return { location, sessionId };
 }
 
 /**
@@ -585,13 +585,13 @@ async function signUpCreator(jar, { name }) {
  * difference live in. The invitation row is written either way (stage 5 needs a token to send), so
  * status and `published_at` are what say whether anything went out.
  */
-async function relationshipState(instanceRecordId) {
+async function relationshipState(sessionRecordId) {
   const { rows } = await db.query(
     `SELECT r.id, r.status, r.published_at, r.initiator_user_id
        FROM relationship r
        JOIN session s ON s.relationship_id = r.id
       WHERE s.record_id = $1`,
-    [instanceRecordId],
+    [sessionRecordId],
   );
   return rows[0] ?? null;
 }
@@ -715,7 +715,7 @@ function answers({ feel, wish, think, guess }, overrides = {}) {
     fields[`feel:${itemId}`] = String(pair.feel);
     fields[`wish:${itemId}`] = String(pair.wish);
     // Advanced kinds only when the caller names them: a Basic sheet must not carry a field
-    // its instance's mode does not ask, or the refusal this card adds would be swallowed.
+    // its session's mode does not ask, or the refusal this card adds would be swallowed.
     if (pair.think !== undefined) fields[`think:${itemId}`] = String(pair.think);
     if (pair.guess !== undefined) fields[`guess:${itemId}`] = String(pair.guess);
   }
@@ -873,13 +873,13 @@ async function main() {
     aspects: templateAspects,
     carriedPlan: { planId: "principal", interval: "year" },
   });
-  if (firstCreate.instanceId === null) throw new Error("no instance id in the create redirect");
-  const instanceId = firstCreate.instanceId;
+  if (firstCreate.sessionId === null) throw new Error("no instance id in the create redirect");
+  const sessionId = firstCreate.sessionId;
 
-  const instancePath = `/assessment/instances/${instanceId}`;
+  const sessionPath = `/assessment/instances/${sessionId}`;
 
   /* 1a. the draft — written, owned, unpublished (#828) ------------------ */
-  const drafted = await relationshipState(instanceId);
+  const drafted = await relationshipState(sessionId);
   check(
     "stage 4 wrote the relationship as a draft, owned and unpublished",
     drafted !== null && drafted.status === "draft" && drafted.published_at === null,
@@ -927,7 +927,7 @@ async function main() {
     dashboard.html.includes("Avery and Rowan E2E"),
     "title not found in the relationship render",
   );
-  const stillDraft = await relationshipState(instanceId);
+  const stillDraft = await relationshipState(sessionId);
   check(
     "nothing was sent and nothing was published: still a draft, no publish instant",
     stillDraft !== null && stillDraft.status === "draft" && stillDraft.published_at === null,
@@ -937,13 +937,13 @@ async function main() {
   /* 1d. the send, gated on the walk (#911) --------------------------- */
   // Without a method the send is refused and nothing moves — the gate, asserted first so the pair
   // reads as one rule: no card, no publish; a card, publish.
-  const ungated = await initiator.post(sendInvitationPath(instanceId), {});
+  const ungated = await initiator.post(sendInvitationPath(sessionId), {});
   check(
     "stage 5's send is refused before the walk: no card, no publish",
     ungated.status === 303 && String(ungated.location ?? "").includes("resend=no-payment-method"),
     `${ungated.status} ${ungated.location}`,
   );
-  const stillUnsent = await relationshipState(instanceId);
+  const stillUnsent = await relationshipState(sessionId);
   check(
     "and the row is still a draft after that refusal",
     stillUnsent !== null && stillUnsent.status === "draft",
@@ -951,8 +951,8 @@ async function main() {
   );
 
   /* 1e. the walk's card step, then Send and Continue publishes it ----- */
-  await membershipStandIn(await relationshipState(instanceId), "stage 5 · draft");
-  const sent = await initiator.post(sendInvitationPath(instanceId), {});
+  await membershipStandIn(await relationshipState(sessionId), "stage 5 · draft");
+  const sent = await initiator.post(sendInvitationPath(sessionId), {});
   check("Send and Continue answers 303", sent.status === 303, `${sent.status} ${sent.location}`);
   // #1014 — the send lands on the **relationship**, not the session and not the Sent screen: the flow
   // ends where every later cycle of the relationship lives.
@@ -966,10 +966,10 @@ async function main() {
   );
   check(
     "and it does not land on the session screen or the retired Sent confirmation",
-    !/^\/assessment\/instances\//.test(sendTarget.pathname) && !/\/sent$/.test(sendTarget.pathname),
+    !/^\/assessment\/sessions\//.test(sendTarget.pathname) && !/\/sent$/.test(sendTarget.pathname),
     `location = "${sendLocation}"`,
   );
-  const published = await relationshipState(instanceId);
+  const published = await relationshipState(sessionId);
   check(
     "and it moves the draft to published, with the publish instant written",
     published !== null && published.status === "published" && published.published_at !== null,
@@ -978,13 +978,13 @@ async function main() {
 
   check(
     "the initiator's party cookie is set",
-    initiator.cookies.has(`flow_party_${instanceId}`),
+    initiator.cookies.has(`flow_party_${sessionId}`),
     [...initiator.cookies.keys()].join(", "),
   );
 
   const copy = await db.query(
     "SELECT item_id, prompt FROM item WHERE record_id = $1 ORDER BY position",
-    [instanceId],
+    [sessionId],
   );
   check(
     "creating the instance copied the template's five Aspects into its own rows",
@@ -998,7 +998,7 @@ async function main() {
   // draws that link) and is what draws the invitation. **The link is what matters here** — it is
   // drawn whether the mailer sent, refused or was never configured (#220), which is why this
   // reads the screen rather than a `?invite=` sentence the create no longer hands along (#704).
-  const initiatorScreen = await initiator.get(instancePath);
+  const initiatorScreen = await initiator.get(sessionPath);
   check(
     "the initiator's screen renders",
     initiatorScreen.status === 200,
@@ -1050,9 +1050,7 @@ async function main() {
       initiatorScreen.html.includes("Basic Mode"),
     'data-mode="basic"',
   );
-  const basicModeRow = await db.query("SELECT mode FROM session WHERE record_id = $1", [
-    instanceId,
-  ]);
+  const basicModeRow = await db.query("SELECT mode FROM session WHERE record_id = $1", [sessionId]);
   check(
     "the row records mode=basic",
     basicModeRow.rows[0]?.mode === "basic",
@@ -1061,7 +1059,7 @@ async function main() {
 
   const inviteRow = await db.query(
     "SELECT email, counterparty_name, token_hash, claimed_at, expires_at, created_at FROM session_invite WHERE session_record_id = $1",
-    [instanceId],
+    [sessionId],
   );
   const stored = inviteRow.rows[0];
   check(
@@ -1119,21 +1117,21 @@ async function main() {
     `SELECT iv.claimed_at,
             (SELECT count(*) FROM party p WHERE p.session_record_id = iv.session_record_id)::int AS parties
        FROM session_invite iv WHERE iv.session_record_id = $1`,
-    [instanceId],
+    [sessionId],
   );
   check(
     "the refused claim consumed nothing: token live, one party row",
     afterSelfClaim.rows[0].claimed_at === null && afterSelfClaim.rows[0].parties === 1,
     `claimed_at=${afterSelfClaim.rows[0].claimed_at} parties=${afterSelfClaim.rows[0].parties}`,
   );
-  const stillInitiator = await initiator.get(instancePath);
+  const stillInitiator = await initiator.get(sessionPath);
   check(
     "the Initiator's session still answers as the Initiator",
     stillInitiator.html.includes("You are answering as Avery E2E, the Initiator."),
   );
 
   /* 3. the stranger, then the claim --------------------------------- */
-  const strangerScreen = await stranger.get(instancePath);
+  const strangerScreen = await stranger.get(sessionPath);
   check(
     "a browser with no party token gets a 404, not the screen",
     strangerScreen.status === 404,
@@ -1200,7 +1198,7 @@ async function main() {
     "the GET did not claim the invite",
     (
       await db.query("SELECT claimed_at FROM session_invite WHERE session_record_id = $1", [
-        instanceId,
+        sessionId,
       ])
     ).rows[0].claimed_at === null,
   );
@@ -1223,7 +1221,7 @@ async function main() {
     `SELECT iv.claimed_at,
             (SELECT count(*) FROM party p WHERE p.session_record_id = iv.session_record_id)::int AS parties
        FROM session_invite iv WHERE iv.session_record_id = $1`,
-    [instanceId],
+    [sessionId],
   );
   check(
     "both refused claims consumed nothing: token live, one party row",
@@ -1238,7 +1236,7 @@ async function main() {
   // cookie it was given is what makes the screen readable.
   check(
     "claiming answers 303 to the relationship for a signed-out claimer",
-    claim.status === 303 && (claim.location ?? "").endsWith(instancePath),
+    claim.status === 303 && (claim.location ?? "").endsWith(sessionPath),
     `${claim.status} ${claim.location}`,
   );
   check(
@@ -1248,11 +1246,11 @@ async function main() {
   );
   check(
     "the Counterparty's party cookie is set",
-    counterparty.cookies.has(`flow_party_${instanceId}`),
+    counterparty.cookies.has(`flow_party_${sessionId}`),
   );
   const claimed = await db.query(
     "SELECT claimed_at,(SELECT count(*) FROM party WHERE session_record_id = $1)::int AS parties FROM session_invite WHERE session_record_id = $1",
-    [instanceId],
+    [sessionId],
   );
   check(
     "the claim is recorded, and both party rows exist",
@@ -1261,13 +1259,13 @@ async function main() {
   );
 
   /* 3b. the screen names the answering party, every visit ------------ */
-  const counterpartyScreen = await counterparty.get(instancePath);
+  const counterpartyScreen = await counterparty.get(sessionPath);
   check(
     "the instance screen names the party this session answers as",
     counterpartyScreen.html.includes("You are answering as Rowan E2E, the Counterparty."),
     "You are answering as Rowan E2E, the Counterparty.",
   );
-  const counterpartyRevisit = await counterparty.get(instancePath);
+  const counterpartyRevisit = await counterparty.get(sessionPath);
   check(
     "and names it again on a later visit (not a one-time notice)",
     counterpartyRevisit.html.includes("You are answering as Rowan E2E, the Counterparty."),
@@ -1303,7 +1301,7 @@ async function main() {
   /* 3c. a bound session cannot record the other party's opinion ------ */
   // Through the form the role is the cookie's; a direct POST that *asserts* the other
   // party must be refused rather than quietly written under the cookie's role.
-  const crossPost = await initiator.post(`${instancePath}/answers`, {
+  const crossPost = await initiator.post(`${sessionPath}/answers`, {
     ...answers({ feel: 5, wish: 5 }),
     role: "counterparty",
   });
@@ -1321,7 +1319,7 @@ async function main() {
   );
   const counterpartyOpinions = await db.query(
     "SELECT count(*)::int AS n FROM opinion WHERE session_record_id = $1 AND role = 'counterparty'",
-    [instanceId],
+    [sessionId],
   );
   check(
     "the refused POST wrote no Counterparty opinion",
@@ -1330,7 +1328,7 @@ async function main() {
   );
   const initiatorAfterRefusal = await db.query(
     "SELECT count(*)::int AS n FROM opinion WHERE session_record_id = $1 AND role = 'initiator'",
-    [instanceId],
+    [sessionId],
   );
   check(
     "and no Initiator opinion either — the request was refused, not reinterpreted",
@@ -1338,11 +1336,11 @@ async function main() {
     `n=${initiatorAfterRefusal.rows[0].n}`,
   );
 
-  /* 3d. a Basic instance refuses an Advanced field (#213) ------------ */
-  // The sheet is the mode's sheet. A Think score posted against a Basic instance is a
+  /* 3d. a Basic session refuses an Advanced field (#213) ------------ */
+  // The sheet is the mode's sheet. A Think score posted against a Basic session is a
   // refusal, not a field the server quietly drops — the same "silent success" rule the
   // freeze and the missing-score cases already enforce.
-  const advancedFieldOnBasic = await initiator.post(`${instancePath}/answers`, {
+  const advancedFieldOnBasic = await initiator.post(`${sessionPath}/answers`, {
     ...answers({ feel: 2, wish: 5 }),
     [`think:${TIME}`]: "4",
   });
@@ -1358,7 +1356,7 @@ async function main() {
   );
   const afterBasicRefusal = await db.query(
     "SELECT count(*)::int AS n FROM opinion WHERE session_record_id = $1",
-    [instanceId],
+    [sessionId],
   );
   check(
     "the refused Basic+Think post wrote no opinion row",
@@ -1368,7 +1366,7 @@ async function main() {
 
   /* 4. blind: only the Initiator has answered ----------------------- */
   const initiatorSubmit = await initiator.post(
-    `${instancePath}/answers`,
+    `${sessionPath}/answers`,
     answers({ feel: 2, wish: 5 }, { [MONEY]: { feel: 4, wish: 4 } }),
   );
   check(
@@ -1377,7 +1375,7 @@ async function main() {
     `status ${initiatorSubmit.status}`,
   );
 
-  const blindScreen = await counterparty.get(instancePath);
+  const blindScreen = await counterparty.get(sessionPath);
   check(
     "the Counterparty's screen renders while the Initiator has answered",
     blindScreen.status === 200,
@@ -1393,7 +1391,7 @@ async function main() {
     "the Counterparty still has their own answer sheet",
     blindScreen.html.includes(`name="feel:${TIME}"`),
   );
-  const initiatorWhileBlind = await initiator.get(instancePath);
+  const initiatorWhileBlind = await initiator.get(sessionPath);
   check(
     "the Initiator sees no Gap either, while they wait",
     !initiatorWhileBlind.html.includes("data-feel-gap"),
@@ -1407,7 +1405,7 @@ async function main() {
   // The Counterparty has not submitted, so their report page is the gate — and the gate's one
   // control is the button this card fixes. It used to be `answersPath()`, the POST-only handler,
   // so the click was a GET and the party finished their own sheet against a 405.
-  const lockedReport = await counterparty.get(`${instancePath}/report`);
+  const lockedReport = await counterparty.get(`${sessionPath}/report`);
   check(
     "the Counterparty's report page renders the gate while their sheet is unfinished",
     lockedReport.status === 200 && lockedReport.html.includes('data-report-gated="true"'),
@@ -1417,7 +1415,7 @@ async function main() {
   const continueHref = continueAnchor?.[0].match(/href="([^"]*)"/)?.[1];
   check(
     "the gate's continue CTA points at the answer sheet",
-    continueHref === `${instancePath}/answer`,
+    continueHref === `${sessionPath}/answer`,
     `href ${continueHref ?? "(no anchor)"}`,
   );
   const viaContinue = continueHref === undefined ? undefined : await counterparty.get(continueHref);
@@ -1426,7 +1424,7 @@ async function main() {
     viaContinue?.status === 200 && viaContinue.html.includes(`name="feel:${TIME}"`),
     `status ${viaContinue?.status ?? "(not followed)"}`,
   );
-  const getTheEndpoint = await counterparty.get(`${instancePath}/answers`);
+  const getTheEndpoint = await counterparty.get(`${sessionPath}/answers`);
   check(
     "a GET of the endpoint the CTA used to name is a 405 — the defect this card fixes",
     getTheEndpoint.status === 405,
@@ -1435,7 +1433,7 @@ async function main() {
 
   /* 5-6. the Counterparty answers, and the Gap unlocks --------------- */
   const counterpartySubmit = await counterparty.post(
-    `${instancePath}/answers`,
+    `${sessionPath}/answers`,
     answers({ feel: 5, wish: 3 }, { [MONEY]: { feel: 4, wish: 4 } }),
   );
   check(
@@ -1444,7 +1442,7 @@ async function main() {
     `status ${counterpartySubmit.status}`,
   );
 
-  const afterBoth = await initiator.get(instancePath);
+  const afterBoth = await initiator.get(sessionPath);
   // #R2 — the hinge. Both sheets are in, and that is *not* completion: the report stays locked
   // until both parties accept, which is the review window the accept page exists for.
   check(
@@ -1452,7 +1450,7 @@ async function main() {
     !afterBoth.html.includes("data-alignment-gap"),
   );
   const editBeforeAccept = await initiator.post(
-    `${instancePath}/answers`,
+    `${sessionPath}/answers`,
     answers({ feel: 2, wish: 5 }, { [MONEY]: { feel: 4, wish: 4 } }),
   );
   check(
@@ -1465,7 +1463,7 @@ async function main() {
   // Every earlier version of this file posted `/accepts` by hand, so the suite proved the endpoint
   // worked and never that a person could arrive at it — and the accept page shipped with no link
   // anywhere in the tree. From here the script follows only anchors and form actions the app drew.
-  const submittedVisit = await counterparty.get(counterpartySubmit.location ?? instancePath);
+  const submittedVisit = await counterparty.get(counterpartySubmit.location ?? sessionPath);
   check(
     "the Counterparty's submit lands on the confirmation band",
     submittedVisit.status === 200 && submittedVisit.html.includes("data-submitted-confirmation"),
@@ -1474,23 +1472,23 @@ async function main() {
   const submittedAcceptHref = anchorHref(submittedVisit.html, "data-accept-link");
   check(
     "the confirmation band links to the accept step",
-    submittedAcceptHref === `${instancePath}/accept`,
+    submittedAcceptHref === `${sessionPath}/accept`,
     `href ${submittedAcceptHref ?? "(no anchor)"}`,
   );
 
-  // A party coming back later sees the same route on the instance screen — the confirmation band is
+  // A party coming back later sees the same route on the session screen — the confirmation band is
   // drawn once, but the step it points at stays reachable.
-  const initiatorLaterScreen = await initiator.get(instancePath);
+  const initiatorLaterScreen = await initiator.get(sessionPath);
   const initiatorAcceptHref = anchorHref(initiatorLaterScreen.html, "data-accept-link");
   check(
     "the instance screen links to the accept step on a later visit",
-    initiatorAcceptHref === `${instancePath}/accept`,
+    initiatorAcceptHref === `${sessionPath}/accept`,
     `href ${initiatorAcceptHref ?? "(no anchor)"}; status ${initiatorLaterScreen.status}; band ${/data-accept-step="([a-z]+)"/.exec(initiatorLaterScreen.html)?.[1] ?? "absent"}`,
   );
 
   const acceptanceBefore = await db.query(
     "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
-    [instanceId],
+    [sessionId],
   );
   note(
     `party rows before any acceptance: ${acceptanceBefore.rows
@@ -1498,7 +1496,7 @@ async function main() {
       .join(", ")}`,
   );
 
-  const initiatorAcceptPage = await initiator.get(initiatorAcceptHref ?? `${instancePath}/accept`);
+  const initiatorAcceptPage = await initiator.get(initiatorAcceptHref ?? `${sessionPath}/accept`);
   check(
     "following it answers 200 and draws the acceptance for this party",
     initiatorAcceptPage.status === 200 &&
@@ -1509,21 +1507,21 @@ async function main() {
   const initiatorAcceptAction = acceptFormAction(initiatorAcceptPage.html);
   check(
     "the page's own form posts to the accept endpoint",
-    initiatorAcceptAction === `${instancePath}/accepts`,
+    initiatorAcceptAction === `${sessionPath}/accepts`,
     `action ${initiatorAcceptAction ?? "(no form)"}`,
   );
 
   const initiatorAccept = await initiator.post(
-    initiatorAcceptAction ?? `${instancePath}/accepts`,
+    initiatorAcceptAction ?? `${sessionPath}/accepts`,
     {},
   );
   check(
     "the Initiator's acceptance answers 303 to the accept page",
     initiatorAccept.status === 303 &&
-      (initiatorAccept.location ?? "").endsWith(`${instancePath}/accept`),
+      (initiatorAccept.location ?? "").endsWith(`${sessionPath}/accept`),
     `${initiatorAccept.status} ${initiatorAccept.location}`,
   );
-  const afterFirstAccept = await initiator.get(instancePath);
+  const afterFirstAccept = await initiator.get(sessionPath);
   check(
     "one acceptance: the Gap is still sealed for both of you",
     !afterFirstAccept.html.includes("data-alignment-gap"),
@@ -1534,15 +1532,15 @@ async function main() {
       afterFirstAccept.html.includes('data-accept-step="accepted"'),
   );
 
-  const counterpartyLaterScreen = await counterparty.get(instancePath);
+  const counterpartyLaterScreen = await counterparty.get(sessionPath);
   const counterpartyAcceptHref = anchorHref(counterpartyLaterScreen.html, "data-accept-link");
   check(
     "the Counterparty's screen still offers the accept step",
-    counterpartyAcceptHref === `${instancePath}/accept`,
+    counterpartyAcceptHref === `${sessionPath}/accept`,
     `href ${counterpartyAcceptHref ?? "(no anchor)"}; band ${/data-accept-step="([a-z]+)"/.exec(counterpartyLaterScreen.html)?.[1] ?? "absent"}`,
   );
   const counterpartyAcceptPage = await counterparty.get(
-    counterpartyAcceptHref ?? `${instancePath}/accept`,
+    counterpartyAcceptHref ?? `${sessionPath}/accept`,
   );
   check(
     "and that page reads the Initiator's seat as accepted",
@@ -1552,13 +1550,13 @@ async function main() {
   );
   const counterpartyAcceptAction = acceptFormAction(counterpartyAcceptPage.html);
   const counterpartyAccept = await counterparty.post(
-    counterpartyAcceptAction ?? `${instancePath}/accepts`,
+    counterpartyAcceptAction ?? `${sessionPath}/accepts`,
     {},
   );
   check(
     "the completing acceptance answers 303 to the report",
     counterpartyAccept.status === 303 &&
-      (counterpartyAccept.location ?? "").endsWith(`${instancePath}/report`),
+      (counterpartyAccept.location ?? "").endsWith(`${sessionPath}/report`),
     `${counterpartyAccept.status} ${counterpartyAccept.location}`,
   );
 
@@ -1577,7 +1575,7 @@ async function main() {
   // the count at nine.
   const acceptanceAfter = await db.query(
     "SELECT role, accepted_at FROM party WHERE session_record_id = $1 ORDER BY role",
-    [instanceId],
+    [sessionId],
   );
   check(
     "both seats now record party.accepted_at",
@@ -1593,7 +1591,7 @@ async function main() {
       .join(", ")}`,
   );
 
-  const afterAcceptance = await initiator.get(instancePath);
+  const afterAcceptance = await initiator.get(sessionPath);
   check(
     "the session derives `complete` — the stage the report is opened by",
     afterAcceptance.html.includes('data-stage-badge="sharing"'),
@@ -1626,7 +1624,7 @@ async function main() {
   // from `membership.writable`, not from `relationship_payment.method_captured_at`: the membership
   // stage 5 bought is what opens the report, and that row was written by `membershipStandIn` before
   // the send. The assertions below read the screen, which is the only place the rule lives.
-  const paidScreen = await initiator.get(instancePath);
+  const paidScreen = await initiator.get(sessionPath);
   const gapAttribute = alignmentGaps(paidScreen.html, TIME);
   check(
     "Feel 2 against Feel 5 renders a Gap of 3",
@@ -1647,11 +1645,11 @@ async function main() {
     moneyRow.length === 0 ? "no difference rows" : `${moneyRow.length} rows, all 0`,
   );
 
-  const paidReport = await counterparty.get(`${instancePath}/report`);
+  const paidReport = await counterparty.get(`${sessionPath}/report`);
   dumpPage("report-paid", paidReport.html);
   check(
     // The report has its own vocabulary: `data-feel-gap` / `data-counterparty-gap` per Aspect,
-    // where the instance screen uses `data-alignment-gap` per row. It is the *page* that was shut
+    // where the session screen uses `data-alignment-gap` per row. It is the *page* that was shut
     // before the method was captured, not the numbers.
     "and now the report the acceptance redirected to opens, with the Gap drawn",
     paidReport.status === 200 &&
@@ -1660,7 +1658,7 @@ async function main() {
       paidReport.html.includes('data-counterparty-gap="2"'),
     `status ${paidReport.status} gated=${paidReport.html.includes('data-report-gated="true"')}`,
   );
-  const counterpartyPaid = await counterparty.get(instancePath);
+  const counterpartyPaid = await counterparty.get(sessionPath);
   const counterpartyGap = gapOfKind(alignmentGaps(counterpartyPaid.html, TIME), "feel");
   check(
     "both parties see the same Gap",
@@ -1672,10 +1670,7 @@ async function main() {
   );
 
   /* 7. the freeze, now per party (#R2) -------------------------------- */
-  const editAttempt = await initiator.post(
-    `${instancePath}/answers`,
-    answers({ feel: 4, wish: 4 }),
-  );
+  const editAttempt = await initiator.post(`${sessionPath}/answers`, answers({ feel: 4, wish: 4 }));
   check(
     "editing after this seat accepted answers 409",
     editAttempt.status === 409,
@@ -1687,7 +1682,7 @@ async function main() {
   );
   const storedFeel = await db.query(
     "SELECT feel, wish FROM opinion WHERE session_record_id = $1 AND role = 'initiator' AND item_id = $2",
-    [instanceId, TIME],
+    [sessionId, TIME],
   );
   check(
     "the refused edit wrote nothing (still 2/5)",
@@ -1703,18 +1698,18 @@ async function main() {
     TIME,
   ]);
   try {
-    const afterEdit = await initiator.get(instancePath);
+    const afterEdit = await initiator.get(sessionPath);
     check(
       "editing the template afterwards does not change the instance's screen",
       rendered(afterEdit.html).includes(original) &&
         !rendered(afterEdit.html).includes("TEMPLATE EDITED AFTER ANSWERING"),
       "the original prompt is still drawn",
     );
-    const instanceRow = await db.query(
+    const sessionRow = await db.query(
       "SELECT prompt FROM item WHERE record_id = $1 AND item_id = $2",
-      [instanceId, TIME],
+      [sessionId, TIME],
     );
-    check("the instance's own copy row is unchanged", instanceRow.rows[0]?.prompt === original);
+    check("the instance's own copy row is unchanged", sessionRow.rows[0]?.prompt === original);
   } finally {
     await db.query("UPDATE item SET prompt = $2 WHERE record_id = $1 AND item_id = $3", [
       TEMPLATE_ID,
@@ -1726,7 +1721,7 @@ async function main() {
   /* 9. every party is reachable by hash only ------------------------- */
   const partyHashes = await db.query(
     "SELECT role, access_token_hash FROM party WHERE session_record_id = $1 ORDER BY role",
-    [instanceId],
+    [sessionId],
   );
   check(
     "both parties carry a 64-hex token hash and no raw token",
@@ -1744,9 +1739,9 @@ async function main() {
   );
 
   /* 10. Advanced Mode: four scores, four Gaps (#213) ------------------ */
-  // The card's second instance. It is created here rather than seeded, so the proof is that
-  // the *flow* can produce an Advanced instance — the gap #213 names was that only the seeded
-  // demo showed all four, and a newly created instance could not.
+  // The card's second session. It is created here rather than seeded, so the proof is that
+  // the *flow* can produce an Advanced session — the gap #213 names was that only the seeded
+  // demo showed all four, and a newly created session could not.
   const advInitiator = new Jar("advanced-initiator");
   const advCounterparty = new Jar("advanced-counterparty");
   // v9: stage 4 writes the draft *for the signed-in Initiator*, so a fresh jar needs its own
@@ -1764,16 +1759,16 @@ async function main() {
     mode: "advanced",
     aspects: templateAspects,
   });
-  if (advCreate.instanceId === null) throw new Error("no instance id in the advanced redirect");
-  const advInstanceId = advCreate.instanceId;
-  const advPath = `/assessment/instances/${advInstanceId}`;
+  if (advCreate.sessionId === null) throw new Error("no instance id in the advanced redirect");
+  const advSessionId = advCreate.sessionId;
+  const advPath = `/assessment/instances/${advSessionId}`;
 
   // The draft is published the same way the first relationship's is: stage 5's send, after the
   // walk's card step bought the membership (`membershipStandIn`). The invitation row the create
   // wrote holds the token the counterparty's link is built from.
-  await membershipStandIn(await relationshipState(advInstanceId), "stage 5 · advanced");
-  const advSent = await advInitiator.post(sendInvitationPath(advInstanceId), {});
-  const advPublished = await relationshipState(advInstanceId);
+  await membershipStandIn(await relationshipState(advSessionId), "stage 5 · advanced");
+  const advSent = await advInitiator.post(sendInvitationPath(advSessionId), {});
+  const advPublished = await relationshipState(advSessionId);
   check(
     "the Advanced relationship publishes when its own stage 5 sends",
     advSent.status === 303 &&
@@ -1813,7 +1808,7 @@ async function main() {
     'data-mode="advanced"',
   );
   const advModeRow = await db.query("SELECT mode FROM session WHERE record_id = $1", [
-    advInstanceId,
+    advSessionId,
   ]);
   check(
     "the row records mode=advanced",
@@ -2008,7 +2003,7 @@ async function main() {
   // The path the owner walked: their own template, four stages, stage 5.
   const authoredCreate =
     authoredId === null || authoredSlug === ""
-      ? { instanceId: null, location: "" }
+      ? { sessionId: null, location: "" }
       : await createThroughStages(author, {
           templateRecordId: authoredId,
           templateSlug: authoredSlug,
@@ -2023,7 +2018,7 @@ async function main() {
         });
   check(
     "the create flow runs to stage 5 from a template this account authored (#870)",
-    authoredCreate.instanceId !== null,
+    authoredCreate.sessionId !== null,
     authoredCreate.location,
   );
 
@@ -2120,7 +2115,7 @@ async function main() {
   const { readLibraryTemplate } = await import("@/lib/db/template-library");
   const { templateCopyRefusal } = await import("@/lib/flow/create-copy");
 
-  const boundRelationship = await relationshipState(instanceId);
+  const boundRelationship = await relationshipState(sessionId);
   const forked =
     boundRelationship === null
       ? null
@@ -2193,7 +2188,7 @@ async function authUserTable() {
  *
  * **Order matters in two places.** `DELETE FROM record` cascades the session (and its parties,
  * opinions and invitation) but *not* the relationship — `relationship` is keyed by the template,
- * not by the instance — so the relationship is deleted after the record whose session names it,
+ * not by the session — so the relationship is deleted after the record whose session names it,
  * and `relationship_payment` before the relationship because `0036`'s FK has no cascade.
  *
  * Every statement is `ANY(ids)` and every list is what this run registered, so a re-entry (the
@@ -2227,10 +2222,10 @@ async function cleanup() {
       await db.query("DELETE FROM coach_invite WHERE relationship_id = ANY($1::text[])", [ids]);
     }
 
-    // The instance records: `DELETE FROM record` cascades the session, its parties, its opinions
+    // The session records: `DELETE FROM record` cascades the session, its parties, its opinions
     // and its invitation — everything that hangs off the record itself.
-    for (const instanceId of created) {
-      await db.query("DELETE FROM record WHERE id = $1", [instanceId]);
+    for (const sessionId of created) {
+      await db.query("DELETE FROM record WHERE id = $1", [sessionId]);
     }
 
     if (strays.size > 0) {
@@ -2275,7 +2270,7 @@ async function cleanup() {
       createdTemplates.length > 0
     ) {
       console.log(
-        `· cleaned up ${created.length} instance(s), ${strays.size} relationship(s), ${createdTemplates.length} template(s), ${createdAccounts.length} account(s)`,
+        `· cleaned up ${created.length} session(s), ${strays.size} relationship(s), ${createdTemplates.length} template(s), ${createdAccounts.length} account(s)`,
       );
     }
   } catch (error) {

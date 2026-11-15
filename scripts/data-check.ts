@@ -17,7 +17,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { createRequire } from "node:module";
 
-import { instanceTemplateProblems, zAssessment, zAssessmentInstance } from "../content/assessment";
+import { sessionTemplateProblems, zAssessment, zAssessmentSession } from "../content/assessment";
 import { zArticleCollection, zKbArticle, zNewsArticle, zTip } from "../content/article";
 import {
   assertCategoryScopes,
@@ -54,7 +54,7 @@ import {
   type RouteResolution,
 } from "../content/social";
 import { DEMO_NOW_ISO } from "../content/core";
-import { assessmentInstances, assessments } from "../data/assessments";
+import { assessmentSessions, assessments } from "../data/assessments";
 import { demoBundleProblems, readStore } from "./bundles";
 import { categories as quizCategoryRows } from "../data/categories";
 import { contacts as modelContacts, conversations as modelConversations } from "../data/chat-data";
@@ -244,8 +244,8 @@ const notificationRecords = validateCollection("E0", "notification", zNotificati
 
 /**
  * The record model's two template collections (issue #128). An assessment is a
- * template — Items, no parties; an instance is that template copied and given two
- * parties, so the Opinions live on the instance. Neither carries a Gap: the Gap is
+ * template — Items, no parties; a session is that template copied and given two
+ * parties, so the Opinions live on the session. Neither carries a Gap: the Gap is
  * `gapOf(one, other)` over two scores, and there is no field to drift.
  *
  * These are the **fixtures**, and they are validated whatever else is installed: they are
@@ -253,8 +253,8 @@ const notificationRecords = validateCollection("E0", "notification", zNotificati
  * tenant store is active (E33 below).
  */
 const assessmentRecords = validateCollection("E0", "assessment", zAssessment, [...assessments]);
-const instanceRecords = validateCollection("E0", "assessment instance", zAssessmentInstance, [
-  ...assessmentInstances,
+const sessionRecords = validateCollection("E0", "assessment session", zAssessmentSession, [
+  ...assessmentSessions,
 ]);
 
 /* ------------------------------------------------------------------ *
@@ -293,7 +293,7 @@ if (store.kind === "invalid") {
 /** The active assessment collections: the store when it is valid, the fixtures when absent. */
 const activeAssessmentRecords =
   store.kind === "valid" ? store.records.templates : assessmentRecords;
-const activeInstanceRecords = store.kind === "valid" ? store.records.instances : instanceRecords;
+const activeSessionRecords = store.kind === "valid" ? store.records.instances : sessionRecords;
 
 /* the whole taxonomy table, in one pass */
 const categoryTable: readonly Category[] = taxonomyTable;
@@ -398,30 +398,30 @@ assertUnique("E1", "category ids", categoryTable, (row) => row.id);
 assertUnique(
   "E1",
   "all record ids",
-  [...allQuizzes, ...activeAssessmentRecords, ...activeInstanceRecords],
+  [...allQuizzes, ...activeAssessmentRecords, ...activeSessionRecords],
   (row) => row.id,
 );
 assertUnique("E2", "assessment slugs", activeAssessmentRecords, (row) => `${row.type}/${row.slug}`);
 assertUnique(
   "E2",
-  "assessment instance slugs",
-  activeInstanceRecords,
+  "assessment session slugs",
+  activeSessionRecords,
   (row) => `${row.type}/${row.slug}`,
 );
 
 /* ------------------------------------------------------------------ *
- * E31 — an instance is a copy of a template, and that template resolves
+ * E31 — a session is a copy of a template, and that template resolves
  *
- * A template is copied and given parties; the instance holds the copy. Two things
+ * A template is copied and given parties; the session holds the copy. Two things
  * can go wrong without any single record being invalid: the template it names is not
- * in the collection (a rename that forgot the instances), or the copy has drifted
+ * in the collection (a rename that forgot the sessions), or the copy has drifted
  * (an Aspect edited on one side only). Either way the parties are answering Aspects
  * nobody else holds, and nothing renders the difference — so it fails here, against
- * the collection, via `instanceTemplateProblems` (content/assessment.ts), which is
+ * the collection, via `sessionTemplateProblems` (content/assessment.ts), which is
  * pure so the negative case can violate it without a filesystem.
  * ------------------------------------------------------------------ */
 
-for (const problem of instanceTemplateProblems(activeAssessmentRecords, activeInstanceRecords)) {
+for (const problem of sessionTemplateProblems(activeAssessmentRecords, activeSessionRecords)) {
   err("E31", problem);
 }
 
@@ -1139,7 +1139,7 @@ const brandWordCensus = `${brandWordResult.census.fixtures.length} alignment fix
  *
  * The owner has asked for this more than once and it kept coming back, because nothing enforced
  * it: a fixture is prose, so no typecheck, lint rule or parity hash can see the retired noun. The
- * word was the model's (`assessment_instance`), the product's is a session — one cycle of
+ * word was the model's (`assessment_session`), the product's is a session — one cycle of
  * answering inside a published relationship — and a reader who is told they have "instances" is
  * reading a database's vocabulary.
  *
@@ -1957,7 +1957,7 @@ const deadLinks = notificationRecords.filter((record) => !resolveRoute(record.li
 const counts = [
   `${quizzes.length} quizzes`,
   `${questionOwners.size} questions`,
-  `${activeAssessmentRecords.length} assessment${activeAssessmentRecords.length === 1 ? "" : "s"}${store.kind === "valid" ? " (from the imported store)" : " (fixtures)"}, ${activeInstanceRecords.length} assessment instance${activeInstanceRecords.length === 1 ? "" : "s"}`,
+  `${activeAssessmentRecords.length} assessment${activeAssessmentRecords.length === 1 ? "" : "s"}${store.kind === "valid" ? " (from the imported store)" : " (fixtures)"}, ${activeSessionRecords.length} assessment session${activeSessionRecords.length === 1 ? "" : "s"}`,
   `${news.length} news`,
   `${tipRecords.length} tips`,
   `${kbRecords.length} kb`,

@@ -20,7 +20,7 @@
  *   4. the band is the `onBand` tone, because a neutral chip on the graphite band would be
  *      light-on-dark text with a light border.
  *
- * What it does not render is `relationship-detail.tsx` and `instance-view.tsx` — two client
+ * What it does not render is `relationship-detail.tsx` and `session-view.tsx` — two client
  * surfaces behind server actions and a whole session screen. Their chips are proved by claim 2
  * (the source) and by their own suites, which assert the hooks this file checks by name.
  */
@@ -83,7 +83,7 @@ function toneClasses(variant: (typeof TONES)[number]): string {
 
 /**
  * The audited surfaces, by file: the issue's six, plus the dashboard's own relationship list and
- * the flow screens that carried the same chip literal. `instance-view.tsx` is here because it
+ * the flow screens that carried the same chip literal. `session-view.tsx` is here because it
  * held a byte-identical copy of the shelf's `neutral` chip under its own `data-stage-badge`, and
  * a file list that skipped it is exactly how a fifth definition survives a refactor.
  */
@@ -92,7 +92,7 @@ const CHIP_SURFACES = [
   "components/dashboard/relationship-cards.tsx",
   "components/dashboard/relationship-detail.tsx",
   "components/dashboard/assessments-list.tsx",
-  "components/assessment-flow/instance-view.tsx",
+  "components/assessment-flow/session-view.tsx",
   /**
    * #795 — the band's three chips left `template-detail.tsx` for the shared shell, so the surface
    * that draws them is now `record-detail-shell.tsx`. Both detail pages render it, which is the
@@ -124,7 +124,7 @@ const templateRow: LibraryTemplate = (() => {
     status: "published",
     createdAt: record.date,
     aspectCount: record.items.length,
-    instanceCount: 0,
+    sessionCount: 0,
     authorship: "built-in",
   };
 })();
@@ -167,9 +167,9 @@ const detail: LibraryTemplateDetail = (() => {
 })();
 
 /** The stage the relationship's session has reached, as the card draws it. */
-const myInstanceRow: RelationshipCard = {
+const mySessionRow: RelationshipCard = {
   relationshipId: relationshipRow.id,
-  instanceRecordId: "member-session-abc123",
+  sessionRecordId: "member-session-abc123",
   slug: "staff-manager",
   name: "Son Basics",
   templateTitle: "Staff & Manager",
@@ -312,13 +312,13 @@ describe("no surface declares a chip of its own", () => {
   it("and neither does any other component: the constant is gone from the tree", () => {
     /**
      * The list above is the audited surfaces and it is hand-written, which is precisely how
-     * `instance-view.tsx` kept a byte-identical copy through the first pass. This is the
+     * `session-view.tsx` kept a byte-identical copy through the first pass. This is the
      * self-maintaining half, in three shapes, because each one was a real escape:
      *
      *   - a shared constant — `CHIP`, `CHIP_TEMPLATE`, any `CHIP_*` — may not exist anywhere
      *     under `components/` or `app/`; the primitive is its only home;
      *   - the retired *neutral literal* may not be pasted into a component either, which is what
-     *     an inlined copy looks like (`instance-view.tsx`'s stage badge was exactly this);
+     *     an inlined copy looks like (`session-view.tsx`'s stage badge was exactly this);
      *   - and the same for the retired band literal, which is where the detail header's chips
      *     came from before the band tone existed.
      */
@@ -364,7 +364,7 @@ describe("the surfaces render through it", () => {
     const html = renderToStaticMarkup(
       createElement(AssessmentsList, {
         copy: assessmentsPageCopy,
-        rows: [myInstanceRow],
+        rows: [mySessionRow],
         unreadable: null,
       }),
     );

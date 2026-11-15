@@ -15,7 +15,7 @@
  * The rows are built from the real template fixture, not invented: the Aspect ids, prompts
  * and Values are `data/assessments.ts`'s, which is what the screen would draw.
  *
- * An Advanced instance (#213) is projected the same way: the view model carries `mode`, the
+ * An Advanced session (#213) is projected the same way: the view model carries `mode`, the
  * viewer's `own` holds four scores instead of two, and the counterparty's Think/Guess are
  * just as absent before `complete` as their Feel/Wish — there is still no field that could
  * carry them.
@@ -25,16 +25,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AssessmentReportView } from "@/components/assessment/assessment-report";
 import {
-  AssessmentInstanceView,
+  AssessmentSessionView,
   type InviteNotice,
-} from "@/components/assessment-flow/instance-view";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+} from "@/components/assessment-flow/session-view";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { PartyRole } from "@/content/assessment";
 import type { Assessment } from "@/content/assessment";
 import { gapOf } from "@/content/record";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -42,12 +42,12 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-flow-test";
+const SESSION_ID = "session-flow-test";
 const TIME = "aspect-time-together";
 const MONEY = "aspect-money";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -59,8 +59,8 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 const ACCEPTED_AT = new Date("2026-10-30T12:00:00.000Z");
 
 const parties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
 ];
 
 /**
@@ -86,7 +86,7 @@ function opinionsFor(
   return template.items.map((item) => {
     const override = overrides[item.id];
     return {
-      session_record_id: INSTANCE_ID,
+      session_record_id: SESSION_ID,
       role,
       item_id: item.id,
       feel: override?.feel ?? 3,
@@ -105,7 +105,7 @@ function advancedOpinionsFor(
   return template.items.map((item) => {
     const override = overrides[item.id];
     return {
-      session_record_id: INSTANCE_ID,
+      session_record_id: SESSION_ID,
       role,
       item_id: item.id,
       feel: override?.feel ?? 3,
@@ -124,10 +124,10 @@ function rowsWith(
     initiator: true,
     counterparty: true,
   },
-): FlowInstanceRows {
+): FlowSessionRows {
   return {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "relationship-basics-test",
       record_type: "assessment",
       status: "draft",
@@ -137,8 +137,8 @@ function rowsWith(
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template?.id ?? "",
       relationship_id: "relationship-test",
       mode,
@@ -256,7 +256,7 @@ describe("the coach's read-only view", () => {
       invite,
     });
     const markup = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
 
     expect(markup).toContain('data-coach-badge="true"');
@@ -383,7 +383,7 @@ describe("the review window", () => {
  * glossary's order. The live version of the same claim is `scripts/flow-e2e.mjs`, which
  * counts them off a production build against real rows.
  */
-describe("an Advanced instance", () => {
+describe("an Advanced session", () => {
   const bothAdvanced = [
     ...advancedOpinionsFor("initiator", {
       [TIME]: { feel: 2, wish: 5, think: 4, guess: 1 },
@@ -395,7 +395,7 @@ describe("an Advanced instance", () => {
 
   const render = (screen: ReturnType<typeof projectScreen>) =>
     renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
 
   it("asks four scores per Aspect, in the glossary's order, and names Advanced Mode", () => {
@@ -518,9 +518,9 @@ describe("the invite notice", () => {
       invite: unclaimed,
     });
     return renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen,
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
         inviteNotice,
       }),
     );

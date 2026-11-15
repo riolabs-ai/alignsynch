@@ -196,7 +196,7 @@ describe("the mock adapter's entitlement is the plan's", () => {
     await port.startCheckout(checkoutRequest());
     const entitlement = await port.entitlementFor("account-avery");
     expect(entitlement.planId).toBe("principal");
-    expect(entitlement.maxActiveInstances).toBeNull();
+    expect(entitlement.maxActiveSessions).toBeNull();
     expect(entitlement.advancedMode).toBe(true);
   });
 });

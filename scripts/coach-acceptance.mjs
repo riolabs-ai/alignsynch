@@ -14,20 +14,20 @@
  *      is not a party — they hold no `flow_party_*` token);
  *   4. and the other side of the boundary: a coach *can* read a **completed** session's report.
  *
- * The write paths (`createInstanceFromTemplate`, `inviteCoach`, `claimCoachInvite`,
+ * The write paths (`createSessionFromTemplate`, `inviteCoach`, `claimCoachInvite`,
  * `readFlowScreen`, `submitAnswers`) are the exact functions the routes call, loaded through the
  * same `ts-modules` loader `db:seed` uses, so a green run is evidence about the shipped code.
  *
  * Usage (a seeded demo branch, DEMO_AUTH=1):
  *   DATABASE_URL=postgres://… NEON_AUTH_BASE_URL=https://… node --import ./scripts/ts-modules.mjs scripts/coach-acceptance.mjs
  *
- * It creates one fresh instance and one coach membership, then deletes both before it exits, so
+ * It creates one fresh session and one coach membership, then deletes both before it exits, so
  * it is safe to re-run against a branch another process reads.
  */
 import { Client } from "pg";
 import {
   claimCoachInvite,
-  createInstanceFromTemplate,
+  createSessionFromTemplate,
   inviteCoach,
   readFlowScreen,
   submitAnswers,
@@ -101,9 +101,9 @@ async function main() {
     after.rows.filter((r) => r.role === "coach").length === 1,
   );
 
-  /* 4 (do first, on the seeded complete instance) — a coach reads a completed report ----- */
+  /* 4 (do first, on the seeded complete session) — a coach reads a completed report ----- */
   const complete = await readFlowScreen({
-    instanceRecordId: "assessment-instance-avery-rowan",
+    sessionRecordId: "assessment-instance-avery-rowan",
     token: undefined,
     viewerUserId: admin.user_id,
   });
@@ -119,7 +119,7 @@ async function main() {
   );
 
   /* 2. a coach opens an unfinished session — blind ---------------------------------- */
-  const created = await createInstanceFromTemplate({
+  const created = await createSessionFromTemplate({
     templateRecordId: TEMPLATE_ID,
     initiatorName: "Avery Coach",
     counterpartyName: "Rowan Coach",
@@ -129,7 +129,7 @@ async function main() {
   });
   const freshRelation = (
     await db.query("SELECT relationship_id FROM session WHERE record_id = $1", [
-      created.instanceRecordId,
+      created.sessionRecordId,
     ])
   ).rows[0].relationship_id;
 
@@ -156,7 +156,7 @@ async function main() {
   if (!claim2.ok) throw new Error(`second claimCoachInvite refused: ${claim2.reason}`);
 
   const blind = await readFlowScreen({
-    instanceRecordId: created.instanceRecordId,
+    sessionRecordId: created.sessionRecordId,
     token: undefined,
     viewerUserId: admin.user_id,
   });
@@ -182,7 +182,7 @@ async function main() {
 
   /* 3. a coach POSTing an answer is refused ------------------------------------------ */
   const submit = await submitAnswers({
-    instanceRecordId: created.instanceRecordId,
+    sessionRecordId: created.sessionRecordId,
     token: undefined,
     answers: new Map(),
   });
@@ -193,7 +193,7 @@ async function main() {
   );
   const opinionsWritten = await db.query(
     "SELECT count(*)::int AS n FROM opinion WHERE session_record_id = $1",
-    [created.instanceRecordId],
+    [created.sessionRecordId],
   );
   check(
     "the refused submit wrote no opinion",
@@ -202,10 +202,10 @@ async function main() {
   );
 
   /* cleanup --------------------------------------------------------------------------- */
-  // The fresh instance's record cascades its session (and the session's parties, opinions and
+  // The fresh session's record cascades its session (and the session's parties, opinions and
   // invite); the relationship the session belonged to is a separate row, so it is deleted next —
   // its members and coach invite cascade with it.
-  await db.query("DELETE FROM record WHERE id = $1", [created.instanceRecordId]);
+  await db.query("DELETE FROM record WHERE id = $1", [created.sessionRecordId]);
   await db.query("DELETE FROM relationship WHERE id = $1", [freshRelation]);
   await db.query("DELETE FROM relationship_member WHERE relationship_id = $1 AND role = 'coach'", [
     AVeryRelation,

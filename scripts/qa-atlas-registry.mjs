@@ -289,20 +289,20 @@ function paramResolvers(db, brand) {
         "the seeded demo dataset owns no member template (`record.owner_user_id` is null on every " +
         "row), and this screen opens a template the member authored — so there is no id to open",
     }),
-    "/admin/instances/[id]": async () => ({ id: db?.instanceId ?? null }),
-    "/admin/instances/[id]/report": async () => ({ id: db?.instanceId ?? null }),
+    "/admin/instances/[id]": async () => ({ id: db?.sessionId ?? null }),
+    "/admin/instances/[id]/report": async () => ({ id: db?.sessionId ?? null }),
     "/dashboard/relationships/[id]": async () => ({ id: db?.memberRelationshipId ?? null }),
-    "/assessment/instances/[instanceId]": async () => ({ instanceId: db?.instanceId ?? null }),
+    "/assessment/instances/[instanceId]": async () => ({ sessionId: db?.sessionId ?? null }),
     "/assessment/instances/[instanceId]/report": async () => ({
-      instanceId: db?.instanceId ?? null,
+      sessionId: db?.sessionId ?? null,
     }),
     "/assessment/instances/[instanceId]/answer": async () => ({
-      instanceId: db?.instanceId ?? null,
+      sessionId: db?.sessionId ?? null,
     }),
     "/assessment/instances/[instanceId]/accept": async () => ({
-      instanceId: db?.instanceId ?? null,
+      sessionId: db?.sessionId ?? null,
     }),
-    "/assessment/instances/[instanceId]/sent": async () => ({ instanceId: db?.instanceId ?? null }),
+    "/assessment/instances/[instanceId]/sent": async () => ({ sessionId: db?.sessionId ?? null }),
     "/invite/[token]": Object.assign(async () => ({ token: db?.inviteToken ?? null }), {
       reason:
         "the demo branch holds no claimable invite token — `session_invite` stores `token_hash`, and " +
@@ -350,7 +350,7 @@ function fillParams(pattern, values) {
  * Every row the atlas documents, in `budget.ts` key order.
  *
  * `db` carries the demo branch's identifiers (`{ templateSlug, templateId, relationshipId,
- * memberRelationshipId, instanceId, handle, inviteToken }`); pass `null` to derive the row set with
+ * memberRelationshipId, sessionId, handle, inviteToken }`); pass `null` to derive the row set with
  * no database, which is what the static check does — a row whose params cannot be resolved then
  * reports its skip reason instead of a URL.
  */

@@ -35,7 +35,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 
-import type { Assessment, AssessmentInstance } from "../content/assessment";
+import type { Assessment, AssessmentSession } from "../content/assessment";
 import {
   BUNDLE_FORMAT,
   BUNDLE_VERSION,
@@ -52,7 +52,7 @@ import {
   type DatasetPayload,
   type TemplateBundle,
 } from "../content/bundle";
-import { assessmentInstances, assessments } from "../data/assessments";
+import { assessmentSessions, assessments } from "../data/assessments";
 
 /* ------------------------------------------------------------------ *
  * Where things live
@@ -133,7 +133,7 @@ export const exitCodeFor = (error: BundleError): number => (error.code === "usag
 
 export interface StoreRecords {
   readonly templates: readonly Assessment[];
-  readonly instances: readonly AssessmentInstance[];
+  readonly instances: readonly AssessmentSession[];
 }
 
 /** Absent (the fixtures are active) · invalid (E33's finding) · valid (the active set). */
@@ -197,7 +197,7 @@ function activeRecords(file: string): { records: StoreRecords; fromStore: boolea
     );
   }
   return {
-    records: { templates: [...assessments], instances: [...assessmentInstances] },
+    records: { templates: [...assessments], instances: [...assessmentSessions] },
     fromStore: false,
   };
 }
@@ -242,7 +242,7 @@ export function readAppVersion(): string {
 function buildDatasetBundle(
   records: {
     readonly templates: readonly Assessment[];
-    readonly instances: readonly AssessmentInstance[];
+    readonly instances: readonly AssessmentSession[];
   },
   appVersion: string,
 ): DatasetBundle {
@@ -511,7 +511,7 @@ export function demoBundleProblems(options: DemoBundleOptions = {}): string[] {
     options.appVersion ?? (parsed.ok ? parsed.bundle.appVersion : readAppVersion());
 
   const canonical = serializeBundle(
-    canonicalDemoBundle(assessments, assessmentInstances, appVersion),
+    canonicalDemoBundle(assessments, assessmentSessions, appVersion),
   );
 
   const problems: string[] = [];
@@ -532,7 +532,7 @@ export function writeDemoBundle(options: DemoBundleOptions = {}): ExportResult<D
   const file = options.file ?? DEMO_BUNDLE_FILE;
   const bundle = canonicalDemoBundle(
     assessments,
-    assessmentInstances,
+    assessmentSessions,
     options.appVersion ?? readAppVersion(),
   );
   writeFileAtomic(file, serializeBundle(bundle));

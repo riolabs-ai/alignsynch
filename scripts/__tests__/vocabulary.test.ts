@@ -8,7 +8,7 @@
  *   the extraction   a comment is not copy, an `id` is a handle, a `href` is a route, a template
  *                    substitution is filled at build time
  *   the masking      a `{token}` fill is a count a component interpolates, not a sentence; a brace
- *                    group with a space in it is prose and is still read; `<instance-id>` is prose
+ *                    group with a space in it is prose and is still read; `<session-id>` is prose
  *   the render set   a gated page exempts its fixture, an override replaces the shared one, the
  *                    knowledge base this brand serves is walked and the template's is not
  *   the allowance    exact file and exact string, no file-level hole, and a row nothing uses is a
@@ -108,7 +108,7 @@ describe("readerStrings — the extraction E41 inherits from E37", () => {
   it("does not read an object key — the key is the join, not the sentence", () => {
     const fixture = file(
       "data/pages/demo.ts",
-      'export const demoCopy = { instances: "Relationships made" };',
+      'export const demoCopy = { sessions: "Relationships made" };',
     );
 
     assert.deepEqual(values(fixture), ["Relationships made"]);

@@ -136,7 +136,7 @@ async function recordUnlockSeen(screen: FlowScreen): Promise<void> {
     await markUnlockSeen({ sessionRecordId: screen.sessionRecordId, role: screen.viewer.role });
   } catch (error) {
     if (!(error instanceof DatabaseUnavailableError)) throw error;
-    console.error("instance screen: the unlock mark could not be written", error);
+    console.error("session screen: the unlock mark could not be written", error);
   }
 }
 
@@ -161,7 +161,7 @@ async function readStepsFor(detail: {
     return await readStepsByRelationship(detail.relationshipId);
   } catch (error) {
     if (!(error instanceof DatabaseUnavailableError)) throw error;
-    console.error("instance screen: the Steps could not be read", error);
+    console.error("session screen: the Steps could not be read", error);
     return [];
   }
 }

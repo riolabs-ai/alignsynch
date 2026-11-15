@@ -64,7 +64,7 @@ import TemplateLibraryPage from "@/app/(mainlayout)/templates/relationship/page"
 
 const ACCOUNT = "account-a-avery";
 
-/** The fixture's templates as the library read would hand them over — no author, no instances. */
+/** The fixture's templates as the library read would hand them over — no author, no sessions. */
 const catalogueRows: readonly LibraryTemplate[] = assessments
   .filter((template) => template.status !== "draft")
   .map((template) => ({
@@ -75,7 +75,7 @@ const catalogueRows: readonly LibraryTemplate[] = assessments
     status: template.status,
     createdAt: template.date,
     aspectCount: template.items.length,
-    instanceCount: 0,
+    sessionCount: 0,
     authorship: "built-in" as const,
   }));
 
@@ -130,7 +130,7 @@ describe("every purchasable type has one template, built from the type", () => {
   });
 
   it("takes the type's own Aspects, in order, rather than a second copy of the questions", () => {
-    // The two hand-authored templates keep the Aspects their instances were copied from (E31
+    // The two hand-authored templates keep the Aspects their sessions were copied from (E31
     // pins that), so they are the one deliberate exception; every other type is the source.
     const authored = new Set(["staff-manager", "parent-child"]);
 
@@ -318,9 +318,9 @@ describe("the card's own controls", () => {
 
     for (const type of purchasableRelationshipTypes) {
       const card = cardOf(html, type.id);
-      // Every catalogue row is a published platform template with no instances, so the three
+      // Every catalogue row is a published platform template with no sessions, so the three
       // facts that used to repeat on all 27 cards say nothing and are not drawn.
-      expect(card).not.toContain("data-template-instances");
+      expect(card).not.toContain("data-template-sessions");
       expect(card).not.toContain('data-template-status="published"');
       expect(wordsOf(card)).not.toContain("Created");
       // Duplicating a built-in is always allowed; archiving one is not.

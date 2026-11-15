@@ -334,7 +334,7 @@ const builtIn: LibraryTemplate = {
   status: "published",
   createdAt: "2026-10-01T09:00:00.000Z",
   aspectCount: 5,
-  instanceCount: 0,
+  sessionCount: 0,
   authorship: "built-in",
 };
 
@@ -347,7 +347,7 @@ const draftedByA: LibraryTemplate = {
   status: "draft",
   createdAt: "2026-11-01T09:00:00.000Z",
   aspectCount: 2,
-  instanceCount: 0,
+  sessionCount: 0,
   authorship: "mine",
 };
 

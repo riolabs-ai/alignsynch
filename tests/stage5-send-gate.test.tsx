@@ -71,7 +71,7 @@ function stage(paid?: boolean): string {
       template: TEMPLATE,
       draft: DRAFT,
       backHref: "/back",
-      instanceRecordId: "assessment-instance-brother",
+      sessionRecordId: "assessment-instance-brother",
       problem: null,
       ...(paid === undefined ? {} : { initialPaid: paid }),
     }),
@@ -83,7 +83,7 @@ function walkStep(step: PayFlowStep): string {
   return renderToStaticMarkup(
     createElement(InviteWalk, {
       copy: assessmentCreatePageCopy,
-      instanceRecordId: "assessment-instance-brother",
+      sessionRecordId: "assessment-instance-brother",
       relationshipId: "relationship-brother",
       paid: true,
       onPaid: () => undefined,

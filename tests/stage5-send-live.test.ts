@@ -144,7 +144,7 @@ live("stage 5's Send reads the membership fact from the table that owns it", () 
     // pre-#948 query this call threw `42703 column r.method_captured_at does not exist`, which is
     // the 500 every send produced — the throw is what this assertion is about.
     const result = await sendDraftInvitation({
-      instanceRecordId: `${relationshipId}-session`,
+      sessionRecordId: `${relationshipId}-session`,
       viewerUserId: `${relationshipId}-payer`,
       now: NOW,
     });
@@ -160,7 +160,7 @@ live("stage 5's Send reads the membership fact from the table that owns it", () 
     // the case fails on a product that is working.
     await liveMembership(`${relationshipId}-payer`);
     const result = await sendDraftInvitation({
-      instanceRecordId: `${relationshipId}-session`,
+      sessionRecordId: `${relationshipId}-session`,
       viewerUserId: `${relationshipId}-payer`,
       now: NOW,
     });

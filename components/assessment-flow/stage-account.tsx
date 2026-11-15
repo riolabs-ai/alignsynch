@@ -100,12 +100,7 @@ export function StageAccount({
           foot — one advancing control per stage, the same shape as the four stages around it. It is
           absent on the re-entered state, where the advance is a link. */}
       {advanceHref === undefined ? (
-        <form
-          id={commitFormId}
-          action={CREATE_SESSION_PATH}
-          method="post"
-          data-create-draft="true"
-        >
+        <form id={commitFormId} action={CREATE_SESSION_PATH} method="post" data-create-draft="true">
           <input type="hidden" name="templateRecordId" value={template.recordId} />
           <input type="hidden" name="draft" value="1" />
         </form>

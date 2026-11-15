@@ -1030,8 +1030,7 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
       return {
         ok: false,
         code: "already-bound",
-        reason:
-          "that session already has a Counterparty; a second one would answer in their place",
+        reason: "that session already has a Counterparty; a second one would answer in their place",
       };
     }
     await client.query("UPDATE session_invite SET claimed_at = $2 WHERE session_record_id = $1", [
@@ -1205,11 +1204,7 @@ export async function resendInvite(input: ResendInput): Promise<ResendResult> {
     // the signed-in account. A role out of Postgres, never a field in the post.
     const viewerRole =
       (await partyRoleForTokens(client, input.sessionRecordId, input.viewerTokens ?? [])) ??
-      (await partyRoleForUser(
-        client,
-        input.sessionRecordId,
-        normalizedUserId(input.viewerUserId),
-      ));
+      (await partyRoleForUser(client, input.sessionRecordId, normalizedUserId(input.viewerUserId)));
 
     // `complete` is derived, not stored: both parties answered every Aspect of the session's own
     // copy. Only asked when there is an invitation to reissue — a session with no invite row is
@@ -1401,11 +1396,7 @@ export async function sendDraftInvitation(input: {
   try {
     viewerRole =
       (await partyRoleForTokens(reader, input.sessionRecordId, input.viewerTokens ?? [])) ??
-      (await partyRoleForUser(
-        reader,
-        input.sessionRecordId,
-        normalizedUserId(input.viewerUserId),
-      ));
+      (await partyRoleForUser(reader, input.sessionRecordId, normalizedUserId(input.viewerUserId)));
   } finally {
     reader.release();
   }
@@ -2045,11 +2036,7 @@ export async function acceptSession(input: AcceptInput): Promise<AcceptResult> {
       (input.token === undefined || input.token === ""
         ? undefined
         : await partyRoleOf(client, input.sessionRecordId, input.token)) ??
-      (await partyRoleForUser(
-        client,
-        input.sessionRecordId,
-        normalizedUserId(input.viewerUserId),
-      ));
+      (await partyRoleForUser(client, input.sessionRecordId, normalizedUserId(input.viewerUserId)));
     if (role === undefined) {
       await client.query("ROLLBACK");
       return {
@@ -2301,11 +2288,7 @@ export async function writeStep(input: StepWriteInput): Promise<StepWriteResult>
       (input.token === undefined || input.token === ""
         ? undefined
         : await partyRoleOf(client, input.sessionRecordId, input.token)) ??
-      (await partyRoleForUser(
-        client,
-        input.sessionRecordId,
-        normalizedUserId(input.viewerUserId),
-      ));
+      (await partyRoleForUser(client, input.sessionRecordId, normalizedUserId(input.viewerUserId)));
     if (role === undefined) {
       await client.query("ROLLBACK");
       return {

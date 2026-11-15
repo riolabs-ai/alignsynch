@@ -24,7 +24,7 @@
  * ## What "the modules it imports directly" means
  *
  * One level for the **centring** rule: the page's own file plus every module it names in an import.
- * That is where a page-level shell lives — `instance-view.tsx`, `invite-view.tsx`,
+ * That is where a page-level shell lives — `session-view.tsx`, `invite-view.tsx`,
  * `report-view.tsx` were each imported by exactly one page and each drew its own container.
  *
  * One level for the **column** rule, plus one more, because the create flow's stages moved their

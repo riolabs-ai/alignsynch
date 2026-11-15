@@ -179,7 +179,7 @@ describe("V31 — a seeded relationship agrees with the lifecycle its dataset au
     expect(problems[0].message).toContain("no relationship row");
   });
 
-  it("reports every authored instance, not just the first one", () => {
+  it("reports every authored session, not just the first one", () => {
     const problems = seededRelationshipProblems([
       coherentRow({ relationship_status: "draft" }),
       coherentRow({
@@ -195,7 +195,7 @@ describe("V31 — a seeded relationship agrees with the lifecycle its dataset au
 });
 
 describe("V31 — the wired check asks for the dataset's lifecycle", () => {
-  it("derives the expectation from the instance and flags the row that disagrees", async () => {
+  it("derives the expectation from the session and flags the row that disagrees", async () => {
     const calls: { text: string; values: unknown[] }[] = [];
     const client = {
       async query(text: string, values: unknown[]) {
@@ -240,7 +240,7 @@ describe("V31 — the wired check asks for the dataset's lifecycle", () => {
     expect(calls[0].values[0]).toEqual(["assessment-instance-avery-rowan"]);
   });
 
-  it("asks nothing when the fixture authors no instance", async () => {
+  it("asks nothing when the fixture authors no session", async () => {
     const client = {
       async query() {
         throw new Error("no query should be issued");

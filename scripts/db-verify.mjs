@@ -597,7 +597,7 @@ export function publishedWithoutVersionProblems(records) {
 
 /**
  * V21 over the fixture's own ids — the whole check, and the only part of this script that does not
- * iterate `listAssessmentInstances()`.
+ * iterate `listAssessmentSessions()`.
  *
  * **Only the instances `data/assessments.ts` authors are checked**, and the ids are read from the
  * fixture on every run: production also holds instances people created in the app
@@ -619,7 +619,7 @@ export async function seededInstanceStatusProblems(client, authoredInstances) {
   if (authored.length === 0) return { problems, complete: 0, authored: 0, matched: 0 };
 
   const { seededLifecycleOf } = await import("@/content/assessment.ts");
-  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { sessionStatusOf: instanceStatusOf } = await import("@/lib/flow/state.ts");
   const { rows } = await client.query(SEEDED_STATUS_SQL, [authored.map((instance) => instance.id)]);
   const rowById = new Map(rows.map((row) => [row.record_id, row]));
   const lifecycleById = new Map(
@@ -858,19 +858,19 @@ export async function seededRelationshipCoherenceProblems(client, authoredInstan
 async function main() {
   loadEnv();
   const {
-    listAssessmentInstances,
-    readAssessmentInstanceRowsBySlug,
+    listAssessmentSessions,
+    readAssessmentSessionRowsBySlug,
     readAssessmentTemplateRowsById,
   } = await import("@/lib/db/assessments.ts");
   const {
-    assessmentInstanceFromRows,
+    assessmentSessionFromRows,
     assessmentTemplateFromPayload,
     assessmentTemplateFromRows,
     authoredAspectProblems,
     copyDriftProblems,
     itemIdsOf,
   } = await import("@/lib/db/rows.ts");
-  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { sessionStatusOf: instanceStatusOf } = await import("@/lib/flow/state.ts");
 
   // The SQL checks run on the unpooled URL, like the writes; the data-layer reads use the
   // runtime pool, which is the path the page takes.
@@ -1221,7 +1221,7 @@ async function main() {
 
     if (missing.length > 0 || !hasSettingColumn) return;
 
-    const instances = await listAssessmentInstances();
+    const instances = await listAssessmentSessions();
     let templatesChecked = 0;
     /**
      * How many copies authored their own list (#699) — counted so the verdict line proves V4's
@@ -1233,7 +1233,7 @@ async function main() {
     // V12 — the Setting's vocabulary and the fixture parity (#259). The fixture map is
     // `data/assessments.ts` itself, not a list copied into this script: a setting written by
     // `db:seed` and a setting authored in the fixture are the same value or they are drift.
-    const { assessmentInstances: authoredInstances } = await import("@/data/assessments.ts");
+    const { assessmentSessions: authoredInstances } = await import("@/data/assessments.ts");
     const authoredSettingOf = new Map(
       authoredInstances.map((instance) => [instance.id, instance.setting]),
     );
@@ -1259,7 +1259,7 @@ async function main() {
     const settingsChecked = [];
 
     for (const listed of instances) {
-      const rows = await readAssessmentInstanceRowsBySlug(listed.slug);
+      const rows = await readAssessmentSessionRowsBySlug(listed.slug);
       if (rows === undefined) {
         fail("V3", `instance "${listed.slug}" is listed but has no readable record row`);
         continue;
@@ -1322,7 +1322,7 @@ async function main() {
         // branch was taken rather than assumed.
         authoredCopies += 1;
         for (const problem of authoredAspectProblems({
-          instanceId: listed.recordId,
+          sessionId: listed.recordId,
           items: rows.items,
         })) {
           fail("V4", problem);
@@ -1334,7 +1334,7 @@ async function main() {
             `template version "${bound.template_version_id}"`,
           );
           for (const problem of copyDriftProblems({
-            instanceId: listed.recordId,
+            sessionId: listed.recordId,
             templateId: bound.template_version_id,
             copyIds: itemIdsOf(rows.items),
             templateIds: offered.items.map((item) => item.id),
@@ -1551,7 +1551,7 @@ async function main() {
         }
 
         try {
-          assessmentInstanceFromRows(rows);
+          assessmentSessionFromRows(rows);
         } catch (error) {
           fail("V7", error.message);
         }
@@ -1559,7 +1559,7 @@ async function main() {
     }
 
     // V21 — the fixture's own instances read `complete` (#427/R2 follow-up). The one check here
-    // that does not iterate `listAssessmentInstances()`: production also holds instances people
+    // that does not iterate `listAssessmentSessions()`: production also holds instances people
     // created in the app, and an `answering` one of those is a person mid-flow, not drift. The ids
     // come from `data/assessments.ts` (imported above for V12), so the check follows the fixture
     // rather than a copy of it. A seeded instance that is not `complete` is either a seed older
@@ -1665,7 +1665,7 @@ async function main() {
     //       assessment yet". Skipped — with a line in the summary — when `demo_account` is
     //       empty, because that is the flag being off, not drift.
     //
-    // The two members' party map is `DEMO_INSTANCE_ID` + the button's own role name; the admin
+    // The two members' party map is `DEMO_SESSION_ID` + the button's own role name; the admin
     // answers no instance (`db:seed` gives it `party: null`, and `destinationFor()` sends it to the
     // operator registry, which no party row can make true or false). Kept as two lines here rather
     // than a shared constant the seed does not import, which would be a third copy of the mapping
@@ -1704,7 +1704,7 @@ async function main() {
       }
     }
 
-    const { DEMO_ACCOUNT_EMAILS, DEMO_INSTANCE_ID } = await import("@/lib/auth/demo-accounts.ts");
+    const { DEMO_ACCOUNT_EMAILS, DEMO_SESSION_ID } = await import("@/lib/auth/demo-accounts.ts");
     const { rows: demoTable } = await client.query(
       "SELECT to_regclass('public.demo_account') IS NOT NULL AS present",
     );
@@ -1723,19 +1723,19 @@ async function main() {
         if (accountId === undefined) continue;
         const { rows: seat } = await client.query(
           "SELECT user_id, name FROM party WHERE session_record_id = $1 AND role = $2",
-          [DEMO_INSTANCE_ID, role],
+          [DEMO_SESSION_ID, role],
         );
         const bound = seat[0];
         seededBindings += 1;
         if (bound === undefined) {
           fail(
             "V10",
-            `instance "${DEMO_INSTANCE_ID}": ${email} owns no ${role} party row — the seed's binding has nothing to be on (run \`pnpm db:seed\`)`,
+            `instance "${DEMO_SESSION_ID}": ${email} owns no ${role} party row — the seed's binding has nothing to be on (run \`pnpm db:seed\`)`,
           );
         } else if (bound.user_id !== accountId) {
           fail(
             "V10",
-            `instance "${DEMO_INSTANCE_ID}": the ${role} ("${bound.name}") is bound to ${bound.user_id === null ? "no account" : `account "${bound.user_id}"`}, not to ${email}'s ("${accountId}") — the seeded binding moved (run \`pnpm db:seed\`)`,
+            `instance "${DEMO_SESSION_ID}": the ${role} ("${bound.name}") is bound to ${bound.user_id === null ? "no account" : `account "${bound.user_id}"`}, not to ${email}'s ("${accountId}") — the seeded binding moved (run \`pnpm db:seed\`)`,
           );
         }
       }

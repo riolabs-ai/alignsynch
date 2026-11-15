@@ -29,7 +29,7 @@ import { assessmentAnswerPageCopy } from "@/data/pages/assessment-answer";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
 import { answerGateOf, ownScoreOf, type AnswerGate } from "@/lib/flow/answer-gate";
-import { projectScreen, type FlowAspect, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowAspect, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -37,11 +37,11 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-answer-gate-test";
+const SESSION_ID = "session-answer-gate-test";
 const TIME = "aspect-time-together";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -51,8 +51,8 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
 ];
 
 /** The same two seats, with an instant on the ones a test says have accepted. */
@@ -69,7 +69,7 @@ const ACCEPTED_AT = "2026-11-01T12:00:00.000Z";
 /** One Aspect's answers, as a row: `own` is whoever the projection was asked for. */
 function opinion(role: PartyRole, itemId: string, feel: number, wish: number): OpinionRow {
   return {
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     item_id: itemId,
     feel,
@@ -82,22 +82,22 @@ function opinion(role: PartyRole, itemId: string, feel: number, wish: number): O
 function rowsWith(
   opinions: readonly OpinionRow[],
   accepted: readonly PartyRole[] = [],
-): FlowInstanceRows {
+): FlowSessionRows {
   const count = (role: PartyRole) => opinions.filter((entry) => entry.role === role).length;
   return {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "answer-gate-test",
       record_type: "assessment",
       status: "draft",
       date: new Date("2026-11-01T12:00:00.000Z"),
       title: template.title,
-      summary: "an instance under test",
+      summary: "a session under test",
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-test",
       mode: "basic",
@@ -131,7 +131,7 @@ function gateFor(
 ): AnswerGate {
   const screen = screenFor(role, opinions, accepted);
   return answerGateOf({
-    instanceRecordId: screen.instanceRecordId,
+    sessionRecordId: screen.sessionRecordId,
     viewerRole: screen.viewer.role,
     status: screen.status,
     viewerAccepted: screen.viewerAccepted,
@@ -167,7 +167,7 @@ function render(
       gate,
       viewer,
       mode: "basic",
-      backHref: `/assessment/instances/${INSTANCE_ID}`,
+      backHref: `/assessment/instances/${SESSION_ID}`,
     }),
   );
 }
@@ -198,7 +198,7 @@ describe("answerGateOf: which surface the page draws", () => {
     const gate = gateFor("initiator");
     expect(gate.state).toBe("sheet");
     expect(gate.role).toBe("initiator");
-    expect(gate.action).toBe(`/assessment/instances/${INSTANCE_ID}/answers`);
+    expect(gate.action).toBe(`/assessment/instances/${SESSION_ID}/answers`);
     expect(gate.aspects).toBe(items.length);
     expect(gate.answered).toBe(0);
   });
@@ -249,16 +249,16 @@ describe("answerGateOf: which surface the page draws", () => {
 
     const other = gateFor("counterparty", partial, ["initiator"]);
     expect(other.state).toBe("sheet");
-    expect(other.action).toBe(`/assessment/instances/${INSTANCE_ID}/answers`);
+    expect(other.action).toBe(`/assessment/instances/${SESSION_ID}/answers`);
   });
 });
 
 describe("the sheet's markup", () => {
   const aspects = items.map((item) => aspectWith(item.item_id, null));
 
-  it("is a plain POST to the instance's answers endpoint", () => {
+  it("is a plain POST to the session's answers endpoint", () => {
     const html = render(gateFor("initiator"), aspects);
-    expect(html).toContain(`action="/assessment/instances/${INSTANCE_ID}/answers"`);
+    expect(html).toContain(`action="/assessment/instances/${SESSION_ID}/answers"`);
     expect(html).toContain('method="post"');
   });
 
@@ -284,7 +284,7 @@ describe("the sheet's markup", () => {
     }
   });
 
-  it("asks only the kinds a Basic Mode instance defines", () => {
+  it("asks only the kinds a Basic Mode session defines", () => {
     const html = render(gateFor("initiator"), aspects);
     expect(html).toContain(`name="feel:${TIME}"`);
     expect(html).toContain(`name="wish:${TIME}"`);

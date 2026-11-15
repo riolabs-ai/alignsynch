@@ -77,7 +77,7 @@ function walk(step?: PayFlowStep, paid = false): string {
     renderToStaticMarkup(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: RELATIONSHIP,
         paid,
         onPaid: () => undefined,

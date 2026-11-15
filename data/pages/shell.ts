@@ -257,7 +257,7 @@ export function shellCopy(brand: Brand): PageCopy {
        * `quiz-tools` is the heading over the quiz product's own menu, which an elevated viewer
        * gets below the alignment menu (see `lib/nav.ts` for the capability and its stub).
        *
-       * `console-gaps` and `admin-sessions` are the operator's rows (`/admin/gaps` console 4/5,
+       * `console-gaps` and `admin-instances` are the operator's rows (`/admin/gaps` console 4/5,
        * `/admin/instances` console 3/5). Each is drawn only for a viewer carrying `admin-console`,
        * because a row that leads to a 404 for a member advertises a surface the member must not
        * learn exists — a 404 is the whole refusal. A six-row menu for everybody else is the

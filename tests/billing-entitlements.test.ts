@@ -3,7 +3,7 @@
  *
  * The table is the card's own words turned into code:
  *
- *   Free   1 active instance, Basic Mode only
+ *   Free   1 active session, Basic Mode only
  *   Paid   unlimited, Basic and Advanced
  *
  * **What the table is not, since #835, is the create-time gate.** `lib/flow/store.ts` asks one
@@ -28,7 +28,7 @@ import {
   checkoutRefusal,
   entitlementForPlan,
   entitlementOf,
-  FREE_ACTIVE_INSTANCE_LIMIT,
+  FREE_ACTIVE_SESSION_LIMIT,
   FREE_PLAN_ID,
   gateSummary,
   subscriptionGrantsPaid,
@@ -56,18 +56,18 @@ function subscription(over: Partial<Subscription> = {}): Subscription {
 }
 
 describe("plan → what the server allows", () => {
-  it("is the card's table: Free one instance and Basic only, paid unlimited and Advanced", () => {
+  it("is the card's table: Free one session and Basic only, paid unlimited and Advanced", () => {
     expect(gateSummary()).toEqual([
-      { plan: "Free", activeInstances: "1", relationships: "1", modes: "basic" },
+      { plan: "Free", activeSessions: "1", relationships: "1", modes: "basic" },
       {
         plan: "Basic",
-        activeInstances: "unlimited",
+        activeSessions: "unlimited",
         relationships: "unlimited",
         modes: "basic + advanced",
       },
       {
         plan: "Principal",
-        activeInstances: "unlimited",
+        activeSessions: "unlimited",
         relationships: "unlimited",
         modes: "basic + advanced",
       },
@@ -76,16 +76,16 @@ describe("plan → what the server allows", () => {
 
   it("gives the free plan exactly one slot and one mode", () => {
     const free = entitlementForPlan(FREE_PLAN_ID);
-    expect(free.maxActiveInstances).toBe(FREE_ACTIVE_INSTANCE_LIMIT);
+    expect(free.maxActiveSessions).toBe(FREE_ACTIVE_SESSION_LIMIT);
     expect(free.advancedMode).toBe(false);
     expect(free.allowedModes).toEqual([BASIC_MODE]);
     expect(free.paid).toBe(false);
   });
 
-  it("gives every paid tier unlimited instances and both modes", () => {
+  it("gives every paid tier unlimited sessions and both modes", () => {
     for (const planId of ["basic", "principal"] as const) {
       const paid = entitlementForPlan(planId);
-      expect(paid.maxActiveInstances).toBeNull();
+      expect(paid.maxActiveSessions).toBeNull();
       expect(paid.advancedMode).toBe(true);
       expect(paid.allowedModes).toEqual([BASIC_MODE, ADVANCED_MODE]);
       expect(paid.paid).toBe(true);

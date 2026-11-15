@@ -1,8 +1,8 @@
 /**
  * The gate refuses inside the store (#289, #505, #835) — not in a component, not in a route.
  *
- * This suite drives `createInstanceFromTemplate`, the one function through which an assessment
- * instance comes into being, and asserts that a refusal happens **before the transaction opens**:
+ * This suite drives `createSessionFromTemplate`, the one function through which an assessment
+ * session comes into being, and asserts that a refusal happens **before the transaction opens**:
  * the pool is never asked for a connection, so a refused create cannot leave a record, an item, a
  * party row or an invitation behind. That ordering is the difference between a gate and a
  * warning, and it is what "server-side enforcement" means here — no surface can bypass it by
@@ -24,7 +24,7 @@
  * `scripts/billing-smoke.mjs`, and `db:verify` is what proves the rows.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createInstanceFromTemplate, type CreateInstanceInput } from "@/lib/flow/store";
+import { createSessionFromTemplate, type CreateSessionInput } from "@/lib/flow/store";
 
 /**
  * The gate's inputs, and the sentinel that proves the store got past it.
@@ -61,7 +61,7 @@ vi.mock("@/lib/db/client", () => ({
   },
 }));
 
-function createInput(over: Partial<CreateInstanceInput> = {}): CreateInstanceInput {
+function createInput(over: Partial<CreateSessionInput> = {}): CreateSessionInput {
   return {
     templateRecordId: "assessment-relationship-basics",
     initiatorName: "Avery",
@@ -80,18 +80,18 @@ beforeEach(() => {
 });
 
 describe("a free account", () => {
-  it("creates its first Basic instance", async () => {
-    await expect(createInstanceFromTemplate(createInput())).rejects.toThrow(
+  it("creates its first Basic session", async () => {
+    await expect(createSessionFromTemplate(createInput())).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );
     expect(gate.poolConnects).toBe(1);
   });
 
-  it("creates an Advanced instance too — the trial is the Advanced entitlement (#835)", async () => {
+  it("creates an Advanced session too — the trial is the Advanced entitlement (#835)", async () => {
     // The path the issue was filed about: create → publish, no draft. It was refused
     // `mode-not-entitled` while create → draft → send handed over the same paid tier for seven
     // days. One answer now, and it is the trial's.
-    await expect(createInstanceFromTemplate(createInput({ mode: "advanced" }))).rejects.toThrow(
+    await expect(createSessionFromTemplate(createInput({ mode: "advanced" }))).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );
     expect(gate.poolConnects).toBe(1);
@@ -99,10 +99,10 @@ describe("a free account", () => {
 
   it("is refused a second Basic relationship, and the refusal names the plan's limit", async () => {
     // #505 — the plan's own limit. The sentence names the tier and the number the pricing page
-    // sells ("One active relationship at a time"), not an "assessment instance".
+    // sells ("One active relationship at a time"), not an "assessment session".
     gate.activeRelationships = 1;
 
-    await expect(createInstanceFromTemplate(createInput())).rejects.toMatchObject({
+    await expect(createSessionFromTemplate(createInput())).rejects.toMatchObject({
       code: "relationship-limit",
       message: expect.stringContaining("The Free plan includes 1 active relationship"),
     });
@@ -115,7 +115,7 @@ describe("a free account", () => {
     gate.activeRelationships = 1;
 
     await expect(
-      createInstanceFromTemplate(createInput({ mode: "advanced" })),
+      createSessionFromTemplate(createInput({ mode: "advanced" })),
     ).rejects.toMatchObject({
       code: "relationship-limit",
       message: expect.stringContaining("already has 1 active relationship"),
@@ -136,7 +136,7 @@ describe("a free account", () => {
 describe("a draft (#834)", () => {
   it("is written whatever Mode it asks for, and reaches the transaction", async () => {
     await expect(
-      createInstanceFromTemplate(createInput({ mode: "advanced", draft: true })),
+      createSessionFromTemplate(createInput({ mode: "advanced", draft: true })),
     ).rejects.toThrow("REACHED_THE_TRANSACTION");
     // The gate is before the transaction by design; reaching it is the proof the gate stood down.
     expect(gate.poolConnects).toBe(1);
@@ -145,7 +145,7 @@ describe("a draft (#834)", () => {
   it("is written even when the plan's relationship limit is already spent", async () => {
     gate.activeRelationships = 1;
 
-    await expect(createInstanceFromTemplate(createInput({ draft: true }))).rejects.toThrow(
+    await expect(createSessionFromTemplate(createInput({ draft: true }))).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );
     expect(gate.poolConnects).toBe(1);
@@ -157,7 +157,7 @@ describe("a draft (#834)", () => {
     gate.activeRelationships = 1;
 
     await expect(
-      createInstanceFromTemplate(createInput({ mode: "advanced", draft: false })),
+      createSessionFromTemplate(createInput({ mode: "advanced", draft: false })),
     ).rejects.toMatchObject({ code: "relationship-limit" });
     expect(gate.poolConnects).toBe(0);
   });
@@ -170,14 +170,14 @@ describe("a paid account", () => {
 
   it("is allowed a second, third, tenth relationship", async () => {
     gate.activeRelationships = 9;
-    await expect(createInstanceFromTemplate(createInput())).rejects.toThrow(
+    await expect(createSessionFromTemplate(createInput())).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );
     expect(gate.poolConnects).toBe(1);
   });
 
   it("is allowed Advanced Mode", async () => {
-    await expect(createInstanceFromTemplate(createInput({ mode: "advanced" }))).rejects.toThrow(
+    await expect(createSessionFromTemplate(createInput({ mode: "advanced" }))).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );
     expect(gate.poolConnects).toBe(1);
@@ -186,7 +186,7 @@ describe("a paid account", () => {
 
 describe("a signed-out create", () => {
   it("is not gated — there is no account to hold a plan", async () => {
-    await expect(createInstanceFromTemplate(createInput({ viewerUserId: null }))).rejects.toThrow(
+    await expect(createSessionFromTemplate(createInput({ viewerUserId: null }))).rejects.toThrow(
       "REACHED_THE_TRANSACTION",
     );
     expect(gate.poolConnects).toBe(1);

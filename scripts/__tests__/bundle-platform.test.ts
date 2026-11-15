@@ -33,7 +33,7 @@ import {
   serializeBundle,
   type PlatformPayload,
 } from "../../content/bundle";
-import { assessmentInstances, assessments } from "../../data/assessments";
+import { assessmentSessions, assessments } from "../../data/assessments";
 import { platformIdentities } from "../../data/platform-identities";
 import {
   buildIdentity,
@@ -147,7 +147,7 @@ describe("export → pack → unpack → pack is byte-identical", () => {
       "the unpacked bundle is the packed one, byte for byte",
     );
     assert.equal(unpacked.bundle.payload.content.templates.length, assessments.length);
-    assert.equal(unpacked.bundle.payload.content.instances.length, assessmentInstances.length);
+    assert.equal(unpacked.bundle.payload.content.instances.length, assessmentSessions.length);
 
     const again = packPackage({
       from: join(directory, "unpacked"),
@@ -213,10 +213,10 @@ describe("--subset prod strips demo personas and the relationships they hold", (
 
   it("refuses (B8) to drop a persona that leaves a real seat unowned", () => {
     const full = payloadCopy();
-    const instance = full.content.instances[0];
+    const session = full.content.instances[0];
     // One demo seat, one seat that belongs to nobody the package declares — a tenant
     // relationship a `prod` subset would delete if it cascaded on any demo party.
-    instance.parties[1].name = "Dana";
+    session.parties[1].name = "Dana";
 
     assert.throws(
       () => subsetPayload(full, { subset: "prod" }),
@@ -416,7 +416,7 @@ describe("bundleVersion 1 still imports", () => {
       bundleVersion: PLATFORM_BUNDLE_VERSION,
       kind: "dataset",
       appVersion: APP,
-      payload: { templates: [], instances: [] },
+      payload: { templates: [], sessions: [] },
     };
     const parsed = parseBundle(JSON.stringify(raw));
     assert.equal(parsed.ok, false);
@@ -494,7 +494,7 @@ describe("the platform payload's own references (B8)", () => {
  * ================================================================== */
 describe("the fixtures' dataset bundle still builds through the v1 path", () => {
   it("is the same bundle the fixtures produce", () => {
-    const bundle = canonicalDemoBundle(assessments, assessmentInstances, APP);
+    const bundle = canonicalDemoBundle(assessments, assessmentSessions, APP);
     assert.equal(bundle.bundleVersion, 1);
     assert.equal(bundle.kind, "dataset");
     const reparsed = parseBundle(serializeBundle(bundle));

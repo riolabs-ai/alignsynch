@@ -79,9 +79,7 @@ function sessionResults(): SearchPageRow[] {
   return assessmentSessions.map((session) => {
     const path = `/assessment/${session.slug}`;
     if (!isValidRoute(routeManifest, path)) {
-      throw new Error(
-        `data/searchdata: "${session.slug}" has no route — ${path} does not resolve`,
-      );
+      throw new Error(`data/searchdata: "${session.slug}" has no route — ${path} does not resolve`);
     }
     return {
       id: `assessment-${session.slug}`,

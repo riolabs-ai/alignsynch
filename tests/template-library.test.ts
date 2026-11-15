@@ -13,7 +13,7 @@
  *     all — with distinct markers, so a state is assertable without reading prose.
  *   * **the detail page is read-only and 404s a stranger's template.**
  *
- * The page modules are driven directly (the same way `tests/my-instances.test.ts` drives its
+ * The page modules are driven directly (the same way `tests/my-sessions.test.ts` drives its
  * route): `currentUser` and the two reads are mocked, so these cases prove the page's decisions
  * without a database, and the live proof against real rows is the acceptance run in the PR.
  */
@@ -79,7 +79,7 @@ const builtIn: LibraryTemplate = {
   status: "published",
   createdAt: "2026-10-01T09:00:00.000Z",
   aspectCount: 5,
-  instanceCount: 2,
+  sessionCount: 2,
   authorship: "built-in",
 };
 
@@ -92,7 +92,7 @@ const authoredByA: LibraryTemplate = {
   status: "published",
   createdAt: "2026-10-20T11:30:00.000Z",
   aspectCount: 3,
-  instanceCount: 1,
+  sessionCount: 1,
   authorship: "mine",
 };
 
@@ -103,7 +103,7 @@ const archivedByA: LibraryTemplate = {
   slug: "last-years-check-in",
   title: "Last Year's Check-In",
   status: "archived",
-  instanceCount: 4,
+  sessionCount: 4,
 };
 
 function asSignedIn(userId: string): void {
@@ -376,7 +376,7 @@ describe("the detail page", () => {
     expect(html).not.toContain("data-template-detail-archived");
   });
 
-  it("says what archiving did, and offers no way to start an instance from it", async () => {
+  it("says what archiving did, and offers no way to start a session from it", async () => {
     asSignedIn(ACCOUNT_A);
     readLibraryTemplate.mockResolvedValue({
       template: { ...authoredByA, status: "archived" },
@@ -386,7 +386,7 @@ describe("the detail page", () => {
 
     expect(html).toContain("data-template-detail-archived");
     expect(html).toContain("keeps its own copy of the Aspects");
-    expect(html).not.toContain("Start an instance");
+    expect(html).not.toContain("Start a session");
     expect(html).toContain("Unarchive");
   });
 });

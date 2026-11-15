@@ -1,7 +1,7 @@
 /**
  * A claim binds a browser to one party, and never reassigns a session (#202).
  *
- * The defect this file covers was found against a seeded instance: a signed-in Initiator
+ * The defect this file covers was found against a seeded session: a signed-in Initiator
  * who opened their own invitation link spent the token, and from then on their answers were
  * recorded as the Counterparty's — silently, so the Gap was computed between one person and
  * themselves. Three rules came out of it, and each has a test here:
@@ -18,10 +18,10 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
 import { InviteView } from "@/components/assessment-flow/invite-view";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { invitePageCopy } from "@/data/pages/invite";
 import { loginPageCopy } from "@/data/pages/login";
 import { signInDestination } from "@/lib/auth/next-path";
@@ -116,9 +116,9 @@ describe("partyTokensFrom", () => {
     expect(
       partyTokensFrom(
         jar([
-          { name: "flow_party_instance-a", value: "token-a" },
-          { name: "flow_invite_instance-a", value: "invite-a" },
-          { name: "flow_party_instance-b", value: "token-b" },
+          { name: "flow_party_session-a", value: "token-a" },
+          { name: "flow_invite_session-a", value: "invite-a" },
+          { name: "flow_party_session-b", value: "token-b" },
           { name: "theme", value: "dark" },
         ]),
       ),
@@ -126,7 +126,7 @@ describe("partyTokensFrom", () => {
   });
 
   it("ignores a cleared cookie, so an empty value is not a party", () => {
-    expect(partyTokensFrom(jar([{ name: "flow_party_instance-a", value: "" }]))).toEqual([]);
+    expect(partyTokensFrom(jar([{ name: "flow_party_session-a", value: "" }]))).toEqual([]);
     expect(partyTokensFrom(jar([]))).toEqual([]);
   });
 });
@@ -158,8 +158,8 @@ describe("the invite fixture carries every band the page can ask for", () => {
     expect(itemLabel(claim, "confirm")).toContain("{counterparty}");
   });
 
-  it("has an answering-party band on the instance screen for both roles", () => {
-    const viewer = sectionOf(assessmentInstancePageCopy, "viewer");
+  it("has an answering-party band on the session screen for both roles", () => {
+    const viewer = sectionOf(assessmentSessionPageCopy, "viewer");
     expect(itemLabel(viewer, "initiator")).toContain("{name}");
     expect(itemLabel(viewer, "initiator")).toContain("the Initiator");
     expect(itemLabel(viewer, "counterparty")).toContain("the Counterparty");
@@ -173,7 +173,7 @@ describe("the invite fixture carries every band the page can ask for", () => {
 function preview(over: Partial<InvitePreview> = {}): InvitePreview {
   return {
     state: "claimable",
-    instanceRecordId: "instance-1",
+    sessionRecordId: "session-1",
     initiatorName: "Avery",
     counterpartyName: "Rowan",
     templateTitle: "Relationship Basics",
@@ -308,16 +308,16 @@ describe("the counterparty wizard", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * What the instance screen renders
+ * What the session screen renders
  * ------------------------------------------------------------------ */
 
 function screen(role: "initiator" | "counterparty"): FlowScreen {
   return {
-    instanceRecordId: "instance-1",
+    sessionRecordId: "session-1",
     relationshipId: "relationship-1",
-    slug: "relationship-basics-instance-1",
+    slug: "relationship-basics-session-1",
     title: "Relationship Basics",
-    summary: "An instance between two people.",
+    summary: "A session between two people.",
     status: "awaiting_counterparty",
     mode: "basic",
     setting: "soft",
@@ -339,12 +339,12 @@ function screen(role: "initiator" | "counterparty"): FlowScreen {
   };
 }
 
-describe("the instance screen names the answering party on every visit", () => {
+describe("the session screen names the answering party on every visit", () => {
   it("says the session answers as the Initiator", () => {
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen: screen("initiator"),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
       }),
     );
     expect(html).toContain("You are answering as Avery, the Initiator.");
@@ -353,9 +353,9 @@ describe("the instance screen names the answering party on every visit", () => {
 
   it("says the session answers as the Counterparty", () => {
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen: screen("counterparty"),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
       }),
     );
     expect(html).toContain("You are answering as Rowan, the Counterparty.");
@@ -405,8 +405,8 @@ describe("the wizard's addresses", () => {
     }
   });
 
-  it("lands a submit on the instance's confirmation state", () => {
-    expect(submittedPath("instance-1")).toBe("/assessment/instances/instance-1?submitted=1");
+  it("lands a submit on the session's confirmation state", () => {
+    expect(submittedPath("session-1")).toBe("/assessment/instances/session-1?submitted=1");
   });
 });
 
@@ -473,9 +473,9 @@ describe("invitePromptFor", () => {
 describe("the post-submit confirmation", () => {
   const render = (role: "initiator" | "counterparty", submitted: boolean) =>
     renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen: screen(role),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
         submitted,
       }),
     );
@@ -485,7 +485,7 @@ describe("the post-submit confirmation", () => {
     expect(html).toContain("Thank you — your answers are saved");
     expect(html).toContain("Avery answers the same questions from their side and accepts");
     expect(html).toContain("How to change an opinion");
-    expect(html).toContain('href="/assessment/instances/instance-1/answer"');
+    expect(html).toContain('href="/assessment/instances/session-1/answer"');
     expect(html).toContain('data-submitted-confirmation=""');
   });
 

@@ -30,12 +30,12 @@ import {
   acceptedBy,
   acceptedCount,
   answersRemaining,
-  instanceStatusOf,
+  sessionStatusOf,
   maySubmit,
   parseSubmission,
   visibleRoles,
   waitingOn,
-  type InstanceProgress,
+  type SessionProgress,
 } from "@/lib/flow/state";
 import { answersFrom } from "@/lib/flow/answers";
 import { BASIC_OPINION_KINDS, opinionKindsFor } from "@/content/assessment";
@@ -47,7 +47,7 @@ const aspects = ["aspect-time-together", "aspect-money"];
  * A finished session by default: every Aspect answered **and both seats accepted**, which is
  * what `complete` means since #R2. Each case overrides only the count it is about.
  */
-function progress(overrides: Partial<InstanceProgress> = {}): InstanceProgress {
+function progress(overrides: Partial<SessionProgress> = {}): SessionProgress {
   return {
     aspectCount: 2,
     hasCounterparty: true,
@@ -59,26 +59,26 @@ function progress(overrides: Partial<InstanceProgress> = {}): InstanceProgress {
   };
 }
 
-describe("the instance's status is derived, never stored", () => {
+describe("the session's status is derived, never stored", () => {
   it("is awaiting_counterparty until the invite is claimed", () => {
-    expect(instanceStatusOf(progress({ hasCounterparty: false, counterpartyAnswered: 0 }))).toBe(
+    expect(sessionStatusOf(progress({ hasCounterparty: false, counterpartyAnswered: 0 }))).toBe(
       "awaiting_counterparty",
     );
   });
 
   it("is answering while either party still owes an Aspect", () => {
-    expect(instanceStatusOf(progress({ counterpartyAnswered: 0 }))).toBe("answering");
-    expect(instanceStatusOf(progress({ initiatorAnswered: 1 }))).toBe("answering");
+    expect(sessionStatusOf(progress({ counterpartyAnswered: 0 }))).toBe("answering");
+    expect(sessionStatusOf(progress({ initiatorAnswered: 1 }))).toBe("answering");
   });
 
   it("is complete only when both parties answered every Aspect and both accepted", () => {
-    expect(instanceStatusOf(progress())).toBe("complete");
+    expect(sessionStatusOf(progress())).toBe("complete");
     expect(answersRemaining(progress())).toEqual({ initiator: 0, counterparty: 0 });
   });
 
   it("never calls a copy with no Aspects complete", () => {
     expect(
-      instanceStatusOf({
+      sessionStatusOf({
         aspectCount: 0,
         hasCounterparty: true,
         initiatorAnswered: 0,
@@ -110,19 +110,19 @@ describe("the instance's status is derived, never stored", () => {
  */
 describe("acceptance is the completion hinge", () => {
   it("keeps a fully answered session in `answering` until both accept", () => {
-    expect(instanceStatusOf(progress({ initiatorAccepted: 0, counterpartyAccepted: 0 }))).toBe(
+    expect(sessionStatusOf(progress({ initiatorAccepted: 0, counterpartyAccepted: 0 }))).toBe(
       "answering",
     );
-    expect(instanceStatusOf(progress({ initiatorAccepted: 1, counterpartyAccepted: 0 }))).toBe(
+    expect(sessionStatusOf(progress({ initiatorAccepted: 1, counterpartyAccepted: 0 }))).toBe(
       "answering",
     );
-    expect(instanceStatusOf(progress({ initiatorAccepted: 0, counterpartyAccepted: 1 }))).toBe(
+    expect(sessionStatusOf(progress({ initiatorAccepted: 0, counterpartyAccepted: 1 }))).toBe(
       "answering",
     );
   });
 
   it("never completes on acceptance alone", () => {
-    expect(instanceStatusOf(progress({ counterpartyAnswered: 1 }))).toBe("answering");
+    expect(sessionStatusOf(progress({ counterpartyAnswered: 1 }))).toBe("answering");
   });
 
   it("names which seat has accepted, and counts them", () => {
@@ -228,7 +228,7 @@ describe("a submission is the whole sheet, validated by the model's own schema",
 /**
  * #213 — the mode decides the sheet, and the mode is an argument.
  *
- * `parseSubmission` takes the mode `submitAnswers` read from the locked instance row, so a
+ * `parseSubmission` takes the mode `submitAnswers` read from the locked session row, so a
  * post cannot choose which sheet it is judged against. Basic refuses a Think/Guess value
  * instead of dropping it; Advanced refuses a sheet that skips the pair.
  */
@@ -277,7 +277,7 @@ describe("the sheet a mode asks", () => {
   });
 });
 
-describe("a form post is read against the kinds the instance's mode asks", () => {
+describe("a form post is read against the kinds the session's mode asks", () => {
   it("keys answers by Aspect and refuses an Advanced kind in Basic Mode", () => {
     const form = new FormData();
     form.set("feel:aspect-money", "4");

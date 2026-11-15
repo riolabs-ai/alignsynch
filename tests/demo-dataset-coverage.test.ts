@@ -24,23 +24,23 @@ import {
   RELATIONSHIP_LIFECYCLE_STATUSES,
   seededLifecycleOf,
 } from "@/content/assessment";
-import { assessmentInstances } from "@/data/assessments";
+import { assessmentSessions } from "@/data/assessments";
 import { platformIdentities } from "@/data/platform-identities";
 import { LAPSE_REASONS } from "@/lib/relationship/membership";
 import { RELATIONSHIP_STATUSES } from "@/lib/relationship/status";
 
-/** The lifecycle each instance carries — the dataset seen through the model's one derivation. */
-const lifecycles = assessmentInstances.map((instance) => ({
-  instance,
-  lifecycle: seededLifecycleOf(instance),
+/** The lifecycle each session carries — the dataset seen through the model's one derivation. */
+const lifecycles = assessmentSessions.map((session) => ({
+  session,
+  lifecycle: seededLifecycleOf(session),
 }));
 
 /** Every seat the dataset puts a person in, by name and role. */
-const seats = assessmentInstances.flatMap((instance) =>
-  instance.parties.map((party) => ({
+const seats = assessmentSessions.flatMap((session) =>
+  session.parties.map((party) => ({
     name: party.name,
     role: party.role,
-    slug: instance.slug,
+    slug: session.slug,
   })),
 );
 
@@ -119,8 +119,8 @@ describe("the demo dataset covers every lifecycle word the model allows", () => 
   });
 
   it("keeps the lifecycle facts SQL will check: no completion before a publish, no lapse before creation", () => {
-    for (const { instance, lifecycle } of lifecycles) {
-      const created = Date.parse(instance.date);
+    for (const { session, lifecycle } of lifecycles) {
+      const created = Date.parse(session.date);
       if (lifecycle.publishedAt !== null) {
         expect(Date.parse(lifecycle.publishedAt)).toBeGreaterThanOrEqual(created);
       }
@@ -143,7 +143,7 @@ describe("the demo dataset covers every lifecycle word the model allows", () => 
 
   it("is a population, not a demo of four: thirty relationships and thirty distinct people", () => {
     const people = new Set(seats.map((seat) => seat.name));
-    expect(assessmentInstances.length).toBeGreaterThanOrEqual(30);
+    expect(assessmentSessions.length).toBeGreaterThanOrEqual(30);
     expect(people.size).toBeGreaterThanOrEqual(30);
     // Initiators and counterparties both, or half the screens have nothing to show.
     expect(seats.some((seat) => seat.role === "initiator")).toBe(true);

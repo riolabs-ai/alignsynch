@@ -14,14 +14,14 @@
  *              recorded — the state the fee is gated on, reached through the app's own requests.
  *              Then the payer's screen is fetched and asserted to **draw both acts**.
  *   verify     after a browser has pressed them: the method is on file, the fee landed, the
- *              relationship is `complete`, and the instance the payer was gated out of now reads
+ *              relationship is `complete`, and the session the payer was gated out of now reads
  *              the Gap. This is the "a member can pay" column of the report.
  *   teardown   deletes what `setup` wrote — the rows and the auth account — because `pnpm db:seed`
  *              refuses a branch carrying assessment records it does not author.
  *
  * **Nothing here decides anything.** Creation, sealing, capture and completion all go through the
  * app's endpoints and actions; this script reads the rows back to prove it. The only thing it
- * writes itself is a JSON handoff file (relationships, instance ids, the signed-in cookie) so the
+ * writes itself is a JSON handoff file (relationships, session ids, the signed-in cookie) so the
  * browser pass knows which screen to open as which account — never a secret that outlives the run.
  *
  * Usage:
@@ -162,8 +162,8 @@ async function signIn(email, password) {
  * One relationship, through the screens the app draws
  * ------------------------------------------------------------------ */
 
-function instanceIdIn(location) {
-  return location?.match(/[?&]instance=([0-9a-f-]{36})/)?.[1] ?? null;
+function sessionIdIn(location) {
+  return location?.match(/[?&]session=([0-9a-f-]{36})/)?.[1] ?? null;
 }
 
 async function createRelationship(db, jar, templateAspects, label) {
@@ -218,17 +218,17 @@ async function createRelationship(db, jar, templateAspects, label) {
     `[${label}] stage 4 saves the relationship as a draft`,
     committed.status === 303 &&
       (committed.location ?? "").includes(`${stem(TEMPLATE_SLUG)}/invite`) &&
-      instanceIdIn(committed.location) !== null,
+      sessionIdIn(committed.location) !== null,
     `${committed.status} ${committed.location}`,
   );
-  const instanceId = instanceIdIn(committed.location);
-  if (instanceId === null) throw new Error(`[${label}] the draft create named no instance`);
+  const sessionId = sessionIdIn(committed.location);
+  if (sessionId === null) throw new Error(`[${label}] the draft create named no session`);
   const drafted = await db.query(
     `SELECT rel.status, rel.published_at
        FROM relationship rel
        JOIN session s ON s.relationship_id = rel.id
       WHERE s.record_id = $1`,
-    [instanceId],
+    [sessionId],
   );
   check(
     `[${label}] and it is a draft with no publish instant`,
@@ -253,9 +253,9 @@ async function createRelationship(db, jar, templateAspects, label) {
      ON CONFLICT (relationship_id) DO UPDATE
        SET method_captured_at = EXCLUDED.method_captured_at,
            charge_due_at = EXCLUDED.charge_due_at`,
-    [instanceId],
+    [sessionId],
   );
-  const sent = await jar.post(sendInvitationPath(instanceId), {});
+  const sent = await jar.post(sendInvitationPath(sessionId), {});
   check(
     `[${label}] stage 5's Send and Continue publishes it`,
     sent.status === 303,
@@ -270,13 +270,13 @@ async function createRelationship(db, jar, templateAspects, label) {
     `UPDATE relationship_payment
         SET method_captured_at = NULL, charge_due_at = NULL
       WHERE relationship_id = (SELECT relationship_id FROM session WHERE record_id = $1)`,
-    [instanceId],
+    [sessionId],
   );
   return sent;
 }
 
 /** Answer both sheets and record both acceptances — the seal the fee is gated on. */
-async function seal(jars, instancePath, aspectIds) {
+async function seal(jars, sessionPath, aspectIds) {
   const sheet = (feel, wish) => {
     const fields = {};
     for (const itemId of aspectIds) {
@@ -289,15 +289,15 @@ async function seal(jars, instancePath, aspectIds) {
     ["initiator", jars.initiator, 2, 5],
     ["counterparty", jars.counterparty, 5, 3],
   ]) {
-    const answered = await jar.post(`${instancePath}/answers`, sheet(feel, wish));
+    const answered = await jar.post(`${sessionPath}/answers`, sheet(feel, wish));
     check(
       `the ${role} answers every Aspect`,
       answered.status === 303,
       `${answered.status} ${answered.location}`,
     );
-    const page = await jar.get(`${instancePath}/accept`);
+    const page = await jar.get(`${sessionPath}/accept`);
     const action = (page.html.match(/<form\b[^>]*action="([^"]*\/accepts)"[^>]*>/) ?? [])[1];
-    const accepted = await jar.post(action ?? `${instancePath}/accepts`, {});
+    const accepted = await jar.post(action ?? `${sessionPath}/accepts`, {});
     check(
       `the ${role} accepts`,
       accepted.status === 303,
@@ -379,8 +379,8 @@ async function setup(db) {
     `published_at=${relationship.published_at}`,
   );
 
-  const instancePath = `/assessment/instances/${relationship.record_id}`;
-  const inviteScreen = await initiator.get(instancePath);
+  const sessionPath = `/assessment/instances/${relationship.record_id}`;
+  const inviteScreen = await initiator.get(sessionPath);
   const link = inviteScreen.html.match(/http:\/\/[^\s"<>]+\/invite\/[A-Za-z0-9_-]{43}/)?.[0];
   check("the invitation link is on the creator's screen", link !== undefined);
   if (link === undefined) throw new Error("no invitation link on the instance screen");
@@ -396,7 +396,7 @@ async function setup(db) {
 
   await seal(
     { initiator, counterparty },
-    instancePath,
+    sessionPath,
     items.rows.map((row) => row.item_id),
   );
 
@@ -428,7 +428,7 @@ async function setup(db) {
     password,
     userId,
     relationshipId: relationship.id,
-    instanceId: relationship.record_id,
+    sessionId: relationship.record_id,
     cookie: initiator.header(),
     setup: {
       relationship: "active",
@@ -460,7 +460,7 @@ async function setup(db) {
   );
 
   console.log(`\nstate written to ${STATE_PATH}`);
-  console.log(`relationship ${relationship.id} · instance ${relationship.record_id}`);
+  console.log(`relationship ${relationship.id} · session ${relationship.record_id}`);
 }
 
 /* ------------------------------------------------------------------ *
@@ -502,15 +502,15 @@ async function verify(db, state) {
     `${facts?.actions} admin_action row(s) on the relationship`,
   );
 
-  const instance = await jar.get(`/assessment/instances/${state.instanceId}`);
+  const session = await jar.get(`/assessment/instances/${state.sessionId}`);
   check(
     "the Gap is open to the payer",
-    instance.html.includes("data-alignment-gap") || instance.html.includes("data-alignment-aspect"),
-    `status ${instance.status}, alignment rows ${(instance.html.match(/data-alignment-gap="/g) ?? []).length}`,
+    session.html.includes("data-alignment-gap") || session.html.includes("data-alignment-aspect"),
+    `status ${session.status}, alignment rows ${(session.html.match(/data-alignment-gap="/g) ?? []).length}`,
   );
   check(
     "and the session no longer reads awaiting payment",
-    !instance.html.includes("awaiting_payment"),
+    !session.html.includes("awaiting_payment"),
   );
 
   const screen = await jar.get(`/dashboard/relationships/${state.relationshipId}`);
@@ -523,13 +523,13 @@ async function verify(db, state) {
 
   const report = {
     relationshipId: state.relationshipId,
-    instanceId: state.instanceId,
+    sessionId: state.sessionId,
     status: facts?.status,
     methodCapturedAt: facts?.method_captured_at,
     chargedAt: facts?.charged_at,
     amountCents: facts?.charge_amount_cents,
     adminActions: facts?.actions,
-    gapRows: (instance.html.match(/data-alignment-gap="/g) ?? []).length,
+    gapRows: (session.html.match(/data-alignment-gap="/g) ?? []).length,
   };
   console.log(`\n${JSON.stringify(report, null, 2)}`);
   return report;
@@ -548,13 +548,13 @@ async function teardown(db, state) {
   await db.query("DELETE FROM relationship_payment WHERE relationship_id = $1", [
     state.relationshipId,
   ]);
-  await db.query("DELETE FROM session_invite WHERE session_record_id = $1", [state.instanceId]);
-  await db.query("DELETE FROM opinion WHERE session_record_id = $1", [state.instanceId]);
-  await db.query("DELETE FROM party WHERE session_record_id = $1", [state.instanceId]);
-  await db.query("DELETE FROM item WHERE record_id = $1", [state.instanceId]);
-  await db.query("DELETE FROM response_option WHERE record_id = $1", [state.instanceId]);
-  await db.query("DELETE FROM session WHERE record_id = $1", [state.instanceId]);
-  await db.query("DELETE FROM record WHERE id = $1", [state.instanceId]);
+  await db.query("DELETE FROM session_invite WHERE session_record_id = $1", [state.sessionId]);
+  await db.query("DELETE FROM opinion WHERE session_record_id = $1", [state.sessionId]);
+  await db.query("DELETE FROM party WHERE session_record_id = $1", [state.sessionId]);
+  await db.query("DELETE FROM item WHERE record_id = $1", [state.sessionId]);
+  await db.query("DELETE FROM response_option WHERE record_id = $1", [state.sessionId]);
+  await db.query("DELETE FROM session WHERE record_id = $1", [state.sessionId]);
+  await db.query("DELETE FROM record WHERE id = $1", [state.sessionId]);
   await db.query("DELETE FROM relationship WHERE id = $1", [state.relationshipId]);
   await db
     .query(

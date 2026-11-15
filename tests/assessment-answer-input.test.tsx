@@ -23,13 +23,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import type { Assessment } from "@/content/assessment";
 import { SCORE_MAX, SCORE_MIN } from "@/content/record";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -37,10 +37,10 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-answer-input-test";
+const SESSION_ID = "session-answer-input-test";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -50,13 +50,13 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
 ];
 
 /** One answered Aspect — Feel 4, Wish 2 — so the round-trip can be read off the rendered DOM. */
 const answered: OpinionRow = {
-  session_record_id: INSTANCE_ID,
+  session_record_id: SESSION_ID,
   role: "initiator",
   item_id: items[0].item_id,
   feel: 4,
@@ -65,21 +65,21 @@ const answered: OpinionRow = {
   guess: null,
 };
 
-function rowsWith(opinions: readonly OpinionRow[]): FlowInstanceRows {
+function rowsWith(opinions: readonly OpinionRow[]): FlowSessionRows {
   return {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "answer-input-test",
       record_type: "assessment",
       status: "draft",
       date: new Date("2026-10-31T12:00:00.000Z"),
       title: template.title,
-      summary: "an instance under test",
+      summary: "a session under test",
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-test",
       mode: "basic",
@@ -103,7 +103,7 @@ function sheet(opinions: readonly OpinionRow[] = []): HTMLElement {
     invite: null,
   });
   const html = renderToStaticMarkup(
-    createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+    createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
   );
   const host = document.createElement("div");
   // The component's own server-rendered output, never third-party or user input: this is how
@@ -164,7 +164,7 @@ describe("the answer sheet's structure", () => {
     const host = sheet();
     const form = host.querySelector("form");
     expect(form?.getAttribute("method")).toBe("post");
-    expect(form?.getAttribute("action")).toBe(`/assessment/instances/${INSTANCE_ID}/answers`);
+    expect(form?.getAttribute("action")).toBe(`/assessment/instances/${SESSION_ID}/answers`);
   });
 });
 

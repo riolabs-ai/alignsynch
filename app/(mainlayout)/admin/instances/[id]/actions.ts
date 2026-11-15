@@ -78,8 +78,7 @@ export async function editRelationshipAsStaff(input: {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const sessionRecordId =
-    typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
+  const sessionRecordId = typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
   if (sessionRecordId === "") return { ok: false, code: "no-such-relationship" };
 
   const relationshipId = await relationshipIdOf(sessionRecordId);
@@ -125,8 +124,7 @@ export async function previewRelationshipEditAsStaff(input: {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const sessionRecordId =
-    typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
+  const sessionRecordId = typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
   if (sessionRecordId === "") return { ok: false, code: "no-such-relationship" };
 
   const relationshipId = await relationshipIdOf(sessionRecordId);
@@ -239,8 +237,7 @@ export async function performRepair(input: RepairInput): Promise<RepairOutcome> 
   if (user === null) return { ok: false, code: "signed-out" };
 
   const reason = typeof input?.reason === "string" ? input.reason : "";
-  const sessionRecordId =
-    typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
+  const sessionRecordId = typeof input?.sessionRecordId === "string" ? input.sessionRecordId : "";
   const actorUserId = user.userId;
   const base = { actorUserId, sessionRecordId, reason };
 
