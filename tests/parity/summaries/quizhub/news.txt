@@ -21,11 +21,11 @@ headings (18)
   h3  "The Psychology of Quiz Design: How to Create Addictive Learning Experiences"
   h3  "Quiz Trends to Watch in 2025: What&#x27;s Hot and What&#x27;s Next"
 
-landmarks (6)
+landmarks (5)
   banner         1
   complementary  1
   main           1
-  navigation     3
+  navigation     2
 
 links (25 unique, 42 total)
   /                                                    2
@@ -55,8 +55,8 @@ links (25 unique, 42 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.1 2
 
 counts
-  elements  735
+  elements  726
   images    0
-  buttons   19
+  buttons   18
   inputs    2
-  classes   280 (sha 6f2e1581e912)
+  classes   279 (sha 12a6ed253a83)
