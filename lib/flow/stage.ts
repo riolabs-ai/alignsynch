@@ -54,8 +54,20 @@ export type FlowStage = (typeof FLOW_STAGES)[number];
  * the ladder, so `null` is the honest answer and the instance screen draws its own notice instead
  * of a badge. Typing the value as `FlowStage | null` rather than adding a fourth stage name makes
  * "draw the ladder for a void" a compile error at the call site.
+ *
+ * **`draft` has no stage either, and for the opposite reason (#975).** The ladder's first rung is
+ * defined as "Initiator has Invited Counterparty, but they have not Registered" — an invitation
+ * that went out and has not been claimed. A draft has sent nothing, so calling it `invited` is the
+ * D6 defect: the row claimed an invitation that never existed. There is no rung below `invited`
+ * because the ladder starts where the product starts, which is the send.
+ *
+ * `null` therefore means "off the ladder", and the two ways to get there are told apart by the
+ * status, not by the null: a void is excluded by every read that could draw it
+ * (`lib/db/assessments.ts` throws if one reaches the card list), and a draft is a card that draws
+ * the draft's own words instead of a stage. `stageCopyId()` is never asked about either.
  */
 const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
+  draft: null,
   awaiting_counterparty: "invited",
   answering: "connected",
   /**
@@ -68,7 +80,10 @@ const STAGE_OF_STATUS: Record<InstanceStatus, FlowStage | null> = {
   voided: null,
 };
 
-/** The stage this instance's screen is at — `null` when the session was voided. */
+/**
+ * The stage this instance's screen is at — `null` when it is off the ladder, which is an
+ * operator's void (#503) or a relationship that was never sent (#975).
+ */
 export function relationshipStage(status: InstanceStatus): FlowStage | null {
   return STAGE_OF_STATUS[status];
 }
@@ -81,6 +96,8 @@ export function relationshipStage(status: InstanceStatus): FlowStage | null {
  * unavailable before that. In this model a relationship *is* the assessment, so "shared" is the
  * moment the Counterparty has a seat:
  *
+ *   draft                  false — nothing was sent, so there is no second sheet and no invitation
+ *                          for anybody to act on (#975)
  *   awaiting_counterparty  false — nothing is shared; the invitation has not been claimed, so
  *                          there is no second sheet to align against
  *   answering              true  — in progress: both seats exist and the sheets are being filled

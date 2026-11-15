@@ -46,6 +46,9 @@ export const adminReportPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "status",
       items: [
+        // #975 — see `data/pages/admin-relationship.ts`; the report's status band needs the same
+        // word for the same compile-forced reason.
+        { id: "draft", label: "Draft" },
         { id: "awaiting-counterparty", label: "Awaiting counterparty" },
         { id: "answering", label: "Answering" },
         { id: "awaiting-payment", label: "Awaiting payment" },

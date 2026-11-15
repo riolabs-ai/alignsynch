@@ -65,6 +65,7 @@ type Phase = { readonly kind: "idle" } | { readonly kind: "done"; readonly outco
  * `Record<InstanceStatus, string>`, so a fourth status is a compile error until it has words.
  */
 const STATUS_COPY_ID: Record<InstanceStatus, string> = {
+  draft: "draft",
   awaiting_counterparty: "awaiting-counterparty",
   answering: "answering",
   /* #619 — sealed and unpaid: the console reads it as its own state, not as an error. */

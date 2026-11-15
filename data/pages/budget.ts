@@ -608,7 +608,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   // #877 — the member's assessment-session listing. Budget 0 from the first commit, like the
-  // dashboard record lists: the heading, the toolbar's eight labels, the four state tabs, the four
+  // dashboard record lists: the heading, the toolbar's eight labels, the five state tabs, the four
   // row links, the two empty states, the console's filter band and the failure panel are all
   // `data/pages/assessments.ts`, so the next literal written in `assessments-list.tsx` is a red
   // build. Attribution is reachability, so this row counts the one component the page imports.
