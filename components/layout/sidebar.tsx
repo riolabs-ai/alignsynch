@@ -20,7 +20,11 @@ import { BrandGlyph } from "@/components/layout/brand-glyph";
 import { LeavingLink } from "@/components/layout/leaving-link";
 
 /**
- * The sidebar: the brand's mark, the brand's menu, and the sign-out row.
+ * The sidebar: the brand's mark, the brand's menu, and — for a member only — the sign-out row.
+ *
+ * The account row is drawn from `viewer.role` (#975 D13): `null` is nobody signed in, so a visitor
+ * gets no sign-out control rather than one describing a session that does not exist. The header's
+ * account menu makes the same decision in `lib/shell/account-menu.ts`.
  *
  * The menu lives in `components/layout/nav-menus.tsx`, because it is brand-selected and
  * capability-filtered since issue #156 and keeping it in a hook-free module is what lets a
@@ -302,6 +306,27 @@ export function AppSidebar({
     router.refresh();
   };
 
+  /**
+   * **A visitor has nothing to sign out of (#975 D13).**
+   *
+   * The account row below used to be drawn unconditionally, so a signed-out visitor — on every
+   * create stage, in a preview with no auth secrets, in the gate's own render — was offered
+   * `Logout` by a rail whose session did not exist. It is the same lie `lib/shell/account-menu.ts`
+   * removed from the header (#979), and the two halves of the chrome must not disagree about
+   * whether a session exists.
+   *
+   * `viewer.role` is the fact, and it is already here: `app/(mainlayout)/layout.tsx` builds the
+   * viewer with `navViewer(role)` from `shellSession()`, which answers `null` for nobody signed in
+   * and at least `member` for anybody who is (`lib/auth/shell-account.ts`). A viewer constructed
+   * from capabilities alone has no rung either — `lib/nav.ts` says so — and that viewer is not a
+   * session, so the row is absent for it too: the closed direction, never a control for a person
+   * this render cannot name.
+   *
+   * It is a conditional, not a redesign. The row, its words and its failure line are untouched,
+   * and nothing takes its place: the header's account menu is already a visitor's way in.
+   */
+  const signedIn = viewer.role !== null;
+
   return (
     <>
       {/**
@@ -504,27 +529,33 @@ export function AppSidebar({
           </nav>
         </div>
 
-        <div className="border-t py-4">
-          <nav className="grid gap-1 px-2">
-            <NavRow
-              icon={<LogOut className="size-5" />}
-              label={signingOut ? logoutPendingLabel : logoutLabel}
-              active={false}
-              collapsed={narrow}
-              labelled={open}
-              onNavigate={onClose}
-              onSelect={signOut}
-            />
-          </nav>
-          {signOutFailed && <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>}
-          {/**
-           * **The width control** used to live here (#542 phase 2): a
-           * `<form action={toggleRail}>` with a submit button, under the sign-out row. It moved to
-           * the top row in #875, where it is the handle on the rail's own border — and it is a
-           * button calling the same action, not a form. Nothing replaced it here: this section is
-           * the account row (sign out) and nothing else.
-           */}
-        </div>
+        {/*
+         * The account row: a member's, never a visitor's (#975 D13). See `signedIn` above — the
+         * row itself is unchanged, only its presence is now a question about this request.
+         */}
+        {signedIn ? (
+          <div className="border-t py-4">
+            <nav className="grid gap-1 px-2">
+              <NavRow
+                icon={<LogOut className="size-5" />}
+                label={signingOut ? logoutPendingLabel : logoutLabel}
+                active={false}
+                collapsed={narrow}
+                labelled={open}
+                onNavigate={onClose}
+                onSelect={signOut}
+              />
+            </nav>
+            {signOutFailed && <p className="px-2 pt-2 text-xs text-red-600">{logoutErrorLabel}</p>}
+          </div>
+        ) : null}
+        {/**
+         * **The width control** used to live here (#542 phase 2): a
+         * `<form action={toggleRail}>` with a submit button, under the sign-out row. It moved to
+         * the top row in #875, where it is the handle on the rail's own border — and it is a
+         * button calling the same action, not a form. Nothing replaced it here: this section is
+         * the account row (sign out) and nothing else.
+         */}
 
         {/* The version badge — the bottom of the rail (issue #269). Last in the document, so it is
             the last stop the keyboard makes inside the sidebar, and below the sign-out row on

@@ -83,7 +83,7 @@ import { RelationshipFlowShell, type FlowMount } from "./relationship-flow-shell
 import { StageAccount } from "./stage-account";
 import { type ChoiceGroup, StageChoiceForm } from "./stage-choice-form";
 import { StageInvite } from "./stage-invite";
-import { StageOneFields } from "./stage-one-fields";
+import { StageOneForm } from "./stage-one-form";
 
 /** Which of the create flow's five steps this render is (#688, #689, #690, #825). */
 export type CreateStage = 1 | 2 | 3 | 4 | 5;
@@ -579,71 +579,97 @@ export function CreateRelationship({
                 cancelLabel={cancelLabel}
               />
             ) : (
-              <form
+              /*
+               * **Details is a client component (#975 D8).** The form and its refusal live in
+               * `StageOneForm`, because a press that cannot advance has to *answer* — with the
+               * fixture's own `{field} is required.` sentence at the field it is about — and a
+               * server render cannot answer a click. This component still owns every word: the
+               * seven labels and the five refusal sentences are resolved here from
+               * `data/pages/assessment-create.ts` (E23) and handed down, so the screen's voice
+               * stays in one fixture and a refusal cannot drift from the label it names.
+               *
+               * The two sentences per field are the server's own composition
+               * (`lib/flow/create-copy.ts::fieldSentence`), which is what the store's
+               * `?problem=invalid-input&field=…` refusal draws in the band above this form — so a
+               * press in the browser and a refusal from the store say the same sentence.
+               */
+              <StageOneForm
                 action={SAVE_WHO_PATH}
-                method="post"
-                aria-labelledby="create-stage-heading"
-                className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-              >
-                {/* The template is the route's own fact; the form carries it so the POST names it. */}
-                <input type="hidden" name="templateRecordId" value={template.recordId} />
-
-                {/*
-                The seven fields, and the one derivation in the flow (#825): the title follows the
-                four name inputs until somebody types in it. That is a keystroke-level behaviour, so
-                the controls live in a client component (`StageOneFields`) while the form, the
-                template band and the foot stay here.
-
-                The inventory is the spec's (`docs/specs/flow-stages.md` → *Stage 1, Details*), and
-                `tests/create-fields.test.ts` pins the order, the two columns and the five required
-                marks — a sixth field, a moved one or a bare required label is red rather than a
-                reviewer's memory.
-              */}
-                <StageOneFields
-                  copy={{
-                    titleLabel: itemLabel(who, "title-label"),
-                    titleHelp: itemLabel(who, "title-help"),
-                    initiatorFirstLabel: itemLabel(who, "initiator-first-label"),
-                    initiatorLastLabel: itemLabel(who, "initiator-last-label"),
-                    initiatorLastPlaceholder: itemLabel(who, "initiator-last-placeholder"),
-                    initiatorHelp: itemLabel(who, "initiator-help"),
-                    counterpartyFirstLabel: itemLabel(who, "counterparty-first-label"),
-                    counterpartyFirstPlaceholder: itemLabel(who, "counterparty-first-placeholder"),
-                    counterpartyLastLabel: itemLabel(who, "counterparty-last-label"),
-                    counterpartyLastPlaceholder: itemLabel(who, "counterparty-last-placeholder"),
-                    counterpartyHelp: itemLabel(who, "counterparty-help"),
-                    emailLabel: itemLabel(who, "email-label"),
-                    emailPlaceholder: itemLabel(who, "email-placeholder"),
-                    descriptionLabel: itemLabel(who, "description-label"),
-                    descriptionPlaceholder: itemLabel(who, "description-placeholder"),
-                    descriptionHelp: itemLabel(who, "description-help"),
-                    requiredNote: itemLabel(who, "required-note"),
-                  }}
-                  values={{
-                    initiatorFirst: draft.initiatorFirst,
-                    initiatorLast: draft.initiatorLast,
-                    counterpartyFirst: draft.counterpartyFirst,
-                    counterpartyLast: draft.counterpartyLast,
-                    title: draft.title,
-                    email: draft.email,
-                    description: draft.description,
-                  }}
-                  descriptionDefault={template.summary}
-                />
-
-                {/* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */}
-                <StageFoot
-                  backHref={backHref}
-                  backLabel={itemLabel(who, "back")}
-                  cancelHref={shell.closeHref}
-                  cancelLabel={cancelLabel}
-                  advance={
-                    <button type="submit" className={ADVANCE_CLASSES}>
-                      {itemLabel(who, "submit")}
-                    </button>
-                  }
-                />
-              </form>
+                templateRecordId={template.recordId}
+                copy={{
+                  titleLabel: itemLabel(who, "title-label"),
+                  titleHelp: itemLabel(who, "title-help"),
+                  initiatorFirstLabel: itemLabel(who, "initiator-first-label"),
+                  initiatorLastLabel: itemLabel(who, "initiator-last-label"),
+                  initiatorLastPlaceholder: itemLabel(who, "initiator-last-placeholder"),
+                  initiatorHelp: itemLabel(who, "initiator-help"),
+                  counterpartyFirstLabel: itemLabel(who, "counterparty-first-label"),
+                  counterpartyFirstPlaceholder: itemLabel(who, "counterparty-first-placeholder"),
+                  counterpartyLastLabel: itemLabel(who, "counterparty-last-label"),
+                  counterpartyLastPlaceholder: itemLabel(who, "counterparty-last-placeholder"),
+                  counterpartyHelp: itemLabel(who, "counterparty-help"),
+                  emailLabel: itemLabel(who, "email-label"),
+                  emailPlaceholder: itemLabel(who, "email-placeholder"),
+                  descriptionLabel: itemLabel(who, "description-label"),
+                  descriptionPlaceholder: itemLabel(who, "description-placeholder"),
+                  descriptionHelp: itemLabel(who, "description-help"),
+                  requiredNote: itemLabel(who, "required-note"),
+                }}
+                values={{
+                  initiatorFirst: draft.initiatorFirst,
+                  initiatorLast: draft.initiatorLast,
+                  counterpartyFirst: draft.counterpartyFirst,
+                  counterpartyLast: draft.counterpartyLast,
+                  title: draft.title,
+                  email: draft.email,
+                  description: draft.description,
+                }}
+                descriptionDefault={template.summary}
+                /*
+                 * The five controls `whoDraft()` refuses, in the order the stage draws them —
+                 * the same order it reports them in, so the cursor lands on the first thing the
+                 * person would have filled. The Counterparty's surname and the description are
+                 * optional and are deliberately absent.
+                 */
+                requirements={[
+                  {
+                    field: "initiator-first",
+                    sentence: fieldSentence("initiator-first", "required") ?? "",
+                  },
+                  {
+                    field: "initiator-last",
+                    sentence: fieldSentence("initiator-last", "required") ?? "",
+                  },
+                  {
+                    field: "counterparty-first",
+                    sentence: fieldSentence("counterparty-first", "required") ?? "",
+                  },
+                  {
+                    field: "email",
+                    sentence: fieldSentence("email", "required") ?? "",
+                    // The address has a second way to be wrong, and the store names it apart.
+                    invalidSentence: fieldSentence("email", "email") ?? "",
+                  },
+                  {
+                    field: "title",
+                    sentence: fieldSentence("title", "required") ?? "",
+                  },
+                ]}
+                foot={
+                  /* The stage foot (#760): `[Back][Cancel]` left, the advance flush right. */
+                  <StageFoot
+                    backHref={backHref}
+                    backLabel={itemLabel(who, "back")}
+                    cancelHref={shell.closeHref}
+                    cancelLabel={cancelLabel}
+                    advance={
+                      <button type="submit" className={ADVANCE_CLASSES}>
+                        {itemLabel(who, "submit")}
+                      </button>
+                    }
+                  />
+                }
+              />
             )}
           </>
         ) : stage === 2 ? (

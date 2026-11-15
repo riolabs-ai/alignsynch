@@ -25,11 +25,11 @@ headings (22)
   h4  "Quiz Monetization Strategies That Work in 2025"
   h3  "Subscribe to Our Newsletter"
 
-landmarks (5)
+landmarks (4)
   banner         1
   complementary  1
   main           1
-  navigation     2
+  navigation     1
 
 links (11 unique, 12 total)
   /                                                    1
@@ -45,8 +45,8 @@ links (11 unique, 12 total)
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.20.1 2
 
 counts
-  elements  363
+  elements  354
   images    4
-  buttons   26
+  buttons   25
   inputs    3
-  classes   255 (sha 16fec7d78ce3)
+  classes   254 (sha f99b2e90a107)
