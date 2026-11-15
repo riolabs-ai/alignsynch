@@ -89,13 +89,7 @@ export function billingTestMode(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): boolean {
   try {
-    if (billingProvider(env) !== "stripe") return false;
-    // The one exception: a deployment that selects the **live** key set is not in test mode, and
-    // `/pricing` must stop promising that no money moves. The name is repeated rather than imported
-    // because importing the adapter for one constant would make it a static import — resolving it
-    // on demand is what keeps a keyless demo keyless. An unpaired live selector is refused by the
-    // adapter anyway, so answering `false` here is the safe direction.
-    return (env.BILLING_KEY_SET?.trim().toLowerCase() ?? "") !== "alignsynch-live";
+    return billingProvider(env) === "stripe";
   } catch {
     return false;
   }

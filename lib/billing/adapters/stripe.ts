@@ -17,13 +17,12 @@
  * filterable, because that event's subject is the subscription. The receiver acts only on an event
  * claiming its own value; anything else is acknowledged and dropped, never mapped.
  *
- * **Test mode by default, live mode only through two variables.** A test set's credential is
- * `sk_test_…` and its publishable key `pk_test_…`; the adapter refuses anything whose prefix does not
- * match the mode the set promises, so a test set cannot be filled with a live credential. The one
- * live set, `alignsynch-live`, is **unreachable on one variable**: it is gated on
- * `BILLING_LIVE_KEYS_CONFIRM` spelling the same word back, and then it requires `sk_live_…`. That is
- * why the variables carry `_TEST_` / `_LIVE_` in their names: a credential can never be read as the
- * wrong one in a config file, a log line or a screenshot.
+ * **Test mode only, and structurally so.** Every credential a set can carry is checked against its
+ * test-mode prefix — the secret key `sk_test_…`, the publishable key `pk_test_…` — and the webhook
+ * secret against `whsec_`. There is no branch, flag or fallback that could reach a live account, and
+ * no live key set to select: going live would be a code change with its own review, not a variable
+ * somebody flips in a hurry. That is why the variables carry `_TEST_` in their names: a credential
+ * can never be read as the wrong one in a config file, a log line or a screenshot.
  *
  * **One API version, pinned here.** Every request sends `Stripe-Version: STRIPE_API_VERSION`
  * (`2026-03-25.dahlia`), overridable with `STRIPE_API_VERSION`. Sending no version left the
@@ -31,12 +30,13 @@
  * only valid from a version — so the same code worked on one test account and answered
  * `Invalid ui_mode: embedded_page` on another.
  *
- * **Three key sets, one selector, and everything account-scoped follows it.** `BILLING_KEY_SET`
- * names a complete set (`STRIPE_<SET>_{SECRET,PUBLISHABLE,WEBHOOK}`); unset means the legacy
- * `STRIPE_TEST_*` trio for one release. The set chooses the **Price ids**
- * (`data/billing-prices.ts`) and the **webhook secret** as well as the API key, because all three
- * are account-scoped: a Price id resolves on one account only, and a key swap that left the other
- * account's `whsec` in place would fail signature verification on every delivery.
+ * **Two key sets, one selector, and the Price follows it.** `BILLING_KEY_SET` names a complete set
+ * (`STRIPE_<SET>_TEST_{SECRET,PUBLISHABLE,WEBHOOK}`); unset means the legacy `STRIPE_TEST_*` trio
+ * for one release. The set chooses the **webhook secret** as well as the API key, because each
+ * account has its own endpoint: a key swap that left the other account's `whsec` in place would fail
+ * signature verification on every delivery. The Price is chosen by **lookup key**
+ * (`data/billing-prices.ts`), which is account-independent, and resolved against the selected
+ * account — so no account-scoped id lives in the tree at all.
  *
  * **No SDK, on purpose.** `lib/objstore.ts` already hand-writes a SigV4 client for Neon's object
  * storage rather than take a dependency, and the same reasoning applies here: two REST calls and one
@@ -54,7 +54,7 @@
  */
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { type BillingInterval, BILLING_INTERVALS, billingPlan } from "@/data/billing-plans";
-import { billingPriceIdFor, TRIAL_PERIOD_DAYS } from "@/data/billing-prices";
+import { billingPriceLookupKeyFor, TRIAL_PERIOD_DAYS } from "@/data/billing-prices";
 import { checkoutRefusal, entitlementOf } from "@/lib/billing/entitlements";
 import {
   billingHostFromEnv,
@@ -205,40 +205,22 @@ export interface StripeCredentials {
  * switching between them must not mean editing three secret values in place: the selector names a
  * set, and a set is read whole or refused whole.
  *
- * `alignsynch-live` is a member so that going live is a configuration change rather than a code
- * change — and it is **unreachable on one variable**: see `liveKeySetConfirmed()`.
+ * **Two sets, both test mode.** A live set is not a member and cannot be added by configuration: the
+ * product runs every environment in the provider's sandbox, and the prefix guards below refuse a
+ * live credential outright rather than pretending a mode switch exists.
  */
-export const BILLING_KEY_SETS = ["ventureio-test", "alignsynch-test", "alignsynch-live"] as const;
+export const BILLING_KEY_SETS = ["ventureio-test", "alignsynch-test"] as const;
 
 export type BillingKeySet = (typeof BILLING_KEY_SETS)[number];
-
-/** The one set that spends real money. */
-export const LIVE_KEY_SET: BillingKeySet = "alignsynch-live";
-
-/**
- * The second variable a live set requires, and the exact value it must carry.
- *
- * A **paired echo**, not a boolean: `BILLING_KEY_SET=alignsynch-live` alone is never enough, so a
- * typo in the selector cannot reach live keys — the confirmation has to spell the same word in a
- * different variable. The `sk_live_` prefix guard below is the wall after this one.
- */
-export const LIVE_KEY_SET_CONFIRM_VARIABLE = "BILLING_LIVE_KEYS_CONFIRM";
-
-/** Is `alignsynch-live` paired with its confirmation in this environment? */
-export function liveKeySetConfirmed(
-  env: Readonly<Record<string, string | undefined>> = process.env,
-): boolean {
-  return (env[LIVE_KEY_SET_CONFIRM_VARIABLE]?.trim().toLowerCase() ?? "") === LIVE_KEY_SET;
-}
 
 /**
  * The variables each set carries — **names only**, no value is ever read from this table.
  *
  * A row per set rather than a naming convention over the selector, so a variable added to one set
  * cannot be silently missing from another in a way only a deployment finds. The webhook secret is
- * per set for the same reason the Price id is: the two test accounts have their own endpoints, so a
- * key swap that leaves the other account's `whsec` in place fails signature verification on every
- * delivery — which reads as "webhooks stopped" days later.
+ * per set for the same reason the Price is resolved per account: the two accounts have their own
+ * endpoints, so a key swap that leaves the other account's `whsec` in place fails signature
+ * verification on every delivery — which reads as "webhooks stopped" days later.
  */
 export const BILLING_KEY_SET_VARIABLES: Readonly<
   Record<
@@ -255,11 +237,6 @@ export const BILLING_KEY_SET_VARIABLES: Readonly<
     secretKey: "STRIPE_ALIGNSYNCH_TEST_SECRET",
     publishableKey: "STRIPE_ALIGNSYNCH_TEST_PUBLISHABLE",
     webhookSecret: "STRIPE_ALIGNSYNCH_TEST_WEBHOOK",
-  },
-  "alignsynch-live": {
-    secretKey: "STRIPE_ALIGNSYNCH_LIVE_SECRET",
-    publishableKey: "STRIPE_ALIGNSYNCH_LIVE_PUBLISHABLE",
-    webhookSecret: "STRIPE_ALIGNSYNCH_LIVE_WEBHOOK",
   },
 };
 
@@ -299,13 +276,11 @@ export function billingKeySetFromEnv(
 /**
  * The credentials, or a `not-configured` refusal that names the variable to set.
  *
- * **Resolution order, and there are exactly four sources:**
+ * **Resolution order, and there are exactly three sources:**
  *
  *   1. `BILLING_KEY_SET=ventureio-test` → `STRIPE_VENTUREIO_TEST_{SECRET,PUBLISHABLE,WEBHOOK}`
  *   2. `BILLING_KEY_SET=alignsynch-test` → `STRIPE_ALIGNSYNCH_TEST_{…}`
- *   3. `BILLING_KEY_SET=alignsynch-live` → `STRIPE_ALIGNSYNCH_LIVE_{…}`, and **only** when
- *      `BILLING_LIVE_KEYS_CONFIRM=alignsynch-live` says the same word in a second variable
- *   4. `BILLING_KEY_SET` absent → `STRIPE_TEST_{…}` (the legacy trio, one release)
+ *   3. `BILLING_KEY_SET` absent → `STRIPE_TEST_{…}` (the legacy trio, one release)
  *
  * A named set is **all three members or none**: a set used three-quarters-full is the half-filled
  * state the selector exists to remove, so a missing member is a refusal naming it. Every failure
@@ -354,6 +329,20 @@ function legacyCredentials(env: Readonly<Record<string, string | undefined>>): S
       `${LEGACY_VARIABLES.webhookSecret} is not a signing secret (it must start with whsec_)`,
     );
   }
+  // Optional here (the hosted path never reads it), but never unchecked: a deployment that carries
+  // a live publishable key must be refused at configuration, not when its frame fails to mount.
+  if (
+    publishableKey !== undefined &&
+    publishableKey !== "" &&
+    !publishableKey.startsWith("pk_test_")
+  ) {
+    throw new BillingRefusal(
+      "not-configured",
+      `${LEGACY_VARIABLES.publishableKey} is not a test-mode publishable key (it must start with ` +
+        "pk_test_) — this adapter has no live mode, and an in-page checkout built from it would " +
+        "never start",
+    );
+  }
 
   return {
     secretKey,
@@ -367,28 +356,17 @@ function legacyCredentials(env: Readonly<Record<string, string | undefined>>): S
 /**
  * One named set, read whole: every member required, every prefix checked, nothing echoed.
  *
- * The live set is gated **before** its keys are read, so a deployment that names it without the
- * paired confirmation is refused with the two variables to fix rather than being allowed as far as
- * a `sk_live_` prefix check.
+ * The prefix guards are the product's guarantee that **no environment can reach a live account**:
+ * a `sk_live_…` secret, a `pk_live_…` publishable key or a non-`whsec_` signing secret is a
+ * `not-configured` refusal at configuration time, naming the variable, never an attempt that fails
+ * later inside a checkout. They are checked on the selected set and on the legacy trio alike, so
+ * there is no path that reads a live credential and proceeds.
  */
 function keySetCredentials(
   keySet: BillingKeySet,
   env: Readonly<Record<string, string | undefined>>,
 ): StripeCredentials {
-  if (keySet === LIVE_KEY_SET && !liveKeySetConfirmed(env)) {
-    throw new BillingRefusal(
-      "not-configured",
-      `BILLING_KEY_SET="${keySet}" selects live keys, and ${LIVE_KEY_SET_CONFIRM_VARIABLE} is ` +
-        `not "${keySet}" — a live key set is never reachable on one variable. Set both to "${keySet}" ` +
-        "to spend real money, or name a test set.",
-    );
-  }
-
   const names = BILLING_KEY_SET_VARIABLES[keySet];
-  const live = keySet === LIVE_KEY_SET;
-  const secretPrefix = live ? "sk_live_" : "sk_test_";
-  const publishablePrefix = live ? "pk_live_" : "pk_test_";
-
   const secretKey = env[names.secretKey]?.trim() ?? "";
   const webhookSecret = env[names.webhookSecret]?.trim() ?? "";
   const publishableKey = env[names.publishableKey]?.trim() ?? "";
@@ -400,12 +378,11 @@ function keySetCredentials(
         "adapter will not fall back to another account's credentials",
     );
   }
-  if (!secretKey.startsWith(secretPrefix)) {
+  if (!secretKey.startsWith("sk_test_")) {
     throw new BillingRefusal(
       "not-configured",
-      `${names.secretKey} is not a ${live ? "live-mode" : "test-mode"} secret key (it must start ` +
-        `with ${secretPrefix}) — BILLING_KEY_SET="${keySet}" promises ` +
-        `${live ? "live" : "test"} mode, and this adapter will not fall back to the other`,
+      `${names.secretKey} is not a test-mode secret key (it must start with sk_test_) — ` +
+        "this adapter has no live mode and will not fall back to one",
     );
   }
   if (webhookSecret === "") {
@@ -420,8 +397,8 @@ function keySetCredentials(
       `${names.webhookSecret} is not a signing secret (it must start with whsec_)`,
     );
   }
-  // Required here and only here: a named set is the "complete set" case, and the publishable key
-  // is the one member the embedded frame cannot start without. The legacy trio keeps it optional
+  // Required here and only here: a named set is the "complete set" case, and the publishable key is
+  // the one member the embedded frame cannot start without. The legacy trio keeps it optional
   // because three deployments sell the hosted checkout, which never reads it.
   if (publishableKey === "") {
     throw new BillingRefusal(
@@ -430,11 +407,14 @@ function keySetCredentials(
         "in-page checkout has no key to load the provider's frame with",
     );
   }
-  if (!publishableKey.startsWith(publishablePrefix)) {
+  // The wall for the browser half. Without it a deployment carrying `pk_live_…` would mount the
+  // in-page frame against a live account and only fail when the secret guard refused to create the
+  // session — late, and in the middle of a purchase instead of at configuration.
+  if (!publishableKey.startsWith("pk_test_")) {
     throw new BillingRefusal(
       "not-configured",
-      `${names.publishableKey} is not a ${live ? "live-mode" : "test-mode"} publishable key ` +
-        `(it must start with ${publishablePrefix})`,
+      `${names.publishableKey} is not a test-mode publishable key (it must start with pk_test_) — ` +
+        "this adapter has no live mode, and an in-page checkout built from it would never start",
     );
   }
 
@@ -729,6 +709,13 @@ export class StripeBillingAdapter implements BillingPort {
   private readonly host: BillingHost;
   private readonly now: () => Date;
   private readonly fetchImpl: typeof fetch;
+  /**
+   * Resolved Price ids, per lookup key, for this adapter instance.
+   *
+   * A lookup key resolves to one id on one account and that never moves, so resolving it per
+   * checkout would spend a round trip on a fact that cannot change while the process is up.
+   */
+  private readonly priceIds = new Map<string, string>();
 
   constructor(options: StripeAdapterOptions = {}) {
     this.credentials = stripeCredentialsFromEnv(options.env ?? process.env);
@@ -797,26 +784,22 @@ export class StripeBillingAdapter implements BillingPort {
       );
     }
 
-    // A (tier, interval) with no Price is a checkout that cannot charge: refused with the pair
+    // A (tier, interval) with no lookup key is a checkout that cannot charge: refused with the pair
     // named, never served by an inline amount that would disagree with the fixture.
     //
-    // A Price id is **account-scoped**, so the lookup carries the key set these credentials belong
-    // to: with no selector that is the default set (which is what this build shipped), with
-    // `BILLING_KEY_SET` set it is that set and nothing else. A missing row is refused by name —
-    // falling back to another set's id would answer `No such price` inside the flow, which is the
-    // failure this selector exists to remove.
-    const priceId = billingPriceIdFor(plan.id, interval, this.credentials.keySet);
-    if (priceId === undefined) {
-      const keySet = this.credentials.keySet;
+    // The Price itself is resolved **against the selected account** from an account-independent
+    // lookup key: a Price id belongs to one account and answers `No such price` on the other, so no
+    // id lives in the tree and none can be borrowed. A key that resolves to nothing here is refused
+    // by name — the configuration gap, found before money is involved.
+    const lookupKey = billingPriceLookupKeyFor(plan.id, interval);
+    if (lookupKey === undefined) {
       throw new BillingRefusal(
-        keySet === null ? "not-for-sale" : "not-configured",
-        keySet === null
-          ? `${plan.id}/${interval} has no Price in this build — add one to data/billing-prices.ts before selling it`
-          : `BILLING_KEY_SET="${keySet}" has no Price for ${plan.id}/${interval} — add that ` +
-              "key set's id to data/billing-prices.ts before selling it, and do not borrow " +
-              "another set's id: a Price id resolves on one account only",
+        "not-for-sale",
+        `${plan.id}/${interval} has no Price in this build — add its lookup key to ` +
+          "data/billing-prices.ts before selling it",
       );
     }
+    const priceId = await this.priceIdFor(lookupKey);
 
     const embedded = request.presentation === "embedded";
     const publishableKey = this.credentials.publishableKey;
@@ -1365,6 +1348,40 @@ export class StripeBillingAdapter implements BillingPort {
       livemode: object.livemode === true,
       currentPeriodEnd: new Date(periodEnd * 1000).toISOString(),
     };
+  }
+
+  /**
+   * The Price id a lookup key resolves to, on the account these credentials belong to.
+   *
+   * **Why a lookup key and not an id in the fixture.** A Price id is account-scoped: the same id
+   * resolves on exactly one account and answers `No such price` on the other, so an id table is a
+   * table that must be edited on every key-set switch and whose failure mode is a checkout naming
+   * the wrong account's Price. A `lookup_key` is account-independent (`alignsynch_<tier>_<interval>`,
+   * identical on both accounts, measured 2026-11-15), so the fixture names one string and the
+   * provider answers with the id for whichever account `BILLING_KEY_SET` selected.
+   *
+   * A key that resolves to nothing is `not-configured` naming the plan, the key and the key set —
+   * never an inline amount and never another account's id.
+   */
+  private async priceIdFor(lookupKey: string): Promise<string> {
+    const cached = this.priceIds.get(lookupKey);
+    if (cached !== undefined) return cached;
+
+    const found = await this.get<{ data?: readonly { id?: unknown }[] }>(
+      `/prices?lookup_keys[]=${encodeURIComponent(lookupKey)}&limit=1`,
+    );
+    const id = found.data?.[0]?.id;
+    if (typeof id !== "string" || id === "") {
+      throw new BillingRefusal(
+        "not-configured",
+        `no Price with lookup key "${lookupKey}" resolves on this deployment's account ` +
+          `(BILLING_KEY_SET="${this.credentials.keySet ?? "unset → legacy STRIPE_TEST_*"}") — create ` +
+          "it on that account before selling the plan; a Price from the other account resolves " +
+          "nowhere here",
+      );
+    }
+    this.priceIds.set(lookupKey, id);
+    return id;
   }
 
   /** `GET` one API object. */

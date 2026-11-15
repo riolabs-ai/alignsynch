@@ -22,7 +22,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { BILLING_PRICE_IDS, TRIAL_PERIOD_DAYS } from "@/data/billing-prices";
+import { billingPriceLookupKeyFor, TRIAL_PERIOD_DAYS } from "@/data/billing-prices";
 import { resetBillingAdapter, startCheckout } from "@/lib/billing";
 import { StripeBillingAdapter } from "@/lib/billing/adapters/stripe";
 import { BillingRefusal } from "@/lib/billing/port";
@@ -37,20 +37,38 @@ const ENV = {
 const NOW = new Date("2026-11-13T12:00:00.000Z");
 
 /** A `fetch` that answers with one JSON payload and records what it was asked. */
-function fakeFetch(payload: unknown, status = 200) {
+function fakeFetch(payload: unknown, status = 200, priceId = "price_resolved") {
   const calls: { url: string; method: string; body: string }[] = [];
   const impl = (async (url: string, init: RequestInit = {}) => {
+    const target = String(url);
     calls.push({
-      url: String(url),
+      url: target,
       method: String(init.method ?? "GET"),
       body: typeof init.body === "string" ? init.body : "",
     });
+    // A checkout resolves its Price lookup key first, so the fake answers that call too: the id it
+    // returns carries the key, which is how a test sees that the resolution really happened.
+    if (target.includes("/prices?lookup_keys[]=")) {
+      const lookupKey = decodeURIComponent(
+        target.slice(target.indexOf("lookup_keys[]=") + "lookup_keys[]=".length).split("&")[0] ??
+          "",
+      );
+      return new Response(JSON.stringify({ data: [{ id: `${priceId}_${lookupKey}` }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify(payload), {
       status,
       headers: { "content-type": "application/json" },
     });
   }) as unknown as typeof fetch;
   return { impl, calls };
+}
+
+/** The session creation among the calls: the Price resolution comes first. */
+function sessionCalls<T extends { url: string }>(calls: readonly T[]): readonly T[] {
+  return calls.filter((call) => call.url === "https://api.stripe.com/v1/checkout/sessions");
 }
 
 function adapter(env: Readonly<Record<string, string>>, fetchImpl: typeof fetch) {
@@ -74,13 +92,16 @@ describe("the embedded membership checkout (stage 5's card step)", () => {
       presentation: "embedded",
     });
 
-    expect(calls[0]?.url).toBe("https://api.stripe.com/v1/checkout/sessions");
-    const form = new URLSearchParams(calls[0]?.body ?? "");
+    const [posted] = sessionCalls(calls);
+    expect(posted?.url).toBe("https://api.stripe.com/v1/checkout/sessions");
+    const form = new URLSearchParams(posted?.body ?? "");
 
     // A real subscription, not a card capture.
     expect(form.get("mode")).toBe("subscription");
-    // The Price, by id — never an inline amount.
-    expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.basic.month);
+    // The Price, by the id the account answered the lookup key with — never an inline amount.
+    expect(form.get("line_items[0][price]")).toBe(
+      `price_resolved_${billingPriceLookupKeyFor("basic", "month")}`,
+    );
     expect(form.get("line_items[0][quantity]")).toBe("1");
     expect([...form.keys()].some((key) => key.includes("price_data"))).toBe(false);
     // The seven days the badge promises.
@@ -135,9 +156,11 @@ describe("the hosted checkout (/pricing's plan buttons)", () => {
     const { impl, calls } = fakeFetch({ id: "cs_sub_4", url: "https://checkout.stripe.test/x" });
     const session = await adapter(ENV, impl).startCheckout(CHECKOUT);
 
-    const form = new URLSearchParams(calls[0]?.body ?? "");
+    const form = new URLSearchParams(sessionCalls(calls)[0]?.body ?? "");
     expect(form.get("mode")).toBe("subscription");
-    expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.basic.month);
+    expect(form.get("line_items[0][price]")).toBe(
+      `price_resolved_${billingPriceLookupKeyFor("basic", "month")}`,
+    );
     expect(form.get("subscription_data[trial_period_days]")).toBe("7");
     expect(
       form.get("subscription_data[trial_settings][end_behavior][missing_payment_method]"),
@@ -164,8 +187,10 @@ describe("the hosted checkout (/pricing's plan buttons)", () => {
   it("sells the yearly interval on the yearly Price", async () => {
     const { impl, calls } = fakeFetch({ id: "cs_sub_6", url: "https://checkout.stripe.test/z" });
     await adapter(ENV, impl).startCheckout({ ...CHECKOUT, planId: "principal", interval: "year" });
-    const form = new URLSearchParams(calls[0]?.body ?? "");
-    expect(form.get("line_items[0][price]")).toBe(BILLING_PRICE_IDS.principal.year);
+    const form = new URLSearchParams(sessionCalls(calls)[0]?.body ?? "");
+    expect(form.get("line_items[0][price]")).toBe(
+      `price_resolved_${billingPriceLookupKeyFor("principal", "year")}`,
+    );
     expect(form.get("metadata[interval]")).toBe("year");
   });
 
