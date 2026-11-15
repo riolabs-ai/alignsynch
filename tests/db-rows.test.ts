@@ -63,6 +63,9 @@ function instanceRows(instance: AssessmentInstance): AssessmentInstanceRows {
       relationship_id: `relationship-${instance.id}`,
       mode: instance.mode,
       setting: instance.setting,
+      // The relationship's own name (`0011_console_columns.sql`); NULL is unnamed, and the read
+      // falls back to the template title rather than inventing one.
+      name: instance.name ?? null,
     },
     parties: instance.parties.map((party) => ({
       session_record_id: instance.id,
@@ -117,7 +120,12 @@ describe("rows → model", () => {
   test.each(assessmentInstances.map((instance) => [instance.slug, instance] as const))(
     "the rows for %s map back to the fixture",
     (_slug, instance) => {
-      expect(assessmentInstanceFromRows(instanceRows(instance))).toEqual(instance);
+      // `lifecycle` is the one field the rows cannot carry: it is the **seeded relationship's**
+      // state (`relationship.status`, its instants and its reasons — `content/assessment.ts::
+      // zSeededLifecycle`), and the database keeps it on the relationship, not on the record this
+      // mapper reads. Everything the record holds round-trips exactly.
+      const { lifecycle: _seeded, ...content } = instance;
+      expect(assessmentInstanceFromRows(instanceRows(instance))).toEqual(content);
     },
   );
 
@@ -235,24 +243,33 @@ describe("the schema still decides", () => {
  */
 describe("the console's three columns (#289 follow-up)", () => {
   test("an existing instance parses with `name` NULL, and the fallback is the template title", () => {
-    // Every fixture instance predates the column, so every one of them is unnamed.
+    // Most of the dataset predates the column; #1079's population names seven of its rows, and both
+    // halves are asserted here — an unnamed row falls back to the template's title, a named one keeps
+    // its own words.
     for (const instance of assessmentInstances) {
       const template = assessments.find((candidate) => candidate.id === instance.templateId);
       expect(template).toBeDefined();
+      // Narrowed here rather than asserted: a template that does not resolve is a fixture defect
+      // the line above already fails on.
+      if (template === undefined) continue;
 
       const rows = instanceRows(instance);
-      expect(rows.instance.name).toBeUndefined();
+      expect(rows.instance.name).toBe(instance.name ?? null);
 
       const parsed = assessmentInstanceFromRows(rows);
-      expect("name" in parsed).toBe(false);
-      expect(instanceNameOf(parsed, template!.title)).toBe(template!.title);
-      // An explicit `NULL` is the same fact as an absent column, and reads the same way.
-      expect(
-        instanceNameOf(
-          assessmentInstanceFromRows({ ...rows, instance: { ...rows.instance, name: null } }),
-          template!.title,
-        ),
-      ).toBe(template!.title);
+      if (instance.name === undefined) {
+        expect("name" in parsed).toBe(false);
+        expect(instanceNameOf(parsed, template.title)).toBe(template.title);
+        // An explicit `NULL` is the same fact as an absent column, and reads the same way.
+        expect(
+          instanceNameOf(
+            assessmentInstanceFromRows({ ...rows, instance: { ...rows.instance, name: null } }),
+            template.title,
+          ),
+        ).toBe(template.title);
+      } else {
+        expect(instanceNameOf(parsed, template.title)).toBe(instance.name);
+      }
     }
 
     // The fallback reads the *argument*, not the copy's own title: a caller that resolves a

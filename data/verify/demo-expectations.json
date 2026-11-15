@@ -2,14 +2,16 @@
   "dataset": "demo-dataset.alignsynch.json",
   "brand": "alignsynch",
   "rows": {
-    "record": 33,
-    "item": 172,
+    "record": 60,
+    "item": 307,
     "response_option": 0,
-    "relationship": 4,
-    "session": 4,
-    "party": 8,
-    "opinion": 40,
+    "relationship": 31,
+    "session": 31,
+    "session_invite": 28,
+    "party": 56,
+    "opinion": 205,
     "billing_plan": 6,
+    "billing_subscription": 1,
     "demo_account": 3
   },
   "routes": [

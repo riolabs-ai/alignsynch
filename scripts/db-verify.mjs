@@ -86,17 +86,15 @@
  *   V20 the membership's coach (coach card): a relationship has at most one `coach` member. The
  *       unique key already forbids two identical accounts; this pins "one coach per relationship"
  *       on the rows so a second coach invited by hand is named, not assumed.
- *   V21 a **seeded** instance reads `complete` (#427/R2 follow-up): for every instance
- *       `data/assessments.ts` authors — the ids read from the fixture, never a list kept in this
- *       script — `instanceStatusOf()` over one SQL statement's counts (aspect count, both answered
- *       counts, both accepted counts, and whether a counterparty party row exists at all) answers
- *       `complete`. `db:seed` writes a seeded instance as a **finished** demo session, stamping
- *       `party.accepted_at` from the instance's own fixture date, so a seeded instance that reads
- *       `answering` is either a seed older than #427/R2 or a rule change that moved `complete` —
- *       the state production sat in for a day on 2026-11-03 while this file stayed green
- *       (`docs/operations/releasing.md` 2a). V11 names the *mark* on a non-complete instance; this names the
- *       absence of completion itself. Instances the seed does not author are not checked: their
- *       status is their own.
+ *   V21 a **seeded** instance reads the status its dataset authors (#427/R2, #1079): for every
+ *       instance `data/assessments.ts` authors — the ids read from the fixture, never a list kept in
+ *       this script — `instanceStatusOf()` over one SQL statement's counts (aspect count, both
+ *       answered counts, both accepted counts, whether a counterparty party row exists, and the
+ *       relationship's own `published_at`/`void_reason`) answers the word the authored lifecycle
+ *       implies (`expectedSessionStatusOf`). V21 used to assert a single `complete` for every
+ *       instance, because the seed wrote every instance as a finished session; a dataset of thirty
+ *       relationships across the seven lifecycle words cannot be checked by one value, and checking
+ *       it by "whatever the rows say" would be no check at all.
  *   V22 `template_version` exists and carries its immutability trigger (#502b): a published version
  *       is a snapshot, so the guard is what makes "editing a template never mutates N" a property of
  *       the database rather than of the one write path that happens to be careful.
@@ -160,18 +158,17 @@
  *       lie, and nothing measured the pair. A **draft** is exempt (no version is what "not offered"
  *       means) and a **session record** is exempt (it is a played copy, never a template).
  *       Numbered after #667's V29, which landed first.
- *   V31 a **seeded relationship is coherent with its own session** (#975): for every instance
- *       `data/assessments.ts` authors, the pair of rows that describe it agree. A session that
- *       derives `complete` — both parties answered every Aspect and both accepted — cannot be a
- *       relationship that says `draft` or `pending`, because nothing was ever invited; and it
- *       cannot be missing its `session_invite` row, because `claimInvite()` is the only code path
- *       that creates a Counterparty party and it spends an invitation to do it. On the demo branch
- *       both statements were false at once: all four relationships read `draft` (0030's default the
- *       seed never overwrote) with six Gaps open, and `session_invite` held **0 rows** — so
- *       `/dashboard/relationships/<id>` said "Not sent yet — nothing has been invited or charged"
- *       while `/assessments` said the pair had accepted, and `/invite/<token>` could only answer
- *       "No such invitation". V21 asserted the session and said nothing about the relationship, so
- *       the branch stayed green with the two surfaces disagreeing. Numbered after #962's V30.
+ *   V31 a **seeded relationship is coherent with its dataset** (#975, #1079): for every instance
+ *       `data/assessments.ts` authors, the `relationship` row beside it carries exactly the lifecycle
+ *       the dataset declares — the status, the three instants, the two reason columns, and the
+ *       invitation whose presence and claim state the status implies. V21 asserts the *session*
+ *       against the same declaration; this asserts the *relationship*, because the two rows describe
+ *       one pair and a branch where they disagree renders two screens saying opposite things.
+ *       The finding it was written for (#975): all four relationships read `draft` — 0030's default
+ *       the seed never overwrote — over sessions with six Gaps open, and `session_invite` held **0
+ *       rows**, so `/dashboard/relationships/<id>` said "Not sent yet — nothing has been invited or
+ *       charged" while `/assessments` said the pair had accepted, and `/invite/<token>` could only
+ *       answer "No such invitation". Numbered after #962's V30.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
  */
@@ -306,6 +303,9 @@ function scanForUpdatePaths() {
 const SEEDED_STATUS_SQL = `
   SELECT ai.record_id,
          r.slug,
+         rel.published_at AS published_at,
+         rel.status       AS relationship_status,
+         rel.void_reason  AS void_reason,
          (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)::int AS aspect_count,
          count(*) FILTER (WHERE p.role = 'initiator')::int AS initiators,
          count(*) FILTER (WHERE p.role = 'counterparty')::int AS counterparties,
@@ -321,10 +321,39 @@ const SEEDED_STATUS_SQL = `
            AS counterparty_answered
     FROM session ai
     JOIN record r ON r.id = ai.record_id
+    LEFT JOIN relationship rel ON rel.id = ai.relationship_id
     LEFT JOIN party p ON p.session_record_id = ai.record_id
    WHERE ai.record_id = ANY($1::text[])
-   GROUP BY ai.record_id, r.slug
+   GROUP BY ai.record_id, r.slug, rel.published_at, rel.status, rel.void_reason
    ORDER BY r.slug`;
+
+/**
+ * **The session status a lifecycle implies** — the other half of V21, and the reason it is a
+ * function rather than a constant (#1079).
+ *
+ * V21 used to assert one word (`complete`) for every seeded instance, because the seed wrote every
+ * instance as a finished session. A dataset with drafts, pending invitations and lapsed rows can no
+ * longer be checked by a single expected value, and checking it by "whatever the rows say" would be
+ * no check at all. So the expectation is derived from the dataset's own lifecycle through the same
+ * `instanceStatusOf()` the screen uses:
+ *
+ *   void                                  `voided`            (relationship.void_reason is set)
+ *   no published_at                       `draft`             (nothing was ever sent)
+ *   the counterparty holds no seat        `awaiting_counterparty`
+ *   not both seats accepted               `answering`
+ *   both accepted, both answered          `complete`
+ *
+ * `active` and `complete` both answer `complete` here: the session status describes the assessment
+ * cycle, while the relationship status describes the subscription — that separation is #533's, and
+ * V31 is where the second one is checked.
+ */
+export function expectedSessionStatusOf(lifecycle) {
+  if (lifecycle.status === "void") return "voided";
+  if (lifecycle.publishedAt === null) return "draft";
+  if (lifecycle.seats !== "both") return "awaiting_counterparty";
+  if (lifecycle.accepted !== "both") return "answering";
+  return "complete";
+}
 
 /**
  * What is missing from an instance that is not `complete`, in the words of the row it is missing.
@@ -539,16 +568,22 @@ export function publishedWithoutVersionProblems(records) {
 export async function seededInstanceStatusProblems(client, authoredInstances) {
   const problems = [];
   const authored = authoredInstances.map((instance) => ({ id: instance.id, slug: instance.slug }));
-  if (authored.length === 0) return { problems, complete: 0, authored: 0 };
+  if (authored.length === 0) return { problems, complete: 0, authored: 0, matched: 0 };
 
+  const { seededLifecycleOf } = await import("@/content/assessment.ts");
   const { instanceStatusOf } = await import("@/lib/flow/state.ts");
   const { rows } = await client.query(SEEDED_STATUS_SQL, [authored.map((instance) => instance.id)]);
   const rowById = new Map(rows.map((row) => [row.record_id, row]));
+  const lifecycleById = new Map(
+    authoredInstances.map((instance) => [instance.id, seededLifecycleOf(instance)]),
+  );
   let complete = 0;
+  let matched = 0;
 
   for (const instance of authored) {
     const row = rowById.get(instance.id);
     if (row === undefined) continue;
+    const expected = expectedSessionStatusOf(lifecycleById.get(instance.id));
     const status = instanceStatusOf({
       aspectCount: row.aspect_count,
       hasCounterparty: row.counterparties >= 1,
@@ -556,18 +591,21 @@ export async function seededInstanceStatusProblems(client, authoredInstances) {
       counterpartyAnswered: row.counterparty_answered,
       initiatorAccepted: row.initiator_accepted,
       counterpartyAccepted: row.counterparty_accepted,
+      published: row.published_at !== null && row.published_at !== undefined,
+      voided: row.void_reason !== null && row.void_reason !== undefined,
     });
-    if (status === "complete") {
-      complete += 1;
+    if (status === expected) {
+      matched += 1;
+      if (status === "complete") complete += 1;
       continue;
     }
     problems.push({
       code: "V21",
-      message: `seeded instance "${row.slug ?? instance.slug}" reads "${status}" — db:seed writes a finished session, and ${seededStatusDetail(row)}`,
+      message: `seeded instance "${row.slug ?? instance.slug}" reads "${status}" but its dataset authors "${lifecycleById.get(instance.id).status}", which derives "${expected}" — ${seededStatusDetail(row)}: run \`pnpm db:seed\``,
     });
   }
 
-  return { problems, complete, authored: authored.length };
+  return { problems, complete, authored: authored.length, matched };
 }
 
 /**
@@ -590,6 +628,9 @@ const SEEDED_RELATIONSHIP_SQL = `
          rel.status          AS relationship_status,
          rel.published_at    AS published_at,
          rel.completed_at    AS completed_at,
+         rel.expired_at      AS expired_at,
+         rel.lapse_reason    AS lapse_reason,
+         rel.void_reason     AS void_reason,
          ii.session_record_id IS NOT NULL AS invite_present,
          (ii.claimed_at IS NOT NULL)      AS invite_claimed,
          (SELECT count(*) FROM item i WHERE i.record_id = ai.record_id)::int AS aspect_count,
@@ -612,34 +653,31 @@ const SEEDED_RELATIONSHIP_SQL = `
     LEFT JOIN party p          ON p.session_record_id = ai.record_id
    WHERE ai.record_id = ANY($1::text[])
    GROUP BY ai.record_id, r.slug, rel.id, rel.status, rel.published_at, rel.completed_at,
+            rel.expired_at, rel.lapse_reason, rel.void_reason,
             ii.session_record_id, ii.claimed_at
    ORDER BY r.slug`;
-
-/** The statuses that mean "nothing has gone out", which a completed session cannot be. */
-const UNSENT_RELATIONSHIP_STATUSES = ["draft", "pending"];
 
 /**
  * V31 over the rows above — the whole rule, so a test can drive it with no database.
  *
- * Each row is one authored instance with its **derived** session status already computed by
- * `instanceStatusOf()` (`instance_status`), so the rule never re-implements the derivation it is
- * checking against.
+ * #1079 — **the rule compares the row to the dataset, not to a single happy word.** V31 used to
+ * assert one implication — "a session that derives `complete` cannot be a `draft` or a `pending`
+ * relationship" — because the seed wrote every instance as a finished session. The dataset now
+ * authors a lifecycle per instance (`content/assessment.ts::seededLifecycleOf`), and every word
+ * brings its own row set: a draft has no invitation, a pending one has none claimed and one seat, a
+ * published one has both seats and a claimed link, `complete` carries `completed_at`, `void` carries
+ * a reason, `expired` carries an instant and one of the three reasons. So each row is handed the
+ * lifecycle it should be (`expected`) and every one of those facts is compared:
  *
- * Three findings, in the order a reader would hit them:
- *
- *   `draft`/`pending`   over a pair that has answered everything and accepted each other. This is
- *                       D3: the screen says "Not sent yet — nothing has been invited or charged"
- *                       while the report draws six Gaps. A lifecycle word is a statement about the
- *                       pair, and this one contradicts every other row about them.
- *   no `published_at`   on a relationship that is past the unsent statuses. `published_at` is when
- *                       the invitation went out; a live relationship without one is a row that has
- *                       lost the only instant the trial and the invite window are measured from.
- *   no invitation       on an instance with a counterparty. The product cannot create that party
- *                       without spending an invitation (`claimInvite()`), so its absence means the
- *                       row was written by something that skipped the product — this is D16, where
- *                       `session_invite` was empty and `/invite/<token>` had no address at all.
- *                       An invitation that is present but **unclaimed** is the same finding from the
- *                       other side: both seats accepted, on a link nobody spent.
+ *   status                     the stored word must be the authored word
+ *   published_at / completed_at / expired_at   present exactly when the lifecycle says so
+ *   lapse_reason / void_reason the words the row carries, or NULL
+ *   session_invite             absent for a draft, present otherwise, claimed exactly when a seat
+ *                              exists — `claimInvite()` is the only path that creates a counterparty,
+ *                              so a seat without a claimed invitation is a row written by something
+ *                              that skipped the product (D16), and an invitation the status says was
+ *                              never sent is the same finding from the other side
+ *   the counterparty seat      present exactly when the lifecycle says both seats exist
  *
  * A relationship that does not exist at all is reported too — a session with no relationship is the
  * #340 split half-applied, and every screen that reads the relationship 404s over it.
@@ -647,42 +685,92 @@ const UNSENT_RELATIONSHIP_STATUSES = ["draft", "pending"];
 export function seededRelationshipProblems(rows) {
   const problems = [];
   for (const row of rows) {
-    if (row.instance_status !== "complete") continue;
+    const expected = row.expected;
+    if (expected === undefined) continue;
     const slug = row.slug ?? row.record_id;
 
     if (row.relationship_id === null || row.relationship_id === undefined) {
       problems.push({
         code: "V31",
-        message: `seeded instance "${slug}" derives complete but has no relationship row — the #340 split half-applied, so every surface that reads the relationship answers 404 over a session two people finished`,
+        message: `seeded instance "${slug}" has no relationship row — the #340 split half-applied, so every surface that reads the relationship answers 404 over a session two people finished`,
       });
       continue;
     }
 
-    if (UNSENT_RELATIONSHIP_STATUSES.includes(row.relationship_status)) {
+    const mismatch = (fact, found, want) =>
       problems.push({
         code: "V31",
-        message: `relationship "${row.relationship_id}" reads "${row.relationship_status}" while its session "${slug}" derives complete (every Aspect answered on both seats, both accepted) — a relationship that was never sent cannot have answers, and /dashboard/relationships says "Not sent yet" over a report full of Gaps: run \`pnpm db:seed\` (it writes the status its own session implies)`,
+        message: `relationship "${row.relationship_id}" (${slug}): ${fact} is ${found}, but data/assessments.ts authors ${want} — run \`pnpm db:seed\` (it writes the lifecycle its own dataset declares)`,
       });
+
+    if (row.relationship_status !== expected.status) {
+      mismatch("status", JSON.stringify(row.relationship_status), JSON.stringify(expected.status));
+      // The rest of the row is read against a status that is already wrong; one finding per row is
+      // enough to name the repair.
       continue;
     }
 
-    if (row.published_at === null || row.published_at === undefined) {
+    const hasPublished = row.published_at !== null && row.published_at !== undefined;
+    if (hasPublished !== (expected.publishedAt !== null)) {
+      mismatch(
+        "published_at",
+        hasPublished ? "set" : "NULL",
+        expected.publishedAt === null ? "NULL" : "an instant",
+      );
+    }
+    const hasCompleted = row.completed_at !== null && row.completed_at !== undefined;
+    if (hasCompleted !== (expected.completedAt !== null)) {
+      mismatch(
+        "completed_at",
+        hasCompleted ? "set" : "NULL",
+        expected.completedAt === null ? "NULL" : "an instant",
+      );
+    }
+    const hasExpired = row.expired_at !== null && row.expired_at !== undefined;
+    if (hasExpired !== (expected.expiredAt !== null)) {
+      mismatch(
+        "expired_at",
+        hasExpired ? "set" : "NULL",
+        expected.expiredAt === null ? "NULL" : "an instant",
+      );
+    }
+    if ((row.lapse_reason ?? null) !== expected.lapseReason) {
+      mismatch(
+        "lapse_reason",
+        JSON.stringify(row.lapse_reason ?? null),
+        JSON.stringify(expected.lapseReason),
+      );
+    }
+    if ((row.void_reason ?? null) !== expected.voidReason) {
+      mismatch(
+        "void_reason",
+        JSON.stringify(row.void_reason ?? null),
+        JSON.stringify(expected.voidReason),
+      );
+    }
+
+    const wantsInvite = expected.invite !== "none";
+    if (row.invite_present !== wantsInvite) {
       problems.push({
         code: "V31",
-        message: `relationship "${row.relationship_id}" reads "${row.relationship_status}" with published_at NULL — the invitation went out at some instant, and it is the instant the trial and the invite window are measured from`,
+        message: wantsInvite
+          ? `seeded relationship "${slug}" is "${expected.status}" and has no session_invite row — the status says the invitation went out, and claimInvite() is the only path that puts a counterparty in a seat: run \`pnpm db:seed\``
+          : `seeded relationship "${slug}" is a draft and carries a session_invite row — nothing has been sent, so /invite/<token> would offer a link the relationships screen says does not exist`,
+      });
+    } else if (row.invite_present && row.invite_claimed !== (expected.invite === "claimed")) {
+      problems.push({
+        code: "V31",
+        message: `seeded relationship "${slug}" is "${expected.status}" but its invitation is ${row.invite_claimed ? "claimed" : "unclaimed"} — a claimed seat and a sent link are the same fact, and they were written from different ones`,
       });
     }
 
-    if (row.invite_present !== true) {
-      problems.push({
-        code: "V31",
-        message: `session "${slug}" has a counterparty and no session_invite row — the only code path that creates a Counterparty party spends an invitation (claimInvite), so this relationship has a seat nobody could have been invited into and /invite/<token> can never resolve: run \`pnpm db:seed\``,
-      });
-    } else if (row.invite_claimed !== true) {
-      problems.push({
-        code: "V31",
-        message: `session "${slug}" carries an unclaimed invitation while both seats answered and accepted — the link is still spendable on a seat somebody already holds`,
-      });
+    const hasBothSeats = row.counterparties === 1;
+    if (hasBothSeats !== (expected.seats === "both")) {
+      mismatch(
+        "the counterparty party row",
+        hasBothSeats ? "present" : "absent",
+        expected.seats === "both" ? "present" : "absent",
+      );
     }
   }
   return problems;
@@ -701,23 +789,19 @@ export async function seededRelationshipCoherenceProblems(client, authoredInstan
   const authored = authoredInstances.map((instance) => ({ id: instance.id, slug: instance.slug }));
   if (authored.length === 0) return { problems: [], checked: 0 };
 
-  const { instanceStatusOf } = await import("@/lib/flow/state.ts");
+  const { seededLifecycleOf } = await import("@/content/assessment.ts");
   const { rows } = await client.query(SEEDED_RELATIONSHIP_SQL, [
     authored.map((instance) => instance.id),
   ]);
   const slugById = new Map(authored.map((instance) => [instance.id, instance.slug]));
+  const lifecycleById = new Map(
+    authoredInstances.map((instance) => [instance.id, seededLifecycleOf(instance)]),
+  );
 
   const evaluated = rows.map((row) => ({
     ...row,
     slug: row.slug ?? slugById.get(row.record_id),
-    instance_status: instanceStatusOf({
-      aspectCount: row.aspect_count,
-      hasCounterparty: row.counterparties >= 1,
-      initiatorAnswered: row.initiator_answered,
-      counterpartyAnswered: row.counterparty_answered,
-      initiatorAccepted: row.initiator_accepted,
-      counterpartyAccepted: row.counterparty_accepted,
-    }),
+    expected: lifecycleById.get(row.record_id),
   }));
 
   return { problems: seededRelationshipProblems(evaluated), checked: evaluated.length };
@@ -985,6 +1069,12 @@ async function main() {
     const authoredSettingOf = new Map(
       authoredInstances.map((instance) => [instance.id, instance.setting]),
     );
+    // #1079 — the dataset's own lifecycle per instance, which V5 (how many seats) and V6 (how much
+    // of the sheet) read instead of assuming every seeded instance is a finished one.
+    const { seededLifecycleOf } = await import("@/content/assessment.ts");
+    const authoredLifecycleOf = new Map(
+      authoredInstances.map((instance) => [instance.id, seededLifecycleOf(instance)]),
+    );
     const { rows: badSettings } = await client.query(
       `SELECT r.slug, ai.alignment_setting
          FROM session ai
@@ -1122,7 +1212,13 @@ async function main() {
           `instance "${listed.slug}" has ${counterparties} counterparty(ies) — at most one`,
         );
       }
-      if (invite === undefined && counterparties !== 1) {
+      // #1079 — a seeded `draft` or `pending` relationship genuinely has no second seat: the
+      // invitation is unsent or unclaimed, and `claimInvite()` is the only path that creates a
+      // counterparty. Every other status has both seats, and an invitation whose row is missing is
+      // V31's finding rather than V5's.
+      const authoredSeats = authoredLifecycleOf.get(listed.recordId)?.seats;
+      const wantsCounterparty = authoredSeats === undefined || authoredSeats === "both";
+      if (invite === undefined && wantsCounterparty && counterparties !== 1) {
         fail(
           "V5",
           `instance "${listed.slug}" has ${initiators} initiator(s) and ${counterparties} counterparty(ies) — exactly one of each`,
@@ -1256,9 +1352,15 @@ async function main() {
         settingsChecked.push({ slug: listed.slug, setting: rows.instance.setting });
       }
 
-      // A fixture instance is answered in full by construction, and a **complete** flow
-      // instance has to be; an unfinished one is the flow working, not drift.
-      const mustBeComplete = invite === undefined || status === "complete";
+      // A fixture instance is answered as far as its dataset authors, and a **complete** flow
+      // instance has to be answered in full; an unfinished one is the flow working, not drift.
+      // #1079 — the authored half of that: a `published` relationship with one side in, a `void` or
+      // an `expired` one, and a draft or a pending invitation are all coherent states, so the
+      // sheet is only owed where the dataset says both seats answered.
+      const authoredAnswers = authoredLifecycleOf.get(listed.recordId)?.answers;
+      const mustBeComplete =
+        authoredAnswers === "both" ||
+        (authoredAnswers === undefined && (invite === undefined || status === "complete"));
 
       if (mustBeComplete) {
         const { rows: unanswered } = await client.query(
