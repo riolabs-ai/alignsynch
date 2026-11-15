@@ -170,9 +170,10 @@ console cannot do rather than leaving it to be discovered.
 ![The admin console at 1440 wide: the heading "Admin console" over a grid of figure cards, each one printing the predicate it counts and linking to the rows behind it.](docs/assets/screens/alignsynch/desktop/admin-console.png)
 
 The operator group of the rail sits beside it — `/admin/console`, `/admin/instances`, `/admin/gaps`,
-`/admin/inbox`, `/admin/health`, `/admin/billing`, `/admin/broadcast`, `/admin/audit`, `/admin/growth`
-and `/admin/docs` — gated on the `product.admin` capability (`lib/brand-boundary.ts`). The audit log
-records every audited write: who, at which rung, what it touched, and why.
+`/admin/inbox`, `/admin/health`, `/admin/billing`, `/admin/broadcast`, `/admin/audit` and `/admin/docs`
+— gated on the `product.admin` capability (`lib/brand-boundary.ts`). The growth model is deliberately
+not a rail row: `/admin/growth` charts a _modelled_ business rather than this instance's, so it is
+URL-only. The audit log records every audited write: who, at which rung, what it touched, and why.
 
 ## The flow, as a diagram
 
