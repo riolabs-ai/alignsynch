@@ -1,32 +1,42 @@
 /**
- * V31 — a seeded relationship is coherent with its own session (#975).
+ * V31 — a seeded relationship carries the lifecycle its **dataset authors** (#975, #1079).
  *
- * The defect this covers was measured on the demo branch and named by the UX walk behind #975:
- * `relationship.status` read `draft` on all four seeded relationships (0030's default, which the
- * seed never overwrote) while every one of them had both seats answered and both acceptances
+ * The defect this was written for was measured on the demo branch and named by the UX walk behind
+ * #975: `relationship.status` read `draft` on all four seeded relationships (0030's default, which
+ * the seed never overwrote) while every one of them had both seats answered and both acceptances
  * stamped — so `/dashboard/relationships/<id>` said **"Not sent yet — nothing has been invited or
  * charged"** over a report drawing six Gaps, and `/assessments` said the pair had accepted.
- * `session_invite` held **0 rows**, so `/invite/<token>` could only answer "No such invitation" and
- * the counterparty's accept path had no screen at all. V21 asserted the session and was green
- * throughout: the two rows that describe one pair were never compared.
+ * `session_invite` held **0 rows**, so `/invite/<token>` could only answer "No such invitation".
+ * V21 asserted the session and was green throughout: the two rows that describe one pair were never
+ * compared.
+ *
+ * #1079 moved the expectation: the dataset authors seven lifecycle words, each with its own row set,
+ * so the rule compares a row against the lifecycle it should carry rather than against "complete".
+ * These cases pin both directions — a row that disagrees with its dataset is named, and a row that
+ * agrees with a *non-finished* lifecycle passes.
  *
  * The rule is `seededRelationshipProblems()` in `scripts/db-verify.mjs`, exported so these cases can
- * drive it with literals — the gate is database-free (`docs/operations/gate.md`), and a check
- * that needs a branch is a check that runs after the merge. The status itself is the product's own
- * `instanceStatusOf()`, so a rule change that moved `complete` fails here rather than turning the
- * demo silently green.
+ * drive it with literals — the gate is database-free (`docs/operations/gate.md`), and a check that
+ * needs a branch is a check that runs after the merge.
  */
 import { describe, expect, it } from "vitest";
+import { seededLifecycleOf, type DerivedLifecycle } from "@/content/assessment";
 
 import {
   seededRelationshipCoherenceProblems,
   seededRelationshipProblems,
 } from "../scripts/db-verify.mjs";
 
+const AT = "2026-10-28T18:30:00.000Z";
+
+/** The lifecycle one status derives, through the model's own function. */
+function expectedOfStatus(status: string, extra: Record<string, unknown> = {}): DerivedLifecycle {
+  return seededLifecycleOf({ date: AT, lifecycle: { status, ...extra } as never });
+}
+
 /**
- * One row of `SEEDED_RELATIONSHIP_SQL`, as `pg` returns it, plus the derived session status the
- * caller computes. Written as `db:seed` leaves a seeded relationship: `complete`, published and
- * completed at the instance's own instant, with one claimed invitation.
+ * One row of `SEEDED_RELATIONSHIP_SQL`, as `pg` returns it, plus the lifecycle the dataset authors
+ * (`expected`). Written as `db:seed` leaves a seeded relationship.
  */
 interface CoherenceRow {
   record_id: string;
@@ -35,34 +45,69 @@ interface CoherenceRow {
   relationship_status: string;
   published_at: Date | string | null;
   completed_at: Date | string | null;
+  expired_at: Date | string | null;
+  lapse_reason: string | null;
+  void_reason: string | null;
   invite_present: boolean;
   invite_claimed: boolean;
-  instance_status: "yours-to-answer" | "awaiting-other" | "complete";
+  counterparties: number;
+  expected: DerivedLifecycle | undefined;
 }
 
-const AT = new Date("2026-10-28T18:30:00.000Z");
-
 function coherentRow(overrides: Partial<CoherenceRow> = {}): CoherenceRow {
+  const expected = expectedOfStatus("complete", { plan: "basic" });
   return {
     record_id: "assessment-instance-avery-rowan",
     slug: "avery-rowan",
     relationship_id: "relationship-assessment-instance-avery-rowan",
     relationship_status: "complete",
-    published_at: AT,
-    completed_at: AT,
+    published_at: expected.publishedAt,
+    completed_at: expected.completedAt,
+    expired_at: null,
+    lapse_reason: null,
+    void_reason: null,
     invite_present: true,
     invite_claimed: true,
-    instance_status: "complete",
+    counterparties: 1,
+    expected,
     ...overrides,
   };
 }
 
-describe("V31 — a seeded relationship agrees with its session", () => {
-  it("passes the rows the seed now writes", () => {
+describe("V31 — a seeded relationship agrees with the lifecycle its dataset authors", () => {
+  it("passes the row the seed writes", () => {
     expect(seededRelationshipProblems([coherentRow()])).toEqual([]);
   });
 
-  it("names a draft relationship over a completed session", () => {
+  it("passes a draft, a pending invitation and a lapsed row — the three #1079 added", () => {
+    for (const [status, extra] of [
+      ["draft", {}],
+      ["pending", {}],
+      ["published", { answers: "initiator" }],
+      ["expired", { lapseReason: "trial-ended" }],
+      ["void", { voidReason: "Closed at both parties' request." }],
+    ] as const) {
+      const expected = expectedOfStatus(status, extra);
+      const row = coherentRow({
+        relationship_status: status,
+        published_at: expected.publishedAt,
+        completed_at: expected.completedAt,
+        expired_at: expected.expiredAt,
+        lapse_reason: expected.lapseReason,
+        void_reason: expected.voidReason,
+        invite_present: expected.invite !== "none",
+        invite_claimed: expected.invite === "claimed",
+        counterparties: expected.seats === "both" ? 1 : 0,
+        expected,
+      });
+      expect({ status, problems: seededRelationshipProblems([row]) }).toEqual({
+        status,
+        problems: [],
+      });
+    }
+  });
+
+  it("names a relationship whose stored status is not the one its dataset authors", () => {
     const problems = seededRelationshipProblems([coherentRow({ relationship_status: "draft" })]);
     expect(problems).toHaveLength(1);
     expect(problems[0].code).toBe("V31");
@@ -72,54 +117,66 @@ describe("V31 — a seeded relationship agrees with its session", () => {
     expect(problems[0].message).toContain("db:seed");
   });
 
-  it("treats `pending` the same way — neither was ever invited", () => {
-    expect(
-      seededRelationshipProblems([coherentRow({ relationship_status: "pending" })]).map(
-        (problem) => problem.code,
-      ),
-    ).toEqual(["V31"]);
+  it("names a completed relationship with no completed_at", () => {
+    const problems = seededRelationshipProblems([coherentRow({ completed_at: null })]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0].message).toContain("completed_at");
   });
 
   it("names a live relationship with no publish instant", () => {
+    const expected = expectedOfStatus("active", { plan: "basic" });
     const problems = seededRelationshipProblems([
-      coherentRow({ relationship_status: "active", published_at: null }),
+      coherentRow({
+        relationship_status: "active",
+        published_at: null,
+        completed_at: null,
+        expected,
+      }),
     ]);
     expect(problems).toHaveLength(1);
-    expect(problems[0].message).toContain("published_at NULL");
+    expect(problems[0].message).toContain("published_at");
   });
 
-  it("names a session whose counterparty was never invited", () => {
+  it("names a relationship whose counterparty seat was never claimed", () => {
     const problems = seededRelationshipProblems([coherentRow({ invite_present: false })]);
     expect(problems).toHaveLength(1);
     expect(problems[0].message).toContain("session_invite");
     expect(problems[0].message).toContain("avery-rowan");
   });
 
+  it("names a claimed invitation the dataset says was never sent — a draft carrying a link", () => {
+    const expected = expectedOfStatus("draft");
+    const problems = seededRelationshipProblems([
+      coherentRow({
+        relationship_status: "draft",
+        published_at: null,
+        completed_at: null,
+        invite_present: true,
+        invite_claimed: false,
+        counterparties: 0,
+        expected,
+      }),
+    ]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0].message).toContain("draft");
+  });
+
   it("names an unclaimed invitation on a seat somebody already holds", () => {
     const problems = seededRelationshipProblems([coherentRow({ invite_claimed: false })]);
     expect(problems).toHaveLength(1);
-    expect(problems[0].message).toContain("unclaimed invitation");
+    expect(problems[0].message).toContain("claimed");
+  });
+
+  it("names a lapse reason on a relationship that never lapsed", () => {
+    const problems = seededRelationshipProblems([coherentRow({ lapse_reason: "payment-failed" })]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0].message).toContain("lapse_reason");
   });
 
   it("names a session with no relationship row at all", () => {
     const problems = seededRelationshipProblems([coherentRow({ relationship_id: null })]);
     expect(problems).toHaveLength(1);
     expect(problems[0].message).toContain("no relationship row");
-  });
-
-  it("leaves a session that is not complete alone — a person mid-flow is not drift", () => {
-    expect(
-      seededRelationshipProblems([
-        coherentRow({
-          instance_status: "yours-to-answer",
-          relationship_status: "draft",
-          published_at: null,
-          invite_present: false,
-          invite_claimed: false,
-          completed_at: null,
-        }),
-      ]),
-    ).toEqual([]);
   });
 
   it("reports every authored instance, not just the first one", () => {
@@ -137,8 +194,8 @@ describe("V31 — a seeded relationship agrees with its session", () => {
   });
 });
 
-describe("V31 — the wired check derives the status itself", () => {
-  it("derives `complete` from the counts and flags the draft row", async () => {
+describe("V31 — the wired check asks for the dataset's lifecycle", () => {
+  it("derives the expectation from the instance and flags the row that disagrees", async () => {
     const calls: { text: string; values: unknown[] }[] = [];
     const client = {
       async query(text: string, values: unknown[]) {
@@ -152,6 +209,9 @@ describe("V31 — the wired check derives the status itself", () => {
               relationship_status: "draft",
               published_at: null,
               completed_at: null,
+              expired_at: null,
+              lapse_reason: null,
+              void_reason: null,
               invite_present: false,
               invite_claimed: false,
               aspect_count: 5,
@@ -168,11 +228,11 @@ describe("V31 — the wired check derives the status itself", () => {
     };
 
     const result = await seededRelationshipCoherenceProblems(client, [
-      { id: "assessment-instance-avery-rowan", slug: "avery-rowan" },
+      { id: "assessment-instance-avery-rowan", slug: "avery-rowan", date: AT },
     ]);
 
     expect(result.checked).toBe(1);
-    // `draft` over a complete session short-circuits: the invitation finding is not piled on top.
+    // `draft` over a finished session's row short-circuits: the invitation finding is not piled on.
     expect(result.problems).toHaveLength(1);
     expect(result.problems[0].code).toBe("V31");
     // The ids the check asks about are the fixture's, passed as one array.

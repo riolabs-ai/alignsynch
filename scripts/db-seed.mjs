@@ -61,6 +61,25 @@
  * flag is a switch, and a switch that only ever adds leaves a demo backdoor behind on every
  * machine that ever ran a demo.
  *
+ * **#1079 — the demo is a population, not four finished relationships.** `data/assessments.ts`
+ * authors thirty-one relationships (and `data/assessment-population.ts` the compact rows they are built
+ * from), each carrying a `lifecycle` block: the seven words `0030_relationship_lifecycle.sql` allows,
+ * with the instants and reasons their own CHECK constraints require. This file does not invent any
+ * of it — `content/assessment.ts::seededLifecycleOf()` turns the block into the row set (which seats
+ * exist, how much of the sheet has been answered, whether an invitation was sent and claimed, which
+ * terminal instant and reason), and the seed writes exactly that. `pnpm db:verify` compares the rows
+ * back against the same function (V21, V31), so the dataset and the branch cannot drift apart.
+ *
+ * **Known limits, stated so nobody mistakes this for customer data.** The population is synthetic:
+ * the names are fixtures on `demo.alignsynch.test`, the scores are authored to produce a spread of
+ * Gaps (some In Synch, some Big), the void reasons were written by nobody, and the clock is
+ * `DEMO_NOW_ISO` (`content/core.ts`) — every seeded instant is derived from a fixture date plus whole
+ * days, never from `now()`. The three demo identities are the only credentials, and they are
+ * generated per run and stored only in `demo_account`; the other thirty people are party rows, not
+ * accounts. An `active` relationship needs an entitling subscription to read as live rather than
+ * lapsed (`membershipOf()`), so the demo writes **one** `billing_subscription` for the initiator's
+ * account — the one billing row this seed owns, and the reason an `active` demo is not a status lie.
+ *
  * **The platform admins.** With `ADMIN_NN_EMAIL` / `ADMIN_NN_PASS` present, this script also
  * ensures each pair is a durable `admin` account: created through the same sign-up path when
  * absent, reconciled (role corrected in place) when present, and — when the password has changed
@@ -304,97 +323,91 @@ function inviteEmailFor(instance) {
 }
 
 /**
- * #975 — **the seeded relationship is written coherently, not merely written.**
+ * #1079 — **the seeded relationship is written from the dataset's own lifecycle**, not from a
+ * single-happy-path derivation.
  *
- * Two rows describe one pair, and the seed wrote only the first half of each:
+ * Before #1079 the status was inferred from one fact — "did both parties answer every Aspect" —
+ * and because the model *requires* both parties to answer, that inference could only ever produce
+ * `complete`. The demo branch therefore held thirty finished relationships and zero live product:
+ * no draft, nothing waiting on a counterparty, nothing active, nothing lapsed. The dataset now
+ * authors its lifecycle per instance (`content/assessment.ts::zSeededLifecycle`), and
+ * `seededLifecycleOf()` is the one derivation of what that lifecycle writes — the same function
+ * `scripts/db-verify.mjs` (V21, V31) compares the rows back to and
+ * `tests/demo-dataset-coverage.test.ts` counts.
  *
- *   `relationship.status`      was never written at all, so all four rows took 0030's `draft`
- *                              default while both parties had accepted every Aspect and the
- *                              report drew six Gaps. `/dashboard/relationships/<id>` therefore said
- *                              **"Not sent yet — nothing has been invited or charged"** over a
- *                              relationship `/assessments` called "You have both accepted — the Gap
- *                              is open". A draft that was never sent cannot have answers; a pair
- *                              with a Gap cannot be a draft. This is the defect.
- *   `session_invite`           was never written either, so no relationship had an invitation —
- *                              and `publishViewOf()` draws `invite-missing` ("that is a defect;
- *                              support can repair it") for any non-draft row whose invite is NULL.
- *                              Fixing the status alone would have moved the lie one band down.
+ * **The row stays coherent with its own session**, which is what #975 established and V31 holds:
+ * the lifecycle's `seats`, `answers`, `accepted` and `invite` decide which `party`, `opinion` and
+ * `session_invite` rows exist (see `seedInstance`), so a `draft` genuinely has no invitation and a
+ * `pending` one genuinely has nobody in the second seat. The SQL CHECKs are satisfied by
+ * construction: `published_at` is `created_at`-or-later, `completed_at` only exists on a published
+ * row and never before it, `expired_at` is at-or-after creation, and a lapse reason arrives with
+ * its instant (`0032_relationship_lapse.sql`).
  *
- * **The status is derived from the fixture, and the derivation is the product's own rule.** A
- * seeded instance is a finished demo session (every Aspect answered on both seats, both
- * acceptances stamped), so its session derives `complete` — which is precisely what V21 asserts
- * on every run — and the relationship follows it:
- *
- *   sealed (every party answered every Aspect)   `complete`, published and completed at the
- *                                                instance's own instant
- *   not sealed                                   `published`, published at that instant, nothing
- *                                                completed — the truthful pair for a dataset whose
- *                                                pair has not answered yet
- *
- * `active` is the other defensible word, and it is **not** used: `membershipOf()` reads a live
- * status with no entitling subscription as `lapsed`, so an `active` demo would print "the
- * initiator's membership ended — the subscription was cancelled … read-only for both of you" over
- * a relationship nobody ever charged. Trading a status lie for a billing lie is not a fix. A
- * `complete` row is closed, so it never lapses and never claims a charge.
- *
- * `published_at` is the relationship's own `created_at`, the same instant 0030's backfill uses and
- * the earliest instant it can have gone out: inventing `now()` would claim a publish nobody made.
- *
- * **Idempotent by update, not by insert.** `status`, `published_at` and `completed_at` are in the
- * `DO UPDATE` list, so a re-seed converges a row an older seed left draft instead of leaving the
- * branch half-converted.
+ * **Idempotent by update, not by insert.** Every lifecycle column is in the `DO UPDATE` list, so a
+ * re-seed converges a row an older seed left `complete` — or one a person changed in the app —
+ * instead of leaving the branch half-converted.
  */
-async function seedRelationship(client, instance) {
-  const sealed =
-    instance.parties.length > 0 &&
-    instance.parties.every((party) => party.opinions.length === instance.items.length);
-  const status = sealed ? "complete" : "published";
-
+async function seedRelationship(client, instance, lifecycle) {
   await client.query(
     `INSERT INTO relationship
        (id, template_id, template_version_id, initiator_user_id, counterparty_user_id,
-        purchased_at, plan, created_at, status, published_at, completed_at)
-     VALUES ($1, $2, $3, NULL, NULL, NULL, NULL, $4, $5, $4, $6)
+        purchased_at, plan, created_at, status, published_at, completed_at, void_reason,
+        expired_at, lapse_reason)
+     VALUES ($1, $2, $3, NULL, NULL, NULL, $4, $5, $6, $7, $8, $9, $10, $11)
      ON CONFLICT (id) DO UPDATE SET
        template_id         = EXCLUDED.template_id,
        template_version_id = EXCLUDED.template_version_id,
+       plan                = EXCLUDED.plan,
        created_at          = EXCLUDED.created_at,
        status              = EXCLUDED.status,
        published_at        = EXCLUDED.published_at,
-       completed_at        = EXCLUDED.completed_at`,
+       completed_at        = EXCLUDED.completed_at,
+       void_reason         = EXCLUDED.void_reason,
+       expired_at          = EXCLUDED.expired_at,
+       lapse_reason        = EXCLUDED.lapse_reason`,
     [
       `relationship-${instance.id}`,
       instance.templateId,
       `template-version-${instance.templateId}-v1`,
+      lifecycle.plan,
       instance.date,
-      status,
-      sealed ? instance.date : null,
+      lifecycle.status,
+      lifecycle.publishedAt,
+      lifecycle.completedAt,
+      lifecycle.voidReason,
+      lifecycle.expiredAt,
+      lifecycle.lapseReason,
     ],
   );
-  return { sealed, status };
+  return lifecycle;
 }
 
 /**
- * The invitation that put the counterparty in their seat (#975).
+ * The invitation that put the counterparty in their seat (#975, #1079).
  *
  * `claimInvite()` (`lib/flow/store.ts`) is the only code path that creates a Counterparty party,
  * and it does so by spending an invitation: it inserts the party and sets `claimed_at` in one
- * transaction. So a seeded instance that *has* a counterparty party, opinions and an acceptance
- * is a relationship somebody was invited into, and a branch without the row is a relationship
- * nobody could have been invited to. That is D16, and it had no screen: `session_invite` was
- * empty, so `/invite/<token>` could only ever answer "No such invitation".
+ * transaction. So a seeded instance whose lifecycle says the counterparty holds a seat must have
+ * the invitation that put them there — and an instance whose lifecycle is `draft` must have **no**
+ * invitation at all, because nothing has been sent yet. `pending` is the third state: the row
+ * exists, `claimed_at` is NULL, and the link is still spendable — which is exactly what the demo's
+ * `/invite/<token>` needs in order to show a live invitation.
  *
  * Written from the same facts as the party row, so the two cannot disagree: `created_at` is the
  * relationship's instant, `expires_at` is that instant plus `INVITE_TTL_MS` (7 days, the same
- * constant the product writes), and `claimed_at` is the acceptance instant — the seed stamps
- * `party.accepted_at` from the instance's own date, so the claim and the acceptance share it.
- * An invitation displayed as claimed is exactly the state `inviteStateOf()` reads off the pair
- * (`claimed` outranks `expired`, so a seeded row older than its window still reads claimed).
+ * constant the product writes), and `claimed_at` is the acceptance instant for a claimed row.
  */
-async function seedInvitation(client, instance, relationship) {
+async function seedInvitation(client, instance, lifecycle) {
   const { hashToken, INVITE_TTL_MS } = await import("../lib/flow/tokens.ts");
+  if (lifecycle.invite === "none") {
+    // A draft never had a link. Deleting by session is the idempotent convergence: a relationship
+    // that used to be `pending` and is now `draft` must lose the row, or the branch keeps an
+    // invitation for something nobody sent.
+    await client.query("DELETE FROM session_invite WHERE session_record_id = $1", [instance.id]);
+    return null;
+  }
   const token = demoInviteToken(instance.id);
-  const expiresAt = new Date(new Date(instance.date).getTime() + INVITE_TTL_MS);
+  const expiresAt = new Date(new Date(instance.date).getTime() + INVITE_TTL_MS).toISOString();
   const counterparty = instance.parties.find((party) => party.role === "counterparty");
 
   await client.query(
@@ -416,13 +429,30 @@ async function seedInvitation(client, instance, relationship) {
       // A claimed invitation's window is history; an unclaimed one still has to satisfy
       // `invite_expires_after_creation`, which the TTL does on its own.
       expiresAt,
-      relationship.sealed ? instance.date : null,
+      lifecycle.invite === "claimed" ? instance.date : null,
     ],
   );
-  return { token, email: inviteEmailFor(instance) };
+  return { token, email: inviteEmailFor(instance), claimed: lifecycle.invite === "claimed" };
 }
 
-async function seedInstance(client, instance) {
+/**
+ * One instance's rows: the record, its Aspects, the relationship, the session, the invitation, the
+ * seats and the answers — **each written from the lifecycle** (#1079).
+ *
+ * Which rows exist is the lifecycle's decision, and it is what keeps the demo honest:
+ *
+ *   `seats`     `initiator` for `draft`/`pending` — the counterparty has not claimed a seat, so
+ *               `party` holds one row and a screen that asks "is there a counterparty" answers no.
+ *               `both` for everything past the claim.
+ *   `answers`   `none`, `initiator` or `both`. The fixture carries the whole sheet (the model
+ *               requires it); how much of it has *happened* is a lifecycle fact, and a `published`
+ *               row with one side in is the demo's most important screen — the Gap cannot be drawn
+ *               until both sides answered.
+ *   `accepted`  `both` records `party.accepted_at` from the instance's own instant; `none` leaves it
+ *               NULL, so `instanceStatusOf()` derives `answering` rather than `complete`. Without
+ *               that, every relationship would read finished whatever its lifecycle said.
+ */
+async function seedInstance(client, instance, lifecycle) {
   await upsertRecord(client, instance);
   await replaceItems(client, instance);
   // #340 — the relationship the instance was split into. One per instance, idempotent by the
@@ -430,10 +460,8 @@ async function seedInstance(client, instance) {
   // re-seed converges on the same row. The two account columns stay NULL here: the demo accounts
   // do not exist yet (they are created and bound later, in phase 2), and the relationship's
   // Initiator/Counterparty are the parties' bindings, which `bindDemoParties` writes on `party`
-  // and nowhere else. `purchased_at` is NULL — no demo relationship records a purchase.
-  //
-  // #975 — and the row carries the lifecycle facts its own session implies (`seedRelationship`).
-  const relationship = await seedRelationship(client, instance);
+  // and on the relationship itself. `purchased_at` is NULL — no demo relationship records a purchase.
+  await seedRelationship(client, instance, lifecycle);
   await client.query(
     `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
      VALUES ($1, $2, $3, $4, $5)
@@ -449,22 +477,27 @@ async function seedInstance(client, instance) {
       `relationship-${instance.id}`,
     ],
   );
-  // #975 — the invitation that put the counterparty in this seat. Written after the `session` row
+  // The invitation that put the counterparty in this seat — written after the `session` row
   // because `session_invite.session_record_id` is a foreign key to it (0013 renamed the table and
   // the column; the constraint never went away).
-  await seedInvitation(client, instance, relationship);
+  await seedInvitation(client, instance, lifecycle);
   await client.query("DELETE FROM party WHERE session_record_id = $1", [instance.id]);
-  for (const party of instance.parties) {
-    // A seeded instance is a **finished** demo session: its parties have answered every Aspect,
-    // and since #427/R2 a session is complete only when both parties have **accepted**, so the
-    // seed records the acceptance at the fixture's own instant. Without it the demo would read as
-    // `answering` forever and its unlock marker (`party.unlock_seen_at`, V11) would be one that
-    // can never show. The fixture carries no acceptance field — an instant the product derives,
-    // not something an author writes — which is why it is stamped here rather than in `data/`.
+  const seats = instance.parties.filter(
+    (party) => lifecycle.seats === "both" || party.role === "initiator",
+  );
+  for (const party of seats) {
+    // #427/R2 — a session is complete only when both parties have **accepted**, so the seed records
+    // the acceptance at the fixture's own instant for a lifecycle that says both seats accepted.
+    // The fixture carries no acceptance field — an instant the product derives, not something an
+    // author writes — which is why it is stamped here rather than in `data/`.
     await client.query(
       "INSERT INTO party (session_record_id, role, name, accepted_at) VALUES ($1, $2, $3, $4)",
-      [instance.id, party.role, party.name, instance.date],
+      [instance.id, party.role, party.name, lifecycle.accepted === "both" ? instance.date : null],
     );
+    const answered =
+      lifecycle.answers === "both" ||
+      (lifecycle.answers === "initiator" && party.role === "initiator");
+    if (!answered) continue;
     for (const answer of party.opinions) {
       await client.query(
         `INSERT INTO opinion (session_record_id, role, item_id, feel, wish, think, guess)
@@ -624,11 +657,15 @@ const DEMO_DOMAIN = "demo.alignsynch.test";
 const DEMO_ORIGIN = process.env.DEMO_ORIGIN ?? "http://localhost:3000";
 
 /**
- * The three accounts, and the one party two of them own.
+ * The three accounts, and the seats they hold.
  *
  * The handles are `demo-`prefixed so a leftover row is identifiable by name, and the display
- * names are the party names the dataset carries (`Avery`, `Rowan`) so `/profile/<handle>` and
- * the instance screen agree about who is signed in.
+ * names are the party names the dataset carries (`Avery`, `Rowan`) — which is the **binding key**:
+ * `bindDemoParties` binds every `party` row whose name is that person, so the demo identities hold
+ * every relationship their name appears in rather than one fixture instance (#1079). Avery is the
+ * Initiator on four of them and Rowan is the Counterparty on one and the Initiator on two, which is
+ * what makes both demo buttons show a populated screen — the requirement the issue states as "at
+ * least one relationship where they are the initiator/counterparty".
  */
 const DEMO_ACCOUNTS = [
   {
@@ -636,21 +673,18 @@ const DEMO_ACCOUNTS = [
     name: "Avery",
     handle: "demo-initiator",
     role: "member",
-    party: { instance: "assessment-instance-avery-rowan", role: "initiator" },
   },
   {
     email: `counterparty@${DEMO_DOMAIN}`,
     name: "Rowan",
     handle: "demo-counterparty",
     role: "member",
-    party: { instance: "assessment-instance-avery-rowan", role: "counterparty" },
   },
   {
     email: `admin@${DEMO_DOMAIN}`,
     name: "Demo Admin",
     handle: "demo-admin",
     role: "admin",
-    party: null,
   },
 ];
 
@@ -730,6 +764,36 @@ async function removeDemoAccounts(client) {
           ])
         ).rowCount ?? 0);
 
+  // #1079 — the two account columns on `relationship` follow the same rule as `party.user_id`: a
+  // demo account removed on purpose must not leave a relationship claiming an initiator no auth
+  // user holds (V27's shape, one table over). And the demo subscription dies with the account, or
+  // the next run's `provider_subscription_id` would be a row nobody owns.
+  const unowned =
+    ids.length === 0
+      ? 0
+      : ((
+          await client.query(
+            `UPDATE relationship SET initiator_user_id = NULL
+              WHERE initiator_user_id = ANY($1::text[])`,
+            [ids],
+          )
+        ).rowCount ?? 0) +
+        ((
+          await client.query(
+            `UPDATE relationship SET counterparty_user_id = NULL
+              WHERE counterparty_user_id = ANY($1::text[])`,
+            [ids],
+          )
+        ).rowCount ?? 0);
+  const subscriptions =
+    ids.length === 0
+      ? 0
+      : ((
+          await client.query("DELETE FROM billing_subscription WHERE user_id = ANY($1::text[])", [
+            ids,
+          ])
+        ).rowCount ?? 0);
+
   // #coach — a membership row is an account's view into a relationship, so it dies with the demo
   // account that held it, exactly as the party binding does. A coach invite is invited by an
   // account too, so it goes the same way.
@@ -782,6 +846,8 @@ async function removeDemoAccounts(client) {
     profiles: profiles + orphanHandles,
     credentials,
     unbound,
+    unowned,
+    subscriptions,
     members,
     coachInvites,
   };
@@ -841,29 +907,110 @@ async function seedDemoAccounts(client) {
 }
 
 /**
- * Avery and Rowan are the two people on `assessment-instance-avery-rowan`, and these two
- * accounts are them. One `UPDATE` per party, and a `rowCount` of exactly 1: a binding that
- * matched nothing means the dataset did not land (or its ids moved), and a binding that matched
- * two would mean the instance has two initiators — both are refusals, not warnings.
+ * Every seat a demo identity holds, plus the two account columns the relationship itself carries.
+ *
+ * Binding is by **party name** (#1079). It used to be one hard-coded `(instance, role)` per account,
+ * which was right while the dataset had four instances and one of them belonged to Avery — but a
+ * thirty-relationship demo whose demo buttons each opened one row would be a dataset nobody can
+ * browse. Every row whose name is the account's display name is that person's seat, and the
+ * relationship's own `initiator_user_id` / `counterparty_user_id` follow from the seats (an
+ * `UPDATE … FROM`, so the two facts are written in one statement and cannot disagree).
+ *
+ * A binding that matches **nothing** is still a refusal, not a warning: it means the dataset did
+ * not land, or a name changed in `data/assessment-population.ts` without this file following.
  */
 async function bindDemoParties(client, accounts) {
   const bound = [];
   for (const account of accounts) {
-    if (account.party === null) continue;
     const { rows } = await client.query(
-      `UPDATE party SET user_id = $1
-        WHERE session_record_id = $2 AND role = $3
-        RETURNING name`,
-      [account.userId, account.party.instance, account.party.role],
+      `UPDATE party SET user_id = $1 WHERE name = $2
+        RETURNING session_record_id, role, name`,
+      [account.userId, account.name],
     );
-    if (rows.length !== 1) {
+    if (rows.length === 0) {
       throw new Error(
-        `demo party ${account.party.instance}/${account.party.role}: ${rows.length} row(s) matched, expected exactly 1 — is the demo dataset imported?`,
+        `demo identity ${account.email}: no party row is named "${account.name}" — the names in data/assessment-population.ts and this file disagree`,
       );
     }
-    bound.push({ ...account.party, email: account.email, partyName: rows[0].name });
+    for (const row of rows) {
+      bound.push({
+        instance: row.session_record_id,
+        role: row.role,
+        email: account.email,
+        partyName: row.name,
+      });
+    }
   }
+
+  // The relationship's account columns are the seats' bindings, read from `party` rather than kept
+  // as a second list. `member` surfaces read them (`relation` → `initiator_user_id`), so a NULL here
+  // is a relationship its own initiator cannot see.
+  await client.query(
+    `UPDATE relationship r
+        SET initiator_user_id = p.user_id
+       FROM session s
+       JOIN party p ON p.session_record_id = s.record_id
+      WHERE s.relationship_id = r.id AND p.role = 'initiator' AND p.user_id IS NOT NULL
+        AND r.initiator_user_id IS DISTINCT FROM p.user_id`,
+  );
+  await client.query(
+    `UPDATE relationship r
+        SET counterparty_user_id = p.user_id
+       FROM session s
+       JOIN party p ON p.session_record_id = s.record_id
+      WHERE s.relationship_id = r.id AND p.role = 'counterparty' AND p.user_id IS NOT NULL
+        AND r.counterparty_user_id IS DISTINCT FROM p.user_id`,
+  );
   return bound;
+}
+
+/**
+ * **The live subscription a real `active` relationship needs** (#1079).
+ *
+ * `membershipOf()` reads a live status with no entitling subscription as `lapsed`, so an `active`
+ * row on an account with no `billing_subscription` renders "the initiator's membership ended — the
+ * subscription was cancelled … read-only for both of you". That is the trade the previous seed
+ * refused to make (it wrote every row `complete` instead), and it is why this has to exist before
+ * the dataset can carry an `active` word at all: a status lie is not fixed by a billing lie.
+ *
+ * One row per demo account that initiates a live relationship, on the tier that relationship was
+ * bought on (`relationship.plan`), `status: 'active'` — so the period end cannot expire the demo —
+ * and the deterministic `provider_subscription_id` is the idempotency key, as a provider's would
+ * be. The partial unique index (`one live subscription per account`) is what keeps a re-seed from
+ * stacking a second one.
+ */
+async function seedDemoSubscriptions(client, accounts) {
+  const { DEMO_NOW_ISO } = await import("../content/core.ts");
+  const periodEnd = new Date(Date.parse(DEMO_NOW_ISO) + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const written = [];
+  for (const account of accounts) {
+    const { rows } = await client.query(
+      `SELECT rel.plan
+         FROM relationship rel
+        WHERE rel.initiator_user_id = $1 AND rel.plan IS NOT NULL
+        ORDER BY CASE rel.status WHEN 'active' THEN 0 WHEN 'published' THEN 1 ELSE 2 END,
+                 rel.created_at DESC
+        LIMIT 1`,
+      [account.userId],
+    );
+    const plan = rows[0]?.plan;
+    if (plan === undefined) continue;
+    await client.query(
+      `INSERT INTO billing_subscription
+         (user_id, plan_id, interval, provider, provider_subscription_id, status, current_period_end)
+       VALUES ($1, $2, 'month', 'mock', $3, 'active', $4)
+       ON CONFLICT (provider_subscription_id) DO UPDATE SET
+         user_id            = EXCLUDED.user_id,
+         plan_id            = EXCLUDED.plan_id,
+         interval           = EXCLUDED.interval,
+         status             = EXCLUDED.status,
+         current_period_end = EXCLUDED.current_period_end,
+         updated_at         = now()`,
+      [account.userId, plan, `demo-${account.email}`, periodEnd],
+    );
+    written.push({ email: account.email, plan });
+  }
+  return written;
 }
 
 /**
@@ -1265,8 +1412,9 @@ const COUNT_SQL = {
   response_option: "SELECT count(*)::int AS n FROM response_option",
   session: "SELECT count(*)::int AS n FROM session",
   relationship: "SELECT count(*)::int AS n FROM relationship",
-  // #975 — one invitation per session: the row that put each counterparty in their seat. Counted
-  // because "the invitation exists" is now a fact the seed promises and V31 checks.
+  // #975/#1079 — one invitation per relationship that went out: the row that put each counterparty
+  // in their seat. Counted because "the invitation exists" is a fact the seed promises and V31
+  // checks — and **not** one per instance, because a draft has no link.
   session_invite: "SELECT count(*)::int AS n FROM session_invite",
   party: "SELECT count(*)::int AS n FROM party",
   opinion: "SELECT count(*)::int AS n FROM opinion",
@@ -1437,8 +1585,11 @@ async function main() {
       const accounts = await seedDemoAccounts(client);
       const bound = await bindDemoParties(client, accounts);
       await syncRelationshipMembers(client);
+      // #1079 — the same subscription the full seed writes, so the narrow repair leaves an
+      // `active` relationship reading entitled rather than lapsed.
+      const subscriptions = await seedDemoSubscriptions(client, accounts);
       console.log(
-        `demo accounts: ${accounts.length} identity(ies) restored, ${[...bound].length} party binding(s)`,
+        `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s)`,
       );
     } finally {
       await client.end();
@@ -1463,6 +1614,14 @@ async function main() {
   // line: a message that spells the source differently from the sweep is a message that makes a
   // converged branch look like a drifted one.
   const source = demo ? displayPath(DEMO_DATASET_FILE) : "data/assessments.ts";
+
+  // #1079 — every instance's lifecycle, derived once from the dataset itself. One function
+  // (`content/assessment.ts::seededLifecycleOf`) decides which `relationship`, `party`, `opinion`
+  // and `session_invite` rows exist, so the seed cannot write a state the fixtures do not author.
+  const { seededLifecycleOf } = await import("../content/assessment.ts");
+  const lifecycles = new Map(
+    assessmentInstances.map((instance) => [instance.id, seededLifecycleOf(instance)]),
+  );
   // #865 — the ids this seed is about to write, and therefore the only relationship rows the
   // branch is allowed to keep: the sweep deletes by *not being in this set*.
   const bundleRelationshipIds = assessmentInstances.map(
@@ -1492,16 +1651,22 @@ async function main() {
     ),
     session: assessmentInstances.length,
     relationship: assessmentInstances.length,
-    // #975 — one invitation per session. A seeded session has a counterparty party, and the only
-    // way the product ever creates one is by spending an invitation, so the row is part of what
-    // the seed promises rather than an extra.
-    session_invite: assessmentInstances.length,
-    party: assessmentInstances.reduce((total, instance) => total + instance.parties.length, 0),
-    opinion: assessmentInstances.reduce(
-      (total, instance) =>
-        total + instance.parties.reduce((count, party) => count + party.opinions.length, 0),
+    // #975 — one invitation per session, **except a draft** (#1079): a relationship that was never
+    // sent has no link, so the count is the lifecycles that went out, not the instance count.
+    session_invite: assessmentInstances.filter(
+      (instance) => lifecycles.get(instance.id).invite !== "none",
+    ).length,
+    // #1079 — the seats and the answers are the lifecycle's, not the fixture's: a `pending`
+    // relationship has one party row, a `published` one with one side in has one seat's answers.
+    party: assessmentInstances.reduce(
+      (total, instance) => total + (lifecycles.get(instance.id).seats === "both" ? 2 : 1),
       0,
     ),
+    opinion: assessmentInstances.reduce((total, instance) => {
+      const lifecycle = lifecycles.get(instance.id);
+      const sides = lifecycle.answers === "both" ? 2 : lifecycle.answers === "initiator" ? 1 : 0;
+      return total + sides * instance.items.length;
+    }, 0),
     // #289 — one row per tier × interval, from `data/billing-plans.ts`.
     billing_plan: billingFixtures.length,
   };
@@ -1585,7 +1750,7 @@ async function main() {
     console.log(
       `  · demo accounts: ${
         demo
-          ? `${removed.credentials} credential row(s), ${removed.authUsers} auth user(s), ${removed.profiles} profile row(s), ${removed.unbound} party binding(s), ${removed.members} membership row(s), ${removed.coachInvites} coach invite(s) removed before re-seeding`
+          ? `${removed.credentials} credential row(s), ${removed.authUsers} auth user(s), ${removed.profiles} profile row(s), ${removed.unbound} party binding(s), ${removed.unowned} relationship account column(s), ${removed.subscriptions} subscription row(s), ${removed.members} membership row(s), ${removed.coachInvites} coach invite(s) removed before re-seeding`
           : `${removed.credentials} credential row(s) removed, none created (DEMO_AUTH is not 1)`
       }`,
     );
@@ -1620,7 +1785,9 @@ async function main() {
           : undefined,
       );
     }
-    for (const instance of assessmentInstances) await seedInstance(client, instance);
+    for (const instance of assessmentInstances) {
+      await seedInstance(client, instance, lifecycles.get(instance.id));
+    }
     // #289 — the plan rows, from the same fixture a pricing surface renders. Seeded here and not
     // in the migration: a migration is DDL and cannot import the fixture, and a price typed into
     // SQL would be a second copy of the number the page renders.
@@ -1649,6 +1816,9 @@ async function main() {
       // #coach — the two bound parties become relationship members, so the relationship they
       // answer is the one they can see. A coach is never added here: a coach is invited.
       await syncRelationshipMembers(client);
+      // #1079 — the subscription an `active` relationship is read against, written after the
+      // accounts exist and after `billing_plan` (phase 1) so the tier resolves.
+      const subscriptions = await seedDemoSubscriptions(client, accounts);
       console.log(
         `  · demo accounts created: ${accounts.length} (${accounts.map((account) => `${account.email}=${account.role}`).join(", ")}) — in phase 2, committed only at the end of it`,
       );
@@ -1662,6 +1832,11 @@ async function main() {
         if (party.role !== "counterparty") continue;
         console.log(
           `  · invitation: /invite/${demoInviteToken(party.instance)} — ${party.partyName} (claimed)`,
+        );
+      }
+      for (const subscription of subscriptions) {
+        console.log(
+          `  · subscription: ${subscription.email} on the ${subscription.plan} tier (active) — an \`active\` relationship reads entitled rather than lapsed`,
         );
       }
     }
@@ -1696,10 +1871,24 @@ async function main() {
     }
 
     // The demo rows are asserted the same way the content rows are: three credentials, one
-    // admin, two bound parties, and the dataset the file describes.
+    // admin, every seat the two demo people hold (#1079 — the dataset names them in several
+    // relationships, so the count is derived from the fixtures rather than fixed at two), and the
+    // dataset the file describes.
     const report = await demoReport(client);
+    const demoSeatNames = new Set(DEMO_ACCOUNTS.map((account) => account.name));
+    const demoSeats = assessmentInstances.reduce((total, instance) => {
+      const lifecycle = lifecycles.get(instance.id);
+      return (
+        total +
+        instance.parties.filter(
+          (party) =>
+            demoSeatNames.has(party.name) &&
+            (lifecycle.seats === "both" || party.role === "initiator"),
+        ).length
+      );
+    }, 0);
     const demoExpected = demo
-      ? { accounts: 3, admins: 1, demo_members: 2, bound_parties: 2 }
+      ? { accounts: 3, admins: 1, demo_members: 2, bound_parties: demoSeats }
       : { accounts: 0, admins: 0, demo_members: 0, bound_parties: 0 };
     for (const [key, count] of Object.entries(demoExpected)) {
       if (report.totals[key] !== count) {

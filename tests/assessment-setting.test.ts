@@ -30,7 +30,7 @@ import {
   zAssessmentInstance,
 } from "@/content/assessment";
 import { assessmentInstanceFromRows, type AssessmentInstanceRows } from "@/lib/db/rows";
-import { assessmentInstances } from "@/data/assessments";
+import { assessmentInstances, starterInstances } from "@/data/assessments";
 import type { AssessmentInstance } from "@/content/assessment";
 
 /** The feature example: Basic Mode, Soft. */
@@ -141,8 +141,10 @@ describe("the instance's setting is a parse-time fact", () => {
 });
 
 describe("the fixtures author their setting", () => {
-  it("gives every seeded instance an explicit setting", () => {
-    const settings = assessmentInstances.map((instance) => [instance.slug, instance.setting]);
+  it("gives every authored demonstration an explicit setting", () => {
+    // The four demonstrations, not the population (#1079): `starterInstances` is the set that
+    // defines the shape, and the rows beneath it are a demo's data.
+    const settings = starterInstances.map((instance) => [instance.slug, instance.setting]);
     expect(settings).toEqual([
       ["avery-rowan", "soft"],
       ["ruth-sam", "soft"],
@@ -151,8 +153,8 @@ describe("the fixtures author their setting", () => {
     ]);
   });
 
-  it("keeps exactly one instance under Full, and it is the Advanced demonstration", () => {
-    const full = assessmentInstances.filter((instance) => instance.setting === "full");
+  it("keeps exactly one demonstration under Full, and it is the Advanced one", () => {
+    const full = starterInstances.filter((instance) => instance.setting === "full");
     expect(full.map((instance) => instance.slug)).toEqual(["noor-iris"]);
     expect(noor.mode).toBe("advanced");
   });
