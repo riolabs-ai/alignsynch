@@ -48,12 +48,53 @@
  *      nothing, which run 43263203497 measured (`children none — the body carries no
  *      preserve_under_name`) and a raw 422 never said.
  *
- *   3. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
+ *   3. **Re-apply the branch's trusted origin.** Neon implements a restore as a branch *creation*
+ *      (`scripts/demo-branch-prune.mjs` records the same fact about the branch slot), and the
+ *      branch's Managed Auth **integration survives that while its trusted-domain list does not**.
+ *      Measured on 2026-11-15 against the live project: `GET …/branches/<demo>/auth` answered 200
+ *      with a `created_at` from 2026-10-30 both before and after a reset, and in the same window
+ *      `GET …/branches/<demo>/auth/domains` went from
+ *      `[{"domain":"https://demo.alignsynch.com",…}]` to `{"domains":[]}`. The restore hands back a
+ *      branch that is correct in every other way and whose auth server trusts no site, so every
+ *      sign-in answers `403 INVALID_ORIGIN` — the origin is refused *before* any password is
+ *      compared, which means no identity can enter the demo, admin seats included, while
+ *      `/api/version` reads 200 and every gate stays green.
+ *
+ *      **So the origin is re-applied, not assumed**: one `GET` of the list, and one `POST` of
+ *      `{domain, auth_provider: "better_auth"}` only when the origin is not already in it. The
+ *      origin is `DEMO_ORIGIN` (default `https://demo.alignsynch.com`) and it is validated before
+ *      anything is written — a bare `https` origin, no wildcard, no path
+ *      (`scripts/demo-auth-domains.mjs`). The list is never widened, never replaced and never
+ *      trimmed: an auth server that trusts any origin is a phishing surface wearing a test badge,
+ *      and a repair that rewrites somebody else's entry is a second defect.
+ *
+ *      This step runs **before** the reseed on purpose. The seed creates its accounts through the
+ *      branch's own sign-up endpoint with `Origin: $DEMO_ORIGIN`, so on a branch whose list was
+ *      just emptied it would be creating them from an untrusted origin. (Loopback is implicitly
+ *      trusted, which is why a local run has never shown this.)
+ *
+ *   4. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
  *      branch's* connection string and *this branch's* auth host. The seed reads
  *      `data/bundles/demo-dataset.alignsynch.json` as the bundle it is (asserting it is still
  *      the canonical export), writes the six content tables, and creates the three demo
  *      accounts through the branch's own sign-up endpoint. None of that logic is copied here:
  *      a second writer would be a second definition of "seeded".
+ *
+ *   5. **Prove sign-in works, and fail if it does not.** One probe, in this run's own output: a
+ *      `POST` to the branch's `/sign-in/email` with `Origin: $DEMO_ORIGIN` and a **deliberately
+ *      wrong** credential for an address that cannot exist (`origin-probe@…invalid`). Only
+ *      `401 INVALID_EMAIL_OR_PASSWORD` passes: the origin has been accepted by the time the server
+ *      compares a credential, so a 401 proves the site is trusted without any real credential ever
+ *      being handled — and no seat is the subject of a failed sign-in. A `403` **fails the run**
+ *      with a named error, because "the branch came back" is not a reset: a branch that answers
+ *      403 on sign-in is not a working demo, whatever the row counts say. A `429`/`5xx` is retried
+ *      once and then fails too — an inconclusive probe is not a pass, and the nightly job must not
+ *      report success for something it could not establish.
+ *
+ *      A probe from a **loopback** `DEMO_ORIGIN` proves nothing, because Neon Auth trusts
+ *      `http://localhost:*` implicitly on a branch whose list is empty (measured: an empty list
+ *      answers 401 for `http://localhost:3000` and 403 for the demo origin). The run says so
+ *      rather than banking the 401.
  *
  * A `--skip-reset` run (reseed only) still empties the branch first (`resetContent`): it cannot
  * use the restore, so without that the branch would keep whatever the previous reseed left. The
@@ -89,6 +130,12 @@
  *   branch id through the API, never read from the environment, so a shell that exported the
  *   production `DATABASE_URL` cannot aim this script at production. `NEON_AUTH_BASE_URL` from
  *   the environment is deliberately *overwritten*, not inherited, for the same reason.
+ * - **A `DEMO_ORIGIN` that is not one exact origin.** A wildcard, a path, a query, a credential in
+ *   the URL, or plain `http` on a public host is refused before anything is written, because the
+ *   trusted-domain list is a phishing surface the moment it is wider than the demo's own site.
+ * - **A branch with no Managed Auth integration.** The origin list hangs off the integration, so a
+ *   branch without one is named (`GET …/auth/domains` answered 404) rather than repaired by
+ *   inventing configuration — enabling Neon Auth is a decision, not a retry.
  *
  * ## What it prints
  *
@@ -96,6 +143,9 @@
  * derived from the bundle and compared; then the two rules #185 asks about — the write made
  * between two resets is gone, and two consecutive runs converge. With a schema-only source the
  * after-reset block reads **zeros**, and that block is the evidence the source carries no rows.
+ * The re-applied origin is printed with the list it found and the list it now carries, and the
+ * sign-in probe is printed with its status — `○` 401 proved, `!` 403 refused, `?` unproven — so
+ * "the demo is enterable" is a line in the log rather than an assumption behind the row counts.
  * On a failure it prints the branch's state *after* the failure and exits non-zero: a failed
  * reset leaves a branch that still serves, and saying what it holds is part of the job.
  *
@@ -105,10 +155,17 @@
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --skip-migrate  # trust the base's ledger
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --skip-seed     # migrate + reset only
  *   NEON_API_KEY=… node scripts/demo-reset.mjs --skip-reset    # reseed only (empties first)
+ *   NEON_API_KEY=… node scripts/demo-reset.mjs --verify-origin # re-apply + prove, reset nothing
+ *   NEON_API_KEY=… node scripts/demo-reset.mjs --probe-origin https://alignsynch.com  # probe only
  *
  * Flags: --branch <name> (default `demo`), --source <name> (default `$DEMO_SOURCE_BRANCH`, else
  * the branch's parent), --project <id> (default: the only project the key can see), --dry-run,
- * --skip-migrate, --skip-reset, --skip-seed, --help.
+ * --skip-migrate, --skip-reset, --skip-seed, --verify-origin, --probe-origin <origin>, --help.
+ *
+ * `--verify-origin` is the maintenance run: it re-applies the origin and probes it, and touches
+ * nothing else, so the repair after a hand-made reset is one command instead of a remembered curl.
+ * `--probe-origin <origin>` changes nothing at all — it asks the branch whether it trusts a given
+ * origin, which is how the `403` failure path is demonstrated without breaking the live demo.
  *
  * `DEMO_SOURCE_BRANCH` is how the demo restores from `demo-base` while its own parent is still
  * `production`: Neon does not allow a branch to be re-parented, so the source is named instead of
@@ -137,6 +194,19 @@ import {
 } from "./demo-branch-prune.mjs";
 import { sourceRefusal } from "./demo-source-guard.mjs";
 import { restoreRequest } from "./demo-restore-plan.mjs";
+import {
+  AUTH_PROVIDER,
+  authDomainsPath,
+  DEFAULT_DEMO_ORIGIN,
+  domainPlan,
+  isLoopbackOrigin,
+  originRefusal,
+  PROBE_EMAIL,
+  PROBE_PASSWORD,
+  probeFailure,
+  probeLine,
+  trustedOrigins,
+} from "./demo-auth-domains.mjs";
 
 const API = (process.env.NEON_API_BASE ?? "https://console.neon.tech/api/v2").replace(/\/+$/, "");
 const BUNDLE = "data/bundles/demo-dataset.alignsynch.json";
@@ -174,6 +244,7 @@ class Refused extends Error {
 
 const USAGE = `usage: node scripts/demo-reset.mjs [--branch <name>] [--source <name>] [--project <id>]
                                 [--dry-run] [--skip-migrate] [--skip-reset] [--skip-seed]
+                                [--verify-origin] [--probe-origin <origin>]
 
   --branch <name>   the branch to reset (default: demo)
   --source <name>   the branch to restore from (default: $DEMO_SOURCE_BRANCH, else the branch's parent)
@@ -182,6 +253,13 @@ const USAGE = `usage: node scripts/demo-reset.mjs [--branch <name>] [--source <n
   --skip-migrate    do not apply db/migrations to the source branch first
   --skip-reset      reseed without resetting (the branch is emptied first)
   --skip-seed       reset without reseeding
+  --verify-origin   re-apply the branch's trusted origin and prove sign-in; reset and reseed nothing
+  --probe-origin    ask the branch whether it trusts <origin>; change nothing at all
+
+The branch's trusted-domain list is branch configuration that a restore does not preserve, so a
+completed reset re-applies DEMO_ORIGIN (default https://demo.alignsynch.com) to it and then proves
+sign-in from that origin with a deliberately wrong credential. A 403 fails the run: a branch that
+refuses the site is not a reset demo, whatever its row counts say.
 
 The source is a branch name — \`DEMO_SOURCE_BRANCH=demo-base\`, or \`--source demo-base\` — and it
 must be the schema-only base: a source that is the project's default branch is refused, because a
@@ -204,6 +282,8 @@ function parseArgs(argv) {
     skipMigrate: false,
     skipReset: false,
     skipSeed: false,
+    verifyOrigin: false,
+    probeOrigin: null,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -237,6 +317,12 @@ function parseArgs(argv) {
       case "--skip-seed":
         options.skipSeed = true;
         break;
+      case "--verify-origin":
+        options.verifyOrigin = true;
+        break;
+      case "--probe-origin":
+        options.probeOrigin = next();
+        break;
       case "-h":
       case "--help":
         say(USAGE);
@@ -249,6 +335,18 @@ function parseArgs(argv) {
   if (options.skipReset && options.skipSeed) {
     throw new Refused("--skip-reset and --skip-seed together are a no-op");
   }
+  // The two origin commands are their own runs: one repairs and proves, the other only asks.
+  if (options.verifyOrigin && options.probeOrigin !== null) {
+    throw new Refused("--verify-origin and --probe-origin are one command each, not a pair");
+  }
+  if (
+    (options.verifyOrigin || options.probeOrigin !== null) &&
+    (options.skipMigrate || options.skipReset || options.skipSeed)
+  ) {
+    throw new Refused(
+      "--verify-origin and --probe-origin reset and reseed nothing, so --skip-migrate, --skip-reset and --skip-seed do not apply to them",
+    );
+  }
   return options;
 }
 
@@ -259,8 +357,13 @@ function parseArgs(argv) {
 /**
  * One request. `NEON_API_KEY` goes in the header and nowhere else: never in a message, never in
  * a URL, never in a log line (an error from the API echoes the request, not the credential).
+ *
+ * `allow` is the set of statuses the caller reads for its meaning instead of as a failure — the
+ * trusted-domain route answers `404` on a branch with no Neon Auth integration, and that is an
+ * answer ("this branch has no integration") rather than a transport error. It is a list of numbers
+ * rather than a boolean so a caller cannot accidentally accept a `500`.
  */
-async function neon(method, path, body) {
+async function request(method, path, body, allow = []) {
   const key = process.env.NEON_API_KEY?.trim() ?? "";
   const response = await fetch(`${API}${path}`, {
     method,
@@ -280,13 +383,18 @@ async function neon(method, path, body) {
     payload = null;
   }
 
-  if (!response.ok) {
+  if (!response.ok && !allow.includes(response.status)) {
     const detail = payload?.message ?? (text === "" ? "" : text.slice(0, 200));
     throw new Error(
       `${method} ${path.split("?")[0]} answered HTTP ${response.status}${detail ? ` — ${detail}` : ""}`,
     );
   }
-  return payload;
+  return { status: response.status, payload };
+}
+
+/** The body of one request, for every caller that only cares about a 2xx. */
+async function neon(method, path, body) {
+  return (await request(method, path, body)).payload;
 }
 
 /** The project: `--project`, `$NEON_PROJECT_ID`, or the only one the key can see. */
@@ -795,6 +903,162 @@ function printRestorePlan(plan, branchName) {
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /* ------------------------------------------------------------------ *\
+ * Trusted origins — re-applied after a restore, then proved
+ * ------------------------------------------------------------------ */
+
+/** How long the sign-in probe waits for an answer before it is "no HTTP answer" (status 0). */
+const PROBE_TIMEOUT_MS = 20_000;
+
+/**
+ * The one origin this branch must trust: `DEMO_ORIGIN`, or the demo's own site.
+ *
+ * The default is `https://demo.alignsynch.com` rather than `http://localhost:3000` **because a
+ * loopback origin is not evidence**. Neon Auth trusts `http://localhost:*` implicitly on a branch
+ * whose trusted-domain list is empty — measured on 2026-11-15: an empty list answered `401` for
+ * `Origin: http://localhost:3000` and `403` for `https://demo.alignsynch.com` in the same window —
+ * so a nightly run that trusted loopback would print a green probe every night on a demo nobody
+ * can enter. Validated before the first API call, so a refusal about the origin cannot arrive after
+ * a restore has already emptied the branch.
+ */
+function resolveOrigin(raw) {
+  const value = (raw ?? DEFAULT_DEMO_ORIGIN).trim();
+  const refusal = originRefusal(value);
+  if (refusal !== null) throw new Refused(`${refusal}\n\nNothing was changed.`);
+  return value;
+}
+
+/**
+ * Re-applies the branch's trusted origin — the step a restore makes necessary.
+ *
+ * One `GET` of the list, and one `POST` only when the origin is not already in it, then a `GET`
+ * again to read back what the branch actually carries. Nothing else is written: no entry is
+ * removed, none is replaced, and the list is never written wholesale, because a repair that widens
+ * the allowlist — or deletes somebody else's entry — is a second defect wearing the first one's
+ * clothes.
+ *
+ * A branch with no Managed Auth integration answers `404` rather than an empty list, and that is a
+ * refusal: there is no list to re-apply, and enabling Neon Auth on a branch is a decision rather
+ * than a retry. (The demo branch keeps its integration across a restore — measured — so this is the
+ * case a `--branch` on some other branch hits, not the nightly one.)
+ */
+async function ensureTrustedOrigin({ projectId, branch, origin, dryRun }) {
+  const path = authDomainsPath(projectId, branch.id);
+  step(`trusted origin — ${origin} on ${branch.name}`);
+
+  const before = await request("GET", path, undefined, [404]);
+  if (before.status === 404) {
+    throw new Refused(
+      `branch "${branch.name}" (${branch.id}) has no Neon Auth integration — GET ${path} answered 404 (${before.payload?.message ?? "not found"}), so there is no trusted-domain list to re-apply. Enabling Neon Auth on a branch is a decision, not a retry. Nothing was changed.`,
+    );
+  }
+
+  const trusted = trustedOrigins(before.payload);
+  say(
+    `  before    ${
+      trusted.length === 0
+        ? "no origin is trusted — every sign-in from a site answers 403 INVALID_ORIGIN"
+        : trusted.join(", ")
+    }`,
+  );
+
+  const plan = domainPlan({ trusted, origin });
+  if (plan.action === "present") {
+    say(`  applied   nothing — ${plan.reason}`);
+    return { added: false, trusted };
+  }
+  if (dryRun) {
+    say(`  would add ${origin} — --dry-run, nothing is written`);
+    return { added: false, trusted };
+  }
+
+  const posted = await request(
+    "POST",
+    path,
+    { domain: origin, auth_provider: AUTH_PROVIDER },
+    [404],
+  );
+  if (posted.status === 404) {
+    throw new Error(
+      `POST ${path} answered 404 for ${origin} — the branch has no Managed Auth integration after the operation, so the origin could not be re-applied`,
+    );
+  }
+
+  // Read back rather than trust the POST's own answer: the question is what the branch carries.
+  const after = trustedOrigins((await request("GET", path)).payload);
+  if (!after.some((domain) => domain.toLowerCase() === origin.toLowerCase())) {
+    throw new Error(
+      `the API accepted ${origin} on "${branch.name}" but the list it now reports does not carry it (${after.join(", ") || "empty"}) — the origin is still untrusted, so sign-in would answer 403 INVALID_ORIGIN`,
+    );
+  }
+  say(`  applied   added ${origin} — the branch now trusts ${after.join(", ")}`);
+  return { added: true, trusted: after };
+}
+
+/**
+ * One sign-in POST to the branch's own auth host, from a given origin, with a deliberately wrong
+ * credential. No real seat is involved and no credential is read: `PROBE_EMAIL` cannot exist and
+ * `PROBE_PASSWORD` cannot be anybody's.
+ *
+ * A `429` or a `5xx` is retried once, because a run that has just created thirty accounts is
+ * entitled to a rate-limit and that is not an answer about the origin. A network failure is
+ * reported as status `0` — "no HTTP answer" — and is not read as a pass either.
+ */
+async function probeSignIn(authBaseUrl, origin) {
+  const url = `${authBaseUrl.replace(/\/+$/, "")}/sign-in/email`;
+
+  const attempt = async () => {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin },
+        body: JSON.stringify({ email: PROBE_EMAIL, password: PROBE_PASSWORD }),
+        signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+      });
+      const text = await response.text();
+      let payload = null;
+      try {
+        payload = text === "" ? null : JSON.parse(text);
+      } catch {
+        payload = null;
+      }
+      return { status: response.status, code: payload?.code ?? null };
+    } catch (error) {
+      return { status: 0, code: null, error: error.message };
+    }
+  };
+
+  let reply = await attempt();
+  if (reply.status === 429 || reply.status >= 500 || reply.status === 0) {
+    await delay(2000);
+    reply = await attempt();
+  }
+  return reply;
+}
+
+/**
+ * Proves the demo is enterable: `401` or the run fails.
+ *
+ * This is the check the card exists for, and it is deliberately not "the branch came back" — a
+ * branch that answers `403 INVALID_ORIGIN` is a demo nobody can enter, whatever the row counts say
+ * and whatever `/api/version` answers. The credential is a deliberate wrong one, so a
+ * `401 INVALID_EMAIL_OR_PASSWORD` is the origin being accepted and nothing else.
+ */
+async function probeOrigin({ authBaseUrl, origin }) {
+  step(`sign-in probe — Origin: ${origin}`);
+  say(`  auth      ${authBaseUrl}`);
+  if (isLoopbackOrigin(origin)) {
+    warn(
+      `${origin} is a loopback origin — Neon Auth trusts it implicitly on any branch, so a 401 here is NOT evidence that the demo's public origin is trusted. Set DEMO_ORIGIN to the site visitors use for a probe that proves something.`,
+    );
+  }
+  const reply = await probeSignIn(authBaseUrl, origin);
+  say(probeLine({ status: reply.status, origin }));
+  const failure = probeFailure({ status: reply.status, origin, authBaseUrl });
+  if (failure !== null) throw new Error(failure);
+  return reply.status;
+}
+
+/* ------------------------------------------------------------------ *\
  * Counts — read from the branch, never assumed
  * ------------------------------------------------------------------ */
 /**
@@ -1163,6 +1427,11 @@ async function main() {
 
   const t0 = Date.now();
 
+  // The origin is resolved and validated before the first API call: a refusal about it must not
+  // arrive after a restore has already emptied the branch.
+  const origin = resolveOrigin(options.probeOrigin ?? process.env.DEMO_ORIGIN);
+  progress.origin = origin;
+
   const project = await resolveProject(options.project);
   progress.projectId = project.id;
   progress.branchName = options.branch;
@@ -1195,6 +1464,26 @@ async function main() {
     );
   }
 
+  // The two origin commands are their own runs — they prove a door and change no content — so they
+  // are handled before the reset banner and before the capacity pre-flight, neither of which
+  // applies to them.
+  if (options.probeOrigin !== null || options.verifyOrigin) {
+    progress.originOnly = true;
+    say(`demo:reset — project ${project.name} (${project.id})`);
+    say(`  branch    ${branch.name} (${branch.id})`);
+    say(`  compute   ${branch.endpointHost}`);
+    if (options.verifyOrigin) {
+      // `--verify-origin` re-applies and then proves; `--probe-origin` only asks, and changes
+      // nothing, which is what makes it usable to demonstrate a refused origin on a live branch.
+      await ensureTrustedOrigin({ projectId: project.id, branch, origin, dryRun: options.dryRun });
+    }
+    const status = await probeOrigin({ authBaseUrl, origin });
+    say(
+      `\n✓ demo:reset — ${options.verifyOrigin ? `${branch.name} trusts ${origin}` : `${branch.name} was asked about ${origin}`} and sign-in from it answered ${status}`,
+    );
+    return;
+  }
+
   say(`demo:reset — project ${project.name} (${project.id})`);
   say(`  branch    ${branch.name} (${branch.id})`);
   say(
@@ -1221,6 +1510,9 @@ async function main() {
       step("the restore this run would send");
       printRestorePlan(restoreRequest(branch, source, new Date()), branch.name);
     }
+    // The origin step is planned too: "--dry-run" has to answer "would tomorrow's run leave the
+    // demo enterable?", and that answer is the list it would write.
+    await ensureTrustedOrigin({ projectId: project.id, branch, origin, dryRun: true });
     const before = await counts(connectionStrings.direct);
     printCounts("counts now (--dry-run: nothing will change)", before);
     say("\n✓ demo:reset — dry run, nothing was changed");
@@ -1283,6 +1575,13 @@ async function main() {
     authBaseUrl = authBaseUrlFor(branch.endpointHost, database);
   }
 
+  // The trusted-domain list is branch configuration a restore does not preserve, so a completed
+  // reset **writes it back** rather than assuming it survived (`demo-auth-domains.mjs` carries the
+  // measurement). It runs after the restore and before the reseed on purpose: the seed creates its
+  // accounts through this branch's own sign-up endpoint with `Origin: $DEMO_ORIGIN`, so on a branch
+  // whose list was just emptied it would be creating them from an origin the branch refuses.
+  await ensureTrustedOrigin({ projectId: project.id, branch, origin, dryRun: false });
+
   const afterReset = await counts(connectionStrings.direct);
   printCounts(
     options.skipReset
@@ -1317,6 +1616,11 @@ async function main() {
 
   const afterSeed = await counts(connectionStrings.direct);
   printCounts("after the reseed", afterSeed);
+
+  // The door, proved in this run's own output: 401 from the demo origin or the reset failed. It
+  // runs on every path that touched the branch, `--skip-seed` included, because the question is
+  // whether the site is trusted and not whether rows were written.
+  const proofStatus = await probeOrigin({ authBaseUrl, origin });
 
   const bundle = await bundleCounts();
   let mismatches = printBundleComparison(afterSeed, bundle.expected);
@@ -1359,6 +1663,7 @@ async function main() {
   say(
     `  accounts    ${afterSeed.demo_account} demo account(s) + ${afterSeed["platform admin"]} platform admin(s) — ${accountsAgree ? "one profile and one auth user each" : "INCONSISTENT with the seed's accounts"}`,
   );
+  say(`  origin      ${origin} — trusted, sign-in from it answered ${proofStatus}`);
   say(`  elapsed     ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 
   if (mismatches > 0) {
@@ -1375,7 +1680,18 @@ async function main() {
  * What has been resolved so far, so the failure path can report the branch's state without
  * re-deriving it from the environment (a `--branch` flag is not an environment variable).
  */
-const progress = { projectId: null, branchName: null, branchId: null, database: null, role: null };
+const progress = {
+  projectId: null,
+  branchName: null,
+  branchId: null,
+  database: null,
+  role: null,
+  origin: null,
+  // `--verify-origin` and `--probe-origin` change no content, so a failure there has no branch
+  // state to report: nothing was reset, nothing was seeded, and reading the counts would dress a
+  // one-line refusal up as a partial reset.
+  originOnly: false,
+};
 
 main().catch(async (error) => {
   console.error(`\n✗ demo:reset failed: ${error.message}`);
@@ -1383,7 +1699,12 @@ main().catch(async (error) => {
   // A failed reset is not a dead branch: say what it holds now, so the next person does not
   // have to guess whether the demo is serving something valid. A refusal never touched the
   // branch — it is raised before the first write — so there is nothing to report.
-  if (!(error instanceof Refused) && progress.projectId !== null && progress.branchName !== null) {
+  if (
+    !(error instanceof Refused) &&
+    !progress.originOnly &&
+    progress.projectId !== null &&
+    progress.branchName !== null
+  ) {
     try {
       const branch = await resolveBranch(progress.projectId, progress.branchName);
       const { database, role } = await resolveDatabaseAndRole(progress.projectId, branch);
