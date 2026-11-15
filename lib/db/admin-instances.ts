@@ -144,6 +144,13 @@ const ADMIN_INSTANCES_SQL = `
     ON t.id = ai.template_record_id
    AND t.record_type = 'assessment'
   WHERE r.record_type = 'assessment'
+    -- #1100b — the console's instance list is sessions, so a **draft session is not on it**. A
+    -- draft is a create that has not been accepted: it has no Counterparty seat, no answers and
+    -- nothing to administer, and listing it here would print a session with 0 answers beside
+    -- thirty real ones. The relationship itself is still visible wherever its creator reads it
+    -- (the dashboard and the member relationship list read relationship.status), which is the
+    -- screen that can say "unsent" or "awaiting invitation".
+    AND ai.state = 'active'
   ORDER BY r.date DESC, r.slug
 `;
 
