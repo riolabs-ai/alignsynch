@@ -8,7 +8,7 @@
 
 **Prepared:** 2026-11-16  
 **Repo path:** `docs/specs/v2-bundles/08-spec-design-page-payment-v2/` · **Issue:** #1132 (+ #1121)  
-**Source:** `v2-prototype` pass 10 (final, QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0).  
+**Source:** `v2-prototype` pass 10 plus the 2026-11-16 trial-start decision (DESIGN-NOTES v3.2 §45). QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0.  
 **Priority:** P1  
 **Issues:** [#1132](https://github.com/riolabs-ai/alignsynch/issues/1132) Payment v2 · [#1121](https://github.com/riolabs-ai/alignsynch/issues/1121) trial-ended states · [#1115](https://github.com/riolabs-ai/alignsynch/issues/1115) / PR [#1116](https://github.com/riolabs-ai/alignsynch/pull/1116) card-free trial · epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119)  
 **Target:** `/dashboard/payment` (standalone billing).  
@@ -30,15 +30,17 @@
 
 | Concern | Existing source | Implementation guidance |
 | --- | --- | --- |
-| Trial state | `lib/billing/trial.ts` `trialStateOf()`, `lib/db/billing.ts` `grantCreationTrial()` | `none | active | ending (≤ 2 days) | lapsed`; extension = `trial_extended_at` null. |
+| Trial state | `lib/billing/trial.ts` `trialStateOf()`, `lib/db/billing.ts` `grantCreationTrial()` | `none` until the Counterparty accepts; `active` from acceptance; then `ending (≤ 2 days) | lapsed`. Extension = `trial_extended_at` null. **Move `grantCreationTrial()` to acceptance** (PR #1116 currently grants at creation). |
 | Checkout | `lib/billing/adapters/stripe.ts` (`payment_method_collection: "always"`), `startMembershipAction` / `confirmMembershipAction` | Add a Card is the explicit upgrade action (#1115 task 9). `tests/one-payment-surface.test.ts` must still see one card-capture component. |
 | Panel | `NEW: payment-panel` | Shared with the Relationship Detail Payment tab. |
 
 ## Page and interaction requirements
 
 - **Per-relationship panels** (billing surface `#f2f7f4`, line `#c8dccf`, ink `#2d6549`):
-  - Trial: Status "Free Trial · 3 Days Left", Ends, After "$9.99 / month", Card "None"; action **Add a Card**.
-  - Draft: the HTML says "trial starts when you send the invite", which matches the pass 10 wizard ("Free Trial · Starts When You Send"). PR #1116 instead grants the trial at creation (a draft too). **Open owner decision** (see bundle 01): keep "starts when you send" and move the PR's grant to send, or keep the PR and change this line to "Your 7 days free started when you created this relationship." 
+  - Live trial: Status "Free Trial · 3 Days Left", Ends, After "$9.99 / month", Card "None"; action **Add a Card**.
+  - Invite sent: Status **"Trial Starts When Tomás Accepts"** (use the other person's first name), no Ends date, no countdown. Note: "Your 7-day free trial starts when Tomás accepts. No card needed."
+  - Draft: Status "Not Started", Trial **"Starts When Dana Accepts"**. Note: "Send the invite. Your 7-day free trial starts when Dana accepts." Action **Continue Setup**.
+  - **Resolved (2026-11-16):** the clock starts when the Counterparty accepts, not at creation and not when you send. PR #1116 must move its grant to acceptance (see bundle 01).
   - Paused: **Add a Card** + **Get 7 More Days Free**; after use the extension hides and the panel notes "one time only".
 - **Aside:** Payment Method (no-card state, Add a Card → existing checkout; the HTML's inline add-card form is a mock, "Prototype only. Nothing is charged."), Billing History ("No charges yet."), How Trials Work.
 - **Counterparty view:** only "Marcus covers this relationship. You’re never charged." No `$`, trial, card or extension text.
@@ -69,7 +71,7 @@
 
 ## Copy strings (exact)
 
-"Payment" · "Free Trial · N Days Left" · "Add a Card" · "Get 7 More Days Free" · "Paused" · "Payment Method" · "Billing History" · "No charges yet." · "How Trials Work" · "Marcus covers this relationship. You’re never charged."
+"Payment" · "Free Trial · N Days Left" · "Trial Starts When {Name} Accepts" · "Starts When {Name} Accepts" · "Starts when the other person accepts" · "Add a Card" · "Get 7 More Days Free" · "Paused" · "Payment Method" · "Billing History" · "No charges yet." · "How Trials Work" · "Marcus covers this relationship. You’re never charged."
 
 ## Locked rules (apply to every v2 surface)
 
@@ -84,7 +86,7 @@ These were decided by the owner on 2026-11-16 and are not open for reinterpretat
 7. **Archive over delete.** Default to Archive (reversible) for templates and relationships; hard delete only where there is no shared data and it is confirmed.
 8. **Title Case for labels, buttons, tabs and headings, with no ending period**; sentence case for sentences. Product terms are capitalized: Aspect, Feel, Wish, Think, Guess, Stage, Align, In Synch, Small Gap, Gap, Alignment Tolerance.
 9. **Route conflict.** The repo's public catalog is `/relationship-types`; the v2 route is **`/relationship-templates`**. Ship `/relationship-templates` and `/relationship-templates/[slug]`, permanently redirect (308) `/relationship-types` and `/relationship-types/[slug]` to them, and update `RELATIONSHIP_TYPES_PATH` (`lib/flow/paths.ts`) so no link points at the old route.
-10. **Card-free trial, decided placement.** Stage 4 is the account only. The trial choice sits on the Stage 5 send button, **Continue with 7 Days Free** (as in PR #1116); payment happens only after the relationship exists. (Open: PR #1116 anchors the trial at creation; the pass 10 copy says it starts when you send. See bundle 01.) When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
+10. **Card-free trial, decided placement and start.** Stage 4 is the account only. The Stage 5 primary button is **Continue with 7 Days Free** and only sends the invite. **The 7-day free trial starts when the Counterparty accepts** (both parties in). Drafts and sent-but-pending invites use no trial days. This replaces PR #1116's start at relationship creation and the earlier prototype start-at-send copy; PR #1116 must move its grant to acceptance. When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
 11. **One status and one next action per state.** Banners confirm what just happened and never repeat the status.
 12. **Layout.** QuizHub breakpoints, content capped at 1440 px (`max-w-content`), `data-qh` on prototype elements names the QuizHub source to reuse.
 
@@ -139,7 +141,7 @@ Do not weaken existing route, data, brand or copy-ownership checks to make the p
 
 ## Definition of done
 
-Payment matches the reference with real trial data, the Draft copy is corrected, the checkout stays the single card surface, tokens only, axe 0, repository checks pass, owner review before deployment.
+Payment matches the reference with real trial data, drafts and pending invites show no countdown, the checkout stays the single card surface, tokens only, axe 0, repository checks pass, owner review before deployment.
 
 ## Appendix: generated inventory
 

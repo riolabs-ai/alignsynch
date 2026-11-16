@@ -242,7 +242,7 @@
         mode: val("mode") === "advanced" ? "Advanced · Feel, Wish, Think, Guess" : "Basic · Feel and Wish",
         tolerance: val("tolerance") === "full" ? "Full · Small Gap Not OK" : "Soft · Small Gap OK",
         aspects: on + (on === 1 ? " Aspect" : " Aspects"),
-        plan: "Free Trial · Starts When You Send" + (PLAN_Q[q.get("plan")] ? " · then " + PLAN_Q[q.get("plan")] : ""),
+        plan: "Free Trial · Starts When Elena Accepts" + (PLAN_Q[q.get("plan")] ? " · then " + PLAN_Q[q.get("plan")] : ""),
         message: $("#cp-msg").value
       };
       $$("[data-out]").forEach(e => { if (out[e.dataset.out] !== undefined) e.textContent = out[e.dataset.out]; });

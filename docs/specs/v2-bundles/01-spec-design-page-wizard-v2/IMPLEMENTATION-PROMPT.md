@@ -8,21 +8,21 @@
 
 **Prepared:** 2026-11-16  
 **Repo path:** `docs/specs/v2-bundles/01-spec-design-page-wizard-v2/` · **Issue:** #1123  
-**Source:** `v2-prototype` pass 10 (final, QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0).  
+**Source:** `v2-prototype` pass 10 plus the 2026-11-16 trial-start decision (DESIGN-NOTES v3.2 §45). QA-clean: check4, flow4/5/8/9/10, axe 0, brand lint 0.  
 **Priority:** **P0** (the first thing an Initiator touches; the conversion path)  
 **Issues:** [#1123](https://github.com/riolabs-ai/alignsynch/issues/1123) wizard v2 · epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119) · depends on [#1120](https://github.com/riolabs-ai/alignsynch/issues/1120) tokens · trial data [#1115](https://github.com/riolabs-ai/alignsynch/issues/1115) / PR [#1116](https://github.com/riolabs-ai/alignsynch/pull/1116) · trial-ended states [#1121](https://github.com/riolabs-ai/alignsynch/issues/1121)  
 **Target:** Replace the visuals and copy of the existing five-stage Create Relationship wizard (Stages 1 Details · 2 Settings · 3 Aspects · 4 Account · 5 Invite). The stage count does not change.  
 **Stack constraint:** Existing Next.js App Router, React, TypeScript and Tailwind CSS v3. The repository pins Tailwind CSS `3.4.17`; do not migrate to Tailwind v4 as part of this work. Reuse QuizHub (ThemeForest React/TW3) components plus the AlignSynch globals only.
 
-> **Owner decision (2026-11-16), now drawn in the bundled pass 10 HTML.** Stage 4 is **account only**. The card-free trial sits on the **Stage 5 send button, "Continue with 7 Days Free"**, exactly as PR #1116 wired it. The plan chip carried from Pricing shows at **Stage 5**, in the billing note beside that button. `reference/wizard-stage4-*.png` and `wizard-stage5-plan-*.png` show the decided placement.
+> **Owner decisions (2026-11-16), now drawn in the bundled HTML.** Stage 4 is **account only**. The Stage 5 primary button is **"Continue with 7 Days Free"** and only sends the invite. The plan chip carried from Pricing shows at **Stage 5**, in the billing note beside that button. `reference/wizard-stage4-*.png` and `wizard-stage5-plan-*.png` show the decided placement.
 >
-> **Open decision for the owner (trial anchor).** PR #1116 writes the trial row when the relationship is **created** (a draft too, inside `createInstanceFromTemplate()`). The pass 10 prototype copy says the trial starts **when you send** ("Free Trial · Starts When You Send"; "A draft never burns trial days"; Continue as Draft starts no trial). The button and copy in this brief follow the prototype; the build team must not ship until the owner picks one anchor, and then align either PR #1116's grant point or these strings.
+> **Resolved decision (trial start, 2026-11-16).** The 7-day free trial clock starts when the Counterparty **accepts** the invite (both parties in). Drafts and sent-but-pending invites use no trial days. This replaces both PR #1116's start at relationship creation (`createInstanceFromTemplate()`) and the earlier prototype start-at-send copy. **PR #1116 must move its trial grant to acceptance.** The Stage 5 button label does not change.
 
 ## Copy-ready team prompt
 
 > Implement the approved v2 Create Relationship wizard from `01-spec-design-page-wizard-v2/` in the existing Next.js app. Use `wizard.html?stage=1..5`, `css/tokens.css`, `js/tw-config.js` and `reference/` as the visual and interaction reference. Keep the existing five stages, their route and the existing create-flow store (`lib/flow/store.ts`); this is a visual, copy and layout port, not a new flow.
 >
-> Build one focused layout with no dashboard sidebar: a flow header with Save and Exit, a sticky progress rail on desktop (five-segment stage gauge plus a dashed outer Stage 6 arc labelled "Starts when Elena joins", a stage list and a live Your Relationship summary), a one-line progress bar on mobile, and one stage card at a time with Back on the left and one primary action on the right. Stage 4 is the account only (sign up or sign in, no payment). Stage 5 is the invite: name, email and message, a Review list with Edit per row, a live What Elena Sees preview, the plan chip when the visitor came from Pricing, and the primary **Continue with 7 Days Free**, which creates and sends the relationship with the card-free trial (PR #1116 behaviour). **Continue as Draft** is the secondary action.
+> Build one focused layout with no dashboard sidebar: a flow header with Save and Exit, a sticky progress rail on desktop (five-segment stage gauge plus a dashed outer Stage 6 arc labelled "Starts when Elena joins", a stage list and a live Your Relationship summary), a one-line progress bar on mobile, and one stage card at a time with Back on the left and one primary action on the right. Stage 4 is the account only (sign up or sign in, no payment). Stage 5 is the invite: name, email and message, a Review list with Edit per row, a live What Elena Sees preview, the plan chip when the visitor came from Pricing, and the primary **Continue with 7 Days Free**, which sends the invite. The card-free trial starts when Elena accepts, not when you send and not when the relationship is created. **PR #1116 must move its trial grant to acceptance.** **Continue as Draft** is the secondary action and starts no trial.
 >
 > Reuse the QuizHub components named by each element's `data-qh` attribute, add the new `stage-gauge` and `paired-answer-bars` (scale-only) components to the shared component set, and take every colour from the v2 tokens. No card field may render in any stage. After implementation, check the flow at 390, 768, 1280 and 1920 px, run the repository checks, and do not deploy until the owner has reviewed it.
 
@@ -53,7 +53,7 @@ Paths below are named in the repo's issues and PR #1116; confirm each before edi
 ### Layout
 
 - **Focused layout:** no sidebar. Flow header (`components/layout/header (flow)`): icon, "Create Relationship", and a ghost **Save and Exit** button with ×. 1440 px content cap.
-- **Desktop (≥ lg):** two-column `RecordDetailShell` grid (flow variant). Left: sticky rail on the status surface: setup stage gauge (5 segments: done graphite, current `deep`, later `line`) inside a dashed outer Stage 6 arc labelled "Starts when Elena joins"; the stage list (Done / In Progress / Up Next / Later; only reached stages are clickable; current has `aria-current="step"`); then the live **Your Relationship** summary (title, template, role, mode, tolerance, Aspects, Membership "Free Trial · Starts When You Send" plus "· then <Plan>" from Pricing).
+- **Desktop (≥ lg):** two-column `RecordDetailShell` grid (flow variant). Left: sticky rail on the status surface: setup stage gauge (5 segments: done graphite, current `deep`, later `line`) inside a dashed outer Stage 6 arc labelled "Starts when Elena joins"; the stage list (Done / In Progress / Up Next / Later; only reached stages are clickable; current has `aria-current="step"`); then the live **Your Relationship** summary (title, template, role, mode, tolerance, Aspects, Membership "Free Trial · Starts When Elena Accepts" plus "· then <Plan>" from Pricing).
 - **Mobile:** one line "Stage n of 5 · Name" plus a 5-segment progress bar; the rail is hidden.
 - **Stage card** (`components/assessment-flow/flow-stage`): icon chip, eyebrow `Stage n of 5`, Title Case H2 (focus moves to it on stage change), one-line purpose; footer with Back left and one primary right.
 
@@ -64,16 +64,16 @@ Paths below are named in the repo's issues and PR #1116; confirm each before edi
 | 1 Details | Name Your Relationship | From-Template notice ("From your template · My Copy" when it started from a My Template); Title (required); Shared Goal ("Elena reads this on her invite"); role choice cards ("I’m the Brother" / "I’m the Sister", each with You · Initiator and Elena/Them · Counterparty party chips; whoever starts is always the Initiator). Empty Title blocks Continue with a neutral info message "Add a title to continue." (info icon, no red). | **Continue to Settings** / Back to Template |
 | 2 Settings | Choose How You Compare | Mode: Basic (Feel, Wish) or Advanced (+ Think, Guess) as radio cards with example chips. **Alignment Tolerance**: Soft or Full, each showing a live Small Gap chip ("Small Gap · OK" vs "Small Gap · Not OK under Full"). | **Continue to Aspects** / Back |
 | 3 Aspects | Pick What You'll Talk About | Five Aspects (Contact Frequency, Old Roles, Showing Up, Parent Decisions, Feeling Respected in the sample), each with a read-only preview of the locked 1–5 scale (numbered cells) and a switch. Live count "n of 5 Aspects On · about N minutes" (Basic 0.6 min, Advanced 1.2 min per Aspect). The last remaining switch locks with "Keep at least one Aspect." Off rows fade to 60 % but keep AA text. Each row's pencil opens the **Aspect drawer** (right sheet, `components/ui/sheet`): Title, Prompt, "1 Means", "5 Means"; the scale is shown as "Scale Locked · 1–5 for every Aspect" with the poles previewed live, never a field. **Add an Aspect** opens the same drawer and appends a numbered row; the count and minutes update. Before Stage 6 these are direct edits. | **Continue to Account** / Back |
-| 4 Account | Save It to Your Account | **Account only.** Purpose line "Create an account or sign in. Nothing is charged, and no card is asked for." Auth card (FormSurface, no shadow) with tabs New to AlignSynch / I Have an Account → signed-in confirmation ("Signed in as …"). No trial card, no plan chip, no payment input of any kind. Saving here writes the relationship as a draft (PR #1116 grants the trial at this point; see the open decision above). | **Continue to Invite** (after auth) / Back |
-| 5 Invite | Invite Elena | First name, email, optional message; **Review** list (title, mode, tolerance, Aspects, account) with an Edit link per row that jumps back to that stage; the clay **What Elena Sees** live preview card; the status note "Stage 6 Align starts the moment Elena accepts."; when `plan` is present, the **plan chip** ("Family Plan · Saved from Pricing. It starts after the free week, only once you add a card." with a Change link back to Pricing); the trial line drawn from the server: "7 days free, no card. Your 7 days free end on Monday, November 23." | **Continue with 7 Days Free** (creates/sends; always enabled) / **Continue as Draft** (outline) |
+| 4 Account | Save It to Your Account | **Account only.** Purpose line "Create an account or sign in. Nothing is charged, and no card is asked for." Auth card (FormSurface, no shadow) with tabs New to AlignSynch / I Have an Account → signed-in confirmation ("Signed in as …"). No trial card, no plan chip, no payment input of any kind. Saving here writes the relationship as a draft and starts no trial. | **Continue to Invite** (after auth) / Back |
+| 5 Invite | Invite Elena | First name, email, optional message; **Review** list (title, mode, tolerance, Aspects, account) with an Edit link per row that jumps back to that stage; the clay **What Elena Sees** live preview card; the status note "Stage 6 Align starts the moment Elena accepts."; when `plan` is present, the **plan chip** ("Family Plan · Saved from Pricing. It starts after the free week, only once you add a card." with a Change link back to Pricing); the billing note: "Sends the invite. Your 7-day free trial starts when Elena accepts. No card needed. Elena is never charged." | **Continue with 7 Days Free** (sends the invite; always enabled; does not start the trial) / **Continue as Draft** (outline; starts no trial) |
 
 ### Arrivals and exits
 
 - From the in-app template page: Stage 1 with the template preselected; Back to Template returns there.
 - From a My Template (`from=my-template`): the Stage 1 notice reads "From your template · My Copy"; Back and Save and Exit go to the My Template detail.
 - From the public template page or Pricing (`from=public|pricing`, plus `plan=<id>`): Back goes to the public template page; **Save and Exit** becomes **Exit** (no account yet) and goes to `/relationship-templates`. The `plan` value persists across all stages (stage changes only change the stage).
-- **Continue with 7 Days Free** → `/dashboard/relationships/[id]?from=wizard` with the one-line banner "Relationship Created" plus the trial end date.
-- **Continue as Draft** → `/dashboard/relationships/[id]?from=wizard&draft=1` with "Saved as Draft".
+- **Continue with 7 Days Free** → `/dashboard/relationships/[id]?from=wizard` with the one-line banner "Relationship Created" plus "Your 7-day free trial starts when Elena accepts. No card needed." There is no trial end date yet.
+- **Continue as Draft** → `/dashboard/relationships/[id]?from=wizard&draft=1` with "Saved as Draft" plus "Send the invite when you are ready. Your trial starts when Elena accepts."
 
 ### States and query params
 
@@ -81,7 +81,7 @@ Paths below are named in the repo's issues and PR #1116; confirm each before edi
 | --- | --- | --- |
 | `stage=1..5` | keep if the wizard already routes by stage; otherwise internal state | current stage; only reached stages are navigable |
 | `from=template|my-template|public|pricing` | yes | where Back/Exit go and which notice shows |
-| `plan=single|family|annual` | yes | plan chosen on Pricing; shows the Stage 5 chip and the summary row "Free Trial · 7 Days · then Family" |
+| `plan=single|family|annual` | yes | plan chosen on Pricing; shows the Stage 5 chip and the summary row "Free Trial · Starts When Elena Accepts · then Family" |
 | `edit=draft|invited` | yes (edit mode) | From Relationship Detail's "Still Editable" panel: header "Edit Relationship", Stages 4–5 hidden, Exit reads "Cancel", every stage's primary is "Save Changes" and returns with a saved toast. Invited note: "Elena hasn’t joined yet, so you can still change everything. She sees the new version when she opens the invite." |
 
 ## QuizHub components to reuse (`data-qh` mapping)
@@ -111,7 +111,7 @@ Every prototype element carries `data-qh`, naming the QuizHub file to reuse. `NE
 | `NEW: chosen plan (from Pricing)` | wizard.html (1) |
 | `NEW: invite preview (what Elena sees)` | wizard.html (1) |
 | `NEW: paired-answer-bars (scale only)` | wizard.html (5) |
-| `NEW: payment-panel (trial on send)` | wizard.html (1) |
+| `NEW: payment-panel (trial starts when Elena accepts)` | wizard.html (1) |
 | `NEW: stage-gauge (setup variant)` | wizard.html (5) |
 
 The Aspect drawer is `components/ui/sheet`; confirms and toasts use the shared modal and toast (bundle 09 `patterns.html`).
@@ -126,9 +126,9 @@ The Aspect drawer is `components/ui/sheet`; confirms and toasts use the shared m
 - Count: "n of 5 Aspects On · about N minutes"
 - Stage 5: "Stage 6 Align starts the moment Elena accepts." · "Continue with 7 Days Free" · "Continue as Draft"
 - Stage 4 purpose: "Create an account or sign in. Nothing is charged, and no card is asked for."
-- Billing note: "Sends the invite and starts your 7-day free trial. No card needed. Elena is never charged."
+- Billing note: "Sends the invite. Your 7-day free trial starts when Elena accepts. No card needed. Elena is never charged."
 - Plan chip: "{Plan} Plan · {price} after the trial, once you add a card" · "Change"
-- Rail: "Free Trial · Starts When You Send" (· "then {Plan}")
+- Rail: "Free Trial · Starts When Elena Accepts" (· "then {Plan}")
 - Drawer: "Edit Aspect" · "1 Means" · "5 Means" · "Scale Locked · 1–5 for every Aspect" · "Add an Aspect"
 - Edit mode: "Edit Relationship" · "Cancel" · "Save Changes"
 - Banned: "Ongoing", "Keep as Draft", "Alignment Setting", "Stage n of 6/8", any price on Stage 4.
@@ -146,7 +146,7 @@ These were decided by the owner on 2026-11-16 and are not open for reinterpretat
 7. **Archive over delete.** Default to Archive (reversible) for templates and relationships; hard delete only where there is no shared data and it is confirmed.
 8. **Title Case for labels, buttons, tabs and headings, with no ending period**; sentence case for sentences. Product terms are capitalized: Aspect, Feel, Wish, Think, Guess, Stage, Align, In Synch, Small Gap, Gap, Alignment Tolerance.
 9. **Route conflict.** The repo's public catalog is `/relationship-types`; the v2 route is **`/relationship-templates`**. Ship `/relationship-templates` and `/relationship-templates/[slug]`, permanently redirect (308) `/relationship-types` and `/relationship-types/[slug]` to them, and update `RELATIONSHIP_TYPES_PATH` (`lib/flow/paths.ts`) so no link points at the old route.
-10. **Card-free trial, decided placement.** Stage 4 is the account only. The trial choice sits on the Stage 5 send button, **Continue with 7 Days Free** (as in PR #1116); payment happens only after the relationship exists. (Open: PR #1116 anchors the trial at creation; the pass 10 copy says it starts when you send. See bundle 01.) When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
+10. **Card-free trial, decided placement and start.** Stage 4 is the account only. The Stage 5 primary button is **Continue with 7 Days Free** and only sends the invite. **The 7-day free trial starts when the Counterparty accepts** (both parties in). Drafts and sent-but-pending invites use no trial days. This replaces PR #1116's start at relationship creation and the earlier prototype start-at-send copy; PR #1116 must move its grant to acceptance. When the 7 days end without a card, Stage 6 pauses read-only (nothing lost) and the Initiator gets one free 7-day extension, once.
 11. **One status and one next action per state.** Banners confirm what just happened and never repeat the status.
 12. **Layout.** QuizHub breakpoints, content capped at 1440 px (`max-w-content`), `data-qh` on prototype elements names the QuizHub source to reuse.
 
@@ -189,8 +189,8 @@ Keep stage copy in the copy layer and template Aspects from the template record.
 
 ### Flow
 
-- Template → Stage 1 → … → Stage 5 → Continue with 7 Days Free lands on Relationship Detail with "Relationship Created" and the trial end date (port of `src/qa/flow8.js`).
-- Continue as Draft lands with "Saved as Draft" and the relationship in `draft`.
+- Template → Stage 1 → … → Stage 5 → Continue with 7 Days Free lands on Relationship Detail with "Relationship Created" and "Your 7-day free trial starts when Elena accepts. No card needed." The invited relationship shows no countdown (port of `src/qa/flow8.js`).
+- Continue as Draft lands with "Saved as Draft", "Send the invite when you are ready. Your trial starts when Elena accepts.", and the relationship in `draft` with no countdown.
 - Pricing → catalog → template → wizard keeps `plan` to Stage 5 and shows the chip there only.
 - Stages 1–5 render zero payment inputs (`autocomplete="cc-*"`, `name="card*"`, cvc/expiry/postal), matching `tests/trial-no-payment-inputs.test.ts` from PR #1116.
 
@@ -221,7 +221,7 @@ Do not weaken existing route, data, brand or copy-ownership checks to make the p
 
 ## Included from pass 10
 
-- Trial on the Stage 5 button, Stage 4 account only, plan chip at Stage 5 (DESIGN-NOTES §34).
+- Trial on the Stage 5 button, Stage 4 account only, plan chip at Stage 5 (DESIGN-NOTES §34). Trial clock starts when Elena accepts (§45); PR #1116 must move its grant to acceptance.
 - Aspect drawer and Add an Aspect (§35); edit mode for draft and invited relationships (§38; `reference/wizard-edit-invited-*`, `drawer-edit-*`).
 
 ## Definition of done

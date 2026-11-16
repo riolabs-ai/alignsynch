@@ -1,4 +1,4 @@
-Standalone check, Mon Nov 16 2026 20:14:09 GMT-0300 (Brasilia Standard Time)
+Standalone check, Mon Nov 16 2026 20:41:13 GMT-0300 (Brasilia Standard Time)
 Each bundle folder served alone (python3 -m http.server), headless Chrome at 390 and 1280.
 
 OK   01-spec-design-page-wizard-v2 wizard.html?stage=1 @390 sw=390/390 -> /wizard.html?stage=1 
@@ -86,7 +86,7 @@ OK   06-spec-design-page-templates-v2 templates.html?tab=mine&empty=1 @1280 sw=1
 OK   06-spec-design-page-templates-v2 relationship-template.html @390 sw=390/390 -> /relationship-template.html 
 OK   06-spec-design-page-templates-v2 relationship-template.html @1280 sw=1280/1280 -> /relationship-template.html 
 OK   06-spec-design-page-templates-v2 my-template-detail.html @390 sw=390/390 -> /my-template-detail.html 
-OK   06-spec-design-page-templates-v2 my-template-detail.html @1280 sw=1280/1280 -> /my-template-detail.html 
+OK   06-spec-design-page-templates-v2 my-template-detail.html @1280 sw=1280/1280 -> /my-template-detail.html  (retried after a transient fonts.gstatic.com connection-closed; retry passed with overflow none and no failed requests)
 OK   06-spec-design-page-templates-v2 my-template-detail.html?id=ev @390 sw=390/390 -> /my-template-detail.html?id=ev 
 OK   06-spec-design-page-templates-v2 my-template-detail.html?id=ev @1280 sw=1280/1280 -> /my-template-detail.html?id=ev 
 OK   06-spec-design-page-templates-v2 template-proposal.html @390 sw=390/390 -> /template-proposal.html 
@@ -123,3 +123,5 @@ OK   11-spec-design-page-account-settings-v2 settings.html @390 sw=390/390 -> /s
 OK   11-spec-design-page-account-settings-v2 settings.html @1280 sw=1280/1280 -> /settings.html 
 
 FAILURES 0
+
+Note: my-template-detail.html @1280 failed once on a transient Google Fonts request (net::ERR_CONNECTION_CLOSED). Immediate retry at 390 and 1280 passed with no overflow and no failed requests. Recorded as OK.
