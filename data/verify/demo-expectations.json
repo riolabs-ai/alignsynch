@@ -12,7 +12,20 @@
     "opinion": 205,
     "billing_plan": 6,
     "billing_subscription": 2,
-    "demo_account": 3
+    "demo_account": 3,
+    "admin_action": 6,
+    "billing_event": 2,
+    "broadcast_recipient": 3,
+    "broadcast_send": 1,
+    "contact_message": 3,
+    "contact_reply": 2,
+    "email_event": 2,
+    "news_signup": 5,
+    "plan_grant": 1,
+    "relationship_payment": 1,
+    "review_issue": 2,
+    "review_issue_comment": 2,
+    "review_todo": 3
   },
   "routes": [
     {
