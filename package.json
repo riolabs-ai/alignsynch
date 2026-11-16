@@ -1,6 +1,6 @@
 {
   "name": "quizhub",
-  "version": "1.20.1",
+  "version": "1.21.0",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "engines": {
@@ -15,6 +15,7 @@
     "data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/*.test.js && node .datacheck/scripts/data-check.js && node scripts/sample-brand-colors.mjs --check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs --check",
     "test": "vitest run",
     "parity": "node scripts/parity.mjs",
+    "routes:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/routes-check.mjs",
     "parity:update": "node scripts/parity.mjs --update",
     "bundles": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundles.js",
     "bundle:pack": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundle-platform.js pack",
@@ -57,6 +58,7 @@
     "db:seed:check": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --check",
     "db:seed:review": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --review",
     "db:seed:demo": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-seed.mjs --demo-accounts",
+    "templates:import": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-templates-import.mjs",
     "db:verify": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-verify.mjs",
     "admin:ensure": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-admin-ensure.mjs",
     "health:record": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/health-record.mjs",

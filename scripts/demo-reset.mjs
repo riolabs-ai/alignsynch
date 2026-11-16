@@ -31,22 +31,32 @@
  *      through the API, so for a demo cut before the base existed that parent is a historical
  *      accident, and the source is what decides where the rows come from.
  *
- *      **A branch with children needs `preserve_under_name`, and that is a defect this script had.**
+ *      **Every restore carries `preserve_under_name`, and the branch it creates is the way back.**
  *      The API refuses a restore of a branch that has children unless the body says where to
  *      preserve its state (`422 — Branch has children, preserve_under_name is required`), which is
  *      what the nightly run answered until `demo-restore-plan.mjs` supplied it. The parameter
- *      creates a preserved branch holding this branch's pre-reset state and moves every child under
- *      it, so the branch this run restores comes out with no children and the next run sends the
- *      plain body. The preserved branch is a real branch — one against the project's limit and the
- *      storage its rows occupy, no compute — and it is a **recovery point**, so the reset never
- *      deletes the newest one. It does bound the set: `scripts/demo-branch-prune.mjs` keeps the
- *      newest preserved state per parent plus anything younger than
+ *      creates a preserved branch holding this branch's **pre-reset state** and moves every child
+ *      under it, so the branch this run restores comes out with no children — and the preserved
+ *      branch is exactly what §3b restores *from* when the origin step cannot converge. That is why
+ *      it is sent on every run rather than only when children happen to exist: a reset with no
+ *      preserved branch has no undo.
+ *
+ *      Taking the state before the restore instead is not an alternative, and the first version of
+ *      §3b did exactly that and failed: a `demo-preserved-<stamp>` branch created as a child of the
+ *      branch about to be restored *is a child*, so the restore it was taken for is refused with
+ *      that same `422`. Measured on 2026-11-15 — `pnpm demo:reset` stopped at the restore, left a
+ *      stray preserved branch and reset nothing. The request is legal with no children as well
+ *      (measured on a scratch branch: `200`, and the preserved branch appears), so the body does
+ *      not depend on topology.
+ *
+ *      The preserved branch is a real branch — one against the project's limit and the storage its
+ *      rows occupy, no compute. The run deletes it once it has reseeded and proved sign-in
+ *      (`deleteRecoveryPoint`), and `scripts/demo-branch-prune.mjs` retires one a dead run left
+ *      behind: it keeps the newest preserved state per parent plus anything younger than
  *      `DEMO_PRESERVED_MAX_AGE_DAYS` (7) and retires the rest **before** the restore is sent
  *      (#909). Without that bound the reset's own recovery points filled the project's ten
- *      branches and the plain restore died on `422 — branches limit exceeded` on two consecutive
- *      nights (`99eedaba`, `7a531b43`): a restore needs one free branch slot even when it preserves
- *      nothing, which run 43263203497 measured (`children none — the body carries no
- *      preserve_under_name`) and a raw 422 never said.
+ *      branches and the restore died on `422 — branches limit exceeded` on two consecutive nights
+ *      (`99eedaba`, `7a531b43`).
  *
  *   3. **Re-apply the branch's trusted origin.** Neon implements a restore as a branch *creation*
  *      (`scripts/demo-branch-prune.mjs` records the same fact about the branch slot), and the
@@ -84,12 +94,13 @@
  *          45s ceiling for the whole step, and only a `5xx` or a fetch that never answered is
  *          retried. A `4xx` — a bad shape, a refused key, a branch with no integration — is a fact
  *          and fails at once. Every attempt is printed with its status and elapsed time.
- *      3b. **A failure no longer leaves the branch empty.** The run takes a **recovery point** (a
- *          `<branch>-preserved-<stamp>` branch holding exactly the pre-reset state) immediately
- *          before the restore; if every attempt fails, it restores the branch from that point, reads
- *          the counts back against the pre-reset census, and exits non-zero. A failed reset ends
- *          where it started. The point is deleted once the run converges, and the preserved-branch
- *          policy (`scripts/demo-branch-prune.mjs`) retires one that was not.
+ *      3b. **A failure no longer leaves the branch empty.** The restore itself preserves the demo's
+ *          **pre-reset state** as `<branch>-preserved-<stamp>` (`restoreRequest()` always sends
+ *          `preserve_under_name`); if every attempt fails, the run restores the branch from that
+ *          preserved branch, reads the counts back against the pre-reset census, and exits
+ *          non-zero. A failed reset ends where it started. The branch is deleted once the run
+ *          converges, and the preserved-branch policy (`scripts/demo-branch-prune.mjs`) retires one
+ *          that a dead run left.
  *
  *   4. **Reseed from the bundle.** `scripts/db-seed.mjs` with `DEMO_AUTH=1`, pointed at *this
  *      branch's* connection string and *this branch's* auth host. The seed reads
@@ -219,7 +230,7 @@ import {
   prunePreservedBranches,
 } from "./demo-branch-prune.mjs";
 import { sourceRefusal } from "./demo-source-guard.mjs";
-import { preservedUnderName, restoreRequest } from "./demo-restore-plan.mjs";
+import { restoreRequest } from "./demo-restore-plan.mjs";
 import {
   AUTH_PROVIDER,
   attemptTrace,
@@ -299,9 +310,9 @@ That re-apply runs *after* the restore, so a failure in it would leave an emptie
 therefore attempted ${ORIGIN_ATTEMPTS} times with a 2s → 4s → 8s → 16s backoff inside a
 ${ORIGIN_RETRY_CEILING_MS / 1000}s ceiling, retrying only a 5xx or a fetch that never answered — a
 4xx is a fact about the request and fails at once. If every attempt fails, the run restores the
-branch from the recovery point it took before the restore (a <branch>-preserved-<stamp> branch
-holding exactly the pre-reset state) and exits non-zero: a failed reset ends where it started, never
-emptier than it began.
+branch from the pre-reset state the restore itself preserved (a <branch>-preserved-<stamp> branch
+holding exactly the rows, accounts and auth configuration the demo held a second before) and exits
+non-zero: a failed reset ends where it started, never emptier than it began.
 
 --fail-origin-once and --fail-origin-always inject the 500 the live API answered in the seconds
 after a restore, so both paths are provable without an outage. They are switches rather than
@@ -682,8 +693,10 @@ async function capacityRefusalNow(projectId, branchName) {
  * capacity as if the deletes had happened, so a dry run answers "is tomorrow's run wedged?".
  *
  * `needed` is what this run has to fit, and the demo reset needs **two** free slots since #1090: one
- * for the restore itself and one for the pre-reset recovery point the restore is preceded by. A run
- * refused here has written nothing, which is the whole point of deciding it before `db:migrate`.
+ * for the restore itself (Neon implements a restore as a branch creation, measured in run
+ * 43263203497 — `422 — branches limit exceeded` on a body that preserved nothing) and one for the
+ * preserved branch that same restore creates and §3b restores *from*. A run refused here has
+ * written nothing, which is the whole point of deciding it before `db:migrate`.
  */
 async function preflightCapacity({ projectId, branch, dryRun, needed = 1 }) {
   const ceiling = branchLimit();
@@ -699,7 +712,7 @@ async function preflightCapacity({ projectId, branch, dryRun, needed = 1 }) {
 
   step(
     `branch capacity — ${plan.count} branch(es), limit ${plan.ceiling}; this run needs ${needed} free slot(s)${
-      needed > 1 ? " (the restore, and the pre-reset recovery point before it)" : ""
+      needed > 1 ? " (the restore itself, and the preserved branch it creates — the way back)" : ""
     }`,
   );
   for (const candidate of plan.candidates) {
@@ -988,21 +1001,24 @@ async function restoreFromSource(projectId, branch, plan) {
 }
 
 /**
- * Says what the restore will do with the branch's children before it is sent, and — when one is
- * created — what the preserved branch is and what it costs. A restore that quietly re-parents
- * somebody's preview branch is a surprise; the run log is the only place that can say it first.
+ * Says what the restore will do with the branch's children, and what the preserved branch is: the
+ * branch this run restores *from* if the trusted-origin step cannot converge. A restore that
+ * quietly re-parents somebody's preview branch is a surprise; the run log is the only place that
+ * can say it first.
  */
 function printRestorePlan(plan, branchName) {
-  if (plan.preservedUnder === null) {
-    say("  children  none — the body carries no preserve_under_name, so nothing is preserved");
-    return;
+  if (plan.children.length === 0) {
+    say(`  children  none — nothing to move under the preserved branch`);
+  } else {
+    say(
+      `  children  ${plan.children.length} (${plan.children.map((child) => child.name).join(", ")}) — moved under the preserved branch`,
+    );
   }
   say(
-    `  children  ${plan.children.length} (${plan.children.map((child) => child.name).join(", ")}) — moved under the preserved branch`,
+    `  preserved ${plan.preservedUnder} — the state ${branchName} holds right now, and what a failed run restores from`,
   );
-  say(`  preserved ${plan.preservedUnder}`);
   say(
-    `            the state ${branchName} holds right now, kept as its own branch: one branch against the project's limit and the storage its rows occupy, no compute — kept while it is the newest for ${branchName} and younger than DEMO_PRESERVED_MAX_AGE_DAYS, retired after that by the pre-flight`,
+    `            one branch against the project's limit and the storage its rows occupy, no compute — deleted when this run converges, and retired by the pre-flight if a dead run leaves it`,
   );
 }
 
@@ -1182,7 +1198,7 @@ async function ensureTrustedOrigin({
 }
 
 /* ------------------------------------------------------------------ *\
- * The pre-reset state — taken before the restore, put back if the origin step cannot converge
+ * The pre-reset state — preserved by the restore, put back if the origin step cannot converge
  * ------------------------------------------------------------------ */
 
 /**
@@ -1194,39 +1210,25 @@ async function ensureTrustedOrigin({
  * rows behind a deployment that still answered `200`. Retrying closes the window
  * (`ensureTrustedOrigin`); this closes the consequence, because a retry can still be exhausted.
  *
- * The recovery point is a plain branch created from `demo`'s own head before the restore — copy on
- * write, no compute, exactly the rows, the auth configuration and the trusted list the demo holds at
- * that instant. It is named with the preserved-branch convention (`<branch>-preserved-<UTC stamp>`,
- * `demo-restore-plan.mjs::preservedUnderName`, checked against the project's existing names so a
- * collision cannot fail the run), which is what makes the existing policy
- * (`demo-branch-prune.mjs`) the thing that retires one this script failed to delete.
+ * The branch named here is the one the restore itself created under `preserve_under_name` — copy on
+ * write from `demo`'s own head, no compute, exactly the rows, the auth configuration and the trusted
+ * list the demo held at the instant before the restore. It is **not** created by this script ahead
+ * of the restore: a branch created as a child of the branch about to be restored makes that restore
+ * illegal (`422 — Branch has children, preserve_under_name is required`), which is how the first
+ * version of this function left `pnpm demo:reset` unable to reset at all. The preserved branch is
+ * therefore both the mechanism the API demands and the way back, and this function only finds it.
  *
  * It is deleted on the path where the run converged (`deleteRecoveryPoint`), so a healthy nightly
  * does not spend a branch slot permanently; the capacity pre-flight counts it while the run is live.
  *
- * @param {{ projectId: string, branch: { id: string, name: string, allNames?: string[] }, dryRun: boolean }} input
- * @returns {Promise<{ id: string, name: string } | null>} `null` on `--dry-run`
+ * @param {{ projectId: string, name: string }} input
+ * @returns {Promise<{ id: string, name: string }>}
  */
-async function createRecoveryPoint({ projectId, branch, dryRun }) {
-  const name = preservedUnderName(branch.name, new Date(), branch.allNames ?? []);
-  step(`recovery point — the state ${branch.name} holds now, kept as ${name}`);
-  if (dryRun) {
-    say(`  would create ${name} — --dry-run, nothing is written`);
-    return null;
-  }
-
-  const created = await neon("POST", `/projects/${projectId}/branches`, {
-    branch: { name, parent_id: branch.id },
-    endpoints: [],
-  });
-  await awaitOperations(projectId, created?.operations ?? [], "recovery point");
-
-  // Read back: the state has to exist before the restore destroys what it holds, and a branch list
-  // that does not carry it is a reason to stop rather than to restore onto nothing.
+async function resolvePreservedBranch({ projectId, name }) {
   const found = (await listBranches(projectId)).find((candidate) => candidate.name === name);
   if (found === undefined) {
-    throw new Refused(
-      `the API accepted the recovery point "${name}" but the project's branch list does not carry it, so ${branch.name}'s current state was not preserved — refusing to restore over a state there is no way back from. Nothing was changed.`,
+    throw new Error(
+      `the restore finished but the project's branch list does not carry the preserved branch "${name}", so the state ${name} was supposed to hold cannot be named — the branch is empty and there is no recorded way back. Nothing else ran: no reseed, no trusted-origin write.`,
     );
   }
   say(
@@ -1600,6 +1602,12 @@ async function resetContent(connectionString) {
       ["session", "public.session", "DELETE FROM session"],
       ["relationship_member", "public.relationship_member", "DELETE FROM relationship_member"],
       ["coach_invite", "public.coach_invite", "DELETE FROM coach_invite"],
+      /* #1081 — the two billing rows that hang off a relationship. `relationship_payment` has no
+       * `ON DELETE CASCADE` (0036 says why: the obligation is the record of a charge), so it has to
+       * go before the relationship it names; `plan_grant` cascades, and deleting it explicitly is
+       * what puts the count in the report instead of leaving it to the FK. */
+      ["relationship_payment", "public.relationship_payment", "DELETE FROM relationship_payment"],
+      ["plan_grant", "public.plan_grant", "DELETE FROM plan_grant"],
       ["relationship", "public.relationship", "DELETE FROM relationship"],
       ["template_version", "public.template_version", "DELETE FROM template_version"],
       ["item", "public.item", "DELETE FROM item"],
@@ -1607,6 +1615,23 @@ async function resetContent(connectionString) {
       ["record", "public.record", "DELETE FROM record"],
       ["user_profile", "public.user_profile", "DELETE FROM user_profile"],
       ["demo_account", "public.demo_account", "DELETE FROM demo_account"],
+      /* #1081 — the console's half. These tables cascade from nothing above and the seed upserts
+       * into them, so a reseed-only run would otherwise keep a walkthrough's extra inbox reply, an
+       * extra audit row or a reviewer's own to-do beside the seeded ones, and `pnpm demo:verify`
+       * would then diff the branch against an expectation file that cannot be true again. The
+       * demo's contract is the bundle, this console half and the three accounts — nothing else —
+       * and children before parents in each pair, for the FKs that do cascade. */
+      ["broadcast_recipient", "public.broadcast_recipient", "DELETE FROM broadcast_recipient"],
+      ["broadcast_send", "public.broadcast_send", "DELETE FROM broadcast_send"],
+      ["contact_reply", "public.contact_reply", "DELETE FROM contact_reply"],
+      ["contact_message", "public.contact_message", "DELETE FROM contact_message"],
+      ["email_event", "public.email_event", "DELETE FROM email_event"],
+      ["news_signup", "public.news_signup", "DELETE FROM news_signup"],
+      ["admin_action", "public.admin_action", "DELETE FROM admin_action"],
+      ["billing_event", "public.billing_event", "DELETE FROM billing_event"],
+      ["review_issue_comment", "public.review_issue_comment", "DELETE FROM review_issue_comment"],
+      ["review_issue", "public.review_issue", "DELETE FROM review_issue"],
+      ["review_todo", "public.review_todo", "DELETE FROM review_todo"],
     ];
 
     for (const [label, qualified, sql] of statements) {
@@ -1861,11 +1886,12 @@ async function main() {
 
   if (options.dryRun) {
     if (!options.skipReset) {
+      // One line answers both pre-flight questions, because the answer is one branch: the restore
+      // preserves the demo's current state under `preserve_under_name`, and that preserved branch
+      // is what a failed run would restore *from*. Nothing is created here — a dry run has to be
+      // able to say "tomorrow's run can put the branch back" without writing a branch to say it.
       step("the restore this run would send");
       printRestorePlan(restoreRequest(branch, source, new Date()), branch.name);
-      // The recovery point is planned too: a dry run has to answer "could tomorrow's run put the
-      // branch back if the origin step failed after the restore?".
-      await createRecoveryPoint({ projectId: project.id, branch, dryRun: true });
     }
     // The origin step is planned too: "--dry-run" has to answer "would tomorrow's run leave the
     // demo enterable?", and that answer is the list it would write.
@@ -1879,9 +1905,9 @@ async function main() {
   const before = await counts(connectionStrings.direct);
   printCounts("before", before);
 
-  // The state this run is about to destroy. It has to be taken **before** the restore, because the
-  // trusted-origin step runs after it: a failure there is not a no-op on a branch the restore has
-  // already emptied, and without this there would be nothing to put back.
+  // The state this run is about to destroy, as the branch the restore preserves it under. It is
+  // written into `progress` before the call, so a failure anywhere after this names the way back
+  // rather than leaving the reader with an emptied branch and no next step.
   let recovery = null;
 
   if (!options.skipReset) {
@@ -1895,20 +1921,24 @@ async function main() {
       await migrateSource({ branch, source: prepared });
     }
 
-    // The way back, taken while the current state still exists (#1090).
-    recovery = await createRecoveryPoint({ projectId: project.id, branch, dryRun: false });
-    progress.recovery = recovery;
-
     step(`reset ${branch.name} from ${source.name} (one restore, not a delete)`);
-    // The body comes from `restoreRequest()`: with children the API refuses a restore that does
-    // not say where to preserve them (`422 — Branch has children, preserve_under_name is
-    // required`), so the plan is decided and printed before the call, not discovered by it.
+    // The body comes from `restoreRequest()` and always carries `preserve_under_name`: the branch
+    // it creates holds the demo's pre-reset state, which is this run's only way back (#1090), and
+    // the API refuses a restore of a branch with children without it. It is taken *by* the restore
+    // rather than before it on purpose — a branch created beforehand is itself a child, and that is
+    // the `422` this parameter exists to answer.
     const plan = restoreRequest(branch, source, new Date());
     printRestorePlan(plan, branch.name);
+    progress.recovery = { id: null, name: plan.preservedUnder };
     const reset = await restoreFromSource(project.id, branch, plan);
     say(
-      `  reset ${reset.operations === 0 ? "accepted with no operations" : `finished after ${(reset.waitedMs / 1000).toFixed(1)}s (${reset.operations} operation(s))`}${reset.preservedUnder === null ? "" : ` — children now under ${reset.preservedUnder}`}`,
+      `  reset ${reset.operations === 0 ? "accepted with no operations" : `finished after ${(reset.waitedMs / 1000).toFixed(1)}s (${reset.operations} operation(s))`} — pre-reset state preserved as ${reset.preservedUnder}`,
     );
+    recovery = await resolvePreservedBranch({
+      projectId: project.id,
+      name: plan.preservedUnder,
+    });
+    progress.recovery = recovery;
 
     // The endpoint can be replaced by the reset; everything after this point re-resolves it.
     const after = await resolveBranch(project.id, branch.name);
@@ -1950,8 +1980,8 @@ async function main() {
   // Because the restore has already emptied the branch by this point, failing here is not a no-op —
   // so this is where the run puts the branch back (#1090). Retries first: the measured failure was
   // a few-second window of `500 AUTH_FAILURE` after a restore, which a second attempt usually
-  // clears. If every attempt fails, the branch is restored from the recovery point taken above and
-  // the run exits non-zero having ended where it started.
+  // clears. If every attempt fails, the branch is restored from the pre-reset state the restore
+  // itself preserved and the run exits non-zero having ended where it started.
   let originOutcome;
   try {
     originOutcome = await ensureTrustedOrigin({
@@ -2135,7 +2165,7 @@ main().catch(async (error) => {
     // A branch emptied by a restore that then failed has a way back, and the person reading this
     // log is the only one who can find it — so the last line names it rather than leaving them with
     // zeros and no next step.
-    if (progress.recovery !== null) {
+    if (progress.recovery !== null && progress.recovery.id !== null) {
       console.error(
         `  · the pre-reset state is held by "${progress.recovery.name}" (${progress.recovery.id}) — put it back with: POST /projects/${progress.projectId}/branches/${progress.branchId ?? "<branch id>"}/restore {"source_branch_id":"${progress.recovery.id}"}`,
       );

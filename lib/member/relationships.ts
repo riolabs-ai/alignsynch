@@ -1362,10 +1362,16 @@ export async function publishRelationship(
         );
         const nextRound = Number(round.rows[0]?.round ?? 0) + 1;
 
+        // #1100b — **`draft`, because publishing is not acceptance.** This statement writes the
+        // Initiator's seat and nothing else; the Counterparty gets theirs through `claimInvite`,
+        // which is the one write that flips the session to `active`. A published-and-unclaimed
+        // round is precisely the "invited but not started" session the state exists to name, so the
+        // column is written here rather than left to its `active` default — the default is the
+        // backfill's answer for rows that predate the column, never the answer for a new row.
         await sql.query(
           `INSERT INTO session
-             (record_id, template_record_id, mode, alignment_setting, relationship_id, round)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+             (record_id, template_record_id, mode, alignment_setting, relationship_id, round, state)
+           VALUES ($1, $2, $3, $4, $5, $6, 'draft')`,
           [
             sessionRecordId.id,
             rel.template_id,

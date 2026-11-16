@@ -574,20 +574,15 @@ else
   skip_step "email:bodies" "no email:bodies:check script in package.json"
 fi
 
-# The release atlas (#945): every route `data/pages/budget.ts` registers has a row in the current
-# version's `docs/qa-atlas/<version>/manifest.json`, every claimed status agrees with the boundary
-# table (`tests/parity/boundary.ts`), every thumbnail the manifest points at exists, and the atlas
-# directory stays inside its 5 MB budget. **Static on purpose** — no browser, no connection, nothing
-# from `lib/db/**` — because the capture needs a server and the demo branch's rows, which CI has not
-# got, while the *claim* that every route was captured is exactly what a gate can hold. In every lane
-# for the fifth time and the same reason as the steps above: the registry is `data/`, the boundary is
-# `tests/`, the generator is `scripts/`, the manifest is `docs/`, and a lane that skipped it would be
-# green over a stale atlas. ~0.2 s. A route the manifest does not carry fails **by route name**.
-if has_script "qa:atlas:check"; then
-  run_step "qa:atlas:check (the registry and the atlas manifest agree)" pnpm qa:atlas:check || fail
-else
-  skip_step "qa:atlas:check" "no qa:atlas:check script in package.json"
-fi
+# **No `qa:atlas:check` step here, on purpose.** The owner deferred the QA atlas on 2026-11-15: the
+# sweep cannot see the auth modal, the stage-form embeds, sign-in/sign-up or the Stripe steps, so a
+# full sweep of the registry could miss the very screens a release changed and still bill that
+# release for a capture it could not take. Nothing was deleted — `pnpm qa:atlas` (a capture),
+# `pnpm qa:atlas:check` (the static half: registry vs the current cut's manifest, the boundary
+# claims, the 5 MB budget and the retention window) and `pnpm qa:atlas:prune` all still work by hand,
+# and the check passing on demand is the evidence the atlas is intact. **Reactivation is the owner's
+# request** — when they ask for it, this step comes back here verbatim; until then its absence is a
+# recorded decision (#1094), not an oversight, so do not re-add it as a "missing check".
 
 # The recorded demo walk (#898). `docs/qa/demo-flow/transcript.json` + its 55 committed PNGs are
 # what `/how-it-works` replays, so a transcript that has drifted from the screenshots it names is a
@@ -732,6 +727,23 @@ if [ "$LANE" = "code" ]; then
   run_step "build (next build)" build_in_slot || fail
 else
   skip_step "build (next build)" "lane=$LANE has no build step — CI re-runs the full gate on the merge head"
+fi
+
+# The route tree, judged by Next's own router (#1113). `next start` refuses to boot a build
+# whose dynamic routes cannot be sorted — `sortDynamicRoutes()` in
+# `next/dist/server/lib/router-utils/filesystem.js` calls `getSortedRoutes()` over
+# `.next/routes-manifest.json`'s `dynamicRoutes[].page` and throws on two different segment
+# names at one level (`/dashboard/templates/[id]` beside `/dashboard/templates/[slug]/create`
+# cost a boot). `next build` cannot see it: `validateAppPaths()` validates within one route,
+# so the tree compiled and the gate went green while the first request to the deployment was a
+# 500. This step is one function call on the artifact the build just wrote — no server, no
+# port, ~0.3 s — and it runs only in the code lane, because a route-tree change is `app/**`
+# and that is what the classifier calls the code lane. The verdict is Next's verbatim message,
+# never a rule re-implemented here: route groups make a hand-rolled walker wrong both ways.
+if [ "$LANE" = "code" ]; then
+  run_step "routes:check (Next's own router validation over the built manifest)" pnpm routes:check || fail
+else
+  skip_step "routes:check" "lane=$LANE has no build step — CI re-runs the full gate on the merge head"
 fi
 
 # End of the heavy section: hand the slot back before the summary prints. The EXIT trap is the

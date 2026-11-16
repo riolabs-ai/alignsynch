@@ -68,14 +68,17 @@
  *       relationship, no session points at a relationship that does not exist.
  *   V18 a scored session is immutable (#340): there is no `UPDATE` path against `session` or
  *       `opinion` anywhere in `lib/`, `scripts/` or `app/` — the rows a score is read from can
- *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **Two column
+ *       be written once (the gated `INSERT` in `submitAnswers`) and never rewritten. **Three column
  *       sets are carved out.** An `UPDATE session` whose SET list is exactly `voided_at` and/or
  *       `voided_by` is legal (#503), because an operator's void adds an operator-state column that
  *       no score and no derivation over a score reads — `instanceStatusOf()` answers `voided`
  *       before it counts anything. An `UPDATE session` whose SET list is exactly `name` is legal
  *       (#278), because the deletion sweep must rewrite the free-text label so a survivor's session
  *       stops naming a person who deleted their account — `name` is the console's optional label
- *       and no derivation over answers reads it. The carve-outs are column lists, not table ones:
+ *       and no derivation over answers reads it. An `UPDATE session` whose SET list is exactly
+ *       `state` is legal (#1100b), because the acceptance flip is how a draft session becomes a
+ *       live one and `state` is a predicate every reader already carries — never a count of
+ *       answers. The carve-outs are column lists, not table ones:
  *       an `UPDATE session SET mode = …`, `SET alignment_setting = …`, `SET template_record_id = …`
  *       or a SET list mixing an admitted column with anything else still fails here.
  *   V19 the membership's initiator (coach card): a relationship that has any member has exactly
@@ -169,8 +172,31 @@
  *       rows**, so `/dashboard/relationships/<id>` said "Not sent yet — nothing has been invited or
  *       charged" while `/assessments` said the pair had accepted, and `/invite/<token>` could only
  *       answer "No such invitation". Numbered after #962's V30.
+ *   V32 the invitation belongs to a relationship (`0040_session_invite_relationship.sql`, #1100a):
+ *       every `session_invite` row carries a `relationship_id` — filled by 0040 from the session it
+ *       already pointed at — and the count of rows still missing one is printed as a census.
+ *       **This one does not fail**: it prints a report line and its count. The card that adds the
+ *       column changed no behaviour, and #1100b keeps the invitation on the session (the draft
+ *       session is where `mode`, the Setting and the Initiator's seat live, so the row still hangs
+ *       off a session), which means neither writer supplies the column yet. Failing here would
+ *       paint a branch red for work nobody has done.
+ *   V33 a session has a state, and it is the one the rows imply (`0041_session_state.sql`,
+ *       #1100b): every session on a relationship with no Counterparty seat is `draft`, every
+ *       session whose relationship has one is `active`. **This one fails**, row by row, naming the
+ *       record and the direction of the mismatch, because the two states are different product
+ *       facts: a `draft` is an invitation nobody has accepted and no count or screen may read it,
+ *       an `active` one is a live session. The census is printed either way — the draft count is
+ *       the product's "invited but not started" number, and on a seeded branch it is the `draft`
+ *       plus `pending` lifecycle rows, not an error.
+ *
+ *       The rule reads the **Counterparty seat**, not `relationship.counterparty_user_id`: the seat
+ *       is the row `claimInvite` writes, while that column has no writer in the product (the seed
+ *       mirrors it, the account purge nulls it — `grep -rn counterparty_user_id lib scripts`). A
+ *       count of active sessions whose relationship mirror is NULL is printed beside the census, as
+ *       a report and never a failure, for exactly that reason.
  *
  * Exit 1 with a named failure per violation, like the `data:check` E-codes; exit 0 with a count.
+ * V32 is the one check that reports without failing, and it says so in its own output line.
  */
 import { Client } from "pg";
 import { readdirSync, readFileSync } from "node:fs";
@@ -213,6 +239,22 @@ const VOID_COLUMNS = new Set(["voided_at", "voided_by"]);
  * permitted line below says which of the two admitted this statement.
  */
 const LABEL_COLUMNS = new Set(["name"]);
+
+/**
+ * The acceptance flip (#1100b, `0041_session_state.sql`): `UPDATE session SET state = 'active' …`,
+ * written by `claimInvite` in the transaction that binds the Counterparty's seat.
+ *
+ * `state` is not a score column and cannot become one: it answers "has the pair started this
+ * session", it is written **once**, by the one path that makes the answer yes, and every
+ * derivation over it is a predicate (`state = 'active'`), never a count of answers. The column is
+ * a carve-out rather than a place in `VOID_COLUMNS` because the three admitted writes are three
+ * different facts — an operator's end (#503), a deleted person's label (#278), and the claim — and
+ * the permitted-line census should say which one a statement is.
+ *
+ * A SET list that mixes `state` with anything else still fails below: `SET state = …, mode = …`
+ * would be exactly the rewrite of a scored session V18 exists to refuse.
+ */
+const STATE_COLUMNS = new Set(["state"]);
 
 /**
  * V18's scan: find every `UPDATE` statement that targets the `session` or `opinion` table in the
@@ -267,12 +309,18 @@ function scanForUpdatePaths() {
         setColumns.length > 0 && setColumns.every((column) => VOID_COLUMNS.has(column));
       const isLabel =
         setColumns.length === 1 && setColumns.every((column) => LABEL_COLUMNS.has(column));
-      if (isSession && (isVoid || isLabel)) {
+      const isState =
+        setColumns.length === 1 && setColumns.every((column) => STATE_COLUMNS.has(column));
+      if (isSession && (isVoid || isLabel || isState)) {
         allowed.push({
           file,
           line,
           columns: setColumns,
-          why: isVoid ? "an operator's void (#503)" : "the deletion sweep's label rewrite (#278)",
+          why: isVoid
+            ? "an operator's void (#503)"
+            : isLabel
+              ? "the deletion sweep's label rewrite (#278)"
+              : "the acceptance flip (#1100b)",
         });
         continue;
       }
@@ -923,6 +971,126 @@ async function main() {
         relationshipOrphans += 1;
         fail("V17", `session "${row.record_id}" points at a relationship that does not exist`);
       }
+    }
+
+    // V32 — the invitation's own relationship (0040, #1100a). **Reported, not enforced**, on
+    // purpose: the invitation still hangs off the session it belongs to (#1100b keeps the session
+    // row and the invitation's `session_record_id` key), so neither writer supplies the new column
+    // yet. Flipping this line to a `fail()` would paint `db:verify` red for work nobody has done.
+    let invitesChecked = 0;
+    let invitesWithoutRelationship = 0;
+    if (present.includes("session_invite")) {
+      const { rows: inviteRelationshipColumn } = await client.query(
+        `SELECT 1 AS present FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'session_invite'
+            AND column_name = 'relationship_id'`,
+      );
+      if (inviteRelationshipColumn.length === 0) {
+        console.log(
+          "  · invite: session_invite.relationship_id does not exist — run `pnpm db:migrate` (0040, #1100a)",
+        );
+      } else {
+        const { rows: inviteCensus } = await client.query(
+          `SELECT count(*)::int AS invites,
+                  count(*) FILTER (WHERE relationship_id IS NULL)::int AS without_relationship
+             FROM session_invite`,
+        );
+        invitesChecked = inviteCensus[0]?.invites ?? 0;
+        invitesWithoutRelationship = inviteCensus[0]?.without_relationship ?? 0;
+        console.log(
+          `  · invite: ${invitesChecked} invitation(s), ${invitesWithoutRelationship} with no relationship_id (0040 fills every one; want 0)`,
+        );
+      }
+    } else {
+      console.log("  · invite: public.session_invite does not exist — nothing to report");
+    }
+
+    // V33 — a session has a state, and it is the one the rows imply (0041, #1100b). The rule is a
+    // bijection with the Counterparty seat: no seat ⇒ `draft`, seat ⇒ `active`. It is enforced row
+    // by row, naming the record and which way it disagrees, because the two states are two product
+    // facts and a row on the wrong side is a session that is either invisible when it is live or
+    // counted when nobody accepted it.
+    //
+    // The census is printed either way. On a seeded branch the draft count is not an error: it is
+    // the `draft` and `pending` lifecycle rows — the product's "invited but not started" number.
+    let sessionStatesChecked = 0;
+    let draftSessions = 0;
+    let activeSessions = 0;
+    let activeSessionsWithoutMirror = 0;
+    if (present.includes("session") && present.includes("relationship") && hasRelationshipColumn) {
+      const { rows: stateColumn } = await client.query(
+        `SELECT 1 AS present FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = 'session'
+            AND column_name = 'state'`,
+      );
+      if (stateColumn.length === 0) {
+        fail(
+          "V33",
+          "public.session.state does not exist — a draft session and a live one are the same row (run `pnpm db:migrate`, 0041)",
+        );
+      } else {
+        const { rows: stateCensus } = await client.query(
+          `SELECT s.state, count(*)::int AS sessions
+             FROM session s
+            GROUP BY s.state
+            ORDER BY s.state`,
+        );
+        for (const row of stateCensus) {
+          sessionStatesChecked += Number(row.sessions);
+          if (row.state === "draft") draftSessions = Number(row.sessions);
+          if (row.state === "active") activeSessions = Number(row.sessions);
+        }
+
+        // The rule, row by row. One statement, so the two directions cannot be read a minute apart;
+        // `has_counterparty` is the seat `claimInvite` writes, which is the fact — not the
+        // relationship's seeded mirror.
+        const { rows: stateOffenders } = await client.query(
+          `SELECT s.record_id, s.state, r.id AS relationship_id,
+                  EXISTS (SELECT 1 FROM party p
+                           WHERE p.session_record_id = s.record_id
+                             AND p.role = 'counterparty') AS has_counterparty
+             FROM session s
+             JOIN relationship r ON r.id = s.relationship_id
+            WHERE (s.state = 'active' AND NOT EXISTS (SELECT 1 FROM party p
+                                                       WHERE p.session_record_id = s.record_id
+                                                         AND p.role = 'counterparty'))
+               OR (s.state = 'draft'  AND EXISTS (SELECT 1 FROM party p
+                                                   WHERE p.session_record_id = s.record_id
+                                                     AND p.role = 'counterparty'))
+            ORDER BY s.record_id`,
+        );
+        for (const row of stateOffenders) {
+          fail(
+            "V33",
+            row.state === "active"
+              ? `session "${row.record_id}" is state='active' but relationship "${row.relationship_id}" has no Counterparty seat — a live session must be one somebody accepted`
+              : `session "${row.record_id}" is state='draft' but relationship "${row.relationship_id}" has a Counterparty seat — an accepted session must read active`,
+          );
+        }
+
+        // The mirror, reported and never failed: `relationship.counterparty_user_id` is what the
+        // console and the demo harness read back, it has no writer in the product (only the seed
+        // binds it and the account purge nulls it), and a signed-out claim has no account to name.
+        const { rows: mirror } = await client.query(
+          `SELECT count(*)::int AS missing
+             FROM session s
+             JOIN relationship r ON r.id = s.relationship_id
+            WHERE s.state = 'active' AND r.counterparty_user_id IS NULL`,
+        );
+        activeSessionsWithoutMirror = mirror[0]?.missing ?? 0;
+        console.log(
+          `  · session state: ${activeSessions} active, ${draftSessions} draft of ${sessionStatesChecked} session(s) — a draft is the "invited but not started" count, and every draft lacks a Counterparty seat while every active one has it (V33 fails, not reports)`,
+        );
+        if (activeSessionsWithoutMirror > 0) {
+          console.log(
+            `  · session state: ${activeSessionsWithoutMirror} active session(s) whose relationship mirror (counterparty_user_id) is NULL — the seat is the fact, this column is the seed's mirror`,
+          );
+        }
+      }
+    } else {
+      console.log(
+        "  · session state: public.session or public.relationship does not exist — nothing to check",
+      );
     }
 
     // V19 + V20 — the membership's two invariants (coach card). The rows are grouped per
@@ -2157,7 +2325,7 @@ async function main() {
     }
 
     console.log(
-      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
+      `✓ db:verify — ${instances.length} session(s) checked, ${templatesChecked} template(s) resolved, ${versionsParsed} template version(s) parsed with every relationship bound to one (${authoredCopies} copy(ies) authored at create, checked as structure), ${publishedTemplates} published template(s) each with at least one version (no published badge over a template that cannot be copied), no Gap column, no \`instance\` table or column, ${relationshipOrphans} orphan session(s) (every session has a relationship), ${invitesChecked} invitation(s) with ${invitesWithoutRelationship} missing a relationship (V32 reports all of them; 0 wanted), ${activeSessions} active and ${draftSessions} draft session(s) of ${sessionStatesChecked} — every draft lacks a Counterparty seat and every active one has it (V33 fails on a mismatch; the draft count is the "invited but not started" census), ${activeSessionsWithoutMirror} active session(s) whose relationship mirror is NULL (reported; the seat is the fact), ${updatePaths.violations.length} UPDATE path(s) against session/opinion across ${updatePaths.files} source file(s) (a scored session is immutable), ${memberRelationshipsChecked} relationship(s) with one initiator member and no double coach, every mode matches its answers, every Setting one of soft/full with ${settingsChecked.length} seeded setting(s) matching the fixture, ${seeded.complete} of ${seeded.authored} seeded session(s) complete, ${seededRelationships.checked} seeded relationship(s) coherent with their own session (one lifecycle word, one claimed invitation each), ${bindings}, ${unlockMarks[0].n} unlock mark(s) on complete instances only, ${billingPlansChecked} billing plan row(s) matching data/billing-plans.ts (${liveSubscriptions} live subscription(s)), ${consoleColumnsChecked} console column(s) nullable with no default, ${submittedSeats} submitted seat(s) with every Aspect answered, ${emailEvents} mail event(s) recorded (${suppressedAddresses} address(es) suppressed), ${inboxMessages} contact message(s) in the inbox with ${inboxReplies} reply attempt(s), ${broadcasts} broadcast send(s) recorded (${broadcastRecipients} address(es) mailed), ${profileRows} profile row(s) with a live account behind them (no orphan after a deletion), ${openDeletionJobs} open deletion job(s) none older than ${STUCK_DELETION_JOB_HOURS} h, ${reviewArtifacts} review artifact(s) with ${reviewTodos} TODO item(s) and ${reviewIssues} feedback issue(s) none in a closed/open mismatch, no drift`,
     );
 
     // One line per seeded instance, in slug order: which Setting it plays under, and what that

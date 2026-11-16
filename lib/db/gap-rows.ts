@@ -87,6 +87,13 @@ const POPULATION_SQL = `
   LEFT JOIN aspect_count ac ON ac.record_id = ai.record_id
   LEFT JOIN answered ia ON ia.session_record_id = ai.record_id AND ia.role = 'initiator'
   LEFT JOIN answered ca ON ca.session_record_id = ai.record_id AND ca.role = 'counterparty'
+  -- #1100b — **a draft session is not in the population.** The two numbers this statement feeds
+  -- are "how many sessions exist" and "how many are complete", and a create nobody accepted is
+  -- neither: it has no Counterparty seat and no answers, so counting it only widens a denominator
+  -- on the one screen whose whole value is that its two numbers agree with its rows. The
+  -- completeness half was already unaffected (it requires both seats and every Aspect answered);
+  -- this is the total catching up.
+  WHERE ai.state = 'active'
 `;
 
 /**

@@ -76,6 +76,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "pg";
+import { ADMIN_SURFACE_COUNT_SQL } from "./db-seed-admin-surfaces.mjs";
 import { loadEnv, repoRoot, writeDatabaseUrl } from "./load-env.mjs";
 import {
   brandMismatch,
@@ -105,6 +106,11 @@ const REQUEST_TIMEOUT_MS = 20_000;
  * prints, plus `demo_account`, which the seed creates under `DEMO_AUTH=1`. Spelled here rather
  * than imported because `db-seed.mjs` runs its seed at import; `db:verify` is the separate, deeper
  * check of these same rows and stays separate.
+ *
+ * **#1081's console half is imported, not re-spelled.** Those thirteen tables are authored by
+ * `scripts/db-seed-admin-surfaces.mjs`, which also owns the numbers
+ * (`ADMIN_SURFACE_ROWS`); `tests/db-seed-admin-surfaces.test.ts` holds the expectation file equal to
+ * them. A third copy here is exactly the drift this file's own docstring complains about.
  */
 const COUNT_SQL = {
   record: "SELECT count(*)::int AS n FROM record WHERE record_type = 'assessment'",
@@ -120,6 +126,7 @@ const COUNT_SQL = {
   opinion: "SELECT count(*)::int AS n FROM opinion",
   billing_plan: "SELECT count(*)::int AS n FROM billing_plan",
   demo_account: "SELECT count(*)::int AS n FROM demo_account",
+  ...ADMIN_SURFACE_COUNT_SQL,
 };
 
 let problems = 0;

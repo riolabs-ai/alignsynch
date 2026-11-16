@@ -758,6 +758,11 @@
           "question": "Which release connected the billing state machine to the events it was waiting for, and shipped no new surface?"
         },
         {
+          "path": "changelog/v1-21-0.md",
+          "title": "v1.21.0",
+          "question": "Which release made a draft session distinguishable from a live one, and gave an invitation its own relationship?"
+        },
+        {
           "path": "changelog/v1-3-0.md",
           "title": "v1.3.0",
           "question": "The release where the flow closed."

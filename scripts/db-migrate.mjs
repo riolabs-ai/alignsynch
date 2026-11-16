@@ -43,6 +43,19 @@ const CONTENT_TABLES = [
 
 async function main() {
   loadEnv();
+  // **Which branch does this run touch?** Answered before the first statement, because a migration
+  // applied to the wrong branch is the one mistake this script cannot roll back: `.env.local` wins
+  // over `.env`, so "production" and "demo" are one file-set away from each other and nothing in the
+  // output said which one was connected. The endpoint's host and the branch name are printed — never
+  // the credential, which `new URL().host` drops.
+  const target = writeDatabaseUrl();
+  let host = "<unparsable DATABASE_URL>";
+  try {
+    host = new URL(target).host;
+  } catch {
+    // Keep the run going: the connection below reports the real problem, with the URL it used.
+  }
+  console.log(`  · target: ${host} (NEON_BRANCH=${process.env.NEON_BRANCH ?? "<unset>"})`);
   const client = new Client({
     connectionString: writeDatabaseUrl(),
     application_name: "db:migrate",

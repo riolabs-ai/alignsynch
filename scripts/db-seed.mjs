@@ -85,6 +85,16 @@
  * equal to the same derivation by `tests/db-seed-subscriptions.test.ts`. Those two rows are the
  * reason an `active` demo is not a status lie.
  *
+ * **#1081 — the console's half is part of the dataset.** A walkthrough that signs in as the Admin
+ * reached `/admin/instances` and then a rail of empty lists, because nothing wrote the rows
+ * `/admin/audit`, `/admin/inbox`, `/admin/broadcast`, `/admin/billing` and `/admin/review` read.
+ * `scripts/db-seed-admin-surfaces.mjs` authors them — six audit entries, a worked support thread
+ * with a refused reply beside an untouched one, one broadcast and the addresses it reached, a comp
+ * and a charged obligation, and the review shelf's issues and to-dos — all from ids drawn from the
+ * rows this same seed writes, on the fixture clock (`DEMO_NOW_ISO`), and gated on `DEMO_AUTH` so a
+ * production seed never writes a synthetic audit row. `data/verify/demo-expectations.json` carries
+ * the thirteen counts and `tests/db-seed-admin-surfaces.test.ts` holds them equal to the plan.
+ *
  * **The platform admins.** With `ADMIN_NN_EMAIL` / `ADMIN_NN_PASS` present, this script also
  * ensures each pair is a durable `admin` account: created through the same sign-up path when
  * absent, reconciled (role corrected in place) when present, and — when the password has changed
@@ -116,6 +126,7 @@ import {
   seatProofSummary,
   seatProofVerdict,
 } from "./db-seed-admin-proof.mjs";
+import { seedAdminSurfaces } from "./db-seed-admin-surfaces.mjs";
 import { DEMO_ACCOUNTS, inviteEmailFor } from "./db-seed-invite.mjs";
 import {
   SEED_LOCK_ID,
@@ -135,6 +146,7 @@ import {
   sweepLine,
 } from "./db-seed-sweep.mjs";
 import { loadEnv, repoRoot, requireVariable, writeDatabaseUrl } from "./load-env.mjs";
+import { sessionStateOf } from "../content/assessment.ts";
 
 /** The auth proof's throwaway account (issue #145 comment, confirmed by Jaden). */
 const TEMP_E2E_USER_IDS = ["b8bb3fe0-caf3-4aa9-9344-fb62c224c215"];
@@ -427,18 +439,28 @@ async function seedInstance(client, instance, lifecycle) {
   // and on the relationship itself. `purchased_at` is NULL — no demo relationship records a purchase.
   await seedRelationship(client, instance, lifecycle);
   await client.query(
-    `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
-     VALUES ($1, $2, $3, $4, $5)
+    // #1100b — **the session's state is the lifecycle's `seats`, not a flag on the session.** A
+    // `draft` or `pending` relationship carries one seat (the invitation may have gone out; nobody
+    // has claimed it), so its session is a `draft` session and no count or screen reads it. From
+    // the claim onward the row reads `active` — including `void` and `expired`, whose sessions are
+    // live sessions that ended, not sessions that never started. Written from the same value the
+    // `party` rows below are written from, so a re-seed cannot leave the two disagreeing; V33
+    // (`scripts/db-verify.mjs`) compares the rows back to it.
+    `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id,
+                          state)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (record_id) DO UPDATE SET template_record_id = EXCLUDED.template_record_id,
                                           mode = EXCLUDED.mode,
                                           alignment_setting = EXCLUDED.alignment_setting,
-                                          relationship_id = EXCLUDED.relationship_id`,
+                                          relationship_id = EXCLUDED.relationship_id,
+                                          state = EXCLUDED.state`,
     [
       instance.id,
       instance.templateId,
       instance.mode,
       instance.setting,
       `relationship-${instance.id}`,
+      sessionStateOf(lifecycle),
     ],
   );
   // The invitation that put the counterparty in this seat — written after the `session` row
@@ -1554,8 +1576,20 @@ async function main() {
       // fixtures, which `data:check` E32 holds the bundle equal to.
       const { assessmentInstances } = await import("../data/assessments.ts");
       const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
+      /* #1081 — the console half is re-written here too, and the reason is the ids: every account
+       * this path creates is a *new* auth user, so a repair that stopped at the subscriptions would
+       * leave the audit log's `actor_user_id` (and the grant's `granted_by`) pointing at the
+       * accounts the previous run deleted, and `/admin/audit` would print bare uuids. The function
+       * is idempotent, so re-binding is the whole cost. */
+      const { DEMO_NOW_ISO } = await import("../content/core.ts");
+      const operator = accounts.find((account) => account.role === "admin");
+      const adminHalf =
+        operator === undefined
+          ? null
+          : await seedAdminSurfaces(client, { actorUserId: operator.userId, nowIso: DEMO_NOW_ISO });
       console.log(
-        `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s)`,
+        `demo accounts: ${accounts.length} identity(ies) restored, ${bound.length} party binding(s), ${subscriptions.length} subscription(s)` +
+          (adminHalf === null ? " — no operator, the console half was not written" : ""),
       );
     } finally {
       await client.end();
@@ -1785,6 +1819,24 @@ async function main() {
       // #1079 — the subscription an `active` relationship is read against, written after the
       // accounts exist and after `billing_plan` (phase 1) so the tier resolves.
       const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
+      /* #1081 — the console's own half: the audit log, the support inbox, the one broadcast, the
+       * comp and the charge `/admin/billing` draws, and the review shelf's issues and to-dos. Every
+       * id it writes is drawn from the rows above — the operator's own account, the relationships
+       * this run just wrote, the newest artifact the catalogue seeded — so an admin list cannot
+       * link to a record that does not exist. Gated on `demo`, like the accounts themselves:
+       * production's seed writes no synthetic console row. The refusals and the fixture clock are
+       * `scripts/db-seed-admin-surfaces.mjs`'s. */
+      const operator = accounts.find((account) => account.role === "admin");
+      if (operator === undefined) {
+        throw new Error(
+          "the admin half needs the demo operator (an account at role 'admin'), and this run created none",
+        );
+      }
+      const { DEMO_NOW_ISO } = await import("../content/core.ts");
+      const adminHalf = await seedAdminSurfaces(client, {
+        actorUserId: operator.userId,
+        nowIso: DEMO_NOW_ISO,
+      });
       console.log(
         `  · demo accounts created: ${accounts.length} (${accounts.map((account) => `${account.email}=${account.role}`).join(", ")}) — in phase 2, committed only at the end of it`,
       );
@@ -1805,6 +1857,17 @@ async function main() {
           `  · subscription: ${subscription.email} on the ${subscription.plan} tier (active) — an \`active\` relationship reads entitled rather than lapsed`,
         );
       }
+      // #1081 — what the console half wrote, in the tables its screens read. This is the line an
+      // operator checks against `data/verify/demo-expectations.json`; the numbers are the plan's
+      // (`ADMIN_SURFACE_ROWS`), not a second copy typed here.
+      console.log(
+        `  · admin half: ${Object.entries(adminHalf.counts)
+          .map(([table, count]) => `${table} ${count}`)
+          .join(", ")}`,
+      );
+      console.log(
+        `  · admin half anchors: comp ${adminHalf.subjects.grantedRelationship}, charge ${adminHalf.subjects.paidRelationship}, review ${adminHalf.subjects.artifact}`,
+      );
     }
 
     // The admin seats — durable, independent of DEMO_AUTH. Runs in phase 2 (with the other

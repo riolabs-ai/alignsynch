@@ -8,7 +8,18 @@
 
 One row per release that shipped **without** a QA atlas sweep, and the reason in the owner's terms.
 The check reads this file, so a version with no `manifest.json` either appears here or fails the
-gate.
+check.
+
+**Every sweep is deferred for this period, not just individual releases.** On 2026-11-15 the owner
+stopped atlas generation and took `qa:atlas:check` out of the gate until the capture is refactored to
+see what a release changes, so the question this page answers changes shape for a while: it is no
+longer "did this release ship unmeasured?" but "no release is being measured at all". What that does
+_not_ change is this page. The table below is still the record, a row is still written for a release
+that ships without a sweep, and the four field rules below are still the rules the check applies. It
+also does not make the check gratuitous: `pnpm qa:atlas:check` still runs by hand, and on a tree
+whose version has no manifest and no row it still fails and names that version — what is gone is a
+gate that fails everyone's push on it. Reactivation is the owner's request (#1094); the day it comes,
+this paragraph goes and the per-release rule is the whole page again.
 
 ## Why a release may ship without a sweep
 
@@ -23,8 +34,9 @@ unnoticed either, which is what this page is for.
 
 ## What a row must say
 
-| version | date | commit | reason |
-| ------- | ---- | ------ | ------ |
+| version | date       | commit                                   | reason                                                                                                                                                                                                                                                                                                                                                       |
+| ------- | ---------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.21.0  | 2026-11-16 | 1ce29064ce310905047e791fc00d1b54b3256b01 | no sweep for this release: generation is stopped until the atlas can see what a release changes (#1094), and it captures no auth modal, no stage-form embed step and nothing of the Stripe capture — which is where the session-state and invitation changes are read. The sha names the tree the release is cut from, because a commit cannot carry its own |
 
 Four fields, each checked by `scripts/qa-atlas-deferral.mjs`:
 

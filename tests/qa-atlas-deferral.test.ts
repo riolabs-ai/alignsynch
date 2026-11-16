@@ -29,7 +29,7 @@
  *      that matters is that the gate exits non-zero, not that a helper returns a string.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,6 +48,8 @@ import {
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CHECK = join(ROOT, "scripts", "qa-atlas-check.mjs");
 const ATLAS = join(ROOT, "docs", "qa-atlas");
+/** The version this tree carries — the cut the suites below either measure or find deferred. */
+const VERSION: string = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).version;
 
 /** A reason that would survive review, so a case can vary one cell and nothing else. */
 const REASON = "the atlas captures no auth modal and no stage-form embed steps";
@@ -274,15 +276,33 @@ describe("commitResolves — a sha names a build or it names nothing", () => {
   });
 });
 
-describe("the check — a version that has a manifest is unchanged", () => {
-  it("passes on the committed atlas and says nothing about a deferral", () => {
+describe.skipIf(!existsSync(join(ROOT, "docs", "qa-atlas", `v${VERSION}`, "manifest.json")))(
+  "the check — a version that has a manifest is unchanged",
+  () => {
+    it("passes on the committed atlas and says nothing about a deferral", () => {
+      const result = runCheck(null);
+      const out = `${result.stdout}${result.stderr}`;
+
+      expect(result.status).toBe(0);
+      expect(out).toContain("captured at");
+      expect(out).not.toContain("⚑");
+      expect(out).not.toContain("deferred");
+    }, 120_000);
+  },
+);
+
+/**
+ * The mirror case, and the one this tree is in while #1094 has generation stopped: a release with no
+ * sweep must pass **by deferral**, printing the row it rests on. Skipping the group above without
+ * this would make "no manifest" indistinguishable from "nobody looked".
+ */
+describe("the check — this tree's own release", () => {
+  it("passes on the committed atlas or on the deferral the tree records", () => {
     const result = runCheck(null);
     const out = `${result.stdout}${result.stderr}`;
 
     expect(result.status).toBe(0);
-    expect(out).toContain("captured at");
-    expect(out).not.toContain("⚑");
-    expect(out).not.toContain("deferred");
+    expect(out.includes("captured at") || out.includes(`⚑ v${VERSION} deferred`)).toBe(true);
   }, 120_000);
 });
 
