@@ -149,9 +149,7 @@ describe("the claim's refusals", () => {
   it("tells the reader to ask for another one when the link is dead", () => {
     // The affordance the card asks for: a named refusal *and* what to do next, never a 500.
     expect(sectionOf(invitePageCopy, "expired").body).toMatch(/ask .*to send you a new one/i);
-    expect(itemLabel(sectionOf(invitePageCopy, "refusals"), "email-mismatch")).toMatch(
-      /resend/i,
-    );
+    expect(itemLabel(sectionOf(invitePageCopy, "refusals"), "email-mismatch")).toMatch(/resend/i);
   });
 
   it("keeps the confirmation a statement about this invitation", () => {

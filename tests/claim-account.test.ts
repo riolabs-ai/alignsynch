@@ -56,17 +56,17 @@ beforeEach(() => {
   fake.signUp = null;
   fake.fetches.length = 0;
   process.env.NEON_AUTH_BASE_URL = "https://auth.example.test/";
-  vi.stubGlobal(
-    "fetch",
-    async (url: string, init: { body?: unknown } = {}) => {
-      fake.fetches.push({ url, body: init.body === undefined ? null : JSON.parse(String(init.body)) });
-      const answer = fake.signUp ?? { status: 500 };
-      const headers = new Headers();
-      for (const cookie of answer.cookies ?? []) headers.append("set-cookie", cookie);
-      headers.append("content-type", "application/json");
-      return new Response(JSON.stringify(answer.body ?? {}), { status: answer.status, headers });
-    },
-  );
+  vi.stubGlobal("fetch", async (url: string, init: { body?: unknown } = {}) => {
+    fake.fetches.push({
+      url,
+      body: init.body === undefined ? null : JSON.parse(String(init.body)),
+    });
+    const answer = fake.signUp ?? { status: 500 };
+    const headers = new Headers();
+    for (const cookie of answer.cookies ?? []) headers.append("set-cookie", cookie);
+    headers.append("content-type", "application/json");
+    return new Response(JSON.stringify(answer.body ?? {}), { status: answer.status, headers });
+  });
 });
 
 describe("resolveClaimAccount", () => {

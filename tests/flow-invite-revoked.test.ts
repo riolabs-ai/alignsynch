@@ -107,7 +107,9 @@ describe("a withdrawn invitation cannot be claimed", () => {
     // It began, looked the token up by its hash, rolled back. No write, no commit, no token issued.
     expect(fake.calls).toHaveLength(3);
     expect(fake.calls[0].text).toBe("BEGIN");
-    expect(fake.calls[1].text).toMatch(/^SELECT session_record_id, counterparty_name, email, claimed_at/);
+    expect(fake.calls[1].text).toMatch(
+      /^SELECT session_record_id, counterparty_name, email, claimed_at/,
+    );
     expect(fake.calls[1].values).toEqual([hashToken(TOKEN)]);
     expect(fake.calls.at(-1)?.text).toBe("ROLLBACK");
     expect(fake.calls.some(({ text }) => /^(UPDATE|INSERT|DELETE)/i.test(text))).toBe(false);

@@ -172,7 +172,9 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("INSERT INTO party")) {
       return state.seatTaken ? { rows: [], rowCount: 0 } : wrote;
     }
-    if (sql.startsWith("SELECT session_record_id, counterparty_name, email, claimed_at, expires_at")) {
+    if (
+      sql.startsWith("SELECT session_record_id, counterparty_name, email, claimed_at, expires_at")
+    ) {
       return { rows: state.invite === undefined ? [] : [state.invite], rowCount: 1 };
     }
     // #533 phase 3 — the claim asks which relationship the invitation's session belongs to before
@@ -559,7 +561,9 @@ describe("claimInvite binds the account the posted address resolves to", () => {
   it("keeps a signed-in claimer's own session ahead of the resolved account", async () => {
     stub.state.invite = invite();
 
-    await claimInvite(claimInput({ viewerUserId: "account-signed-in", accountUserId: "account-x" }));
+    await claimInvite(
+      claimInput({ viewerUserId: "account-signed-in", accountUserId: "account-x" }),
+    );
 
     expect(partyInserts()[0].values[3]).toBe("account-signed-in");
   });
