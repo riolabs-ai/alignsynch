@@ -15,6 +15,7 @@
     "data:check": "tsc -p tsconfig.datacheck.json && node --test .datacheck/scripts/__tests__/*.test.js && node .datacheck/scripts/data-check.js && node scripts/sample-brand-colors.mjs --check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs --check",
     "test": "vitest run",
     "parity": "node scripts/parity.mjs",
+    "routes:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/routes-check.mjs",
     "parity:update": "node scripts/parity.mjs --update",
     "bundles": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundles.js",
     "bundle:pack": "tsc -p tsconfig.datacheck.json && node .datacheck/scripts/bundle-platform.js pack",

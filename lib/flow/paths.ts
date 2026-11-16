@@ -54,13 +54,13 @@ export function relationshipPath(relationshipId: string): string {
  * (`assessments/`), not a page under the `/assessment` record-kind (`assessment/`). It replaced
  * `/assessment/instances`, which is now a 308 here (`next.config.mjs`) — one listing, one address.
  *
- * It is not `sessionPath()`'s base: a session is still addressed at
+ * It is not `instancePath()`'s base: a session is still addressed at
  * `/assessment/instances/<record id>`, because that is the flow's own route and it did not move.
  */
 export const MY_ASSESSMENTS_PATH = "/assessments";
 
 /** The create endpoint — a POST-only route handler. */
-export const CREATE_SESSION_PATH = "/assessment/new";
+export const CREATE_INSTANCE_PATH = "/assessment/new";
 
 /**
  * `POST /assessment/new/who` — stage 1's save (#688).
@@ -68,14 +68,14 @@ export const CREATE_SESSION_PATH = "/assessment/new";
  * A route handler below the create endpoint rather than a second verb on it: the endpoint
  * commits a relationship, and this writes a draft cookie — two different effects that should
  * never be reachable by getting one form field wrong. The stage-2 form still posts to
- * `CREATE_SESSION_PATH`, which reads the draft stage 1 wrote.
+ * `CREATE_INSTANCE_PATH`, which reads the draft stage 1 wrote.
  */
 export const SAVE_WHO_PATH = "/assessment/new/who";
 
 /**
  * `POST /assessment/new/mode` — stage 2's save (#689).
  *
- * Before stage 3 existed, the Mode screen's own form posted straight to `CREATE_SESSION_PATH`
+ * Before stage 3 existed, the Mode screen's own form posted straight to `CREATE_INSTANCE_PATH`
  * and the relationship was created there. The approved flow puts Aspects between the two, so the
  * Mode form now saves its two choices into the same draft and hands over to
  * `createAspectsPath()`; the create stays behind the last stage's own control.
@@ -139,34 +139,33 @@ export const PUBLIC_HELP_PATH = "/help";
 export const TEMPLATES_PATH = "/templates";
 
 /**
- * `/templates/relationship` — the template library: the built-ins this account can use plus its
- * own (#console 5/5).
+ * `/templates/relationship` — **the create flow's namespace** since #1109, not a page.
  *
  * A child of `TEMPLATES_PATH` because a template **is** a thing, and `assessment` is a record
- * *kind* a template is not (#794): the URL's parent now names what the child is. A page, not a
- * POST endpoint — the route handler that saves a template lives one segment deeper, at
- * `CREATE_TEMPLATE_PATH`, and Next refuses a `page.tsx` and a `route.ts` in one segment (they are
- * two parallel pages for the same URL, and the app loader throws).
+ * *kind* a template is not (#794): the URL's parent names what the child is. What lives under it
+ * now is the flow that starts a relationship from a template — `…/[slug]/create` and its four
+ * stages — plus the one POST endpoint that flow posts to (`…/[slug]/status`).
+ *
+ * **The library itself moved to the dashboard.** `/templates/relationship`, `…/new` and
+ * `…/[slug]` were retired in #1109: a member's templates are `/dashboard/templates[?tab=mine]` and
+ * one of them is `/dashboard/templates/<id>`, and the three old addresses answer a 308 from
+ * `next.config.mjs`. So this constant is no longer aliased to the library (`TEMPLATE_LIBRARY_PATH`
+ * below names that), and only the flow's own paths are built from it.
  */
 export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
 
 /**
- * The library, under its long-standing name.
+ * `/dashboard/templates` — **the member's template library**, where it lives since #1109.
  *
- * Kept as an alias because the budget rows, the copy fixtures and the components have called it
- * this since #console 5/5, and "the template library" is still what the screen is. Nothing new
- * should be spelled with it; a new caller names `RELATIONSHIP_TEMPLATES_PATH`.
- */
-export const TEMPLATE_LIBRARY_PATH = RELATIONSHIP_TEMPLATES_PATH;
-
-/**
- * `/templates/relationship/new` — the form that authors a template (#255).
+ * It was an alias for `RELATIONSHIP_TEMPLATES_PATH` while `/templates/relationship` was a page;
+ * that page is retired, and every "go back to your templates" destination in the product means this
+ * one. Kept as a name because the budget rows, the copy fixtures and the flow's own components have
+ * called it "the template library" since #console 5/5, and it still is.
  *
- * Registered in `content/routes.ts` (E7 checks it in both directions) because it is a page. It is
- * not `…/[slug]/edit`: a template is never edited once saved — sessions copy their Aspects at
- * creation, so a mutable source would rewrite the questions under answers somebody already gave.
+ * The value is a literal rather than an import of `MEMBER_TEMPLATES_PATH` (`lib/member/templates.ts`)
+ * on purpose: that module reaches `pg`, and this one is imported by `"use client"` components.
  */
-export const NEW_TEMPLATE_PATH = `${RELATIONSHIP_TEMPLATES_PATH}/new`;
+export const TEMPLATE_LIBRARY_PATH = `${OVERVIEW_PATH}/templates`;
 
 /**
  * `/relationship-types` — one relationship *type*'s public page (#794).
@@ -221,7 +220,7 @@ export function relationshipTypeDemoPath(typeId: string): string {
 }
 
 /**
- * One template, read-only: its Aspects, its sessions and whether it is archived.
+ * One template, read-only: its Aspects, its instances and whether it is archived.
  *
  * **Takes `record.slug`.** `record.id` is the storage handle and leaves the URL (#794): every
  * caller holds a `LibraryTemplate`, which carries both, and the id-shaped predecessor of this
@@ -260,33 +259,15 @@ export function dashboardTemplateEditorPath(recordId: string): string {
   return `${OVERVIEW_PATH}/templates/${recordId}`;
 }
 
-/** The duplicate endpoint — a POST, so a GET never writes a copy. */
-export function templateDuplicatePath(slug: string): string {
-  return `${relationshipTemplatePath(slug)}/duplicate`;
-}
-
 /**
- * The delete endpoint — a POST, and a separate address from `/status` on purpose.
- *
- * Archiving and deleting are two different promises ("hidden, and still recoverable" versus
- * "gone"), and an address that carried either a state or an absence would make the same URL mean
- * both a move and a destruction. The row's delete control posts here, and only here.
+ * **The duplicate, delete and save endpoints are gone (#1109).** `/templates/relationship/<slug>`
+ * was their parent, and the row menu that posted to them was that page's: duplicating, archiving
+ * and deleting a member's own template are now the dashboard's (`/dashboard/templates?tab=mine` for
+ * the copy, `/dashboard/templates/<id>` for the retire band, both server actions over
+ * `lib/member/templates.ts`). `templateDuplicatePath`, `templateDeletePath` and
+ * `CREATE_TEMPLATE_PATH` were deleted rather than aliased, so no caller can rebuild a dead address.
+ * `templateStatusPath` above **stays**: the create flow's stage 1 still posts to it (#870).
  */
-export function templateDeletePath(slug: string): string {
-  return `${relationshipTemplatePath(slug)}/delete`;
-}
-
-/**
- * The template-saving endpoint — a POST-only route handler, so it is not a page and the manifest
- * does not list it (the same split as `/assessment/new`).
- *
- * `/templates/relationship/save` and not `/templates/relationship`: that address is the library
- * page (`RELATIONSHIP_TEMPLATES_PATH`), and a segment cannot hold both. The form posts here and
- * the handler redirects: a save is a POST followed by a GET of either the form (refused, with the
- * reason) or `/assessment` (saved, where the new template is listed). That is what keeps a reload
- * from saving a second copy.
- */
-export const CREATE_TEMPLATE_PATH = `${RELATIONSHIP_TEMPLATES_PATH}/save`;
 
 /**
  * `/dashboard/relationships/[id]` — one relationship's own screen (#619).
@@ -300,8 +281,8 @@ export function relationshipScreenPath(relationshipId: string): string {
   return `${OVERVIEW_PATH}/relationships/${encodeURIComponent(relationshipId)}`;
 }
 
-export function sessionPath(sessionRecordId: string): string {
-  return `/assessment/instances/${sessionRecordId}`;
+export function instancePath(instanceRecordId: string): string {
+  return `/assessment/instances/${instanceRecordId}`;
 }
 
 /**
@@ -311,13 +292,13 @@ export function sessionPath(sessionRecordId: string): string {
  * live form submits to, and Next refuses a `page.tsx` in the same segment as a `route.ts`. The
  * two names sit beside each other so the difference is read, not remembered.
  */
-export function answerSheetPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/answer`;
+export function answerSheetPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/answer`;
 }
 
 /** `/assessment/instances/[instanceId]/accept` — the acceptance step (#409, R1-E). A page. */
-export function acceptPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/accept`;
+export function acceptPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/accept`;
 }
 
 /**
@@ -329,13 +310,13 @@ export function acceptPath(sessionRecordId: string): string {
  * the sheet, `/answers` writes it — and the two function names sit side by side so the difference
  * is read rather than remembered (#R2).
  */
-export function acceptsPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/accepts`;
+export function acceptsPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/accepts`;
 }
 
 /** `/assessment/instances/[instanceId]/report` — the report the second acceptance opens. */
-export function reportPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/report`;
+export function reportPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/report`;
 }
 
 /**
@@ -438,8 +419,8 @@ export function createInvitePath(templateSlug: string): string {
  * The gate for one created relationship, as stage 5's own address: the template's slug in the
  * path, the relationship's id in `?instance=` (#794's two handles, unchanged).
  */
-export function createInviteForPath(templateSlug: string, sessionRecordId: string): string {
-  return `${createInvitePath(templateSlug)}?instance=${encodeURIComponent(sessionRecordId)}`;
+export function createInviteForPath(templateSlug: string, instanceRecordId: string): string {
+  return `${createInvitePath(templateSlug)}?instance=${encodeURIComponent(instanceRecordId)}`;
 }
 
 /**
@@ -452,14 +433,14 @@ export function createInviteForPath(templateSlug: string, sessionRecordId: strin
  * invitation that already went out, and a first send that reused it would leave the relationship's
  * status behind at `draft`.
  */
-export function sendInvitationPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/send`;
+export function sendInvitationPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/send`;
 }
 
 /**
  * `/assessment/instances/[instanceId]/sent` — the invitation's confirmation screen (#691).
  *
- * A child of the session, beside `answer`, `accept` and `report`, because the screen is about one
+ * A child of the instance, beside `answer`, `accept` and `report`, because the screen is about one
  * committed relationship: the invitation's row is what it draws, and the id in its address is the
  * one the create just committed. It is deliberately **not** `…/create/sent`: the `create` tree is
  * the template's, and by the time this screen renders the template is a fact on the session rather
@@ -471,8 +452,8 @@ export function sendInvitationPath(sessionRecordId: string): string {
  * live. It still draws the shared band (inside the sheet, at Invite) because that is what the
  * artifact does around it, but nothing in the flow *advances* here as a sixth step.
  */
-export function sentPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/sent`;
+export function sentPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/sent`;
 }
 
 /**
@@ -526,8 +507,8 @@ export function pricingStartPath(choice?: {
 }
 
 /** The submit endpoint: a form post, so a frozen answer is a status code and not a banner. */
-export function answersPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/answers`;
+export function answersPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/answers`;
 }
 
 /**
@@ -537,19 +518,19 @@ export function answersPath(sessionRecordId: string): string {
  * not a page, and the panel's two controls (the tick and the reword) both post here with the Step's id
  * and nothing that identifies a person. A GET of it is a 405, exactly as a GET of `/answers` is.
  */
-export function stepsPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/steps`;
+export function stepsPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/steps`;
 }
 
 /**
  * The re-invite endpoint — a POST, so a GET never reissues a token (#275).
  *
- * A child of the session's own address rather than a sibling: the invitation belongs to that
- * session, and the form that posts here is drawn on that session's screen. Like the other two
+ * A child of the instance's own address rather than a sibling: the invitation belongs to that
+ * instance, and the form that posts here is drawn on that instance's screen. Like the other two
  * POST-only endpoints it is a route handler, not a page, so the manifest does not list it.
  */
-export function reinvitePath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}/invite`;
+export function reinvitePath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/invite`;
 }
 
 export function invitePath(token: string): string {
@@ -609,13 +590,13 @@ export function inviteAuthPath(
 export const INVITE_INTENT_VALUE = "invite";
 
 /**
- * The confirmation a submit lands on: the session screen in its `submitted` state.
+ * The confirmation a submit lands on: the instance screen in its `submitted` state.
  *
- * A query rather than a route of its own: this is the same read (the viewer's own session) with
+ * A query rather than a route of its own: this is the same read (the viewer's own instance) with
  * one band added, and a second page module would be a second `readFlowScreen()` for the same rows.
  */
-export function submittedPath(sessionRecordId: string): string {
-  return `${sessionPath(sessionRecordId)}?submitted=1`;
+export function submittedPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}?submitted=1`;
 }
 
 /** The `submitted` value `submittedPath()` writes, and the only one the screen reads. */
@@ -645,7 +626,7 @@ export function claimPath(token: string): string {
  */
 export function afterClaimTarget(input: {
   viewerSignedIn: boolean;
-  sessionRecordId: string;
+  instanceRecordId: string;
 }): string {
-  return input.viewerSignedIn ? OVERVIEW_PATH : sessionPath(input.sessionRecordId);
+  return input.viewerSignedIn ? OVERVIEW_PATH : instancePath(input.instanceRecordId);
 }

@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/template-detail.tsx   (variation: the operator's template page — the Aspects as authored, the relationships that started from it live and archived, and the disable/enable pair the store can undo)
+// template-ancestor: components/dashboard/relationship-detail.tsx   (variation: the operator's template page — the Aspects as authored, the relationships that started from it live and archived, and the disable/enable pair the store can undo)
 "use client";
 
 import {

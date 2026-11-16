@@ -731,6 +731,23 @@ else
   skip_step "build (next build)" "lane=$LANE has no build step — CI re-runs the full gate on the merge head"
 fi
 
+# The route tree, judged by Next's own router (#1113). `next start` refuses to boot a build
+# whose dynamic routes cannot be sorted — `sortDynamicRoutes()` in
+# `next/dist/server/lib/router-utils/filesystem.js` calls `getSortedRoutes()` over
+# `.next/routes-manifest.json`'s `dynamicRoutes[].page` and throws on two different segment
+# names at one level (`/dashboard/templates/[id]` beside `/dashboard/templates/[slug]/create`
+# cost a boot). `next build` cannot see it: `validateAppPaths()` validates within one route,
+# so the tree compiled and the gate went green while the first request to the deployment was a
+# 500. This step is one function call on the artifact the build just wrote — no server, no
+# port, ~0.3 s — and it runs only in the code lane, because a route-tree change is `app/**`
+# and that is what the classifier calls the code lane. The verdict is Next's verbatim message,
+# never a rule re-implemented here: route groups make a hand-rolled walker wrong both ways.
+if [ "$LANE" = "code" ]; then
+  run_step "routes:check (Next's own router validation over the built manifest)" pnpm routes:check || fail
+else
+  skip_step "routes:check" "lane=$LANE has no build step — CI re-runs the full gate on the merge head"
+fi
+
 # End of the heavy section: hand the slot back before the summary prints. The EXIT trap is the
 # same call, so a failing step releases it too — a crashed gate must not hold a slot.
 gate_slot_release

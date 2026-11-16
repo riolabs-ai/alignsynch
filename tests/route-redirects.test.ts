@@ -181,20 +181,31 @@ describe("the legacy redirects", () => {
 
   /**
    * And the row that rule protects is still doing its job: the catalogue's old addresses move, the
-   * library's new ones do not. A lookahead that excluded too much would be as wrong as none.
+   * create flow's new ones do not, and the three retired library addresses move to the dashboard.
+   *
+   * #1109 changed the middle of this: `/templates/relationship` and `…/new` used to be the
+   * destination *and* a live page. They are redirects now, and the flow beneath them is still the
+   * tree's — a lookahead or a pattern that excluded too much would be as wrong as none.
    */
-  it("moves the old catalogue addresses and leaves the library where it is", () => {
+  it("moves the old catalogue addresses, the retired library, and leaves the create flow alone", () => {
     const catalogue = redirects.filter((entry) => entry.source.startsWith("/templates"));
+    /** The **first** match — which is the row Next uses, and the only one a request sees. */
     const hits = (path: string) =>
       catalogue
         .filter((entry) => matcherFor(entry.source)(path) !== false)
-        .map((e) => e.destination);
+        .slice(0, 1)
+        .map((e) => destinationOf(e, (matcherFor(e.source)(path) || { params: {} }).params));
 
-    expect(hits("/templates/spouses")).toEqual(["/relationship-types/:typeId"]);
-    expect(hits("/templates/relationship")).toEqual([]);
-    expect(hits("/templates/relationship/new")).toEqual([]);
-    expect(hits("/templates/relationship/spouses")).toEqual([]);
+    expect(hits("/templates/spouses")).toEqual(["/relationship-types/spouses"]);
+    expect(hits("/templates/relationship")).toEqual(["/dashboard/templates"]);
+    expect(hits("/templates/relationship/new")).toEqual(["/dashboard/templates?tab=mine"]);
+    expect(hits("/templates/relationship/spouses")).toEqual(["/relationship-templates"]);
+    // The flow's own addresses are the tree's: no redirect may catch any of them.
+    expect(hits("/templates/relationship/spouses/create")).toEqual([]);
     expect(hits("/templates/relationship/spouses/create/mode")).toEqual([]);
+    expect(hits("/templates/relationship/spouses/create/aspects")).toEqual([]);
+    expect(hits("/templates/relationship/spouses/create/commit")).toEqual([]);
+    expect(hits("/templates/relationship/spouses/create/invite")).toEqual([]);
   });
 
   /**
@@ -212,12 +223,12 @@ describe("the legacy redirects", () => {
    * rest — a `redirects()` entry is method-agnostic, so the navigation that follows a form moves too.
    */
   const MOVED_ADDRESSES: readonly (readonly [oldPath: string, newPath: string])[] = [
-    ["/assessment/templates", "/templates/relationship"],
-    ["/assessment/templates/new", "/templates/relationship/new"],
-    ["/assessment/templates/save", "/templates/relationship/save"],
-    ["/assessment/templates/spouses", "/templates/relationship/spouses"],
+    ["/assessment/templates", "/dashboard/templates"],
+    ["/assessment/templates/new", "/dashboard/templates?tab=mine"],
+    ["/assessment/templates/save", "/dashboard/templates?tab=mine"],
+    ["/assessment/templates/spouses", "/relationship-templates"],
     ["/assessment/templates/spouses/status", "/templates/relationship/spouses/status"],
-    ["/assessment/templates/spouses/duplicate", "/templates/relationship/spouses/duplicate"],
+    ["/assessment/templates/spouses/duplicate", "/dashboard/templates?tab=mine"],
     ["/assessment/templates/spouses/create", "/templates/relationship/spouses/create"],
     ["/assessment/templates/spouses/create/mode", "/templates/relationship/spouses/create/mode"],
     [
@@ -232,6 +243,13 @@ describe("the legacy redirects", () => {
       "/assessment/templates/spouses/create/account",
       "/templates/relationship/spouses/create/commit",
     ],
+    // #1109 — the member's library, its authoring form and one template retired. Each address
+    // answers 308 to the surface that replaced it: the dashboard's templates tab for the first two,
+    // the public catalogue for a single template, whose owner's editor needs an id the old path
+    // does not carry.
+    ["/templates/relationship", "/dashboard/templates"],
+    ["/templates/relationship/new", "/dashboard/templates?tab=mine"],
+    ["/templates/relationship/spouses", "/relationship-templates"],
     ["/templates", "/relationship-templates"],
     ["/templates/spouses", "/relationship-types/spouses"],
   ];
@@ -294,9 +312,8 @@ describe("the legacy redirects", () => {
    * tree and then asked of every redirect, so a route that moves again fails here by name.
    */
   const NEW_PAGES = [
-    "/templates/relationship",
-    "/templates/relationship/new",
-    "/templates/relationship/[slug]",
+    // #1109 — the three single-template addresses are **not** here any more: they retired, and the
+    // table above asserts the 308 each one answers. What stays under this noun is the create flow.
     "/templates/relationship/[slug]/create",
     "/templates/relationship/[slug]/create/mode",
     "/templates/relationship/[slug]/create/aspects",
@@ -310,9 +327,9 @@ describe("the legacy redirects", () => {
   ] as const;
 
   const NEW_HANDLERS = [
-    "/templates/relationship/save",
+    // #1109 — `…/save` and `…/[slug]/duplicate` were deleted with their pages; the one POST the
+    // template noun still answers is stage 1's status write, and a redirect may not claim it.
     "/templates/relationship/[slug]/status",
-    "/templates/relationship/[slug]/duplicate",
   ] as const;
 
   it("leaves the new #794 addresses to the tree, not to a redirect", () => {

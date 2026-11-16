@@ -47,7 +47,9 @@ const pendingRow = (overrides: Partial<Surface> = {}): Surface => ({
 });
 
 const liveRow = (overrides: Partial<Surface> = {}): Surface => ({
-  route: "/templates/relationship",
+  // #1109 — the library's live surface is the dashboard's catalogue; `/templates/relationship` is a
+  // 308 now, so a fixture row pointing at it would be testing a route the manifest dropped.
+  route: "/dashboard/templates",
   label: "Template catalogue",
   area: "relationships",
   status: "live",
@@ -77,9 +79,9 @@ describe("the real surface registry", () => {
       // sessions it lists. It replaced `/assessment/instances`, which is a 308 here.
       "/assessments",
       // #794 — the library moved under the template noun: `assessment` is a record *kind*, and a
-      // template is not an assessment.
-      "/templates/relationship",
-      "/templates/relationship/[slug]",
+      // template is not an assessment. #1109 retired that noun's three pages, so the library's row
+      // is the dashboard's template catalogue and what stays here is the create flow's stage 1.
+      "/dashboard/templates",
       // #R2 (#427, PR #429): the form posts to `POST /assessment/new` and the transaction writes
       // the record, the relationship, the session and the initiating seat. It was `preview` while
       // the submit was disabled.
@@ -199,7 +201,10 @@ describe("the invariants refuse a row that parses but cannot be true", () => {
 describe("the lookups the nav and a pending page use", () => {
   it("finds a surface by its route pattern", () => {
     assert.equal(surfaceFor("/shop")?.status, "pending");
-    assert.equal(surfaceFor("/templates/relationship")?.status, "live");
+    // #1109 — the template library's row is the dashboard's now; `/templates/relationship` retired
+    // and answers a 308, so it is no longer a surface this registry has anything to say about.
+    assert.equal(surfaceFor("/dashboard/templates")?.status, "live");
+    assert.equal(surfaceFor("/templates/relationship"), undefined);
     assert.equal(surfaceFor("/nowhere"), undefined);
   });
 

@@ -9,6 +9,12 @@
  * listing is admin-curated (#533). Building a second editor would have been the same six hundred
  * lines with one card swapped, which is the hand-bake #336's rule exists to catch.
  *
+ * **The retire band is wired here as well (#1109).** Archive, restore and delete a member's own
+ * template used to exist only on the retired `/templates/relationship` listing; the board's three
+ * server actions (`archivePrivate` / `restorePrivate` / `deletePrivate`) hand the editor's own
+ * controls the same three writes, and the band's sentences and refusals are the fixture's — so the
+ * actions survive the page that used to own them, with no second vocabulary.
+ *
  * **A stranger's id is a 404, not a 403.** `readMyTemplate` answers `undefined` for three cases on
  * purpose — no such row, a row that is not a template, and somebody else's row — and this page
  * turns all three into `notFound()`, the 404 a URL that never existed returns. A distinguishable
@@ -33,7 +39,7 @@ import { dashboardTemplateEditorPageCopy } from "@/data/pages/dashboard-template
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
 import { MEMBER_TEMPLATES_PATH, readMyTemplate } from "@/lib/member/templates";
-import { savePrivate } from "../actions";
+import { archivePrivate, deletePrivate, restorePrivate, savePrivate } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +95,10 @@ export default async function MemberTemplatePage({ params }: { params: Promise<{
           catalogue={null}
           band={PRIVATE_BAND}
           onSave={savePrivate}
+          onArchive={archivePrivate}
+          onRestore={restorePrivate}
+          onDelete={deletePrivate}
+          deleteHref={MEMBER_TEMPLATES_PATH}
         />
       </div>
     </StageColumn>

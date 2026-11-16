@@ -35,18 +35,15 @@ vi.mock("next/link", () => ({
     createElement("a", { href, ...rest }, children),
 }));
 
-import { TemplateDetail } from "@/components/assessment-flow/template-detail";
 import { AssessmentsList } from "@/components/dashboard/assessments-list";
 import { RelationshipCards } from "@/components/dashboard/relationship-cards";
 import { TemplateShelf } from "@/components/dashboard/template-shelf";
 import { badgeVariants, Chip } from "@/components/ui/badge";
 import { assessments } from "@/data/assessments";
-import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
 import { assessmentsPageCopy } from "@/data/pages/assessments";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
 import type { RelationshipCard } from "@/lib/db/assessments";
-import type { LibraryTemplateDetail } from "@/lib/db/template-library";
 import type { LibraryTemplate } from "@/lib/flow/template-library";
 import { catalogueCard } from "@/lib/member/shelf";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
@@ -149,22 +146,6 @@ const relationshipRow: MemberRelationshipRow = {
   view: "invite-claimed",
   membership: { state: "lapsed", reason: null, endedAt: null, writable: false },
 };
-
-/** The template detail page's read, built from the fixture record. */
-const detail: LibraryTemplateDetail = (() => {
-  const record = assessments.find((row) => row.id === templateRow.id);
-  if (record === undefined) throw new Error("the fixture has no staff-manager record");
-  return {
-    template: templateRow,
-    aspects: record.items.map((item, index) => ({
-      id: item.id,
-      position: index,
-      prompt: item.prompt,
-      leftValue: item.leftValue,
-      rightValue: item.rightValue,
-    })),
-  };
-})();
 
 /** The stage the relationship's session has reached, as the card draws it. */
 const mySessionRow: RelationshipCard = {
@@ -398,22 +379,5 @@ describe("the surfaces render through it", () => {
       expect(elementWith(html, hook), hook).toContain(toneClasses("soft"));
     }
     expect(elementWith(html, "data-viewer-role")).toContain(toneClasses("neutral"));
-  });
-
-  it("the detail band draws the on-band tone, and keeps its three hooks", () => {
-    const html = renderToStaticMarkup(
-      createElement(TemplateDetail, { copy: templateDetailPageCopy, detail }),
-    );
-    expect(html).toContain(toneClasses("onBand"));
-    for (const hook of [
-      "data-template-detail-group",
-      "data-template-detail-realm",
-      "data-template-detail-short-name",
-    ]) {
-      const chip = elementWith(html, hook);
-      expect(chip, hook).toContain("rounded-full");
-      expect(chip, hook).toContain("border-background/30");
-    }
-    expect(html).not.toContain("rounded-md border border-background/30");
   });
 });

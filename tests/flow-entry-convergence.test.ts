@@ -131,9 +131,11 @@ describe("every in-product segment draws the flow's dialog over itself", () => {
 describe("the in-product doors are the soft navigation, and only they are", () => {
   it("gives every wizard-route entry a FlowEntryLink carrying the flow's own address", () => {
     const doorFiles = SOURCES.filter(({ text }) => text.includes("href={createRelationshipPath("));
+    // #1109 — the retired `/templates/relationship/[slug]` page was the second door; the one left is
+    // the catalogue card, which is still mounted on the dashboard's catalogue tab and the marketing
+    // pages. A new door is a row here, not a silent addition.
     expect(doorFiles.map(({ path }) => path).sort()).toEqual([
       "components/assessment-flow/template-card.tsx",
-      "components/assessment-flow/template-detail.tsx",
     ]);
     for (const { path, text } of doorFiles) {
       expect(text, `${path} draws the door on a bare anchor`).not.toMatch(
@@ -203,7 +205,6 @@ describe("the marketing surfaces keep navigating", () => {
       .sort();
     expect(importers).toEqual([
       "components/assessment-flow/template-card.tsx",
-      "components/assessment-flow/template-detail.tsx",
       "components/dashboard/relationship-cards.tsx",
       /*
        * #975 D10 — a relationship's own screen draws the same doors its card does (the publish gate's

@@ -455,26 +455,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship",
-    status: "db",
-    templates: ["alignsynch"],
-    capability:
-      "The template catalogue, grouped by the relationship type each template names (Business · Personal, then the ones that name none): one card per template with its type, realm, roles and Aspect count, a View details link, and duplicate/archive on the rows this account owns.",
-    notes:
-      "`record.author_user_id` is the whole rule — `NULL` is a built-in, the author's id is a template a person wrote, and the read returns `author_user_id IS NULL OR author_user_id = $1`, so another account's template is never in the payload. A template written before `0011_console_columns.sql` has no author and therefore reads as built-in; the page says so in its own band rather than leaving it to be discovered. Archiving flips `record.status` to `archived` (author only): the catalogue stops listing it and `createInstanceFromTemplate` refuses it, while every instance already made from it keeps its own copy of the Aspects and still opens. Duplicating copies the record and its items into a new template authored by the caller, whatever state the source is in.",
-  },
-  {
-    kind: "route",
-    surface: "/templates/relationship/[slug]",
-    status: "db",
-    templates: ["alignsynch"],
-    capability:
-      "One template as a landing page: a header band naming its group, realm, Relationship Type and the two role seats, who it is for and who it is not for, every Aspect with both named ends of the scale, and what a Mode and a Setting are. No person's name, no price, no testimonial.",
-    notes:
-      "The 'open' action. Read-only on purpose — editing is a separate decision, and the spec puts the editor on this same route when it exists. The read applies the same author rule as the library, so another account's template is a 404 here and nothing distinguishes it from an id that does not exist.",
-  },
-  {
-    kind: "route",
     surface: "/templates/relationship/[slug]/create",
     status: "db",
     templates: ["alignsynch"],
@@ -522,16 +502,6 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "Stage 5 of the create flow (Invite): the payment walk as a soft prompt, the address the invitation goes to, and the two acts — send it, or keep the draft.",
     notes:
       "The decision the flow exists to reach (#825). `Send and Continue` posts to `POST /assessment/instances/[id]/send`, which calls `sendDraftInvitation()`: the token is reissued first (`resendInvite` owns one-token-per-instance and the cooldown), then the status flips `draft → published` through `canTransition()` with `published_at` stamped, and the email goes out after that commit — the order is what stops a published relationship with a token nobody sent. `Continue as Draft` is a plain link to `/dashboard`, where the draft is listed; it sends nothing and charges nothing. The walk (#771: plan, account, method, confirmation, done) is `components/assessment-flow/invite-walk.tsx`, one client component so the server column stays server-rendered; choosing a plan writes nothing, the method step defers the capture to publish, and the stage's foot no longer depends on which panel is open — the send is the stage's act, not the walk's. The relationship is read through `readFlowScreen()` with this browser's `flow_party_*` cookie and then the signed-in account, so a crafted id, somebody else's relationship and a dead one all land back on Details.",
-  },
-  {
-    kind: "route",
-    surface: "/templates/relationship/new",
-    status: "fixture",
-    templates: ["alignsynch"],
-    capability:
-      "Write a template: a title and one to eight Aspects, each a question with a Left Value and a Right Value, saved as a published record with no parties.",
-    notes:
-      '`fixture` and not `db` on purpose: the page renders page copy and resolves the session, and the one thing that reaches Postgres is the endpoint it posts to — `app/(mainlayout)/templates/relationship/save/route.ts` (moved one segment deeper when `/templates/relationship` became the library page, because Next refuses a page and a route handler in one segment), which writes the record and item rows through `lib/flow/templates.ts`. The save writes `record.author_user_id` from the session, so a template written here appears under "Mine" on `/templates/relationship`; a save from a request with no session would write NULL and read as a built-in, which cannot happen because the route gates on `currentUser()`. Since #255 this is the app\'s only writer of a template; the four seeded ones come from `data/assessments.ts` and carry no author.',
   },
   {
     kind: "route",
