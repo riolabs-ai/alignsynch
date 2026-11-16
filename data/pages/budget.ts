@@ -662,27 +662,30 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-sent",
     budget: 0,
   },
-  "/templates/relationship/[slug]/create": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[slug]/create": {
+    page: "app/(mainlayout)/dashboard/templates/[slug]/create/page.tsx",
+    // #1109 — the stage module moved out of `app/` into `components/flow/template-create/`, so the
+    // closure this row attributes gained a directory: the words are still the fixture's, and the
+    // budget stays 0 with the module counted.
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
   // #688 — stage 2 (Mode) of the same flow. Its own row because attribution is per surface, and
   // the fixture is shared on purpose: two stages that print different words for one relationship
   // would be the copy drift this table exists to stop. Budget 0, so the form's next literal is red.
-  "/templates/relationship/[slug]/create/mode": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[slug]/create/mode": {
+    page: "app/(mainlayout)/dashboard/templates/[slug]/create/mode/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
   // #689 — stage 3 (Aspects). The same row shape and the same fixture, for the same reason: the
   // list is one stage of one flow, and its words belong beside the two forms' words. Budget 0, so a
   // sentence typed into the list is a red build rather than a second vocabulary.
-  "/templates/relationship/[slug]/create/aspects": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/aspects/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[slug]/create/aspects": {
+    page: "app/(mainlayout)/dashboard/templates/[slug]/create/aspects/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
@@ -691,16 +694,16 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // card's labels, the two prices and the account stage's copy are a red build if they are typed
   // into a component. #825 — the gate is retired and this is the account stage itself, which still
   // reads the same fixture: its words are this flow's words, not a second create vocabulary.
-  "/templates/relationship/[slug]/create/commit": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[slug]/create/commit": {
+    page: "app/(mainlayout)/dashboard/templates/[slug]/create/commit/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
   // #825 — stage 5, Invite. The same row again, for the same reason: one flow, one vocabulary.
-  "/templates/relationship/[slug]/create/invite": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx",
-    dirs: ["components/assessment-flow"],
+  "/dashboard/templates/[slug]/create/invite": {
+    page: "app/(mainlayout)/dashboard/templates/[slug]/create/invite/page.tsx",
+    dirs: ["components/assessment-flow", "components/flow/template-create"],
     fixture: "data/pages/assessment-create",
     budget: 0,
   },

@@ -174,7 +174,7 @@ describe("a create that did not come through the flow", () => {
     expect(response.status).toBe(303);
     const location = new URL(response.headers.get("location") ?? "");
     // Stage 5 is where the send is decided; the create's own redirect reports no `invite=` outcome.
-    expect(location.pathname).toBe("/templates/relationship/relationship-basics/create/invite");
+    expect(location.pathname).toBe("/dashboard/templates/relationship-basics/create/invite");
     expect(location.searchParams.get("instance")).toBe(INSTANCE_ID);
     expect(location.searchParams.get("invite")).toBeNull();
     expect(stub.creates).toEqual([{ draft: true, templateRecordId: TEMPLATE_ID }]);

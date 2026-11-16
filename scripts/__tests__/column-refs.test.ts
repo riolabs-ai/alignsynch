@@ -353,34 +353,47 @@ describe("rendersColumn", () => {
     assert.equal(rendersColumn(`<Thing />`, ["components/thing.tsx"], new Map()), false);
   });
 
-  it("follows two hops — the create flow's stages hand the column to the one shell (#979 B)", () => {
+  it("follows three hops — the flow hands the column to the one shell through its module home (#979 B, #1109)", () => {
     const files = new Map([
       [
-        "components/create-relationship.tsx",
+        "components/flow/template-create/create.tsx",
         {
-          path: "components/create-relationship.tsx",
+          path: "components/flow/template-create/create.tsx",
           // The import is what the hop follows: a render with no import is a file whose
           // dependency graph says nothing, and the walk has nothing to resolve.
+          source: `import { CreateRelationship } from "../../assessment-flow/create-relationship";\n<CreateRelationship />`,
+        },
+      ],
+      [
+        "components/assessment-flow/create-relationship.tsx",
+        {
+          path: "components/assessment-flow/create-relationship.tsx",
           source: `import { RelationshipFlowShell } from "./relationship-flow-shell";\n<RelationshipFlowShell />`,
         },
       ],
       [
-        "components/relationship-flow-shell.tsx",
-        { path: "components/relationship-flow-shell.tsx", source: `<StageColumn />` },
+        "components/assessment-flow/relationship-flow-shell.tsx",
+        {
+          path: "components/assessment-flow/relationship-flow-shell.tsx",
+          source: `<StageColumn />`,
+        },
       ],
     ]);
-    const imports = ["components/create-relationship.tsx"];
-    // One hop: the column is not in `create-relationship.tsx` any more.
-    assert.equal(rendersColumn(`<CreateRelationship />`, imports, files, 1), false);
-    // Two: the shell it renders draws it.
-    assert.equal(rendersColumn(`<CreateRelationship />`, imports, files), true);
+    const imports = ["components/flow/template-create/create.tsx"];
+    // One hop: the stage module is a route reading, and draws no column.
+    assert.equal(rendersColumn(`<TemplateCreatePage />`, imports, files, 1), false);
+    // Two: `CreateRelationship` is mounted without one, because the shell owns it.
+    assert.equal(rendersColumn(`<TemplateCreatePage />`, imports, files, 2), false);
+    // Three: the shell it renders draws it.
+    assert.equal(rendersColumn(`<TemplateCreatePage />`, imports, files), true);
   });
 
-  it("stops at two hops, so a page that draws no column still fails", () => {
+  it("stops at three hops, so a page that draws no column still fails", () => {
     const files = new Map([
       ["a.tsx", { path: "a.tsx", source: `import { B } from "./b";` }],
       ["b.tsx", { path: "b.tsx", source: `import { C } from "./c";` }],
-      ["c.tsx", { path: "c.tsx", source: `<StageColumn />` }],
+      ["c.tsx", { path: "c.tsx", source: `import { D } from "./d";` }],
+      ["d.tsx", { path: "d.tsx", source: `<StageColumn />` }],
     ]);
     assert.equal(rendersColumn(`<A />`, ["a.tsx"], files), false);
   });

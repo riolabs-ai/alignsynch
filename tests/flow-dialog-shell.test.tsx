@@ -35,7 +35,7 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { RELATIONSHIPS_PATH, TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 
 /** The stage address the dialog describes, and the page it was opened over. */
-const STAGE_PATH = "/templates/relationship/relationship-basics/create/mode";
+const STAGE_PATH = "/dashboard/templates/relationship-basics/create/mode";
 let pathname = STAGE_PATH;
 
 const usePathname = vi.fn(() => pathname);
@@ -130,38 +130,52 @@ describe("the flow's shell, in both mountings", () => {
 });
 
 describe("the mounting is declared once, and forwarded", () => {
+  /**
+   * The stage modules, in the module home #1109 moved them to. They are the *same* module the
+   * routes and the interceptors render, which is what this block has always been about; what moved
+   * is where they live — out of `app/`, so the address could change without the component knowing.
+   */
+  const STAGE_MODULES = [
+    "components/flow/template-create/create.tsx",
+    "components/flow/template-create/mode.tsx",
+    "components/flow/template-create/aspects.tsx",
+    "components/flow/template-create/commit.tsx",
+    "components/flow/template-create/invite.tsx",
+  ] as const;
+
+  /** The five route files that render them — thin, and request-time (`dynamic` lives here). */
   const STAGE_ROUTES = [
-    "app/(mainlayout)/templates/relationship/[slug]/create/page.tsx",
-    "app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx",
-    "app/(mainlayout)/templates/relationship/[slug]/create/aspects/page.tsx",
-    "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
-    "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[slug]/create/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[slug]/create/mode/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[slug]/create/aspects/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[slug]/create/commit/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[slug]/create/invite/page.tsx",
   ] as const;
 
   const INTERCEPTED = [
-    "app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/page.tsx",
-    "app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/mode/page.tsx",
-    "app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/aspects/page.tsx",
-    "app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/commit/page.tsx",
-    "app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/invite/page.tsx",
+    "app/(mainlayout)/dashboard/relationships/@flow/(...)dashboard/templates/[slug]/create/page.tsx",
+    "app/(mainlayout)/dashboard/relationships/@flow/(...)dashboard/templates/[slug]/create/mode/page.tsx",
+    "app/(mainlayout)/dashboard/relationships/@flow/(...)dashboard/templates/[slug]/create/aspects/page.tsx",
+    "app/(mainlayout)/dashboard/relationships/@flow/(...)dashboard/templates/[slug]/create/commit/page.tsx",
+    "app/(mainlayout)/dashboard/relationships/@flow/(...)dashboard/templates/[slug]/create/invite/page.tsx",
   ] as const;
 
   it("defaults every stage route to the page mounting and forwards one it is handed", () => {
-    for (const route of STAGE_ROUTES) {
-      const file = source(route);
-      expect(file, `${route} does not take a mounting`).toContain("mount?: FlowMount");
-      expect(file, `${route} defaults to the page mounting`).toContain('mount = "page"');
-      expect(file, `${route} does not hand the mounting to the flow`).toContain("mount={mount}");
+    for (const module of STAGE_MODULES) {
+      const file = source(module);
+      expect(file, `${module} does not take a mounting`).toContain("mount?: FlowMount");
+      expect(file, `${module} defaults to the page mounting`).toContain('mount = "page"');
+      expect(file, `${module} does not hand the mounting to the flow`).toContain("mount={mount}");
     }
   });
 
   it("renders the same stage module from the intercepted route, as a dialog", () => {
     for (const [index, route] of INTERCEPTED.entries()) {
       const file = source(route);
-      const target = STAGE_ROUTES[index];
-      if (target === undefined) throw new Error(`no stage route for ${route}`);
-      // The intercepted route *is* the stage route, mounted differently: same module, one prop.
-      // Imported by module specifier, so the extension a Next route file carries is not part of it.
+      const target = STAGE_MODULES[index];
+      if (target === undefined) throw new Error(`no stage module for ${route}`);
+      // The intercepted route *is* the stage module, mounted differently: same file, one prop.
+      // Imported by module specifier, so the extension the module carries is not part of it.
       const module = target.replace(/\.tsx$/, "");
       expect(file, `${route} does not import ${target}`).toContain(`from "@/${module}"`);
       // The dialog mounting is a *value*, not a JSX string literal — `data:check` E23 counts those
@@ -170,6 +184,20 @@ describe("the mounting is declared once, and forwarded", () => {
         "mount={FLOW_MOUNT_DIALOG}",
       );
       expect(file, `${route} does not import the mount token`).toContain("FLOW_MOUNT_DIALOG");
+    }
+  });
+
+  it("keeps every route a page of its own, rendering the module the slot mounts", () => {
+    for (const [index, route] of STAGE_ROUTES.entries()) {
+      const target = STAGE_MODULES[index];
+      if (target === undefined) throw new Error(`no stage module for ${route}`);
+      const file = source(route);
+      expect(file, `${route} does not render ${target}`).toContain(
+        `from "@/${target.replace(/\.tsx$/, "")}"`,
+      );
+      expect(file, `${route} is not request-time`).toContain(
+        'export const dynamic = "force-dynamic"',
+      );
     }
   });
 

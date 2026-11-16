@@ -125,7 +125,7 @@ export const surfaceRegistry: readonly Surface[] = [
 
   /* ---- live: the write surfaces R2 wired — create and answer (#427) ---------- */
   {
-    route: "/templates/relationship/[slug]/create",
+    route: "/dashboard/templates/[slug]/create",
     label: "Create a relationship",
     area: "relationships",
     // Live since R2 (#427, PR #429). The form posts `templateRecordId`, both seats, the Mode and

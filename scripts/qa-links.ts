@@ -98,9 +98,9 @@ const ROUTE_GROUP = /^\([^)]*\)$/;
  *
  * Neither adds an address. A slot is a hole in its layout, and an intercepted page renders in that
  * hole while the browser stays on the address being *intercepted* — the target page already serves
- * it. `app/(mainlayout)/dashboard/relationships/@flow/(...)templates/relationship/[slug]/create/page.tsx`
- * is `/templates/relationship/[slug]/create` for QA purposes, because that is what is in the URL,
- * and it is that page's row in the manifest which vouches for it.
+ * it. `app/(mainlayout)/dashboard/relationships/@flow/(...)dashboard/templates/[slug]/create/page.tsx`
+ * is `/dashboard/templates/[slug]/create` for QA purposes, because that is what is in the URL, and
+ * it is that page's row in the manifest which vouches for it.
  */
 const SLOT = /^@/;
 const INTERCEPTION = /^\(\.{1,3}\)/;
@@ -182,11 +182,10 @@ export const AUTH_CLASS_TABLE: readonly {
   // member — signed out is `redirect(/login?next=…)`, not a page.
   { prefix: "/dashboard", auth: "member", why: 'requireRole("member") / currentUser()' },
   { prefix: "/settings", auth: "member", why: "currentUser()" },
-  {
-    prefix: "/templates/relationship",
-    auth: "member",
-    why: "currentUser() — the creator's own templates",
-  },
+  // #1109 — the member's template library was `/templates/relationship`, and it moved to
+  // `/dashboard/templates` (the row above classifies it now). The old noun has no page left to
+  // classify: its three screens 308 to the dashboard and its create flow moved with them, so the
+  // only `/templates/` row here is the public catalogue's.
   {
     prefix: "/assessment/instances",
     auth: "member",
@@ -201,7 +200,9 @@ export const AUTH_CLASS_TABLE: readonly {
   // public — the exceptions a broader row above would otherwise swallow.
   { prefix: "/support/articles", auth: "public", why: "the marketing article page — no session" },
   {
-    prefix: "/templates/relationship/[slug]/create",
+    // #1109 — the create flow is a `/dashboard` address now, and its stage 1 is the one public
+    // screen behind that prefix: an anonymous draft is the flow's whole point (#690).
+    prefix: "/dashboard/templates/[slug]/create",
     auth: "public",
     why: "an anonymous draft — currentUserIfConfigured(), no sign-in gate",
   },

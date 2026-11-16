@@ -276,14 +276,14 @@ class Jar {
  * ------------------------------------------------------------------ */
 
 /**
- * `/templates/relationship/<slug>/create` — the stem every create stage hangs off (#688, #794).
+ * `/dashboard/templates/<slug>/create` — the stem every create stage hangs off (#688, #794).
  *
  * The segment is the template's **slug**, because that is what the app redirects with: stage 1's
  * handler resolves the posted id to the slug before it answers, so an assertion built from the id
  * would be asserting the address the app deliberately does not use.
  */
 function createStem(templateSlug = TEMPLATE_SLUG) {
-  return `/templates/relationship/${templateSlug}/create`;
+  return `/dashboard/templates/${templateSlug}/create`;
 }
 
 /**
@@ -773,7 +773,7 @@ async function main() {
     "a card's use action is the create flow's stage 1, carrying the template it sells",
     /^\/templates\/relationship\/[a-z-]+\/create$/.test(startHref),
     startHref === ""
-      ? "no `/templates/relationship/<slug>/create` action on the page"
+      ? "no `/dashboard/templates/<slug>/create` action on the page"
       : `href = "${startHref}"`,
   );
   const words = chosenSlug === "" ? null : await templateWords(chosenSlug);
@@ -2048,7 +2048,7 @@ async function main() {
 
   // Stage 1 is the door, so the same template must be *accepted* there rather than refused: the
   // guard asks the store's own question, and a published, versioned template answers it yes.
-  const authoredStageOne = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  const authoredStageOne = await author.get(`/dashboard/templates/${authoredSlug}/create`);
   check(
     "stage 1 draws the form for it — the guard lets a copyable template through",
     authoredStageOne.status === 200 &&
@@ -2059,7 +2059,7 @@ async function main() {
 
   // And the refusal that started all of this: archive the template, and stage 1 refuses **before**
   // a field is collected, with the author's own publish control under the sentence.
-  const archivedPost = await author.post(`/templates/relationship/${authoredSlug}/status`, {
+  const archivedPost = await author.post(`/dashboard/templates/${authoredSlug}/status`, {
     status: "archived",
   });
   check(
@@ -2067,7 +2067,7 @@ async function main() {
     archivedPost.status === 303,
     `${archivedPost.status} ${archivedPost.location}`,
   );
-  const refusedStageOne = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  const refusedStageOne = await author.get(`/dashboard/templates/${authoredSlug}/create`);
   dumpPage("stage1-refused", refusedStageOne.html);
   check(
     "stage 1 refuses an archived template at the door, before any field is collected",
@@ -2079,14 +2079,14 @@ async function main() {
   check(
     "and the refusal carries the author's one-click publish, pointed back at this stage",
     refusedStageOne.html.includes('data-create-publish="true"') &&
-      refusedStageOne.html.includes(`action="/templates/relationship/${authoredSlug}/status"`) &&
+      refusedStageOne.html.includes(`action="/dashboard/templates/${authoredSlug}/status"`) &&
       refusedStageOne.html.includes('value="create"'),
     "no publish control under the band",
   );
 
   // Pressing it is the existing status transition, and it comes back to stage 1 rather than the
   // library — the person is mid-flow, not browsing.
-  const republished = await author.post(`/templates/relationship/${authoredSlug}/status`, {
+  const republished = await author.post(`/dashboard/templates/${authoredSlug}/status`, {
     status: "published",
     return: "create",
   });
@@ -2094,10 +2094,10 @@ async function main() {
     "publishing from the refusal answers 303 back to stage 1",
     republished.status === 303 &&
       new URL(republished.location ?? "/", BASE_URL).pathname ===
-        `/templates/relationship/${authoredSlug}/create`,
+        `/dashboard/templates/${authoredSlug}/create`,
     `${republished.status} ${republished.location}`,
   );
-  const reopened = await author.get(`/templates/relationship/${authoredSlug}/create`);
+  const reopened = await author.get(`/dashboard/templates/${authoredSlug}/create`);
   check(
     "and stage 1 draws the form again — one click, no research project",
     reopened.status === 200 &&

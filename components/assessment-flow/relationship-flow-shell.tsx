@@ -100,9 +100,13 @@ export const FLOW_MOUNT_DIALOG = "dialog" as const;
  * The dialog only describes the flow while the address belongs to it. Derived from the address
  * rather than from a flag, because the address is the fact the whole mounting is built on: a
  * refresh of it renders the stage as a page, and a soft navigation away from it closes the dialog.
+ *
+ * The segments are the dashboard's since #1109 phase 2 moved the flow out of the retired template
+ * noun: `/dashboard/templates/<slug>/create` and its four stages. `<slug>` is one segment, so
+ * `/dashboard/templates/<id>` — the member's editor — is deliberately not a stage address.
  */
 export function isFlowStagePath(pathname: string): boolean {
-  return /\/templates\/relationship\/[^/]+\/create(\/(mode|aspects|commit|invite))?\/?$/.test(
+  return /\/dashboard\/templates\/[^/]+\/create(\/(mode|aspects|commit|invite))?\/?$/.test(
     pathname,
   );
 }

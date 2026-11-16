@@ -169,7 +169,7 @@ function instanceIdIn(location) {
 async function createRelationship(db, jar, templateAspects, label) {
   // #794 — the stage addresses carry the template's slug; the post and the draft cookie carry its
   // id, and stage 1's handler is what turns one into the other before it answers.
-  const stem = (templateSlug) => `/templates/relationship/${templateSlug}/create`;
+  const stem = (templateSlug) => `/dashboard/templates/${templateSlug}/create`;
   const who = await jar.post("/assessment/new/who", {
     templateRecordId: TEMPLATE_ID,
     initiatorName: "Avery E2E",

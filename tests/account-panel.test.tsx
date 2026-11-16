@@ -60,7 +60,7 @@ declare global {
 }
 
 const brand = alignSynchBrand as Brand;
-const STAGE = "/templates/relationship/brothers/create/commit";
+const STAGE = "/dashboard/templates/brothers/create/commit";
 
 /**
  * The two labels the toggle is read by, out of the fixtures rather than typed here — the same

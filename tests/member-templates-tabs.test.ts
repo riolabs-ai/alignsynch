@@ -125,7 +125,7 @@ describe("the catalogue card", () => {
     // Both actions point into the shipped flow, under this template's own **slug** — `record.id`
     // is the storage handle and never appears in a URL (#794).
     expect(html).toContain('href="/templates/relationship/staff-manager"');
-    expect(card.create?.href).toBe("/templates/relationship/staff-manager/create");
+    expect(card.create?.href).toBe("/dashboard/templates/staff-manager/create");
   });
 
   it("marks the card as a template and seeds its cover from the slug", () => {

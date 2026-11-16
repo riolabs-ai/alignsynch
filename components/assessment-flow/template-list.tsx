@@ -2,10 +2,10 @@
  * template-ancestor: components/explore/explore-quiz-list.tsx   (variation: cards over Postgres template records grouped by the type each names, surface-supplied notice above a grid the shared card owns)
  *
  * `/assessment`'s list: the published templates, each card drawing the **same** action row the
- * library at `/templates/relationship` draws (#146, #409).
+ * library at `/dashboard/templates` draws (#146, #409).
  *
  * The **card** is not this file's: it is `TemplateCard` in `template-card.tsx`, shared with
- * `/templates/relationship`. This file owns what the catalogue adds — the notice a save leaves and
+ * `/dashboard/templates`. This file owns what the catalogue adds — the notice a save leaves and
  * the copy object the card draws with, resolved from `data/pages/assessment.ts` (E23, budget 0) —
  * so the two catalogue surfaces render one card rather than two cards that drift.
  *
@@ -18,7 +18,7 @@
  *
  * **The door is the card's own, not this file's.** `TemplateCard` already renders
  * `Create Relationship` as a link to `createRelationshipPath(template.slug)` — stage 1 of the one
- * flow — because the library needed it too. So `/assessment` and `/templates/relationship` now have
+ * flow — because the library needed it too. So `/assessment` and `/dashboard/templates` now have
  * one create path *by construction*: the same component, the same href. Nothing here may add a
  * `<form>`, and `tests/one-create-path.test.ts` fails the page if one comes back.
  */

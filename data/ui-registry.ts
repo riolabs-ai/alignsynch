@@ -455,7 +455,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create",
+    surface: "/dashboard/templates/[slug]/create",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -465,7 +465,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/mode",
+    surface: "/dashboard/templates/[slug]/create/mode",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -475,7 +475,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/aspects",
+    surface: "/dashboard/templates/[slug]/create/aspects",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -485,7 +485,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/commit",
+    surface: "/dashboard/templates/[slug]/create/commit",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -495,7 +495,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/templates/relationship/[slug]/create/invite",
+    surface: "/dashboard/templates/[slug]/create/invite",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -644,7 +644,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "One destination with two tabs (#620): Relationship Templates is the product shelf a member can start a relationship from, each card carrying the price of the relationship and the two owner-named actions (View Details, Create Relationship); My Templates is what they own or adopted, plus the blank and clone bands that create a new one.",
     notes:
-      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/templates/relationship/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
+      "The tab is the URL: `?tab=mine` is the second tab and the bare path is the catalogue, so both are linkable and a `curl` can ask for either (`lib/member/shelf.ts::templatesTabOf`, which lands an unknown value on the catalogue). Two reads, neither keyed on the request — `listLibraryTemplates(userId)` for the catalogue (the platform's templates plus this account's) and `listMemberLibrary(userId)` for the second tab — with `requireRole` resolving the id from the session. `Create Relationship` opens `/dashboard/templates/<id>/create`, the shipped create step; nobody here says \"start an instance\", because a relationship is what a person starts. `/dashboard/library` was the third door and is now a 308 to `?tab=mine`.",
   },
   {
     kind: "route",
@@ -929,7 +929,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     capability:
       "The public Relationship Templates catalogue (#889): a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. `/pricing`, a type's own page and its `/demo` sheet are public, and since #1042 all 27 start actions are the create flow's stage 1 for every viewer — the template in the path, no `/register` detour and no session-shaped action.",
     notes:
-      "**Retained as a landing variation since #905, and the composition the canonical door renders again since #1040**: `/relationship-templates` is the catalogue's endpoint and, since #1040, renders this same #889 composition on both builds — one screen at two addresses, from one model. Nothing links this page as the catalogue; a type's own page and its worked example still live under this namespace. The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` was what every card linked from #867 until #1042 — the account first, the wizard after — and asking somebody with an account to make one was the defect #979 names. Since #1042 the cards link the flow's stage 1 directly (`/templates/relationship/<slug>/create`), for a visitor and a member alike: stage 1 renders without a session (#690) and the account is stage 4 of that same wizard, on the draft. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.",
+      "**Retained as a landing variation since #905, and the composition the canonical door renders again since #1040**: `/relationship-templates` is the catalogue's endpoint and, since #1040, renders this same #889 composition on both builds — one screen at two addresses, from one model. Nothing links this page as the catalogue; a type's own page and its worked example still live under this namespace. The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` was what every card linked from #867 until #1042 — the account first, the wizard after — and asking somebody with an account to make one was the defect #979 names. Since #1042 the cards link the flow's stage 1 directly (`/dashboard/templates/<slug>/create`), for a visitor and a member alike: stage 1 renders without a session (#690) and the account is stage 4 of that same wizard, on the draft. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.",
   },
   {
     kind: "route",
@@ -1017,6 +1017,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
       "The two-party flow: the published template list, the invite view, the blind answer form and the instance screen both parties share. It also owns the raised-surface container every dashboard page renders inside — `stage-column.tsx` (`StageColumn`), 1126px up to one left edge at 274 and no `mx-auto` — which is the shape #717 gave the eighteen admin pages and #858 gave the member console.",
     notes:
       "Reads and writes Postgres through lib/flow/store.ts, so it is not a prop-only domain like components/assessment beside it. `StageColumn` is the one container: a page that centres itself, or spells a second `max-w`, is the regression `data/surface-columns.ts` and `scripts/column-refs.ts` measure in the gate (a `wide`/`bleed` page is a registered exception with a reason and, for `bleed`, a way back). The stage dialog in `stage-shell.tsx` is the one documented centred box — a sheet, not a page column.",
+  },
+  {
+    kind: "domain",
+    surface: "components/flow",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "The create flow's five stage modules — Details, Settings, Aspects, Account, Invite — held where no address reaches them, because the same module is both a page and the dialog a slot mounts over the shelf. The address is `/dashboard/templates/[slug]/create{,/mode,/aspects,/commit,/invite}`: #1109 phase 2 moved these files out of `app/(mainlayout)/templates/relationship/[slug]/create/**/page.tsx` with `git mv`, and nothing about a stage changed in the move.",
+    notes:
+      'The rule this directory exists to keep is **a stage is written once and mounted twice**: each module takes `mount?: FlowMount` (default `"page"`), the route file under `dashboard/templates/[slug]/create` renders it bare, and the `@flow` interceptors in `dashboard/templates` (`(.)`), `dashboard/relationships` and `assessment` (`(...)`) render it with `mount={FLOW_MOUNT_DIALOG}` — held by `tests/flow-entry-convergence.test.ts` and `tests/flow-dialog-shell.test.tsx`. `db`, like `components/assessment-flow` beside it: the stages read and write through `lib/flow/store.ts` over `lib/db/**`, and no stage changed a query in the move. Keeping the stages out of `app/` is what let the address change without the components knowing, and the five kept their `[slug]` dynamic-param signature because they are still page components.',
   },
   {
     kind: "domain",

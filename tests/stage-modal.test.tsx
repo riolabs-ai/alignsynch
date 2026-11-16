@@ -162,7 +162,9 @@ describe("the surfaces the shell wraps outside the four stages", () => {
   it("renders stage 4 inside the same modal, and stage 5 as its own route (#825)", () => {
     // The account gate that used to sit behind the create is retired; the account is stage 4, so
     // the assertion is that its page still draws the flow's one shell and reads the draft.
-    const commit = source("app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx");
+    // #1109 — the stage body lives in the module home now, so the page is a thin route and the
+    // facts below are the module's. One module, two mountings: the page and the slot child.
+    const commit = source("components/flow/template-create/commit.tsx");
     expect(commit).toContain("<CreateRelationship");
     expect(commit).toContain("stage={4}");
     // #829 — the account column is the panel, which owns the mode (Create your account first) and
@@ -178,7 +180,7 @@ describe("the surfaces the shell wraps outside the four stages", () => {
     // Nothing is sent from this stage: it writes the draft and hands over.
     expect(commit).toContain("createInviteForPath");
 
-    const invite = source("app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx");
+    const invite = source("components/flow/template-create/invite.tsx");
     expect(invite).toContain("<CreateRelationship");
     expect(invite).toContain("stage={5}");
     expect(invite).toContain("instanceRecordId={screen.instanceRecordId}");
@@ -195,20 +197,33 @@ describe("the surfaces the shell wraps outside the four stages", () => {
 
   it("keeps every stage route a page of its own — no interception, no second flow", () => {
     const pages = [
-      "app/(mainlayout)/templates/relationship/[slug]/create/page.tsx",
-      "app/(mainlayout)/templates/relationship/[slug]/create/mode/page.tsx",
-      "app/(mainlayout)/templates/relationship/[slug]/create/aspects/page.tsx",
-      "app/(mainlayout)/templates/relationship/[slug]/create/commit/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[slug]/create/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[slug]/create/mode/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[slug]/create/aspects/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[slug]/create/commit/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[slug]/create/invite/page.tsx",
       "app/(mainlayout)/assessment/instances/[instanceId]/sent/page.tsx",
     ];
     for (const path of pages) {
       const file = source(path);
-      expect(file, `${path} is still a route`).toContain("export default async function");
+      // A default export is what makes it a route; since #1109 the first five are thin wrappers,
+      // so the export is not `async` any more — the stage module under it is.
+      expect(file, `${path} is still a route`).toMatch(/export default (async )?function/);
       // A request-time render: the draft is a cookie and the template is a database read.
       expect(file, `${path} stays request-time`).toContain(
         'export const dynamic = "force-dynamic"',
       );
       expect(file, `${path} imports the shell`).not.toContain("@modal");
+    }
+    // The five wrappers render the module home and nothing else, so a route cannot drift from the
+    // screen the slot mounts (`tests/flow-entry-convergence.test.ts` holds the other direction).
+    for (const stage of ["create", "mode", "aspects", "commit", "invite"] as const) {
+      // Stage 1's route is `…/create`, the others one segment below it.
+      const route = stage === "create" ? "create" : `create/${stage}`;
+      const file = `app/(mainlayout)/dashboard/templates/[slug]/${route}/page.tsx`;
+      expect(source(file), `${route} renders the module home`).toContain(
+        `@/components/flow/template-create/${stage}`,
+      );
     }
     // Nothing intercepts the flow: the count the issue measured as 0 is still 0.
     expect(OVERVIEW_PATH).toBe("/dashboard");

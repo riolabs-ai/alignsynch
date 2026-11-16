@@ -271,16 +271,17 @@ function paramResolvers(db, brand) {
       return { id: TOURNAMENT_IDS[0] ?? null };
     },
     "/profile/[username]": async () => ({ username: db?.handle ?? null }),
-    "/templates/relationship/[slug]": async () => ({ slug: db?.templateSlug ?? null }),
-    "/templates/relationship/[slug]/create": async () => ({ slug: db?.templateSlug ?? null }),
-    "/templates/relationship/[slug]/create/mode": async () => ({ slug: db?.templateSlug ?? null }),
-    "/templates/relationship/[slug]/create/aspects": async () => ({
+    // #1109 — the stage addresses moved under the dashboard; the retired `/templates/relationship`
+    // noun has no page left to capture, so its row went with the tree rather than 308ing.
+    "/dashboard/templates/[slug]/create": async () => ({ slug: db?.templateSlug ?? null }),
+    "/dashboard/templates/[slug]/create/mode": async () => ({ slug: db?.templateSlug ?? null }),
+    "/dashboard/templates/[slug]/create/aspects": async () => ({
       slug: db?.templateSlug ?? null,
     }),
-    "/templates/relationship/[slug]/create/commit": async () => ({
+    "/dashboard/templates/[slug]/create/commit": async () => ({
       slug: db?.templateSlug ?? null,
     }),
-    "/templates/relationship/[slug]/create/invite": async () => ({
+    "/dashboard/templates/[slug]/create/invite": async () => ({
       slug: db?.templateSlug ?? null,
     }),
     "/admin/templates/[id]": async () => ({ id: db?.templateId ?? null }),
