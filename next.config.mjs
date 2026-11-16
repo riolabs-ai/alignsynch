@@ -299,20 +299,33 @@ const nextConfig = {
        * catalogue that owned this address moved to `/relationship-types` in the same commit as this
        * row (`content/routes.ts`, `lib/marketing-routes.ts`, `data/pages/budget.ts`).
        */
-      { source: "/assessment/templates", destination: "/templates/relationship", permanent: true },
+      // #1109 — this family used to hop once more, into `/templates/relationship*`. Those three
+      // addresses retired in this change, so each row lands on its **final** home: two 308s where
+      // one will do is a redirect table that reads as if the old destination still exists.
+      {
+        source: "/assessment/templates",
+        destination: "/dashboard/templates",
+        permanent: true,
+      },
       {
         source: "/assessment/templates/new",
-        destination: "/templates/relationship/new",
+        destination: "/dashboard/templates?tab=mine",
         permanent: true,
       },
       {
+        // #1109 — the authoring form and its POST endpoint are gone; the form's address now lands
+        // on the tab that authors one. Retargeted rather than left to hop, so the bookmark answers
+        // one 308 instead of a 308 into another redirect.
         source: "/assessment/templates/save",
-        destination: "/templates/relationship/save",
+        destination: "/dashboard/templates?tab=mine",
         permanent: true,
       },
       {
+        // #1109 — the read-only template page retired; a bookmarked one lands on the public
+        // catalogue, which is what the page's own replacement is (the owner's editor is
+        // `/dashboard/templates/<id>`, and an old address carries no id to send them to).
         source: "/assessment/templates/:slug",
-        destination: "/templates/relationship/:slug",
+        destination: "/relationship-templates",
         permanent: true,
       },
       {
@@ -321,8 +334,10 @@ const nextConfig = {
         permanent: true,
       },
       {
+        // #1109 — the duplicate endpoint retired with the listing; the copy band on the dashboard
+        // is the action now, so a bookmarked POST-shaped path lands on the tab that offers it.
         source: "/assessment/templates/:slug/duplicate",
-        destination: "/templates/relationship/:slug/duplicate",
+        destination: "/dashboard/templates?tab=mine",
         permanent: true,
       },
       {
@@ -357,6 +372,39 @@ const nextConfig = {
       // Since #905 the bare noun lands on the catalogue's new endpoint; a *type* id still lands on
       // the type's own page one row below, because the record pages did not move with the listing.
       { source: "/templates", destination: "/relationship-templates", permanent: true },
+
+      /*
+       * #1109 — **the member's template library retired, and these are its three doors.**
+       *
+       * The listing, the authoring form and the read-only detail page were the console's 5/5
+       * screens; every action they carried has a home on the dashboard now — open, duplicate,
+       * archive and delete on `/dashboard/templates[?tab=mine]` and `/dashboard/templates/<id>`,
+       * and a copy of somebody else's template in the same tab's copy band. So they answer 308
+       * with no page behind them: `content/routes.ts`, `data/pages/budget.ts` and
+       * `lib/marketing-routes.ts` lost their rows in the same change, and
+       * `tests/route-redirects.test.ts` holds the list to the live route table.
+       *
+       * **The order is load-bearing.** Next matches these in order and `:slug` matches one
+       * segment, so `/templates/relationship/new` has to be spelled before the `:slug` row or the
+       * form's address would be swallowed by a rule that means "one template". The
+       * `/…/:slug/create…` paths are **not** redirected: the create flow is still mounted there
+       * (`[slug]/create/**`, phase 2 of #1109), and a single-segment pattern cannot match them.
+       */
+      {
+        source: "/templates/relationship",
+        destination: "/dashboard/templates",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/new",
+        destination: "/dashboard/templates?tab=mine",
+        permanent: true,
+      },
+      {
+        source: "/templates/relationship/:slug",
+        destination: "/relationship-templates",
+        permanent: true,
+      },
       //
       // **The type row excludes `relationship`, and that exclusion is load-bearing.** `/templates`
       // is no longer a page but a namespace, and the library now lives one segment inside it

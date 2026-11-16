@@ -111,14 +111,8 @@ export const surfaceRegistry: readonly Surface[] = [
     status: "live",
   },
   {
-    route: "/templates/relationship",
+    route: "/dashboard/templates",
     label: "Template catalogue",
-    area: "relationships",
-    status: "live",
-  },
-  {
-    route: "/templates/relationship/[slug]",
-    label: "Template",
     area: "relationships",
     status: "live",
   },

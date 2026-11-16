@@ -114,20 +114,20 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       id: "clone",
-      heading: "Clone a public template",
-      body: "The public templates are curated by the operators of this site. Cloning one copies its words and its Aspects into a template you own; the copy is private to you and the original does not change.",
+      heading: "Copy a template",
+      body: "Copy a template into one of your own — the catalogue's, which the operators of this site curate, or a template you already own. The copy carries the words and the Aspects, it is private to you, and the original does not change.",
       items: [
         { id: "choose", label: "Choose a template" },
-        { id: "submit", label: "Clone it" },
-        { id: "cloning", label: "Cloning…" },
+        { id: "submit", label: "Copy it" },
+        { id: "cloning", label: "Copying…" },
         { id: "cloned", label: "{title} is now yours." },
-        { id: "none", label: "There are no public templates to clone yet." },
+        { id: "none", label: "There are no templates to copy yet." },
       ],
     },
     {
       id: "empty",
       heading: "No templates yet",
-      body: "Start one below — blank, or cloned from the public catalogue. A relationship starts from a template, so this is where the work begins.",
+      body: "Start one below — blank, or copied from a template you can use. A relationship starts from a template, so this is where the work begins.",
     },
     {
       id: "refusals",

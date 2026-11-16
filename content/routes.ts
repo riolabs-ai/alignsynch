@@ -101,11 +101,10 @@ const STATIC_ROUTES = [
   "/search",
   "/settings",
   "/support",
-  // #794 — the template library and its authoring form. The library used to sit under
-  // `/assessment/templates`, which named a record *kind* a template is not; `/templates` itself is
-  // **not** a route any more (it 308s to `/relationship-types`), so only its children are listed.
-  "/templates/relationship",
-  "/templates/relationship/new",
+  // #1109 — `/templates/relationship` and `/templates/relationship/new` are **not** routes any
+  // more: the member's library is `/dashboard/templates` (`?tab=mine` for the rows and the two ways
+  // to start one), and the two addresses 308 there from `next.config.mjs`. The create flow's own
+  // paths under `/templates/relationship/[slug]/create…` are still mounted and still listed below.
   "/terms",
   "/tournaments",
   "/welcome",
@@ -136,9 +135,9 @@ const DYNAMIC_ROUTES = [
   // the `create` tree, because the invitation's row is what it draws and the template is a fact on
   // the session by the time it renders.
   "/assessment/instances/[instanceId]/sent",
-  // #794 — the template library and its six-stage create flow, under the template's own noun. The
-  // segment is `record.slug`; `record.id` stays the storage handle and leaves the URL.
-  "/templates/relationship/[slug]",
+  // #794 — the create flow, under the template's own noun. The segment is `record.slug`;
+  // `record.id` stays the storage handle and leaves the URL. The library's own `[slug]` page and
+  // its `new` form were retired in #1109 (they 308 to the dashboard) — what stays here is the flow.
   "/templates/relationship/[slug]/create",
   // #688 — stage 2 of the create flow. A page, not a query switch: each stage has its own
   // address, so a person can reload on Mode and the draft still puts them there.
