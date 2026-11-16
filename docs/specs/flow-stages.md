@@ -18,13 +18,13 @@ superseded v5; each was approved in its turn and the decisions it carried are re
 
 ## The five stages
 
-| #   | Stage        | The screen asks                                                                                                                | Ends by                                                                                                                                              |
-| --- | ------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why                                        | `Continue to Stage 2` (Settings)                                                                                                                     |
-| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                            | `Continue to Stage 3` (Aspects)                                                                                                                      |
-| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one           | `Continue to Stage 4` (Account)                                                                                                                      |
-| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                              | `Continue to Stage 5` (Invite)                                                                                                                       |
-| 5   | **Invite**   | The walk — a membership plan, then the card, then a thank-you — and the act it unlocks: send the invitation, or keep the draft | `send email to counterparty now` → **`/dashboard/relationships/<id>`**, the relationship published; or keep the draft → the same page, still a draft |
+| #   | Stage        | The screen asks                                                                                                               | Ends by                                                                                                                                              |
+| --- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Details**  | Who the two people are, the invitation address, what the relationship is called and why                                       | `Continue to Stage 2` (Settings)                                                                                                                     |
+| 2   | **Settings** | The mode (fixed per session) and the setting a party may later move                                                           | `Continue to Stage 3` (Aspects)                                                                                                                      |
+| 3   | **Aspects**  | Which aspects this relationship asks, in order, each one inspectable in place, and the creator may add or remove one          | `Continue to Stage 4` (Account)                                                                                                                      |
+| 4   | **Account**  | The account the invitation is sent from — signing up or in writes the relationship as a **draft**                             | `Continue to Stage 5` (Invite)                                                                                                                       |
+| 5   | **Invite**   | The walk — the plans compared, then the free week (no card at any step) — and the act: send the invitation, or keep the draft | `send email to counterparty now` → **`/dashboard/relationships/<id>`**, the relationship published; or keep the draft → the same page, still a draft |
 
 **The foot is one shape on stages 1–5** (#760): `[Back][Cancel]` as a single left group and the act
 that advances the flow flush right. `Cancel` leaves the flow — it goes where the shell's close goes,
@@ -261,6 +261,17 @@ drawn in this stage's right column, because those facts are all known before the
 and repeating them on Invite is one card too many.
 
 ## Stage 5, Invite — the walk, the act inside it, and the relationship it lands on
+
+**No step of the create flow takes a card (#1115).** The account's seven-day trial is granted by the
+same transaction that writes the relationship (`grantCreationTrial()` in `lib/db/billing.ts`, called
+from `createInstanceFromTemplate()`), so stage 5's panel states the week and its end date and its
+primary action is **`Continue with 7 days free`** — one press, no plan selection, no price to clear
+and no card field anywhere. A rendered create stage contains **0** card-number, expiry, CVC or
+billing-postcode inputs, and `tests/trial-no-payment-inputs.test.ts` measures that on every stage of
+the flow. The purchase flow the table below describes (plan → card → thank you → the act) is
+**retained in `invite-walk.tsx`, not deleted**, because the explicit "add a payment method" upgrade
+action is its only caller; the create path mounts the walk with no checkout handler, which is what
+makes the card step unreachable from any stage of this flow.
 
 Stage 5 is one decision, drawn as **one four-step walk** in one column
 (`components/assessment-flow/invite-walk.tsx`), in this order:

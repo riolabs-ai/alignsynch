@@ -5,8 +5,15 @@
  * one write: **Send and Continue** posts `POST /assessment/instances/[id]/send`, which publishes the
  * relationship and mails the one invitation; **Continue as Draft** is a link to the dashboard, where
  * the draft is under My relationships. Nothing is sent until Send is pressed, and keeping it as a
- * draft costs nothing — which is the promise the retired post-commit account gate used to carry and
- * now says where the send actually happens.
+ * draft costs nothing.
+ *
+ * **No stage of this flow takes a card (#1115).** The account's seven-day trial was granted in the
+ * same transaction that wrote the relationship (`grantCreationTrial` in `lib/flow/store.ts`), so
+ * the walk on this page states the week and lets the reader through: the primary action is
+ * `Continue with 7 days free`, and this page hands over **no** checkout action at all — it imports
+ * none of the membership actions, so a card cannot come back through this file without the ratchet
+ * in `tests/trial-no-payment-inputs.test.tsx` failing on the import line. Those actions belong to
+ * the explicit upgrade action, the one caller of `payment_method_collection: "always"`.
  *
  * **Two handles, and they are not interchangeable (#794).** The path segment is the template's
  * **slug**; `?instance=` is the relationship's **id**. The read is the flow's own
@@ -18,6 +25,11 @@
  * draft cookie when it wrote the relationship, so the facts this stage prints are read back from
  * the rows it wrote — which is the stronger source anyway: it is what was actually created.
  *
+ * **The trial's end is read once, here.** `trialStateOf()` over the account's live subscription at
+ * this request's instant — the same read every later surface (band, emails, lapse) asks — and the
+ * instant is handed to the walk as a date. A client clock never recomputes it: two people opening
+ * one account must read the same day.
+ *
  * `force-dynamic`: the screen read is a database read and the party cookie is a request cookie.
  */
 import { cookies } from "next/headers";
@@ -25,14 +37,12 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
 import type { FlowMount } from "@/components/assessment-flow/relationship-flow-shell";
-import {
-  confirmMembershipAction,
-  startMembershipAction,
-} from "@/app/(mainlayout)/dashboard/relationships/actions";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { readLibraryTemplate } from "@/lib/db/template-library";
+import { readActiveSubscription } from "@/lib/db/billing";
 import { entitlementForAccount } from "@/lib/billing";
+import { trialStateOf } from "@/lib/billing/trial";
 import { createRefusal } from "@/lib/flow/create-copy";
 import { carriedPlanOf, parsePlanIntent } from "@/lib/flow/plan-intent";
 import { createCommitPath, createRelationshipPath } from "@/lib/flow/paths";
@@ -136,34 +146,32 @@ export default async function TemplateCreateInvitePage({
   };
 
   /**
-   * **The walk and the gate, both built here (#870, #911).**
+   * **The walk, and the week it states (#1115 supersedes #870/#1043's capture wiring).**
    *
-   * The stage draws the walk on the left and the send on the right, and it owns the state that ties
-   * them together — but it cannot read a session, an entitlement or a row, so the three facts it
-   * needs arrive as props:
+   * The stage draws the walk on the left and the two sentences that make a draft safe on the right.
+   * Three facts arrive as props, and none of them is a payment handler any more:
    *
-   *   `capture`      the two server actions the membership needs (start the checkout, then confirm
-   *                  it by the session the provider minted). Passed in because a `"use client"`
-   *                  module that imported them would reach `lib/db/**` — E34's failure mode.
-   *   `initialPaid`  whether a membership is already live for this account. A person who paid and
-   *                  came back lands on the thank-you with the send enabled instead of being asked
-   *                  twice.
-   *   `planIncluded` what the account's plan already covers, so an entitled account gets a summary
-   *                  rather than a radio group selling a tier it holds.
+   *   `trialEndsAt`  the instant the creating account's free week closes, from the **one** read
+   *                  (`trialStateOf`) over the subscription `grantCreationTrial` wrote. It is what
+   *                  turns the walk into its card-free panel: the plan is a comparison, the action
+   *                  is `Continue with 7 days free`, and no step of the walk can reach a checkout.
+   *   `initialPaid`  whether a **paid** membership is already live — a Stripe row, not a trial. A
+   *                  person who has paid lands one press from the act instead of being sold the
+   *                  plan again; a person inside their trial lands on the panel that names the week,
+   *                  which is the whole point of showing the date.
+   *   `planIncluded` what the account's plan already covers, so the panel states the tier instead
+   *                  of drawing a radio group for a plan the account holds (the trial entitles at
+   *                  Basic, so a fresh creator sees `Your plan · Basic` beside the free continue).
    *
-   * **`initialPaid` is `screen.subscriptionLive`, not `screen.paymentArmed` (#1014).** The latter is
-   * `membership.writable`, and a `draft` reads writable on purpose — nothing has been sold, so there
-   * is nothing to lapse. Stage 5 renders on exactly such a draft, so `paymentArmed` answered "paid"
-   * for every new relationship: the walk opened on its thank-you, skipped the plan and the card, and
-   * `sendDraftInvitation()` refused the send with `no-payment-method`. `subscriptionLive` is read
-   * from the same `billing_subscription` row that refusal names, so the courtesy and the rule agree.
-   *
-   * **This is the membership purchase (#1010 R2), and the only card form.** The card is Stripe's,
-   * mounted inside the walk from `components/billing/stripe-frame.tsx`, and it mounts the
-   * *subscription* checkout — one monthly membership covering both parties, seven days free. There
-   * is no "add a payment method" act on this stage or anywhere else: a card reaches an account by
-   * buying the membership. This page hands over actions; it never draws a field.
+   * **`initialPaid` is `subscriptionLive` *and* not a trial.** `subscriptionLive` is true for the
+   * trialing row too, and opening the walk on its thank-you for that would hide the trial's end and
+   * the free continue — the two things this stage exists to show.
    */
+  const liveSubscription = viewer === null ? null : await readActiveSubscription(viewer.userId);
+  const trial = trialStateOf(liveSubscription, new Date());
+  const trialEndsAt =
+    trial.state === "active" || trial.state === "ending" ? trial.endsAt.toISOString() : undefined;
+
   const accountPlan =
     entitlement === null
       ? undefined
@@ -208,11 +216,8 @@ export default async function TemplateCreateInvitePage({
       problemLink={refusal?.link ?? null}
       notice={planNotice?.sentence ?? null}
       noticeLink={planNotice?.link ?? null}
-      checkout={{
-        onStart: startMembershipAction,
-        onConfirm: confirmMembershipAction,
-      }}
-      initialPaid={screen.subscriptionLive === true}
+      {...(trialEndsAt === undefined ? {} : { trialEndsAt })}
+      initialPaid={screen.subscriptionLive === true && trial.state === "none"}
       {...(accountPlan === undefined ? {} : { planIncluded: accountPlan })}
       {...(carriedPlan === null ? {} : { carriedPlan })}
     />

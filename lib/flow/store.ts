@@ -85,7 +85,7 @@ import {
 } from "@/content/steps";
 import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { relationshipGateRefusal } from "@/lib/billing/entitlements";
-import { activeRelationshipCount, grantPublishTrial } from "@/lib/db/billing";
+import { activeRelationshipCount, grantCreationTrial, grantPublishTrial } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import { openPaymentObligation, type PaymentSql } from "@/lib/db/relationship-payment";
 import {
@@ -780,6 +780,25 @@ export async function createInstanceFromTemplate(
         relationshipId,
         payerUserId: initiatorUserId,
         provider: billingProvider(),
+      });
+
+      // #1115 — **the trial opens with the relationship.** The week is anchored here, inside the
+      // transaction that writes the row, so the two facts cannot disagree: a relationship that
+      // commits has a trial, and a trial is never spent by somebody who created nothing. The
+      // writer is account-keyed and idempotent (`grantCreationTrial`), which is what keeps a second
+      // relationship — or the publish below — from restarting or duplicating the clock.
+      //
+      // Its failure is the create's failure, on purpose: a committed relationship whose account
+      // holds no entitling subscription reads `lapsed` on the very next membership read, which is
+      // the lock-out #840 fixed on the other anchor. A rolled-back create is the honest answer.
+      //
+      // `nothing-written` is the ordinary second create: the account already holds an entitling
+      // subscription, so this relationship inherits that clock rather than opening a second one
+      // (spec D3 — one week per account). Nothing to log; the caller reads the same row as before.
+      await grantCreationTrial(sqlOf(client), {
+        userId: initiatorUserId,
+        relationshipId,
+        now,
       });
     }
 

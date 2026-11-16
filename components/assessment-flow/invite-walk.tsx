@@ -3,7 +3,22 @@
 // template-ancestor: components/assessment-flow/create-relationship.tsx   (variation: the invite stage's left column is a three-step walk — join a plan, save a card, thank you — so the money decision happens in this stage instead of on a pricing page, and the stage's send waits for it)
 
 /**
- * `InviteWalk` — the membership purchase on stage 5 (#771, three steps since #911).
+ * `InviteWalk` — stage 5's walk (#771, three steps since #911), **card-free on the create path**
+ * since #1115.
+ *
+ * **Two callers, two panels, and one of them never asks for a card.** The create flow mounts this
+ * walk with no `checkout` handler at all (#1115 task 3): the relationship has already been written
+ * *and its seven-day trial granted with it* (spec D2/D3), so the panel's job is to say what the
+ * week is and let the reader through — the primary action reads `Continue with 7 days free` and
+ * opens the act. Every payment control below (a row selection starting a checkout, the card step,
+ * the thank-you) stays in the module for the **explicit upgrade action**, which is the only caller
+ * of the adapter's `payment_method_collection: "always"` and passes the handler. A create render
+ * therefore contains zero payment inputs, and `tests/trial-no-payment-inputs.test.tsx` holds that.
+ *
+ * **The trial's end is a date the server measured.** `trialEndsAt` arrives as the instant
+ * `trialStateOf()` read (`lib/billing/trial.ts`) and is printed through `formatDateLong`, a pure
+ * function of that instant on UTC getters — never a browser countdown, so two people on one account
+ * cannot read two different numbers off the same trial.
  *
  * **Three steps, and the artifact draws them in this order.** The approved reference is
  * `docs/review/artifacts/prototype-relationship-lifecycle-v9.html`, whose Invite screen puts the pay
@@ -63,6 +78,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { PageCopy } from "@/content/pages";
+import { formatDateLong } from "@/content/core";
 import type { MembershipOutcome } from "@/lib/member/outcomes";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import type { CarriedPlan } from "@/lib/flow/plan-intent";
@@ -104,6 +120,7 @@ export function InviteWalk({
   checkout,
   planIncluded,
   carriedPlan,
+  trialEndsAt,
   initialStep,
 }: {
   copy: PageCopy;
@@ -121,6 +138,15 @@ export function InviteWalk({
   onPaid: () => void;
   /** The server's membership actions. Absent in a render-only test, where nothing can be pressed. */
   checkout?: CheckoutHandlers;
+  /**
+   * **The trial's end, as the server read it** (#1115).
+   *
+   * An ISO instant, produced by `trialStateOf()` on the page and rendered here as a date. Its
+   * presence is also what makes this the **card-free create panel**: the walk only draws the
+   * free-week action, and only the free-week action, when it has a week to name. Absent means
+   * nothing was measured — the purchase path's panel, and the tests' render-only one.
+   */
+  trialEndsAt?: string;
   /**
    * What the account already pays for (#870), when the page measured it. An entitled account gets a
    * **summary** of its tier instead of the radio group — the walk must not ask somebody on a paid
@@ -166,6 +192,16 @@ export function InviteWalk({
 
   /** The provider's frame can mount: the session and the key that opens it are both in hand. */
   const frameReady = clientSecret !== null && publishableKey !== null;
+
+  /**
+   * **The card-free create panel** (#1115): the page measured a week, and supplied no checkout
+   * handler. Both facts are required, and together they are what makes the plan a comparison and
+   * the free-week action the way on — a walk that has neither is the purchase panel, unchanged.
+   */
+  const cardFree = trialEndsAt !== undefined && checkout === undefined;
+
+  /** The trial's end as a reader sees it — the server instant through the tree's UTC formatter. */
+  const trialDate = trialEndsAt === undefined ? null : formatDateLong(trialEndsAt);
 
   /**
    * The account's plan already covers a tier (#870): its panel is a summary, not the radio group, and
@@ -280,6 +316,20 @@ export function InviteWalk({
     setCheckoutSessionId(null);
     setStep("card");
     void startMembership(picked);
+  }
+
+  /**
+   * **The free week is the act on the create path** (#1115).
+   *
+   * One press and no money: the relationship exists and its trial was granted in the same
+   * transaction that wrote it, so this only opens the send — `onPaid` reports the fact the stage's
+   * gate reads, and the walk moves straight to the act. The thank-you is deliberately skipped: its
+   * sentence says a card is on file, and on this path nothing was ever asked for.
+   */
+  function startFreeTrial(): void {
+    setRefusal(null);
+    onPaid();
+    setStep("action");
   }
 
   /**
@@ -406,7 +456,14 @@ export function InviteWalk({
           </p>
         </div>
       ) : (
-        <PlanChoices copy={copy} initial={plan ?? undefined} onSelect={choosePlan} />
+        <PlanChoices
+          copy={copy}
+          initial={plan ?? undefined}
+          /* A row's selection reports the preference and nothing more on the create path (#1115):
+             nothing here blocks progress, and nothing here opens a checkout. The purchase path
+             keeps #1031's "choosing a row is the act". */
+          onSelect={cardFree ? (picked: PlanId) => setPlan(picked) : choosePlan}
+        />
       )}
 
       {/* What the money buys, named: the plan joined, and the relationship it activates. */}
@@ -422,41 +479,73 @@ export function InviteWalk({
         </ul>
       </div>
 
-      <p className={SMALL}>{itemLabel(plans, "trial")}</p>
+      {cardFree ? (
+        /**
+         * **The create path's panel** (#1115): the week, when it ends, and one action that takes
+         * neither a plan nor a card. The trial is already running — it opened with the relationship
+         * in the transaction that wrote it — so there is nothing here to join, and the price list
+         * above is a comparison, not an offer.
+         *
+         * The end is printed from the instant the page measured (`trialEndsAt`), never from a
+         * browser clock: two people opening one account read the same date.
+         */
+        <>
+          <p className={SMALL}>{itemLabel(plans, "trial-free")}</p>
+          <p className={SMALL} data-trial-ends={trialEndsAt}>
+            {trialDate === null
+              ? null
+              : fillLabel(itemLabel(plans, "trial-ends"), { date: trialDate })}
+          </p>
+          <button
+            type="button"
+            data-pay-action="continue"
+            data-panel-first="true"
+            className={PRIMARY}
+            onClick={startFreeTrial}
+          >
+            {itemLabel(plans, "free-continue")}
+          </button>
+        </>
+      ) : (
+        <>
+          <p className={SMALL}>{itemLabel(plans, "trial")}</p>
 
-      {/* The entitled account has no row to choose, so its panel needs the one control that is the
-          act everywhere else. It opens the card step with no tier, which the walk answers as a
-          refusal rather than a charge (#870). Nothing else on this panel is a button (#1031). */}
-      {planEntitled ? (
-        <button
-          type="button"
-          data-pay-action="continue"
-          data-panel-first="true"
-          className={PRIMARY}
-          onClick={() => choosePlan(null)}
-        >
-          {itemLabel(flow, "continue")}
-        </button>
-      ) : null}
-
-      {/*
-        **A carried plan is a choice already made, so its panel needs the control that opens the card
-        step** (#1043). The row arrived checked — and a native radio fires no `change` when it is
-        already checked — so without this button the panel would be a step nobody could leave without
-        changing their mind first. It carries the *same* `data-pay-action` as the entitled account's
-        control because it is the same act: open the card step with the row this panel shows. Choosing
-        the other row still starts the checkout directly, exactly as it does when nothing was carried.
-      */}
-      {planEntitled || carriedPlan === undefined ? null : (
-        <button
-          type="button"
-          data-pay-action="continue"
-          data-panel-first="true"
-          className={PRIMARY}
-          onClick={() => choosePlan(carriedPlan.row)}
-        >
-          {itemLabel(flow, "continue")}
-        </button>
+          {/* The entitled account has no row to choose, so its panel needs the one control that is
+              the act everywhere else. It opens the card step with no tier, which the walk answers as
+              a refusal rather than a charge (#870). Nothing else on this panel is a button
+              (#1031). */}
+          {planEntitled ? (
+            <button
+              type="button"
+              data-pay-action="continue"
+              data-panel-first="true"
+              className={PRIMARY}
+              onClick={() => choosePlan(null)}
+            >
+              {itemLabel(flow, "continue")}
+            </button>
+          ) : null}
+          {/*
+            **A carried plan is a choice already made, so its panel needs the control that opens the
+            card step** (#1043). The row arrived checked — and a native radio fires no `change` when
+            it is already checked — so without this button the panel would be a step nobody could
+            leave without changing their mind first. It carries the *same* `data-pay-action` as the
+            entitled account's control because it is the same act: open the card step with the row
+            this panel shows. Choosing the other row still starts the checkout directly, exactly as
+            it does when nothing was carried.
+          */}
+          {planEntitled || carriedPlan === undefined ? null : (
+            <button
+              type="button"
+              data-pay-action="continue"
+              data-panel-first="true"
+              className={PRIMARY}
+              onClick={() => choosePlan(carriedPlan.row)}
+            >
+              {itemLabel(flow, "continue")}
+            </button>
+          )}
+        </>
       )}
     </>
   );

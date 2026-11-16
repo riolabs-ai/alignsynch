@@ -218,7 +218,11 @@ describe("stage 5 — the walk is paid for by a subscription, not by `writable`"
       join(process.cwd(), "app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx"),
       "utf8",
     );
-    expect(page).toContain("initialPaid={screen.subscriptionLive === true}");
+    // #1115 narrows the returning state to a **paid** row: `subscriptionLive` is true for the
+    // trialing row the create itself granted, and opening the walk on its thank-you for that would
+    // hide the week's end and the free-week action — the two things stage 5 now exists to show.
+    // `paymentArmed` is still wrong for the #1014 reason, and still absent.
+    expect(page).toContain('screen.subscriptionLive === true && trial.state === "none"');
     expect(page).not.toContain("initialPaid={screen.paymentArmed");
   });
 });

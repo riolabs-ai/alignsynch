@@ -35,9 +35,11 @@ import {
 } from "@/lib/billing/publish-trial";
 import {
   syncRelationshipsWithSubscription,
+  type Sql,
   type SubscriptionConsequence,
   type SyncDirection,
 } from "@/lib/relationship/enforcement";
+import { TRIAL_INTERVAL, TRIAL_PLAN_ID, trialEndsAt } from "@/lib/billing/trial";
 import {
   type BillingProvider,
   type Plan,
@@ -157,6 +159,70 @@ export async function grantPublishTrial(input: {
       PUBLISH_TRIAL_INTERVAL,
       publishTrialSubscriptionId(input.userId),
       publishTrialEndsAt(input.publishedAt).toISOString(),
+      ENTITLING_STATUSES,
+    ],
+  );
+  return rows.length > 0 ? "granted" : "nothing-written";
+}
+
+/**
+ * Open the trial a relationship starts **when it is created** (#1115, spec D2/D3).
+ *
+ * The anchor moved here from the publish (#840's `grantPublishTrial()` above, kept and untouched
+ * by #1115): the week opens with the relationship, not with the send, so a creator slow to invite
+ * is not burning their week — and a visitor who never creates one is not burning it at all.
+ *
+ * **It runs inside the create's own transaction**, which is why it takes the caller's handle
+ * (`Sql`) instead of reading on the pool the way `grantPublishTrial` does. Two facts follow, and
+ * both are the point: a relationship that commits has a trial, and a trial never exists without a
+ * relationship — a throw after this statement rolls the trial back with the row.
+ *
+ * **One trial per account, by construction.** The statement is the publish writer's shape:
+ *
+ *   - the provider id is a function of the **user** (`publishTrialSubscriptionId`), NOT the
+ *     relationship, so the two writers can only ever land on one row per account — a second create,
+ *     or a create followed by a publish, writes nothing;
+ *   - `NOT EXISTS` over the entitling statuses refuses an account that already holds a live
+ *     subscription (a paid one included, so an upgrade is never overwritten by a trial);
+ *   - `ON CONFLICT DO NOTHING` covers the partial unique index on `user_id` for a concurrent write
+ *     that slips past the check.
+ *
+ * `mock` + `livemode = false`: no money moved, and no provider subscription exists during the
+ * trial (D2) — the row is ours, and the upgrade action (a later card) converts it in place.
+ *
+ * `relationshipId` is provenance, not a column: `0009_billing.sql` keys a subscription to the
+ * account, and the relationship is the **trigger**. It is carried so the call site can name what
+ * granted the row in a log line, and so a reader of this function knows what opens it.
+ */
+export async function grantCreationTrial(
+  sql: Sql,
+  input: {
+    readonly userId: string;
+    readonly relationshipId: string;
+    readonly now: Date;
+  },
+): Promise<"granted" | "nothing-written"> {
+  const { rows } = await sql.query<{ provider_subscription_id: string }>(
+    `INSERT INTO billing_subscription
+       (user_id, plan_id, interval, provider, provider_subscription_id, status, livemode,
+        current_period_end)
+     SELECT $1, $2, $3, 'mock', $4, 'trialing', false, $5
+      WHERE NOT EXISTS (
+              SELECT 1
+                FROM billing_subscription
+               WHERE user_id = $1
+                 AND (status = ANY($6::text[]) OR provider_subscription_id = $4)
+            )
+     ON CONFLICT DO NOTHING
+     RETURNING provider_subscription_id`,
+    [
+      input.userId,
+      TRIAL_PLAN_ID,
+      TRIAL_INTERVAL,
+      // The same key `grantPublishTrial()` writes, on purpose: one account, one trial, whichever
+      // of the two writers gets there first.
+      publishTrialSubscriptionId(input.userId),
+      trialEndsAt(input.now).toISOString(),
       ENTITLING_STATUSES,
     ],
   );

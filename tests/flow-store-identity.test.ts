@@ -195,6 +195,12 @@ const stub = vi.hoisted(() => {
     ) {
       return wrote;
     }
+    // #1115 — the creation trial, written **inside** the create's transaction by
+    // `grantCreationTrial()`. This suite is about identity binding, so the answer is "granted";
+    // `tests/trial-create.test.ts` is where the statement itself is read.
+    if (sql.startsWith("INSERT INTO billing_subscription")) {
+      return { rows: [{ provider_subscription_id: `trial:${String(values[0])}` }], rowCount: 1 };
+    }
     throw new Error(`the stub client has no answer for: ${sql.slice(0, 80)}`);
   }
 
@@ -428,39 +434,54 @@ describe("createInstanceFromTemplate writes the Setting the form chose", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * Create — the publish trial (#835)
+ * Create — the trial's anchor (#835, moved by #1115)
  * ------------------------------------------------------------------ */
 
 /**
- * A create that publishes opens the trial, on **both** publish paths.
+ * A create opens the trial, **inside the transaction that writes the relationship**.
  *
  * The draft path has granted it since #840 (`sendDraftInvitation`). The pre-#825 one-form create
  * publishes inside its own transaction and granted nothing — so the row it committed read
- * `lapsed` on the next membership read and the counterparty's claim was refused. #835 makes the
- * two paths agree: whichever write moves a relationship to `published` opens the week.
+ * `lapsed` on the next membership read and the counterparty's claim was refused. #835 made the
+ * two paths agree; #1115 moved the anchor from the publish to **creation** and added the writer
+ * that runs in the create's own transaction (`grantCreationTrial`). The publish grant stays, and
+ * the account-scoped provider id is what keeps the two from ever writing two rows.
  */
-describe("a create that publishes opens the trial", () => {
+describe("a create opens the trial (#1115 moved the anchor)", () => {
   function trialInserts() {
     return callsMatching(/^INSERT INTO billing_subscription/);
   }
 
-  it("grants it for the account that published, after the relationship is committed", async () => {
+  it("grants it inside the transaction that writes the relationship, and the publish grant follows", async () => {
     await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
 
-    const [grant] = trialInserts();
-    expect(grant).toBeDefined();
-    // After COMMIT, not inside the transaction: a trial that described a rolled-back relationship
-    // would be a paid week for nothing.
-    expect(onlyIndex(/^INSERT INTO billing_subscription/)).toBeGreaterThan(onlyIndex(/^COMMIT$/));
-    expect(grant.values[0]).toBe("account-avery");
-    // The entry paid tier — `PUBLISH_TRIAL_PLAN_ID`, the one whose entitlement plays both modes.
-    expect(grant.values[1]).toBe("basic");
+    const writes = trialInserts();
+    // Two statements, one row: the creation grant **inside** the transaction (a relationship that
+    // commits has a trial) and #840's publish grant after it, which the guard answers with nothing
+    // because the account already holds an entitling row. Neither is removed by #1115.
+    expect(writes).toHaveLength(2);
+    const [creation, publish] = writes;
+    const creationAt = stub.calls.indexOf(creation);
+    expect(creationAt).toBeGreaterThan(onlyIndex(/^BEGIN$/));
+    expect(creationAt).toBeLessThan(onlyIndex(/^COMMIT$/));
+    expect(stub.calls.indexOf(publish)).toBeGreaterThan(onlyIndex(/^COMMIT$/));
+
+    expect(creation.values[0]).toBe("account-avery");
+    // The entry paid tier — the one whose entitlement plays both modes.
+    expect(creation.values[1]).toBe("basic");
+    // One trial per account: both writers name the same provider id, so they can only land on one
+    // row — a second relationship inherits the clock instead of opening a second week (D3).
+    expect(creation.values[3]).toBe("trial:account-avery");
+    expect(publish.values[3]).toBe("trial:account-avery");
   });
 
-  it("writes none for a draft — the send is what publishes, and it grants there", async () => {
+  it("grants it for a draft create too — the row is what opens the week, not the send", async () => {
+    // #1115 supersedes the old rule that only a publish opened the window: stage 4 writes the
+    // relationship, and the week opens with the relationship (spec D3). A draft that is never sent
+    // still spent nothing — the trial is free.
     await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery", draft: true }));
 
-    expect(trialInserts()).toHaveLength(0);
+    expect(trialInserts()).toHaveLength(1);
   });
 
   it("writes none for a signed-out create — there is no account to hold a trial", async () => {

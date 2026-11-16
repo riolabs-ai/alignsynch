@@ -212,6 +212,30 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
         },
         { id: "trial-short", label: "7 days free" },
         /**
+         * **#1115 — the card-free week, in its own words.**
+         *
+         * The three items below are the create path's, and they are new rather than edits of
+         * `trial` above: that sentence is the purchase panel's (it says the trial starts when a
+         * card is saved), and the create path never reaches it. Leaving it in place keeps the
+         * demoted purchase copy intact — the explicit upgrade action is the only reader now.
+         *
+         * `trial-free` states the anchor the issue decided (spec D3): the clock opens with the
+         * relationship. `trial-ends` carries the instant as `{date}`, filled from the **server's**
+         * read — never a browser countdown, or two people on one account read two numbers. `{date}`
+         * is deliberately left visible if unfilled, like every other placeholder in this tree.
+         */
+        {
+          id: "trial-free",
+          label:
+            "7 days free, no card. The trial starts when this relationship is created, and nothing is charged during it.",
+        },
+        { id: "trial-ends", label: "Your 7 days free end on {date}." },
+        /**
+         * The stage-5 primary action (#1115). The owner's phrase, verbatim: it says what pressing it
+         * does — continues into the free week — and never asks for money.
+         */
+        { id: "free-continue", label: "Continue with 7 days free" },
+        /**
          * #911 — **what the money buys, named once.** The card asked for the two things by name, so
          * they are two rows rather than a sentence: the plan the person joined (filled with its own
          * name and price from the rows above) and the relationship that is activated by sending it.
