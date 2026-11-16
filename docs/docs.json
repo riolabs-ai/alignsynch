@@ -56,6 +56,11 @@
       "blurb": "The data model, the environment, the generated tables and the record of what the tree holds.",
       "docs": [
         {
+          "path": "analysis/template-boundary.md",
+          "title": "Template boundary",
+          "question": "Where does the bot-profile template stop and the base/common begin — and which ADRs govern it?"
+        },
+        {
           "path": "assets/screens/README.md",
           "title": "Screenshot registry",
           "question": "Which screenshot shows which surface, on which brand and viewport?"

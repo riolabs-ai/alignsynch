@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**147 documents in 9 sections.** Every page carries the same nav block, generated
+**148 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -39,7 +39,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 
 - [Start here](#start-here) — 3 documents
 - [Guides](#guides) — 4 documents
-- [Reference](#reference) — 10 documents
+- [Reference](#reference) — 11 documents
 - [Operations](#operations) — 18 documents
 - [Specs & design briefs](#specs-design-briefs) — 44 documents
 - [Records & QA](#records-qa) — 24 documents
@@ -68,6 +68,7 @@ How to do one thing well: templates, bundles, brand, models.
 
 The data model, the environment, the generated tables and the record of what the tree holds.
 
+- [`analysis/template-boundary.md`](analysis/template-boundary.md) — **Template boundary** — Where does the bot-profile template stop and the base/common begin — and which ADRs govern it?
 - [`assets/screens/README.md`](assets/screens/README.md) — **Screenshot registry** — Which screenshot shows which surface, on which brand and viewport?
 - [`glossary.md`](glossary.md) — **Glossary** — What does this domain's vocabulary mean? Generated from the schema comments.
 - [`reference/billing.md`](reference/billing.md) — **Billing** — How are the two billing drivers wired, and where is the pricing CTA?

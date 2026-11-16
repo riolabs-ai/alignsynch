@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Reference** › Screenshot registry · next [Glossary](../../glossary.md)
+[Docs hub](../../README.md) › **Reference** › Screenshot registry · prev [Template boundary](../../analysis/template-boundary.md) · next [Glossary](../../glossary.md)
 
 <!-- docs-nav:end -->
 
@@ -119,6 +119,6 @@ red test rather than a broken link somebody finds later.
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../README.md) › **Reference** › Screenshot registry · next [Glossary](../../glossary.md)
+[Docs hub](../../README.md) › **Reference** › Screenshot registry · prev [Template boundary](../../analysis/template-boundary.md) · next [Glossary](../../glossary.md)
 
 <!-- docs-nav:end -->
