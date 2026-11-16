@@ -1,0 +1,51 @@
+{
+  "release": "1.21.0",
+  "commit": "1ce29064ce310905047e791fc00d1b54b3256b01",
+  "capturedAt": "2026-11-16T09:53:00-03:00",
+  "method": "headless Chrome over the DevTools protocol — Emulation.setDeviceMetricsOverride, Runtime.evaluate asserts, Page.captureScreenshot at the measured document height",
+  "server": "pnpm dev from this release's own worktree, BRAND=alignsynch, port 4317, loopback, demo branch env (.env.local wins over .env)",
+  "session": "signed in from Node through POST /api/auth/sign-in/email as the branch's first ADMIN_EMAILS seat, cookies handed to Chrome with Network.setCookie (a browser-origin sign-in answers 403 on this branch)",
+  "stills": [
+    {
+      "file": "admin-audit-1440.png",
+      "url": "/admin/audit",
+      "width": 1440,
+      "height": 1483,
+      "bytes": 272106,
+      "asserts": {
+        "title": "Audit log · AlignSynch",
+        "h1": "Audit log",
+        "tableRows": 6,
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 3337
+      },
+      "why": "the six admin_action rows the demo seed authors — the surface #1081/#1104 filled, which rendered empty states before"
+    },
+    {
+      "file": "dashboard-1440.png",
+      "url": "/dashboard",
+      "width": 1440,
+      "height": 1594,
+      "bytes": 186957,
+      "asserts": {
+        "title": "Overview · AlignSynch",
+        "h1": "Welcome back, Platform Admin",
+        "h2": ["Recent Messages", "Notifications", "Waiting on you", "Answer every Aspect"],
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 2194
+      },
+      "why": "the member dashboard over the seeded relationships, at the release's own commit"
+    }
+  ],
+  "pixelCheck": {
+    "tool": "PIL over a 120x120 downscale",
+    "admin-audit-1440.png": { "distinctColours": 745, "ink": "15.8%" },
+    "dashboard-1440.png": { "distinctColours": 638, "ink": "87.6%" }
+  }
+}

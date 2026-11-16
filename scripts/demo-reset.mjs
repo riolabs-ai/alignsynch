@@ -1602,6 +1602,12 @@ async function resetContent(connectionString) {
       ["session", "public.session", "DELETE FROM session"],
       ["relationship_member", "public.relationship_member", "DELETE FROM relationship_member"],
       ["coach_invite", "public.coach_invite", "DELETE FROM coach_invite"],
+      /* #1081 — the two billing rows that hang off a relationship. `relationship_payment` has no
+       * `ON DELETE CASCADE` (0036 says why: the obligation is the record of a charge), so it has to
+       * go before the relationship it names; `plan_grant` cascades, and deleting it explicitly is
+       * what puts the count in the report instead of leaving it to the FK. */
+      ["relationship_payment", "public.relationship_payment", "DELETE FROM relationship_payment"],
+      ["plan_grant", "public.plan_grant", "DELETE FROM plan_grant"],
       ["relationship", "public.relationship", "DELETE FROM relationship"],
       ["template_version", "public.template_version", "DELETE FROM template_version"],
       ["item", "public.item", "DELETE FROM item"],
@@ -1609,6 +1615,23 @@ async function resetContent(connectionString) {
       ["record", "public.record", "DELETE FROM record"],
       ["user_profile", "public.user_profile", "DELETE FROM user_profile"],
       ["demo_account", "public.demo_account", "DELETE FROM demo_account"],
+      /* #1081 — the console's half. These tables cascade from nothing above and the seed upserts
+       * into them, so a reseed-only run would otherwise keep a walkthrough's extra inbox reply, an
+       * extra audit row or a reviewer's own to-do beside the seeded ones, and `pnpm demo:verify`
+       * would then diff the branch against an expectation file that cannot be true again. The
+       * demo's contract is the bundle, this console half and the three accounts — nothing else —
+       * and children before parents in each pair, for the FKs that do cascade. */
+      ["broadcast_recipient", "public.broadcast_recipient", "DELETE FROM broadcast_recipient"],
+      ["broadcast_send", "public.broadcast_send", "DELETE FROM broadcast_send"],
+      ["contact_reply", "public.contact_reply", "DELETE FROM contact_reply"],
+      ["contact_message", "public.contact_message", "DELETE FROM contact_message"],
+      ["email_event", "public.email_event", "DELETE FROM email_event"],
+      ["news_signup", "public.news_signup", "DELETE FROM news_signup"],
+      ["admin_action", "public.admin_action", "DELETE FROM admin_action"],
+      ["billing_event", "public.billing_event", "DELETE FROM billing_event"],
+      ["review_issue_comment", "public.review_issue_comment", "DELETE FROM review_issue_comment"],
+      ["review_issue", "public.review_issue", "DELETE FROM review_issue"],
+      ["review_todo", "public.review_todo", "DELETE FROM review_todo"],
     ];
 
     for (const [label, qualified, sql] of statements) {
