@@ -42,9 +42,6 @@ import { affiliatePageCopy } from "./affiliate";
 import { assessmentPageCopy } from "./assessment";
 import { assessmentInstancePageCopy } from "./assessment-instance";
 import { assessmentsPageCopy } from "./assessments";
-import { assessmentTemplatePageCopy } from "./assessment-template-new";
-import { templateDetailPageCopy } from "./assessment-template-detail";
-import { templateLibraryPageCopy } from "./assessment-templates";
 import { relationshipReportPageCopy } from "./assessment-relationship-report";
 import { assessmentAcceptPageCopy } from "./assessment-accept";
 import { assessmentAnswerPageCopy } from "./assessment-answer";
@@ -184,11 +181,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/support": supportPageCopy,
   "/support/articles/[slug]": supportArticlePageCopy,
   "/terms": legalPages.terms,
-  // #794 — the template library, one template and the six-stage create flow, under the template's
-  // own noun. The fixtures keep their names: `assessment-template-*` are the copy files for the
-  // screens, not the addresses, and renaming them would be a second rename inside a move.
-  "/templates/relationship": templateLibraryPageCopy,
-  "/templates/relationship/[slug]": templateDetailPageCopy,
+  // #794 — the six-stage create flow, under the template's own noun. #1109 retired the member's
+  // library listing, its authoring form and its read-only detail page (they 308 to
+  // `/dashboard/templates`), so their three entries are gone from this table with them: a path here
+  // is a promise that the route renders a fixture, and E23 checks the two directions.
   "/templates/relationship/[slug]/create": assessmentCreatePageCopy,
   // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
   // drift into two vocabularies.
@@ -200,7 +196,6 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // create is retired; stage 4 is the account and stage 5 is the invite.
   "/templates/relationship/[slug]/create/commit": assessmentCreatePageCopy,
   "/templates/relationship/[slug]/create/invite": assessmentCreatePageCopy,
-  "/templates/relationship/new": assessmentTemplatePageCopy,
   /**
    * The public catalogue, at two addresses and one fixture (#905).
    *

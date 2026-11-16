@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/template-detail.tsx   (variation: the public, signed-out detail page — the same descriptor pair and the same Aspect list with both named ends, read from `data/relationship-types.ts` instead of a database record, with no seat controls, no duplicate/archive actions and one `/register` call to action)
+// template-ancestor: components/dashboard/relationship-detail.tsx   (variation: the public, signed-out detail page — the same descriptor pair and the same Aspect list with both named ends, read from `data/relationship-types.ts` instead of a database record, with no seat controls, no duplicate/archive actions and one `/register` call to action)
 
 import type { TemplateDetailModel } from "@/lib/template-detail";
 import Link from "next/link";

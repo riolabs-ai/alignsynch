@@ -704,31 +704,11 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/assessment-create",
     budget: 0,
   },
-  // #255 — the template authoring form. Budget 0 from the first commit, for the reason the
-  // three flow surfaces above are: every word is in `data/pages/assessment-template-new.ts`,
-  // including the six refusals, so the next literal written in the form is a red build.
-  // #console 5/5 — the template library and one template. Two surfaces, one read each, budget 0
-  // from the first commit: every word is in `data/pages/assessment-templates.ts` and
-  // `data/pages/assessment-template-detail.ts`, so the next literal written in either component
-  // is a red build.
-  "/templates/relationship": {
-    page: "app/(mainlayout)/templates/relationship/page.tsx",
-    dirs: ["components/assessment-flow"],
-    fixture: "data/pages/assessment-templates",
-    budget: 0,
-  },
-  "/templates/relationship/[slug]": {
-    page: "app/(mainlayout)/templates/relationship/[slug]/page.tsx",
-    dirs: ["components/assessment-flow"],
-    fixture: "data/pages/assessment-template-detail",
-    budget: 0,
-  },
-  "/templates/relationship/new": {
-    page: "app/(mainlayout)/templates/relationship/new/page.tsx",
-    dirs: ["components/assessment-flow"],
-    fixture: "data/pages/assessment-template-new",
-    budget: 0,
-  },
+  // #255 — the template authoring form was this table's first budget-0 row. It retired in #1109
+  // with the rest of the member's `/templates/relationship` screens (the form's address now 308s to
+  // `/dashboard/templates?tab=mine`, where the blank and copy bands author one), so its row, the
+  // library's and the detail page's are gone rather than left pointing at a page that no longer
+  // exists — E23 reads this table in both directions.
   "/invite/[token]": {
     page: "app/(mainlayout)/invite/[token]/page.tsx",
     dirs: ["components/assessment-flow"],

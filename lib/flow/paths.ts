@@ -139,34 +139,33 @@ export const PUBLIC_HELP_PATH = "/help";
 export const TEMPLATES_PATH = "/templates";
 
 /**
- * `/templates/relationship` — the template library: the built-ins this account can use plus its
- * own (#console 5/5).
+ * `/templates/relationship` — **the create flow's namespace** since #1109, not a page.
  *
  * A child of `TEMPLATES_PATH` because a template **is** a thing, and `assessment` is a record
- * *kind* a template is not (#794): the URL's parent now names what the child is. A page, not a
- * POST endpoint — the route handler that saves a template lives one segment deeper, at
- * `CREATE_TEMPLATE_PATH`, and Next refuses a `page.tsx` and a `route.ts` in one segment (they are
- * two parallel pages for the same URL, and the app loader throws).
+ * *kind* a template is not (#794): the URL's parent names what the child is. What lives under it
+ * now is the flow that starts a relationship from a template — `…/[slug]/create` and its four
+ * stages — plus the one POST endpoint that flow posts to (`…/[slug]/status`).
+ *
+ * **The library itself moved to the dashboard.** `/templates/relationship`, `…/new` and
+ * `…/[slug]` were retired in #1109: a member's templates are `/dashboard/templates[?tab=mine]` and
+ * one of them is `/dashboard/templates/<id>`, and the three old addresses answer a 308 from
+ * `next.config.mjs`. So this constant is no longer aliased to the library (`TEMPLATE_LIBRARY_PATH`
+ * below names that), and only the flow's own paths are built from it.
  */
 export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
 
 /**
- * The library, under its long-standing name.
+ * `/dashboard/templates` — **the member's template library**, where it lives since #1109.
  *
- * Kept as an alias because the budget rows, the copy fixtures and the components have called it
- * this since #console 5/5, and "the template library" is still what the screen is. Nothing new
- * should be spelled with it; a new caller names `RELATIONSHIP_TEMPLATES_PATH`.
- */
-export const TEMPLATE_LIBRARY_PATH = RELATIONSHIP_TEMPLATES_PATH;
-
-/**
- * `/templates/relationship/new` — the form that authors a template (#255).
+ * It was an alias for `RELATIONSHIP_TEMPLATES_PATH` while `/templates/relationship` was a page;
+ * that page is retired, and every "go back to your templates" destination in the product means this
+ * one. Kept as a name because the budget rows, the copy fixtures and the flow's own components have
+ * called it "the template library" since #console 5/5, and it still is.
  *
- * Registered in `content/routes.ts` (E7 checks it in both directions) because it is a page. It is
- * not `…/[slug]/edit`: a template is never edited once saved — instances copy their Aspects at
- * creation, so a mutable source would rewrite the questions under answers somebody already gave.
+ * The value is a literal rather than an import of `MEMBER_TEMPLATES_PATH` (`lib/member/templates.ts`)
+ * on purpose: that module reaches `pg`, and this one is imported by `"use client"` components.
  */
-export const NEW_TEMPLATE_PATH = `${RELATIONSHIP_TEMPLATES_PATH}/new`;
+export const TEMPLATE_LIBRARY_PATH = `${OVERVIEW_PATH}/templates`;
 
 /**
  * `/relationship-types` — one relationship *type*'s public page (#794).
@@ -260,33 +259,15 @@ export function dashboardTemplateEditorPath(recordId: string): string {
   return `${OVERVIEW_PATH}/templates/${recordId}`;
 }
 
-/** The duplicate endpoint — a POST, so a GET never writes a copy. */
-export function templateDuplicatePath(slug: string): string {
-  return `${relationshipTemplatePath(slug)}/duplicate`;
-}
-
 /**
- * The delete endpoint — a POST, and a separate address from `/status` on purpose.
- *
- * Archiving and deleting are two different promises ("hidden, and still recoverable" versus
- * "gone"), and an address that carried either a state or an absence would make the same URL mean
- * both a move and a destruction. The row's delete control posts here, and only here.
+ * **The duplicate, delete and save endpoints are gone (#1109).** `/templates/relationship/<slug>`
+ * was their parent, and the row menu that posted to them was that page's: duplicating, archiving
+ * and deleting a member's own template are now the dashboard's (`/dashboard/templates?tab=mine` for
+ * the copy, `/dashboard/templates/<id>` for the retire band, both server actions over
+ * `lib/member/templates.ts`). `templateDuplicatePath`, `templateDeletePath` and
+ * `CREATE_TEMPLATE_PATH` were deleted rather than aliased, so no caller can rebuild a dead address.
+ * `templateStatusPath` above **stays**: the create flow's stage 1 still posts to it (#870).
  */
-export function templateDeletePath(slug: string): string {
-  return `${relationshipTemplatePath(slug)}/delete`;
-}
-
-/**
- * The template-saving endpoint — a POST-only route handler, so it is not a page and the manifest
- * does not list it (the same split as `/assessment/new`).
- *
- * `/templates/relationship/save` and not `/templates/relationship`: that address is the library
- * page (`RELATIONSHIP_TEMPLATES_PATH`), and a segment cannot hold both. The form posts here and
- * the handler redirects: a save is a POST followed by a GET of either the form (refused, with the
- * reason) or `/assessment` (saved, where the new template is listed). That is what keeps a reload
- * from saving a second copy.
- */
-export const CREATE_TEMPLATE_PATH = `${RELATIONSHIP_TEMPLATES_PATH}/save`;
 
 /**
  * `/dashboard/relationships/[id]` — one relationship's own screen (#619).

@@ -19,9 +19,10 @@ describe("templateWriteReason", () => {
         expect(reason).toContain("an untitled template");
       }
     }
-    // A clone names the source id rather than a title, so the fallback is the id's absence.
-    const clone = templateWriteReason({ action: "cloned-public", scope: "member" });
-    expect(clone).toContain("(dashboard, templates)");
+    // A copy names the source id rather than a title, so the fallback is the id's absence.
+    const copy = templateWriteReason({ action: "copied", scope: "member" });
+    expect(copy).toContain("(dashboard, templates)");
+    expect(copy).toContain("(unknown)");
   });
 
   it("names the action, so the audit row reads as a sentence", () => {
@@ -30,14 +31,24 @@ describe("templateWriteReason", () => {
     ).toMatch(/^Created "Mine" from a blank start \(dashboard, templates\)\.$/);
     expect(
       templateWriteReason({
-        action: "cloned-public",
+        action: "copied",
         scope: "member",
         sourceTemplateId: "template-parent-child",
       }),
-    ).toContain("Cloned public template template-parent-child");
+    ).toContain("Copied template template-parent-child");
     expect(templateWriteReason({ action: "saved", scope: "console", title: "Mine" })).toContain(
       "(console, templates)",
     );
+    // #1109 — the retire band's three sentences name the row they act on.
+    expect(
+      templateWriteReason({ action: "archived", scope: "member", templateId: "assessment-x" }),
+    ).toBe("Archived their own template assessment-x (dashboard, templates).");
+    expect(
+      templateWriteReason({ action: "restored", scope: "member", templateId: "assessment-x" }),
+    ).toContain("Restored their own template assessment-x as a working copy");
+    expect(
+      templateWriteReason({ action: "deleted", scope: "member", templateId: "assessment-x" }),
+    ).toContain("Deleted their own template assessment-x permanently");
   });
 
   it("never names the member surface for a console write, or the reverse", () => {

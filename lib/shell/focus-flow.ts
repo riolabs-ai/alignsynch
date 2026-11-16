@@ -37,9 +37,14 @@
 export const FOCUS_FLOW_PATTERNS: readonly (readonly string[])[] = [
   // The member's own template: the console's editor in its `private` band.
   ["dashboard", "templates", "*"],
-  // The template author's two screens: a blank template, and one started from a catalogue type.
-  // #794 — the template noun owns them: `assessment` is a record kind, and a template is not one.
-  ["templates", "relationship", "new"],
+  // The five-stage create wizard, under the template noun: `assessment` is a record kind, and a
+  // template is not one (#794).
+  //
+  // #1109 — the *authoring form* was the second entry here (`/templates/relationship/new`). It
+  // retired with its page: a template is authored on the dashboard's templates tab now, in the
+  // blank band and the copy band, and neither is a job with an end of its own — the tab is a place
+  // you work from, with the rail as the way back. So the form is not a flow and the flow is the
+  // wizard, which is still one.
   ["templates", "relationship", "*", "create"],
 ];
 
