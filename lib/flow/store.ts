@@ -720,11 +720,20 @@ export async function createInstanceFromTemplate(
     // this column existed actually was; an instant is "the creator wrote this list", which is what
     // V4 validates as structure instead of as equality. One INSERT, no UPDATE path: the column is
     // not in V18's carve-out list and must not become one.
+    //
+    // **`state = 'draft'`, and the publish flag above does not change it (#1100b).** The owner's
+    // ruling: a session row exists from this commit — it is the only home for `mode`, the Setting,
+    // `aspects_authored_at` and the Initiator's seat — but a **draft session is not a live
+    // session**. This transaction writes the Counterparty as `NULL`, so there is no acceptance at
+    // this instant; `claimInvite` is the one write that flips it to `active`, and "accepted but
+    // still draft" is therefore not a state the rows can hold. Publishing (`publishes`, the
+    // create-and-send path) is not the flip either: an invitation that went out to nobody is
+    // exactly the "invited but not started" population the state exists to name.
     await client.query(
       `INSERT INTO session
          (record_id, template_record_id, mode, alignment_setting, relationship_id,
-          aspects_authored_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+          aspects_authored_at, state)
+       VALUES ($1, $2, $3, $4, $5, $6, 'draft')`,
       [
         instanceRecordId,
         found.id,
@@ -1040,6 +1049,35 @@ export async function claimInvite(input: ClaimInput): Promise<ClaimResult> {
         "UPDATE relationship SET status = 'active' WHERE id = $1 AND status = 'published'",
         [relationshipId],
       );
+      // #1100b — **this is the one moment a draft session becomes a live session.** The create
+      // writes the session as `draft` (that is where `mode`, the Setting and the Initiator's seat
+      // live before anybody is invited to them); the Counterparty's seat was inserted three
+      // statements above, in this same transaction. So the flip is written here, beside the status
+      // change it belongs to, and it commits with the seat: there is no window in which the pair
+      // has accepted but the session still reads `draft`. There is deliberately no second write
+      // path — a re-claim is refused above (`already-a-party` / `already-bound`), and the
+      // `state = 'draft'` guard makes a retry a no-op rather than a second flip.
+      //
+      // Scoped to **the session whose invitation was spent**, not to the relationship: one
+      // relationship can hold several rounds, and a later round's draft must not be published by
+      // an earlier round's claim.
+      await client.query(
+        "UPDATE session SET state = 'active' WHERE record_id = $1 AND state = 'draft'",
+        [invite.session_record_id],
+      );
+      // The relationship's own mirror of the seat, bound in the same transaction. `party` is the
+      // fact (`party_session_user_key` makes one account one seat) and this column is what the
+      // console and the demo harness read back; nothing in the product wrote it until now, so a
+      // claimed invitation left it NULL for ever. `IS NULL` keeps it from overwriting a binding an
+      // earlier claim wrote, and a signed-out claim has no account to name — the same NULL the
+      // party row stores.
+      if (claimerUserId !== null) {
+        await client.query(
+          `UPDATE relationship SET counterparty_user_id = $2
+            WHERE id = $1 AND counterparty_user_id IS NULL`,
+          [relationshipId, claimerUserId],
+        );
+      }
     }
     // #coach — the Counterparty is a member of the relationship they just joined, so the
     // relationship's membership mirrors its parties. A signed-out claim has no account and so

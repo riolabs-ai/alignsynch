@@ -113,8 +113,7 @@ describe("the shell's menus", () => {
       "/admin/console",
       "/admin/instances",
       "/admin/gaps",
-      // #920 — the growth model: 36 cohorts to a $3M run-rate, charted from one artifact.
-      "/admin/growth",
+      // #1095 — no growth row: the model charts a simulated business, so the page is URL-only.
       "/admin/billing",
       "/admin/broadcast",
       // #901 — the docs home: the manifest's 117 pages had no way in but the address bar.

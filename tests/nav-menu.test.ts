@@ -107,6 +107,10 @@ describe("the menu descriptor", () => {
    * #929 — the owner's order, restored: the inbox leads the operator group and the log closes it.
    * The two rows that left for `group-support` (the review shelf, the health page) are asserted
    * **absent** here and present in Support below, because "moved" — not "deleted" — is the claim.
+   *
+   * #1095 took the growth row out: the page charts a *modelled* business, so the owner kept the
+   * screen and removed it from the rail. The row is gone from this list, and its absence is
+   * asserted below rather than left implied.
    */
   it("leads the Admin group with the inbox and ends it with the audit log", () => {
     const admin = ALIGN_MENU.find((group) => group.label === "group-admin");
@@ -116,12 +120,28 @@ describe("the menu descriptor", () => {
       "/admin/console",
       "/admin/instances",
       "/admin/gaps",
-      "/admin/growth",
       "/admin/billing",
       "/admin/broadcast",
       "/admin/docs",
       "/admin/audit",
     ]);
+  });
+
+  /**
+   * #1095 — `/admin/growth` is **URL-only**. The owner's ruling kept the page and dropped the
+   * menu row, because a screen charting a simulated business does not belong in an operator's
+   * rail. The assertion is negative on purpose and sits where the positive one lived, so the
+   * absence is proven at every rung instead of going unmentioned — and the route is asserted
+   * present in the same case, because "off the rail" is not "out of the tree".
+   */
+  it("does not draw the growth model, and still resolves its URL", () => {
+    expect(allItems().map((item) => item.href)).not.toContain("/admin/growth");
+    expect(hrefsFor("admin")).not.toContain("/admin/growth");
+    expect(hrefsFor("owner")).not.toContain("/admin/growth");
+    expect(railHrefs("admin")).not.toContain("/admin/growth");
+    expect(railHrefs("owner")).not.toContain("/admin/growth");
+    // The page is untouched: the route still resolves, so the address is still the way in.
+    expect(matchRoute(routeManifest, "/admin/growth")).toBeDefined();
   });
 
   /**
@@ -166,13 +186,15 @@ describe("the ladder decides the rows", () => {
     owner: hrefsFor("owner"),
   };
 
-  /** #929 — the operator group, as the owner ordered it: the inbox first, the log last. */
+  /**
+   * #929 — the operator group, as the owner ordered it: the inbox first, the log last.
+   * #1095 — the growth row is gone; the page is URL-only, so no rung draws it.
+   */
   const ADMIN_GROUP = [
     "/admin/inbox",
     "/admin/console",
     "/admin/instances",
     "/admin/gaps",
-    "/admin/growth",
     "/admin/billing",
     "/admin/broadcast",
     "/admin/docs",
@@ -256,8 +278,9 @@ describe("the ladder decides the rows", () => {
     // the help pair — #929's arrangement, asserted rather than assumed.
     expect(MENUS.admin).toContain("/admin/review");
     expect(MENUS.admin).toContain("/admin/health");
-    // #920's growth row and #901's docs row survived the move; nine rows in the operator group.
-    expect(ADMIN_GROUP).toHaveLength(9);
+    // #901's docs row survived the move; #1095 removed the growth row, so eight rows in the
+    // operator group.
+    expect(ADMIN_GROUP).toHaveLength(8);
   });
 
   /**
@@ -281,8 +304,8 @@ describe("the ladder decides the rows", () => {
 
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
-    // #920 added one operator row, so the two staff rungs carry 16 each.
-    expect(counts).toEqual([5, 6, 16, 16]);
+    // #920 added one operator row and #1095 removed it again, so the two staff rungs carry 15.
+    expect(counts).toEqual([5, 6, 15, 15]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);

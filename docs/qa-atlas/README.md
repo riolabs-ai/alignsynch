@@ -6,6 +6,13 @@
 
 <!-- docs-nav:end -->
 
+> **Deferred (2026-11-15) — the atlas is no longer gate-enforced.** The owner deferred all atlas
+> generation and took `qa:atlas:check` out of `scripts/verify.sh`, until the capture is refactored to
+> see the auth modal, the stage-form embeds, sign-in/sign-up and the Stripe steps. Nothing was
+> deleted: `pnpm qa:atlas:check` still runs on request, over the same current cut and against the
+> same rules the gate applied, and that is where the atlas's state is read from now.
+> **Reactivation is the owner's decision** (issue #1094) — a request, not a checklist item.
+
 One document per release that answers the question a hash cannot: **does every surface still render
 the record it claims?**
 
@@ -61,10 +68,11 @@ pruned `v1.18.0` (1.73 MB) and its `docs.json` row, leaving the current cut plus
 | `v1.20.0` | 1.66 MB | past #1                                          |
 | `v1.19.0` | 1.66 MB | past #2                                          |
 
-Two commands, and only one of them runs in the gate:
+Two commands, and neither runs in the gate — `qa:atlas:check` since the 2026-11-15 deferral,
+`qa:atlas:prune` never:
 
 ```bash
-pnpm qa:atlas:check   # a gate step: FAILS when the tree holds more cuts than the window
+pnpm qa:atlas:check   # the check: FAILS when the tree holds more cuts than the window
 pnpm qa:atlas:prune   # removes them with `git rm -r`; NEVER a gate step
 ```
 
@@ -101,7 +109,7 @@ recorded as failing — `/assessment/instances/[instanceId]/sent`, `/admin/insta
 ## Running a capture
 
 The capture needs a running server and the demo branch's own rows, which is why it is **not** a gate
-step. The static half is.
+step. Neither is the static half any more — it runs by hand, on request (see the note at the top).
 
 ```bash
 export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
@@ -138,13 +146,14 @@ written into `manifest.json` as `captureCommit`, and printed in the document bes
 pnpm qa:atlas:check
 ```
 
-Static on purpose — no browser, no connection, nothing from `lib/db/**` — so it runs in the gate in
-every lane. It fails, by route name, when:
+Static on purpose — no browser, no connection, nothing from `lib/db/**` — so it runs anywhere,
+including a docs-only change, and needed no environment of its own while it was a gate step. It
+fails, by route name, when:
 
 - a route `data/pages/budget.ts` registers has no row in the current version's `manifest.json` (or the
   manifest carries a route the registry does not know), **or the tree's version has no atlas at all** —
-  which is why a release cut carries one: bumping `package.json` without capturing turns the gate red,
-  by design, and the step says which version is undocumented. A release the atlas cannot see may ship
+  which is why a release cut used to carry one: bumping `package.json` without capturing fails this
+  check, by design, and it says which version is undocumented. A release the atlas cannot see may ship
   anyway **only** by being declared in [`DEFERRED.md`](DEFERRED.md), and the pass says so out loud;
 - a row's `expected` status disagrees with the boundary table, or a capture whose measured status
   differs is reported as anything other than a `fail` — publishing a real mismatch is the atlas's job,
@@ -175,7 +184,7 @@ must exist) and saying which surfaces the atlas cannot yet cover. The rule is st
 stale row, a reasonless row, a placeholder reason and an unresolvable commit each fail by name, and
 a version that is both captured and deferred is a contradiction the check refuses.
 
-A declared deferral is not a quiet pass. Every gate run prints it first:
+A declared deferral is not a quiet pass. Every run prints it first:
 
 ```text
 ⚑ v1.20.0 deferred · <reason> — no atlas captures this release, and docs/qa-atlas/DEFERRED.md is the record of it

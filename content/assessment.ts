@@ -585,6 +585,26 @@ export function seededLifecycleOf(instance: {
 }
 
 /**
+ * **The session state a lifecycle implies** (#1100b): a `draft` session or a live one.
+ *
+ * The seat decides it, and nothing else — `seats: "initiator"` is a relationship whose Counterparty
+ * has not joined (`draft` and `pending`: the invitation may be in the post, but nobody accepted it),
+ * `seats: "both"` is one where they have. That is the same fact `scripts/db-verify.mjs` V33 reads
+ * back from the `party` rows and `lib/flow/store.ts::claimInvite` writes, so the seeded branch and
+ * the product cannot disagree about which sessions are live.
+ *
+ * It is deliberately **not** `accepted`. Acceptance (`party.accepted_at`, #R2) is a later act on a
+ * session that is already live: a `published` relationship has both seats and a sheet in progress,
+ * and hiding it as a draft would delete the demo's most important screen — "sent, being answered".
+ *
+ * Pure, like the rest of this module: one derivation, three readers (the seed writes it, V33
+ * compares the rows back to it, `tests/demo-dataset-coverage.test.ts` counts it).
+ */
+export function sessionStateOf(lifecycle: DerivedLifecycle): "draft" | "active" {
+  return lifecycle.seats === "both" ? "active" : "draft";
+}
+
+/**
  * How many `party` and `opinion` rows one instance writes (#1079, #1083).
  *
  * A bundle authors the **whole sheet** — both parties, every Aspect — and the lifecycle decides how
