@@ -12,13 +12,13 @@
  *   pnpm bundles import <file>                → validate, then write the tenant store
  *
  * **The store is `data/generated/assessments.json`** (gitignored), holding the canonical
- * `{ templates, instances }` payload. It is *the active set*: when the file is present it
+ * `{ templates, sessions }` payload. It is *the active set*: when the file is present it
  * supersedes `data/assessments.ts` for export and for `data:check`'s E1/E2/E31, and deleting
  * it resets the tenant to the fixtures. `data/assessments.ts` stays untouched — it is the
  * demo bundle's source.
  *
- * **Import refuses; it never rewrites.** Nothing is renamed, remapped or suffixed in bundle
- * version 1. A dataset import *replaces* the store (it is an install, so re-running it is
+ * **Import refuses; it never rewrites.** Nothing is renamed, remapped or suffixed in a bundle
+ * this build writes. A dataset import *replaces* the store (it is an install, so re-running it is
  * idempotent and there is no collision to have). A template import appends: if no store
  * exists the fixtures are materialized into it first — this is the moment a tenant stops
  * borrowing our fixtures and owns its data — and any collision with the active set is `B5`,
@@ -28,7 +28,7 @@
  * leaves a half-written bundle or a half-imported store: a rejected import leaves the store
  * byte-identical or absent, and unlinks its temporary file. A failed export leaves nothing.
  *
- * The codes are the six in `scripts/rule-codes.ts`: `B1`–`B4`/`B6` are minted by
+ * The codes are the nine in `scripts/rule-codes.ts`: `B1`–`B4`/`B6`/`B9` are minted by
  * `content/bundle.ts`, and `B5` here — a collision is a fact about the store, so a bundle on
  * its own cannot violate it.
  */
@@ -39,13 +39,16 @@ import type { Assessment, AssessmentSession } from "../content/assessment";
 import {
   BUNDLE_FORMAT,
   BUNDLE_VERSION,
+  LEGACY_BUNDLE_VERSION,
   canonicalDemoBundle,
   datasetCollectionProblems,
   formatBundleIssue,
+  normalizeLegacyDatasetPayload,
   parseBundle,
   serializeBundle,
   serializeDatasetPayload,
   zDatasetPayload,
+  zLegacyDatasetPayload,
   type Bundle,
   type BundleKind,
   type DatasetBundle,
@@ -99,6 +102,7 @@ type BundleErrorCode =
   | "B6"
   | "B7"
   | "B8"
+  | "B9"
   | "usage"
   | "io"
   /** Not a bundle's fault: the shell has no credential for the step that was asked for. */
@@ -133,7 +137,7 @@ export const exitCodeFor = (error: BundleError): number => (error.code === "usag
 
 export interface StoreRecords {
   readonly templates: readonly Assessment[];
-  readonly instances: readonly AssessmentSession[];
+  readonly sessions: readonly AssessmentSession[];
 }
 
 /** Absent (the fixtures are active) · invalid (E33's finding) · valid (the active set). */
@@ -147,6 +151,13 @@ export type StoreRead =
  * of the first. The rules are the bundle's own: the payload shape (a store is a dataset
  * payload, not an envelope — it is what an import installs), then the collection rules
  * (B3). `E33` prints what this returns.
+ *
+ * **Two shapes, one active set.** The store is gitignored and every build before #1103 phase 3
+ * wrote it under the version-1 key. A tree that upgrades with a store in place would otherwise
+ * answer E33 "invalid" for a file nobody edited — a data-looking failure for a format change —
+ * so a v1 store is read and normalized exactly as a v1 bundle is, and the next import or export
+ * writes the current shape. Reading never rewrites: the file on disk stays what it was until a
+ * command that writes it runs.
  */
 export function readStore(file: string = STORE_FILE): StoreRead {
   if (!existsSync(file)) return { kind: "absent" };
@@ -162,16 +173,25 @@ export function readStore(file: string = STORE_FILE): StoreRead {
   }
 
   const payload = zDatasetPayload.safeParse(raw);
-  if (!payload.success) {
+  let records: DatasetPayload | undefined;
+  if (payload.success) {
+    records = payload.data;
+  } else {
+    const legacy = zLegacyDatasetPayload.safeParse(raw);
+    if (legacy.success) records = normalizeLegacyDatasetPayload(legacy.data);
+  }
+
+  if (records === undefined) {
+    const failed = payload.success ? [] : payload.error.issues;
     return {
       kind: "invalid",
-      problems: payload.error.issues.map(
+      problems: failed.map(
         (issue) => `${displayPath(file)} ${["root", ...issue.path].join(".")}: ${issue.message}`,
       ),
     };
   }
 
-  const collection = datasetCollectionProblems(payload.data);
+  const collection = datasetCollectionProblems(records);
   if (collection.length > 0) {
     return {
       kind: "invalid",
@@ -179,7 +199,7 @@ export function readStore(file: string = STORE_FILE): StoreRead {
     };
   }
 
-  return { kind: "valid", records: payload.data };
+  return { kind: "valid", records };
 }
 
 /**
@@ -197,7 +217,7 @@ function activeRecords(file: string): { records: StoreRecords; fromStore: boolea
     );
   }
   return {
-    records: { templates: [...assessments], instances: [...assessmentSessions] },
+    records: { templates: [...assessments], sessions: [...assessmentSessions] },
     fromStore: false,
   };
 }
@@ -242,7 +262,7 @@ export function readAppVersion(): string {
 function buildDatasetBundle(
   records: {
     readonly templates: readonly Assessment[];
-    readonly instances: readonly AssessmentSession[];
+    readonly sessions: readonly AssessmentSession[];
   },
   appVersion: string,
 ): DatasetBundle {
@@ -252,7 +272,7 @@ function buildDatasetBundle(
       bundleVersion: BUNDLE_VERSION,
       kind: "dataset" as const,
       appVersion,
-      payload: { templates: [...records.templates], instances: [...records.instances] },
+      payload: { templates: [...records.templates], sessions: [...records.sessions] },
     }),
   );
   if (!parsed.ok) {
@@ -278,7 +298,7 @@ function collisionProblems(active: StoreRecords, template: Assessment): BundleIs
   const issues: BundleIssueList = [];
   const where = (id: string) => {
     if (active.templates.some((existing) => existing.id === id)) return "the active templates";
-    if (active.instances.some((existing) => existing.id === id)) return "the active instances";
+    if (active.sessions.some((existing) => existing.id === id)) return "the active sessions";
     return undefined;
   };
 
@@ -326,11 +346,13 @@ export interface ImportResult {
   readonly kind: BundleKind;
   readonly store: string;
   readonly templates: number;
-  readonly instances: number;
+  readonly sessions: number;
   /** True when this import turned the fixtures into the store before appending. */
   readonly materialized: boolean;
   /** The template id appended, or `null` for a dataset install. */
   readonly added: string | null;
+  /** True when the file was a `bundleVersion: 1` document, read and normalized. */
+  readonly deprecated: boolean;
 }
 
 /**
@@ -378,7 +400,7 @@ export function importBundleFile(file: string, options: ImportOptions = {}): Imp
     added = bundle.payload.id;
     records = {
       templates: [...active.records.templates, bundle.payload],
-      instances: [...active.records.instances],
+      sessions: [...active.records.sessions],
     };
   }
 
@@ -391,9 +413,10 @@ export function importBundleFile(file: string, options: ImportOptions = {}): Imp
     kind: bundle.kind,
     store: storePath,
     templates: next.payload.templates.length,
-    instances: next.payload.instances.length,
+    sessions: next.payload.sessions.length,
     materialized,
     added,
+    deprecated: parsed.legacy === true,
   };
 }
 
@@ -544,10 +567,10 @@ export function writeDemoBundle(options: DemoBundleOptions = {}): ExportResult<D
  * ------------------------------------------------------------------ */
 
 const USAGE = [
-  "usage: pnpm bundles export --dataset [--out <file>]",
-  "       pnpm bundles export --template <id> [--out <file>]",
+  "usage: pnpm bundles export --dataset [--out <file>] [--store <file>]",
+  "       pnpm bundles export --template <id> [--out <file>] [--store <file>]",
   "       pnpm bundles export --dataset --check | --fix",
-  "       pnpm bundles import <file>",
+  "       pnpm bundles import <file> [--store <file>]",
 ].join("\n");
 
 const usageError = (detail?: string): BundleError =>
@@ -563,6 +586,7 @@ function runExport(args: readonly string[]): number {
   let dataset = false;
   let template: string | undefined;
   let out: string | undefined;
+  let store: string | undefined;
   let check = false;
   let fix = false;
 
@@ -575,6 +599,9 @@ function runExport(args: readonly string[]): number {
     } else if (arg === "--out") {
       out = value(args, index, "--out");
       index += 1;
+    } else if (arg === "--store") {
+      store = value(args, index, "--store");
+      index += 1;
     } else if (arg === "--check") check = true;
     else if (arg === "--fix") fix = true;
     else throw usageError(`unknown flag "${arg}"`);
@@ -584,6 +611,9 @@ function runExport(args: readonly string[]): number {
   if (check && fix) throw usageError("--check and --fix are exclusive");
   if ((check || fix) && template !== undefined) {
     throw usageError("--check and --fix compare the demo dataset, so they take --dataset");
+  }
+  if ((check || fix) && store !== undefined) {
+    throw usageError("--check and --fix compare the demo bundle, so they take no --store");
   }
   if (!dataset && template === undefined) throw usageError("export needs --dataset or --template");
 
@@ -602,22 +632,22 @@ function runExport(args: readonly string[]): number {
   if (fix) {
     const written = writeDemoBundle({ file: out });
     process.stdout.write(
-      `wrote ${displayPath(written.file)} — ${written.bundle.payload.templates.length} templates, ${written.bundle.payload.instances.length} instances (bundleVersion ${BUNDLE_VERSION}, appVersion ${written.bundle.appVersion})\n`,
+      `wrote ${displayPath(written.file)} — ${written.bundle.payload.templates.length} templates, ${written.bundle.payload.sessions.length} sessions (bundleVersion ${BUNDLE_VERSION}, appVersion ${written.bundle.appVersion})\n`,
     );
     return 0;
   }
 
   if (dataset) {
-    const written = exportDataset({ out });
+    const written = exportDataset({ out, store });
     process.stdout.write(
-      `wrote ${displayPath(written.file)} — dataset: ${written.bundle.payload.templates.length} templates, ${written.bundle.payload.instances.length} instances (bundleVersion ${BUNDLE_VERSION}, appVersion ${written.bundle.appVersion})\n`,
+      `wrote ${displayPath(written.file)} — dataset: ${written.bundle.payload.templates.length} templates, ${written.bundle.payload.sessions.length} sessions (bundleVersion ${BUNDLE_VERSION}, appVersion ${written.bundle.appVersion})\n`,
     );
     return 0;
   }
 
   const templateId = template;
   if (templateId === undefined) throw usageError("export needs --dataset or --template");
-  const written = exportTemplate(templateId, { out });
+  const written = exportTemplate(templateId, { out, store });
   process.stdout.write(
     `wrote ${displayPath(written.file)} — template "${written.bundle.payload.id}" with ${written.bundle.payload.items.length} aspects (bundleVersion ${BUNDLE_VERSION}, appVersion ${written.bundle.appVersion})\n`,
   );
@@ -625,13 +655,33 @@ function runExport(args: readonly string[]): number {
 }
 
 function runImport(args: readonly string[]): number {
-  const file = args[0];
-  if (file === undefined) throw usageError("import needs a bundle file");
-  if (args.length > 1) throw usageError(`import takes one file, got ${args.length}`);
-  if (file.startsWith("--")) throw usageError(`unknown flag "${file}"`);
+  let file: string | undefined;
+  let store: string | undefined;
 
-  const result = importBundleFile(file);
-  const counts = `${result.templates} templates, ${result.instances} instances`;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--store") {
+      store = value(args, index, "--store");
+      index += 1;
+    } else if (arg.startsWith("--")) {
+      throw usageError(`unknown flag "${arg}"`);
+    } else if (file !== undefined) {
+      throw usageError(`import takes one file, got more than one ("${file}", "${arg}")`);
+    } else {
+      file = arg;
+    }
+  }
+
+  if (file === undefined) throw usageError("import needs a bundle file");
+
+  const result = importBundleFile(file, { store });
+  const counts = `${result.templates} templates, ${result.sessions} sessions`;
+  // One line, and only when it happened: a legacy document is tolerated, not blessed.
+  if (result.deprecated) {
+    process.stderr.write(
+      `bundle: legacy instances key accepted (deprecated)\n  ${displayPath(file)} is bundleVersion ${LEGACY_BUNDLE_VERSION} — read as bundleVersion ${BUNDLE_VERSION}, and the store is written in the current shape (payload.sessions); export it again to leave the old key behind\n`,
+    );
+  }
   if (result.kind === "dataset") {
     process.stdout.write(
       `imported ${displayPath(file)} as a dataset — replaced ${displayPath(result.store)} (${counts})\n`,

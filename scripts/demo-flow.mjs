@@ -1956,7 +1956,7 @@ async function seedDrift(client) {
   const authored = [
     ...(payload.templates ?? []).map((record) => record.id),
     ...(payload.records ?? []).map((record) => record.id),
-    ...(payload.instances ?? []).map((record) => record.id),
+    ...(payload.sessions ?? []).map((record) => record.id),
     ...(payload.assessments ?? []).map((record) => record.id),
   ].filter((id) => typeof id === "string");
   if (authored.length === 0) return { checked: false, extra: [] };

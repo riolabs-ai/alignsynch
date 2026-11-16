@@ -1511,13 +1511,13 @@ async function main() {
       // `data/assessments.ts` proves which setting a seeded instance actually plays under.
       const authored = authoredSettingOf.get(listed.recordId);
       if (authored !== undefined) {
-        if (rows.instance.setting !== authored) {
+        if (rows.session.setting !== authored) {
           fail(
             "V12",
-            `instance "${listed.slug}" carries Setting "${rows.instance.setting}", but data/assessments.ts authors "${authored}" (run \`pnpm db:seed\`)`,
+            `session "${listed.slug}" carries Setting "${rows.session.setting}", but data/assessments.ts authors "${authored}" (run \`pnpm db:seed\`)`,
           );
         }
-        settingsChecked.push({ slug: listed.slug, setting: rows.instance.setting });
+        settingsChecked.push({ slug: listed.slug, setting: rows.session.setting });
       }
 
       // A fixture instance is answered as far as its dataset authors, and a **complete** flow

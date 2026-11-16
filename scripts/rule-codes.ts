@@ -230,7 +230,7 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     owner:
       "bundle import/export (scripts/bundles.ts, scripts/bundle-platform.ts, content/bundle.ts — issues #147, #899)",
     // Three files, because each code is minted where its rule lives: `content/bundle.ts`
-    // detects B1–B4/B6 (a document), `scripts/bundles.ts` mints B5 (a collision with the active
+    // detects B1–B4/B6/B9 (a document), `scripts/bundles.ts` mints B5 (a collision with the active
     // store), and `scripts/bundle-platform.ts` mints B7 and B8 (a package against this tree, a
     // subset against its own references). Declaring all three keeps "one code, one owner" true
     // without pretending the model module is a script.
@@ -241,9 +241,10 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
       B3: "dataset collection — an id or a slug twice, a `templateId` outside the bundle, or a copy that drifted",
       B4: "forbidden key — a key that names a credential (`token`, `secret`, `password`, `apiKey`, `key`, `pin`), wherever it sits",
       B5: "a template import colliding with the active store's id or `type/slug` — the import refuses rather than rewriting",
-      B6: "`bundleVersion` — this build reads 1 and 2",
+      B6: "`bundleVersion` — this build reads 1, 2 and 3",
       B7: "build identity — the package's `schemaVersion` / `lockfileSha256` is not this tree's, so it refuses before writing",
       B8: "a package that drops a record something it keeps still references — a persona a relationship names, media a record renders",
+      B9: "the record-array key disagrees with the version — `payload.instances` under a v3 document, `payload.sessions` under a v1 one, or both keys in one payload",
     },
   },
 ];

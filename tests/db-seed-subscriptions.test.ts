@@ -34,7 +34,7 @@ const BUNDLE_PATH = new URL("../data/bundles/demo-dataset.alignsynch.json", impo
 const EXPECTATIONS_PATH = new URL("../data/verify/demo-expectations.json", import.meta.url);
 
 interface DatasetBundle {
-  readonly payload: { readonly instances: unknown[] };
+  readonly payload: { readonly sessions: unknown[] };
 }
 
 interface Expectations {
@@ -45,7 +45,7 @@ const bundle = JSON.parse(readFileSync(BUNDLE_PATH, "utf8")) as DatasetBundle;
 const expectations = JSON.parse(readFileSync(EXPECTATIONS_PATH, "utf8")) as Expectations;
 
 /** The bundle's sessions, through the model — a bundle that drifts fails here, not in a seed. */
-const bundleSessions = zAssessmentSession.array().parse(bundle.payload.instances);
+const bundleSessions = zAssessmentSession.array().parse(bundle.payload.sessions);
 
 const planOf = (session: AssessmentSession) => seededLifecycleOf(session).plan;
 

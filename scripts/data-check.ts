@@ -293,7 +293,7 @@ if (store.kind === "invalid") {
 /** The active assessment collections: the store when it is valid, the fixtures when absent. */
 const activeAssessmentRecords =
   store.kind === "valid" ? store.records.templates : assessmentRecords;
-const activeSessionRecords = store.kind === "valid" ? store.records.instances : sessionRecords;
+const activeSessionRecords = store.kind === "valid" ? store.records.sessions : sessionRecords;
 
 /* the whole taxonomy table, in one pass */
 const categoryTable: readonly Category[] = taxonomyTable;
