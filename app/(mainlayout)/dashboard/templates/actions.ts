@@ -31,15 +31,21 @@ import {
   slugify,
   type TemplateFormPayload,
   type TemplateSaveOutcome,
+  type TemplateVersionFormPayload,
+  type TemplateVersionOutcome,
   validateTemplateRecord,
 } from "@/lib/admin/template-draft";
 import { currentUser } from "@/lib/auth/session";
-import { templateWriteReason } from "@/lib/member/template-reasons";
+import { templateWriteReason, type TemplateWriteAction } from "@/lib/member/template-reasons";
 import {
+  archiveMyTemplate,
   clonePublicTemplate,
   createPrivateTemplate,
+  deleteMyTemplate,
   MemberTemplateRefused,
+  restoreMyTemplate,
   savePrivateTemplate,
+  type MemberTemplateRetireRequest,
 } from "@/lib/member/templates";
 
 /** A payload field as a trimmed string; anything else is empty, so zod names the hole. */
@@ -112,11 +118,16 @@ export async function createPrivate(payload: TemplateFormPayload): Promise<Templ
 }
 
 /**
- * Clone a public template into one of the member's own.
+ * Copy a template into one of the member's own — a catalogue one, or one they already own.
  *
  * The payload is the source's id alone — no record, because the copy is taken from the **stored**
  * rows inside the transaction, and no reason, because the audit sentence is composed here. A body
  * that carried a record would be able to copy words the catalogue never offered.
+ *
+ * **Two sources, one control** (#1109): the catalogue's published templates, and the member's own.
+ * The second is the "duplicate" action the retired `/templates/relationship` row menu offered, and
+ * this band is where it lives now. Which of the two a body names is decided by the write, not by
+ * this action: it hands the id over and the transaction refuses anything the member may not copy.
  */
 export async function clonePublic(payload: { templateId?: string }): Promise<TemplateSaveOutcome> {
   const user = await currentUser();
@@ -129,7 +140,7 @@ export async function clonePublic(payload: { templateId?: string }): Promise<Tem
     const result = await clonePublicTemplate({
       actorUserId: user.userId,
       reason: templateWriteReason({
-        action: "cloned-public",
+        action: "copied",
         scope: "member",
         sourceTemplateId: templateId,
       }),
@@ -164,4 +175,71 @@ export async function savePrivate(payload: TemplateFormPayload): Promise<Templat
   } catch (error) {
     return refusalOf(error);
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * Retire — archive, restore, destroy the member's own template (#1109)
+ * ------------------------------------------------------------------ */
+
+/** The one body the three retire actions share, so the fourth one cannot silently lose the gate. */
+async function retirePrivate(
+  payload: TemplateVersionFormPayload,
+  write: (request: MemberTemplateRetireRequest) => Promise<{ readonly actionId: string }>,
+  action: Extract<TemplateWriteAction, "archived" | "restored" | "deleted">,
+): Promise<TemplateVersionOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const templateId = text(payload.templateId);
+  if (templateId === "") return { ok: false, code: "no-such-template" };
+
+  try {
+    const result = await write({
+      actorUserId: user.userId,
+      reason: templateWriteReason({ action, scope: "member", templateId }),
+      templateId,
+    });
+    /**
+     * `version: 0` and not a version number: a member's template carries no `template_version` row
+     * (publishing to the catalogue is the console's), and this outcome's `version` is the field the
+     * retire band does not print. `actionId` is what the notice names, and it is real.
+     */
+    return { ok: true, version: 0, actionId: result.actionId };
+  } catch (error) {
+    if (error instanceof ActRefused) return { ok: false, code: error.reason };
+    if (error instanceof MemberTemplateRefused) return { ok: false, code: error.reason };
+    throw error;
+  }
+}
+
+/**
+ * Archive one of the member's own templates.
+ *
+ * The retired `/templates/relationship` listing carried this as a row action, and until #1109 it was
+ * the only UI for it: the editor's retire band existed but the private page passed no handler.
+ */
+export async function archivePrivate(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return retirePrivate(payload, archiveMyTemplate, "archived");
+}
+
+/** Put an archived template back in hand — as a working copy (`draft`), never as an offer. */
+export async function restorePrivate(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return retirePrivate(payload, restoreMyTemplate, "restored");
+}
+
+/**
+ * Destroy a template no reader can reach.
+ *
+ * The destructive one, and the gate is not the dialog: `deleteMyTemplate()` refuses a row any
+ * relationship was created from and a row with a published version, and writes nothing when it
+ * refuses. The editor's `AlertDialog` is a confirmation, never the rule.
+ */
+export async function deletePrivate(
+  payload: TemplateVersionFormPayload,
+): Promise<TemplateVersionOutcome> {
+  return retirePrivate(payload, deleteMyTemplate, "deleted");
 }

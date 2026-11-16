@@ -36,10 +36,12 @@ export const assessmentPageCopy: PageCopy = zPageCopy.parse({
        */
       body: "Pick the template you want and press Create Relationship. It opens the guided setup — who you are inviting, the settings, the Aspects you will both answer — and the invitation only goes out at the end, once the plan is chosen.",
       cta: {
-        // The authoring form (#255). A `cta` and not a bare href in the view: the path is then
-        // resolved against `content/routes.ts` by E23, so a moved form is a red build and not a 404.
+        // The authoring band on the dashboard's templates tab (#1109). A `cta` and not a bare href
+        // in the view: the path is then resolved against `content/routes.ts` by E10, so a moved
+        // form is a red build and not a 404 — which is exactly how `/templates/relationship/new`
+        // was caught when it retired.
         label: "Write your own template",
-        href: "/templates/relationship/new",
+        href: "/dashboard/templates?tab=mine",
       },
     },
     {

@@ -191,7 +191,7 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       id: "create",
       heading: "Write one",
       body: "A template is a title and up to eight Aspects, each with a Left and a Right Value. Relationships copy those Aspects when they are created, so editing later never reaches an answer somebody already gave.",
-      cta: { label: "Write a template", href: "/templates/relationship/new" },
+      cta: { label: "Write a template", href: "/dashboard/templates?tab=mine" },
     },
     {
       id: "legacy",
@@ -202,7 +202,7 @@ export const templateLibraryPageCopy: PageCopy = zPageCopy.parse({
       id: "empty",
       heading: "No template yet",
       body: "This account can use no template: nothing built in, and nothing written. Write one to have something to start a relationship from.",
-      cta: { label: "Write a template", href: "/templates/relationship/new" },
+      cta: { label: "Write a template", href: "/dashboard/templates?tab=mine" },
     },
     {
       id: "no-match",

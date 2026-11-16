@@ -35,15 +35,17 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("the focused flows", () => {
-  it("covers the member's template editor and both template authors", () => {
+  it("covers the member's template editor and the create wizard", () => {
     for (const pathname of [
       "/dashboard/templates/abc123",
-      // #794 — the template author's screens moved under the template noun.
-      "/templates/relationship/new",
+      // #794 — the create wizard moved under the template noun. #1109 retired the authoring form
+      // that used to sit beside it: authoring happens on the dashboard's templates tab now, in the
+      // blank and copy bands, and that tab is a list page, not a flow with an exit of its own.
       "/templates/relationship/abc123/create",
     ]) {
       expect(isFocusedFlow(pathname), pathname).toBe(true);
     }
+    expect(isFocusedFlow("/templates/relationship/new")).toBe(false);
   });
 
   it("leaves the relationship detail under the rail — a destination is not a flow (#873)", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-// template-ancestor: components/assessment-flow/template-form.tsx   (variation: mode and round-count selects with a bullet description per option, before the lobby opens)
+// template-ancestor: components/ui/form-surface.tsx   (variation: mode and round-count selects with a bullet description per option, before the lobby opens)
 
 import { Button } from "@/components/ui/button";
 import {
