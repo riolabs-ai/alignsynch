@@ -44,6 +44,14 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 <!-- changelog-view:begin index -->
 <!-- generated from CHANGELOG.md by scripts/changelog-view.mjs — edit the entry, not this block -->
 
+### [v1.21.0](v1-21-0.md)
+
+- **Released** 2026-11-16
+- **Tag** [`v1.21.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.21.0)
+- **Pull requests named** 26
+- **Theme:** a draft session is not a live session — the row a create writes now carries the state that says whether anybody joined, an invitation names its relationship, and the demo finally seeds both halves of the console
+- **Headline:** feat(demo) — #1081 — seed the admin half so the console rail is not empty states (#1104)
+
 ### [v1.20.1](v1-20-1.md)
 
 - **Released** 2026-11-14

@@ -18,7 +18,7 @@
  * exits non-zero, on the bytes in `docs/qa-atlas/`, with a message that names what is wrong.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,6 +30,12 @@ import {
   coverageProblems,
   currentVersion,
 } from "../scripts/qa-atlas-registry.mjs";
+import {
+  commitResolves,
+  deferralFor,
+  deferralProblems,
+  parseDeferrals,
+} from "../scripts/qa-atlas-deferral.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CHECK = join(ROOT, "scripts/qa-atlas-check.mjs");
@@ -80,11 +86,21 @@ function check(dir: string) {
   );
 }
 
-/** The rows the committed atlas ships, for the pure cases. */
-const ROWS = manifestOf(ROOT).routes;
-const COVERAGE = manifestOf(ROOT).coverage;
+/**
+ * The rows the committed atlas ships, for the pure cases.
+ *
+ * A tree whose own version has **no** manifest is a release that shipped without a sweep — #1094
+ * stopped atlas generation until a capture can see what a release changes, and `DEFERRED.md` is the
+ * record of it. The suites below measure a sweep, so on that tree they are skipped rather than
+ * pointed at the previous cut's manifest: reading someone else's numbers would assert a sweep that
+ * did not happen. The last describe keeps the tree from skipping in silence — it fails unless the
+ * deferral row for this very version is present and well formed.
+ */
+const HAS_MANIFEST = existsSync(join(ROOT, ATLAS, "manifest.json"));
+const ROWS = HAS_MANIFEST ? manifestOf(ROOT).routes : [];
+const COVERAGE = HAS_MANIFEST ? manifestOf(ROOT).coverage : {};
 
-describe("a capture refuses to measure a build that is not its tree", () => {
+describe.skipIf(!HAS_MANIFEST)("a capture refuses to measure a build that is not its tree", () => {
   it("proceeds when /api/version names this tree and this version", () => {
     expect(
       captureRefusal({
@@ -141,7 +157,7 @@ describe("a capture refuses to measure a build that is not its tree", () => {
   });
 });
 
-describe("the coverage block describes the rows it ships with", () => {
+describe.skipIf(!HAS_MANIFEST)("the coverage block describes the rows it ships with", () => {
   it("is satisfied by the committed block", () => {
     expect(coverageProblems({ coverage: COVERAGE, rows: ROWS })).toEqual([]);
   });
@@ -184,7 +200,7 @@ describe("the coverage block describes the rows it ships with", () => {
   });
 });
 
-describe("pnpm qa:atlas:check on the bytes it would gate", () => {
+describe.skipIf(!HAS_MANIFEST)("pnpm qa:atlas:check on the bytes it would gate", () => {
   it("is green on the committed atlas", () => {
     const dir = sandbox();
     const result = check(dir);
@@ -229,4 +245,26 @@ describe("pnpm qa:atlas:check on the bytes it would gate", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("must describe the rows it ships with");
   }, 120_000);
+});
+
+/**
+ * The other half of the skip above: a tree with no manifest for its own version must **record** that,
+ * which is the whole point of `docs/qa-atlas/DEFERRED.md` (#1094). A release that skipped these
+ * suites and wrote no row would be a release that could not answer "was this build measured?" at all.
+ */
+describe("a release that ships without a sweep defers it in writing", () => {
+  it.skipIf(HAS_MANIFEST)("names this version, and the row survives every field rule", () => {
+    const { rows } = parseDeferrals(readFileSync(join(ROOT, "docs/qa-atlas/DEFERRED.md"), "utf8"));
+    const row = deferralFor(rows, currentVersion());
+
+    expect(row, `DEFERRED.md carries no row for v${currentVersion()}`).toBeDefined();
+    if (row === undefined) return;
+    expect(
+      deferralProblems({
+        row,
+        version: currentVersion(),
+        resolves: (sha) => commitResolves(ROOT, sha),
+      }),
+    ).toEqual([]);
+  });
 });
