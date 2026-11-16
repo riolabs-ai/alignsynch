@@ -145,11 +145,11 @@ describe("the mounting is declared once, and forwarded", () => {
 
   /** The five route files that render them — thin, and request-time (`dynamic` lives here). */
   const STAGE_ROUTES = [
-    "app/(mainlayout)/dashboard/templates/[slug]/create/page.tsx",
-    "app/(mainlayout)/dashboard/templates/[slug]/create/mode/page.tsx",
-    "app/(mainlayout)/dashboard/templates/[slug]/create/aspects/page.tsx",
-    "app/(mainlayout)/dashboard/templates/[slug]/create/commit/page.tsx",
-    "app/(mainlayout)/dashboard/templates/[slug]/create/invite/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[id]/create/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[id]/create/mode/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[id]/create/aspects/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[id]/create/commit/page.tsx",
+    "app/(mainlayout)/dashboard/templates/[id]/create/invite/page.tsx",
   ] as const;
 
   const INTERCEPTED = [

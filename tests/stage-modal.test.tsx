@@ -197,11 +197,11 @@ describe("the surfaces the shell wraps outside the four stages", () => {
 
   it("keeps every stage route a page of its own — no interception, no second flow", () => {
     const pages = [
-      "app/(mainlayout)/dashboard/templates/[slug]/create/page.tsx",
-      "app/(mainlayout)/dashboard/templates/[slug]/create/mode/page.tsx",
-      "app/(mainlayout)/dashboard/templates/[slug]/create/aspects/page.tsx",
-      "app/(mainlayout)/dashboard/templates/[slug]/create/commit/page.tsx",
-      "app/(mainlayout)/dashboard/templates/[slug]/create/invite/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[id]/create/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[id]/create/mode/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[id]/create/aspects/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[id]/create/commit/page.tsx",
+      "app/(mainlayout)/dashboard/templates/[id]/create/invite/page.tsx",
       "app/(mainlayout)/assessment/instances/[instanceId]/sent/page.tsx",
     ];
     for (const path of pages) {
@@ -220,7 +220,7 @@ describe("the surfaces the shell wraps outside the four stages", () => {
     for (const stage of ["create", "mode", "aspects", "commit", "invite"] as const) {
       // Stage 1's route is `…/create`, the others one segment below it.
       const route = stage === "create" ? "create" : `create/${stage}`;
-      const file = `app/(mainlayout)/dashboard/templates/[slug]/${route}/page.tsx`;
+      const file = `app/(mainlayout)/dashboard/templates/[id]/${route}/page.tsx`;
       expect(source(file), `${route} renders the module home`).toContain(
         `@/components/flow/template-create/${stage}`,
       );

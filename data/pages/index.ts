@@ -186,17 +186,17 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // listing, its authoring form and its read-only detail page retired in the same change (they 308
   // to `/dashboard/templates`), so their three entries are gone from this table with them: a path
   // here is a promise that the route renders a fixture, and E23 checks the two directions.
-  "/dashboard/templates/[slug]/create": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create": assessmentCreatePageCopy,
   // #688 — stage 2 renders the same fixture: one flow, one copy table, two steps that must not
   // drift into two vocabularies.
-  "/dashboard/templates/[slug]/create/mode": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/mode": assessmentCreatePageCopy,
   // #689 — stage 3, the third register of the same fixture.
-  "/dashboard/templates/[slug]/create/aspects": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/aspects": assessmentCreatePageCopy,
   // #690 — stage 4 and stage 5 of one flow: the same fixture again, because a second copy of these
   // words is how a flow grows two dialects. #825 — the account gate that used to sit behind the
   // create is retired; stage 4 is the account and stage 5 is the invite.
-  "/dashboard/templates/[slug]/create/commit": assessmentCreatePageCopy,
-  "/dashboard/templates/[slug]/create/invite": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/commit": assessmentCreatePageCopy,
+  "/dashboard/templates/[id]/create/invite": assessmentCreatePageCopy,
   /**
    * The public catalogue, at two addresses and one fixture (#905).
    *

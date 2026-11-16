@@ -333,12 +333,13 @@ describe("the legacy redirects", () => {
    */
   const NEW_PAGES = [
     // #1109 — the three single-template addresses are **not** here any more: they retired, and the
-    // table above asserts the 308 each one answers. What stays under this noun is the create flow.
-    "/dashboard/templates/[slug]/create",
-    "/dashboard/templates/[slug]/create/mode",
-    "/dashboard/templates/[slug]/create/aspects",
-    "/dashboard/templates/[slug]/create/commit",
-    "/dashboard/templates/[slug]/create/invite",
+    // table above asserts the 308 each one answers. What stays under this noun is the create flow,
+    // in the `[id]` segment it shares with the editor beside it.
+    "/dashboard/templates/[id]/create",
+    "/dashboard/templates/[id]/create/mode",
+    "/dashboard/templates/[id]/create/aspects",
+    "/dashboard/templates/[id]/create/commit",
+    "/dashboard/templates/[id]/create/invite",
     "/relationship-types",
     "/relationship-types/[slug]",
     // #905 — the catalogue's new endpoint is a page in the tree, not a redirect: nothing may
@@ -349,7 +350,7 @@ describe("the legacy redirects", () => {
   const NEW_HANDLERS = [
     // #1109 — `…/save` and `…/[slug]/duplicate` were deleted with their pages; the one POST the
     // flow still answers is stage 1's status write, and a redirect may not claim it.
-    "/dashboard/templates/[slug]/status",
+    "/dashboard/templates/[id]/status",
   ] as const;
 
   it("leaves the new #794 addresses to the tree, not to a redirect", () => {

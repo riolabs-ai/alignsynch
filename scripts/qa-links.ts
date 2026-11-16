@@ -202,7 +202,7 @@ export const AUTH_CLASS_TABLE: readonly {
   {
     // #1109 — the create flow is a `/dashboard` address now, and its stage 1 is the one public
     // screen behind that prefix: an anonymous draft is the flow's whole point (#690).
-    prefix: "/dashboard/templates/[slug]/create",
+    prefix: "/dashboard/templates/[id]/create",
     auth: "public",
     why: "an anonymous draft — currentUserIfConfigured(), no sign-in gate",
   },

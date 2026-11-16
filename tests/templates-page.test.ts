@@ -288,7 +288,7 @@ describe("every action on the page is public", () => {
   it("sends every card to a create step this build actually ships", () => {
     // The stage-1 route is in the manifest (E7 checks it in both directions), and every card's
     // address is one instance of that pattern. The segments are the dashboard's since #1109.
-    expect(ROUTE_PATTERNS).toContain("/dashboard/templates/[slug]/create");
+    expect(ROUTE_PATTERNS).toContain("/dashboard/templates/[id]/create");
     for (const card of cards) {
       expect(card.start).toMatch(/^\/dashboard\/templates\/[a-z-]+\/create$/);
       expect(card.start).toBe(`/dashboard/templates/${card.id}/create`);

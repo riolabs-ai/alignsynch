@@ -273,15 +273,15 @@ function paramResolvers(db, brand) {
     "/profile/[username]": async () => ({ username: db?.handle ?? null }),
     // #1109 — the stage addresses moved under the dashboard; the retired `/templates/relationship`
     // noun has no page left to capture, so its row went with the tree rather than 308ing.
-    "/dashboard/templates/[slug]/create": async () => ({ slug: db?.templateSlug ?? null }),
-    "/dashboard/templates/[slug]/create/mode": async () => ({ slug: db?.templateSlug ?? null }),
-    "/dashboard/templates/[slug]/create/aspects": async () => ({
+    "/dashboard/templates/[id]/create": async () => ({ slug: db?.templateSlug ?? null }),
+    "/dashboard/templates/[id]/create/mode": async () => ({ slug: db?.templateSlug ?? null }),
+    "/dashboard/templates/[id]/create/aspects": async () => ({
       slug: db?.templateSlug ?? null,
     }),
-    "/dashboard/templates/[slug]/create/commit": async () => ({
+    "/dashboard/templates/[id]/create/commit": async () => ({
       slug: db?.templateSlug ?? null,
     }),
-    "/dashboard/templates/[slug]/create/invite": async () => ({
+    "/dashboard/templates/[id]/create/invite": async () => ({
       slug: db?.templateSlug ?? null,
     }),
     "/admin/templates/[id]": async () => ({ id: db?.templateId ?? null }),

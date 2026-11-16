@@ -1,5 +1,10 @@
 /**
- * `POST /dashboard/templates/[slug]/status` — archive or unarchive a template (#794, #1109).
+ * `POST /dashboard/templates/[id]/status` — archive or unarchive a template (#794, #1109).
+ *
+ * **The segment is `[id]` and the value is a slug.** Next refuses two different dynamic segment names
+ * at one level, so the create branch and this endpoint live under the editor's `[id]` segment while
+ * the URL still carries `/dashboard/templates/<slug>/status`; `slugFromSegmentParams` is the same
+ * translation the five stage pages use, and `create/page.tsx` carries the long version of why.
  *
  * **The address moved with the flow.** It was `/templates/relationship/[slug]/status` while that
  * tree was the member's library; #1109 moved the library to the dashboard, deleted the old tree and
@@ -37,6 +42,7 @@ import { loginPathFor } from "@/lib/auth/paths";
 import { currentUser } from "@/lib/auth/session";
 import { resolveTemplateHandle } from "@/lib/db/template-library";
 import { TEMPLATE_LIBRARY_PATH, createRelationshipPath } from "@/lib/flow/paths";
+import { slugFromSegmentParams } from "@/lib/flow/segment-params";
 import { setTemplateStatus } from "@/lib/flow/templates";
 import { parseRealmFilter } from "@/components/assessment-flow/template-card";
 import { parseLibraryStatus, parseLibraryView } from "@/lib/flow/template-library";
@@ -64,14 +70,14 @@ function libraryUrl(request: Request, form: FormData, extra?: Record<string, str
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ slug: string }> },
+  context: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const user = await currentUser();
   if (user === null) {
     return NextResponse.redirect(new URL(loginPathFor(TEMPLATE_LIBRARY_PATH), request.url), 303);
   }
 
-  const { slug } = await context.params;
+  const { slug } = await slugFromSegmentParams(context.params);
   const form = await request.formData();
   const wanted = form.get("status");
   const status = wanted === "archived" || wanted === "published" ? wanted : null;

@@ -164,13 +164,14 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/assessment/instances/[instanceId]/sent", mode: "column" },
   { path: "/invite/[token]", mode: "column" },
   // #1109 — the create flow, at the dashboard address it shares with the member's template library.
-  // `[slug]` beside the editor's `[id]` (a `page.tsx` one level up) is not a second segment name for
-  // one slot: `[id]` has no `create` child, so Next resolves the branch by depth.
-  { path: "/dashboard/templates/[slug]/create", mode: "column" },
-  { path: "/dashboard/templates/[slug]/create/aspects", mode: "column" },
-  { path: "/dashboard/templates/[slug]/create/commit", mode: "column" },
-  { path: "/dashboard/templates/[slug]/create/invite", mode: "column" },
-  { path: "/dashboard/templates/[slug]/create/mode", mode: "column" },
+  // The segment is `[id]` and the value a `/create` URL carries is a template **slug**: Next refuses
+  // two dynamic segment names at one level, so the flow lives under the editor's `[id]` segment
+  // rather than beside it. See `app/(mainlayout)/dashboard/templates/[id]/create/page.tsx`.
+  { path: "/dashboard/templates/[id]/create", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/aspects", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/commit", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/invite", mode: "column" },
+  { path: "/dashboard/templates/[id]/create/mode", mode: "column" },
 
   // ── Authoring. ──────────────────────────────────────────────────────────────────────────────
   { path: "/my-quizzes", mode: "column" },

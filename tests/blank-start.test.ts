@@ -73,7 +73,7 @@ describe("the blank start's address", () => {
   it("is the blank template's stage 1, and it is in the route manifest", () => {
     expect(blankRelationshipPath()).toBe(createRelationshipPath(BLANK_TEMPLATE_SLUG));
     expect(blankRelationshipPath()).toBe("/dashboard/templates/blank-template/create");
-    expect(ROUTE_PATTERNS).toContain("/dashboard/templates/[slug]/create");
+    expect(ROUTE_PATTERNS).toContain("/dashboard/templates/[id]/create");
   });
 
   it("is a different address from a named template's, so the two starts cannot be confused", () => {

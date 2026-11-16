@@ -142,22 +142,24 @@ const DYNAMIC_ROUTES = [
   "/dashboard/relationships/[id]",
   "/dashboard/support/articles/[slug]",
   "/dashboard/templates/[id]",
-  // #1109 — the create flow, at the dashboard address it now shares with the library. The segment
-  // is `record.slug` (the URL fact since #794); `record.id` is the storage handle and only appears
-  // in the editor route above, which is keyed on the row. Stage 1 opens on the template the person
+  // #1109 — the create flow, at the dashboard address it now shares with the library. The URL a
+  // person sees carries `record.slug` (the URL fact since #794) while the segment is named `[id]`,
+  // because Next refuses two dynamic segment names at one level and the editor route above is the
+  // `[id]` at that level — `lib/flow/segment-params.ts` is the translation. `record.id` is the
+  // storage handle and only the editor is keyed on it. Stage 1 opens on the template the person
   // picked, so there is no picker at this address.
-  "/dashboard/templates/[slug]/create",
+  "/dashboard/templates/[id]/create",
   // #688 — stage 2 (Settings / mode). A page, not a query switch: each stage has its own address, so
   // a person can reload on it and the draft still puts them there.
-  "/dashboard/templates/[slug]/create/mode",
+  "/dashboard/templates/[id]/create/mode",
   // #689 — stage 3 (Aspects): the list the flow collects, and the reason the draft exists.
-  "/dashboard/templates/[slug]/create/aspects",
+  "/dashboard/templates/[id]/create/aspects",
   // #825 — stage 4 (Account): the app's own sign-in form and the conversion that writes the
   // relationship as a draft. It is the last screen before anything exists.
-  "/dashboard/templates/[slug]/create/commit",
+  "/dashboard/templates/[id]/create/commit",
   // #825 — stage 5 (Invite): send the invitation or keep the draft. It replaces the account gate
   // that used to sit *after* the create (`…/create/account`, retired with #659's decision).
-  "/dashboard/templates/[slug]/create/invite",
+  "/dashboard/templates/[id]/create/invite",
   "/categories/[slug]",
   "/creator-tips/[slug]",
   "/invite/[token]",

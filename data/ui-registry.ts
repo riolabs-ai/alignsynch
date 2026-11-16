@@ -455,7 +455,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/dashboard/templates/[slug]/create",
+    surface: "/dashboard/templates/[id]/create",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -465,7 +465,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/dashboard/templates/[slug]/create/mode",
+    surface: "/dashboard/templates/[id]/create/mode",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -475,7 +475,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/dashboard/templates/[slug]/create/aspects",
+    surface: "/dashboard/templates/[id]/create/aspects",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -485,7 +485,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/dashboard/templates/[slug]/create/commit",
+    surface: "/dashboard/templates/[id]/create/commit",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -495,7 +495,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
-    surface: "/dashboard/templates/[slug]/create/invite",
+    surface: "/dashboard/templates/[id]/create/invite",
     status: "db",
     templates: ["alignsynch"],
     capability:
@@ -1024,9 +1024,9 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "The create flow's five stage modules — Details, Settings, Aspects, Account, Invite — held where no address reaches them, because the same module is both a page and the dialog a slot mounts over the shelf. The address is `/dashboard/templates/[slug]/create{,/mode,/aspects,/commit,/invite}`: #1109 phase 2 moved these files out of `app/(mainlayout)/templates/relationship/[slug]/create/**/page.tsx` with `git mv`, and nothing about a stage changed in the move.",
+      "The create flow's five stage modules — Details, Settings, Aspects, Account, Invite — held where no address reaches them, because the same module is both a page and the dialog a slot mounts over the shelf. The address is `/dashboard/templates/[id]/create{,/mode,/aspects,/commit,/invite}` — a template **slug** in a segment Next names `id`, because Next refuses two dynamic segment names at one level and the editor next door is `/dashboard/templates/[id]`; the URL a person sees is `/dashboard/templates/<slug>/create…`. #1109 phase 2 moved these files out of `app/(mainlayout)/templates/relationship/[slug]/create/**/page.tsx` with `git mv`, and nothing about a stage changed in the move.",
     notes:
-      'The rule this directory exists to keep is **a stage is written once and mounted twice**: each module takes `mount?: FlowMount` (default `"page"`), the route file under `dashboard/templates/[slug]/create` renders it bare, and the `@flow` interceptors in `dashboard/templates` (`(.)`), `dashboard/relationships` and `assessment` (`(...)`) render it with `mount={FLOW_MOUNT_DIALOG}` — held by `tests/flow-entry-convergence.test.ts` and `tests/flow-dialog-shell.test.tsx`. `db`, like `components/assessment-flow` beside it: the stages read and write through `lib/flow/store.ts` over `lib/db/**`, and no stage changed a query in the move. Keeping the stages out of `app/` is what let the address change without the components knowing, and the five kept their `[slug]` dynamic-param signature because they are still page components.',
+      'The rule this directory exists to keep is **a stage is written once and mounted twice**: each module takes `mount?: FlowMount` (default `"page"`), the route file under `dashboard/templates/[id]/create` renders it bare, and the `@flow` interceptors in `dashboard/templates` (`(.)`), `dashboard/relationships` and `assessment` (`(...)`) render it with `mount={FLOW_MOUNT_DIALOG}` — held by `tests/flow-entry-convergence.test.ts` and `tests/flow-dialog-shell.test.tsx`. `db`, like `components/assessment-flow` beside it: the stages read and write through `lib/flow/store.ts` over `lib/db/**`, and no stage changed a query in the move. Keeping the stages out of `app/` is what let the address change without the components knowing, and the five kept their `[slug]` dynamic-param signature because they are still page components.',
   },
   {
     kind: "domain",
