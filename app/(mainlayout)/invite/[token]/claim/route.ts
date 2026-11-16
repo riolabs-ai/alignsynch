@@ -35,8 +35,9 @@ import { NextResponse } from "next/server";
  *                      posted by the form can name it.
  *   the address        the second field. It must be the address the invitation was sent to
  *                      (`email-mismatch` refuses otherwise), and it is what the account is
- *                      resolved from — which is why the resolution is attempted **only for a live,
- *                      claimable invitation**: a dead link must not create an account.
+ *                      resolved from — resolved for a live invitation (creating the account when the
+ *                      address names none) and for one this address already spent (the resume, which
+ *                      looks an account up and never creates one): a dead link must mint nothing.
  *
  * Success binds the Counterparty's party row, sets their party cookie, relays the sign-up's own
  * session cookies when this request created the account, and redirects (303) — **onto `/dashboard`**
@@ -69,17 +70,26 @@ export async function POST(
   const viewer = await currentUserIfConfigured();
   const viewerTokens = partyTokensFrom(jar);
 
-  // The account is resolved **before** the transaction (an HTTP sign-up cannot join one) and only
-  // for a claim that can succeed: `previewInvite()` is the inert read the page itself makes, so a
-  // spent or expired link never creates an account.
+  // The account is resolved **before** the transaction (an HTTP sign-up cannot join one), and for
+  // the two states a claim can be answered in: a live invitation, and one this same address already
+  // spent — the resume. `previewInvite()` is the inert read the page itself makes, so a dead token
+  // never reaches this. **Only a live invitation may create an account** (`allowCreate`): on the
+  // resume path the address is compared against the seat that exists, and a dead link must not
+  // mint anything.
   const preview = await previewInvite(token, {
     viewerTokens,
     viewerUserId: viewer?.userId ?? null,
   });
-  const account =
-    preview.state === "claimable" && preview.viewerRole === null
-      ? await resolveClaimAccount({ email, name, origin: new URL(request.url).origin })
-      : { userId: null, setCookies: [], created: false };
+  const resolvesAccount =
+    preview.viewerRole === null && (preview.state === "claimable" || preview.state === "claimed");
+  const account = resolvesAccount
+    ? await resolveClaimAccount({
+        email,
+        name,
+        origin: new URL(request.url).origin,
+        allowCreate: preview.state === "claimable",
+      })
+    : { userId: null, setCookies: [], created: false };
 
   const result = await claimInvite({
     invitationToken: token,

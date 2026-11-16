@@ -90,6 +90,21 @@ function dumpPage(name, html) {
   }
 }
 
+/**
+ * The claim form's own fields (#1115 task 4).
+ *
+ * The screen renders inside the app's shell, and the shell's header carries the search input — so a
+ * count over the whole document counts chrome and reports three fields for a two-field form. The
+ * form that posts to `/claim` *is* the screen: its inputs are the two the counterparty is asked
+ * for. Hidden inputs are excluded for the same reason (a machine-read field is not an ask).
+ */
+function claimFieldsOf(html) {
+  const form = html.match(/<form[^>]*action="[^"]*\/claim"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? "";
+  return (form.match(/<(?:input|textarea|select)\b[^>]*>/g) ?? []).filter(
+    (field) => !/type="hidden"/i.test(field),
+  );
+}
+
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 const TEMPLATE_ID = "assessment-relationship-basics";
 /** The same fixture row's `slug` — what every stage's URL carries since #794. */
@@ -1101,11 +1116,14 @@ async function main() {
     !initiatorInvite.html.includes("Accept and answer"),
   );
 
-  const selfClaim = await initiator.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
+  // #1115 task 4 — the three onboarding steps are retired, so the refusal a claim comes back with
+  // carries the code and no `?step=`: the page resolves both shapes, and this pins the one the
+  // endpoint actually writes.
+  const selfClaim = await initiator.post(`/invite/${token}/claim`, { name: "Rowan E2E" });
   check(
     "the Initiator's own claim is refused with already-a-party",
     selfClaim.status === 303 &&
-      (selfClaim.location ?? "").endsWith(`/invite/${token}?step=3&claim=already-a-party`),
+      (selfClaim.location ?? "").endsWith(`/invite/${token}?claim=already-a-party`),
     `${selfClaim.status} ${selfClaim.location}`,
   );
   const selfRefusal = await initiator.get(`/invite/${token}?step=3&claim=already-a-party`);
@@ -1154,13 +1172,13 @@ async function main() {
   // #710 — and that screen renders inside the flow's modal, under the five-stage rail at Account,
   // closing onto the dashboard. Three facts, because a shell that only *looks* modal (a client
   // overlay that mounts after hydration) would still 404 the deep link.
-  const claimFields = invitePage.html.match(/<(input|textarea|select)\b[^>]*>/g) ?? [];
+  const claimFields = claimFieldsOf(invitePage.html);
   check(
     "it opens on the two-field claim screen, name and email and nothing else",
     claimFields.length === 2 &&
       claimFields[0].includes('name="name"') &&
       claimFields[1].includes('name="email"') &&
-      claimFields[0].includes('value="Rowan"') &&
+      claimFields[0].includes('value="Rowan E2E"') &&
       !invitePage.html.includes('type="password"'),
     `${claimFields.length} field(s)`,
   );
@@ -1191,13 +1209,13 @@ async function main() {
     oldStep.status === 200 &&
       oldStep.html.includes('data-stage-shell="true"') &&
       oldStep.html.includes("Stage 4 of 5") &&
-      (oldStep.html.match(/<(input|textarea|select)\b[^>]*>/g) ?? []).length === 2,
+      claimFieldsOf(oldStep.html).length === 2,
     `status ${oldStep.status}`,
   );
   check(
     "and the screen says who pays, so the counterparty never wonders",
     invitePage.html.includes("Accepting costs you nothing") &&
-      invitePage.html.includes("You are joining as Rowan, the Counterparty."),
+      invitePage.html.includes("You are joining as Rowan E2E, the Counterparty."),
   );
   check(
     "it does not name an answering party for a browser that is not one",
@@ -1252,6 +1270,13 @@ async function main() {
     afterRefusals.rows[0].claimed_at === null && afterRefusals.rows[0].parties === 1,
     `claimed_at=${afterRefusals.rows[0].claimed_at} parties=${afterRefusals.rows[0].parties}`,
   );
+
+  // #1115 task 4 — the claim resolves the account its address names, and **creates** it when the
+  // address names none: that is the journey this run proves (303 onto `/dashboard`, signed in, no
+  // password). The harness therefore owns its own address, so a leftover account for it — one a
+  // crashed run left behind, or a branch somebody else is walking — would take the found-account
+  // path and land on the relationship instead. Clear it first, so the claim is the one measured.
+  await clearLeftoverAccount(CLAIM_EMAIL);
 
   const claim = await counterparty.post(`/invite/${token}/claim`, {
     name: "Rowan E2E",
@@ -1898,14 +1923,30 @@ async function main() {
     advInvitePage.status === 200,
     `status ${advInvitePage.status}`,
   );
+  // #1115 task 4 — the claim is the two fields: the seat's name, and the address the invitation was
+  // sent to. Posting the retired `confirm` field answered 303 too (a refusal is a redirect), which
+  // is why the seat went unbound and the Counterparty's later submit was a 403. So this asserts the
+  // seat as well as the redirect.
+  await clearLeftoverAccount("iris-e2e@example.com");
   const advClaim = await advCounterparty.post(`/invite/${advToken}/claim`, {
-    confirm: "Iris E2E",
+    name: "Iris E2E",
+    email: "iris-e2e@example.com",
   });
-  check(
-    "claiming the Advanced invitation answers 303",
-    advClaim.status === 303,
-    `status ${advClaim.status}`,
+  const advSeat = await db.query(
+    `SELECT user_id FROM party
+      WHERE session_record_id = $1 AND role = 'counterparty' AND user_id IS NOT NULL`,
+    [advInstanceId],
   );
+  check(
+    "claiming the Advanced invitation binds the Counterparty's seat",
+    advClaim.status === 303 &&
+      advCounterparty.cookies.has(`flow_party_${advInstanceId}`) &&
+      advSeat.rows.length === 1,
+    `status ${advClaim.status} · ${advSeat.rows.length} bound seat(s)`,
+  );
+  for (const row of advSeat.rows) {
+    createdAccounts.push({ email: "iris-e2e@example.com", userId: row.user_id });
+  }
 
   const shortSheet = await advInitiator.post(`${advPath}/answers`, answers({ feel: 2, wish: 5 }));
   check(
@@ -2252,6 +2293,34 @@ async function authUserTable() {
   );
   const names = rows.map((row) => row.table_name);
   return names.find((name) => name === "user" || name === "users") ?? null;
+}
+
+/**
+ * Removes any account an earlier run left behind for **one harness-owned address** (#1115 task 4).
+ *
+ * The two-field claim resolves the account its address names and creates one when the address names
+ * none. That second path is the journey the walk proves — signed in on the dashboard, no password —
+ * so the run has to start from "no account" for its own address. A crashed run, or a concurrent walk
+ * on the same shared branch, can leave one behind; the found-account path is a correct answer, but a
+ * *different* one, and a harness that silently measured it instead would be proving nothing.
+ *
+ * Scoped to the address the caller passes, never a pattern: this deletes real auth rows on a branch
+ * other people read.
+ */
+async function clearLeftoverAccount(email) {
+  const users = await authUserTable();
+  if (users === null) return;
+  const { rows } = await db.query(
+    `SELECT id::text AS id FROM neon_auth."${users}" WHERE lower(email) = lower($1)`,
+    [email],
+  );
+  const ids = rows.map((row) => row.id);
+  if (ids.length === 0) return;
+  await db.query("UPDATE party SET user_id = NULL WHERE user_id = ANY($1::text[])", [ids]);
+  await db.query("DELETE FROM relationship_member WHERE user_id = ANY($1::text[])", [ids]);
+  await db.query("DELETE FROM user_profile WHERE user_id = ANY($1::text[])", [ids]);
+  await db.query(`DELETE FROM neon_auth."${users}" WHERE id::text = ANY($1::text[])`, [ids]);
+  console.log(`· cleared ${ids.length} leftover account(s) for ${email}`);
 }
 
 /**

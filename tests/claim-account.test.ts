@@ -155,4 +155,36 @@ describe("resolveClaimAccount", () => {
     expect(fake.calls).toHaveLength(0);
     expect(fake.fetches).toHaveLength(0);
   });
+
+  /* ------------------------------------------------------------------ *
+   * The resume's reading of the same question (#1115 task 4)
+   * ------------------------------------------------------------------ */
+
+  it("answers the account a spent invitation's address already has, signing nobody in", async () => {
+    // The resume path: the invitation was spent, the seat is bound to this address, and the person
+    // opened their own link again in a new browser. The id is what proves the seat is theirs.
+    fake.users.push({ id: "account-rowan", email: "rowan@example.test" });
+
+    const account = await resolveClaimAccount({
+      email: "rowan@example.test",
+      name: "Rowan",
+      allowCreate: false,
+    });
+
+    expect(account).toEqual({ userId: "account-rowan", setCookies: [], created: false });
+    expect(fake.fetches).toHaveLength(0);
+  });
+
+  it("mints nothing for an address with no account when creation is not allowed", async () => {
+    // A dead link must never create an account: the resume is a comparison, not a sign-up. The
+    // claim is then refused the way it was before — `claimed` — rather than minting a stranger.
+    const account = await resolveClaimAccount({
+      email: "stranger@example.test",
+      name: "Stranger",
+      allowCreate: false,
+    });
+
+    expect(account).toEqual({ userId: null, setCookies: [], created: false });
+    expect(fake.fetches).toHaveLength(0);
+  });
 });

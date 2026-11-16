@@ -15,6 +15,12 @@
  *                                printed or stored, and a later "forgot password" on `/login` is
  *                                how they set a real one.
  *
+ * **`allowCreate: false` is the resume's reading of the same question.** A spent invitation is not
+ * a dead link for the person it was sent to: the route resolves the address so `claimInvite()` can
+ * tell *their* second submit (resume the seat) from somebody else's (refuse). Nothing is created on
+ * that path — a dead link must never mint an account — so an address with none answers `null` and
+ * the claim is refused exactly as it was before.
+ *
  * **Why an HTTP sign-up and not a row.** Users live in Neon's Managed Auth (`neon_auth`), which
  * this app does not migrate and must not write directly: Better Auth owns the hash, the `account`
  * row and the session. `db:seed` learned the same thing — a sign-up is an HTTP request, and it
@@ -110,12 +116,20 @@ export async function resolveClaimAccount(input: {
   readonly email: string | null | undefined;
   readonly name?: string | null;
   readonly origin?: string | null;
+  /**
+   * Whether an address with no account may be signed up here. `true` for a claim that can succeed
+   * (the invitation is live and unclaimed); `false` for a **resume**, where the address is being
+   * compared against the seat that already exists — a dead link must never create an account.
+   */
+  readonly allowCreate?: boolean;
 }): Promise<ClaimAccount> {
   const email = claimEmailOf(input.email);
   if (email === null) return NO_ACCOUNT;
 
   const existing = await accountIdForEmail(email);
   if (existing !== null) return { userId: existing, setCookies: [], created: false };
+
+  if (input.allowCreate === false) return NO_ACCOUNT;
 
   const base = authBaseUrl();
   if (base === null) return NO_ACCOUNT;
