@@ -670,7 +670,8 @@ const RELATIONSHIP_CARDS_SQL = `
     COALESCE((SELECT p5.accepted_at IS NOT NULL FROM party p5
                WHERE p5.session_record_id = l.record_id AND p5.role = 'counterparty'), false)
                                 AS counterparty_accepted,
-    (SELECT count(*) FROM session s2 WHERE s2.relationship_id = rel.id)::int AS sessions_opened,
+    (SELECT count(*) FROM session s2
+      WHERE s2.relationship_id = rel.id AND s2.state = 'active')::int AS sessions_opened,
     COALESCE((
       SELECT json_agg(json_build_object(
         'aspectCount', (SELECT count(*) FROM item i2 WHERE i2.record_id = s2.record_id),
@@ -692,7 +693,7 @@ const RELATIONSHIP_CARDS_SQL = `
         -- #503: a voided past session counts as ended, so it never counts as a completion.
         'voided', (s2.voided_at IS NOT NULL)
       ))
-      FROM session s2 WHERE s2.relationship_id = rel.id
+      FROM session s2 WHERE s2.relationship_id = rel.id AND s2.state = 'active'
     ), '[]'::json)              AS sessions,
     (SELECT json_agg(json_build_object(
         'role', o.role, 'itemId', o.item_id,

@@ -135,6 +135,7 @@ import {
   sweepLine,
 } from "./db-seed-sweep.mjs";
 import { loadEnv, repoRoot, requireVariable, writeDatabaseUrl } from "./load-env.mjs";
+import { sessionStateOf } from "../content/assessment.ts";
 
 /** The auth proof's throwaway account (issue #145 comment, confirmed by Jaden). */
 const TEMP_E2E_USER_IDS = ["b8bb3fe0-caf3-4aa9-9344-fb62c224c215"];
@@ -427,18 +428,28 @@ async function seedInstance(client, instance, lifecycle) {
   // and on the relationship itself. `purchased_at` is NULL — no demo relationship records a purchase.
   await seedRelationship(client, instance, lifecycle);
   await client.query(
-    `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id)
-     VALUES ($1, $2, $3, $4, $5)
+    // #1100b — **the session's state is the lifecycle's `seats`, not a flag on the session.** A
+    // `draft` or `pending` relationship carries one seat (the invitation may have gone out; nobody
+    // has claimed it), so its session is a `draft` session and no count or screen reads it. From
+    // the claim onward the row reads `active` — including `void` and `expired`, whose sessions are
+    // live sessions that ended, not sessions that never started. Written from the same value the
+    // `party` rows below are written from, so a re-seed cannot leave the two disagreeing; V33
+    // (`scripts/db-verify.mjs`) compares the rows back to it.
+    `INSERT INTO session (record_id, template_record_id, mode, alignment_setting, relationship_id,
+                          state)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (record_id) DO UPDATE SET template_record_id = EXCLUDED.template_record_id,
                                           mode = EXCLUDED.mode,
                                           alignment_setting = EXCLUDED.alignment_setting,
-                                          relationship_id = EXCLUDED.relationship_id`,
+                                          relationship_id = EXCLUDED.relationship_id,
+                                          state = EXCLUDED.state`,
     [
       instance.id,
       instance.templateId,
       instance.mode,
       instance.setting,
       `relationship-${instance.id}`,
+      sessionStateOf(lifecycle),
     ],
   );
   // The invitation that put the counterparty in this seat — written after the `session` row
