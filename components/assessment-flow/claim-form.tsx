@@ -133,7 +133,7 @@ export function ClaimForm({
             type="email"
             required
             autoComplete="email"
-            placeholder="name@example.com"
+            placeholder={itemLabel(claim, "email-placeholder")}
             className={FIELD}
           />
 

@@ -55,6 +55,9 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
         { id: "free", label: "Accepting costs you nothing — {initiator} is the one who pays." },
         { id: "name", label: "Your name" },
         { id: "email", label: "Your email" },
+        // The field's example lives in the fixture like every other string the screen prints:
+        // a literal placeholder in a component is copy that cannot be reviewed with the rest (E23).
+        { id: "email-placeholder", label: "name@example.com" },
         { id: "claim", label: "Accept and answer" },
       ],
     },
