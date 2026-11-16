@@ -1149,13 +1149,20 @@ async function main() {
   );
   check("it names the Initiator", invitePage.html.includes("Avery E2E"));
   check("it names the Template", invitePage.html.includes("Relationship Basics"));
-  // #t_0aa81144 — the invitation lands on step 1 of the onboarding wizard, not on a claim button.
-  // #710 — and that wizard now renders inside the flow's modal, under the six-stage rail at
-  // Connect, closing onto the dashboard. Three facts, because a shell that only *looks* modal
-  // (a client overlay that mounts after hydration) would still 404 the deep link.
+  // #1115 task 4 — the invitation lands on **one screen with two fields**: the name the invitation
+  // carries (prefilled) and the address it was sent to. No wizard, no password, no plan.
+  // #710 — and that screen renders inside the flow's modal, under the five-stage rail at Account,
+  // closing onto the dashboard. Three facts, because a shell that only *looks* modal (a client
+  // overlay that mounts after hydration) would still 404 the deep link.
+  const claimFields = invitePage.html.match(/<(input|textarea|select)\b[^>]*>/g) ?? [];
   check(
-    "it opens on step 1 of the wizard",
-    invitePage.html.includes("Avery E2E invited you to answer Relationship Basics."),
+    "it opens on the two-field claim screen, name and email and nothing else",
+    claimFields.length === 2 &&
+      claimFields[0].includes('name="name"') &&
+      claimFields[1].includes('name="email"') &&
+      claimFields[0].includes('value="Rowan"') &&
+      !invitePage.html.includes('type="password"'),
+    `${claimFields.length} field(s)`,
   );
   check(
     "the response renders inside the flow's modal, in the server's own HTML",
@@ -1175,22 +1182,22 @@ async function main() {
       ) &&
       invitePage.html.includes('data-step-cell="5"'),
   );
-  const stepTwo = await counterparty.get(`/invite/${token}?step=2`);
-  dumpPage("invite-step-2", stepTwo.html);
+  // #1115 task 4 — the three steps are retired as screens, but the addresses a mail client already
+  // holds still have to resolve: an old `?step=3` link lands on the same two-field claim.
+  const oldStep = await counterparty.get(`/invite/${token}?step=3`);
+  dumpPage("invite-old-step-3", oldStep.html);
   check(
-    // The shell is the contract; the sentence on the step is copy and changes without notice.
-    "a ?step=2 deep link survives a refresh and lands on the same shell",
-    stepTwo.status === 200 &&
-      stepTwo.html.includes('data-stage-shell="true"') &&
-      stepTwo.html.includes("Stage 4 of 5"),
-    `status ${stepTwo.status}`,
+    "an old ?step=3 link survives a refresh and lands on the same claim screen",
+    oldStep.status === 200 &&
+      oldStep.html.includes('data-stage-shell="true"') &&
+      oldStep.html.includes("Stage 4 of 5") &&
+      (oldStep.html.match(/<(input|textarea|select)\b[^>]*>/g) ?? []).length === 2,
+    `status ${oldStep.status}`,
   );
-  const stepThree = await counterparty.get(`/invite/${token}?step=3`);
   check(
-    "step 3 is the account gate and claims nothing on a GET",
-    stepThree.html.includes("Accepting costs you nothing") &&
-      stepThree.html.includes("You are joining as Rowan E2E, the Counterparty.") === false &&
-      stepThree.html.includes('data-stage-shell="true"'),
+    "and the screen says who pays, so the counterparty never wonders",
+    invitePage.html.includes("Accepting costs you nothing") &&
+      invitePage.html.includes("You are joining as Rowan, the Counterparty."),
   );
   check(
     "it does not name an answering party for a browser that is not one",
@@ -1205,18 +1212,33 @@ async function main() {
     ).rows[0].claimed_at === null,
   );
 
-  const unconfirmed = await counterparty.post(`/invite/${token}/claim`, {});
+  // The invitation's own address, which is the one the claim has to name (#1115 task 4).
+  const CLAIM_EMAIL = "rowan-e2e@example.com";
+  const noAddress = await counterparty.post(`/invite/${token}/claim`, { name: "Rowan E2E" });
   check(
-    "a claim that confirms nothing is refused with unconfirmed",
-    unconfirmed.status === 303 &&
-      (unconfirmed.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
-    `${unconfirmed.status} ${unconfirmed.location}`,
+    "a claim with no address is refused with email-mismatch, not a 500",
+    noAddress.status === 303 &&
+      (noAddress.location ?? "").endsWith(`/invite/${token}?claim=email-mismatch`),
+    `${noAddress.status} ${noAddress.location}`,
   );
-  const wrongName = await counterparty.post(`/invite/${token}/claim`, { confirm: "Avery E2E" });
+  const wrongAddress = await counterparty.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: "someone-else@example.com",
+  });
+  check(
+    "a claim naming a different address is refused with email-mismatch",
+    wrongAddress.status === 303 &&
+      (wrongAddress.location ?? "").endsWith(`/invite/${token}?claim=email-mismatch`),
+    `${wrongAddress.status} ${wrongAddress.location}`,
+  );
+  const wrongName = await counterparty.post(`/invite/${token}/claim`, {
+    name: "Avery E2E",
+    email: CLAIM_EMAIL,
+  });
   check(
     "a claim that confirms the other party's name is refused with unconfirmed",
     wrongName.status === 303 &&
-      (wrongName.location ?? "").endsWith(`/invite/${token}?step=3&claim=unconfirmed`),
+      (wrongName.location ?? "").endsWith(`/invite/${token}?claim=unconfirmed`),
     `${wrongName.status} ${wrongName.location}`,
   );
   const afterRefusals = await db.query(
@@ -1231,14 +1253,17 @@ async function main() {
     `claimed_at=${afterRefusals.rows[0].claimed_at} parties=${afterRefusals.rows[0].parties}`,
   );
 
-  const claim = await counterparty.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
-  // #710 — the exit is `afterClaimTarget()`: a signed-in claimer closes onto `/dashboard`, and a
-  // signed-out one (this run — it posted the endpoint directly, which the screens never offer
-  // because step 3 asks for an account) stays on the relationship it just bound, where the party
-  // cookie it was given is what makes the screen readable.
+  const claim = await counterparty.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: CLAIM_EMAIL,
+  });
+  // #1115 task 4 — the claim resolves the account the address names, creating it through the
+  // branch's own sign-up when it names none, and relays that sign-up's session cookie. So a claim
+  // that started signed out now ends **signed in on the dashboard**, which is the journey the
+  // issue asks for: both parties reach the dashboard and the first assessment session.
   check(
-    "claiming answers 303 to the relationship for a signed-out claimer",
-    claim.status === 303 && (claim.location ?? "").endsWith(instancePath),
+    "claiming answers 303 onto the dashboard, with an account and a seat",
+    claim.status === 303 && (claim.location ?? "").endsWith("/dashboard"),
     `${claim.status} ${claim.location}`,
   );
   check(
@@ -1249,6 +1274,22 @@ async function main() {
   check(
     "the Counterparty's party cookie is set",
     counterparty.cookies.has(`flow_party_${instanceId}`),
+  );
+  // #1115 task 4 — the claim created (or found) the account the address names. The auth user is
+  // real debris on a shared branch, so it joins `createdAccounts` and `cleanup()` deletes it with
+  // this run's other accounts.
+  const boundSeats = await db.query(
+    `SELECT user_id FROM party
+      WHERE session_record_id = $1 AND role = 'counterparty' AND user_id IS NOT NULL`,
+    [instanceId],
+  );
+  for (const row of boundSeats.rows) {
+    createdAccounts.push({ email: CLAIM_EMAIL, userId: row.user_id });
+  }
+  check(
+    "the seat is bound to an account, not just a cookie",
+    boundSeats.rows.length === 1,
+    `${boundSeats.rows.length} bound seat(s)`,
   );
   const claimed = await db.query(
     "SELECT claimed_at,(SELECT count(*) FROM party WHERE session_record_id = $1)::int AS parties FROM session_invite WHERE session_record_id = $1",
@@ -1283,21 +1324,47 @@ async function main() {
       (counterpartyRevisit.html.match(/You are answering as [^<]*\./) ?? ["(not found)"])[0],
   );
 
-  const secondClaim = await stranger.post(`/invite/${token}/claim`, { confirm: "Rowan E2E" });
-  // The refusal keeps whatever step the wizard had reached (#538 put `?step=` on this URL), so the
-  // assertion is the page and the code, not the whole query string.
-  const secondClaimUrl = new URL(secondClaim.location ?? "http://invalid.invalid/");
+  // #1115 task 4 — a spent invitation has two answers now, and the address is what tells them
+  // apart: somebody else's address is refused (the seat is not theirs to take), and the
+  // invitation's own address resumes the seat in a new browser instead of dead-ending on
+  // "used already" — the person clicking their own link twice is not an error.
+  const takenClaim = await stranger.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: "someone-else@example.com",
+  });
+  const takenClaimUrl = new URL(takenClaim.location ?? "http://invalid.invalid/");
   check(
-    "a second claim of the spent token is refused",
-    secondClaim.status === 303 &&
-      secondClaimUrl.pathname === `/invite/${token}` &&
-      secondClaimUrl.searchParams.get("claim") === "claimed",
-    `${secondClaim.status} ${secondClaim.location}`,
+    "a second claim from a different address is refused",
+    takenClaim.status === 303 &&
+      takenClaimUrl.pathname === `/invite/${token}` &&
+      takenClaimUrl.searchParams.get("claim") === "claimed",
+    `${takenClaim.status} ${takenClaim.location}`,
   );
-  const secondClaimPage = await stranger.get(`/invite/${token}?claim=claimed`);
+  const takenClaimPage = await stranger.get(`/invite/${token}?claim=claimed`);
   check(
-    "the second claim lands on the 'used already' band",
-    secondClaimPage.html.includes("This invitation was used already"),
+    "that claim lands on the 'used already' band",
+    takenClaimPage.html.includes("This invitation was used already"),
+  );
+  const resumedClaim = await stranger.post(`/invite/${token}/claim`, {
+    name: "Rowan E2E",
+    email: CLAIM_EMAIL,
+  });
+  check(
+    "the invitation's own address resumes the seat instead, onto the relationship",
+    resumedClaim.status === 303 && (resumedClaim.location ?? "").endsWith(instancePath),
+    `${resumedClaim.status} ${resumedClaim.location}`,
+  );
+  const afterResume = await db.query(
+    `SELECT (SELECT count(*) FROM party WHERE session_record_id = $1)::int AS parties,
+            (SELECT count(*) FROM neon_auth."user" u
+               JOIN party p ON p.user_id = u.id::text
+              WHERE p.session_record_id = $1 AND p.role = 'counterparty')::int AS accounts`,
+    [instanceId],
+  );
+  check(
+    "the resume added no party row and no second account",
+    afterResume.rows[0].parties === 2 && afterResume.rows[0].accounts === 1,
+    `parties=${afterResume.rows[0].parties} accounts=${afterResume.rows[0].accounts}`,
   );
 
   /* 3c. a bound session cannot record the other party's opinion ------ */

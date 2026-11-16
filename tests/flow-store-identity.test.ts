@@ -63,6 +63,8 @@ const stub = vi.hoisted(() => {
       | {
           readonly session_record_id: string;
           readonly counterparty_name: string;
+          /** #1115 task 4 — the address the invitation was sent to; the claim compares it. */
+          readonly email: string | null;
           readonly claimed_at: Date | null;
           readonly expires_at: Date;
         }
@@ -71,6 +73,11 @@ const stub = vi.hoisted(() => {
     seats: PartySeat[];
     /** `true` makes the claim's INSERT … ON CONFLICT DO NOTHING report a conflict. */
     seatTaken: boolean;
+    /**
+     * #1115 task 4 — the account already bound to the Counterparty's seat, as the resume path
+     * reads it. `null` is a cookie-only seat (nothing to compare) and also "no row at all".
+     */
+    counterpartySeat: string | null;
     /**
      * The billing gate's three reads (#289, #505): how many active instances the account already
      * holds, how many relationships it has started, and whether any grant is running. `0`, `0` and
@@ -85,6 +92,7 @@ const stub = vi.hoisted(() => {
     invite: undefined,
     seats: [],
     seatTaken: false,
+    counterpartySeat: null,
     activeInstances: 0,
     activeRelationships: 0,
   };
@@ -99,6 +107,7 @@ const stub = vi.hoisted(() => {
     state.invite = undefined;
     state.seats = [];
     state.seatTaken = false;
+    state.counterpartySeat = null;
     state.activeInstances = 0;
     state.activeRelationships = 0;
   }
@@ -163,7 +172,7 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("INSERT INTO party")) {
       return state.seatTaken ? { rows: [], rowCount: 0 } : wrote;
     }
-    if (sql.startsWith("SELECT session_record_id, counterparty_name, claimed_at, expires_at")) {
+    if (sql.startsWith("SELECT session_record_id, counterparty_name, email, claimed_at, expires_at")) {
       return { rows: state.invite === undefined ? [] : [state.invite], rowCount: 1 };
     }
     // #533 phase 3 — the claim asks which relationship the invitation's session belongs to before
@@ -181,6 +190,18 @@ const stub = vi.hoisted(() => {
         rowCount: 1,
       };
     }
+    // #1115 task 4 — the resume path asks which account holds the Counterparty's seat. `null` is
+    // "no row at all"; the empty string is a row whose binding is NULL (a cookie-only claim).
+    if (sql.startsWith("SELECT user_id FROM party")) {
+      return {
+        rows:
+          state.counterpartySeat === null
+            ? []
+            : [{ user_id: state.counterpartySeat === "" ? null : state.counterpartySeat }],
+        rowCount: 1,
+      };
+    }
+    if (sql.startsWith("UPDATE party SET access_token_hash")) return wrote;
     if (sql.includes("AND user_id = $2")) {
       return { rows: state.seats.filter((seat) => seat.user_id === values[1]), rowCount: 1 };
     }
@@ -282,6 +303,7 @@ function invite(over: Partial<NonNullable<typeof stub.state.invite>> = {}) {
   return {
     session_record_id: "assessment-instance-fresh",
     counterparty_name: "Rowan",
+    email: "rowan@example.test",
     claimed_at: null,
     expires_at: new Date(Date.now() + 60_000),
     ...over,
@@ -289,7 +311,13 @@ function invite(over: Partial<NonNullable<typeof stub.state.invite>> = {}) {
 }
 
 function claimInput(over: Partial<ClaimInput> = {}): ClaimInput {
-  return { token: INVITE_TOKEN, confirm: "Rowan", ...over };
+  // #1115 task 4 — the invitation, and the two fields the claim screen posts.
+  return {
+    invitationToken: INVITE_TOKEN,
+    name: "Rowan",
+    email: "rowan@example.test",
+    ...over,
+  };
 }
 
 /* ------------------------------------------------------------------ *\
@@ -498,7 +526,7 @@ describe("claimInvite binds the claimer", () => {
     expect(partyInserts()[0].values[3]).toBeNull();
   });
 
-  it("ignores an identity posted beside the confirmation", async () => {
+  it("ignores an identity posted beside the two fields", async () => {
     stub.state.invite = invite();
 
     const crafted = {
@@ -511,6 +539,109 @@ describe("claimInvite binds the claimer", () => {
 
     expect(partyInserts()[0].values[3]).toBeNull();
     for (const call of stub.calls) expect(call.values).not.toContain("posted-by-the-browser");
+  });
+});
+
+/* ------------------------------------------------------------------ *\
+ * Claim — two fields, and the account the address names (#1115 task 4)
+ * ------------------------------------------------------------------ */
+
+describe("claimInvite binds the account the posted address resolves to", () => {
+  it("writes the resolved account on the seat when the browser has no session", async () => {
+    stub.state.invite = invite();
+
+    const result = await claimInvite(claimInput({ accountUserId: "account-rowan" }));
+
+    expect(result).toMatchObject({ ok: true, accountUserId: "account-rowan", resumed: false });
+    expect(partyInserts()[0].values[3]).toBe("account-rowan");
+  });
+
+  it("keeps a signed-in claimer's own session ahead of the resolved account", async () => {
+    stub.state.invite = invite();
+
+    await claimInvite(claimInput({ viewerUserId: "account-signed-in", accountUserId: "account-x" }));
+
+    expect(partyInserts()[0].values[3]).toBe("account-signed-in");
+  });
+
+  it("refuses an address that is not the invitation's, and writes nothing", async () => {
+    stub.state.invite = invite({ email: "rowan@example.test" });
+
+    const result = await claimInvite(claimInput({ email: "someone@else.test" }));
+
+    expect(result).toMatchObject({ ok: false, code: "email-mismatch" });
+    expect(partyInserts()).toHaveLength(0);
+    expect(callsMatching(/^UPDATE session_invite /)).toHaveLength(0);
+    expect(callsMatching(/^ROLLBACK$/)).toHaveLength(1);
+  });
+
+  it("accepts the invitation's address whatever the case — a keyboard capitalises it", async () => {
+    stub.state.invite = invite({ email: "rowan@example.test" });
+
+    const result = await claimInvite(claimInput({ email: " Rowan@Example.TEST " }));
+
+    expect(result).toMatchObject({ ok: true });
+  });
+});
+
+describe("a second submit resumes the same seat (#1115 task 4)", () => {
+  it("hands back a fresh cookie for the same party and writes no second account or row", async () => {
+    stub.state.invite = invite({ claimed_at: new Date("2026-11-10T09:00:00.000Z") });
+    stub.state.counterpartySeat = "account-rowan";
+
+    const result = await claimInvite(claimInput({ accountUserId: "account-rowan" }));
+
+    expect(result).toMatchObject({ ok: true, resumed: true, accountUserId: "account-rowan" });
+    // The seat is not re-inserted, `claimed_at` is not rewritten, and the relationship's status is
+    // untouched: a resume is one column, the browser's own token.
+    expect(partyInserts()).toHaveLength(0);
+    expect(callsMatching(/^UPDATE session_invite /)).toHaveLength(0);
+    expect(callsMatching(/^UPDATE relationship /)).toHaveLength(0);
+    expect(callsMatching(/^UPDATE party SET access_token_hash/)).toHaveLength(1);
+  });
+
+  it("refuses the seat to an address that is not the invitation's", async () => {
+    stub.state.invite = invite({ claimed_at: new Date("2026-11-10T09:00:00.000Z") });
+    stub.state.counterpartySeat = "account-rowan";
+
+    const result = await claimInvite(claimInput({ email: "someone@else.test" }));
+
+    expect(result).toMatchObject({ ok: false, code: "claimed" });
+    expect(callsMatching(/^UPDATE party SET access_token_hash/)).toHaveLength(0);
+  });
+
+  it("refuses the seat to a different account, even with the right address", async () => {
+    // The bound account is the authority once the seat has one: a shared link plus the address is
+    // not enough to take somebody else's seat.
+    stub.state.invite = invite({ claimed_at: new Date("2026-11-10T09:00:00.000Z") });
+    stub.state.counterpartySeat = "account-rowan";
+
+    const result = await claimInvite(claimInput({ accountUserId: "account-someone-else" }));
+
+    expect(result).toMatchObject({ ok: false, code: "claimed" });
+    expect(callsMatching(/^UPDATE party SET access_token_hash/)).toHaveLength(0);
+  });
+
+  it("takes no seat when the row has no account and the claim resolved none", async () => {
+    // A cookie-only claim: the seat exists, its binding is NULL, and the address is the whole
+    // proof. Nothing is rebound, and the answer says so.
+    stub.state.invite = invite({ claimed_at: new Date("2026-11-10T09:00:00.000Z") });
+    stub.state.counterpartySeat = "";
+
+    const result = await claimInvite(claimInput());
+
+    expect(result).toMatchObject({ ok: true, resumed: true, accountUserId: null });
+    expect(partyInserts()).toHaveLength(0);
+  });
+
+  it("refuses when a spent invitation has no seat at all — drift is not repaired here", async () => {
+    stub.state.invite = invite({ claimed_at: new Date("2026-11-10T09:00:00.000Z") });
+    stub.state.counterpartySeat = null;
+
+    const result = await claimInvite(claimInput());
+
+    expect(result).toMatchObject({ ok: false, code: "claimed" });
+    expect(partyInserts()).toHaveLength(0);
   });
 });
 

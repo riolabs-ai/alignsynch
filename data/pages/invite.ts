@@ -52,84 +52,21 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
       body: "You answer every Aspect first. You will not see their answers, and they will not see yours, until you have both accepted the session — and after that, the answers are frozen.",
       items: [
         { id: "join", label: "You are joining as {counterparty}, the Counterparty." },
-        { id: "confirm", label: "I am {counterparty}, and I am joining as the Counterparty." },
+        { id: "free", label: "Accepting costs you nothing — {initiator} is the one who pays." },
+        { id: "name", label: "Your name" },
+        { id: "email", label: "Your email" },
         { id: "claim", label: "Accept and answer" },
       ],
     },
     /**
-     * The onboarding wizard's three screens (#t_0aa81144).
-     *
-     * Before this, the claim dropped the Counterparty straight into the session: no sentence said
-     * who had invited them, what was about to happen, or why they were suddenly being asked for
-     * scores. Each step is one screen with one question answered, addressed by `?step=1|2|3`.
-     *
-     * **Their numbered progress band is gone (#710).** The response renders inside the flow's
-     * modal, under the six-stage rail, because it is stage 5 — Connect — of the *same* journey the
-     * Initiator started. The flow has one progress pattern (the cell rail), so this section now
-     * carries only the two controls the wizard keeps: Back and Continue.
-     *
-     * The copy never says the Counterparty pays, because they never do: `free` says who does.
+     * The three onboarding screens are **retired** (#1115 task 4). `step-1` / `step-2` / `step-3`
+     * said what the product was, what would happen next, and which account to create; the owner's
+     * rule for this side of the flow is two fields and one screen, so the `claim` section above is
+     * the whole surface. The copy is deleted rather than kept "for reference": a fixture row no
+     * surface reads is a second, drifting description of a screen that does not exist. The one
+     * sentence worth keeping — "your answers are yours alone until you have both submitted" —
+     * already lives on `data/pages/assessment-instance.ts`, where the answers are given.
      */
-    {
-      id: "steps",
-      items: [
-        { id: "back", label: "Back" },
-        { id: "next", label: "Continue" },
-      ],
-    },
-    {
-      id: "step-1",
-      heading: "What this is",
-      body: "Someone you know wants to compare notes with you. It takes a few minutes, and nothing you write is shown to them until you have both finished.",
-      items: [
-        { id: "invited-by", label: "{initiator} invited you to answer {template}." },
-        {
-          id: "they-see",
-          label:
-            "They answer the same questions from their side. They never see your answers before you submit, and you never see theirs.",
-        },
-        {
-          id: "you-see",
-          label:
-            "You see the questions and your own answers. When you have both finished, you both see the report.",
-        },
-      ],
-    },
-    {
-      id: "step-2",
-      heading: "What happens next",
-      body: "Three things happen in order, and you can stop after any of them.",
-      items: [
-        {
-          id: "you-answer",
-          label: "You answer every question: how it feels now, and how you wish it to be.",
-        },
-        { id: "they-answer", label: "{initiator} answers the same questions from their side." },
-        {
-          id: "report",
-          label:
-            "When you have both answered and accepted, the report opens for both of you: every gap, computed from the two answers.",
-        },
-        {
-          id: "editable",
-          label:
-            "You can change any opinion until you accept the session. After you accept, your answers are sealed.",
-        },
-      ],
-    },
-    {
-      id: "step-3",
-      heading: "Your account",
-      body: "The answers are tied to an account so you can come back to them. If you are already signed in, this is the last step.",
-      items: [
-        { id: "free", label: "Accepting costs you nothing — {initiator} is the one who pays." },
-        { id: "signed-in", label: "You are signed in as {name}." },
-        { id: "sign-in", label: "Sign in to accept {initiator}'s invitation" },
-        { id: "register", label: "Create an account" },
-        { id: "accept", label: "Accept the invitation" },
-        { id: "confirm", label: "I am {counterparty}, and I am joining as the Counterparty." },
-      ],
-    },
     {
       id: "claimed",
       heading: "This invitation was used already",
@@ -191,7 +128,17 @@ export const invitePageCopy: PageCopy = zPageCopy.parse({
         {
           id: "unconfirmed",
           label:
-            "Nothing was claimed: the claim did not confirm joining as {counterparty}. Tick the box below and send it again.",
+            "Nothing was claimed: the claim did not confirm joining as {counterparty}. Send it again with the name the invitation carries.",
+        },
+        /**
+         * #1115 task 4 — the two-field claim's own refusal. The link is fine and the seat is free;
+         * the address is not the one the invitation was sent to, which is the one fact that ties
+         * the seat to a person now that no password is asked for.
+         */
+        {
+          id: "email-mismatch",
+          label:
+            "Nothing was claimed: this invitation was sent to a different address. Ask {initiator} to resend it to yours.",
         },
         /**
          * #533 phase 3 — the link is fine, the membership is not. Its own sentence because the

@@ -117,16 +117,31 @@ now resolves to the same screen for both viewers.
 
 The counterparty opens `/invite/<token>` and gets the same overlay: `StageShell` frames it,
 `StageRail` draws the same five cells with **Account** current (nothing above it is available,
-because the other person created the relationship), and closing leaves onto `/dashboard`. The three
-onboarding screens — _What this is_, _What happens next_, _Your account_ — are that stage's body,
-addressed by `?step=1|2|3` with the token in the path, so a refresh, a deep link and the sign-in
-round trip all land on the same screen. There is no second stepper: the flow has one progress
-pattern, the cell rail.
+because the other person created the relationship), and closing leaves onto `/dashboard`. The stage's
+body is `components/assessment-flow/claim-form.tsx`: **two fields, one screen** (#1115 task 4) — the
+name the invitation already carries, prefilled, and the address it was sent to. There is no
+`?step=1|2|3` addressing any more; the three onboarding screens (_What this is_, _What happens next_,
+_Your account_) were retired with their copy, because a claim that asks for a password, a plan or a
+price is the friction #1115 exists to remove (US-2: "at most two fields before the counterparty can
+begin answering"). An old `?step=` link still resolves — it lands on this screen and the parameter is
+ignored, since a copy of the link in somebody's mail client cannot be rewritten. There is no second
+stepper: the flow has one progress pattern, the cell rail.
 
-A completed response exits onto `/dashboard` for a signed-in claimer — the relationship is under My
-relationships from that redirect on. A signed-out claim (postable, though the screens never offer
-it: step 3 asks for an account instead) stays on the relationship it just bound, because
-`/dashboard` would only bounce the browser to `/login` and lose the seat the claim set.
+The address is the second credential, because the password went away. A claim whose address is not
+the one the invitation was sent to is refused with `email-mismatch` and claims nothing; a repeat
+submit from the right address **resumes** the seat in a new browser rather than dead-ending on "used
+already" — the person clicking their own link twice is not an error, and the `party` row's own
+`access_token_hash` is replaced, never a second row or a second account. The account the claim binds
+is resolved before the claim's transaction: `lib/auth/claim-account.ts` answers the id an existing
+address already has, or creates one through the branch's own `sign-up/email` (the call
+`scripts/db-seed.mjs` makes) and relays that sign-up's session cookies. A tree with no auth server
+still claims — the seat is bound to the browser's cookie and the person signs in later.
+
+A completed response exits onto `/dashboard`: with the account resolved, a claim that started signed
+out ends signed in, which is the journey #1115 D1 asks for — _both parties able to access the
+dashboard and the first assessment session, not when they share or publish their opinions_. A
+browser that holds the seat but no session stays on the relationship it just bound, because
+`/dashboard` would only bounce it to `/login` and lose the cookie the claim set.
 
 The refusal bands — a spent, expired, withdrawn or lapsed invitation link, and a browser that is
 already a party — are **not** the response path: there is nothing to respond to, so they keep their

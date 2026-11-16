@@ -87,7 +87,13 @@ import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
 import { lapseIfDue, recordLapseIfDue, type Sql } from "@/lib/relationship/enforcement";
-import { membershipOf, membershipSentence, type Membership } from "@/lib/relationship/membership";
+import {
+  connectionOf,
+  membershipOf,
+  membershipSentence,
+  type Connection,
+  type Membership,
+} from "@/lib/relationship/membership";
 import { initiatorIsViewer } from "@/lib/relationship/initiator";
 import { trialStateOf, type TrialFacts, type TrialState } from "@/lib/relationship/trial";
 import {
@@ -219,6 +225,17 @@ export interface MemberRelationshipRow {
    * does; `readMyRelationship` always fills it.
    */
   readonly counterpartySeatName?: string | null;
+  /**
+   * #1115 task 5 — is the pair **connected**? Both seats bound to an account, and the session
+   * exists: the owner's own criterion (issue #1115, D1), which is explicitly *not* "they shared
+   * or published their opinions". Derived by `connectionOf()` from the three facts the query
+   * reads, so no screen computes it.
+   *
+   * Optional for the reason `counterpartySeatName` is: view literals in the suites predate the
+   * field. `readMyRelationship` and the list always fill it; a screen that finds it absent draws
+   * no connection row rather than guessing one.
+   */
+  readonly connection?: Connection;
   /** What the band says, derived at the instant the read was given. */
   readonly view: PublishView;
   /**
@@ -253,6 +270,12 @@ interface RelationshipQueryRow {
   readonly initiator_name: string | null;
   /** #975 — the Counterparty's **seat** name, from `party`; present when `counterparty_name` is not. */
   readonly counterparty_seat_name: string | null;
+  /** #1115 task 5 — a session row exists for the relationship's latest round. */
+  readonly session_exists: boolean;
+  /** #1115 task 5 — the Initiator's `party` row exists and carries an account. */
+  readonly initiator_bound: boolean;
+  /** #1115 task 5 — the Counterparty's `party` row exists and carries an account. */
+  readonly counterparty_bound: boolean;
   readonly claimed: boolean | null;
   readonly revoked: boolean | null;
   readonly expires_at: Date | string | null;
@@ -338,6 +361,18 @@ const COUNTERPARTY_SEAT_NAME = `(
 const RELATIONSHIP_COLUMNS = `
   rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
   rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME}, ${COUNTERPARTY_SEAT_NAME},
+  -- #1115 task 5 — "connected" is a fact about the two seats and the session, read here and never
+  -- computed on a screen. A seat counts as bound only when the party row carries a user_id: a row
+  -- with a NULL binding is a browser holding a cookie, and that person cannot open the dashboard.
+  (s.record_id IS NOT NULL) AS session_exists,
+  EXISTS (
+    SELECT 1 FROM party bp
+     WHERE bp.session_record_id = s.record_id AND bp.role = 'initiator' AND bp.user_id IS NOT NULL
+  ) AS initiator_bound,
+  EXISTS (
+    SELECT 1 FROM party bp
+     WHERE bp.session_record_id = s.record_id AND bp.role = 'counterparty' AND bp.user_id IS NOT NULL
+  ) AS counterparty_bound,
   t.id AS template_id, t.slug AS template_slug, t.title, t.summary,
   -- #841 — the relationship's own title, written at create from stage 1, beside the template's.
   -- The list used to head every card with the template's title, so two relationships made from one
@@ -496,6 +531,11 @@ function relationshipOf(
     counterpartyName: row.counterparty_name,
     initiatorName: row.initiator_name,
     counterpartySeatName: row.counterparty_seat_name ?? null,
+    connection: connectionOf({
+      hasSession: row.session_exists === true,
+      initiatorBound: row.initiator_bound === true,
+      counterpartyBound: row.counterparty_bound === true,
+    }),
     view: publishViewOf({ status, invite, now }),
     membership: membershipOf({
       status,

@@ -438,6 +438,37 @@ export function RelationshipDetail({
     ),
   });
 
+  /**
+   * #1115 task 5 — the Connection cell. The *state* comes from `connectionOf()` on the server read
+   * (`MemberRelationshipView.connection`); this function only chooses which of the fixture's two
+   * sentences draws it, so the screen can never disagree with `content/stages.ts` about whether the
+   * pair is connected. When they are not, the sentence names the person whose seat is still empty —
+   * the seat's name first, the invitation's second, the role's own noun last, the same order
+   * `rolesLine` uses above.
+   */
+  const connectionValue = (row: MemberRelationshipView): ReactNode => {
+    const connection = row.connection;
+    if (connection === undefined) return null;
+    if (connection.connected) {
+      return (
+        <Chip variant="soft" data-connection="connected">
+          {pageItemOf(copy, "connected").label}
+        </Chip>
+      );
+    }
+    const name =
+      connection.waitingOn === "initiator"
+        ? (row.initiatorName ?? pageItemOf(copy, "role-initiator").label)
+        : (row.counterpartySeatName ??
+          row.counterpartyName ??
+          pageItemOf(copy, "role-counterparty").label);
+    return (
+      <span data-connection="waiting">
+        {fillLabel(pageItemOf(copy, "waiting").label, { name })}
+      </span>
+    );
+  };
+
   /* #795 — the facts card. The four the artifact draws (§5), in the same cell anatomy the template
      uses for its figures. */
   const factRows: readonly DetailFact[] = [
@@ -468,6 +499,17 @@ export function RelationshipDetail({
       label: pageItemOf(copy, "invited").label,
       value: relationship.counterpartyName ?? pageItemOf(copy, "none").label,
     },
+    /* #1115 task 5 — the derived state, drawn from the read and never computed here. Absent only
+       for a view literal that predates the field; the page always supplies it. */
+    ...(relationship.connection === undefined
+      ? []
+      : [
+          {
+            id: "connection",
+            label: pageItemOf(copy, "connection").label,
+            value: connectionValue(relationship),
+          },
+        ]),
   ];
 
   return (
