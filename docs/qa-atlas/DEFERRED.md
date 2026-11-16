@@ -34,8 +34,9 @@ unnoticed either, which is what this page is for.
 
 ## What a row must say
 
-| version | date | commit | reason |
-| ------- | ---- | ------ | ------ |
+| version | date       | commit                                   | reason                                                                                                                                                                                                                                                                                                                                                       |
+| ------- | ---------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.21.0  | 2026-11-16 | 1ce29064ce310905047e791fc00d1b54b3256b01 | no sweep for this release: generation is stopped until the atlas can see what a release changes (#1094), and it captures no auth modal, no stage-form embed step and nothing of the Stripe capture — which is where the session-state and invitation changes are read. The sha names the tree the release is cut from, because a commit cannot carry its own |
 
 Four fields, each checked by `scripts/qa-atlas-deferral.mjs`:
 
