@@ -46,7 +46,3 @@ scripts/payment-e2e.mjs
 # The copy-item ids. `itemLabel(facts, "instance")` selects a row of `data/pages/admin-report.ts`
 # by its `id`, which E41 skips on purpose; the id moves when the fixture does, in phase 3.
 components/admin/report-operations.tsx
-
-# Provenance: the comment records the button label this card replaced ("Start an instance"), so it
-# must keep the old wording to keep its point.
-components/assessment-flow/template-detail.tsx
