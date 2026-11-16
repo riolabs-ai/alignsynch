@@ -54,6 +54,13 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CHECK = join(ROOT, "scripts", "qa-atlas-check.mjs");
 const ATLAS = join(ROOT, "docs", "qa-atlas");
 const MANIFEST = join(ROOT, "docs", "docs.json");
+/**
+ * The cut this tree carries. `pnpm qa:atlas:prune` refuses a head that is not `package.json`'s
+ * version, so a release that ships without a sweep (its own version has no directory — #1094) has
+ * no prune to run, and the two end-to-end cases below are skipped rather than aimed at the previous
+ * cut's sandbox. The refusal itself is pinned above, in `a prune refuses before it deletes anything`.
+ */
+const VERSION: string = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).version;
 
 /**
  * The environment a sandbox subprocess gets: this shell's, minus the repository it was told about.
@@ -312,114 +319,120 @@ describe("a prune's row filter matches through the docs/ prefix", () => {
  * the three facts that failure broke: the directory is gone, no row mentions it, and the check is
  * green on what is left.
  */
-describe("pnpm qa:atlas:prune takes the directory and its row in one run", () => {
-  function git(dir: string, args: string[]) {
-    return spawnSync(
-      "git",
-      [
-        "-c",
-        "user.email=qa-atlas@example.test",
-        "-c",
-        "user.name=qa-atlas test",
-        "-c",
-        "commit.gpgsign=false",
-        ...args,
-      ],
-      { cwd: dir, encoding: "utf8", env: sandboxEnv() },
-    );
-  }
-
-  /** The committed atlas + the committed manifest, plus one registered cut the caller adds. */
-  function pruneSandbox(label: string): string {
-    const dir = mkdtempSync(join(tmpdir(), "qa-atlas-prune-"));
-    sandboxes.push(dir);
-    cpSync(ATLAS, join(dir, "docs", "qa-atlas"), { recursive: true });
-    const cutDir = join(dir, "docs", "qa-atlas", label);
-    mkdirSync(cutDir, { recursive: true });
-    writeFileSync(
-      join(cutDir, "manifest.json"),
-      `${JSON.stringify({ schema: "qa-atlas/v1", version: label.slice(1), routes: [] })}\n`,
-    );
-    // A fourth cut that passes `docs:check` is a *listed* cut — an unregistered directory is its own
-    // failure, and the prune would (correctly) refuse to pretend it dropped a row for one.
-    const manifest = readManifest();
-    const section = manifest.sections.find((candidate) =>
-      candidate.docs.some((doc) => doc.path === "qa-atlas/README.md"),
-    );
-    if (section === undefined) throw new Error("the committed manifest lists no qa-atlas section");
-    section.docs.unshift({
-      path: `qa-atlas/${label}/index.md`,
-      title: `QA atlas — ${label}`,
-      question: `What did every registered surface render in ${label}, and did it read the record it claims?`,
-    });
-    writeFileSync(join(dir, "docs", "docs.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-    // `--prune` refuses a cut git does not track, because `git rm -r` cannot remove one.
-    expect(git(dir, ["init", "--quiet"]).status).toBe(0);
-    expect(git(dir, ["add", "--all"]).status).toBe(0);
-    expect(git(dir, ["commit", "--quiet", "-m", "sandbox: four registered cuts"]).status).toBe(0);
-    return dir;
-  }
-
-  function prune(dir: string) {
-    return spawnSync(
-      process.execPath,
-      [
-        "--import",
-        "./scripts/ts-modules.mjs",
-        "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
-        join(ROOT, "scripts", "qa-atlas.mjs"),
-        "--prune",
-        "--root",
-        dir,
-      ],
-      { cwd: ROOT, encoding: "utf8", env: sandboxEnv() },
-    );
-  }
-
-  it("drops the row with the directory, and the check is green afterwards", () => {
-    const dir = pruneSandbox("v1.16.0");
-    const manifestFile = join(dir, "docs", "docs.json");
-    const before = readManifest(manifestFile);
-    expect(rowsOf(before).filter((doc) => doc.path.startsWith("qa-atlas/v1.16.0/"))).toHaveLength(
-      1,
-    );
-
-    const result = prune(dir);
-    expect(result.status).toBe(0);
-    expect(result.stdout).toContain("dropped 1 row");
-    expect(result.stdout).toContain("4 cuts → 3");
-
-    // (a) the directory the run deleted
-    expect(existsSync(join(dir, "docs", "qa-atlas", "v1.16.0"))).toBe(false);
-    // (b) and no row left behind, which is the half that used to be skipped
-    const after = readManifest(manifestFile);
-    expect(rowsOf(after).filter((doc) => doc.path.startsWith("qa-atlas/v1.16.0/"))).toHaveLength(0);
-    expect(rowsOf(after)).toHaveLength(rowsOf(before).length - 1);
-    // (c) the tree the prune left is one the check accepts
-    const checked = check(dir);
-    expect(checked.status).toBe(0);
-    expect(checked.stdout).toContain("window: 3 cuts");
-  }, 120_000);
-
-  it("names a removed cut whose row it did not find, instead of printing a clean zero", () => {
-    const dir = pruneSandbox("v1.16.0");
-    // The manifest listed the cut under a spelling the filter cannot match — the defect, reproduced.
-    const manifest = readManifest(join(dir, "docs", "docs.json"));
-    for (const section of manifest.sections) {
-      section.docs = section.docs.filter((doc) => !doc.path.startsWith("qa-atlas/v1.16.0/"));
+describe.skipIf(!existsSync(join(ATLAS, `v${VERSION}`)))(
+  "pnpm qa:atlas:prune takes the directory and its row in one run",
+  () => {
+    function git(dir: string, args: string[]) {
+      return spawnSync(
+        "git",
+        [
+          "-c",
+          "user.email=qa-atlas@example.test",
+          "-c",
+          "user.name=qa-atlas test",
+          "-c",
+          "commit.gpgsign=false",
+          ...args,
+        ],
+        { cwd: dir, encoding: "utf8", env: sandboxEnv() },
+      );
     }
-    writeFileSync(join(dir, "docs", "docs.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-    expect(git(dir, ["add", "--all"]).status).toBe(0);
-    expect(
-      git(dir, ["commit", "--quiet", "-m", "sandbox: an unregistered fourth cut"]).status,
-    ).toBe(0);
 
-    const result = prune(dir);
-    expect(result.status).toBe(1);
-    expect(result.stdout).toContain("dropped 0 rows");
-    expect(result.stderr).toContain("listed no row for docs/qa-atlas/v1.16.0");
-  }, 120_000);
-});
+    /** The committed atlas + the committed manifest, plus one registered cut the caller adds. */
+    function pruneSandbox(label: string): string {
+      const dir = mkdtempSync(join(tmpdir(), "qa-atlas-prune-"));
+      sandboxes.push(dir);
+      cpSync(ATLAS, join(dir, "docs", "qa-atlas"), { recursive: true });
+      const cutDir = join(dir, "docs", "qa-atlas", label);
+      mkdirSync(cutDir, { recursive: true });
+      writeFileSync(
+        join(cutDir, "manifest.json"),
+        `${JSON.stringify({ schema: "qa-atlas/v1", version: label.slice(1), routes: [] })}\n`,
+      );
+      // A fourth cut that passes `docs:check` is a *listed* cut — an unregistered directory is its own
+      // failure, and the prune would (correctly) refuse to pretend it dropped a row for one.
+      const manifest = readManifest();
+      const section = manifest.sections.find((candidate) =>
+        candidate.docs.some((doc) => doc.path === "qa-atlas/README.md"),
+      );
+      if (section === undefined)
+        throw new Error("the committed manifest lists no qa-atlas section");
+      section.docs.unshift({
+        path: `qa-atlas/${label}/index.md`,
+        title: `QA atlas — ${label}`,
+        question: `What did every registered surface render in ${label}, and did it read the record it claims?`,
+      });
+      writeFileSync(join(dir, "docs", "docs.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+      // `--prune` refuses a cut git does not track, because `git rm -r` cannot remove one.
+      expect(git(dir, ["init", "--quiet"]).status).toBe(0);
+      expect(git(dir, ["add", "--all"]).status).toBe(0);
+      expect(git(dir, ["commit", "--quiet", "-m", "sandbox: four registered cuts"]).status).toBe(0);
+      return dir;
+    }
+
+    function prune(dir: string) {
+      return spawnSync(
+        process.execPath,
+        [
+          "--import",
+          "./scripts/ts-modules.mjs",
+          "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
+          join(ROOT, "scripts", "qa-atlas.mjs"),
+          "--prune",
+          "--root",
+          dir,
+        ],
+        { cwd: ROOT, encoding: "utf8", env: sandboxEnv() },
+      );
+    }
+
+    it("drops the row with the directory, and the check is green afterwards", () => {
+      const dir = pruneSandbox("v1.16.0");
+      const manifestFile = join(dir, "docs", "docs.json");
+      const before = readManifest(manifestFile);
+      expect(rowsOf(before).filter((doc) => doc.path.startsWith("qa-atlas/v1.16.0/"))).toHaveLength(
+        1,
+      );
+
+      const result = prune(dir);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("dropped 1 row");
+      expect(result.stdout).toContain("4 cuts → 3");
+
+      // (a) the directory the run deleted
+      expect(existsSync(join(dir, "docs", "qa-atlas", "v1.16.0"))).toBe(false);
+      // (b) and no row left behind, which is the half that used to be skipped
+      const after = readManifest(manifestFile);
+      expect(rowsOf(after).filter((doc) => doc.path.startsWith("qa-atlas/v1.16.0/"))).toHaveLength(
+        0,
+      );
+      expect(rowsOf(after)).toHaveLength(rowsOf(before).length - 1);
+      // (c) the tree the prune left is one the check accepts
+      const checked = check(dir);
+      expect(checked.status).toBe(0);
+      expect(checked.stdout).toContain("window: 3 cuts");
+    }, 120_000);
+
+    it("names a removed cut whose row it did not find, instead of printing a clean zero", () => {
+      const dir = pruneSandbox("v1.16.0");
+      // The manifest listed the cut under a spelling the filter cannot match — the defect, reproduced.
+      const manifest = readManifest(join(dir, "docs", "docs.json"));
+      for (const section of manifest.sections) {
+        section.docs = section.docs.filter((doc) => !doc.path.startsWith("qa-atlas/v1.16.0/"));
+      }
+      writeFileSync(join(dir, "docs", "docs.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+      expect(git(dir, ["add", "--all"]).status).toBe(0);
+      expect(
+        git(dir, ["commit", "--quiet", "-m", "sandbox: an unregistered fourth cut"]).status,
+      ).toBe(0);
+
+      const result = prune(dir);
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain("dropped 0 rows");
+      expect(result.stderr).toContain("listed no row for docs/qa-atlas/v1.16.0");
+    }, 120_000);
+  },
+);
 
 /**
  * The other end of the same bookkeeping: the capture writes a page, and the page is an orphan until
