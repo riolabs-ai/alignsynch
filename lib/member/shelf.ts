@@ -99,6 +99,26 @@ function aspectsLabel(card: PageCopySection, count: number): string {
 }
 
 /**
+ * How long one person's answers take, from the number of Aspects: **about 35 seconds each**, rounded
+ * to the nearest minute, and never less than one.
+ *
+ * A template carries no duration of its own, so this is a *reading* of the work rather than a stored
+ * field — which is why it is a pure function here and not a column. The constant reproduces bundle
+ * 06's own samples exactly (`templates.html` draws `4 Aspects` / `About 2 Minutes`,
+ * `5 Aspects` / `About 3 Minutes`, `6 Aspects` / `About 4 Minutes`), so the port cannot drift from
+ * the artifact it was taken from.
+ */
+export function minutesForAspects(aspects: number): number {
+  if (!Number.isFinite(aspects) || aspects <= 0) return 1;
+  return Math.max(1, Math.round((aspects * 35) / 60));
+}
+
+/** `"About 3 Minutes"` — bundle 06's third card chip, derived from the Aspect count. */
+function minutesLabel(card: PageCopySection, count: number): string {
+  return fillLabel(itemLabel(card, "minutes"), { count: String(minutesForAspects(count)) });
+}
+
+/**
  * The shelf a template is filed under, as the filter row spells it.
  *
  * `null` for a template no relationship type names: the card draws the plain `Template` chip, and the
@@ -118,8 +138,10 @@ export function categoryLabelOf(copy: PageCopy, slug: string): string | null {
  * the shipped flow — the Library never says "start an instance", because a relationship is what a
  * person starts and a session is what a published relationship opens.
  *
- * The chip is the shelf: a filed template says its category (`Work`, `Family`), and a template the
- * taxonomy does not name says `Template`. The meta line is the Aspect count and the plan's one price.
+ * The chips are bundle 06's three, in its order: the shelf, the Aspect count, and how long the
+ * answers take (`Family` · `5 Aspects` · `About 3 Minutes`). The meta line keeps #796's one price —
+ * the plan's monthly figure, never a per-relationship charge — which the artifact does not draw but
+ * the owner asked for on this card, so it is a line rather than a fourth chip.
  */
 export function catalogueCard(copy: PageCopy, row: LibraryTemplate): TemplateShelfCard {
   const card = sectionOf(copy, "card");
@@ -129,8 +151,12 @@ export function catalogueCard(copy: PageCopy, row: LibraryTemplate): TemplateShe
     slug: row.slug,
     title: row.title,
     summary: row.summary,
-    chips: [categoryLabelOf(copy, row.slug) ?? itemLabel(card, "template")],
-    meta: [aspectsLabel(card, row.aspectCount), planPriceLabel(card)],
+    chips: [
+      categoryLabelOf(copy, row.slug) ?? itemLabel(card, "template"),
+      aspectsLabel(card, row.aspectCount),
+      minutesLabel(card, row.aspectCount),
+    ],
+    meta: [planPriceLabel(card)],
     detail: { href: relationshipTemplatePath(row.slug), label: words.detail },
     create: { href: createRelationshipPath(row.slug), label: words.create },
     relationship: null,
