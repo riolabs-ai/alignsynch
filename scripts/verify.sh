@@ -57,6 +57,13 @@
 # or a column page whose view still centres itself all fail here. The registry is data, the check
 # is a script, the pages are app — three lanes, one check, ~0.4 s.
 #
+# THE TREE-HYGIENE STEP IS A REPORT AND NEVER A FAILURE (#1178). `scripts/tree-hygiene.mjs` names the
+# writer of every changed path — `next dev` rewrites `AGENTS.md`, `gitnexus analyze` writes
+# `CLAUDE.md`, `pnpm gen` writes `data/generated/` — and the command that clears it. It runs first in
+# every lane so the table is the first thing a dirty run prints. It must never fail the gate: a
+# worker's worktree is dirty by design mid-card, so a gate that failed on dirt would fail every card.
+# The refusal lives in `scripts/release.sh`, where a cut is made.
+#
 # CI classifies too, and only because it pays for the base ref: ci.yml checks
 # out full history and fetches origin/main, so GATE_REF resolves there (a
 # depth-1 checkout has no such ref, and until ci.yml was fixed every CI run
@@ -472,6 +479,30 @@ if [ "$LANE" != "code" ] && printf '%s\n' "$LANE_FILES" |
   printf '%s! dependency/config manifest changed — a bump wants the full gate: GATE_LANE=full bash scripts/verify.sh%s\n' \
     "$C_YEL" "$C_OFF" >&2
 fi
+
+# TREE HYGIENE IS A REPORT AND NEVER A FAILURE. **Do not turn this into a check.** A worker's
+# worktree is dirty by design in the middle of a card — the branch *is* the uncommitted work — so a
+# gate that failed on dirt would fail every card the gate exists to check, and the fleet would learn
+# to skip the gate instead of cleaning the tree. What this step buys is the other direction: a path
+# written by a *tool* (`next dev`, `gitnexus analyze`, a generator) rather than by the person
+# running the gate is named with the command that clears it, so the operator reads "`next dev` wrote
+# this" and not thirty lines of `git status` to scroll past. `scripts/tree-hygiene.mjs` prints its
+# rows and always exits 0; the wrapper below returns 0 even when the reporter itself cannot run. The
+# refusal stays where a cut is made — `scripts/release.sh::require_cut_checkout` — never here.
+report_tree_hygiene() {
+  local out rc
+  set +e
+  out="$(node scripts/tree-hygiene.mjs --known-only 2>&1)"
+  rc=$?
+  set -e
+  if [ "$rc" -ne 0 ]; then
+    printf '  tree-hygiene: the reporter could not read the tree (exit %s) — not a gate failure\n' "$rc"
+  fi
+  printf '%s\n' "$out" | sed -e 's/^/  /'
+  return 0
+}
+
+run_step "tree hygiene (who wrote the changed paths — a report, never a failure)" report_tree_hygiene || fail
 
 # Order is deliberate: cheap-and-certain first, the build last.
 run_step "deps (pnpm install --frozen-lockfile)" pnpm install --frozen-lockfile || fail
