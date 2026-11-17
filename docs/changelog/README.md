@@ -48,7 +48,7 @@ pnpm changelog:check    # fail, naming the page and line, when one has drifted
 
 - **Released** 2026-11-17
 - **Tag** [`v1.22.0`](https://github.com/riolabs-ai/alignsynch/releases/tag/v1.22.0)
-- **Pull requests named** 15
+- **Pull requests named** 18
 - **Theme:** the release where the relationship became six sections you can read — a Counterparty who joins instead of being described, numbered Aspects with a tolerance in words, and a trial that pauses instead of closing
 - **Headline:** feat(v2) — #1124 — Relationship Detail's six-tab layer (#1148)
 
