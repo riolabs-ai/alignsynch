@@ -938,6 +938,11 @@
           "question": "Which release made a draft session distinguishable from a live one, and gave an invitation its own relationship?"
         },
         {
+          "path": "changelog/v1-22-0.md",
+          "title": "v1.22.0",
+          "question": "Which release turned the relationship into six sections a reader can address, and made a trial that ends pause instead of close?"
+        },
+        {
           "path": "changelog/v1-3-0.md",
           "title": "v1.3.0",
           "question": "The release where the flow closed."

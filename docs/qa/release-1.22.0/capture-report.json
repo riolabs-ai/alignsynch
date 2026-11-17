@@ -1,0 +1,41 @@
+{
+  "release": "1.22.0",
+  "commit": "7eb8ed0dc57afc215dfed842ab3dc0e3d39faa90",
+  "capturedAt": "2026-11-17T15:26:06.545Z",
+  "method": "headless Chrome over the DevTools protocol (scripts/cdp.mjs) — Runtime.evaluate asserts, Page.captureScreenshot at the measured document height",
+  "server": "pnpm dev from this release's own worktree, port 3411, loopback, demo branch env (.env.local wins over .env), /api/version answered {\"version\":\"1.22.0\",\"commit\":\"7eb8ed0dc57afc215dfed842ab3dc0e3d39faa90\"}",
+  "session": "signed in from Node through POST /api/auth/sign-in/email as initiator@demo.alignsynch.test (the demo initiator), cookies handed to Chrome with Network.setCookie",
+  "stills": [
+    {
+      "file": "relationship-detail-1440.png",
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial",
+      "width": 1440,
+      "height": 1366,
+      "sha256": "f2cd4c58d92a86bd54f6031b17b7130b93bd6b73b656c5721fd5f67648979edb",
+      "asserts": {
+        "title": "Relationship · AlignSynch",
+        "path": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial",
+        "h1": "Staff & Manager",
+        "h2": [
+          "Recent Messages",
+          "Notifications",
+          "Your Trial Ended",
+          "Complete and open the Gap",
+          "Where this stands",
+          "Relationship Discussion",
+          "Aspects",
+          "Members",
+          "Relationship Information",
+          "Assessment Settings"
+        ],
+        "tabs": ["Discussion", "Aspects", "Members", "Details", "Settings", "Payment"],
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 1936
+      },
+      "why": "the six-tab relationship detail this release ships — a live trial relationship seen by its Initiator, with the numbered Aspects, the counter-party seat and the trial-ended band"
+    }
+  ]
+}
