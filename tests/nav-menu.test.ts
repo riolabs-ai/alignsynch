@@ -124,6 +124,8 @@ describe("the menu descriptor", () => {
       "/admin/broadcast",
       "/admin/docs",
       "/admin/permissions",
+      // #1138 — the transactional-mail override editor, the third reference row.
+      "/admin/email-templates",
       "/admin/audit",
     ]);
   });
@@ -202,6 +204,8 @@ describe("the ladder decides the rows", () => {
     // #1126 — the CRUD & Permissions matrix, directly after Docs: the docs say how the product
     // works, this says which role may do what.
     "/admin/permissions",
+    // #1138 — the transactional-mail override editor: what the product writes to a person.
+    "/admin/email-templates",
     "/admin/audit",
   ];
 
@@ -296,9 +300,10 @@ describe("the ladder decides the rows", () => {
     // the help pair — #929's arrangement, asserted rather than assumed.
     expect(MENUS.admin).toContain("/admin/review");
     expect(MENUS.admin).toContain("/admin/health");
-    // #901's docs row survived the move, #1095 removed the growth row, and #1126 added the CRUD &
-    // Permissions row directly after Docs, so nine rows in the operator group.
-    expect(ADMIN_GROUP).toHaveLength(9);
+    // #901's docs row survived the move, #1095 removed the growth row, #1126 added the CRUD &
+    // Permissions row directly after Docs and #1138 added the mail-override row after that, so ten
+    // rows in the operator group.
+    expect(ADMIN_GROUP).toHaveLength(10);
   });
 
   /**
@@ -323,9 +328,10 @@ describe("the ladder decides the rows", () => {
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
     // #920 added one operator row and #1095 removed it again; #1126 added the CRUD & Permissions
-    // row, so the two staff rungs carry 16 rather than 15 — and #1131 added Chat to the Workspace
-    // group, so every rung that draws it counts one more: 17 for a staff rung, 6 and 7 below.
-    expect(counts).toEqual([6, 7, 17, 17]);
+    // row and #1138 the mail-override row (so the two staff rungs carry 17 rather than 15), and
+    // #1131 added Chat to the Workspace group, so every rung that draws it counts one more:
+    // 18 for a staff rung (ADMIN_GROUP 10 + WORKSPACE 4 + SUPPORT_GROUP 4), 6 and 7 below.
+    expect(counts).toEqual([6, 7, 18, 18]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);

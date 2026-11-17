@@ -34,6 +34,8 @@ import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
 // #1126 — the CRUD & Permissions matrix: the v2 spec reference, read from one markdown source.
 import { adminPermissionsPageCopy } from "./admin-permissions";
+// #1138 — the transactional-mail override: one register of templates, one editor per template.
+import { adminEmailTemplatesPageCopy } from "./admin-email-templates";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 // #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
 import { adminReviewPageCopy } from "./admin-review";
@@ -132,6 +134,9 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/inbox": adminInboxPageCopy,
   // #1126 — the CRUD & Permissions matrix, read from `docs/specs/v2-prototype/crud-matrix.md`.
   "/admin/permissions": adminPermissionsPageCopy,
+  // #1138 — the transactional-mail override: the register, then one template's editor.
+  "/admin/email-templates": adminEmailTemplatesPageCopy,
+  "/admin/email-templates/[id]": adminEmailTemplatesPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   // #877 — the member's assessment-session listing, plural and a sibling of `/dashboard/

@@ -15,6 +15,18 @@ export const DEMO_PIN_FIELD = "pin";
 export const DEMO_ROLE_FIELD = "as";
 
 /**
+ * The field a role button carries the page it was asked to return to (#1187).
+ *
+ * A sign-in is a round trip, and `?next=` is the half of it the browser brought with it: a
+ * signed-out POST to the create flow's stage 4 answers `303 → /login?next=<commit page>`, and a
+ * button that ignores the value signs the person in and drops them somewhere else. The value is
+ * **not** trusted here — it is whatever a client posted — so the action re-validates it
+ * (`lib/auth/next-path.ts::signInDestination`) against the role's own destination before it is
+ * used, exactly as `startGoogleSignIn` does for the same reason.
+ */
+export const DEMO_NEXT_FIELD = "next";
+
+/**
  * What a submission answers.
  *
  * `idle` is the panel before anything was submitted; `rejected` carries the sentence for the cause
@@ -70,4 +82,15 @@ export type DemoGateAction = (prev: DemoFormState, formData: FormData) => Promis
 export type DemoViewProps =
   | { readonly kind: "off" }
   | { readonly kind: "entry" }
-  | { readonly kind: "roles"; readonly action: DemoRoleAction };
+  | {
+      readonly kind: "roles";
+      readonly action: DemoRoleAction;
+      /**
+       * The page the buttons must return to (#1187) — the raw `?next=` `/login` was opened with,
+       * or `""` when it was opened with none. It rides each button's form as a hidden field
+       * because a server action sees only what the form posted, and the action **re-validates**
+       * it (`signInDestination`) before using it: absent or unsafe, the role's own destination
+       * (`destinationFor(role)`) is the fallback.
+       */
+      readonly next: string;
+    };

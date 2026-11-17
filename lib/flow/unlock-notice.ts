@@ -32,7 +32,8 @@
  * `fetch` and is the same shape the invitation's send has taken since #146.
  */
 import type { PartyRole } from "@/content/assessment";
-import { reportReadyTemplate, renderTemplate } from "@/lib/email/templates";
+import { reportReadyTemplate } from "@/lib/email/templates";
+import { renderTemplateForSend } from "@/lib/email/send";
 import { instanceLink, sendMail, type MailMessage, type MailOutcome } from "@/lib/flow/email";
 import { readUnlockFacts } from "@/lib/flow/store";
 
@@ -73,9 +74,11 @@ export interface UnlockNoticeMessage extends MailMessage {
  * plain text first with the HTML derived from it. The recipient, the link and the blind rule are
  * unchanged — the template is handed no score, no Gap value and no token.
  */
-export function unlockNoticeMessage(fields: UnlockNoticeFields): UnlockNoticeMessage {
+export async function unlockNoticeMessage(
+  fields: UnlockNoticeFields,
+): Promise<UnlockNoticeMessage> {
   const link = instanceLink(fields.instanceRecordId, fields.base);
-  const rendered = renderTemplate(reportReadyTemplate, {
+  const rendered = await renderTemplateForSend(reportReadyTemplate, {
     recipient: fields.recipientName,
     other: fields.otherName,
     template: fields.templateTitle,
@@ -136,7 +139,7 @@ export async function sendUnlockNotice(input: {
   }
 
   return sendMail(
-    unlockNoticeMessage({
+    await unlockNoticeMessage({
       to: recipient.email,
       recipientName: recipient.name,
       otherName: facts[input.submittedBy].name,

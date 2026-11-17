@@ -42,6 +42,7 @@ import {
   joinedTemplate,
   membershipLapsedTemplate,
   purchaseConfirmationTemplate,
+  reachesCounterparty,
   relationshipExpiredTemplate,
   relationshipPausedTemplate,
   releaseNoteTemplate,
@@ -56,6 +57,8 @@ import {
   type EmailTemplate,
   type RenderedTemplate,
 } from "@/lib/email/templates";
+import { memberFacingTemplate, memberFacingTemplates } from "@/lib/admin/email-templates";
+import { renderSampleEmail } from "@/lib/email/samples";
 import {
   expiryDateOf,
   reminderDueAt,
@@ -493,5 +496,74 @@ describe("the reminder's due window is a pure function of the stored instant", (
 
   it("prints the calendar date from the stored instant, not from a clock", () => {
     expect(expiryDateOf(expiresAt)).toBe("2026-11-12");
+  });
+});
+
+/**
+ * #1138 — the register read as an **editor's** source, not a sender's.
+ *
+ * The admin page is a view of this file, so the editor can only be as safe as the facts asserted
+ * here: an audience column that refuses to address money mail to the Counterparty, a sample render
+ * for every row (so opening one cannot 500), a sample value for every declared placeholder (so the
+ * chips are all real), and the trial sentence the decision in force requires.
+ */
+describe("the register as the editor's source", () => {
+  it("declares an audience for every row, and the money letters cannot reach the Counterparty", () => {
+    for (const template of EMAIL_TEMPLATES) {
+      expect(["initiator", "counterparty", "both", "member", "subscriber", "operator"]).toContain(
+        template.recipient,
+      );
+    }
+    // By identity, not by id: renaming a file must not quietly make a money letter addressable to
+    // the person the product promised a price-free experience (#1119, #1115).
+    expect(reachesCounterparty(trialEndingTemplate.recipient)).toBe(false);
+    expect(reachesCounterparty(purchaseConfirmationTemplate.recipient)).toBe(false);
+    expect(reachesCounterparty(joinedTemplate.recipient)).toBe(false);
+    // And the pair the trial decision hangs on.
+    expect(invitationTemplate.recipient).toBe("counterparty");
+    expect(joinedTemplate.recipient).toBe("initiator");
+  });
+
+  it("renders every member-facing default over its sample facts", () => {
+    for (const template of memberFacingTemplates()) {
+      const rendered = renderSampleEmail(template.id);
+      expect(rendered.subject.length, template.id).toBeGreaterThan(0);
+      expect(rendered.text.length, template.id).toBeGreaterThan(0);
+      // The band derives the HTML from the text: an empty derivation means the body never landed.
+      expect(rendered.html, template.id).toContain(rendered.preheader);
+    }
+  });
+
+  it("renders a body written from the declared chips alone, for every template", () => {
+    // The chips are the editor's contract, and they are named in **body-variable** space while the
+    // sample facts are in **facts** space (`expires_on` comes from `expiresAt`, `joiner` from the
+    // join), so a chip-by-chip comparison of the two would be a false failure. The real question is
+    // the editor's own: can an admin write a body from the chips offered and have it render? That is
+    // what this asks, through the same call the preview makes.
+    for (const template of memberFacingTemplates()) {
+      const chips = template.body?.placeholders ?? [];
+      if (chips.length === 0) continue;
+      const body = `One line, then every variable: ${chips.map((name) => `{{${name}}}`).join(" ")}.`;
+      const rendered = renderSampleEmail(template.id, { body });
+      expect(rendered.text, template.id).toContain("One line, then every variable:");
+      // A `{{…}}` that survived is a chip this page offered and the band would not fill — the exact
+      // defect an admin would hit on Save, found here instead.
+      expect(rendered.text, template.id).not.toContain("{{");
+    }
+  });
+
+  it("says the trial has started in the join notice, and never on the invitation", () => {
+    // The decision in force (#1119, #1115): the 7-day trial clocks from acceptance, so the notice
+    // that announces the acceptance is the one that must say so — and the invitation, sent before
+    // anybody accepted, must not mention a trial at all.
+    expect(renderSampleEmail("counterparty-joined").text).toMatch(/trial has started/i);
+    expect(renderSampleEmail("counterparty-invitation").text.toLowerCase()).not.toContain("trial");
+  });
+
+  it("keeps the operator's release note off the member register", () => {
+    expect(memberFacingTemplates().map((template) => template.id)).not.toContain(
+      "stakeholder-release-note",
+    );
+    expect(memberFacingTemplate("stakeholder-release-note")).toBeUndefined();
   });
 });

@@ -27,7 +27,8 @@
 import type { MailOutcome } from "@/lib/flow/email";
 import { instanceLink, sendMail } from "@/lib/flow/email";
 import { readUnlockFacts } from "@/lib/flow/store";
-import { joinedTemplate, renderTemplate } from "@/lib/email/templates";
+import { joinedTemplate } from "@/lib/email/templates";
+import { renderTemplateForSend } from "@/lib/email/send";
 
 /** What happened to the notice: the transport's three, plus the two no-message outcomes. */
 export type JoinNoticeOutcome = MailOutcome | "no-such-instance" | "no-address";
@@ -73,7 +74,7 @@ export async function sendJoinNotice(input: {
     return "no-address";
   }
 
-  const rendered = renderTemplate(joinedTemplate, {
+  const rendered = await renderTemplateForSend(joinedTemplate, {
     joiner: facts.counterparty.name,
     inviter: recipient.name,
     template: facts.title,

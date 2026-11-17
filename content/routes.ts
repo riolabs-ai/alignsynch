@@ -44,6 +44,10 @@ const STATIC_ROUTES = [
   // create, edit, archive or leave action. Admin-only and read-only, and directly after Docs in
   // the rail; the source (`docs/specs/v2-prototype/crud-matrix.md`) is parsed per request.
   "/admin/permissions",
+  // #1138 — the transactional-mail override editor: the register's member-facing templates, their
+  // publish state and one template's editor. Directly after the two reference rows, because a mail's
+  // words are the third thing an operator looks up.
+  "/admin/email-templates",
   "/admin/gaps",
   // #920 — the growth model: 36 cohorts on the way to a $3M run-rate, charted from one committed
   // artifact (`data/demo/growth-model.json`), with the sampled operational set beside it.
@@ -136,6 +140,8 @@ const DYNAMIC_ROUTES = [
   "/admin/instances/[id]",
   // #502a — one template being drafted, a child of `/admin/templates`.
   "/admin/templates/[id]",
+  // #1138 — one transactional mail's override, its versions and its editor; the id is the register's.
+  "/admin/email-templates/[id]",
   // #504 — that relationship's Gap report: the operations screen, and the audited export beneath it.
   "/admin/instances/[id]/report",
   "/assessment/[slug]",

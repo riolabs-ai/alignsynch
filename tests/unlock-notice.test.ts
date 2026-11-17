@@ -183,7 +183,7 @@ describe("the message names the instance and carries nothing else", () => {
   });
 
   it("carries no score, no Gap value, no digit and no invitation token", async () => {
-    const message = unlockNoticeMessage({
+    const message = await unlockNoticeMessage({
       to: "rowan@example.test",
       recipientName: "Rowan",
       otherName: "Avery",

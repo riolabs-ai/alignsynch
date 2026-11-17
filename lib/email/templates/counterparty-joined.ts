@@ -54,17 +54,21 @@ export function joinedSubject(facts: JoinedFacts): string {
   return `${facts.joiner} joined — your assessment can start`;
 }
 
-export function joinedDocument(facts: JoinedFacts): EmailDocument {
+export function joinedDocument(facts: JoinedFacts, body?: string): EmailDocument {
   return {
     subject: joinedSubject(facts),
     preheader: `${facts.joiner} claimed the invitation to ${facts.template}.`,
     blocks: [
-      ...bodyBlocks(JOINED_BODY, {
-        joiner: facts.joiner,
-        inviter: facts.inviter,
-        template: facts.template,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        JOINED_BODY,
+        {
+          joiner: facts.joiner,
+          inviter: facts.inviter,
+          template: facts.template,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.inviter}, ${facts.joiner} claimed the invitation to ${facts.template}, so both seats exist and both of you can answer.`,
