@@ -1260,6 +1260,7 @@ for (const finding of [
   ...unmarkedLeavingLinks({
     files: leavingDashboard,
     routes: leavingRoutes,
+    sources: uiSources,
     surfaces: leavingSurfaces,
   }),
   ...unmarkedLeavingMounts({

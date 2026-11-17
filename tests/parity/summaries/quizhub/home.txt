@@ -73,15 +73,15 @@ headings (70)
   h3  "Categories"
   h3  "Contact"
 
-landmarks (3)
+landmarks (4)
   banner         1
   contentinfo    1
-  navigation     1
+  navigation     2
 
-links (72 unique, 91 total)
+links (73 unique, 96 total)
   /                                                    2
   /battle                                              1
-  /categories                                          1
+  /categories                                          2
   /categories/animal                                   1
   /categories/architecture                             1
   /categories/art                                      1
@@ -110,9 +110,9 @@ links (72 unique, 91 total)
   /create/editor                                       2
   /dashboard/user                                      1
   /explore                                             1
-  /help                                                2
-  /login                                               1
-  /pricing                                             2
+  /help                                                3
+  /login                                               2
+  /pricing                                             3
   /privacy                                             2
   /profile/alexjohnson                                 2
   /profile/davidwilson                                 2
@@ -148,13 +148,14 @@ links (72 unique, 91 total)
   /quiz/quiz-world-geography-challenge-capitals-landmarks 1
   /quiz/quiz-world-history-through-time                1
   /quiz/quiz-world-literature-classics                 1
-  /register                                            1
+  /relationship-templates                              1
+  /relationship-templates#catalog                      1
   /terms                                               1
   https://github.com/riolabs-ai/alignsynch/releases/tag/v1.22.0 1
 
 counts
-  elements  2254
+  elements  2264
   images    16
-  buttons   32
+  buttons   33
   inputs    5
-  classes   493 (sha caad43b83a70)
+  classes   505 (sha f57077e2ab1d)

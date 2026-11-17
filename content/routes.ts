@@ -107,11 +107,11 @@ const STATIC_ROUTES = [
   "/quiz-discussions",
   "/register",
   // The public catalogue — the header's `Templates` row, the footer's catalogue link and every
-  // "start with a template" action. Since #905 the catalogue answers here; `/relationship-types`
-  // is the retained #889 variation and the namespace a type's own page lives in, and it used to
-  // own `/templates` (#794) before that.
+  // "start with a template" action. Since #1127 this is the **only** public catalogue address:
+  // `/relationship-types` (which used to serve the retained #889 variation beside it, and used to
+  // own `/templates` before that, #794) answers a 308 here from `next.config.mjs` and is
+  // deliberately **not** a route, so nothing can mount a second catalogue under it again.
   "/relationship-templates",
-  "/relationship-types",
   "/reset/complete",
   "/search",
   "/settings",
@@ -185,13 +185,14 @@ const DYNAMIC_ROUTES = [
   "/quiz/[id]",
   "/quiz/[id]/discussion",
   "/quiz/[id]/play",
-  // One relationship *type*'s public page — the card title on `/relationship-types` links here,
-  // and every purchasable type is a static param of it.
-  "/relationship-types/[slug]",
+  // One relationship *type*'s public page — the card title on `/relationship-templates` links
+  // here, and every purchasable type is a static param of it. It sits under the catalogue's own
+  // path since #1127, so the list and one row of it are one noun.
+  "/relationship-templates/[slug]",
   // #794 · the worked example, one level below the type it belongs to. It used to be
   // `/assessment/demo/[type]`, under the record *kind* a type is not; the segment is the
   // taxonomy id, like its parent, because a type is a fixture row and not a record handle.
-  "/relationship-types/[slug]/demo",
+  "/relationship-templates/[slug]/demo",
   "/reset/[token]",
   "/support/articles/[slug]",
   "/tournaments/[id]",

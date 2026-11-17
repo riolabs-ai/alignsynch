@@ -151,6 +151,13 @@ export type NavRowProps = {
    * `lib/tour/steps.ts`.
    */
   tourAnchor?: string;
+  /**
+   * The row leaves the app on purpose (#1127). `NavRow` already derives that from `leavesApp()`,
+   * but the derivation is invisible to `data:check` E39, which reads the *call site*: a rail row
+   * that names a public page states it here, exactly as `Footer` takes `leaving`. Stating it does
+   * not change the behaviour — it makes the departure readable where the href is written.
+   */
+  leaving?: boolean;
 } & NavRowTarget;
 
 /**
@@ -189,7 +196,8 @@ export function NavRow(props: NavRowProps) {
    * (`lib/marketing-routes.ts`); the accessible name and the marker below are the announcement
    * the rule asks for.
    */
-  const leaving = !pending && props.href !== undefined && leavesApp(props.href);
+  const leaving =
+    !pending && (props.leaving === true || (props.href !== undefined && leavesApp(props.href)));
 
   const tone = pending
     ? "cursor-not-allowed text-muted-foreground opacity-70"
@@ -326,6 +334,7 @@ function QuizHubMenu({
         active={pathname === "/"}
         collapsed={collapsed}
         labelled={labelled}
+        leaving
         onNavigate={onNavigate}
       />
       <NavRow
@@ -445,6 +454,7 @@ function QuizHubMenu({
         active={isActive(pathname, "/pricing")}
         collapsed={collapsed}
         labelled={labelled}
+        leaving
         onNavigate={onNavigate}
       />
       <NavRow
@@ -633,209 +643,4 @@ export function AppNav({
       throw new Error(`no navigation for brand ${String(unhandled)}`);
     }
   }
-}
-
-/**
- * The public pages' top menu — the one part of the shell's navigation a marketing route gets.
- *
- * `#317` moved the public pages out of `app/(mainlayout)`, which was right (a public page draws no
- * sidebar, no palette, no drawers) and took the top menu with it: the marketing header rendered a
- * wordmark and one CTA, so `/pricing` was reachable from `/` only if a reader guessed the URL. The
- * fix is not a second navigation tree — it is this file's destinations, laid out horizontally,
- * drawn by the same `PublicNav` on every public route.
- *
- * The shape follows the three rules the sidebar's menus already keep, which is why it lives here
- * and not in `components/marketing/`:
- *
- *   - **the words are the fixture's** — `sectionOf(copy, "nav")` / `sectionOf(copy, "nav-alignsynch")`
- *     and `itemLabel()`, so the header and the sidebar cannot call one destination by two names;
- *   - **the hrefs are literal JSX attributes** — E10 only sees a `href="…"`; a `const` table of
- *     `{ href }` rows would take every route in this menu out of the gate;
- *   - **the brand choice is a `switch` with a `never` default** — a third brand fails `tsc` here
- *     instead of inheriting the quiz menu, exactly as `AppNav` does.
- *
- * It carries **no active-row state**, on purpose: the current route would come from
- * `usePathname()`, and the marketing header has to stay a server component so the account slot's
- * identity is resolved on the server (`lib/auth/shell-account.ts`). A menu that marked the current
- * page would move the whole header — and the avatar in it — into the browser bundle. The active
- * state is a later card with its own decision to make.
- *
- * It is drawn from `md` up, like the shell header's own chips: a phone-width menu is a drawer, and
- * a drawer on a public page is the app chrome this group exists to keep out.
- */
-export function PublicNav({ copy, brandId }: { copy: PageCopy; brandId: BrandId }) {
-  switch (brandId) {
-    case "quizhub":
-      return <QuizHubPublicNav copy={copy} />;
-    case "alignsynch":
-      return <AlignSynchPublicNav copy={copy} />;
-    default: {
-      // A brand added to `data/brand.ts` without a public menu fails `tsc`.
-      const unhandled: never = brandId;
-      throw new Error(`no public navigation for brand ${String(unhandled)}`);
-    }
-  }
-}
-
-/** One public row's class string — five links that must read as one set. */
-const PUBLIC_ROW_CLASS =
-  "text-sm font-medium text-muted-foreground transition-colors hover:text-action";
-
-/**
- * The alignment brand's public menu: the four front-page destinations the sidebar's own
- * `nav-alignsynch` section names, plus `/pricing` and the public help centre.
- *
- * **Templates is `/templates`, not `/#templates`.** The front page's `#templates` band is still
- * where a reader lands from in-page links, but the header row is a product destination now: a
- * menu row that scrolls the marketing page you are already on to a section is furniture, and the
- * owner asked for a catalogue. `How it works` is still the front page's `#questions` band,
- * because no public route for it exists — a link to a route that does not exist is the defect
- * this menu removes.
- *
- * **The last row is `/help`, not `/support`.** The Help/Support split put the answers in public
- * (`/help`) and the contact form behind the app's session (`/support`), so a menu drawn on
- * marketing routes must not send a signed-out reader to the account page — it would only redirect
- * them back here. `help` is its own fixture id, because the rail's `support` row still says
- * "Support" and still opens the account page.
- */
-function AlignSynchPublicNav({ copy }: { copy: PageCopy }) {
-  const nav = sectionOf(copy, "nav-alignsynch");
-  return (
-    <nav className="hidden items-center gap-6 md:flex">
-      <Link className={PUBLIC_ROW_CLASS} href="/">
-        {itemLabel(nav, "home")}
-      </Link>
-      <Link className={PUBLIC_ROW_CLASS} href={TEMPLATE_CATALOGUE_PATH}>
-        {itemLabel(nav, "templates")}
-      </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/#questions">
-        {itemLabel(nav, "how-it-works")}
-      </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/pricing">
-        {itemLabel(nav, "pricing")}
-      </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/help">
-        {itemLabel(nav, "help")}
-      </Link>
-    </nav>
-  );
-}
-
-/**
- * The quiz brand's public menu: four rows, because four of the five public routes are the quiz
- * product's own destinations and `/` is both front pages at once.
- *
- * It reads the `nav` section — the same one its sidebar reads — so "Pricing Plan" there and here
- * is one string, and the two surfaces cannot drift. `/categories` is a quiz route the brand
- * publishes; `/welcome` is the landing page and is reached from the page's own bands, not from
- * this menu (a menu row pointing at the marketing copy beside it is furniture).
- *
- * The last row is **Help** (`/help`) and not the rail's **Support** (`/support`): the split put the
- * FAQ and knowledge base in public and the contact form behind a session, so a signed-out reader
- * on a marketing route gets the page that answers them. The two words are two fixture ids
- * (`help` / `support`), which is why the rail keeps its own.
- */
-function QuizHubPublicNav({ copy }: { copy: PageCopy }) {
-  const nav = sectionOf(copy, "nav");
-  return (
-    <nav className="hidden items-center gap-6 md:flex">
-      <Link className={PUBLIC_ROW_CLASS} href="/">
-        {itemLabel(nav, "home")}
-      </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/categories">
-        {itemLabel(nav, "categories")}
-      </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/pricing">
-        {itemLabel(nav, "pricing")}
-      </Link>
-      <Link className={PUBLIC_ROW_CLASS} href="/help">
-        {itemLabel(nav, "help")}
-      </Link>
-    </nav>
-  );
-}
-
-/**
- * The public chrome's account slot — the signed-out pair of links, or the signed-in person.
- *
- * It sits beside `PublicNav` for the reason this file gives about `sectionOf` ids: the words are
- * the shell fixture's (`account/signed-out`, `account/sign-up`), and E23 only checks the ids a
- * component asks for against the fixture its surface declares. `components/marketing/**` is
- * attributed to `data/pages/marketing.ts` (the landing page's bands), so a `sectionOf(copy,
- * "account")` written in the header itself would be a name that fixture does not declare — the
- * gate would be right, and the fix is to keep the account's words where the account's words live.
- *
- * **The identity is a prop, never a read.** `account` is resolved by the page's layout, on the
- * server, from the request's session (`lib/auth/shell-account.ts`); nothing here calls
- * `currentUser()`, holds a session, or falls back to a fixture person — that fallback was #212, and
- * a stranger's name over a signed-out visitor's page is exactly what it looked like. `null` is a
- * state, not a failure: it draws the two links, and there is no third branch.
- */
-export function PublicAccountSlot({
-  copy,
-  account,
-}: {
-  copy: PageCopy;
-  account: ShellAccount | null;
-}) {
-  const accountCopy = sectionOf(copy, "account");
-
-  if (account === null) {
-    return (
-      /**
-       * Sign in / Sign up, with a real gap between them (#539 item 5).
-       *
-       * `gap-2` was 8px between a text link and a filled button — measured in a 1440 browser,
-       * the two read as one control with a label. `gap-4` is 16px, the same step the shell's
-       * account row uses between its chips. `whitespace-nowrap` and `shrink-0` are the second
-       * half of the fix: at 390 the row used to compress both labels until "Sign In" wrapped
-       * to two lines inside a 24px-high link, which is what made the pair look crowded at the
-       * narrow end. Neither word may break, and the pair may not shrink — the header's own
-       * mark is what gives way (`min-w-0` on the left group).
-       */
-      <div className="flex shrink-0 items-center gap-4">
-        <Link className={cn(PUBLIC_ROW_CLASS, "whitespace-nowrap")} href="/login">
-          {itemLabel(accountCopy, "signed-out")}
-        </Link>
-        <Link
-          className="inline-flex items-center whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          href="/register"
-        >
-          {itemLabel(accountCopy, "sign-up")}
-        </Link>
-      </div>
-    );
-  }
-
-  /**
-   * The person, as `/profile` and `/leaderboard` already draw one: `GeneratedAvatar` seeded by the
-   * handle, the name under it, the `@handle` line below. The same three lines the shell header's
-   * menu prints, from the same `ShellAccount`, so one person is one monogram on both chromes.
-   */
-  const identity = (
-    <>
-      <GeneratedAvatar name={account.name} seed={account.handle} size={32} />
-      <span className="flex flex-col leading-tight">
-        <span className="text-sm font-medium">{account.name}</span>
-        <span className="text-xs text-muted-foreground">{`@${account.handle}`}</span>
-      </span>
-    </>
-  );
-
-  /**
-   * The profile target is the session's own handle (`lib/auth/profile-href.ts`), or nothing. With
-   * no target the avatar and the name are drawn **unlinked** rather than pointed at a fixture
-   * player: an account that has not chosen a handle yet has no page to open, and the row saying so
-   * is the honest render.
-   */
-  const profileHref = accountProfileHref(account);
-  if (profileHref === null) {
-    return <div className="flex items-center gap-2">{identity}</div>;
-  }
-
-  return (
-    <Link className="flex items-center gap-2" href={profileHref}>
-      {identity}
-    </Link>
-  );
 }

@@ -66,7 +66,8 @@ import {
   OVERVIEW_PATH,
 } from "@/lib/flow/paths";
 import { readFlowScreen } from "@/lib/flow/store";
-import { createDraftCookieName, partyCookieName } from "@/lib/flow/session";
+import { PLAN_INTENT_COOKIE, createDraftCookieName, partyCookieName } from "@/lib/flow/session";
+import { parsePlanIntent } from "@/lib/flow/plan-intent";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 export const dynamic = "force-dynamic";
@@ -230,6 +231,9 @@ export default async function TemplateCreateCommitPage({
 
   if (facts === null) redirect(whoPath);
 
+  // #1127 — the rail's "· then <Plan>" line, from the cookie stage 1 wrote (see `mode/page.tsx`).
+  const planIntent = parsePlanIntent(jar.get(PLAN_INTENT_COOKIE)?.value);
+
   return (
     <CreateRelationship
       copy={assessmentCreatePageCopy}
@@ -252,6 +256,7 @@ export default async function TemplateCreateCommitPage({
       problem={refusal?.sentence ?? null}
       problemLink={refusal?.link ?? null}
       account={account}
+      {...(planIntent === null ? {} : { planIntent })}
       // No second write: a browser that comes back here already has the relationship, so the foot
       // offers the way forward and renders no create form at all.
       {...(created === undefined

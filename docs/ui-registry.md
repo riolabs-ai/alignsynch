@@ -198,23 +198,17 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/relationship-templates` — **fixture**
   - capability: The public catalogue of Relationship Templates — the #889 shop listing: a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. No clock and no app tables; one session read (`currentUserIfConfigured()`) resolves the **authored** membership action — a bare `/register` means an account to a visitor and an account home to a member — while every card's and the closing _create_ action's destination is the flow's stage 1 for both viewers (#1042), so the page renders per request rather than prerendering.
-  - components: `components/templates`
-  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - components: `components/marketing`
+  - reads: an `/api` path — `data/billing-plans.ts`
   - notes: The endpoint the owner asked for, and the one door the header's `Templates` row, the footer's catalogue link and every ‘start with a template’ action point at (`lib/flow/paths.ts::TEMPLATE_CATALOGUE_PATH`). **This address rendered the V2 composition from #905 until #1040**; #1040 restored the v1 shop listing here, on both builds, so this page and `/relationship-types` now render the same composition from the same model (`lib/templates-page.ts` over `data/pages/templates.ts`) — measured as byte-identical markup on both brands, not merely similar. The V2 composition is **retained, not deleted** (`components/templates/templates-catalogue-v2.tsx` + `lib/templates-catalogue.ts`, and `tests/templates-catalogue.test.ts` still pins its claims), but no route mounts it: the template doctrine catalogues a surface rather than deleting it. Types and links are `purchasableTypesByGroup()` over `data/relationship-types.ts`; every card's action is the create flow's stage 1, carrying the template in the path, for a visitor and a member alike (#1042).
 
-- `/relationship-types` — **fixture**
-  - capability: The public Relationship Templates catalogue (#889): a split hero over one framed photograph, a short explainer carrying a real Staff–Manager Aspect, one membership line, a sticky realm menu, and every purchasable Relationship Type grouped by realm with its two roles, its Aspect count and a realm outline icon — plus accessible search as progressive enhancement. Membership is stated once above the shelf, so no card prints a price. `/pricing`, a type's own page and its `/demo` sheet are public, and since #1042 all 27 start actions are the create flow's stage 1 for every viewer — the template in the path, no `/register` detour and no session-shaped action.
-  - components: `components/templates`
-  - reads: Postgres — `lib/db/client.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
-  - notes: **Retained as a landing variation since #905, and the composition the canonical door renders again since #1040**: `/relationship-templates` is the catalogue's endpoint and, since #1040, renders this same #889 composition on both builds — one screen at two addresses, from one model. Nothing links this page as the catalogue; a type's own page and its worked example still live under this namespace. The approved redesign in `docs/specs/spec-as2-style-templates-redesign/` (#889), matched band for band. The destination the header's `Templates` row names and the front page band's one call to action; before this page the row was `/#templates`, an anchor into the front page. Every number is derived: `purchasableRelationshipTypes` gives the 27 and the seven realm counts (`lib/templates-page.ts`), the hero's two stats read the same two numbers, and the explainer's ordinal is the exemplar Aspect's real position (`Staff–Manager · 3 of 6`, where the artifact prints `1 of 6`). The full catalogue is in the initial HTML, so the search filters rendered cards rather than gating them; the reveal is `components/templates/template-catalogue.tsx` and it hides nothing until someone types. `/register?next=<that type's create step>` was what every card linked from #867 until #1042 — the account first, the wizard after — and asking somebody with an account to make one was the defect #979 names. Since #1042 the cards link the flow's stage 1 directly (`/templates/relationship/<slug>/create`), for a visitor and a member alike: stage 1 renders without a session (#690) and the account is stage 4 of that same wizard, on the draft. A bespoke `?template=<slug>` is still not linked — nothing reads that query, so it would be a promise the route cannot keep.
-
-- `/relationship-types/[slug]` — **fixture**
+- `/relationship-templates/[slug]` — **fixture**
   - capability: One Relationship Template, in full: who it is for and who it is not for, every Aspect it asks — the question and its two named ends — the price, one action to start it, and a worked example where the fixture holds one. No clock and no app tables, and since #1042 no session read either: the one start action is the create flow's stage 1 for every viewer, carrying this template in the path, so the page is prerenderable per slug again (#979 removed the member-shaped action; #1042 removed the visitor's `/register` detour).
-  - components: `components/templates`
+  - components: `components/marketing`, `components/templates`
   - reads: an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`
-  - notes: The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` still enumerates every purchasable type and `notFound()` answers any other slug; since #1042 the page reads no session at all, so those params are prerenderable again instead of rendering on demand.
+  - notes: The public way into a template, and the gap it closes is that there was none: the directory listed 27 templates carrying 144 Aspects between them, and a stranger's only doors were `/register` and a worked example on 2 of the 27. The page is `lib/template-detail.ts` over `data/relationship-types.ts` — the same record the catalogue card is projected from, so the questions printed here are the ones the product will ask rather than a second copy that can drift. `generateStaticParams()` still enumerates every purchasable type and `notFound()` answers any other slug; since #1042 the page reads no session at all, so those params are prerenderable again instead of rendering on demand. It moved under the catalogue's own path in #1127 (`/relationship-types/[slug]` is a 308): the list and one row of it are one noun, and there is no second catalogue address for a card to link at.
 
-- `/relationship-types/[slug]/demo` — **fixture**
+- `/relationship-templates/[slug]/demo` — **fixture**
   - capability: The worked example: one Relationship Type's finished report, answered by You and Them and labelled Example, rendered through the live report projection and component — the value shown before anyone pays, and launch criterion 5's one readable proof. No clock and no app tables, and no session read since #1042: its single start action is the create flow's stage 1 for every viewer, carrying this type's template.
   - components: `components/assessment`, `components/assessment-flow`
   - reads: an `/api` path — `data/brand.ts`, `data/brands/alignsynch.ts`
@@ -290,7 +284,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/layout` — **fixture**
   - capability: The shell: header, the sticky sidebar, the layout that composes them, and the footer.
-  - files (10): `admin-notice-bar.tsx`, `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `leaving-link.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `news-signup.tsx`, `sidebar.tsx`
+  - files (12): `admin-notice-bar.tsx`, `app-version.tsx`, `brand-glyph.tsx`, `footer.tsx`, `header.tsx`, `leaving-link.tsx`, `main-layout.tsx`, `nav-menus.tsx`, `news-signup.tsx`, `public-header-nav.tsx`, `public-header.tsx`, `sidebar.tsx`
   - routes (13): `/admin/permissions`, `/affiliate`, `/assessment`, `/categories`, `/creator-tips`, `/creator-tips/[slug]`, `/dashboard/relationships/[id]`, `/invite/[token]`, `/login`, `/register`, `/support`, `/templates/relationship/[slug]/create/commit`, `/tournaments`
 
 - `components/legal` — **mock**
@@ -328,7 +322,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/templates` — **fixture**
   - capability: The public catalogue's eleven files: a hero, the explainer with one real Aspect, the membership line, the sticky realm menu, the searchable catalogue and its journey band — plus the record card (realm outline icon on a flat tint, name, two roles, one facts line, `Details` / `Example` / `Create Relationship`) and the older signpost card the front page's shelf still draws.
   - files (12): `how-it-works-preview.tsx`, `membership-summary.tsx`, `template-art.tsx`, `template-card.tsx`, `template-catalogue-card.tsx`, `template-catalogue.tsx`, `template-detail.tsx`, `template-journey.tsx`, `template-realm-nav.tsx`, `templates-catalogue-v2.tsx`, `templates-hero.tsx`, `templates-page.tsx`
-  - routes (3): `/relationship-templates`, `/relationship-types`, `/relationship-types/[slug]`
+  - routes (1): `/relationship-templates/[slug]`
   - notes: `/relationship-types` is the surface (#889); `template-card.tsx` remains because `/` renders it in its capped six-card shelf and that rollout is a separate, route-sized review the issue defers. `template-art.tsx` is the shared `RecordArtwork` the design system names: one realm icon from `data/media.ts`, masked and painted in the realm's ink, so no card ever draws a monogram or a per-slug hue again. Holds no words: E23 attributes the domain to `data/pages/templates.ts` at budget 0, and everything the cards print is a record from `lib/template-catalogue.ts`.
 
 - `components/ui` — **mock**
@@ -553,7 +547,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/assessment` — **mock**
   - capability: The assessment report: each Aspect's two Opinions, the Values behind them and the Gap between the parties.
   - files (2): `assessment-report.tsx`, `assessment-unreadable.tsx`
-  - routes (2): `/assessment/[slug]`, `/relationship-types/[slug]/demo`
+  - routes (2): `/assessment/[slug]`, `/relationship-templates/[slug]/demo`
   - notes: Reads nothing itself — the instance arrives as props from the route that read Postgres, which is why the surface is `mock` and the route above it is `db`. Since #204 it also draws the one failure state the route can describe: `assessment-unreadable.tsx` prints the database layer's own sentence when the read did not answer, instead of Next's 500 and a digest.
 
 - `components/assessment-flow` — **db**
@@ -576,8 +570,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/marketing` — **fixture**
   - capability: The public pages' own chrome: the marketing header (the brand mark, the shell's public menu and a server-resolved account slot) and the landing page's bands. The footer is the shell's (`components/layout/footer.tsx`), mounted by the group's layout; there is no sidebar.
-  - files (2): `marketing-header.tsx`, `marketing-landing.tsx`
-  - routes (1): `/welcome`
+  - files (4): `carried-plan-link.tsx`, `catalogue-browser.tsx`, `marketing-landing.tsx`, `relationship-catalogue.tsx`
+  - routes (3): `/relationship-templates`, `/relationship-templates/[slug]`, `/welcome`
 
 - `components/onboarding` — **mock**
   - capability: The console's onboarding page: the ordered moves of one relationship, each with what the member does beside what the product does, and the honest limits of this build.
@@ -698,7 +692,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `/pricing` — **live**
   - capability: Plan comparison read from billing_plan: every sellable tier's action opens the template catalogue carrying that tier and interval, the viewer's own plan marked, an FAQ and a closing CTA. Nothing on this page starts a checkout (#1043) — the plan is chosen here and sold inside the create flow's last stage.
   - components: `components/pricing`, `components/ui`
-  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `components/pricing/pricing-plans.tsx`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - reads: Postgres — `lib/db/billing.ts`, `lib/db/client.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
 
 - `/quiz-discussions` — **fixture**
   - capability: Every discussion thread across quizzes, with each quiz's comment count and result beside it.
