@@ -19,7 +19,7 @@ import type { PageCopySection } from "@/content/pages";
 import type { BillingInterval } from "@/data/billing-plans";
 import { metric } from "@/data/metrics";
 import type { PricingPlanView } from "@/lib/billing/catalogue";
-import { pricingStartPath } from "@/lib/flow/paths";
+import { pricingCataloguePath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel } from "@/lib/page-copy";
 import { Check } from "lucide-react";
 import Link from "next/link";
@@ -161,7 +161,7 @@ const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: P
       return (
         <Button asChild className={buttonClassName} variant={variant}>
           <Link
-            href={pricingStartPath({ planId: plan.id, interval: cycle })}
+            href={pricingCataloguePath({ planId: plan.id, interval: cycle })}
             data-plan-carry={plan.id}
             data-plan-carry-interval={cycle}
           >

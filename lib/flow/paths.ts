@@ -199,6 +199,63 @@ export const TEMPLATE_LIBRARY_PATH = `${OVERVIEW_PATH}/templates`;
 export const TEMPLATE_CATALOGUE_PATH = "/relationship-templates";
 
 /**
+ * The catalogue's own shelf anchor — where a "Start Free" or a plan card lands (#1127).
+ *
+ * The catalogue is one page with the shelf part-way down it, so a door that means "pick a template"
+ * names the shelf rather than the top of the hero. It is spelled here because three surfaces author
+ * it (`/pricing`'s two doors, the public header's primary, the closing band) and the fragment is the
+ * one part of the address a caller cannot see is wrong.
+ */
+const CATALOGUE_SHELF = `${TEMPLATE_CATALOGUE_PATH}#catalog`;
+
+/**
+ * `/pricing` → the catalogue, carrying the plan the reader chose (#1127).
+ *
+ * **Every `/pricing` action takes this door, and none of them reaches a checkout.** The v2 spec's
+ * call is that a plan is *chosen* on `/pricing` and *sold* nowhere: the reader lands on the
+ * catalogue with their choice in the address, picks a template, and the wizard carries it to
+ * stage 5's plan line. The plan ids on both ends are the billing fixture's own tiers
+ * (`data/billing-plans.ts`), so the query cannot name a tier the product does not sell.
+ *
+ * The interval rides beside the tier because `billing_plan` keys on the pair — a carried tier
+ * without its interval cannot be priced, and defaulting one here is how a yearly card would quietly
+ * carry a monthly price.
+ *
+ * Pass nothing for the general door (`Start Free`, the closing band): no plan is carried, and the
+ * catalogue renders no banner.
+ */
+export function pricingCataloguePath(choice?: {
+  readonly planId: string;
+  readonly interval: string;
+}): string {
+  if (choice === undefined) return CATALOGUE_SHELF;
+  const query = new URLSearchParams({
+    from: "pricing",
+    plan: choice.planId,
+    interval: choice.interval,
+  });
+  return `${TEMPLATE_CATALOGUE_PATH}?${query.toString()}#catalog`;
+}
+
+/**
+ * A carried plan, as a query string appended to a catalogue link — `?from=pricing&plan=…&interval=…`
+ * or `""` when nothing was carried.
+ *
+ * The chain is one query read three times: `/pricing` writes it, the catalogue's banner names the
+ * tier and its cards keep the pair on their own links, and the template page hangs it on the
+ * `Create Relationship` action so stage 1 can write it into the flow's cookie. A craft
+ * `?plan=` never survives — callers validate with `planIntentFromSearch()` before calling this.
+ */
+export function carriedPlanQuery(intent: { planId: string; interval: string } | null): string {
+  if (intent === null) return "";
+  return new URLSearchParams({
+    from: "pricing",
+    plan: intent.planId,
+    interval: intent.interval,
+  }).toString();
+}
+
+/**
  * One relationship type's public page — `/relationship-templates/<id>`.
  *
  * Addressed by the taxonomy's own `id` (`data/relationship-types.ts`), never by a record handle:

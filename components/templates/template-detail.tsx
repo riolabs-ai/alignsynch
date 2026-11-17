@@ -2,6 +2,8 @@
 
 import type { TemplateDetailModel } from "@/lib/template-detail";
 import Link from "next/link";
+import { Suspense } from "react";
+import { CarriedPlanLink } from "@/components/marketing/carried-plan-link";
 
 /**
  * `/relationship-types/[slug]` — one relationship type, drawn for a stranger (#794).
@@ -111,12 +113,26 @@ export function TemplateDetail({ model }: { model: TemplateDetailModel }) {
             <p className="text-[15px] font-semibold tabular-nums text-foreground">
               {model.priceNote}
             </p>
-            <Link
-              className="inline-flex items-center justify-center rounded-lg bg-action px-6 py-3 text-[15px] font-bold text-action-foreground transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"
-              href={model.start.href}
+            <Suspense
+              fallback={
+                <Link
+                  className="inline-flex items-center justify-center rounded-lg bg-action px-6 py-3 text-[15px] font-bold text-action-foreground transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"
+                  href={model.start.href}
+                >
+                  {model.start.label}
+                </Link>
+              }
             >
-              {model.start.label}
-            </Link>
+              {/* #1127 — the one action keeps the plan a reader chose on `/pricing`. The query is
+                  read in the browser so this page can stay prerendered (see `CarriedPlanLink`). */}
+              <CarriedPlanLink
+                className="inline-flex items-center justify-center rounded-lg bg-action px-6 py-3 text-[15px] font-bold text-action-foreground transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2"
+                href={model.start.href.split("?")[0] ?? model.start.href}
+                data-template-start={model.slug}
+              >
+                {model.start.label}
+              </CarriedPlanLink>
+            </Suspense>
             {model.example && (
               <Link
                 className="text-[13px] font-semibold text-action hover:underline"

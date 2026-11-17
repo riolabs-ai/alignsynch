@@ -82,7 +82,16 @@ export interface CatalogueExampleModel {
 }
 
 /** One type as a card. */
-export function catalogueCard(copy: PageCopy, type: RelationshipType): CatalogueCardModel {
+export function catalogueCard(
+  copy: PageCopy,
+  type: RelationshipType,
+  carry = "",
+): CatalogueCardModel {
+  // #1127 — a plan chosen on `/pricing` rides the card's own links. Both of them: the card's title
+  // opens the template page, and its shelf action opens stage 1, and a reader who takes either must
+  // not lose the plan they picked one page earlier. `carry` is already a validated query string
+  // (`carriedPlanQuery()`), so this appends a fact and never re-reads one.
+  const suffix = carry === "" ? "" : `?${carry}`;
   return {
     id: type.id,
     name: type.name,
@@ -93,8 +102,8 @@ export function catalogueCard(copy: PageCopy, type: RelationshipType): Catalogue
       initiator: type.roles.initiator,
       counterparty: type.roles.counterparty,
     }),
-    href: relationshipTypePath(type.id),
-    start: createRelationshipPath(type.id),
+    href: `${relationshipTypePath(type.id)}${suffix}`,
+    start: `${createRelationshipPath(type.id)}${suffix}`,
   };
 }
 
@@ -102,8 +111,9 @@ export function catalogueCard(copy: PageCopy, type: RelationshipType): Catalogue
 export function catalogueCards(
   copy: PageCopy,
   types: readonly RelationshipType[],
+  carry = "",
 ): CatalogueCardModel[] {
-  return types.map((type) => catalogueCard(copy, type));
+  return types.map((type) => catalogueCard(copy, type, carry));
 }
 
 /**

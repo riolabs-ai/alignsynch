@@ -6,7 +6,7 @@ import { pricingPageCopy } from "@/data/pages/pricing";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { billingTestMode, entitlementForAccount } from "@/lib/billing";
 import { pricingPlans, readPricingPlanRows } from "@/lib/billing/catalogue";
-import { pricingStartPath } from "@/lib/flow/paths";
+import { pricingCataloguePath } from "@/lib/flow/paths";
 import { sectionOf } from "@/lib/page-copy";
 import type { Metadata } from "next";
 
@@ -77,7 +77,7 @@ export default async function PricingPage() {
     rows: planRows.rows,
     source: planRows.source,
     entitledPlanId,
-    startHref: pricingStartPath(),
+    startHref: pricingCataloguePath(),
   });
 
   return (
@@ -88,7 +88,7 @@ export default async function PricingPage() {
         testMode={billingTestMode()}
       />
       <PricingFaq copy={sectionOf(pricingPageCopy, "faq")} />
-      <PricingCta copy={sectionOf(pricingPageCopy, "cta")} startHref={pricingStartPath()} />
+      <PricingCta copy={sectionOf(pricingPageCopy, "cta")} startHref={pricingCataloguePath()} />
     </div>
   );
 }

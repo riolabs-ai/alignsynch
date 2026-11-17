@@ -77,7 +77,7 @@ import {
   serializePlanIntent,
   type PlanIntent,
 } from "@/lib/flow/plan-intent";
-import { pricingStartPath, TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
+import { pricingCataloguePath, pricingStartPath, TEMPLATE_CATALOGUE_PATH } from "@/lib/flow/paths";
 import { PLAN_INTENT_COOKIE } from "@/lib/flow/session";
 
 declare global {
@@ -168,7 +168,7 @@ describe("every /pricing action opens the flow's door (#1043)", () => {
       rows: billingPlanRows(),
       source: "table",
       entitledPlanId: null,
-      startHref: pricingStartPath(),
+      startHref: pricingCataloguePath(),
     });
     return renderToStaticMarkup(
       createElement(PricingPlans, {
@@ -179,12 +179,18 @@ describe("every /pricing action opens the flow's door (#1043)", () => {
     );
   }
 
-  it("carries the tier and the interval from every plan card that sells one", () => {
+  it("carries the tier and the interval to the catalogue from every plan card that sells one", () => {
+    // #1127 — a plan is *chosen* here and *sold* nowhere: the card's action is the catalogue with
+    // its choice in the address (`/relationship-templates?from=pricing&plan=…&interval=…#catalog`),
+    // and no card reaches `/pricing/start` or a checkout any more.
     const html = grid();
     for (const tier of CARRIED_TIERS) {
       // The month toggle is the grid's default, so the address is the monthly one.
       expect(html).toContain(
-        `href="${pricingStartPath({ planId: tier, interval: "month" })}"`.replaceAll("&", "&amp;"),
+        `href="${pricingCataloguePath({ planId: tier, interval: "month" })}"`.replaceAll(
+          "&",
+          "&amp;",
+        ),
       );
       expect(html).toContain(`data-plan-carry="${tier}"`);
       expect(html).toContain('data-plan-carry-interval="month"');
@@ -192,7 +198,7 @@ describe("every /pricing action opens the flow's door (#1043)", () => {
     // The carry is per row, not one shared address.
     expect(CARRIED_TIERS.length).toBeGreaterThan(1);
     expect(
-      new Set(CARRIED_TIERS.map((tier) => pricingStartPath({ planId: tier, interval: "month" })))
+      new Set(CARRIED_TIERS.map((tier) => pricingCataloguePath({ planId: tier, interval: "month" })))
         .size,
     ).toBe(CARRIED_TIERS.length);
   });
@@ -200,7 +206,7 @@ describe("every /pricing action opens the flow's door (#1043)", () => {
   it("leaves the general CTA carrying nothing, and opens no checkout and no sign-up", () => {
     const html = grid();
     // The free card's action is the general door: no tier in its address, so nothing to preselect.
-    expect(html).toContain(`href="${pricingStartPath()}"`);
+    expect(html).toContain(`href="${pricingCataloguePath()}"`);
     expect(html).toMatch(/data-plan-general="free"/);
     // Nothing on this page starts a checkout any more, and nothing sends a reader to `/register`:
     // both were doors out of the flow (#1043).

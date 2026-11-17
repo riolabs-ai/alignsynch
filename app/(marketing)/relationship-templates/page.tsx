@@ -13,8 +13,8 @@ import {
   catalogueQuestions,
   catalogueSteps,
 } from "@/lib/relationship-catalogue";
-import { isPaidPlanTier } from "@/lib/flow/plan-intent";
-import { relationshipTypePath } from "@/lib/flow/paths";
+import { isPaidPlanTier, planIntentFromSearch } from "@/lib/flow/plan-intent";
+import { carriedPlanQuery, relationshipTypePath } from "@/lib/flow/paths";
 import type { Metadata } from "next";
 
 /**
@@ -62,7 +62,21 @@ export default async function RelationshipTemplatesPage({
 }) {
   const params = await searchParams;
   const types = purchasableRelationshipTypes;
-  const cards = catalogueCards(relationshipCatalogueCopy, types);
+  /**
+   * **The carried plan, read once.** `?from=pricing&plan=<tier>&interval=<interval>` is validated by
+   * `planIntentFromSearch()` — a crafted tier or interval resolves to `null` and carries nothing —
+   * and the same query string rides every card's own links below, so the choice survives the
+   * template pick. That is the whole carrier: no cookie is written until stage 1 posts (#1127).
+   */
+  const carry = carriedPlanQuery(
+    planIntentFromSearch({
+      get: (name) => {
+        const value = params[name];
+        return typeof value === "string" ? value : null;
+      },
+    }),
+  );
+  const cards = catalogueCards(relationshipCatalogueCopy, types, carry);
   /** The exemplar: the first template the catalogue can actually show an answer for. */
   const example = catalogueExample(relationshipCatalogueCopy, types);
   const popular = types.find((type) => type.id === "staff-manager") ?? types[0];
