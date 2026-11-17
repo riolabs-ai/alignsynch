@@ -58,6 +58,7 @@ import {
   DetailFacts,
   DetailPanel,
   DetailSection,
+  DETAIL_CARD,
   DETAIL_MUTED,
   RecordDetailShell,
   type DetailFact,
@@ -74,6 +75,7 @@ import {
   refusalSentence,
   type AspectsOutcome,
   type CompleteOutcome,
+  type ExtensionOutcome,
   type ForkOutcome,
   type PublishOutcome,
   type RepublishOutcome,
@@ -83,7 +85,7 @@ import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detai
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
-import { RELATIONSHIPS_PATH, createInviteForPath } from "@/lib/flow/paths";
+import { RELATIONSHIPS_PATH, createInviteForPath, reportPath } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 
@@ -94,6 +96,23 @@ interface AspectState {
   readonly leftValue: string;
   readonly rightValue: string;
 }
+
+/**
+ * #1121 — the no-pause answer, for a view literal that carries no pause facts.
+ *
+ * `readMyRelationship()` always fills `pause`; a suite that builds a `MemberRelationshipView` by
+ * hand (the seven that predate this card) does not, and the screen draws a running Stage 6 for one
+ * rather than inventing a pause nobody derived. Identical to `pauseOf()`'s answer for an open
+ * membership with no window — one shape, one meaning.
+ */
+const RUNNING = {
+  state: "running",
+  paused: false,
+  endsAt: null,
+  daysLeft: null,
+  extended: false,
+  extensionAvailable: false,
+} as const;
 
 /** The refusal sentence for a code: the server's own words first, then the fixture's line. */
 function sentenceFor(
@@ -115,6 +134,8 @@ export function RelationshipDetail({
   onRepublish,
   onComplete,
   onFork,
+  onClaimExtension,
+  arrival,
   templatesHref,
 }: {
   copy: PageCopy;
@@ -164,6 +185,24 @@ export function RelationshipDetail({
    */
   onFork: (payload: { relationshipId?: string }) => Promise<ForkOutcome>;
   /**
+   * #1121 — the Initiator's one free week. A server action, passed in for the same reason every
+   * other write on this screen is: the component may not value-import `lib/member/trial-extension`
+   * (E34).
+   */
+  onClaimExtension: (payload: {
+    relationshipId?: string;
+    reason?: string;
+  }) => Promise<ExtensionOutcome>;
+  /**
+   * #1121 — **an arrival, not a state.**
+   *
+   * `?from=extend` is the one query string the port keeps (§ "Prototype mechanics"): everything
+   * else about a pause is derived from rows, but *"7 More Days Added"* is news about a click that
+   * just landed, and a banner that appeared every visit would be a permanent claim that something
+   * had just happened. `null` for every ordinary load — and the banner is the only thing it draws.
+   */
+  arrival?: "extend" | null;
+  /**
    * Where the forked copy landed, passed in rather than imported: the constant lives beside a module
    * that reaches Postgres, which a `"use client"` file may not value-import (E34).
    */
@@ -183,6 +222,8 @@ export function RelationshipDetail({
   const completionCopy = sectionOf(copy, "completion");
   /** #785 — the Counterparty's one action: the fork of this relationship's template. */
   const forkCopy = sectionOf(copy, "fork");
+  /** #1121 — Stage 6's pause: the badge, the line, the Next Step and the free week. */
+  const pauseCopy = sectionOf(copy, "pause");
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -226,11 +267,114 @@ export function RelationshipDetail({
   const [completeOutcome, setCompleteOutcome] = useState<CompleteOutcome | null>(null);
   /** #785 — the fork's answer: the copy's title, and whether it was one they already had. */
   const [forkOutcome, setForkOutcome] = useState<ForkOutcome | null>(null);
+  /** #1121 — the free week's answer, so the arrival banner can name the end the write committed. */
+  const [extensionOutcome, setExtensionOutcome] = useState<ExtensionOutcome | null>(null);
 
   const editable = relationship.aspectsEditable;
   const publishableNow = relationship.publishable;
   const offersRepublish = relationship.offersRepublish;
   const trialAlone = relationship.trialWithoutLiveInvite;
+
+  /*
+   * #1121 — **Stage 6's pause, and the four things the screen may say about it.**
+   *
+   * `relationship.pause` is server-derived (`pauseOf()`), so nothing here decides a state: this
+   * block only chooses words. The two seats read differently on purpose — the Initiator is told what
+   * expired and what brings it back, the Counterparty is told who is holding it and that nothing is
+   * lost — and the Counterparty's half never names a trial, a card, an extension or a price, which
+   * is the promise the whole screen is measured against (`tests/trial-pause-no-leak.test.ts`).
+   */
+  const pause = relationship.pause ?? RUNNING;
+  const paused = pause.paused;
+  /** Who to wait on / who is covered by. The initiating account's name, never a placeholder. */
+  const initiatorLabel = relationship.initiatorName ?? pageItemOf(copy, "role-initiator").label;
+  const pauseBadge = relationship.isInitiator
+    ? itemLabel(pauseCopy, "badge")
+    : fillLabel(itemLabel(pauseCopy, "badge-waiting"), { initiator: initiatorLabel });
+  const pauseLine = relationship.isInitiator
+    ? itemLabel(pauseCopy, "line")
+    : fillLabel(itemLabel(pauseCopy, "line-waiting"), { initiator: initiatorLabel });
+  /** The Next Step: what this pause is, and the one action (or two) out of it. */
+  const nextStepHeading = relationship.isInitiator
+    ? itemLabel(
+        pauseCopy,
+        pause.state === "extra-week-ended" ? "extra-ended-heading" : "trial-ended-heading",
+      )
+    : fillLabel(itemLabel(pauseCopy, "waiting-heading"), { initiator: initiatorLabel });
+  const nextStepBody = relationship.isInitiator
+    ? itemLabel(
+        pauseCopy,
+        pause.state === "extra-week-ended" ? "extra-ended-body" : "trial-ended-body",
+      )
+    : itemLabel(pauseCopy, "waiting-body");
+  /**
+   * #1121 — the Counterparty's one door out of a pause is *reading*, not paying.
+   *
+   * The results the pause froze are still theirs to read (`reportPath`), which is what the issue
+   * means by "both parties keep reading". A relationship whose session is not readable falls back to
+   * the list — the same door the read-only notice already uses, so the control is never dead.
+   */
+  const resultsHref =
+    relationship.sessionRecordId === null
+      ? RELATIONSHIPS_PATH
+      : reportPath(relationship.sessionRecordId);
+  /**
+   * #1121 — the facts card's membership row, in the owner's four values.
+   *
+   * Initiator: the window while it runs (`Free Trial · Ends <date>` / `Extra Week · Ends <date>`),
+   * then the pause (`Paused · Trial Ended` / `Paused · Extra Week Ended`). Counterparty: `Covered by
+   * <name>` — the one membership fact that is theirs to have, and the one that carries no price.
+   */
+  const membershipFact: DetailFact | null = (() => {
+    if (relationship.closed) return null;
+    if (!relationship.isInitiator) {
+      return {
+        id: "membership",
+        label: pageItemOf(copy, "membership").label,
+        value: fillLabel(itemLabel(pauseCopy, "membership-covered"), {
+          initiator: initiatorLabel,
+        }),
+      };
+    }
+    if (paused) {
+      return {
+        id: "membership",
+        label: pageItemOf(copy, "membership").label,
+        value: itemLabel(
+          pauseCopy,
+          pause.extended ? "membership-extra-ended" : "membership-trial-ended",
+        ),
+      };
+    }
+    if (relationship.trialEndsAt === null) return null;
+    return {
+      id: "membership",
+      label: pageItemOf(copy, "membership").label,
+      value: fillLabel(
+        itemLabel(pauseCopy, pause.extended ? "membership-extra" : "membership-trial"),
+        { instant: formatDate(relationship.trialEndsAt) },
+      ),
+    };
+  })();
+  /**
+   * #1121 — the Initiator's countdown pill, under the status line, mirroring the Payment tab.
+   *
+   * Only in a running window: a paused one has no days left to count, and a pill reading *0 Days
+   * Left* would be the defect the pill exists to prevent. The bundle draws it as a link to
+   * `#payment`; there is no Payment tab on this route yet (#1132 owns that page), so it is drawn as
+   * the badge it is — the number without a door that would go nowhere.
+   */
+  const trialPill: string | null =
+    relationship.isInitiator && !paused && pause.daysLeft !== null
+      ? fillLabel(itemLabel(pauseCopy, pause.extended ? "pill-extra" : "pill-trial"), {
+          days: String(pause.daysLeft),
+        })
+      : null;
+  /** The free week's refusal, in the page's own sentence for its code. */
+  const extensionRefusal =
+    extensionOutcome !== null && !extensionOutcome.ok
+      ? sentenceFor(refusals, extensionOutcome)
+      : null;
 
   /**
    * The list the standard editor draws: the dashboard's own row type, with a stand-in id for a row
@@ -367,6 +511,21 @@ export function RelationshipDetail({
     startTransition(async () => {
       const answer = await onFork({ relationshipId: relationship.id });
       setForkOutcome(answer);
+    });
+  }
+
+  /**
+   * #1121 — **claim the one free week.** One click, and the page re-renders from the rows: Stage 6
+   * runs again because the subscription's period moved, not because a client flag flipped. A
+   * refusal is a sentence from this page's own fixture (`not-paused`, `no-trial`,
+   * `extension-used`), and the button is gone on the very next server read.
+   */
+  function claimExtension(): void {
+    setExtensionOutcome(null);
+    startTransition(async () => {
+      const answer = await onClaimExtension({ relationshipId: relationship.id });
+      setExtensionOutcome(answer);
+      if (answer.ok) router.refresh();
     });
   }
 
@@ -510,7 +669,122 @@ export function RelationshipDetail({
             value: connectionValue(relationship),
           },
         ]),
+    /* #1121 — the membership row, when this seat has one to read (see `membershipFact`). */
+    ...(membershipFact === null ? [] : [membershipFact]),
   ];
+
+  /*
+   * #1121 — **the pause block, above the facts card in the rail.**
+   *
+   * The bundle draws it as the aside's first element (gauge, badge, one status line, one Next Step),
+   * and the shell puts `facts` above `actions` — so the block and the facts card share the facts
+   * slot rather than being pushed below the working panels. One status line, one Next Step: the two
+   * buttons inside it are the same decision seen twice (*add a card* / *take the free week*), which
+   * is why they sit in one block rather than in two panels.
+   */
+  const pausePanel = !paused ? null : (
+    <section
+      data-stage-pause={pause.state}
+      data-stage-pause-role={relationship.isInitiator ? "initiator" : "counterparty"}
+      className={`space-y-3 ${DETAIL_CARD}`}
+    >
+      <p className="flex flex-wrap items-center gap-2">
+        <Chip variant="soft" data-pause-badge="paused">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="mr-1 size-3.5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <rect x="6" y="5" width="4" height="14" rx="1" />
+            <rect x="14" y="5" width="4" height="14" rx="1" />
+          </svg>
+          {pauseBadge}
+        </Chip>
+      </p>
+      <p className="text-sm text-muted-foreground">{pauseLine}</p>
+      <div
+        data-pause-next-step={relationship.isInitiator ? pause.state : "waiting"}
+        className="space-y-2 rounded-b-lg bg-action p-4 text-action-foreground"
+      >
+        <h2 className="text-base font-semibold">{nextStepHeading}</h2>
+        <p className="text-sm text-action-foreground/80">{nextStepBody}</p>
+        <div className="flex flex-wrap gap-2">
+          {/*
+              #1121 — *Add a Card* is the existing checkout, not a second one: `payHref` is the pay
+              modal's address (the same door #912 left on the publish panel), and a relationship with
+              no session has none to offer, so the button is absent rather than dead.
+            */}
+          {relationship.isInitiator && payHref !== null ? (
+            <FlowEntryLink
+              href={payHref}
+              data-pause-add-card="true"
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              {itemLabel(pauseCopy, "add-card")}
+            </FlowEntryLink>
+          ) : null}
+          {/*
+              #1121 — the free week, drawn only while the server says it is available: once it has
+              been used the flag is false for good, and the control is not drawn at all rather than
+              drawn-and-refused. The write re-asks under a lock (`claimTrialExtension`).
+            */}
+          {relationship.canClaimExtension ? (
+            <button
+              type="button"
+              onClick={claimExtension}
+              disabled={pending}
+              data-pause-extend="true"
+              className="inline-flex h-9 items-center rounded-md border border-action-foreground/50 px-3 text-sm font-medium text-action-foreground transition-colors hover:bg-action-foreground/10 disabled:opacity-50"
+            >
+              {pending ? itemLabel(pauseCopy, "extending") : itemLabel(pauseCopy, "extend")}
+            </button>
+          ) : null}
+          {/* The Counterparty's one action is to keep reading — never a card, never a price. */}
+          {relationship.isInitiator ? null : (
+            <a
+              href={resultsHref}
+              data-pause-see-results="true"
+              className="inline-flex h-9 items-center rounded-md border border-action-foreground/50 px-3 text-sm font-medium text-action-foreground transition-colors hover:bg-action-foreground/10"
+            >
+              {itemLabel(pauseCopy, "see-results")}
+            </a>
+          )}
+        </div>
+        {extensionRefusal === null ? null : (
+          <p
+            data-pause-refusal={extensionOutcome?.ok === false ? extensionOutcome.code : ""}
+            className="text-sm text-action-foreground/90"
+          >
+            {extensionRefusal}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+
+  /**
+   * #1121 — the arrival: *"7 More Days Added · Stage 6 is running again. Your extra week ends
+   * <date>."*
+   *
+   * Two ways to get it, and they are the same event seen from two sides: the click that just
+   * succeeded in this session (`extensionOutcome`) and a `?from=extend` arrival from somewhere else.
+   * Both print the end the **rows** carry — the write's own `endsAt`, or the moved period end — so
+   * the sentence cannot claim a date the subscription does not have.
+   */
+  const extensionEndsAt =
+    extensionOutcome?.ok === true
+      ? extensionOutcome.endsAt
+      : arrival === "extend"
+        ? relationship.trialEndsAt
+        : null;
+  const extensionBanner =
+    extensionEndsAt === null
+      ? null
+      : fillLabel(itemLabel(pauseCopy, "added"), { instant: formatDate(extensionEndsAt) });
 
   return (
     <RecordDetailShell
@@ -526,27 +800,31 @@ export function RelationshipDetail({
         />
       }
       facts={
-        <DetailFacts
-          facts={factRows}
-          hooks={{ "data-relationship-facts": "true" }}
-          footnote={
-            <div className="flex flex-wrap items-center gap-2">
-              {/* #706 — the viewer's own seat, from their party row. The facts card says it too;
+        <>
+          {/* #1121 — the pause block first, then the facts card: the bundle's aside order. */}
+          {pausePanel}
+          <DetailFacts
+            facts={factRows}
+            hooks={{ "data-relationship-facts": "true" }}
+            footnote={
+              <div className="flex flex-wrap items-center gap-2">
+                {/* #706 — the viewer's own seat, from their party row. The facts card says it too;
                   the detail screen repeats it because this is where the absent controls would be. */}
-              <Chip variant="neutral" data-viewer-role={relationship.viewerRole}>
-                {relationship.viewerRole === "initiator"
-                  ? pageItemOf(copy, "role-initiator").label
-                  : pageItemOf(copy, "role-counterparty").label}
-              </Chip>
-              {/* #533 phase 3 — the derived membership, beside the stored status. */}
-              {relationship.membership.state === "lapsed" ? (
-                <Chip variant="soft" data-membership-state="lapsed">
-                  {pageItemOf(copy, "read-only").label}
+                <Chip variant="neutral" data-viewer-role={relationship.viewerRole}>
+                  {relationship.viewerRole === "initiator"
+                    ? pageItemOf(copy, "role-initiator").label
+                    : pageItemOf(copy, "role-counterparty").label}
                 </Chip>
-              ) : null}
-            </div>
-          }
-        />
+                {/* #533 phase 3 — the derived membership, beside the stored status. */}
+                {relationship.membership.state === "lapsed" ? (
+                  <Chip variant="soft" data-membership-state="lapsed">
+                    {pageItemOf(copy, "read-only").label}
+                  </Chip>
+                ) : null}
+              </div>
+            }
+          />
+        </>
       }
       actions={
         <>
@@ -817,6 +1095,42 @@ export function RelationshipDetail({
         </>
       }
     >
+      {/* #1121 — the arrival banner: news about the click that just landed, above everything the
+          page says about where this relationship stands. */}
+      {extensionBanner === null ? null : (
+        <p
+          data-stage-pause-arrival="extend"
+          className="rounded-md border border-border bg-muted/50 p-3 text-sm font-medium text-foreground"
+        >
+          {extensionBanner}
+        </p>
+      )}
+
+      {/* #1121 — **read-only while paused, said once, at the top of what the reader came for.**
+          The bundle replaces the Discussion composer with this sentence; this route has no composer
+          yet (#1124 adds the tab layer), so the sentence is drawn as the state bar it becomes —
+          dashed, quiet, and above the sections rather than inside one. */}
+      {paused ? (
+        <p
+          data-stage-pause-read-only="true"
+          className="flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 p-3 text-sm text-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="size-4 shrink-0 text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          {itemLabel(pauseCopy, "read-only")}
+        </p>
+      ) : null}
+
       {/* #795 — the content column's first section: where this stands. The invitation's state, the
           trial and the seat the reader holds are facts about *this* relationship, and they were a
           stack of chips in a card before the shell pulled them into one sentence-shaped section. */}
@@ -825,13 +1139,21 @@ export function RelationshipDetail({
           <Chip variant="soft" data-relationship-invite={relationship.view}>
             {viewSentence(relationship.view)}
           </Chip>
-          {relationship.trialEndsAt === null ? null : (
+          {relationship.trialEndsAt === null || !relationship.isInitiator ? null : (
             <Chip variant="neutral">
               {pageItemOf(copy, "trial").label}
               <span aria-hidden className="mx-1.5">
                 —
               </span>
               {formatDate(relationship.trialEndsAt)}
+            </Chip>
+          )}
+          {/* #1121 — the Initiator's countdown pill. Never drawn for the Counterparty: a number of
+              days left is a fact about somebody else's trial, and their column of the issue's table
+              has nothing in it but "waiting". */}
+          {trialPill === null ? null : (
+            <Chip variant="neutral" data-trial-chip={pause.extended ? "extra" : "trial"}>
+              {trialPill}
             </Chip>
           )}
         </div>
@@ -844,7 +1166,7 @@ export function RelationshipDetail({
         {/* #533 phase 3 — the sentence both parties read. It names the initiator's membership
             and the instant it ended, from the row, so a lapse is never mistaken for a failure of
             the person reading it. */}
-        {relationship.lapseSentence === null ? null : (
+        {relationship.lapseSentence === null || paused ? null : (
           <p
             data-membership-sentence="lapsed"
             className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"

@@ -233,6 +233,17 @@ export const ADMIN_ACTIONS = [
   "relationship.void",
   "relationship.extend",
   /**
+   * #1121 — the Initiator's one free week, self-serve.
+   *
+   * Not `relationship.extend`: that is the operator override, `admin`-floored, and it takes an
+   * arbitrary day count. This action is the member's own claim of the *one* extension the product
+   * offers, at the one length it offers, floored at `member` because it writes only the
+   * relationship's own initiating account's row — and floored here rather than opened up, because
+   * the once-only rule is enforced inside the transaction (`lib/member/trial-extension.ts`), not by
+   * the absence of a button.
+   */
+  "relationship.claim-extension",
+  /**
    * #667 — the review store's three names, and the reason `/admin/review` is a `support` surface.
    *
    * A review artifact is a prototype, a diagram or a report somebody has to look at: the TODO
@@ -349,6 +360,9 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // #533 phase 3 — the two operator overrides, floored where `session.void` is: `admin`.
   "relationship.void": "admin",
   "relationship.extend": "admin",
+  // #1121 — the Initiator's own free week. `member`, for the reason the six rows above are: it
+  // writes nothing but the account's own trial row and a grant for its own relationship.
+  "relationship.claim-extension": "member",
   /**
    * #667 — the review store's three, and #665's screen mounts them (**this card** raised the floor
    * from `support` to `admin`).

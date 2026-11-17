@@ -72,11 +72,46 @@
 import { usePathname, useRouter } from "next/navigation";
 import type { FormEvent, MouseEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import type { PageCopy } from "@/content/pages";
 import { takeFlowOrigin } from "@/lib/flow/dialog-origin";
 import { StageColumn } from "./stage-column";
-import { StageRail } from "./stage-rail";
+import { WizardProgress } from "./wizard-progress";
+import { WizardRail, type WizardRailStep, type WizardRailSummaryRow } from "./wizard-rail";
 import { StageShell } from "./stage-shell";
+
+/**
+ * The v2 wizard rail's facts, **already resolved by the caller** (#1123).
+ *
+ * The rail is the aside the bundle draws beside the stage card: the setup gauge, one row per stage
+ * with its status word, the dashed Align preview and the live relationship summary. Every word in
+ * it is a `data/pages/assessment-create.ts` string the caller filled, so the rail assembles no
+ * sentence of its own (E23) and a rename lands in one fixture.
+ *
+ * Absent on a screen with no stage to number — the "nothing to copy" refusal — which falls back to
+ * the pre-v2 single column rather than drawing a rail that would number a stage the screen is not.
+ */
+export interface FlowRail {
+  /** The nav's accessible name. */
+  readonly label: string;
+  readonly steps: readonly WizardRailStep[];
+  /** `Stage 3 of 5`, already filled with this stage. */
+  readonly count: string;
+  /** This stage's own name, from `data/pages/lifecycle.ts`. */
+  readonly name: string;
+  /** `Stage 6 Align starts when <name> joins`. */
+  readonly alignNote: string;
+  /** The dashed preview row's word. */
+  readonly alignPreviewLabel: string;
+  /** `Starts when <name> joins`. */
+  readonly alignPreviewNote: string;
+  readonly summaryHeading: string;
+  readonly summary: readonly WizardRailSummaryRow[];
+}
+
+/** The v2 flow header's two words: its title, and the label on the control that leaves the flow. */
+export interface FlowHeader {
+  readonly label: string;
+  readonly exitLabel: string;
+}
 
 /** Which of the flow's five stages this render is. `undefined` is the "nothing to copy" screen. */
 export type FlowStage = 1 | 2 | 3 | 4 | 5;
@@ -113,8 +148,6 @@ export interface FlowShellProps {
   mount?: FlowMount;
   /** Which stage is current — the rail's fact. Omitted on the "nothing to copy" screen. */
   stage?: FlowStage;
-  /** The screen's fixture: the rail's five words come from its `stages` section. */
-  copy: PageCopy;
   /** The dialog's accessible name — the stage's own heading, already resolved by the caller. */
   title: string | undefined;
   /** The close control's accessible name, from the caller's fixture. */
@@ -129,37 +162,79 @@ export interface FlowShellProps {
   closeHref: string;
   /** The stage: its heading, its bands and its body. Never re-drawn here. */
   children: ReactNode;
+  /**
+   * **The v2 rail beside the stage card (#1123).** Present on the five stages, absent on a screen
+   * with no stage to number. It is also what widens the panel: a 260px rail and a readable stage
+   * card do not fit in the 880px reading cap, so the frame's wide variant is an inference from the
+   * rail rather than a second flag a caller could set on its own.
+   */
+  rail?: FlowRail;
+  /** The v2 flow header — the title on the left, the exit word on the right. */
+  header?: FlowHeader;
 }
 
 /**
- * The column and the rail above the stage — **one element tree, both mountings**.
+ * The rail, the stage column and the mobile progress line — **one element tree, both mountings**.
  *
  * The rail is drawn here rather than by each stage for the reason #825 gives: one progress pattern,
- * one count, one place a rename hides. `stage === undefined` is the refusal screen that has no stage
- * to number, and it draws no rail rather than a rail claiming to stand on a stage it is not.
+ * one count, one place a rename hides. `rail === undefined` is the refusal screen that has no stage
+ * to number, and it draws the pre-v2 single column rather than a rail claiming to stand on a stage
+ * it is not.
+ *
+ * Below `lg` the aside is off-canvas and `WizardProgress` is the one line that says where the person
+ * is: the same count and the same Align note, from the same resolved props, so the two cannot
+ * disagree about which stage this is.
  */
 function FlowStageBody({
   stage,
-  copy,
+  rail,
   children,
 }: {
   stage: FlowStage | undefined;
-  copy: PageCopy;
+  rail?: FlowRail;
   children: ReactNode;
 }) {
+  if (rail === undefined || stage === undefined) {
+    return <StageColumn>{children}</StageColumn>;
+  }
+
   return (
-    <StageColumn>
-      <div className="space-y-6">
-        {/* Above the stage's own heading, on every stage that has one (#687, #825). */}
-        {stage === undefined ? null : <StageRail copy={copy} current={stage} />}
-        {children}
+    <div className="min-h-full bg-mist">
+      <div className="mx-auto w-full px-4 py-5 lg:px-6">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+          <aside className="hidden space-y-4 lg:sticky lg:top-20 lg:block lg:self-start">
+            <WizardRail
+              label={rail.label}
+              steps={rail.steps}
+              count={rail.count}
+              name={rail.name}
+              alignNote={rail.alignNote}
+              alignPreviewLabel={rail.alignPreviewLabel}
+              alignPreviewNote={rail.alignPreviewNote}
+              summaryHeading={rail.summaryHeading}
+              summary={rail.summary}
+            />
+          </aside>
+          <div className="min-w-0 space-y-4">
+            <WizardProgress
+              step={stage}
+              count={rail.count}
+              name={rail.name}
+              alignNote={rail.alignNote}
+            />
+            {children}
+          </div>
+        </div>
       </div>
-    </StageColumn>
+    </div>
   );
 }
 
 /** The panel's own props, as the dialog mounting passes them to the frame. */
-type FrameProps = Pick<FlowShellProps, "title" | "closeLabel" | "closeHref">;
+type FrameProps = Pick<FlowShellProps, "title" | "closeLabel" | "closeHref" | "header"> & {
+  /** The wide panel variant the v2 rail needs. Derived from `rail` by the caller. */
+  readonly wide: boolean;
+};
 
 /**
  * The dialog mounting: `StageShell`'s frame, portalled over the page underneath, carrying the two
@@ -168,7 +243,14 @@ type FrameProps = Pick<FlowShellProps, "title" | "closeLabel" | "closeHref">;
  * A separate component and not a branch inside `RelationshipFlowShell`, because hooks cannot be
  * conditional and a static render of a stage address must not ask for a router (see the file note).
  */
-function FlowDialogMount({ title, closeLabel, closeHref, body }: FrameProps & { body: ReactNode }) {
+function FlowDialogMount({
+  title,
+  closeLabel,
+  closeHref,
+  header,
+  wide,
+  body,
+}: FrameProps & { body: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [busy, setBusy] = useState(false);
@@ -301,6 +383,8 @@ function FlowDialogMount({ title, closeLabel, closeHref, body }: FrameProps & { 
       title={title}
       closeLabel={closeLabel}
       closeHref={closeHref}
+      wide={wide}
+      {...(header === undefined ? {} : { header })}
       presentation={FLOW_MOUNT_DIALOG}
       onDismiss={dismiss}
     >
@@ -319,26 +403,40 @@ function FlowDialogMount({ title, closeLabel, closeHref, body }: FrameProps & { 
 export function RelationshipFlowShell({
   mount = "page",
   stage,
-  copy,
   title,
   closeLabel,
   closeHref,
+  rail,
+  header,
   children,
 }: FlowShellProps) {
   const body = (
-    <FlowStageBody stage={stage} copy={copy}>
+    <FlowStageBody stage={stage} rail={rail}>
       {children}
     </FlowStageBody>
   );
 
   if (mount === "dialog") {
     return (
-      <FlowDialogMount title={title} closeLabel={closeLabel} closeHref={closeHref} body={body} />
+      <FlowDialogMount
+        title={title}
+        closeLabel={closeLabel}
+        closeHref={closeHref}
+        wide={rail !== undefined}
+        {...(header === undefined ? {} : { header })}
+        body={body}
+      />
     );
   }
 
   return (
-    <StageShell title={title} closeLabel={closeLabel} closeHref={closeHref}>
+    <StageShell
+      title={title}
+      closeLabel={closeLabel}
+      closeHref={closeHref}
+      wide={rail !== undefined}
+      {...(header === undefined ? {} : { header })}
+    >
       {body}
     </StageShell>
   );

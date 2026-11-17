@@ -265,8 +265,8 @@ export interface CentringAllowance {
 export const CENTRING_ALLOWANCES: readonly CentringAllowance[] = [
   {
     file: "components/assessment-flow/stage-shell.tsx",
-    text: '"lg:inset-6 lg:mx-auto lg:max-w-[880px] lg:rounded-lg lg:border",',
-    why: "The v7 stage dialog is capped at 880px and centred on purpose (#760) — a dialog is a sheet, not a page column.",
+    text: '"lg:inset-6 lg:mx-auto lg:rounded-lg lg:border",',
+    why: "The stage dialog is capped and centred on purpose (#760) — a dialog is a sheet, not a page column. The cap itself moves with `wide` (#1123): 880px for every screen, 1180px for the v2 wizard, whose rail sits beside the card.",
   },
 ];
 

@@ -234,6 +234,7 @@ export default async function TemplateCreateCommitPage({
     <CreateRelationship
       copy={assessmentCreatePageCopy}
       stage={4}
+      signedIn={viewer !== null}
       mount={mount}
       template={
         detail === undefined

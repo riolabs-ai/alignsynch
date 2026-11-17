@@ -121,6 +121,23 @@ export type RepublishOutcome =
   | { readonly ok: false; readonly code: string; readonly message?: string };
 
 /**
+ * #1121 — claiming the one free week.
+ *
+ * `endsAt` is the extra week's last instant, so the arrival banner (*"Your extra week ends
+ * <date>"*) prints the row the write just committed rather than a value the client computed. A
+ * refusal carries its code and nothing else: the screen has a sentence for each of the three
+ * (`not-paused`, `no-trial`, `extension-used`) and a fourth for `not-yours`.
+ */
+export type ExtensionOutcome =
+  | {
+      readonly ok: true;
+      readonly actionId: string;
+      readonly endsAt: string;
+      readonly resumed: boolean;
+    }
+  | { readonly ok: false; readonly code: string; readonly message?: string };
+
+/**
  * #623 — what an edit *would* cost, asked before it is written.
  *
  * `blocked` is not a refusal of the request: it is the answer "this edit cannot be made at all",

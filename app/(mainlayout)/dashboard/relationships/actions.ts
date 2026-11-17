@@ -51,11 +51,13 @@ import { editRelationship, previewRelationshipEdit } from "@/lib/member/relation
 import { MemberRefused } from "@/lib/member/publish-basis";
 import type { EditDraft } from "@/lib/relationship/edit-view";
 import { completeRelationship } from "@/lib/member/payment";
+import { claimTrialExtension } from "@/lib/member/trial-extension";
 import type {
   AspectsOutcome,
   CompleteOutcome,
   EditOutcome,
   EditPreviewOutcome,
+  ExtensionOutcome,
   ForkOutcome,
   MembershipOutcome,
   PublishOutcome,
@@ -207,6 +209,46 @@ export async function republishInviteAction(payload: {
       actionId: result.actionId,
       inviteLink: result.after.inviteLink,
       inviteExpiresAt: result.after.inviteExpiresAt,
+    };
+  } catch (error) {
+    if (error instanceof ActRefused) return { ok: false, code: error.reason };
+    if (error instanceof MemberRefused) {
+      return { ok: false, code: error.reason, message: error.message };
+    }
+    throw error;
+  }
+}
+
+/**
+ * #1121 — the Initiator claims the one free week.
+ *
+ * The actor comes from the session, never from the payload; the length is not a field (it is the
+ * product's own seven days), so a crafted post cannot buy a longer pause. The write re-asks the
+ * seat, the pause and the once-only rule inside `act()`'s transaction
+ * (`lib/member/trial-extension.ts`), and the screen's `canClaimExtension` flag is only what decided
+ * to draw the button.
+ */
+export async function claimExtensionAction(payload: {
+  relationshipId?: string;
+  reason?: string;
+}): Promise<ExtensionOutcome> {
+  const user = await currentUser();
+  if (user === null) return { ok: false, code: "signed-out" };
+
+  const relationshipId = text(payload.relationshipId);
+  if (relationshipId === "") return { ok: false, code: "no-such-relationship" };
+
+  try {
+    const result = await claimTrialExtension({
+      actorUserId: user.userId,
+      relationshipId,
+      reason: text(payload.reason),
+    });
+    return {
+      ok: true,
+      actionId: result.actionId,
+      endsAt: result.after.endsAt,
+      resumed: result.after.resumed !== null,
     };
   } catch (error) {
     if (error instanceof ActRefused) return { ok: false, code: error.reason };

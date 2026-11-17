@@ -94,6 +94,7 @@ import {
   type Connection,
   type Membership,
 } from "@/lib/relationship/membership";
+import { pauseOf, type Pause } from "@/lib/relationship/pause";
 import { initiatorIsViewer } from "@/lib/relationship/initiator";
 import { trialStateOf, type TrialFacts, type TrialState } from "@/lib/relationship/trial";
 import {
@@ -630,6 +631,29 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
   readonly trial: TrialState;
   readonly trialEndsAt: string | null;
   /**
+   * #1121 — **Stage 6's pause, derived.** When the trial ends with no card the relationship goes
+   * read-only and never closes; both parties keep reading, and adding a card or taking the free week
+   * resumes it. `pauseOf()` composes the `membership` above with the trial's end and the free week's
+   * claim — it never re-derives the membership, so the badge and the write gate cannot disagree.
+   *
+   * Optional for the same reason `relationshipTitle` is: a view literal written before this field
+   * existed (the suites that build one) carries no pause facts, and the screen draws the running
+   * state for those rather than inventing a pause. `readMyRelationship()` always fills it.
+   */
+  readonly pause?: Pause;
+  /** #1121 — when the one free week was claimed (ISO-8601), or `null` if it never was. */
+  readonly trialExtendedAt?: string | null;
+  /**
+   * #1121 — may **this reader** take the free week? `isInitiator && pause.extensionAvailable`.
+   *
+   * Gated on the seat here rather than in the component, for the reason #706 gates the four write
+   * flags here: the Counterparty is never asked to pay, so the offer must not reach their render at
+   * all — not drawn-but-disabled, not present in a `title`, not in the props. The server action
+   * re-asks the seat and the once-only rule inside its transaction; this flag is what the screen
+   * draws, never the permission.
+   */
+  readonly canClaimExtension?: boolean;
+  /**
    * #533 phase 3 — whether the membership paying for this relationship is still running, derived
    * at the instant the page was given. `lapsed` is the read-only state, and `lapseSentence` is the
    * sentence the screen prints: it names the initiator's membership and the instant it ended, which
@@ -667,6 +691,32 @@ export function aspectsRecordOf(input: {
   readonly sessionRecordId: string | null;
 }): string {
   return input.sessionRecordId ?? input.templateId;
+}
+
+/**
+ * #1121 — when this account claimed its one free week, or `null` if it never did.
+ *
+ * The claim is a `plan_grant` row (`kind = 'extend'`, `granted_by` the account) written by
+ * `claimTrialExtension()` in the same transaction as the period move. Reading it through the
+ * relationships the account **initiated** rather than through `granted_by` alone keeps the marker
+ * answerable from a relationship's own row: an operator's `plan.comp` is a different `kind` and an
+ * operator's `extendTrial()` writes no grant at all, so neither can consume a member's free week.
+ *
+ * One row is the answer, and it is the *first* one: `MIN(created_at)` says when the week was taken
+ * even if a later build ever wrote a second row for another reason.
+ */
+async function readExtensionClaimedAt(initiatorUserId: string): Promise<Date | null> {
+  const rows = await queryRows<{ extended_at: Date | string | null }>(
+    `SELECT MIN(g.created_at) AS extended_at
+       FROM plan_grant g
+       JOIN relationship r ON r.id = g.relationship_id
+      WHERE g.kind = 'extend'
+        AND r.initiator_user_id = $1`,
+    [initiatorUserId],
+  );
+  const value = rows[0]?.extended_at ?? null;
+  if (value === null) return null;
+  return value instanceof Date ? value : new Date(value);
 }
 
 /**
@@ -747,6 +797,29 @@ export async function readMyRelationship(
   // not write). The same function the claim and the answer submit refuse with, so the band and the
   // refusal can never disagree about whether this relationship may be written to.
   const membership = base.membership;
+  /*
+   * #1121 — **the pause, and the one free week.** Two reads, both facts about the *initiating*
+   * account rather than about the viewer: the trial's window is the subscription row's
+   * `current_period_end`, and the free week's claim is a `plan_grant` row with `kind = 'extend'`
+   * granted by that account — the issue's `trial_extended_at`, read rather than stored twice.
+   *
+   * Both are read for a Counterparty too, because the rule they feed is symmetric: they see the
+   * pause (they must know Stage 6 is waiting and that everything is saved), and they see no offer
+   * (`canClaimExtension` is gated on the seat below). Reading the initiator's claim and then not
+   * drawing it is what keeps "once" true when the *Counterparty* reloads the page.
+   */
+  const trialEndsAtDate =
+    subscription !== null && subscription.status === "trialing"
+      ? new Date(subscription.currentPeriodEnd)
+      : null;
+  const trialExtendedAt =
+    row.initiator_user_id === null ? null : await readExtensionClaimedAt(row.initiator_user_id);
+  const pause = pauseOf({
+    membership,
+    endsAt: trialEndsAtDate,
+    trialExtendedAt,
+    now,
+  });
   return {
     ...base,
     /*
@@ -792,6 +865,9 @@ export async function readMyRelationship(
     closed: isClosed(base.status),
     trial,
     membership,
+    pause,
+    trialExtendedAt: trialExtendedAt === null ? null : trialExtendedAt.toISOString(),
+    canClaimExtension: base.isInitiator && pause.extensionAvailable,
     lapseSentence: membership.state === "lapsed" ? membershipSentence(membership) : null,
     trialEndsAt:
       subscription !== null && subscription.status === "trialing"
