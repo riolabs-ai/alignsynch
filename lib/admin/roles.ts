@@ -244,6 +244,23 @@ export const ADMIN_ACTIONS = [
    */
   "relationship.claim-extension",
   /**
+   * #1135 — the invitation's three courtesies and the two ways a relationship ends.
+   *
+   *   cancel-invite     the Initiator kills a link nobody claimed; the status returns to `draft`
+   *   abandon           the Initiator ends a draft that never went out (`→ void`, with its reason)
+   *   leave             either party ends a live Stage 6 (`→ complete`); answers stay readable
+   *   removal-request   the Counterparty asks support to remove their name and answers
+   *
+   * All four are `member`: each writes a row the actor is already a seat on, and each mutation
+   * re-asks the seat inside its transaction (`lib/member/relationship-close.ts`), so the floor is
+   * "this is a member's own product" and never the permission. `leave` is the only one whose actor
+   * may be the Counterparty, and it is the only transition that seat is allowed (#1135).
+   */
+  "relationship.cancel-invite",
+  "relationship.abandon",
+  "relationship.leave",
+  "relationship.removal-request",
+  /**
    * #667 — the review store's three names, and the reason `/admin/review` is a `support` surface.
    *
    * A review artifact is a prototype, a diagram or a report somebody has to look at: the TODO
@@ -363,6 +380,12 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   // #1121 — the Initiator's own free week. `member`, for the reason the six rows above are: it
   // writes nothing but the account's own trial row and a grant for its own relationship.
   "relationship.claim-extension": "member",
+  // #1135 — the same reason as the six rows above: each writes a row the actor is already a seat
+  // on. `leave` includes the Counterparty's own seat, which is the only transition they may take.
+  "relationship.cancel-invite": "member",
+  "relationship.abandon": "member",
+  "relationship.leave": "member",
+  "relationship.removal-request": "member",
   /**
    * #667 — the review store's three, and #665's screen mounts them (**this card** raised the floor
    * from `support` to `admin`).

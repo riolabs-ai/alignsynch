@@ -22,7 +22,7 @@
 import type { Metadata } from "next";
 
 import { StageColumn } from "@/components/assessment-flow/stage-column";
-import { RelationshipsList } from "@/components/dashboard/relationships-list";
+import { RelationshipsList, stateFilterOf } from "@/components/dashboard/relationships-list";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import { requireRole } from "@/lib/auth/require-role";
 import { DatabaseUnavailableError } from "@/lib/db/client";
@@ -31,6 +31,8 @@ import {
   MEMBER_RELATIONSHIPS_PATH,
   type MemberRelationshipRow,
 } from "@/lib/member/relationships";
+import { type AlignmentSummary, alignmentSummaryOf } from "@/lib/member/alignment-summary";
+import { readMemberAlignments } from "@/lib/db/member-alignments";
 import { listLibraryTemplates } from "@/lib/db/template-library";
 import type { RelationshipStartTemplate } from "@/components/dashboard/relationship-create";
 
@@ -41,11 +43,23 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function MemberRelationshipsPage() {
+export default async function MemberRelationshipsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { user } = await requireRole("member", { next: MEMBER_RELATIONSHIPS_PATH });
+  /**
+   * `?filter=` is the chip's address (#1129): the bundle deep-links `?filter=paused`, and a
+   * filter that lives only in `useState` cannot be sent to anyone or survive a reload. The value
+   * is normalised where the chips are declared (`stateFilterOf`), so an unknown word is `All`
+   * rather than an empty grid.
+   */
+  const initialFilter = stateFilterOf((await searchParams).filter);
 
   let rows: readonly MemberRelationshipRow[] = [];
   let templates: readonly RelationshipStartTemplate[] = [];
+  let summaries: Record<string, AlignmentSummary | null> = {};
   let unreadable: string | null = null;
   try {
     rows = await listMyRelationships(user.userId);
@@ -61,6 +75,26 @@ export default async function MemberRelationshipsPage() {
     templates = (await listLibraryTemplates(user.userId))
       .filter((template) => template.status === "published" && template.aspectCount > 0)
       .map((template) => ({ id: template.id, slug: template.slug, title: template.title }));
+
+    /*
+     * #1129 — the card carries the same five-mark bar Start draws, so this screen reads the same
+     * two things: both parties' answers per Aspect (`readMemberAlignments`, scoped to the viewer's
+     * own parties) and the verdict helper that turns them into a summary. A relationship whose
+     * sheets are not both in has no summary, and its card says so rather than drawing a bar of
+     * zeroes.
+     */
+    const alignments = await readMemberAlignments(user.userId);
+    const bySession = new Map(alignments.map((entry) => [entry.sessionRecordId, entry]));
+    summaries = Object.fromEntries(
+      rows.map((row) => {
+        const alignment =
+          row.sessionRecordId === null ? undefined : bySession.get(row.sessionRecordId);
+        return [
+          row.id,
+          alignment === undefined ? null : alignmentSummaryOf(alignment.setting, alignment.answers),
+        ];
+      }),
+    );
   } catch (error) {
     if (!(error instanceof DatabaseUnavailableError)) throw error;
     console.error("member-relationships: the list could not be read", error);
@@ -72,8 +106,10 @@ export default async function MemberRelationshipsPage() {
       <RelationshipsList
         copy={dashboardRelationshipsPageCopy}
         rows={rows}
+        summaries={summaries}
         templates={templates}
         unreadable={unreadable}
+        initialFilter={initialFilter}
       />
     </StageColumn>
   );

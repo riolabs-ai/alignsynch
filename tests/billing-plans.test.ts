@@ -44,11 +44,6 @@ const pricingSources = readdirSync(join(process.cwd(), PRICING_DIR))
     source: readFileSync(join(process.cwd(), PRICING_DIR, file), "utf8"),
   }));
 
-/** The owner's yearly rule: twenty percent off the monthly rate, for twelve months. */
-function yearlyFromMonthly(monthlyCents: number): number {
-  return Math.round(monthlyCents * 12 * 0.8);
-}
-
 describe("the fixture is coherent", () => {
   it("has no problems", () => {
     expect(billingPlanProblems()).toEqual([]);
@@ -73,24 +68,29 @@ describe("the fixture is coherent", () => {
     }
   });
 
-  it("prices the two paid tiers at 8.95 and 16.95 a month", () => {
-    expect(billingPlan("basic")?.monthlyCents).toBe(895);
-    expect(billingPlan("principal")?.monthlyCents).toBe(1_695);
+  it("prices the two paid tiers at the approved 9.99 and 19.99 a month (#1127)", () => {
+    expect(billingPlan("basic")?.monthlyCents).toBe(999);
+    expect(billingPlan("principal")?.monthlyCents).toBe(1_999);
   });
 
-  it("charges a year at 20% off the monthly rate × 12, and divides back to a whole month", () => {
+  it("charges a year at the approved annual amounts, and divides back to a whole month", () => {
+    // The annual figure is an **authored amount**, not a formula: the owner priced Single Annual at
+    // a round `$99` against `$9.99 × 12 = $119.88`, and the Family row is the unclaimed Family
+    // Annual, left at the amount it was created with. What is still checked is the arithmetic the
+    // card depends on — the yearly state prints `yearlyCents / 12` beside "/mo, billed yearly", so
+    // the division has to be exact.
     for (const plan of billingPlans.filter((row) => row.id !== "free")) {
-      expect(plan.yearlyCents, `${plan.id}: yearly`).toBe(yearlyFromMonthly(plan.monthlyCents));
-      // The card prints `yearlyCents / 12` beside "/mo, billed yearly" — a third decimal would
-      // render, so the division has to be exact.
       expect(plan.yearlyCents % 12, `${plan.id}: whole months`).toBe(0);
+      expect(plan.yearlyCents, `${plan.id}: cheaper than twelve months`).toBeLessThan(
+        plan.monthlyCents * 12,
+      );
     }
-    // 8_592 / 12 = 716 and 16_272 / 12 = 1_356 — the "per month" figures the yearly state prints.
-    expect(billingPlan("basic")?.yearlyCents).toBe(8_592);
+    // 9_900 / 12 = 825 and 16_272 / 12 = 1_356 — the "per month" figures the yearly state prints.
+    expect(billingPlan("basic")?.yearlyCents).toBe(9_900);
     expect(billingPlan("principal")?.yearlyCents).toBe(16_272);
     expect(
       billingPlanRows().find((row) => row.id === "basic" && row.interval === "year")?.priceCents,
-    ).toBe(8_592);
+    ).toBe(9_900);
     expect(
       billingPlanRows().find((row) => row.id === "principal" && row.interval === "year")
         ?.priceCents,
@@ -139,9 +139,9 @@ describe("the rows the migration writes and db:verify compares", () => {
     const principal = billingPlan("principal");
     expect(principal).toBeDefined();
     if (principal === undefined) return;
-    // The card prints `$13.56` beside "/mo, billed yearly"; the yearly row is what is charged.
+    // The card prints `$8.25` beside "/mo, billed yearly"; the yearly row is what is charged.
     expect(planPriceCents(principal, "year")).toBe(16_272);
-    expect(planPriceCents(principal, "month")).toBe(1_695);
+    expect(planPriceCents(principal, "month")).toBe(1_999);
     for (const row of billingPlanRows()) {
       const plan = billingPlan(row.id);
       expect(plan).toBeDefined();

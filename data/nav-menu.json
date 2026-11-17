@@ -54,6 +54,13 @@
           "note": "#901 — the docs home renders the 117-page manifest and had no row, so the tree was URL-only. It sits after the review shelf and before the log: the reference you look things up in, then what the rows above it did."
         },
         {
+          "id": "admin-permissions",
+          "href": "/admin/permissions",
+          "icon": "review",
+          "needs": "admin",
+          "note": "#1126 — the CRUD & Permissions matrix, directly after Docs because it is the second reference: the docs say how the product works, this says which role may do what. `review` is the checklist glyph and no name in the set draws a table; the console's own review row lives in group-support, so the reuse never reads as the same destination in one rail."
+        },
+        {
           "id": "admin-audit",
           "href": "/admin/audit",
           "icon": "audit",
@@ -67,18 +74,19 @@
       "label": "group-app",
       "items": [
         {
+          "id": "start",
+          "href": "/dashboard",
+          "icon": "dashboard",
+          "needs": "member",
+          "exact": true,
+          "note": "#1129 — Start, the signed-in landing: the computed Next Step, the two active relationships and four templates. `exact` because `/dashboard` is a parent path of the rows below it, and a prefix rule would light Start beside every one of them. This is the row #620 removed when the Overview stopped being a destination; it comes back as a different page."
+        },
+        {
           "id": "my-relationships",
           "href": "/dashboard/relationships",
           "icon": "relationships",
           "needs": "member",
-          "note": "#620 — the relationship and its assessment, in one list. The row this replaced was /dashboard (the Overview), which keeps answering but is no longer a rail row."
-        },
-        {
-          "id": "my-assessments",
-          "href": "/assessments",
-          "icon": "assessments",
-          "needs": "member",
-          "note": "#877 — the assessment sessions the member is a party to, immediately after the relationships they belong to. It replaced /assessment/instances, which is a 308 here: one listing, one address, and the session's own screen did not move."
+          "note": "#620 — the relationship and its assessment, in one list. Second since #1129, because the rail now opens on Start."
         },
         {
           "id": "templates",

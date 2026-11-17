@@ -81,6 +81,15 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     /** #706 — the viewer's own seat, from their party row. */
     { id: "role-initiator", label: "Initiator" },
     { id: "role-counterparty", label: "Counterparty" },
+    {
+      /**
+       * #1124 — what the tab strip says when the fixture hands it no sections at all. E40 gives an
+       * empty list an explicit bordered block, and this is the sentence that block carries: a
+       * binding nobody can read, said out loud rather than drawn as blank space.
+       */
+      id: "tabs-empty",
+      label: "This relationship has no sections to open — support can repair the binding.",
+    },
   ],
   sections: [
     {
@@ -128,6 +137,11 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "invite-expired", label: "Published. The invitation link has expired." },
         { id: "invite-claimed", label: "Published. The other person has joined." },
         { id: "invite-revoked", label: "Published. An operator revoked the invitation link." },
+        {
+          id: "invite-declined",
+          label:
+            "Published. {counterparty} declined the invitation — send a new one when you are ready.",
+        },
         {
           id: "invite-missing",
           label: "Published with no invitation row — that is a defect; support can repair it.",
@@ -549,9 +563,115 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
+      /**
+       * #1135 — **invitation hygiene**, the three courtesies on a live invitation.
+       *
+       * Bundle 03's pass-10 list, in the order the artifact draws them: Copy Invite Link (copies,
+       * then confirms), Resend Invite (rate-limited by `lib/flow/resend.ts`, then confirms), and
+       * Cancel Invite behind a neutral × confirm whose sentence is the artifact's own — "the link
+       * stops working… your draft stays and you can invite again".
+       *
+       * The resend has three sentences rather than one because the mail has three outcomes
+       * (`sent|unset|failed`): a deployment with no key still minted a working link, and claiming an
+       * email nobody sent would be the one lie this screen could tell.
+       */
+      id: "hygiene",
+      heading: "Invitation",
+      body: "The invitation works until it is claimed, cancelled, or it expires. Copy the link to share it yourself, resend it to the same address, or cancel it — the draft stays, and you can invite again.",
+      items: [
+        { id: "copy", label: "Copy Invite Link" },
+        { id: "copied", label: "Link Copied" },
+        { id: "copy-failed", label: "The clipboard is not available in this browser." },
+        { id: "link", label: "The link" },
+        { id: "resend", label: "Resend Invite" },
+        { id: "resending", label: "Resending…" },
+        { id: "resent", label: "Invitation Resent · the new link is live until {instant}." },
+        {
+          id: "resent-unset",
+          label: "Resent · no email left this deployment, so share the link below.",
+        },
+        { id: "resent-failed", label: "Resent · the email did not go, so share the link below." },
+        { id: "cancel", label: "Cancel Invite" },
+        {
+          id: "cancel-confirm",
+          label:
+            "Cancel this invitation? The link stops working the moment you do. Your draft stays and you can invite again.",
+        },
+        { id: "cancelling", label: "Cancelling…" },
+        { id: "cancelled", label: "Invitation Cancelled at {instant}. This is a draft again." },
+        { id: "keep", label: "Keep It" },
+      ],
+    },
+    {
+      /**
+       * #1135 — **close or leave, never delete.**
+       *
+       * One panel, two roles: either party may Leave (Stage 6 closes for both, answers stay
+       * readable), and the Counterparty has the ghost control the crud-matrix flagged as missing —
+       * Request My Removal, whose reason only support reads. There is deliberately **no "Delete
+       * Relationship"**: the confirm copy is where the rule is stated to the reader, and the writers
+       * (`lib/member/relationship-close.ts`) write a status, never a delete.
+       */
+      id: "close",
+      heading: "Close This Relationship",
+      body: "Leaving closes Stage 6 for both of you. Your answers and the Discussion stay where they are, and you can both still read them.",
+      items: [
+        { id: "leave", label: "Leave Relationship" },
+        {
+          id: "leave-confirm",
+          label:
+            "Leave this relationship? Stage 6 closes for both of you, and your answers and Discussion stay readable to both of you.",
+        },
+        { id: "leaving", label: "Leaving…" },
+        { id: "left", label: "Relationship Closed at {instant}." },
+        { id: "closed-badge", label: "Relationship Closed" },
+        { id: "keep", label: "Stay" },
+        { id: "request", label: "Request My Removal" },
+        {
+          id: "request-confirm",
+          label:
+            "Ask support to remove your name and your answers? They are removed within 30 days, and the relationship closes when they are.",
+        },
+        {
+          id: "request-reason",
+          label: "Anything support should know — they keep it to themselves.",
+        },
+        { id: "requesting", label: "Requesting…" },
+        {
+          id: "requested",
+          label: "Removal Requested · support removes your name and answers within 30 days.",
+        },
+        { id: "requested-at", label: "Removal Requested at {instant} · support has it." },
+      ],
+    },
+    {
+      /**
+       * #1135 — **Abandon Draft**, drawn only for a draft nobody was invited to.
+       *
+       * The confirm says what abandoning is (terminal) rather than softening it: `void` has no
+       * outgoing edge, so "starting again is a new relationship" is the honest sentence and the
+       * reason field is what the audit row and the row's own `void_reason` keep.
+       */
+      id: "abandon",
+      heading: "Abandon This Draft",
+      body: "Nothing has been sent, so there is nobody to tell. Abandoning ends this draft for good.",
+      items: [
+        { id: "submit", label: "Abandon Draft" },
+        {
+          id: "confirm",
+          label:
+            "Abandon this draft? It ends here and cannot be reopened — starting again is a new relationship.",
+        },
+        { id: "reason", label: "Why you are abandoning it (optional)" },
+        { id: "keep", label: "Keep the Draft" },
+        { id: "abandoning", label: "Abandoning…" },
+        { id: "done", label: "Draft Abandoned at {instant}." },
+      ],
+    },
+    {
       id: "closed",
       heading: "This relationship is closed",
-      body: "Nothing more happens to a relationship in this state. Starting a new one is a new relationship with its own invitation.",
+      body: "Stage 6 is closed for both of you. Nothing more happens to this relationship, and your answers and Discussion stay readable.",
     },
     {
       id: "refusals",
@@ -643,8 +763,168 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "Your one free week has already been used on this account. Adding a card resumes Stage 6.",
         },
+        /* #1135 — the ending verbs' dead ends, one sentence each. */
+        {
+          id: "already-closed",
+          label: "This relationship is already closed — there is nothing left to end.",
+        },
+        {
+          id: "already-joined",
+          label: "The other person has already joined, so there is no link to cancel.",
+        },
+        { id: "invite-dead", label: "That invitation already ended. Send a new one instead." },
+        {
+          id: "not-published",
+          label:
+            "An invitation is cancelled on a relationship that was sent — this one is a draft.",
+        },
+        { id: "not-a-draft", label: "Only a draft that was never sent can be abandoned." },
+        {
+          id: "not-running",
+          label:
+            "Stage 6 is not running yet, so there is nothing to leave. Cancel the invitation instead.",
+        },
+        {
+          id: "removal-already-requested",
+          label: "You have already asked support to remove you — they have it.",
+        },
+        /* #275 — the four ways a resend is refused before it writes. */
+        {
+          id: "cooldown",
+          label: "This invitation was resent very recently. Try again in a few hours.",
+        },
+        {
+          id: "cap-reached",
+          label:
+            "This invitation has been resent as many times as it can be. Cancel it and invite again instead.",
+        },
+        {
+          id: "already-claimed",
+          label: "The other person has already joined, so the invitation needs no resending.",
+        },
+        {
+          id: "not-initiator",
+          label: "Only the person who started the relationship can resend its invitation.",
+        },
+        {
+          id: "instance-complete",
+          label: "Both of you have answered everything, so there is no invitation left to resend.",
+        },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The change did not go through." },
+      ],
+    },
+    {
+      /**
+       * #1124 — **the six-tab layer, and it is the whole of the content column.**
+       *
+       * The sections below this one are its panels: the record is one page with six views of it,
+       * not six pages. The labels are the owner's words from the approved bundle
+       * (`docs/specs/v2-bundles/03-spec-design-page-relationship-detail-v2/`), in the bundle's
+       * order, and the `heading` is the tablist's accessible name rather than a drawn heading —
+       * the layer never prints it.
+       */
+      id: "tabs",
+      heading: "Relationship sections",
+      items: [
+        { id: "discussion", label: "Discussion" },
+        { id: "aspects", label: "Aspects" },
+        { id: "members", label: "Members" },
+        { id: "details", label: "Details" },
+        { id: "settings", label: "Settings" },
+        { id: "payment", label: "Payment" },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Discussion panel.
+       *
+       * **The thread has no model yet** (#921 owns it), so the panel draws what the read can
+       * support: the heading and one honest empty state. It is not a fake composer and it is not
+       * a comment box that would write nowhere — the layer ships the tab, and the thread lands
+       * when the model does.
+       */
+      id: "discussion",
+      heading: "Relationship Discussion",
+      body: "One thread for the two of you, beside the Aspects you are answering.",
+      items: [{ id: "empty", label: "Nothing has been said here yet." }],
+    },
+    {
+      /**
+       * #1124 — the Members panel: the two seats, and what has happened to the invitation.
+       *
+       * Read from the relationship itself — the initiator's name, the Counterparty's seat, and
+       * the invitation row — so a draft (no seat bound) says so instead of drawing two blanks.
+       * The owner-named labels are the bundle's: `(You)` marks the viewer, and `Invitation
+       * History` is the subheading.
+       */
+      id: "members",
+      heading: "Members",
+      items: [
+        { id: "you", label: "(You)" },
+        { id: "seat-empty", label: "Not joined yet" },
+        { id: "history", label: "Invitation History" },
+        { id: "no-invite", label: "No invitation has been sent yet." },
+        { id: "sent", label: "Invite sent {date}." },
+        { id: "expires", label: "The link stops working {date}." },
+        { id: "claimed", label: "The other person has joined." },
+        { id: "revoked", label: "An operator revoked the link." },
+      ],
+    },
+    {
+      /** #1124 — the Details panel: the record's own facts, then its timeline. */
+      id: "details",
+      heading: "Relationship Information",
+      items: [
+        { id: "template", label: "Template" },
+        { id: "invitation", label: "Invitation" },
+        { id: "seat", label: "Your Seat" },
+        { id: "timeline", label: "Timeline" },
+        { id: "created", label: "Created {date}." },
+        { id: "published", label: "Published {date}." },
+        { id: "trial-started", label: "7-day free trial started {date}." },
+        { id: "empty-timeline", label: "Nothing has happened to this relationship yet." },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Settings panel: the two values the assessment was configured with, and the
+       * one sentence about when a change takes effect. The values are read; the editor that
+       * writes them is the relationship's own edit panel (#623), so this panel never grows a
+       * second one.
+       */
+      id: "settings",
+      heading: "Assessment Settings",
+      items: [
+        { id: "mode", label: "Mode" },
+        { id: "setting", label: "Alignment Tolerance" },
+        { id: "next-round", label: "Changes apply from the next round." },
+        {
+          id: "by-starter",
+          label: "The person who started this relationship sets these.",
+        },
+      ],
+    },
+    {
+      /**
+       * #1124 — the Payment panel, and the no-leak rule is the whole design.
+       *
+       * The Initiator reads the membership and its trial; the Counterparty reads one sentence
+       * and nothing else — no plan, no price, no card, no countdown. Billing itself is #1132's
+       * surface; this panel mirrors the facts the relationship already carries and adds no
+       * control, so there is exactly one place money is decided.
+       */
+      id: "payment",
+      heading: "Relationship Membership",
+      items: [
+        { id: "membership", label: "Membership" },
+        { id: "billing-owner", label: "Billing Owner" },
+        { id: "you", label: "You" },
+        { id: "open", label: "Running" },
+        { id: "lapsed", label: "Read-only" },
+        { id: "trial-ends", label: "Trial ends {date}." },
+        { id: "no-trial", label: "No trial is running." },
+        { id: "covered", label: "{name} covers this relationship. You’re never charged." },
       ],
     },
     {

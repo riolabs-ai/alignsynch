@@ -160,7 +160,12 @@ test("prints the plan's price and the one start action, both from the fixture", 
     false,
     'the page says "per relationship"',
   );
-  assert.equal(html.includes(formatCurrency(999)), false, "the page prints $9.99");
+  // **One figure, and it is the plan's.** This used to read `not $9.99`, as a proxy for "not the
+  // taxonomy's per-relationship amount" (`RELATIONSHIP_PRICE_CENTS`, also 999). Since #1127 the
+  // Single plan's month *is* $9.99, so the string can no longer tell the two apart — the guard is
+  // `tests/plan-catalogue.test.ts`'s: no component or `lib/` module reads the taxonomy amount at
+  // all. What a reader sees is still exactly one price, and it is the chip above.
+  assert.deepEqual(html.match(/\$[\d.,]+/g) ?? [], [BASIC_MONTH]);
 });
 
 test("the plan's price does not vary with the template", () => {

@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — asset sources · prev [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Divergence table](../../ui-divergence.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — asset sources · prev [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Admin CRUD & Permissions matrix v2 (handoff)](../12-spec-design-page-admin-crud-matrix-v2/README.md)
 
 <!-- docs-nav:end -->
 
@@ -36,6 +36,6 @@ No photography or third-party imagery is used in this bundle, so there are no li
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — asset sources · prev [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Divergence table](../../ui-divergence.md)
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — asset sources · prev [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Admin CRUD & Permissions matrix v2 (handoff)](../12-spec-design-page-admin-crud-matrix-v2/README.md)
 
 <!-- docs-nav:end -->

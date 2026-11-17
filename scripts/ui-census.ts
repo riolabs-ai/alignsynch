@@ -306,12 +306,6 @@ export const NON_EMPTY_LISTS: readonly NonEmptyList[] = [
       "a fixed strip, not a read: both callers (`console/overview.tsx`, `v1/admin-console-overview.tsx`) pass a literal array of cards",
   },
   {
-    file: "components/dashboard/relationship-cards.tsx",
-    receiver: "rows",
-    reason:
-      "the card list is mounted by `relationships-list.tsx`, which owns the panel — `data-relationships-empty` with the fixture's `empty`/`empty-filter` sections and its one action",
-  },
-  {
     file: "components/dashboard/relationship-detail.tsx",
     receiver: "aspects",
     reason:

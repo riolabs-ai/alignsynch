@@ -32,7 +32,7 @@ import { formatCurrency } from "@/content/core";
 import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
 import { dashboardTemplatesPageCopy } from "@/data/pages/dashboard-templates";
 import { billingPlan } from "@/data/billing-plans";
-import { RELATIONSHIP_PRICE_CENTS, relationshipType } from "@/data/relationship-types";
+import { relationshipType } from "@/data/relationship-types";
 import { catalogueCard, mineCard, templatesTabOf, templatesTabPath } from "@/lib/member/shelf";
 import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -102,11 +102,14 @@ describe("the catalogue card", () => {
     // The figure is the plan fixture's, through the tree's one money formatter (#796).
     expect(html).toContain(PLAN_LINE);
     expect(html).toContain("5 Aspects");
-    // `RELATIONSHIP_PRICE_CENTS` predates the pricing rewrite that sells Basic at $8.95/month with
-    // unlimited relationships, so a card quoting it would be a second price model in one product —
-    // and a per-relationship quote the completion step (#619) will not honour.
+    // `RELATIONSHIP_PRICE_CENTS` predates the pricing rewrite that sells the Single plan at a
+    // monthly price with unlimited relationships, so a card quoting it would be a second price
+    // model in one product — and a per-relationship quote the completion step (#619) will not
+    // honour. Since #1127 the two amounts are the same cents, so the string cannot tell them
+    // apart: the card is asserted to print the plan's line, and
+    // `tests/plan-catalogue.test.ts` is what proves nothing reads the taxonomy's field.
     expect(html).not.toContain("per relationship");
-    expect(html).not.toContain(formatCurrency(RELATIONSHIP_PRICE_CENTS));
+    expect(html.match(/\$[\d.,]+/g) ?? []).toEqual([formatCurrency(basic.monthlyCents)]);
   });
 
   it("prices a template the taxonomy does not name too — the plan is what costs money", () => {

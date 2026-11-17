@@ -117,6 +117,10 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/admin/instances", mode: "column" },
   { path: "/admin/instances/[id]", mode: "column" },
   { path: "/admin/instances/[id]/report", mode: "column" },
+  // #1126 — the CRUD & Permissions matrix. `StageColumn`, like every other console page: the Nine
+  // column table is a wide *element* inside the column, and it scrolls in its own container rather
+  // than widening the page — the reading measure is the console family's, not the table's.
+  { path: "/admin/permissions", mode: "column" },
   { path: "/admin/review", mode: "column" },
   { path: "/admin/templates", mode: "column" },
   { path: "/admin/templates/[id]", mode: "column" },

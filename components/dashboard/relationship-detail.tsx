@@ -6,6 +6,12 @@
  * `/dashboard/relationships/[id]` — one relationship, from draft to a live invitation (#533 phase 2),
  * re-cast onto the shared record detail shell by #795.
  *
+ * **#1124 — the content column is a six-tab layer.** Discussion · Aspects · Members · Details ·
+ * Settings · Payment, in the approved bundle's order, hash-addressable (`#aspects`) and driven by
+ * `relationship-tabs.tsx`; the five panels this page did not already draw come from
+ * `relationship-panels.tsx`. The shell's regions are unchanged — band, facts, actions, content —
+ * and no write moved: the layer decides which section of the record is in front, nothing else.
+ *
  * **One shell with the template page, two declared axes.** `components/assessment-flow/
  * record-detail-shell.tsx` draws the identity band, the facts card, the back link and the section
  * order; this file supplies only what a *relationship* says — exactly as the template page supplies
@@ -54,6 +60,14 @@
 import { AspectList, type AspectSaveResult } from "@/components/assessment-flow/aspect-list";
 import { FlowEntryLink } from "@/components/assessment-flow/flow-entry-link";
 import {
+  DetailsPanel,
+  DiscussionPanel,
+  MembersPanel,
+  PaymentPanel,
+  SettingsPanel,
+} from "@/components/dashboard/relationship-panels";
+import { RelationshipTabs } from "@/components/dashboard/relationship-tabs";
+import {
   DetailBand,
   DetailFacts,
   DetailPanel,
@@ -64,6 +78,17 @@ import {
   type DetailFact,
 } from "@/components/assessment-flow/record-detail-shell";
 import { relationshipTypeOf } from "@/components/assessment-flow/template-card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Chip } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,20 +98,26 @@ import { aspectStatesOf, buildTemplateRecord } from "@/lib/admin/template-draft"
 import { formatDate } from "@/content/core";
 import {
   refusalSentence,
+  type AbandonOutcome,
   type AspectsOutcome,
+  type CancelInviteOutcome,
   type CompleteOutcome,
   type ExtensionOutcome,
   type ForkOutcome,
+  type LeaveOutcome,
   type PublishOutcome,
+  type RemovalRequestOutcome,
   type RepublishOutcome,
+  type ResendInviteOutcome,
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
 import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detail";
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
-import { fillLabel, itemLabel, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
+import { fillLabel, itemLabel, itemOf, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
 import { RELATIONSHIPS_PATH, createInviteForPath, reportPath } from "@/lib/flow/paths";
 import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
 import { useState, useTransition, type ReactNode } from "react";
 
 /** One Aspect while it is being edited. `id` is absent only for a row added in this edit. */
@@ -125,16 +156,92 @@ function sentenceFor(
   });
 }
 
+/**
+ * #1135 — **the neutral confirm**, one component for the four destructive verbs.
+ *
+ * The rule is #1119 D-E's, and bundle 03 states it as a locked rule: a destructive action is a
+ * **graphite outline button with an ×**, behind a confirm that says what survives (never a red
+ * button, never a red word). One component rather than four, because the four would otherwise drift
+ * apart — and because the neutral shape is the point, not the particular verb.
+ *
+ * The `hook` is a stable test handle (`data-destructive-action`) keyed on the verb, so a suite can
+ * find "the Leave button" without matching copy that the owner may reword.
+ */
+function DestructiveConfirm({
+  hook,
+  label,
+  heading,
+  body,
+  keepLabel,
+  pendingLabel,
+  pending,
+  onConfirm,
+}: {
+  hook: string;
+  label: string;
+  heading: string;
+  body: string;
+  keepLabel: string;
+  pendingLabel: string;
+  pending: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-2"
+          disabled={pending}
+          data-destructive-action={hook}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+          {label}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{heading}</AlertDialogTitle>
+          <AlertDialogDescription>{body}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{keepLabel}</AlertDialogCancel>
+          {/*
+           * The confirm is the same neutral outline as the trigger: the dialog is where the act is
+           * read, not where it turns red. `onConfirm` closes the dialog by letting the caller's
+           * transition run — the panel below it draws the outcome.
+           */}
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="gap-2 border border-border bg-background text-foreground hover:bg-muted"
+            data-confirm-action={hook}
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
+            {pending ? pendingLabel : label}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export function RelationshipDetail({
   copy,
   relationship,
   editTrigger,
+  settings,
   onSaveAspects,
   onPublish,
   onRepublish,
   onComplete,
   onFork,
   onClaimExtension,
+  onCancelInvite,
+  onResendInvite,
+  onAbandon,
+  onLeave,
+  onRequestRemoval,
   arrival,
   templatesHref,
 }: {
@@ -150,6 +257,16 @@ export function RelationshipDetail({
    * (`editState` absent or `closed`) passes no node at all, which is how it stays honest.
    */
   editTrigger?: ReactNode;
+  /**
+   * #1124 — **the Settings tab's two values**, read by the page from the relationship's own edit
+   * state (`readRelationshipEditState()`, #623) and passed down rather than imported: the module
+   * that reads them reaches Postgres, and a `"use client"` value-import of it is E34's failure
+   * mode (#228).
+   *
+   * Absent is a fact, not a gap — a Counterparty, or a relationship the read refuses to open for
+   * editing, gets the panel's sentence about who sets these instead of two invented defaults.
+   */
+  settings?: { readonly mode: string; readonly setting: string };
   onSaveAspects: (payload: {
     relationshipId?: string;
     record?: unknown;
@@ -194,6 +311,29 @@ export function RelationshipDetail({
     reason?: string;
   }) => Promise<ExtensionOutcome>;
   /**
+   * #1135 — **the five ending verbs, as server actions passed in** (E34 again: this file may not
+   * value-import `lib/member/relationship-close`).
+   *
+   * The page hands them over only for the reader the read says may use them (`relationship.hygiene`),
+   * and each action re-asks the seat inside its transaction. The component's job is the confirm, the
+   * pending state and the refusal sentence — never the rule.
+   *
+   * Optional, with a refusal as the default: a suite that builds this screen by hand draws no panel
+   * (its view literal carries no `hygiene`), and a page that forgot one of them gets "the change did
+   * not go through" rather than a button that silently succeeds.
+   */
+  onCancelInvite?: (payload: {
+    relationshipId?: string;
+    reason?: string;
+  }) => Promise<CancelInviteOutcome>;
+  onResendInvite?: (payload: { instanceRecordId?: string }) => Promise<ResendInviteOutcome>;
+  onAbandon?: (payload: { relationshipId?: string; reason?: string }) => Promise<AbandonOutcome>;
+  onLeave?: (payload: { relationshipId?: string; reason?: string }) => Promise<LeaveOutcome>;
+  onRequestRemoval?: (payload: {
+    relationshipId?: string;
+    reason?: string;
+  }) => Promise<RemovalRequestOutcome>;
+  /**
    * #1121 — **an arrival, not a state.**
    *
    * `?from=extend` is the one query string the port keeps (§ "Prototype mechanics"): everything
@@ -224,6 +364,17 @@ export function RelationshipDetail({
   const forkCopy = sectionOf(copy, "fork");
   /** #1121 — Stage 6's pause: the badge, the line, the Next Step and the free week. */
   const pauseCopy = sectionOf(copy, "pause");
+  /* #1135 — the three panels this card adds, and their own fixtures. */
+  const hygieneCopy = sectionOf(copy, "hygiene");
+  const closeCopy = sectionOf(copy, "close");
+  const abandonCopy = sectionOf(copy, "abandon");
+  /**
+   * #1124 — the tab strip's own words. `tabs` is the fixture's order, unfiltered: the six sections
+   * are the record's, so every seat sees all six and the seat decides what is *inside* a panel,
+   * never whether the panel exists.
+   */
+  const tabCopy = sectionOf(copy, "tabs");
+  const tabs = (tabCopy.items ?? []).map((item) => ({ id: item.id, label: item.label }));
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -245,6 +396,21 @@ export function RelationshipDetail({
   const [publishOutcome, setPublishOutcome] = useState<PublishOutcome | null>(null);
 
   const [republishOutcome, setRepublishOutcome] = useState<RepublishOutcome | null>(null);
+  /*
+   * #1135 — the five ending verbs' outcomes, plus the one client fact on the panel ("Link Copied").
+   *
+   * Each outcome is the server's answer, never a local guess: a refusal carries the code this page's
+   * own fixture has a sentence for, and a success is drawn from the row the action just wrote.
+   */
+  const [cancelOutcome, setCancelOutcome] = useState<CancelInviteOutcome | null>(null);
+  const [resendOutcome, setResendOutcome] = useState<ResendInviteOutcome | null>(null);
+  const [abandonOutcome, setAbandonOutcome] = useState<AbandonOutcome | null>(null);
+  const [leaveOutcome, setLeaveOutcome] = useState<LeaveOutcome | null>(null);
+  const [removalOutcome, setRemovalOutcome] = useState<RemovalRequestOutcome | null>(null);
+  const [copied, setCopied] = useState(false);
+  /** The optional reason the Counterparty may leave for support, and the one for an abandonment. */
+  const [removalReason, setRemovalReason] = useState("");
+  const [abandonReason, setAbandonReason] = useState("");
   /**
    * #912 — **where the pay modal is, and nothing else.** This screen never captures a card: this is
    * the pay walk's address (`createInviteForPath`, #794's two handles), and `null` when the
@@ -390,7 +556,12 @@ export function RelationshipDetail({
   /** The refusal line for the view's own sentence — one id per state, from the fixture. */
   const viewSentence = (view: string): string => {
     const known = (viewCopy.items ?? []).find((item) => item.id === view);
-    return known?.label ?? view;
+    if (known === undefined) return view;
+    // #1135 — `invite-declined` names the person who said no; every other state has no placeholder.
+    return fillLabel(known.label, {
+      counterparty:
+        relationship.counterpartyName ?? relationship.counterpartySeatName ?? "The other person",
+    });
   };
 
   /** The stored status, as its own word (the chip the facts card draws). */
@@ -529,6 +700,86 @@ export function RelationshipDetail({
     });
   }
 
+  /*
+   * #1135 — Copy Invite Link. The clipboard is the browser's, so this is the one handler with no
+   * server call: it copies the link the page is holding, and says so. `navigator.clipboard` is
+   * absent on an insecure origin, which is why the failure is a sentence (`copy-failed`) and not a
+   * thrown error.
+   */
+  async function copyInviteLink(url: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  /**
+   * #1135 — **Resend Invite.** The write is #275's `resendInvite()`: a new token, a new window, the
+   * old link dead. `mail` comes back `sent|unset|failed` and the panel prints the matching sentence,
+   * because "resent" and "emailed" are two different claims.
+   */
+  function resendInvite(): void {
+    setResendOutcome(null);
+    setCopied(false);
+    startTransition(async () => {
+      const answer = await onResendInvite?.({
+        ...(relationship.sessionRecordId === null
+          ? {}
+          : { instanceRecordId: relationship.sessionRecordId }),
+      });
+      setResendOutcome(answer ?? null);
+      if (answer?.ok === true) router.refresh();
+    });
+  }
+
+  /** #1135 — **Cancel Invite.** Behind the neutral confirm; the panel says the link is dead after. */
+  function cancelInvite(): void {
+    setCancelOutcome(null);
+    startTransition(async () => {
+      const answer = await onCancelInvite?.({ relationshipId: relationship.id });
+      setCancelOutcome(answer ?? null);
+      if (answer?.ok === true) router.refresh();
+    });
+  }
+
+  /** #1135 — **Abandon Draft**, with the optional reason that lands on the row's `void_reason`. */
+  function abandonDraft(): void {
+    setAbandonOutcome(null);
+    startTransition(async () => {
+      const answer = await onAbandon?.({
+        relationshipId: relationship.id,
+        reason: abandonReason.trim(),
+      });
+      setAbandonOutcome(answer ?? null);
+      if (answer?.ok === true) router.refresh();
+    });
+  }
+
+  /** #1135 — **Leave Relationship.** Either seat; Stage 6 closes for both. */
+  function leaveRelationship(): void {
+    setLeaveOutcome(null);
+    startTransition(async () => {
+      const answer = await onLeave?.({ relationshipId: relationship.id });
+      setLeaveOutcome(answer ?? null);
+      if (answer?.ok === true) router.refresh();
+    });
+  }
+
+  /** #1135 — **Request My Removal.** One audit row; the reason is support's alone. */
+  function requestMyRemoval(): void {
+    setRemovalOutcome(null);
+    startTransition(async () => {
+      const answer = await onRequestRemoval?.({
+        relationshipId: relationship.id,
+        reason: removalReason.trim(),
+      });
+      setRemovalOutcome(answer ?? null);
+      if (answer?.ok === true) router.refresh();
+    });
+  }
+
   const aspectsRefusal =
     aspectsOutcome !== null && !aspectsOutcome.ok ? sentenceFor(refusals, aspectsOutcome) : null;
   const publishRefusal =
@@ -545,6 +796,52 @@ export function RelationshipDetail({
       : republishOutcome?.ok === true
         ? { url: republishOutcome.inviteLink, expiresAt: republishOutcome.inviteExpiresAt }
         : null;
+
+  /*
+   * #1135 — **the five ending verbs.** `hygiene` is the server's answer for *this* reader; absent
+   * (a hand-built view literal) means none of them is drawn. Each refusal is a sentence from this
+   * page's own fixture, so no panel ever prints a raw code.
+   */
+  const hygiene = relationship.hygiene;
+  /**
+   * Each ending verb is drawn only when the read allows it **and** the page handed the writer over:
+   * a screen that mounted no action must not draw a control that has nothing to run, and a page that
+   * forgot one loses the panel rather than shipping a dead button.
+   */
+  const canCancelInvite = hygiene?.canCancelInvite === true && onCancelInvite !== undefined;
+  const canResendInvite = hygiene?.canResendInvite === true && onResendInvite !== undefined;
+  const canAbandon = hygiene?.canAbandon === true && onAbandon !== undefined;
+  const canLeave = hygiene?.canLeave === true && onLeave !== undefined;
+  const canRequestRemoval = hygiene?.canRequestRemoval === true && onRequestRemoval !== undefined;
+  /**
+   * The four confirm hooks, **derived from the fixture ids** rather than typed here: E23 counts a
+   * literal written in a component against the route's page-copy budget, and a hook is a handle a
+   * test and the fixture should agree on anyway.
+   */
+  const hooks = {
+    cancelInvite: itemOf(hygieneCopy, "cancel").id,
+    abandon: itemOf(abandonCopy, "submit").id,
+    leave: itemOf(closeCopy, "leave").id,
+    removal: itemOf(closeCopy, "request").id,
+  } as const;
+  const cancelRefusal =
+    cancelOutcome !== null && !cancelOutcome.ok ? sentenceFor(refusals, cancelOutcome) : null;
+  const resendRefusal =
+    resendOutcome !== null && !resendOutcome.ok ? sentenceFor(refusals, resendOutcome) : null;
+  const abandonRefusal =
+    abandonOutcome !== null && !abandonOutcome.ok ? sentenceFor(refusals, abandonOutcome) : null;
+  const leaveRefusal =
+    leaveOutcome !== null && !leaveOutcome.ok ? sentenceFor(refusals, leaveOutcome) : null;
+  const removalRefusal =
+    removalOutcome !== null && !removalOutcome.ok ? sentenceFor(refusals, removalOutcome) : null;
+  /**
+   * The most recent link this page holds: the resend's, else the publish's or the republish's, else
+   * `null`. **A token is never stored**, so a link exists on this screen only in the response to a
+   * mint — which is why Copy Invite Link is drawn beside a link and not in its absence.
+   */
+  const linkToCopy =
+    resendOutcome?.ok === true ? resendOutcome.inviteLink : (shownLink?.url ?? null);
+  const removalRequestedAt = hygiene?.removalRequestedAt ?? null;
 
   /* #739 — the payer's band, and the sentences it can print. */
   const gate = relationship.completion;
@@ -786,6 +1083,123 @@ export function RelationshipDetail({
       ? null
       : fillLabel(itemLabel(pauseCopy, "added"), { instant: formatDate(extensionEndsAt) });
 
+  /**
+   * #1124 — **the tab layer's six panels**, assembled here because five of them read this
+   * component's copy and one of them *is* the Aspects section the page already owned.
+   *
+   * The Aspects panel is that section unchanged — same `AspectList`, same two writes, same
+   * refusal sentences — so editing an Aspect is still this page's business and not a tab's. The
+   * other five are drawn by `relationship-panels.tsx` from the same read the screen already has,
+   * and none of them writes: the writes this screen owns did not move, and the ones it does not
+   * own yet (#921's thread, #1135's invitation hygiene) are not faked behind a tab.
+   */
+  const panels: Readonly<Record<string, ReactNode>> = {
+    discussion: <DiscussionPanel copy={copy} />,
+    aspects: (
+      <DetailSection
+        title={aspectCopy.heading}
+        body={sectionBody(aspectCopy)}
+        hooks={{ "data-relationship-aspects": "true" }}
+      >
+        {editable ? (
+          <div className="mt-4 space-y-4">
+            <AspectList
+              copy={copy}
+              wordsSection={ASPECT_EDITOR_SECTION}
+              validationSection={null}
+              aspects={aspectDrafts}
+              addRemove
+              onChange={mirrorAspects}
+              save={persistAspects}
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => save("draft")}
+                disabled={pending}
+              >
+                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-draft")}
+              </Button>
+              <Button type="button" onClick={() => save("pending")} disabled={pending}>
+                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-pending")}
+              </Button>
+              {aspectsOutcome?.ok === true ? (
+                <p data-aspects-saved={aspectsOutcome.actionId} className="text-sm">
+                  {fillLabel(itemLabel(aspectCopy, "saved"), {
+                    status: aspectsOutcome.status,
+                    actionId: aspectsOutcome.actionId,
+                  })}
+                </p>
+              ) : null}
+              {aspectsRefusal === null ? null : (
+                <p
+                  data-aspects-refusal={aspectsOutcome?.ok === false ? aspectsOutcome.code : ""}
+                  className="text-sm"
+                >
+                  {aspectsRefusal}
+                </p>
+              )}
+            </div>
+            {aspectsOutcome !== null &&
+            !aspectsOutcome.ok &&
+            aspectsOutcome.problems !== undefined ? (
+              <ul data-aspects-problems className="space-y-1 text-sm">
+                {aspectsOutcome.problems.map((problem) => (
+                  <li key={`${problem.path}:${problem.message}`}>
+                    <span className="font-mono">{problem.path}</span>
+                    {": "}
+                    {problem.message}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : (
+          <ol className="mt-4 grid gap-3">
+            {aspects.map((aspect, index) => (
+              <li
+                key={aspect.id ?? `row-${String(index + 1)}`}
+                data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
+                className="rounded-lg border border-border bg-card p-6"
+              >
+                <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
+                <p className={`mt-2 ${DETAIL_MUTED}`}>
+                  <span className="font-medium text-foreground">
+                    {itemLabel(aspectCopy, "left")}
+                  </span>
+                  <span aria-hidden className="mx-1.5">
+                    —
+                  </span>
+                  {aspect.leftValue}
+                </p>
+                <p className={DETAIL_MUTED}>
+                  <span className="font-medium text-foreground">
+                    {itemLabel(aspectCopy, "right")}
+                  </span>
+                  <span aria-hidden className="mx-1.5">
+                    —
+                  </span>
+                  {aspect.rightValue}
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </DetailSection>
+    ),
+    members: <MembersPanel copy={copy} relationship={relationship} />,
+    details: (
+      <DetailsPanel
+        copy={copy}
+        relationship={relationship}
+        invitationSentence={viewSentence(relationship.view)}
+      />
+    ),
+    settings: <SettingsPanel copy={copy} settings={settings} />,
+    payment: <PaymentPanel copy={copy} relationship={relationship} />,
+  };
+
   return (
     <RecordDetailShell
       scope="relationship"
@@ -1010,6 +1424,151 @@ export function RelationshipDetail({
             </DetailPanel>
           ) : null}
 
+          {/*
+            #1135 — **Invitation hygiene**, drawn for the Initiator while the link is live
+            (bundle 03's Members panel: Copy Invite Link · Resend Invite · Cancel Invite).
+
+            Copy is drawn **beside a link** and not in its absence: a token is never stored, so the
+            only link this page can hold is one a mint in this session returned. That is the same
+            rule the publish and republish panels already follow, and the one reason a fresh load
+            offers Resend instead of a stale copy.
+          */}
+          {canCancelInvite || canResendInvite ? (
+            <DetailPanel title={hygieneCopy.heading} hooks={{ "data-invite-hygiene": "true" }}>
+              <p className={DETAIL_MUTED}>{sectionBody(hygieneCopy)}</p>
+              <div className="space-y-3">
+                {linkToCopy === null ? null : (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void copyInviteLink(linkToCopy)}
+                      data-copy-invite-link="true"
+                    >
+                      {itemLabel(hygieneCopy, "copy")}
+                    </Button>
+                    <p className="min-w-0 break-all text-sm text-muted-foreground">{linkToCopy}</p>
+                    <p data-copied={copied ? "true" : "false"} className="text-sm">
+                      {copied
+                        ? itemLabel(hygieneCopy, "copied")
+                        : itemLabel(hygieneCopy, "copy-failed")}
+                    </p>
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  {canResendInvite ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={resendInvite}
+                      disabled={pending}
+                      data-resend-invite="true"
+                    >
+                      {pending
+                        ? itemLabel(hygieneCopy, "resending")
+                        : itemLabel(hygieneCopy, "resend")}
+                    </Button>
+                  ) : null}
+                  {canCancelInvite ? (
+                    <DestructiveConfirm
+                      hook={hooks.cancelInvite}
+                      label={itemLabel(hygieneCopy, "cancel")}
+                      heading={itemLabel(hygieneCopy, "cancel")}
+                      body={itemLabel(hygieneCopy, "cancel-confirm")}
+                      keepLabel={itemLabel(hygieneCopy, "keep")}
+                      pendingLabel={itemLabel(hygieneCopy, "cancelling")}
+                      pending={pending}
+                      onConfirm={cancelInvite}
+                    />
+                  ) : null}
+                </div>
+                {resendOutcome?.ok === true ? (
+                  <p data-resend-outcome={resendOutcome.mail} className="text-sm">
+                    {resendOutcome.mail === "sent"
+                      ? fillLabel(itemLabel(hygieneCopy, "resent"), {
+                          instant: resendOutcome.inviteExpiresAt,
+                        })
+                      : itemLabel(
+                          hygieneCopy,
+                          resendOutcome.mail === "unset" ? "resent-unset" : "resent-failed",
+                        )}
+                  </p>
+                ) : null}
+                {resendRefusal === null ? null : (
+                  <p
+                    data-resend-refusal={resendOutcome?.ok === false ? resendOutcome.code : ""}
+                    className="text-sm"
+                  >
+                    {resendRefusal}
+                  </p>
+                )}
+                {cancelOutcome?.ok === true ? (
+                  <p data-cancel-invite={cancelOutcome.revokedAt} className="text-sm">
+                    {fillLabel(itemLabel(hygieneCopy, "cancelled"), {
+                      instant: cancelOutcome.revokedAt,
+                    })}
+                  </p>
+                ) : null}
+                {cancelRefusal === null ? null : (
+                  <p
+                    data-cancel-refusal={cancelOutcome?.ok === false ? cancelOutcome.code : ""}
+                    className="text-sm"
+                  >
+                    {cancelRefusal}
+                  </p>
+                )}
+              </div>
+            </DetailPanel>
+          ) : null}
+
+          {/*
+            #1135 — **Abandon Draft**, drawn only for a draft nobody was invited to. The lifecycle
+            has exactly two edges into `void` for a person (`draft → void`, `pending → void`), and
+            the read draws the control off the same status pair.
+          */}
+          {canAbandon ? (
+            <DetailPanel title={abandonCopy.heading} hooks={{ "data-abandon-draft": "true" }}>
+              <p className={DETAIL_MUTED}>{sectionBody(abandonCopy)}</p>
+              <div className="space-y-3">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="abandon-reason">{itemLabel(abandonCopy, "reason")}</Label>
+                  <Input
+                    id="abandon-reason"
+                    value={abandonReason}
+                    onChange={(event) => setAbandonReason(event.target.value)}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <DestructiveConfirm
+                    hook={hooks.abandon}
+                    label={itemLabel(abandonCopy, "submit")}
+                    heading={itemLabel(abandonCopy, "submit")}
+                    body={itemLabel(abandonCopy, "confirm")}
+                    keepLabel={itemLabel(abandonCopy, "keep")}
+                    pendingLabel={itemLabel(abandonCopy, "abandoning")}
+                    pending={pending}
+                    onConfirm={abandonDraft}
+                  />
+                  {abandonOutcome?.ok === true ? (
+                    <p data-abandoned={abandonOutcome.completedAt} className="text-sm">
+                      {fillLabel(itemLabel(abandonCopy, "done"), {
+                        instant: abandonOutcome.completedAt,
+                      })}
+                    </p>
+                  ) : null}
+                </div>
+                {abandonRefusal === null ? null : (
+                  <p
+                    data-abandon-refusal={abandonOutcome?.ok === false ? abandonOutcome.code : ""}
+                    className="text-sm"
+                  >
+                    {abandonRefusal}
+                  </p>
+                )}
+              </div>
+            </DetailPanel>
+          ) : null}
+
           {relationship.isInitiator && gate !== null && !relationship.closed ? (
             /*
              * #739 — **the completion band, and since #1010 there is nothing to pay on it.**
@@ -1092,6 +1651,97 @@ export function RelationshipDetail({
               <p className={DETAIL_MUTED}>{sectionBody(closedCopy)}</p>
             </DetailPanel>
           ) : null}
+
+          {/*
+            #1135 — **Close This Relationship.** One panel, two roles, and no "Delete Relationship"
+            anywhere (#1119 D-E): either party may Leave, and the Counterparty's own ask (a ghost
+            control whose reason only support reads) rides beneath it. The confirm is where the rule
+            is said to the reader — Stage 6 closes for both, the answers stay readable.
+          */}
+          {(canLeave || canRequestRemoval || removalRequestedAt !== null) && (
+            <DetailPanel title={closeCopy.heading} hooks={{ "data-close-relationship": "true" }}>
+              <p className={DETAIL_MUTED}>{sectionBody(closeCopy)}</p>
+              <div className="space-y-3">
+                {canLeave ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <DestructiveConfirm
+                      hook={hooks.leave}
+                      label={itemLabel(closeCopy, "leave")}
+                      heading={itemLabel(closeCopy, "leave")}
+                      body={itemLabel(closeCopy, "leave-confirm")}
+                      keepLabel={itemLabel(closeCopy, "keep")}
+                      pendingLabel={itemLabel(closeCopy, "leaving")}
+                      pending={pending}
+                      onConfirm={leaveRelationship}
+                    />
+                    {leaveOutcome?.ok === true ? (
+                      <p data-left-at={leaveOutcome.completedAt} className="text-sm">
+                        {fillLabel(itemLabel(closeCopy, "left"), {
+                          instant: leaveOutcome.completedAt,
+                        })}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+                {leaveRefusal === null ? null : (
+                  <p
+                    data-leave-refusal={leaveOutcome?.ok === false ? leaveOutcome.code : ""}
+                    className="text-sm"
+                  >
+                    {leaveRefusal}
+                  </p>
+                )}
+
+                {removalRequestedAt === null ? null : (
+                  <p data-removal-requested={removalRequestedAt} className="text-sm font-medium">
+                    {fillLabel(itemLabel(closeCopy, "requested-at"), {
+                      instant: removalRequestedAt,
+                    })}
+                  </p>
+                )}
+
+                {canRequestRemoval ? (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="removal-reason">
+                        {itemLabel(closeCopy, "request-reason")}
+                      </Label>
+                      <Input
+                        id="removal-reason"
+                        value={removalReason}
+                        onChange={(event) => setRemovalReason(event.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <DestructiveConfirm
+                        hook={hooks.removal}
+                        label={itemLabel(closeCopy, "request")}
+                        heading={itemLabel(closeCopy, "request")}
+                        body={itemLabel(closeCopy, "request-confirm")}
+                        keepLabel={itemLabel(closeCopy, "keep")}
+                        pendingLabel={itemLabel(closeCopy, "requesting")}
+                        pending={pending}
+                        onConfirm={requestMyRemoval}
+                      />
+                      {removalOutcome?.ok === true ? (
+                        <p data-removal-outcome={removalOutcome.requestedAt} className="text-sm">
+                          {itemLabel(closeCopy, "requested")}
+                        </p>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
+                {removalRefusal === null ? null : (
+                  <p
+                    data-removal-refusal={removalOutcome?.ok === false ? removalOutcome.code : ""}
+                    className="text-sm"
+                  >
+                    {removalRefusal}
+                  </p>
+                )}
+              </div>
+            </DetailPanel>
+          )}
         </>
       }
     >
@@ -1214,100 +1864,23 @@ export function RelationshipDetail({
         )}
       </DetailPanel>
 
-      {/* The Aspects: the initiator's editor while the relationship is `draft`/`pending`, and the
-          frozen list for everyone else — a counterparty answers against these words, so the screen
-          that invites them shows them. */}
-      <DetailSection
-        title={aspectCopy.heading}
-        body={sectionBody(aspectCopy)}
-        hooks={{ "data-relationship-aspects": "true" }}
-      >
-        {editable ? (
-          <div className="mt-4 space-y-4">
-            <AspectList
-              copy={copy}
-              wordsSection={ASPECT_EDITOR_SECTION}
-              validationSection={null}
-              aspects={aspectDrafts}
-              addRemove
-              onChange={mirrorAspects}
-              save={persistAspects}
-            />
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => save("draft")}
-                disabled={pending}
-              >
-                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-draft")}
-              </Button>
-              <Button type="button" onClick={() => save("pending")} disabled={pending}>
-                {pending ? itemLabel(aspectCopy, "saving") : itemLabel(aspectCopy, "save-pending")}
-              </Button>
-              {aspectsOutcome?.ok === true ? (
-                <p data-aspects-saved={aspectsOutcome.actionId} className="text-sm">
-                  {fillLabel(itemLabel(aspectCopy, "saved"), {
-                    status: aspectsOutcome.status,
-                    actionId: aspectsOutcome.actionId,
-                  })}
-                </p>
-              ) : null}
-              {aspectsRefusal === null ? null : (
-                <p
-                  data-aspects-refusal={aspectsOutcome?.ok === false ? aspectsOutcome.code : ""}
-                  className="text-sm"
-                >
-                  {aspectsRefusal}
-                </p>
-              )}
-            </div>
-            {aspectsOutcome !== null &&
-            !aspectsOutcome.ok &&
-            aspectsOutcome.problems !== undefined ? (
-              <ul data-aspects-problems className="space-y-1 text-sm">
-                {aspectsOutcome.problems.map((problem) => (
-                  <li key={`${problem.path}:${problem.message}`}>
-                    <span className="font-mono">{problem.path}</span>
-                    {": "}
-                    {problem.message}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        ) : (
-          <ol className="mt-4 grid gap-3">
-            {aspects.map((aspect, index) => (
-              <li
-                key={aspect.id ?? `row-${String(index + 1)}`}
-                data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
-                className="rounded-lg border border-border bg-card p-6"
-              >
-                <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
-                <p className={`mt-2 ${DETAIL_MUTED}`}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "left")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.leftValue}
-                </p>
-                <p className={DETAIL_MUTED}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "right")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.rightValue}
-                </p>
-              </li>
-            ))}
-          </ol>
-        )}
-      </DetailSection>
+      {/*
+        #1124 — **the six-tab layer.** The five sections this page grew up with (where it stands,
+        the Aspects) are joined by the four the approved bundle draws (Members, Details, Settings,
+        Payment) and the Discussion thread's honest empty state, and the whole set is behind one
+        strip: Discussion · Aspects · Members · Details · Settings · Payment.
+
+        Nothing above this line moved. The shell still draws the band, the facts card and the
+        working panels in the same order, and the writes this screen owns — Aspects, publish,
+        reissue, complete, the Counterparty's fork — are still where they were; the layer only
+        decides which section of the record is in front, and it says so in the URL (`#aspects`).
+      */}
+      <RelationshipTabs
+        label={tabCopy.heading ?? ""}
+        emptyLabel={pageItemOf(copy, "tabs-empty").label}
+        tabs={tabs}
+        panels={panels}
+      />
     </RecordDetailShell>
   );
 }

@@ -178,6 +178,16 @@ export const RELATIONSHIP_TEMPLATES_PATH = `${TEMPLATES_PATH}/relationship`;
 export const TEMPLATE_LIBRARY_PATH = `${OVERVIEW_PATH}/templates`;
 
 /**
+ * `/dashboard/templates?tab=library` — the Library **tab** of the member's templates (#1129).
+ *
+ * The v2 empty state on My Relationships leads here, because "no relationships yet" is answered by
+ * choosing a template rather than by reading a message. It is a function of the two constants
+ * above rather than a fourth literal, and it is spelled here because every path in the product is:
+ * the tab is part of the address the Templates screen reads (`?tab=library`), not a client state.
+ */
+export const TEMPLATE_LIBRARY_TAB_PATH = `${TEMPLATE_LIBRARY_PATH}?tab=library`;
+
+/**
  * `/relationship-templates` — the public catalogue of templates, and **the one public address**
  * (#905, consolidated in #1127).
  *

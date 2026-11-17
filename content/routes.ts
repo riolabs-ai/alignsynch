@@ -40,6 +40,10 @@ const STATIC_ROUTES = [
   // so Next resolves them before `[...slug]`.
   "/admin/docs/features",
   "/admin/docs/releases",
+  // #1126 — the CRUD & Permissions matrix: the v2 spec reference for every card that adds a
+  // create, edit, archive or leave action. Admin-only and read-only, and directly after Docs in
+  // the rail; the source (`docs/specs/v2-prototype/crud-matrix.md`) is parsed per request.
+  "/admin/permissions",
   "/admin/gaps",
   // #920 — the growth model: 36 cohorts on the way to a $3M run-rate, charted from one committed
   // artifact (`data/demo/growth-model.json`), with the sampled operational set beside it.
