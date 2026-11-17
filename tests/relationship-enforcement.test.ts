@@ -108,13 +108,29 @@ describe("lapseIfDue", () => {
     expect(reading?.membership.state).toBe("closed");
   });
 
-  it("treats a published relationship with no subscription row as lapsed, and records why", async () => {
-    // The subscription is gone entirely (a purged row, a reset branch): nothing pays, so the pair is
-    // read-only and the reason is the cancellation that removed it — not `trial-ended`, which would
-    // claim a trial window the account no longer has.
+  it("keeps a `published` relationship with no subscription row open — nobody has accepted yet", async () => {
+    // #1115 / spec D3 — the week opens when the Counterparty accepts, so a sent invitation that is
+    // still pending holds no subscription row and has spent nothing. `lapseIfDue()` must write
+    // nothing here: the relationship is not lapsed, it is waiting, and flipping it to `expired`
+    // would close the pair before the invitation could be accepted at all.
     const { sql, calls } = fakeSql([
       { match: RELATIONSHIP_ROW, rows: [publishedRow] },
       { match: COUNTERPARTY, rows: [{ present: false }] },
+      { match: LAPSE_UPDATE, rows: [] },
+    ]);
+
+    const reading = await lapseIfDue(sql, "rel-1", NOW);
+
+    expect(calls.some((call) => LAPSE_UPDATE.test(call.text))).toBe(false);
+    expect(reading?.membership.state).toBe("open");
+  });
+
+  it("still lapses an `active` relationship whose subscription row is gone, and records why", async () => {
+    // Acceptance writes the trial in the transaction that makes the pair `active`, so an `active`
+    // row with no subscription is drift — a purged row, a reset branch — and drift is read-only.
+    const { sql, calls } = fakeSql([
+      { match: RELATIONSHIP_ROW, rows: [{ ...publishedRow, status: "active" }] },
+      { match: COUNTERPARTY, rows: [{ present: true }] },
       { match: LAPSE_UPDATE, rows: [] },
     ]);
 

@@ -92,8 +92,23 @@ describe("membershipOf — the three states", () => {
     });
   });
 
-  it("lapses a live relationship whose account holds no subscription at all", () => {
+  it("keeps a `published` relationship open while no trial has opened — a pending invitation", () => {
+    // #1115 / spec D3 — the week starts when the Counterparty accepts, so a published relationship
+    // whose invitation nobody has answered holds **no** subscription row and has spent nothing.
+    // Reading it as `lapsed` is not a stricter answer, it is a wrong one: `lapseIfDue()` would flip
+    // the row to `expired` before the invitation was ever accepted, which is the lock-out #840
+    // fixed — now reachable without a trial at all.
     expect(membershipOf({ status: "published", subscription: null, now: NOW })).toMatchObject({
+      state: "open",
+      writable: true,
+    });
+  });
+
+  it("still lapses an `active` relationship whose account holds no subscription at all", () => {
+    // The acceptance writes the trial in the transaction that makes the pair `active`, so an
+    // `active` row with no subscription is drift (or an account that never had one to grant to),
+    // and the safe direction for drift is read-only.
+    expect(membershipOf({ status: "active", subscription: null, now: NOW })).toMatchObject({
       state: "lapsed",
       writable: false,
     });
