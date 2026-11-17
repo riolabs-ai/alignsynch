@@ -247,46 +247,6 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     {
-      /**
-       * #690 / #1010 R2 — the hard gate at publish.
-       *
-       * Publishing needs a live **membership** — bought at stage 5, one subscription covering both
-       * parties — so the screen draws **no publish control at all** while there is none, and names
-       * the place one is bought. A disabled button would be worse than nothing: it would say "you
-       * cannot publish yet" and leave the person to guess what would change that.
-       *
-       * There is no "add a payment method" door anywhere in this band, and no sentence offering one:
-       * a card reaches an account by buying the membership, which is what the door is.
-       */
-      id: "publish-gate",
-      heading: "A membership is needed to publish",
-      /**
-       * The artifact's own publish-lock sentence (`s11.publishBlocked`), re-worded for #1010: what
-       * the membership unlocks is the Gap and the parity views, and both seats can still answer
-       * without it. The old line named a payment method, which this build no longer captures
-       * separately from the membership.
-       */
-      body: "Publish is locked until this account's membership is running — the Gap analysis and the parity views stay closed until then. Both seats can still answer.",
-      items: [
-        { id: "publish-help", label: "Publishing waits until the membership is running." },
-        { id: "plans", label: "See plans and prices" },
-        /**
-         * #912 — **the door the band actually needs.** `/pricing` sells the membership without the
-         * relationship in hand, so a band that named only the plans could not resolve the refusal it
-         * drew. This is the pay modal's own label — the owner's words — and the band draws it as the
-         * primary door whenever the relationship has a session for stage 5 to read.
-         */
-        { id: "invite-members", label: "Invite Members" },
-        /**
-         * #958 — **the same door, named for the act it performs.** On a draft the pay modal's Send
-         * *is* the publish, so the band offers both of the owner's verbs rather than implying one
-         * act lives on a different screen. Same label as the card's (`dashboard-relationships.ts`),
-         * deliberately: one act, one word, whichever surface draws it.
-         */
-        { id: "publish-to-counterparty", label: "Publish to Counterparty" },
-      ],
-    },
-    {
       id: "republish",
       heading: "Reissue the invitation",
       body: "One click: a new token on the same invitation row, a new seven-day window, and the old link stops working. Nothing about the Aspects changes, and the relationship stays published.",

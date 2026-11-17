@@ -545,21 +545,14 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
    */
   readonly aspectsEditable: boolean;
   /**
-   * May it be published from its current status? `publishable()` — the detail screen's band.
+   * May it be published from its current status? `publishable()` — the detail screen's publish
+   * panel.
    *
-   * **Status is only half the answer since #690.** Publishing is the hard gate for payment: a
-   * relationship with no method on file gets no publish control at all, and this flag says only
-   * what the status allows. The screen reads both (`publishable && hasPaymentMethod`).
+   * **Only the status question, plus the seat** (`publishable: base.isInitiator && publishable(...)`,
+   * below). `publishable()` is `draft|pending`, and a relationship in one of those states is not sold
+   * yet, so there is no second payment fact for a screen to check against it.
    */
   readonly publishable: boolean;
-  /**
-   * Is the membership paying for this relationship live? #690's hard gate, re-based by #1010 R2.
-   *
-   * Derived from the initiator's subscription (`membership.writable`) — the same fact the claim and
-   * the answer submit refuse on — and `false` when the account has no live subscription. There is
-   * no card to look for any more: the membership bought at stage 5 is what unlocks publishing.
-   */
-  readonly hasMembership: boolean;
   /**
    * #739 — **the completion gate, as facts.** The payer's two acts live on this screen: put a
    * method on file, and complete and open the Gap. This is what the band draws from — the sheets'
@@ -700,25 +693,11 @@ export async function readMyRelationship(
   const base = relationshipOf(row, now, subscription, userId);
   const trial = trialStateOf(subscription, now);
   /*
-   * #690 / #1010 R2 — **the hard gate at publish, as a fact.**
-   *
-   * Publishing is gated on the account's **membership**, not on a card: #1010 deletes the
-   * per-relationship capture, and a card now reaches an account only by buying the subscription at
-   * stage 5. So the question this field answers is "is the membership paying for this relationship
-   * live?", which is `membership.writable` — derived from the initiator's subscription at the
-   * instant this read was handed, by the same function the claim and the answer submit refuse with.
-   * A relationship with no subscription (a brand-new draft, or one whose trial is over) reads
-   * `false` here, and the screen draws no publish control rather than one the write would refuse.
-   */
-  const hasMembership = base.membership.writable;
-  /*
    * #739 — the completion gate, read beside the method fact.
    *
-   * Two reads rather than one because they answer two different questions: `hasPaymentMethod`
-   * above is the publish gate's (#690 — a draft has no session, so nothing here could answer it),
-   * and this is the payer's band once a session exists. Both come from
-   * `relationship_payment.method_captured_at`, so they cannot disagree about the card; what this
-   * adds is the seal, the phase and the deadline, none of which the relationship row carries.
+   * The publish question is status and seat alone (`publishable` above — #690), so the only read
+   * left here is the payer's band once a session exists: its seal, its phase and its deadline, from
+   * `relationship_payment.method_captured_at`, none of which the relationship row carries.
    */
   const completion =
     base.sessionRecordId === null
@@ -755,9 +734,6 @@ export async function readMyRelationship(
      */
     aspectsEditable: base.isInitiator && aspectsEditable(base.status),
     publishable: base.isInitiator && publishable(base.status),
-    // #690 / #1010 R2 — a live membership, or nothing to click at publish. `publishable` stays
-    // the status question the transaction re-asks; this is the second half the screen must not guess.
-    hasMembership,
     completion,
     offersRepublish: base.isInitiator && republishable(base.view) && membership.state !== "lapsed",
     trialWithoutLiveInvite: base.isInitiator && trialRunningWithoutLiveInvite(trial, base.view),
