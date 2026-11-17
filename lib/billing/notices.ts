@@ -33,11 +33,8 @@
  * never a lost subscription.
  */
 import { getPool } from "@/lib/db/client";
-import {
-  membershipLapsedTemplate,
-  renderTemplate,
-  trialEndingTemplate,
-} from "@/lib/email/templates";
+import { renderTemplateForSend } from "@/lib/email/send";
+import { membershipLapsedTemplate, trialEndingTemplate } from "@/lib/email/templates";
 import { relationshipLink, sendMail, type MailOutcome, baseUrl } from "@/lib/flow/email";
 import type { Sql } from "@/lib/relationship/enforcement";
 
@@ -217,12 +214,16 @@ export async function sendMembershipLapsedNotices(input: {
     const link = relationshipLink(row.id, input.base);
     const outcomes: MailOutcome[] = [];
     for (const seat of seats) {
-      const rendered = renderTemplate(membershipLapsedTemplate, {
-        recipient: seat.name,
-        template: (row.title ?? "").trim() === "" ? "your relationship" : (row.title as string),
-        endedAt,
-        link,
-      });
+      const rendered = await renderTemplateForSend(
+        membershipLapsedTemplate,
+        {
+          recipient: seat.name,
+          template: (row.title ?? "").trim() === "" ? "your relationship" : (row.title as string),
+          endedAt,
+          link,
+        },
+        { sql },
+      );
       outcomes.push(
         await sendMail(
           { to: seat.email, subject: rendered.subject, text: rendered.text, html: rendered.html },
@@ -272,11 +273,15 @@ export async function sendTrialEndingNotice(input: {
     return { kind: "trial-ending", outcome: "no-address", recipients: 0, relationshipId: null };
   }
 
-  const rendered = renderTemplate(trialEndingTemplate, {
-    recipient: seat.name,
-    trialEndsAt: input.trialEndsAt,
-    link: `${(input.base ?? baseUrl()).replace(/\/+$/, "")}${PLANS_PATH}`,
-  });
+  const rendered = await renderTemplateForSend(
+    trialEndingTemplate,
+    {
+      recipient: seat.name,
+      trialEndsAt: input.trialEndsAt,
+      link: `${(input.base ?? baseUrl()).replace(/\/+$/, "")}${PLANS_PATH}`,
+    },
+    { sql },
+  );
   const outcome = await sendMail(
     { to: seat.email, subject: rendered.subject, text: rendered.text, html: rendered.html },
     { sender: "trial", ...(input.fetchImpl === undefined ? {} : { fetchImpl: input.fetchImpl }) },

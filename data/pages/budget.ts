@@ -206,6 +206,25 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-permissions",
     budget: 0,
   },
+  // #1138 — the transactional-mail register. Budget 0: the six column labels, the three state
+  // words, the five recipient words, the two class words and the fifteen refusal sentences are
+  // `data/pages/admin-email-templates.ts`, so the next literal written in `email-template-registry.tsx`
+  // is a red build. Attribution is the component subdirectory, because `/admin/templates` already
+  // owns the whole `components/admin` number.
+  "/admin/email-templates": {
+    page: "app/(mainlayout)/admin/email-templates/page.tsx",
+    dirs: ["components/admin/email-templates"],
+    fixture: "data/pages/admin-email-templates",
+    budget: 0,
+  },
+  // The editor: the three fields, the chip list, the four actions, the two preview panels and the
+  // version table are the same fixture — one screen's copy, so the same number covers both routes.
+  "/admin/email-templates/[id]": {
+    page: "app/(mainlayout)/admin/email-templates/[id]/page.tsx",
+    dirs: ["components/admin/email-templates"],
+    fixture: "data/pages/admin-email-templates",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is

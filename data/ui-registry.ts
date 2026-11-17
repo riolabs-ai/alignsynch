@@ -261,6 +261,26 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/admin/email-templates",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "The register of transactional mail, and what production is sending: one row per member-facing template — its class (transactional or marketing), the seat that receives it, whether the send path is on the code default, a published override or a draft waiting behind one, and who last edited it — with the row opening the template's editor.",
+    notes:
+      '#1138 — the ancestor is `/admin/templates` (`components/admin/template-registry.tsx`): the same `StageColumn`, the same header, the same row-link-to-an-editor, and the axis that varies is the data source plus the missing create band. **The rows come from the register, never from the table**: `lib/email/templates/index.ts` is the single source of truth and `memberFacingTemplates()` filters it, so a template added in code appears here with no edit to this file, and a `email_template_version` row whose id is no longer in the register is invisible rather than dangling. The operator\'s own `stakeholder-release-note` is excluded (`memberFacingTemplate()`), which is the issue\'s own scope line. **Two badges, not one**: a published override and a pending draft coexist, so the state column is what the send path reads and a quieter second badge marks the draft beside it — one badge would print a draft badge while production sent the older published words. `status: db` because the live rows are one statement (`listEmailTemplateLive()`, `DISTINCT ON (template_id, status)`); a database that cannot be read draws a panel naming the reason, never a list of `default` badges, because \\"nothing is overridden\\" and \\"the overrides could not be read\\" are different claims. Gates in `/admin/docs` order (`requireAdminProduct()` then `requireAdmin()`, a member answered with the 404 an unknown URL gets, never a 403), `force-dynamic`, and `data/pages/admin-email-templates.ts` holds every word at E23 budget 0.',
+  },
+  {
+    kind: "route",
+    surface: "/admin/email-templates/[id]",
+    status: "db",
+    templates: ["quizhub", "alignsynch"],
+    capability:
+      "One transactional mail: its three editable fields (subject, preheader, body) with the template's own `{{placeholders}}` one click away, a live preview rendered through the real send band, the refused state when the words break a rule, Send Test to the signed-in admin's own address, Save draft · Publish · Reset to Default, and the version history with restore.",
+    notes:
+      "#1138 — the ancestor is `components/admin/template-editor.tsx` (one field set, then the save/publish pair); what varies is that the preview runs **through the real band** rather than a sample renderer, so what an admin reads is what a mailbox receives, and the history restores by saving a new version rather than by rewriting an old one. **The register stays the source of truth for everything but the body paragraph**: `renderTemplate(..., { override })` hands the override only to `bodyBlocks()`, so the template's own sentences and its band frame are not the admin's to delete. Three rule families are checked before any write and again in the action (`lib/email/override.ts::overrideProblems`): an unknown `{{variable}}`, a blank field, and the Counterparty's silence about price, trial, card, plan, extension and `$` — checked on the **rendered** words too, because a `{{plan}}` would hide behind a clean source. A save is refused, never partially applied: the screen prints each problem by name. Writes go through `act()` with `email-template.save|publish|reset` and an `email_template_version` audit row, and the actor is read from `currentUser()`, never from the payload. Test send writes nothing — it renders the sample facts with `mode test` and mails the signed-in admin at their own address, so it is not an `AdminAction`. A body that lives in code (`relationship-expired`) renders read-only with the reason instead of an empty textarea. Gates, `force-dynamic` and the copy fixture are the list's.",
+  },
+  {
+    kind: "route",
     surface: "/admin/gaps",
     status: "db",
     templates: ["alignsynch"],

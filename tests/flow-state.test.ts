@@ -332,8 +332,8 @@ describe("tokens", () => {
 });
 
 describe("the invitation", () => {
-  it("carries exactly one link, filled from the fixture", () => {
-    const message = invitationMessage({
+  it("carries exactly one link, filled from the fixture", async () => {
+    const message = await invitationMessage({
       to: "rowan@example.com",
       initiatorName: "Avery",
       counterpartyName: "Rowan",

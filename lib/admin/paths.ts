@@ -62,6 +62,21 @@ export function adminTemplatePath(templateId: string): string {
   return `${ADMIN_TEMPLATES_PATH}/${templateId}`;
 }
 
+/**
+ * `/admin/email-templates` — the transactional-mail override editor (#1138).
+ *
+ * Here for the reason every admin path in this file is: the screen's own components link to it and
+ * to each template's editor, and `lib/admin/email-templates.ts` opens a pool. `templateId` is the
+ * **register's** id (`counterparty-invitation`), not a row id — the row is the override, and there
+ * may be none at all, which is why the address cannot be built from a version.
+ */
+export const ADMIN_EMAIL_TEMPLATES_PATH = "/admin/email-templates";
+
+/** `/admin/email-templates/<id>` — one registered template, its versions and its editor. */
+export function adminEmailTemplatePath(templateId: string): string {
+  return `${ADMIN_EMAIL_TEMPLATES_PATH}/${templateId}`;
+}
+
 /** `/admin/instances/<id>` — one relationship, and its five repairs. */
 export function adminRelationshipPath(instanceRecordId: string): string {
   return `${ADMIN_INSTANCES_PATH}/${instanceRecordId}`;

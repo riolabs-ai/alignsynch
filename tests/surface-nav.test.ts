@@ -120,6 +120,8 @@ describe("the shell's menus", () => {
       "/admin/docs",
       // #1126 — the CRUD & Permissions matrix: the spec reference the docs alone cannot state.
       "/admin/permissions",
+      // #1138 — the transactional-mail override editor: the words the product sends.
+      "/admin/email-templates",
       "/admin/audit",
       "/dashboard",
       "/dashboard/relationships",

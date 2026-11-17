@@ -80,7 +80,7 @@ export async function POST(
   jar.set(inviteCookieName(instanceId), sent.inviteToken, flowCookieOptions(FLOW_COOKIE_MAX_AGE));
 
   const outcome = await sendInvitation(
-    invitationMessage({
+    await invitationMessage({
       to: sent.email.trim(),
       initiatorName: sent.initiatorName.trim(),
       counterpartyName: sent.counterpartyName.trim(),

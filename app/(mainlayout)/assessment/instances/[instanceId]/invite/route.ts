@@ -83,7 +83,7 @@ export async function POST(
   // the reissue has already committed, so the screen must still draw the new link, and the
   // notice says only that the send failed — a thrown error is not a diagnosis.
   const outcome = await sendInvitation(
-    invitationMessage({
+    await invitationMessage({
       to: result.email,
       initiatorName: result.initiatorName,
       counterpartyName: result.counterpartyName,

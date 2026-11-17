@@ -48,17 +48,24 @@ function calendarDate(instant: Date): string {
   return instant.toISOString().slice(0, 10);
 }
 
-export function membershipLapsedDocument(facts: MembershipLapsedFacts): EmailDocument {
+export function membershipLapsedDocument(
+  facts: MembershipLapsedFacts,
+  body?: string,
+): EmailDocument {
   return {
     subject: MEMBERSHIP_LAPSED_SUBJECT,
     preheader: `The membership on ${facts.template} ended on ${calendarDate(facts.endedAt)}.`,
     blocks: [
-      ...bodyBlocks(MEMBERSHIP_LAPSED_BODY, {
-        recipient: facts.recipient,
-        template: facts.template,
-        ended_on: calendarDate(facts.endedAt),
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        MEMBERSHIP_LAPSED_BODY,
+        {
+          recipient: facts.recipient,
+          template: facts.template,
+          ended_on: calendarDate(facts.endedAt),
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, the membership on ${facts.template} ended on ${calendarDate(facts.endedAt)}.`,
