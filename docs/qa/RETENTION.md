@@ -123,6 +123,7 @@ and re-justified.
 | `release-1.16.0`           | 0.47 MB  | keep     | cited by `docs/changelog/v1-16-0.md`                                                                                          |
 | `release-1.17.0`           | 0.71 MB  | keep     | cited by `docs/changelog/v1-17-0.md` and 1 other file                                                                         |
 | `release-1.21.0`           | 0.44 MB  | keep     | cited by `docs/changelog/v1-21-0.md` — the audit log and the dashboard at 1440, at this release's own commit                  |
+| `release-1.22.0`           | 0.20 MB  | keep     | cited by `docs/changelog/v1-22-0.md` — the six-tab relationship detail at 1440, at this release's own commit                  |
 | `review-admin`             | 0.82 MB  | keep     | cited by `docs/changelog/v1-7-0.md`                                                                                           |
 | `screenshots`              | 3.26 MB  | archived | twelve route screenshots at two widths — no open issue, no pointer, no release cut                                            |
 | `sent`                     | 0.24 MB  | archived | the Sent screen at two widths — no open issue, no pointer, no release cut                                                     |

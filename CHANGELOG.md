@@ -6,6 +6,64 @@ conventional commits on `main` by [`scripts/release.sh`](scripts/release.sh) —
 and each `## [x.y.z] - <date>` block is also the body of its GitHub Release, byte for byte. Every entry ends
 with a **Known limits** block, because a release that does not say what it cannot do reads as a claim that it can.
 
+## [1.22.0] - 2026-11-17
+
+### Added
+
+- `feat(admin)` — the CRUD and Permissions matrix — admin-only, read-only, with the honest failure state (#1126) ([#1157](https://github.com/riolabs-ai/alignsynch/pull/1157))
+- `feat(v2)` — #1124 — Relationship Detail's six-tab layer ([#1148](https://github.com/riolabs-ai/alignsynch/pull/1148))
+- `feat(v2)` — #1125 — Counterparty join — a 3-step role flow (Invite · Join · Accept) ([#1147](https://github.com/riolabs-ai/alignsynch/pull/1147))
+- `feat(v2)` — Align v2 — Soft/Full Alignment Tolerance re-score, numbered Aspects (#1122) ([#1145](https://github.com/riolabs-ai/alignsynch/pull/1145))
+- `feat(v2)` — #1123 the Create Relationship wizard draws the v2 rail and one stage card ([#1144](https://github.com/riolabs-ai/alignsynch/pull/1144))
+- `feat(billing)` — trial-ended states — Stage 6 pauses read-only, one free 7-day extension (#1121) ([#1143](https://github.com/riolabs-ai/alignsynch/pull/1143))
+- `feat(onboarding)` — the counterparty claims with two fields, and connected is derived (#1115 tasks 4-5) ([#1117](https://github.com/riolabs-ai/alignsynch/pull/1117))
+- `feat(style)` — port the v2.0 token layer — calm party palette, locked 1–5 answer scale (#1120) ([#1142](https://github.com/riolabs-ai/alignsynch/pull/1142))
+- `feat(onboarding)` — #1115 tasks 1-3 - trial anchored at creation, one trialStateOf() read, payment out of the create path ([#1116](https://github.com/riolabs-ai/alignsynch/pull/1116))
+- `feat(ia)` — #1109 — retire /templates/relationship and move its three writes to the dashboard ([#1111](https://github.com/riolabs-ai/alignsynch/pull/1111))
+
+### Fixed
+
+- `fix(dashboard)` — delete the dead publish gate (#1140) ([#1141](https://github.com/riolabs-ai/alignsynch/pull/1141))
+
+### Maintenance
+
+- `chore(deps)` — bump next from 16.4.1 to 16.4.5 ([#1118](https://github.com/riolabs-ai/alignsynch/pull/1118))
+- `docs(specs)` — v2.0 UI handoff bundles (01–11) ([#1137](https://github.com/riolabs-ai/alignsynch/pull/1137))
+- `chore(gate)` — routes:check — Next's own router validation over the built manifest (#1113) ([#1114](https://github.com/riolabs-ai/alignsynch/pull/1114))
+- `chore(health)` — re-record platform health at v1.21.0 ([#1110](https://github.com/riolabs-ai/alignsynch/pull/1110))
+
+### Known limits
+
+- **The v2.0 lane is not in this release.** Ten open pull requests — `#1149`, `#1150`, `#1151`,
+  `#1152`, `#1153`, `#1154`, `#1155`, `#1156`, `#1158` and `#1159` — carry the v2.0 surface (app
+  shell, templates, chat, payment, CRUD, the admin matrix, conversion, the answer screen). Every one
+  of them is `DIRTY` or `BEHIND` against `main`, and all ten are excluded from this tag by name: they
+  land in v2.0.0, not here. `#1112` (templates retirement, phase 2) is excluded the same way.
+
+- **The noun sweep has not happened.** `#1103` retires `instance` in favour of `session` — `#1106`
+  in the code and `#1107` in the bundle format — and both are deferred to v2.0.0, so both nouns are
+  still in this tree's comments, its docs and its schema, and the platform bundle this build writes
+  is still version 2 (`content/bundle.ts::PLATFORM_BUNDLE_VERSION`).
+
+- **No dependency majors.** `#1027` (swiper `14.4.0`) and `#1025` (jsdom `31.0.0`) are open and
+  deferred to v2.0.0. The only dependency that moved in this window is `next` `16.4.1` → `16.4.5`
+  (`#1118`), a patch release taken for an advisory that stopped `next build`.
+
+- **No migration rides this tag.** Nothing under `db/migrations/` changed between `v1.21.0` and this
+  release — the newest file in the tree is `db/migrations/0041_session_state.sql`, applied on the
+  demo branch on 2026-11-16. Production's schema is applied by hand with `pnpm db:migrate` and this
+  release neither adds nor applies a migration, so a create against a production database whose
+  ledger has not been run is a separate, deliberate step rather than something this tag performs.
+
+- **`#1115` is still open in this milestone.** Its two landings — the trial anchored at creation
+  (`#1116`) and the counterparty claims (`#1117`) — are in this release; the issue itself is not
+  closed by it and moves to v2.0.0, so the trial's acceptance anchor is shipped but unproven end to
+  end by an issue that has not closed.
+
+- **Production's two `ADMIN_EMAILS` seats still answer `401`** (`#1084`). `walt1@alignsynch.com` and
+  `alignsynch@riolabs.ai` fail `INVALID_EMAIL_OR_PASSWORD` against `https://alignsynch.com`. Carried
+  from v1.21.0 unchanged: this release provisions neither seat, and the issue is open in the backlog.
+
 ## [1.21.0] - 2026-11-16
 
 ### Added
@@ -1769,3 +1827,4 @@ The admin console, and relationship templates become products.
 [1.16.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.15.0...v1.16.0
 [1.19.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.18.0...v1.19.0
 [1.21.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.20.1...v1.21.0
+[1.22.0]: https://github.com/riolabs-ai/alignsynch/compare/v1.21.0...v1.22.0
