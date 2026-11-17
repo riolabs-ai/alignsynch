@@ -15,9 +15,15 @@
  * client state means no hydration mismatch and no second answer to "which rows".
  *
  * **Counts are the whole matrix's, never the filtered page's.** The header band is what the source
- * file says (169 cells · 124 applicable · 37 covered / 25 hinted / 62 missing · 33 P0 / 18 P1 / 28
- * P2 / 15 Won't · 4 conflicts); the line under the filters says how much of it this address shows.
- * A filtered figure in the header would make the page's own totals depend on a link.
+ * file says — its cell count, how many are applicable, the three prototype statuses, the four
+ * priorities and the upstream conflicts, every one of them `countsOf()`'s output; the line under
+ * the filters says how much of it this address shows. A filtered figure in the header would make
+ * the page's own totals depend on a link.
+ *
+ * **The table's columns are the source's columns.** `columns` is the header the parser read, so
+ * the landed source draws its eight — and a `priority` column appears only once a source carries
+ * one instead of folding the rank into `mvp`. A column the file does not have is never drawn, and
+ * no column is filled with another's value.
  *
  * **One honest failure.** `unreadable` is why the source could not be read, drawn in place of the
  * counts and the table — never as an empty table, because "the matrix has no cells" and "the
@@ -53,6 +59,7 @@ import {
   CRUD_TRIAGE_PAGE_URL,
   CRUD_UPSTREAM_STATUSES,
   type CrudCell,
+  type CrudColumn,
   type CrudCounts,
   type CrudFacet,
   type CrudFilter,
@@ -68,6 +75,8 @@ export interface PermissionsConsoleProps {
   copy: PageCopy;
   /** The cells the current address admits, in the source's order. */
   cells: readonly CrudCell[];
+  /** The columns the source's header names, in that header's order — the table's shape. */
+  columns: readonly CrudColumn[];
   /** The whole matrix's figures, or `null` when the source could not be read. */
   counts: CrudCounts | null;
   /** The cells whose upstream answer disagrees with the prototype. */
@@ -90,12 +99,17 @@ function prototypeWords(copy: PageCopy): Record<CrudPrototypeStatus, string> {
   };
 }
 
-/** What upstream answers, as the page prints it. */
+/**
+ * What upstream answers, as the page prints it. `n/a` is the source's `—` ("when not applicable")
+ * and borrows the same "N/A" word the prototype's own not-applicable status prints — one phrase
+ * for one idea, and no second literal in the fixture.
+ */
 function upstreamWords(copy: PageCopy): Record<CrudUpstreamStatus, string> {
   return {
     exists: pageItemOf(copy, "upstream-exists").label,
     "not-found": pageItemOf(copy, "upstream-not-found").label,
     conflict: pageItemOf(copy, "upstream-conflict").label,
+    "n/a": pageItemOf(copy, "status-not-applicable").label,
   };
 }
 
@@ -110,19 +124,58 @@ function priorityWords(copy: PageCopy): Record<CrudPriority, string> {
   };
 }
 
-/** The nine columns, in the source header's order. */
-function columnWords(copy: PageCopy): readonly string[] {
-  return [
-    pageItemOf(copy, "col-object").label,
-    pageItemOf(copy, "col-action").label,
-    pageItemOf(copy, "col-role").label,
-    pageItemOf(copy, "col-prototype").label,
-    pageItemOf(copy, "col-selector").label,
-    pageItemOf(copy, "col-upstream").label,
-    pageItemOf(copy, "col-mvp").label,
-    pageItemOf(copy, "col-rationale").label,
-    pageItemOf(copy, "col-priority").label,
-  ];
+/** Each column's heading, as the page prints it — keyed by the canonical column name. */
+function columnWords(copy: PageCopy): Record<CrudColumn, string> {
+  return {
+    object: pageItemOf(copy, "col-object").label,
+    action: pageItemOf(copy, "col-action").label,
+    role: pageItemOf(copy, "col-role").label,
+    prototype: pageItemOf(copy, "col-prototype").label,
+    selector: pageItemOf(copy, "col-selector").label,
+    upstream: pageItemOf(copy, "col-upstream").label,
+    mvp: pageItemOf(copy, "col-mvp").label,
+    rationale: pageItemOf(copy, "col-rationale").label,
+    priority: pageItemOf(copy, "col-priority").label,
+  };
+}
+
+/** The columns whose cell is typeset differently; the rest are plain text. */
+const CELL_CLASS: Partial<Record<CrudColumn, string>> = {
+  object: "font-medium text-foreground",
+  selector: "font-mono text-xs",
+  rationale: "max-w-md text-muted-foreground",
+};
+
+/** One cell's words, read from the column the source names — never another column's value. */
+function cellText(
+  cell: CrudCell,
+  column: CrudColumn,
+  words: {
+    readonly prototypes: Record<CrudPrototypeStatus, string>;
+    readonly upstreams: Record<CrudUpstreamStatus, string>;
+    readonly priorities: Record<CrudPriority, string>;
+  },
+): string {
+  switch (column) {
+    case "object":
+      return cell.object;
+    case "action":
+      return cell.action;
+    case "role":
+      return cell.role;
+    case "prototype":
+      return words.prototypes[cell.prototype];
+    case "selector":
+      return cell.selector;
+    case "upstream":
+      return words.upstreams[cell.upstream];
+    case "mvp":
+      return cell.mvp;
+    case "rationale":
+      return cell.rationale;
+    case "priority":
+      return words.priorities[cell.priority];
+  }
 }
 
 /** Each facet's heading, as the page prints it. */
@@ -185,6 +238,7 @@ function FilterChip({ href, label, selected }: { href: string; label: string; se
 export function PermissionsConsole({
   copy,
   cells,
+  columns,
   counts,
   conflicts,
   facets,
@@ -197,11 +251,13 @@ export function PermissionsConsole({
   const matrixSection = sectionOf(copy, "matrix");
   const conflictsSection = sectionOf(copy, "conflicts");
 
-  const prototypes = prototypeWords(copy);
-  const upstreams = upstreamWords(copy);
-  const priorities = priorityWords(copy);
-  const columns = columnWords(copy);
-  const headings = facetHeading(copy);
+  const words = {
+    prototypes: prototypeWords(copy),
+    upstreams: upstreamWords(copy),
+    priorities: priorityWords(copy),
+  };
+  const headings = columnWords(copy);
+  const facetHeadings = facetHeading(copy);
 
   /** The header band, filled from the matrix's own totals — the ids are the fixture's, checked. */
   const band = [
@@ -333,7 +389,7 @@ export function PermissionsConsole({
               {CRUD_FACETS.map((facet) => (
                 <div key={facet} className="space-y-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {headings[facet]}
+                    {facetHeadings[facet]}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <FilterChip
@@ -380,7 +436,7 @@ export function PermissionsConsole({
                 <TableHeader>
                   <TableRow>
                     {columns.map((column) => (
-                      <TableHead key={column}>{column}</TableHead>
+                      <TableHead key={column}>{headings[column]}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -390,17 +446,11 @@ export function PermissionsConsole({
                       key={`${cell.object}/${cell.action}/${cell.role}`}
                       data-cell={`${cell.object}/${cell.action}/${cell.role}`}
                     >
-                      <TableCell className="font-medium text-foreground">{cell.object}</TableCell>
-                      <TableCell>{cell.action}</TableCell>
-                      <TableCell>{cell.role}</TableCell>
-                      <TableCell>{prototypes[cell.prototype]}</TableCell>
-                      <TableCell className="font-mono text-xs">{cell.selector}</TableCell>
-                      <TableCell>{upstreams[cell.upstream]}</TableCell>
-                      <TableCell>{cell.mvp}</TableCell>
-                      <TableCell className="max-w-md text-muted-foreground">
-                        {cell.rationale}
-                      </TableCell>
-                      <TableCell>{priorities[cell.priority]}</TableCell>
+                      {columns.map((column) => (
+                        <TableCell key={column} className={CELL_CLASS[column]}>
+                          {cellText(cell, column, words)}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))}
                 </TableBody>

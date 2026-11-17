@@ -202,6 +202,16 @@ export interface MemberRelationshipRow {
   /** The assessment round that exists once the relationship is published; `null` before. */
   readonly sessionRecordId: string | null;
   readonly aspectCount: number;
+  /**
+   * #1128 — how many of this round's Aspects **this reader** has answered, from their own `opinion`
+   * rows. It decides one word: `Continue Assessment` rather than `Start Assessment` on the Next Step
+   * panel, which is the issue's own sentence ("and 'Continue Assessment' once started").
+   *
+   * Optional for the reason `pause` and `hygiene` are: a view literal written before this field
+   * existed carries no count, and the screen then says `Start`, which is true for a reader who has
+   * answered nothing. `readMyRelationship()` and the list always fill it.
+   */
+  readonly viewerAnswered?: number;
   /** The invitation, when one exists. `null` is "not sent yet" (or a defect, see `view`). */
   readonly invite: {
     readonly claimed: boolean;
@@ -256,6 +266,8 @@ interface RelationshipQueryRow {
   readonly initiator_user_id: string | null;
   /** The viewer's own seat in `party`, or `null` for a draft (no session exists to hold one). */
   readonly viewer_role: string | null;
+  /** #1128 — the viewer's own answered Aspect count in the latest round (0 for a draft). */
+  readonly viewer_answered?: number;
   readonly created_at: Date | string;
   readonly published_at: Date | string | null;
   /** #533 phase 3 — the lapse, when the row records one (`0032`). */
@@ -306,14 +318,16 @@ interface RelationshipQueryRow {
  * several and the list is about the relationship, not one cycle. The invitation hangs off that
  * session, so a draft has none.
  */
-const VIEWER_ROLE = `(
+const VIEWER_SEAT = `(
     SELECT p.role
       FROM session vs
       JOIN party p ON p.session_record_id = vs.record_id
      WHERE vs.relationship_id = rel.id AND p.user_id = $1
      ORDER BY vs.round DESC
      LIMIT 1
-  ) AS viewer_role`;
+  )`;
+
+const VIEWER_ROLE = `${VIEWER_SEAT} AS viewer_role`;
 
 /** Who may see the row. `$1` is the viewer, in both statements below. */
 const VIEWER_IS_PARTY = `(
@@ -385,6 +399,15 @@ const RELATIONSHIP_COLUMNS = `
   -- template read identically and the draft a creator had just named could not be found by name.
   sr.title AS relationship_title,
   s.record_id AS session_record_id,
+  -- #1128 — how many Aspects the viewer has answered in the latest round, so the Next Step can
+  -- offer "Continue Assessment" rather than "Start Assessment". A count, never a score: the blind
+  -- rule is a property of the party read, and this statement only counts rows of the viewer's own.
+  (
+    SELECT count(*)::int
+      FROM opinion o
+     WHERE o.session_record_id = s.record_id
+       AND o.role = COALESCE(${VIEWER_SEAT}, 'initiator')
+  ) AS viewer_answered,
   -- #936 — the count is of the Aspects this relationship **holds**, and for a relationship the
   -- flow created those live on the session's copy (s.record_id), not on the template it names.
   (SELECT count(*)::int FROM item i WHERE i.record_id = COALESCE(s.record_id, t.id)) AS aspect_count,
@@ -537,6 +560,7 @@ function relationshipOf(
     publishedAt: row.published_at === null ? null : instantOf(row.published_at),
     sessionRecordId: row.session_record_id,
     aspectCount: Number(row.aspect_count),
+    viewerAnswered: Number(row.viewer_answered ?? 0),
     invite,
     counterpartyName: row.counterparty_name,
     initiatorName: row.initiator_name,

@@ -157,12 +157,12 @@ Not sent — each a go-live blocker the moment money is real:
 **Closed by #1055 (2026-11-14).** The gap below is kept as measured, because it is the reason the
 drift guard exists; the "subscribed?" column now says what the delivery does, not what it did.
 
-| the product says                        | where it says it                           | subscribed?                                                                                |
-| --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `invoice.paid` moves `expired → active` | `lib/relationship/status.ts:184`           | **yes** — mapped, and the reactivation statement runs in the same transaction as the write |
-| a lapsed membership is announced        | `lib/email/templates/membership-lapsed.ts` | **yes** — `invoice.payment_failed` lapses the pair and both seats get template #7          |
-| the trial is ending                     | `lib/email/templates/trial-ending.ts`      | **yes** — `customer.subscription.trial_will_end`, quoting the payload's own `trial_end`    |
-| a renewal failed                        | `lib/billing/notices.ts`                   | **yes** — the pair goes read-only and the member is told; no retry ladder, no grace window |
+| the product says                        | where it says it                           | subscribed?                                                                                                                                            |
+| --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `invoice.paid` moves `expired → active` | `lib/relationship/status.ts:184`           | **yes** — mapped, and the reactivation statement runs in the same transaction as the write                                                             |
+| a lapsed membership is announced        | `lib/email/templates/membership-lapsed.ts` | **yes** — `invoice.payment_failed` lapses the pair, and since #1139 the notice is chosen per seat: #7 or #12 to the Initiator, #13 to the Counterparty |
+| the trial is ending                     | `lib/email/templates/trial-ending.ts`      | **yes** — `customer.subscription.trial_will_end`, quoting the payload's own `trial_end`                                                                |
+| a renewal failed                        | `lib/billing/notices.ts`                   | **yes** — the pair goes read-only and the member is told; no retry ladder, no grace window                                                             |
 
 Before #1055: three events were subscribed and everything else was logged as `not subscribed` and
 dropped, so a relationship recovered by a renewal had no path back to `active`, a trial that ended

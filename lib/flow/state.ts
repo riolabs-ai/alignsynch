@@ -363,6 +363,52 @@ export function parseSubmission(
 }
 
 /**
+ * A **draft** post → the Aspects it is allowed to write, and no refusal (#1128).
+ *
+ * The v2 answer screen saves every pick, and `opinion` stores a row only when an Aspect carries
+ * every kind its Mode asks (`feel`/`wish` are NOT NULL, and Think comes with Guess). A pick is
+ * therefore written when it **completes** its Aspect, and an Aspect still missing a row is simply
+ * not written yet — the screen is one Aspect behind at worst, which is exactly the state the resume
+ * position reads.
+ *
+ * That is why this returns no `problems`: a half-answered Aspect is the normal state of a sheet
+ * being filled in, not a refusal, and `parseSubmission()` stays the one place that refuses an
+ * incomplete **submission**. A value that is not a score still drops its Aspect (never a silent 0),
+ * and an Aspect whose id the instance does not have is ignored — the same forgiveness a form gains
+ * from being rendered out of the rows.
+ */
+export function parseDraft(
+  aspectIds: readonly string[],
+  raw: ReadonlyMap<string, RawAnswer>,
+  mode: AssessmentMode,
+): readonly ParsedAnswers[] {
+  const advanced = mode === "advanced";
+  const parsed: ParsedAnswers[] = [];
+
+  for (const itemId of aspectIds) {
+    const entry = raw.get(itemId);
+    if (entry === undefined) continue;
+    if (advanced && (entry.think === undefined || entry.guess === undefined)) continue;
+    if (!advanced && (entry.think !== undefined || entry.guess !== undefined)) continue;
+
+    const opinion = zOpinions.safeParse(
+      advanced
+        ? {
+            feel: toScore(entry.feel),
+            wish: toScore(entry.wish),
+            think: toScore(entry.think),
+            guess: toScore(entry.guess),
+          }
+        : { feel: toScore(entry.feel), wish: toScore(entry.wish) },
+    );
+    if (!opinion.success) continue;
+    parsed.push({ itemId, opinions: opinion.data });
+  }
+
+  return parsed;
+}
+
+/**
  * A score from form text.
  *
  * `Number("")` is 0 and `Number("  ")` is 0, both of which fail `zScore`'s minimum, and

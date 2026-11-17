@@ -411,6 +411,31 @@ export function answerSheetPath(instanceRecordId: string): string {
   return `${instancePath(instanceRecordId)}/answer`;
 }
 
+/**
+ * `/assessment/instances/[instanceId]/answers/draft` — one Aspect's picks, saved as they are made
+ * (#1128).
+ *
+ * A second address beside `/answers` rather than a flag on it, because the two writes are not the
+ * same write: `/answers` is the **seal** (a whole sheet, every Aspect, refused when one is missing)
+ * and this is the **draft** (whatever has been picked so far, written so a reload resumes). One
+ * endpoint with a mode field would make "which of these two refusals did I get" a question about a
+ * hidden field instead of about the URL.
+ */
+export function answerDraftsPath(instanceRecordId: string): string {
+  return `${instancePath(instanceRecordId)}/answers/draft`;
+}
+
+/**
+ * The answer sheet at one position — `?aspect=n`, or `?aspect=review` for the review (#1128).
+ *
+ * A position is the one query string this route keeps: `Change` on the review has to address one
+ * Aspect, and Back has to land where the reader was. Every other v2 prototype parameter
+ * (`?state=`, `?role=`) named a fact the app derives from rows and is not ported.
+ */
+export function answerAspectPath(instanceRecordId: string, aspect: number | "review"): string {
+  return `${answerSheetPath(instanceRecordId)}?aspect=${aspect}`;
+}
+
 /** `/assessment/instances/[instanceId]/accept` — the acceptance step (#409, R1-E). A page. */
 export function acceptPath(instanceRecordId: string): string {
   return `${instancePath(instanceRecordId)}/accept`;
