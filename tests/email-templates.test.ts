@@ -29,7 +29,13 @@
  */
 import { describe, expect, it } from "vitest";
 import { brand } from "@/data/brand";
-import { htmlFromText, renderEmail, type EmailClass, type EmailDocument } from "@/lib/email/band";
+import {
+  htmlFromText,
+  renderEmail,
+  type EmailClass,
+  type EmailDocument,
+  type EmailImage,
+} from "@/lib/email/band";
 import {
   EMAIL_TEMPLATES,
   invitationTemplate,
@@ -305,7 +311,15 @@ describe("every template renders both parts, text first", () => {
     it(`${item.name}: html is htmlFromText(text)`, () => {
       const rendered = item.render();
       const document = item.document();
-      expect(rendered.html).toBe(htmlFromText(rendered.text, { preheader: document.preheader }));
+      // The one input the text does not carry is a picture's intrinsic size (#1169 lane B), and it
+      // travels with the blocks — exactly as `renderEmail()` hands it over. Everything else,
+      // every sentence included, is still the text's.
+      const figures = document.blocks.filter(
+        (block): block is EmailImage => block.kind === "image",
+      );
+      expect(rendered.html).toBe(
+        htmlFromText(rendered.text, { preheader: document.preheader, figures }),
+      );
     });
 
     it(`${item.name}: the text carries no markup`, () => {
