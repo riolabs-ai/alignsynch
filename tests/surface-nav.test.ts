@@ -98,9 +98,9 @@ describe("the shell's menus", () => {
 
   it("keeps every alignment destination — a status never adds or removes a row", () => {
     expect(hrefsOf(navHtml("member"))).toEqual([
+      // #1129 — Start, the signed-in landing, is the first row of the v2 rail.
+      "/dashboard",
       "/dashboard/relationships",
-      // #877 — the member's assessment sessions, beside the relationships they belong to.
-      "/assessments",
       "/dashboard/templates",
       "/dashboard/help",
       "/dashboard/support",
@@ -119,8 +119,8 @@ describe("the shell's menus", () => {
       // #901 — the docs home: the manifest's 117 pages had no way in but the address bar.
       "/admin/docs",
       "/admin/audit",
+      "/dashboard",
       "/dashboard/relationships",
-      "/assessments",
       "/dashboard/templates",
       // #665 — the review shelf: published artifacts with their to-dos and feedback.
       "/admin/review",
@@ -166,15 +166,16 @@ describe("the shell's menus", () => {
         }),
       );
     for (const [pathname, lit] of [
-      ["/dashboard", ""],
+      // #1129 — Start is a row now, so /dashboard lights it.
+      ["/dashboard", "/dashboard"],
       ["/dashboard/help", "/dashboard/help"],
       ["/dashboard/support", "/dashboard/support"],
       ["/dashboard/relationships", "/dashboard/relationships"],
-      // A child keeps its list row lit, and does not light Overview with it.
+      // A child keeps its list row lit, and does not light Start with it (`exact: true`).
       ["/dashboard/relationships/abc", "/dashboard/relationships"],
       ["/dashboard/templates/abc", "/dashboard/templates"],
     ]) {
-      expect(activeRowHrefs(at(pathname))).toEqual(lit === "" ? [] : [lit]);
+      expect(activeRowHrefs(at(pathname))).toEqual([lit]);
     }
   });
 });

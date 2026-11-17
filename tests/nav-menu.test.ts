@@ -204,8 +204,8 @@ describe("the ladder decides the rows", () => {
   /** #929 — the Support group, in the owner's order: two staff rows among the help pair. */
   const SUPPORT_GROUP = ["/admin/review", "/dashboard/help", "/admin/health", "/dashboard/support"];
 
-  /** The three Workspace rows every rung above it shares (#620, #877). */
-  const WORKSPACE = ["/dashboard/relationships", "/assessments", "/dashboard/templates"];
+  /** The three Workspace rows every rung above it shares (#620, #877, #1129). */
+  const WORKSPACE = ["/dashboard", "/dashboard/relationships", "/dashboard/templates"];
 
   /**
    * **The rule the amendment added, and the one that is easy to lose in a "just move these six
@@ -240,20 +240,20 @@ describe("the ladder decides the rows", () => {
   /**
    * #620 — the Workspace group is **exactly three rows**, and the assertion is over the descriptor
    * rather than a screenshot: a menu is data, and the count is the thing the issues asked for. The
-   * ids are the owner's words, so a row cannot be added back without naming it here — #877 added
-   * `my-assessments` ("My Assessments"), immediately after the relationships it lists the sessions
-   * of, and nothing else moved.
+   * ids are the owner's words, so a row cannot be added back without naming it here — #1129 put
+   * `start` at the top (the signed-in landing, `/dashboard`) and retired `my-assessments`; the
+   * sessions it listed are one click from My Relationships and `/assessments` still answers.
    */
-  it("draws exactly three Workspace rows — My Relationships, My Assessments and Templates", () => {
+  it("draws exactly three Workspace rows — Start, My Relationships and Templates", () => {
     const workspace = ALIGN_MENU.find((group) => group.label === "group-app");
     expect(workspace?.items.map((item) => item.id)).toEqual([
+      "start",
       "my-relationships",
-      "my-assessments",
       "templates",
     ]);
     expect(workspace?.items.map((item) => item.href)).toEqual([
+      "/dashboard",
       "/dashboard/relationships",
-      "/assessments",
       "/dashboard/templates",
     ]);
   });
@@ -348,7 +348,7 @@ describe("the rendered rail", () => {
     expect(railHrefs("admin")[0]).toBe("/admin/inbox");
     expect(railHrefs("owner")[0]).toBe("/admin/inbox");
     expect(railHrefs("support")[0]).toBe("/admin/inbox");
-    expect(railHrefs("member")[0]).toBe("/dashboard/relationships");
+    expect(railHrefs("member")[0]).toBe("/dashboard");
     // The two staff rows inside Support are in the admin's markup, in the owner's order.
     const admin = railHrefs("admin");
     expect(admin.slice(-4)).toEqual([
@@ -396,9 +396,10 @@ describe("the rendered rail", () => {
         .filter((tag) => tag.includes("bg-nav-active"))
         .map((tag) => /href="([^"]*)"/.exec(tag)?.[1] ?? "");
 
-    // #620 removed the Overview row, so `/dashboard` lights nothing: the rail has no row it
-    // could mark, and a rail that marked a row it does not draw would be the same bug mirrored.
-    expect(activeOf("/dashboard")).toEqual([]);
+    // #1129 brought Start back as `/dashboard`, and its row is `exact`: the landing lights, and
+    // the child pages below it do not light it beside their own row.
+    expect(activeOf("/dashboard")).toEqual(["/dashboard"]);
+    expect(activeOf("/dashboard/relationships")).toEqual(["/dashboard/relationships"]);
     // A child page keeps its list row lit.
     expect(activeOf("/dashboard/relationships/abc")).toEqual(["/dashboard/relationships"]);
     expect(activeOf("/admin/console", "admin")).toEqual(["/admin/console"]);
@@ -412,7 +413,13 @@ describe("the rendered rail", () => {
  * rung, route, label, hidden-with-reason), and the blocks above prove the *rail* draws it.
  */
 describe("the document the rail is read from", () => {
-  const rows = navDocument.groups.flatMap((group) => group.items) as unknown as NavRowRecord[];
+  /**
+   * The JSON's inferred type is a union of row shapes (#1129 added `exact` to one row), and a union
+   * of arrays is not a `flatMap` input. Reading it through the record type once keeps the assertions
+   * below about the *document*, which is what this block is for.
+   */
+  const document = navDocument as unknown as { groups: { items: NavRowRecord[] }[] };
+  const rows = document.groups.flatMap((group) => group.items) as unknown as NavRowRecord[];
 
   it("satisfies the schema in content/nav.ts — strict, so an unknown key is a failure", () => {
     const parsed = zNavDocument.safeParse(navDocument);
@@ -436,7 +443,9 @@ describe("the document the rail is read from", () => {
   it("keeps every row — hidden ones included — pointed at a route, an icon and a real label", () => {
     const nav = sectionOf(shellPageCopy, "nav-alignsynch");
     const ids = new Set(nav.items?.map((item) => item.id) ?? []);
-    for (const row of navDocument.groups.flatMap((group) => group.items) as NavRowRecord[]) {
+    for (const row of document.groups.flatMap(
+      (group) => group.items,
+    ) as unknown as NavRowRecord[]) {
       expect(matchRoute(routeManifest, row.href), `${row.href} is not a route`).toBeDefined();
       expect(NAV_ICON_NAMES, `${row.icon} is not an icon name`).toContain(row.icon);
       expect(ids.has(row.label ?? row.id), `${row.href} names "${row.label ?? row.id}"`).toBe(true);

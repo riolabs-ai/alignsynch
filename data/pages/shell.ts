@@ -274,6 +274,12 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "home", label: "Home" },
           { id: "dashboard", label: "Dashboard" },
+          /**
+           * #1129 — the v2 rail's first row. "Start" is the page's own `<h1>` subject (Start
+           * greets rather than names itself), and it is one word because every other row in the
+           * group is: the v2 prototype draws Start · My Relationships · Templates · Chat · Payment.
+           */
+          { id: "start", label: "Start" },
           { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
           /**
