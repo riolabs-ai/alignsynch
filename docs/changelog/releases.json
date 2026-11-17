@@ -1,6 +1,11 @@
 {
   "releases": [
     {
+      "version": "1.22.0",
+      "theme": "the release where the relationship became six sections you can read — a Counterparty who joins instead of being described, numbered Aspects with a tolerance in words, and a trial that pauses instead of closing",
+      "headline": "feat(v2) — #1124 — Relationship Detail's six-tab layer (#1148)"
+    },
+    {
       "version": "1.21.0",
       "theme": "a draft session is not a live session — the row a create writes now carries the state that says whether anybody joined, an invitation names its relationship, and the demo finally seeds both halves of the console",
       "headline": "feat(demo) — #1081 — seed the admin half so the console rail is not empty states (#1104)"
