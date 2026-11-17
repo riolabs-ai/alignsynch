@@ -54,6 +54,7 @@ export function StageInvite({
   planIncluded,
   carriedPlan,
   checkout,
+  trialEndsAt,
   backHref,
   cancelHref,
   cancelLabel,
@@ -85,6 +86,14 @@ export function StageInvite({
   carriedPlan?: CarriedPlan;
   /** The server's membership actions. Absent in a render-only test. */
   checkout?: CheckoutHandlers;
+  /**
+   * **The trial's end, as the page measured it** (#1115).
+   *
+   * The instant `trialStateOf()` read for the creating account, handed through untouched so the
+   * walk can print it as a date. Its presence is what makes the walk the card-free create panel:
+   * the create path supplies no `checkout`, so no stage of this flow can reach the adapter.
+   */
+  trialEndsAt?: string;
   backHref: string;
   cancelHref: string;
   cancelLabel: string;
@@ -108,6 +117,7 @@ export function StageInvite({
           {...(checkout === undefined ? {} : { checkout })}
           {...(planIncluded === undefined ? {} : { planIncluded })}
           {...(carriedPlan === undefined ? {} : { carriedPlan })}
+          {...(trialEndsAt === undefined ? {} : { trialEndsAt })}
         />
 
         {/* The two sentences that make "keep it as a draft" safe to choose. */}

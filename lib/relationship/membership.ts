@@ -193,6 +193,16 @@ export function membershipOf(facts: MembershipFacts): Membership {
   // read-only, which is the opposite of what a draft is for.
   if (facts.status !== "published" && facts.status !== "active") return OPEN;
 
+  // **A published relationship nobody has accepted yet is not a lapse** (#1115, spec D3). The week
+  // opens when the Counterparty accepts, so a sent invitation that is still pending holds **no**
+  // subscription row — and it has spent nothing. Reading that as `lapsed` is not the cautious
+  // answer, it is a wrong one twice over: the member would be told their invitation had expired
+  // before it was answered, and `lapseIfDue()` (`lib/relationship/enforcement.ts`) would write
+  // `expired` over the row, so the pair could never be joined at all. `active` keeps the strict
+  // reading below — acceptance writes the trial in the same transaction that sets it, so an
+  // `active` row with no subscription is drift, and drift is read-only.
+  if (facts.status === "published" && facts.subscription === null) return OPEN;
+
   const { subscription } = facts;
   const trial = trialStateOf(subscription, facts.now);
   if (trial === "expired" || (trial === "none" && !entitlesNow(subscription, facts.now))) {
