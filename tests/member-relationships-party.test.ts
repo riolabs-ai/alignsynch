@@ -129,6 +129,9 @@ beforeEach(() => {
     if (sql.includes("FROM record WHERE id = $1")) return [recordRow];
     if (sql.includes("FROM item WHERE record_id = $1")) return itemRows;
     if (sql.includes("FROM response_option WHERE record_id = $1")) return optionRows;
+    // #1121 — the one free week's claim, read through the relationships the account initiated. No
+    // grant in this fixture: every relationship here is on its first (and only) trial.
+    if (sql.includes("FROM plan_grant g")) return [{ extended_at: null }];
     throw new Error(`unexpected statement: ${sql}`);
   });
 });

@@ -246,6 +246,17 @@ export const MEMBER_REFUSALS = [
   "invalid-window",
   "no-such-version",
   "no-change",
+  /**
+   * #1121 — the free week's three dead ends, one code each because each has its own sentence.
+   *
+   *   not-paused       the relationship is closed, or its trial is still running: nothing to resume
+   *   no-trial         the account holds no `trialing` row — a card is the only way back
+   *   extension-used   this account already took its one free week (server-enforced, not a hidden
+   *                    button: `claimTrialExtension()` re-asks it under a row lock)
+   */
+  "not-paused",
+  "no-trial",
+  "extension-used",
   "failed",
 ] as const;
 

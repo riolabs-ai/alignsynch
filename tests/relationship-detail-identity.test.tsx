@@ -100,6 +100,8 @@ function html(overrides: Partial<MemberRelationshipView> = {}): string {
       onRepublish: noop,
       onComplete: noop,
       onFork: noop,
+      /* #1121 — the free week is not what this suite presses; the stub lets the screen render. */
+      onClaimExtension: noop,
       templatesHref: "/templates/relationship?view=mine",
     }),
   );
