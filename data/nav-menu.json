@@ -74,18 +74,19 @@
       "label": "group-app",
       "items": [
         {
+          "id": "start",
+          "href": "/dashboard",
+          "icon": "dashboard",
+          "needs": "member",
+          "exact": true,
+          "note": "#1129 — Start, the signed-in landing: the computed Next Step, the two active relationships and four templates. `exact` because `/dashboard` is a parent path of the rows below it, and a prefix rule would light Start beside every one of them. This is the row #620 removed when the Overview stopped being a destination; it comes back as a different page."
+        },
+        {
           "id": "my-relationships",
           "href": "/dashboard/relationships",
           "icon": "relationships",
           "needs": "member",
-          "note": "#620 — the relationship and its assessment, in one list. The row this replaced was /dashboard (the Overview), which keeps answering but is no longer a rail row."
-        },
-        {
-          "id": "my-assessments",
-          "href": "/assessments",
-          "icon": "assessments",
-          "needs": "member",
-          "note": "#877 — the assessment sessions the member is a party to, immediately after the relationships they belong to. It replaced /assessment/instances, which is a 308 here: one listing, one address, and the session's own screen did not move."
+          "note": "#620 — the relationship and its assessment, in one list. Second since #1129, because the rail now opens on Start."
         },
         {
           "id": "templates",

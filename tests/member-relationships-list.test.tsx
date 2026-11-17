@@ -1,17 +1,23 @@
 /**
- * `/dashboard/relationships` as the record list — the shell #841 part 2 adds (#841 part 2).
+ * `/dashboard/relationships` as the v2 list — the second screen of the shell (#1129, bundle 05).
  *
  * What this file holds is the shell's promises, and they are the ones a reader notices when they
- * break: the six tabs and **the counts that match the rows behind them**, the default view being
- * `All` so a draft is visible without a click (the assertion #850's `flow:e2e` took green — a
- * default that hid a draft would break it silently), the heading with its create action, and the
- * toolbar's search matching the relationship's own title **and** the other party's name.
+ * break: the five filter chips and **the counts that match the rows behind them**, the default view
+ * being `All` so a draft is visible without a click (the assertion #850's `flow:e2e` took green — a
+ * default that hid a draft would break it silently), the heading with its create action, the toolbar's
+ * search matching the relationship's own title **and** the other party's name, and every card
+ * carrying one of the four state words rather than a stored lifecycle value.
  *
- * Two things are deliberately *not* asserted here. The per-row menu's items render in a Radix
- * portal, so they are absent from a static render — `tests/member-relationship-cards.test.ts` owns
- * the card and pins the reason the trigger carries. And the filter/search behaviour is asserted
- * through `visibleRelationships`, the pure function the component calls, because this tree has no
- * interaction-testing dependency and a DOM rig for one search field would be the wrong trade.
+ * **The vocabulary changed with #1129 and the counts moved with it.** The six stored-lifecycle tabs
+ * are now the bundle's five chips — All · Stage 6 Live · Waiting on Invite · Draft · Paused — so
+ * `active` and `complete` share a chip, `draft` and `pending` share one, and `expired` prints
+ * `Paused`. `All` counts what the grid can draw, which is every row except a `void` one.
+ *
+ * Two things are deliberately *not* asserted here. The card's own states are pinned by
+ * `tests/start-next-steps.test.ts` (the mapping) and `tests/member-relationship-cards.test.ts` (the
+ * chrome). And the filter/search behaviour is asserted through `visibleRelationships`, the pure
+ * function the component calls, because this tree has no interaction-testing dependency and a DOM
+ * rig for one search field would be the wrong trade.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -24,9 +30,9 @@ vi.mock("next/link", () => ({
 
 import {
   RelationshipsList,
-  statusCount,
+  stateCount,
   visibleRelationships,
-  type StatusFilter,
+  type StateFilter,
 } from "@/components/dashboard/relationships-list";
 import { dashboardRelationshipsPageCopy } from "@/data/pages/dashboard-relationships";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
@@ -54,13 +60,12 @@ function row(overrides: Partial<MemberRelationshipRow> & { id: string }): Member
     view: "not-published",
     membership: { state: "open", reason: null, endedAt: null, writable: true },
     ...overrides,
-  };
+  } as MemberRelationshipRow;
 }
 
 /**
- * Five stored states the six tabs filter, plus a `pending` row that has **no tab of its own** —
- * it must still appear under `All`, which is what proves a tab is never invented for a state the
- * artifact does not name.
+ * Every stored state the five chips cover, plus a `pending` row — it has no chip of its own and
+ * prints as **Draft**, which is the mapping #1129 introduced.
  */
 const rows: MemberRelationshipRow[] = [
   row({
@@ -126,35 +131,37 @@ function render(list: readonly MemberRelationshipRow[] = rows): string {
     createElement(RelationshipsList, {
       copy,
       rows: list,
+      summaries: {},
       templates: [],
       unreadable: null,
     }),
   );
 }
 
-/** The markup of one tab, split on the attribute Radix puts on every trigger. */
-function tabChunks(html: string): string[] {
+/** The markup of one chip, split on the attribute every filter button carries. */
+function chipChunks(html: string): string[] {
   return html.split('role="tab"').slice(1);
 }
 
 describe("the relationships list", () => {
-  it("draws the six tabs the owner approved, each with the number of rows behind it", () => {
-    const chunks = tabChunks(render());
-    expect(chunks).toHaveLength(6);
+  it("draws the five filter chips the bundle draws, each with the number of rows behind it", () => {
+    const chunks = chipChunks(render());
+    expect(chunks).toHaveLength(5);
 
     const expected: { label: string; count: number }[] = [
       { label: "All", count: 6 },
-      { label: "Drafts", count: 1 },
-      { label: "Published", count: 1 },
-      { label: "Running", count: 1 },
-      { label: "Complete", count: 1 },
-      { label: "Expired", count: 1 },
+      // `active` and `complete` are one word now.
+      { label: "Stage 6 Live", count: 2 },
+      { label: "Waiting on Invite", count: 1 },
+      // `draft` and `pending` are one word now.
+      { label: "Draft", count: 2 },
+      { label: "Paused", count: 1 },
     ];
     chunks.forEach((chunk, index) => {
-      const tab = expected[index];
-      expect(chunk).toContain(tab.label);
+      const chip = expected[index];
+      expect(chunk).toContain(chip.label);
       expect(chunk).toMatch(
-        new RegExp(`<span class="[^"]*tabular-nums[^"]*">${String(tab.count)}</span>`),
+        new RegExp(`<span class="[^"]*tabular-nums[^"]*">${String(chip.count)}</span>`),
       );
     });
   });
@@ -163,19 +170,17 @@ describe("the relationships list", () => {
     const html = render();
     expect(html).toContain("Weekly check-in");
     expect(html).toContain('data-relationship-card="rel-draft"');
-    // Every row is drawn on the default view — including the `pending` one no tab names.
+    // Every drawable row is on the default view — including the `pending` one, which is a Draft.
     for (const one of rows) expect(html).toContain(`data-relationship-card="${one.id}"`);
-    // …and the tab that is selected is `All`, not a filter that happens to include it.
-    expect(tabChunks(html)[0]).toContain('aria-selected="true"');
+    // …and the chip that is selected is `All`, not a filter that happens to include it.
+    expect(chipChunks(html)[0]).toContain('aria-selected="true"');
   });
 
-  it("carries the create action in the header, the search field and the view toggle", () => {
+  it("carries the create action in the header, the search field and the sort select", () => {
     const html = render();
     expect(html).toContain("Start a relationship");
     expect(html).toContain('placeholder="Search your relationships…"');
-    expect(html).toContain("Grid view");
-    expect(html).toContain("List view");
-    expect(html).toContain("All statuses");
+    expect(html).toContain("Newest");
   });
 
   it("draws the no-relationships sentence when the read returned nothing", () => {
@@ -184,69 +189,85 @@ describe("the relationships list", () => {
     expect(html).not.toContain("data-relationship-card=");
   });
 
-  it("counts a tab as the rows that carry that stored status", () => {
-    const cases: [StatusFilter, number][] = [
+  it("counts a chip as the rows that draw as that state", () => {
+    const cases: [StateFilter, number][] = [
       ["all", 6],
-      ["draft", 1],
-      ["published", 1],
-      ["active", 1],
-      ["complete", 1],
-      ["expired", 1],
+      ["live", 2],
+      ["waiting", 1],
+      ["draft", 2],
+      ["paused", 1],
     ];
-    for (const [status, count] of cases) expect(statusCount(rows, status)).toBe(count);
+    for (const [state, count] of cases) expect(stateCount(rows, state)).toBe(count);
+  });
+
+  it("draws the failure panel, and no figure, when the read did not answer", () => {
+    const html = renderToStaticMarkup(
+      createElement(RelationshipsList, {
+        copy,
+        rows: [],
+        summaries: {},
+        templates: [],
+        unreadable: "connection refused",
+      }),
+    );
+    expect(html).toContain("Your relationships could not be read");
+    expect(html).toContain("connection refused");
+    expect(html).not.toContain('role="tab"');
   });
 });
 
-describe("the kind a relationship card names (#874)", () => {
-  /**
-   * The card's kind chip — the tone-`tint` label that says what the row *is*. Read off its own
-   * hook rather than off the whole render, because the card carries five chips and the defect
-   * was specifically the first one's word.
-   */
-  function kindChip(html: string): string {
-    const match = html.match(/<span[^>]*data-relationship-kind="([^"]+)"[^>]*>([\s\S]*?)<\/span>/);
-    if (match === null) throw new Error("a card drew no chip carrying the kind hook");
-    return match[2];
+describe("the word a relationship card carries (#1129)", () => {
+  /** The slice of the render that belongs to one row's card. */
+  function cardOf(html: string, id: string): string {
+    const from = html.indexOf(`data-relationship-card="${id}"`);
+    if (from < 0) throw new Error(`${id} drew no card`);
+    return html.slice(from);
   }
 
-  it("says Relationship on every card, on both seats", () => {
+  it("prints one of the four state words on every card, never a stored lifecycle value", () => {
     const html = render();
-    expect(kindChip(html)).toBe("Relationship");
-    // Every row's own card, not just the first: the chip is the card's, so a row that drew a
-    // different word would be a second defect behind the same assertion.
-    for (const one of rows) {
-      const from = html.slice(html.indexOf(`data-relationship-card="${one.id}"`));
-      expect(kindChip(from), one.id).toBe("Relationship");
+    const expected: Record<string, string> = {
+      "rel-draft": "Draft",
+      "rel-published": "Waiting on Invite",
+      "rel-running": "Stage 6 Live",
+      "rel-complete": "Stage 6 Live",
+      "rel-expired": "Paused",
+      "rel-pending": "Draft",
+    };
+    for (const [id, word] of Object.entries(expected)) {
+      const card = cardOf(html, id);
+      expect(card, id).toContain(word);
+      // The stored value is never what the reader sees.
+      for (const stored of ["published", "expired", "pending", "complete", "active"]) {
+        expect(card, `${id} prints the stored value "${stored}"`).not.toMatch(
+          new RegExp(`>${stored}<`, "i"),
+        );
+      }
     }
   });
 
-  it("never prints the word Template as a kind", () => {
-    const html = render();
-    expect(kindChip(html)).not.toBe("Template");
-    // The old defect in full: the word appeared as a chip on every card in the list.
-    expect(html).not.toContain(">Template<");
-  });
-
-  it("resolves the word from the fixture's kind table, not from a copy key on the card", () => {
-    // The chip's word is the **value** of the kind the list lists, spelled once in `data/pages`.
-    expect(itemLabel(sectionOf(copy, "kind"), "relationship")).toBe("Relationship");
-    // …and the `card` section no longer carries an item naming the concept the chip borrowed —
-    // the item that shipped as `{ id: "template", label: "Template" }` is what read as a kind.
+  it("resolves the four words from this screen's own fixture, not from a copy key on the card", () => {
+    const words = sectionOf(copy, "card-v2");
+    expect(itemLabel(words, "live")).toBe("Stage 6 Live");
+    expect(itemLabel(words, "waiting")).toBe("Waiting on Invite");
+    expect(itemLabel(words, "draft")).toBe("Draft");
+    expect(itemLabel(words, "paused")).toBe("Paused");
+    // The old card's kind table is still published, and the v2 card does not read it.
     const cardItemIds = (sectionOf(copy, "card").items ?? []).map((item) => item.id);
     expect(cardItemIds).not.toContain("template");
   });
 });
 
-describe("what the toolbar and the tabs select", () => {
+describe("what the toolbar and the chips select", () => {
   const ids = (list: readonly MemberRelationshipRow[]) => list.map((one) => one.id);
 
   it("searches the relationship's own title, not the template it was copied from", () => {
     expect(
-      ids(visibleRelationships(rows, { status: "all", query: "weekly", order: "newest" })),
+      ids(visibleRelationships(rows, { state: "all", query: "weekly", order: "newest" })),
     ).toEqual(["rel-draft"]);
     // The template title every row was copied from is on none of the cards' headings.
     expect(
-      visibleRelationships(rows, { status: "all", query: "copied from", order: "newest" }),
+      visibleRelationships(rows, { state: "all", query: "copied from", order: "newest" }),
     ).toEqual([]);
   });
 
@@ -254,38 +275,29 @@ describe("what the toolbar and the tabs select", () => {
     // An initiator's row knows its counterparty; a counterparty's row knows the initiator.
     // Two rows name Rowan, newest first.
     expect(
-      ids(visibleRelationships(rows, { status: "all", query: "rowan", order: "newest" })),
+      ids(visibleRelationships(rows, { state: "all", query: "rowan", order: "newest" })),
     ).toEqual(["rel-published", "rel-expired"]);
     expect(
-      ids(visibleRelationships(rows, { status: "all", query: "daniel", order: "newest" })),
+      ids(visibleRelationships(rows, { state: "all", query: "daniel", order: "newest" })),
     ).toEqual(["rel-running"]);
   });
 
-  it("filters on the stored status, and All keeps the states no tab names", () => {
+  it("filters on the state a row draws as, and All keeps every drawable row", () => {
     expect(
-      ids(visibleRelationships(rows, { status: "published", query: "", order: "newest" })),
+      ids(visibleRelationships(rows, { state: "waiting", query: "", order: "newest" })),
     ).toEqual(["rel-published"]);
-    expect(
-      ids(visibleRelationships(rows, { status: "all", query: "", order: "newest" })),
-    ).toContain("rel-pending");
-    for (const status of [
-      "draft",
-      "published",
-      "active",
-      "complete",
-      "expired",
-    ] as StatusFilter[]) {
-      expect(
-        visibleRelationships(rows, { status, query: "", order: "newest" }).every(
-          (one) => one.status === status,
-        ),
-      ).toBe(true);
-    }
+    // `pending` has no chip of its own and is a Draft, so the Draft chip holds both.
+    expect(ids(visibleRelationships(rows, { state: "draft", query: "", order: "newest" }))).toEqual(
+      ["rel-draft", "rel-pending"],
+    );
+    expect(ids(visibleRelationships(rows, { state: "all", query: "", order: "newest" }))).toContain(
+      "rel-pending",
+    );
   });
 
   it("orders by the instant the row was started, newest first unless asked otherwise", () => {
-    const newest = ids(visibleRelationships(rows, { status: "all", query: "", order: "newest" }));
-    const oldest = ids(visibleRelationships(rows, { status: "all", query: "", order: "oldest" }));
+    const newest = ids(visibleRelationships(rows, { state: "all", query: "", order: "newest" }));
+    const oldest = ids(visibleRelationships(rows, { state: "all", query: "", order: "oldest" }));
     expect(newest[0]).toBe("rel-published");
     expect(newest.at(-1)).toBe("rel-expired");
     expect(oldest).toEqual([...newest].reverse());
