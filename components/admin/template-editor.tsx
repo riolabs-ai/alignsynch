@@ -153,6 +153,132 @@ function Field({
 export const PRIVATE_BAND = "private" as const;
 export const CATALOGUE_BAND = "catalogue" as const;
 
+/**
+ * The retire band (#711) — archive / restore / destroy, inside the same card as the state it
+ * changes.
+ *
+ * **One band, two variants** (#1109). It used to be drawn only by the console (`band: "catalogue"`)
+ * because retiring a member's template was the console's call; the member's editor now carries the
+ * same three controls over the same three writes (`archiveMyTemplate` / `restoreMyTemplate` /
+ * `deleteMyTemplate` in `lib/member/templates.ts`, reaching them through the dashboard's server
+ * actions). The component is a function rather than a second copy of this markup for the reason
+ * #336 gives: two copies of one band is how the two variants drift apart.
+ *
+ * The delete's rule is **not** here. `deleteMyTemplate()` refuses a template a relationship was
+ * created from or one that was published, and writes nothing when it refuses; the dialog below is a
+ * confirmation that names what it would destroy, never the guard.
+ */
+function RetireBand({
+  copy,
+  title,
+  status,
+  pending,
+  outcome,
+  notice,
+  refusal,
+  onArchive,
+  onRestore,
+  onDelete,
+  onRetire,
+}: {
+  copy: PageCopySection;
+  title: string;
+  status: PublishStatus;
+  pending: boolean;
+  outcome: {
+    readonly kind: "archive" | "restore" | "delete";
+    readonly answer: TemplateVersionOutcome;
+  } | null;
+  notice: string | null;
+  refusal: string | null;
+  onArchive?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  onRestore?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  onDelete?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  onRetire: (
+    kind: "archive" | "restore" | "delete",
+    write: ((payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>) | undefined,
+  ) => void;
+}) {
+  if (onArchive === undefined && onRestore === undefined && onDelete === undefined) return null;
+
+  return (
+    <div data-template-retire={status} className="space-y-3 border-t pt-4">
+      <div className="space-y-1">
+        <p className="text-sm font-medium">{itemLabel(copy, "retire")}</p>
+        <p className="text-sm text-muted-foreground">{itemLabel(copy, "retire-body")}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        {status === "archived" ? (
+          <Button
+            type="button"
+            variant="outline"
+            data-template-restore
+            disabled={pending}
+            onClick={() => onRetire("restore", onRestore)}
+          >
+            {itemLabel(copy, "restore")}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            data-template-archive
+            disabled={pending}
+            onClick={() => onRetire("archive", onArchive)}
+          >
+            {itemLabel(copy, "archive")}
+          </Button>
+        )}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              data-template-delete-trigger
+              disabled={pending || onDelete === undefined}
+            >
+              {itemLabel(copy, "delete")}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent data-template-delete-dialog>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {fillLabel(itemLabel(copy, "delete-title"), { title })}
+              </AlertDialogTitle>
+              <AlertDialogDescription>{itemLabel(copy, "delete-body")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{itemLabel(copy, "cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                data-template-delete-confirm
+                onClick={() => onRetire("delete", onDelete)}
+              >
+                {itemLabel(copy, "delete-confirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      {notice === null ? null : (
+        <p
+          data-template-retire-notice={outcome?.kind ?? ""}
+          className="text-sm text-muted-foreground"
+        >
+          {notice}
+        </p>
+      )}
+      {refusal === null ? null : (
+        <p
+          data-template-retire-refusal={outcome?.answer.ok === false ? outcome.answer.code : ""}
+          className="text-sm"
+        >
+          {refusal}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function TemplateEditor({
   copy,
   sheetCopy,
@@ -168,6 +294,7 @@ export function TemplateEditor({
   onArchive,
   onRestore,
   onDelete,
+  deleteHref = ADMIN_TEMPLATES_PATH,
 }: {
   copy: PageCopy;
   /** The flow's own answer-sheet copy — the preview renders that surface's words. */
@@ -211,6 +338,12 @@ export function TemplateEditor({
   onArchive?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
   onRestore?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
   onDelete?: (payload: TemplateVersionFormPayload) => Promise<TemplateVersionOutcome>;
+  /**
+   * Where a successful delete lands (#1109). The row is gone, so staying on this URL would reload
+   * into a 404; the console goes back to its list, and the member's editor passes the dashboard's
+   * templates tab. Defaulted rather than required so the console's page is unchanged.
+   */
+  deleteHref?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -238,8 +371,17 @@ export function TemplateEditor({
   const aspectCopy = sectionOf(copy, "aspects");
   const preview = sectionOf(copy, "preview");
   const save = sectionOf(copy, "save");
-  const publishCopy =
-    band === "catalogue" ? sectionOf(copy, "publish") : sectionOf(copy, "private");
+  /**
+   * The publish/retire words, from the `publish` section in **both** variants.
+   *
+   * `publish` used to be the catalogue's alone, with the private band reading a section of its own
+   * because it drew none of those controls. Since #1109 the member's editor draws the retire band
+   * (archive / restore / delete), so the two variants share the words that band prints — and both
+   * fixtures declare them, which is what E23 requires of a component's asks. The private card's own
+   * heading and body still come from `private` (`privateCopy` below); what moved is the retire
+   * labels and refusals, not the sentence about publishing.
+   */
+  const publishCopy = sectionOf(copy, "publish");
   const refusals = sectionOf(copy, "refusals");
   const locked = sectionOf(copy, "locked");
   const problems = sectionOf(copy, "problems");
@@ -372,7 +514,7 @@ export function TemplateEditor({
       const answer = await write({ templateId: template.id });
       setRetireOutcome({ kind, answer });
       if (!answer.ok) return;
-      if (kind === "delete") router.push(ADMIN_TEMPLATES_PATH);
+      if (kind === "delete") router.push(deleteHref);
       else router.refresh();
     });
   }
@@ -591,6 +733,28 @@ export function TemplateEditor({
             <CardTitle>{privateCopy.heading}</CardTitle>
             <CardDescription>{sectionBody(privateCopy)}</CardDescription>
           </CardHeader>
+          <CardContent>
+            {/*
+              #1109 — the retire band is the member's too. Archive, restore and delete were the
+              retired `/templates/relationship` row menu's actions, and this editor is where they
+              live now: the same three controls, over `archiveMyTemplate`/`restoreMyTemplate`/
+              `deleteMyTemplate`, with the fixture's sentences. An archived row still draws the
+              state at the top of the page and its Aspects read-only below.
+            */}
+            <RetireBand
+              copy={publishCopy}
+              title={template.title}
+              status={status}
+              pending={versionPending}
+              outcome={retireOutcome}
+              notice={retireNotice}
+              refusal={retireRefusal}
+              onArchive={onArchive}
+              onRestore={onRestore}
+              onDelete={onDelete}
+              onRetire={retire}
+            />
+          </CardContent>
         </Card>
       ) : (
         <Card data-template-publish={status}>
@@ -679,94 +843,22 @@ export function TemplateEditor({
 
             {/*
               #711 — the retire band, inside the same card because it is the same question: what
-              this template is offered as. The delete control confirms in the shipped AlertDialog
-              and names what it destroys; the refusal it can still get is the server's, and the
-              sentence under the band is the fixture's, never this component's.
+              this template is offered as. #1109 lifted the markup into `RetireBand` so the member's
+              editor draws the same three controls over its own three writes.
             */}
-            {onArchive === undefined && onRestore === undefined && onDelete === undefined ? null : (
-              <div data-template-retire={status} className="space-y-3 border-t pt-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{itemLabel(publishCopy, "retire")}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {itemLabel(publishCopy, "retire-body")}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  {status === "archived" ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      data-template-restore
-                      disabled={versionPending}
-                      onClick={() => retire("restore", onRestore)}
-                    >
-                      {itemLabel(publishCopy, "restore")}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      data-template-archive
-                      disabled={versionPending}
-                      onClick={() => retire("archive", onArchive)}
-                    >
-                      {itemLabel(publishCopy, "archive")}
-                    </Button>
-                  )}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        data-template-delete-trigger
-                        disabled={versionPending || onDelete === undefined}
-                      >
-                        {itemLabel(publishCopy, "delete")}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent data-template-delete-dialog>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          {fillLabel(itemLabel(publishCopy, "delete-title"), {
-                            title: template.title,
-                          })}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {itemLabel(publishCopy, "delete-body")}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{itemLabel(publishCopy, "cancel")}</AlertDialogCancel>
-                        <AlertDialogAction
-                          data-template-delete-confirm
-                          onClick={() => retire("delete", onDelete)}
-                        >
-                          {itemLabel(publishCopy, "delete-confirm")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-                {retireNotice === null ? null : (
-                  <p
-                    data-template-retire-notice={retireOutcome?.kind ?? ""}
-                    className="text-sm text-muted-foreground"
-                  >
-                    {retireNotice}
-                  </p>
-                )}
-                {retireRefusal === null ? null : (
-                  <p
-                    data-template-retire-refusal={
-                      retireOutcome?.answer.ok === false ? retireOutcome.answer.code : ""
-                    }
-                    className="text-sm"
-                  >
-                    {retireRefusal}
-                  </p>
-                )}
-              </div>
-            )}
+            <RetireBand
+              copy={publishCopy}
+              title={template.title}
+              status={status}
+              pending={versionPending}
+              outcome={retireOutcome}
+              notice={retireNotice}
+              refusal={retireRefusal}
+              onArchive={onArchive}
+              onRestore={onRestore}
+              onDelete={onDelete}
+              onRetire={retire}
+            />
           </CardContent>
         </Card>
       )}

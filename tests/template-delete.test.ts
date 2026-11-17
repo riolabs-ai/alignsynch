@@ -23,11 +23,9 @@
  * The live proof — the rows really gone, a started relationship still resolving its title and its
  * Aspects — is `tests/template-delete-live.test.ts`, which runs against a branch.
  */
-import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LibraryTemplate } from "@/lib/flow/template-library";
-import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 
 /* ------------------------------------------------------------------ *\
  * The stub client
@@ -123,41 +121,13 @@ vi.mock("@/lib/db/client", () => ({
   },
 }));
 
-const { redirect, currentUser, listLibraryTemplates } = vi.hoisted(() => ({
-  redirect: vi.fn((to: string): never => {
-    throw new Error(`NEXT_REDIRECT:${to}`);
-  }),
-  currentUser: vi.fn(
-    async (): Promise<{ userId: string; email: string; name: string } | null> => null,
-  ),
-  listLibraryTemplates: vi.fn(async (_userId: string | null): Promise<LibraryTemplate[]> => []),
-}));
-
-vi.mock("next/navigation", () => ({ redirect }));
-vi.mock("@/lib/auth/session", () => ({ currentUser }));
-
-const { resolveTemplateHandle } = vi.hoisted(() => ({
-  resolveTemplateHandle: vi.fn(
-    async (_handle: string): Promise<{ id: string; slug: string } | undefined> => undefined,
-  ),
-}));
-
-vi.mock("@/lib/db/template-library", () => ({
-  listLibraryTemplates,
-  resolveTemplateHandle,
-}));
-
-/** `NextResponse.redirect` as a value the harness can read the destination off. */
-vi.mock("next/server", () => ({
-  NextResponse: {
-    redirect: (url: URL, status: number) =>
-      new Response(null, { status, headers: { location: url.toString() } }),
-  },
-}));
-
-import TemplateLibraryPage from "@/app/(mainlayout)/templates/relationship/page";
+/**
+ * **The endpoint and the library page those mocks served are gone** (#1109): the delete route and
+ * the row menu that posted to it retired with `/templates/relationship`. What is left is the writer
+ * this file exists for — `deleteTemplate()`'s referential rule — which the member's own
+ * `deleteMyTemplate()` mirrors in `lib/member/templates.ts`.
+ */
 import { deleteTemplate } from "@/lib/flow/templates";
-import { POST as postDelete } from "@/app/(mainlayout)/templates/relationship/[slug]/delete/route";
 
 const ACCOUNT_A = "account-a-avery";
 const ACCOUNT_B = "account-b-rowan";
@@ -171,9 +141,6 @@ function statements(pattern: RegExp) {
 beforeEach(() => {
   vi.clearAllMocks();
   stub.reset();
-  currentUser.mockResolvedValue({ userId: ACCOUNT_A, email: "avery@example.test", name: "Avery" });
-  listLibraryTemplates.mockResolvedValue([]);
-  resolveTemplateHandle.mockResolvedValue(undefined);
 });
 
 describe("deleting a template you wrote", () => {
@@ -262,171 +229,5 @@ describe("deleting a template you wrote", () => {
     const result = await deleteTemplate(TEMPLATE, ACCOUNT_A);
 
     expect(result).toEqual({ ok: false, code: "template-has-relationships" });
-  });
-});
-
-describe("the delete endpoint", () => {
-  function form(over: Record<string, string> = {}): Request {
-    const body = new FormData();
-    for (const [key, value] of Object.entries(over)) body.set(key, value);
-    return new Request(`http://localhost${TEMPLATE_LIBRARY_PATH}`, { method: "POST", body });
-  }
-
-  it("deletes the row the slug names and lands on the library with a delete notice", async () => {
-    resolveTemplateHandle.mockResolvedValue({ id: TEMPLATE, slug: "draft-mine" });
-
-    const response = await postDelete(form({ view: "mine" }), {
-      params: Promise.resolve({ slug: "draft-mine" }),
-    });
-
-    expect(response.status).toBe(303);
-    const location = response.headers.get("location") ?? "";
-    expect(location).toContain(`${TEMPLATE_LIBRARY_PATH}?`);
-    expect(location).toContain("view=mine");
-    expect(location).toContain("deleted=1");
-    expect(statements(/^DELETE /)).toHaveLength(1);
-  });
-
-  it("carries a refusal back as a named problem, never as a 500", async () => {
-    resolveTemplateHandle.mockResolvedValue({ id: TEMPLATE, slug: "draft-mine" });
-    stub.state.version = 1;
-
-    const response = await postDelete(form(), {
-      params: Promise.resolve({ slug: "draft-mine" }),
-    });
-
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location") ?? "").toContain("problem=template-has-versions");
-    expect(statements(/^DELETE /)).toHaveLength(0);
-  });
-
-  it("sends a signed-out caller to /login with the library preserved", async () => {
-    currentUser.mockResolvedValue(null);
-
-    const response = await postDelete(form(), {
-      params: Promise.resolve({ slug: "draft-mine" }),
-    });
-
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location") ?? "").toContain("/login");
-    expect(statements(/^DELETE /)).toHaveLength(0);
-  });
-
-  it("sends an unknown handle back with `unknown-template` and writes nothing", async () => {
-    const response = await postDelete(form(), {
-      params: Promise.resolve({ slug: "no-such-template" }),
-    });
-
-    expect(response.headers.get("location") ?? "").toContain("problem=unknown-template");
-    expect(statements(/^DELETE /)).toHaveLength(0);
-  });
-});
-
-/* ------------------------------------------------------------------ *\
- * The row action and its confirm step
- * ------------------------------------------------------------------ */
-
-const builtIn: LibraryTemplate = {
-  id: "assessment-relationship-basics",
-  slug: "relationship-basics",
-  title: "Relationship Basics",
-  summary: "Relationship Type: Personal — Time, housework, money.",
-  status: "published",
-  createdAt: "2026-10-01T09:00:00.000Z",
-  aspectCount: 5,
-  sessionCount: 0,
-  authorship: "built-in",
-};
-
-/** A draft this account wrote: no version, so it is the row delete exists for. */
-const draftedByA: LibraryTemplate = {
-  id: "assessment-draft-mine",
-  slug: "draft-mine",
-  title: "Our Weekly Reset",
-  summary: "Written in the app: 2 Aspects.",
-  status: "draft",
-  createdAt: "2026-11-01T09:00:00.000Z",
-  aspectCount: 2,
-  sessionCount: 0,
-  authorship: "mine",
-};
-
-async function renderLibrary(params: Record<string, string> = {}): Promise<string> {
-  return renderToStaticMarkup(await TemplateLibraryPage({ searchParams: Promise.resolve(params) }));
-}
-
-describe("the delete action in a row", () => {
-  it("offers the account's own row a confirmed delete, and never a built-in one", async () => {
-    listLibraryTemplates.mockResolvedValue([builtIn, draftedByA]);
-
-    const html = await renderLibrary();
-
-    // The confirm is a `<details>` disclosure holding the real POST form: the first press only
-    // opens it, so a delete cannot happen on a single mis-click, and the screen still ships no
-    // JavaScript (the same shape `steps-panel.tsx` uses for its reword form).
-    expect(html).toContain(`data-template-delete-confirm="${draftedByA.id}"`);
-    expect(html).toContain("/templates/relationship/draft-mine/delete");
-
-    // One delete control in the whole page: the built-in row carries none.
-    expect(html.match(/data-template-delete-confirm=/g) ?? []).toHaveLength(1);
-  });
-
-  it("asks before it deletes, in the fixture's own words", async () => {
-    listLibraryTemplates.mockResolvedValue([draftedByA]);
-
-    const html = await renderLibrary();
-
-    expect(html).toContain("cannot be undone");
-    // The confirm names the template it is about.
-    expect(html).toContain("Our Weekly Reset");
-    expect(html).toContain("Delete");
-  });
-
-  it("offers no delete on an archived row either — archiving is not a licence to destroy", async () => {
-    listLibraryTemplates.mockResolvedValue([{ ...draftedByA, status: "archived" }]);
-
-    const html = await renderLibrary();
-
-    expect(html).toContain(`data-template-delete-confirm="${draftedByA.id}"`);
-  });
-});
-
-describe("what the library says after a refusal", () => {
-  beforeEach(() => {
-    listLibraryTemplates.mockResolvedValue([draftedByA]);
-  });
-
-  it("says a published template cannot be deleted and points at archive", async () => {
-    const html = await renderLibrary({ problem: "template-has-versions", refused: "draft-mine" });
-
-    expect(html).toContain('data-template-library-notice="has-versions"');
-    expect(html).toContain("Our Weekly Reset");
-    expect(html).toContain("Archive it instead");
-  });
-
-  it("says a template a relationship was started from cannot be deleted, and why", async () => {
-    const html = await renderLibrary({
-      problem: "template-has-relationships",
-      refused: "draft-mine",
-    });
-
-    expect(html).toContain('data-template-library-notice="has-relationships"');
-    expect(html).toContain("Our Weekly Reset");
-    expect(html).toContain("Archive it instead");
-  });
-
-  it("says what happened even when the refused row is not on the filtered list", async () => {
-    const html = await renderLibrary({ problem: "template-has-versions", refused: "gone" });
-
-    expect(html).toContain('data-template-library-notice="has-versions"');
-    expect(html).toContain("Archive it instead");
-  });
-
-  it("names a delete without a title, because the row it would name is gone", async () => {
-    const html = await renderLibrary({ deleted: "1" });
-
-    expect(html).toContain('data-template-library-notice="deleted"');
-    // Nothing from the query string is echoed: the notice is the fixture's own sentence.
-    expect(html).not.toContain("deleted=1");
   });
 });

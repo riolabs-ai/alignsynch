@@ -122,13 +122,20 @@ export interface ClonableTemplate {
 }
 
 /**
- * The public templates a member may clone.
+ * The templates a member may copy into one of their own — the public catalogue, **and their own**.
  *
- * `visibility = 'public'` **and** `status = 'published'` **and** at least one Aspect. The last
- * clause is the picker's own: a template with none cannot be copied into a record `zAssessment`
- * would accept, so offering it would be offering a form that refuses. `owner_user_id IS DISTINCT
- * FROM $1` keeps a member's own public row (an operator's, in practice) out of "clone somebody
- * else's"; it is not a permission, it is deduplication.
+ * **Own rows are here because duplicating your own template is a real action** (#1109). Until the
+ * legacy `/templates/relationship` listing retired, its row menu offered "duplicate" on a template
+ * the member had written; the dashboard's copy band is that action's only home now, so the band
+ * lists what a member can copy and a row they own is copyable by them.
+ *
+ * The public half is `visibility = 'public'` **and** `status = 'published'` **and** at least one
+ * Aspect. The last clause is the picker's own: a template with none cannot be copied into a record
+ * `zAssessment` would accept, so offering it would be offering a form that refuses.
+ * `owner_user_id IS DISTINCT FROM $1` on that half keeps a member's own row out of "copy somebody
+ * else's" — it is not a permission, it is deduplication, and the second half is where an own row
+ * appears exactly once. Both halves exclude a relationship's private copy (`relationship.template_id`
+ * on a private row): that row is not a template anybody authored, and it has its own fork path.
  */
 export async function listClonableTemplates(userId: string): Promise<ClonableTemplate[]> {
   const rows = await queryRows<{
@@ -142,11 +149,22 @@ export async function listClonableTemplates(userId: string): Promise<ClonableTem
             (SELECT count(*) FROM item i WHERE i.record_id = r.id)::int AS aspects
        FROM record r
       WHERE r.record_type = 'assessment'
-        AND r.visibility = 'public'
-        AND r.status = 'published'
-        AND r.owner_user_id IS DISTINCT FROM $1
         AND NOT EXISTS (SELECT 1 FROM session own WHERE own.record_id = r.id)
         AND EXISTS (SELECT 1 FROM item i WHERE i.record_id = r.id)
+        AND (
+          (
+            r.visibility = 'public'
+            AND r.status = 'published'
+            AND r.owner_user_id IS DISTINCT FROM $1
+          )
+          OR (
+            r.owner_user_id = $1
+            AND NOT EXISTS (
+              SELECT 1 FROM relationship rel
+               WHERE rel.template_id = r.id AND r.visibility = 'private'
+            )
+          )
+        )
       ORDER BY r.title`,
     [userId],
   );
@@ -327,13 +345,20 @@ export interface CloneRequest {
 }
 
 /**
- * Clone a **public** template into a private one of the member's own.
+ * Clone a template into a private one of the member's own — the catalogue's, or their own.
  *
  * The copy is `INSERT … SELECT` over the source's `item` rows, in the transaction: the source can
  * be withdrawn between the page's read and this write, so a copy assembled from a value the screen
  * held would be a copy of a template nobody may use any more. The source is read `FOR SHARE`, the
  * same lock `createSessionFromTemplate` takes, so a concurrent unpublish waits rather than
  * committing under a copy that is half-written.
+ *
+ * **Two sources are copyable, and the difference is a product rule.** A public published template
+ * is how a person takes the catalogue's starting point and makes it theirs; **a template they own**
+ * is the duplicate action the retired `/templates/relationship` row menu carried (#1109), and it is
+ * offered here because this band is that action's only home now. Anything else — another account's
+ * row, a relationship's private copy — is `no-such-template`, which is the same refusal an id that
+ * names nothing gets, so a prober learns nothing about which ids exist.
  *
  * The rows written are the member's: `owner_user_id` and `author_user_id` are the actor's,
  * `visibility` is `private`, `status` is `draft`. Nothing links the clone back to the original —
@@ -358,8 +383,9 @@ export async function clonePublicTemplate(
           summary: string;
           status: string;
           visibility: string;
+          owner_user_id: string | null;
         }>(
-          `SELECT id, slug, title, summary, status, visibility
+          `SELECT id, slug, title, summary, status, visibility, owner_user_id
              FROM record
             WHERE id = $1
               AND record_type = 'assessment'
@@ -368,10 +394,14 @@ export async function clonePublicTemplate(
           [request.templateId],
         );
         const from = source.rows[0];
-        if (from === undefined || from.visibility !== "public" || from.status !== "published") {
+        const copyable =
+          from !== undefined &&
+          ((from.visibility === "public" && from.status === "published") ||
+            from.owner_user_id === request.actorUserId);
+        if (!copyable) {
           throw new MemberTemplateRefused(
             "no-such-template",
-            `"${request.templateId}" is not a public template — a member clones the catalogue, not a private row`,
+            `"${request.templateId}" is not a template this account may copy — the catalogue offers published templates, and a member copies their own`,
           );
         }
 
@@ -534,6 +564,197 @@ export async function savePrivateTemplate(
 }
 
 /* ------------------------------------------------------------------ *
+ * Retire: archive, restore, destroy — the member's own template
+ * ------------------------------------------------------------------ */
+
+/**
+ * What a retire is asked for: who, why, which template.
+ *
+ * The three writers below are the dashboard's half of #1109: `/templates/relationship` was the only
+ * surface that could archive, unarchive or delete a member's own template, and retiring that listing
+ * without these would have deleted three actions a member has. They live here rather than in
+ * `lib/admin/templates.ts` for the reason `lib/admin/roles.ts` gives: the console's retire pair is
+ * floored at `admin` because the catalogue is what the product offers, while these three act on a
+ * row whose `owner_user_id` is the caller's, which is `template.draft`'s rung (`member`).
+ */
+export interface MemberTemplateRetireRequest {
+  readonly actorUserId: string;
+  /** The audit sentence, composed by the caller (`lib/member/template-reasons.ts`). */
+  readonly reason: string;
+  readonly templateId: string;
+}
+
+/** The row a retire begins from: enough to write the audit row's `before` and its `after`. */
+interface RetirableTemplateRow {
+  readonly id: string;
+  readonly slug: string;
+  readonly title: string;
+  readonly status: string;
+}
+
+/**
+ * The template a retire may touch, read **inside** the transaction that writes.
+ *
+ * `undefined`-shaped failures are two refusals, not one: an id that names no template this account
+ * owns and an id that names nothing at all both answer `no-such-template` (`readMyTemplate`'s rule —
+ * a distinguishable "not yours" tells a prober which ids are real), and a row that exists without
+ * being the caller's answers `not-yours`.
+ */
+async function lockOwnedTemplate(
+  sql: ActSql,
+  request: MemberTemplateRetireRequest,
+): Promise<RetirableTemplateRow> {
+  const found = await sql.query<RetirableTemplateRow & { owner_user_id: string | null }>(
+    `SELECT r.id, r.slug, r.title, r.status, r.owner_user_id
+       FROM record r
+      WHERE r.id = $1
+        AND r.record_type = 'assessment'
+        AND NOT EXISTS (SELECT 1 FROM session own WHERE own.record_id = r.id)
+        FOR UPDATE OF r`,
+    [request.templateId],
+  );
+  const row = found.rows[0];
+  if (row === undefined) {
+    throw new MemberTemplateRefused(
+      "no-such-template",
+      `no template record holds the id "${request.templateId}"`,
+    );
+  }
+  if (row.owner_user_id !== request.actorUserId) {
+    throw new MemberTemplateRefused(
+      "not-yours",
+      `template "${row.slug}" belongs to another account; only its owner may retire it`,
+    );
+  }
+  return { id: row.id, slug: row.slug, title: row.title, status: row.status };
+}
+
+/**
+ * Archive a template the member owns.
+ *
+ * Archiving is the reversible half, and the fixture says what it means: the row stops being offered
+ * and every relationship that was created from it keeps the version it copied. `already-archived`
+ * is a refusal rather than a silent no-op, because an archive control on an archived row is a
+ * question ("did anything happen?") the answer has to settle.
+ */
+export async function archiveMyTemplate(
+  request: MemberTemplateRetireRequest,
+  runner?: ActTransactionRunner,
+): Promise<ActResult<RetirableTemplateRow>> {
+  return act<RetirableTemplateRow>(
+    {
+      actorUserId: request.actorUserId,
+      action: "template.draft" satisfies AdminAction,
+      target: { table: "record", id: request.templateId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const before = await lockOwnedTemplate(sql, request);
+        if (before.status === "archived") {
+          throw new MemberTemplateRefused(
+            "already-archived",
+            `"${before.slug}" is already archived: there is nothing to retire`,
+          );
+        }
+
+        await sql.query("UPDATE record SET status = 'archived' WHERE id = $1", [before.id]);
+
+        return { before, after: { ...before, status: "archived" } };
+      },
+    },
+    runner,
+  );
+}
+
+/**
+ * Bring an archived template back as a working copy — `draft`, never `published`.
+ *
+ * Restoring to the state it was retired from would be `published` for a template that never had a
+ * version, and a member's row is never published to the catalogue (public listing is admin-curated,
+ * #533). `draft` is also the honest word: nothing is being offered, it is being handed back.
+ */
+export async function restoreMyTemplate(
+  request: MemberTemplateRetireRequest,
+  runner?: ActTransactionRunner,
+): Promise<ActResult<RetirableTemplateRow>> {
+  return act<RetirableTemplateRow>(
+    {
+      actorUserId: request.actorUserId,
+      action: "template.draft" satisfies AdminAction,
+      target: { table: "record", id: request.templateId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const before = await lockOwnedTemplate(sql, request);
+        if (before.status !== "archived") {
+          throw new MemberTemplateRefused(
+            "not-archived",
+            `"${before.slug}" is ${before.status}: there is nothing to restore`,
+          );
+        }
+
+        await sql.query("UPDATE record SET status = 'draft' WHERE id = $1", [before.id]);
+
+        return { before, after: { ...before, status: "draft" } };
+      },
+    },
+    runner,
+  );
+}
+
+/**
+ * Destroy a template no reader can reach, and refuse every row that has one.
+ *
+ * The same referential rule the console's delete enforces, with the two codes this screen's fixture
+ * carries: a relationship was created from it (`template-in-use` — archive it), or it has a
+ * published version (`template-published` — its history is what the catalogue offered). What is
+ * left is a draft nobody answered under, and `item` cascades from `record`, so one statement is
+ * enough. The audit row's `before` is the last copy of the template that exists afterwards.
+ */
+export async function deleteMyTemplate(
+  request: MemberTemplateRetireRequest,
+  runner?: ActTransactionRunner,
+): Promise<ActResult<RetirableTemplateRow>> {
+  return act<RetirableTemplateRow>(
+    {
+      actorUserId: request.actorUserId,
+      action: "template.draft" satisfies AdminAction,
+      target: { table: "record", id: request.templateId },
+      reason: request.reason,
+      mutate: async (sql) => {
+        const before = await lockOwnedTemplate(sql, request);
+
+        const started = await sql.query<{ started: number }>(
+          `SELECT (SELECT count(*) FROM session s WHERE s.template_record_id = $1)
+                + (SELECT count(*) FROM relationship rel WHERE rel.template_id = $1) AS started`,
+          [before.id],
+        );
+        if (Number(started.rows[0]?.started ?? 0) > 0) {
+          throw new MemberTemplateRefused(
+            "template-in-use",
+            `"${before.slug}" was used by a relationship — archive it. A template somebody answered under is never destroyed`,
+          );
+        }
+
+        const versions = await sql.query<{ version: number | null }>(
+          "SELECT max(version) AS version FROM template_version WHERE template_record_id = $1",
+          [before.id],
+        );
+        if ((versions.rows[0]?.version ?? null) !== null) {
+          throw new MemberTemplateRefused(
+            "template-published",
+            `"${before.slug}" has a published version: its history is what the catalogue offered — archive it`,
+          );
+        }
+
+        await sql.query("DELETE FROM record WHERE id = $1", [before.id]);
+
+        return { before, after: { ...before, status: "deleted" } };
+      },
+    },
+    runner,
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * Refusals
  * ------------------------------------------------------------------ */
 
@@ -543,8 +764,19 @@ export async function savePrivateTemplate(
  * `act()`'s own refusals (`ActRefused`: a short reason, a role below the floor) and these are
  * different kinds of answer, and the action maps both to one code union so the screen draws one
  * sentence per code.
+ *
+ * The last four belong to the retire writers (#1109), and each names a state of the row rather than
+ * a rule: already archived, not archived, answered under, published. Every one of them has a
+ * sentence in the member editor's fixture.
  */
-export type MemberTemplateRefusal = "no-such-template" | "not-yours" | "not-editable";
+export type MemberTemplateRefusal =
+  | "no-such-template"
+  | "not-yours"
+  | "not-editable"
+  | "already-archived"
+  | "not-archived"
+  | "template-in-use"
+  | "template-published";
 
 export class MemberTemplateRefused extends Error {
   readonly reason: MemberTemplateRefusal;

@@ -1,35 +1,25 @@
 /**
- * `/templates/relationship` — built-in vs authored, per account (#console 5/5, #794).
+ * The template library's rules — the half that outlived its screens (#794, #1109).
  *
- * The card's four claims, each one a test:
+ * `/templates/relationship`, its authoring form and its read-only detail page were retired in
+ * #1109: every action they carried lives on `/dashboard/templates[?tab=mine]` and
+ * `/dashboard/templates/<id>`, and the three addresses answer a 308. So the cases here are the ones
+ * whose subjects are still live code:
  *
- *   * **the author rule is one function.** `authorshipOf` / `canUseTemplate`: `NULL` is a
- *     built-in, the viewer's id is "mine", anything else is somebody else's and usable by nobody.
- *     A template written before `0011_console_columns.sql` has `NULL` and is therefore a
- *     built-in — the third case the screen has to be honest about.
- *   * **the tab is a filter, not a second read.** `view=mine` over the rows the account may use
- *     leaves exactly its own; `view=built-in` leaves exactly the platform's.
- *   * **the three states render as themselves** — built-ins only, built-ins + own, and nothing at
- *     all — with distinct markers, so a state is assertable without reading prose.
- *   * **the detail page is read-only and 404s a stranger's template.**
+ *   the author rule   `authorshipOf` / `canUseTemplate` — what `lib/flow/templates.ts` asks before
+ *                     a status write, and what every member read filters on.
+ *   the filters       `filterLibrary` / `libraryStateOf` / `parseLibrary*` — pure functions in
+ *                     `lib/flow/template-library.ts`, and `archiveTargetOf` beside them.
  *
- * The page modules are driven directly (the same way `tests/my-sessions.test.ts` drives its
- * route): `currentUser` and the two reads are mocked, so these cases prove the page's decisions
- * without a database, and the live proof against real rows is the acceptance run in the PR.
+ * **What went with the pages, and where it is covered now.** The rendered-library cases, the
+ * detail page's 307 canonicalisation and the per-row archive/duplicate/delete controls were that
+ * page's; the two writes they exercised are the dashboard's copy band and retire band now — the
+ * card and the tab are pinned by `tests/member-templates-tabs.test.ts`, and the retire refusals by
+ * `archiveMyTemplate` / `deleteMyTemplate` in `lib/member/templates.ts` (live-checked by
+ * `pnpm db:verify`).
  */
-import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { matchRoute } from "@/content/route-manifest";
-import { routeManifest } from "@/content/routes";
-import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
-import { templateLibraryPageCopy } from "@/data/pages/assessment-templates";
-import type { LibraryTemplateDetail } from "@/lib/db/template-library";
-import {
-  RELATIONSHIP_TEMPLATES_PATH,
-  TEMPLATE_LIBRARY_PATH,
-  relationshipTemplatePath,
-} from "@/lib/flow/paths";
 import {
   authorshipOf,
   archiveTargetOf,
@@ -40,32 +30,6 @@ import {
   parseLibraryView,
   type LibraryTemplate,
 } from "@/lib/flow/template-library";
-
-const { redirect, notFound, currentUser, listLibraryTemplates, readLibraryTemplate } = vi.hoisted(
-  () => ({
-    redirect: vi.fn((to: string): never => {
-      throw new Error(`NEXT_REDIRECT:${to}`);
-    }),
-    notFound: vi.fn((): never => {
-      throw new Error("NEXT_NOT_FOUND");
-    }),
-    currentUser: vi.fn(
-      async (): Promise<{ userId: string; email: string; name: string } | null> => null,
-    ),
-    listLibraryTemplates: vi.fn(async (_userId: string | null): Promise<LibraryTemplate[]> => []),
-    readLibraryTemplate: vi.fn(
-      async (_id: string, _userId: string | null): Promise<LibraryTemplateDetail | undefined> =>
-        undefined,
-    ),
-  }),
-);
-
-vi.mock("next/navigation", () => ({ redirect, notFound }));
-vi.mock("@/lib/auth/session", () => ({ currentUser }));
-vi.mock("@/lib/db/template-library", () => ({ listLibraryTemplates, readLibraryTemplate }));
-
-import TemplateLibraryPage from "@/app/(mainlayout)/templates/relationship/page";
-import TemplateDetailPage from "@/app/(mainlayout)/templates/relationship/[slug]/page";
 
 const ACCOUNT_A = "account-a-avery";
 const ACCOUNT_B = "account-b-rowan";
@@ -105,30 +69,6 @@ const archivedByA: LibraryTemplate = {
   status: "archived",
   sessionCount: 4,
 };
-
-function asSignedIn(userId: string): void {
-  currentUser.mockResolvedValue({ userId, email: "avery@example.test", name: "Avery" });
-}
-
-async function renderLibrary(params: Record<string, string> = {}): Promise<string> {
-  return renderToStaticMarkup(await TemplateLibraryPage({ searchParams: Promise.resolve(params) }));
-}
-
-async function renderDetail(slug: string): Promise<string> {
-  return renderToStaticMarkup(await TemplateDetailPage({ params: Promise.resolve({ slug }) }));
-}
-
-/** The cards the render drew, by the ids the shared card stamped on them (#409). */
-function renderedRowIds(html: string): string[] {
-  return [...html.matchAll(/data-template-card="([^"]+)"/g)].map((match) => match[1]);
-}
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  currentUser.mockResolvedValue(null);
-  listLibraryTemplates.mockResolvedValue([]);
-  readLibraryTemplate.mockResolvedValue(undefined);
-});
 
 describe("the author rule", () => {
   it("reads a NULL author as the platform's, and a missing one the same way", () => {
@@ -206,220 +146,5 @@ describe("the tabs are filters over the rows the account may use", () => {
     expect(parseLibraryView(undefined)).toBe("all");
     expect(parseLibraryStatus("archived")).toBe("archived");
     expect(parseLibraryStatus("draft")).toBe("all");
-  });
-});
-
-describe("the page", () => {
-  it("registers a path the manifest can match, in both directions", () => {
-    // #794 — the library is under the template noun, and `[slug]` is the segment: `record.slug`
-    // is what a URL carries, `record.id` stays the storage handle.
-    expect(TEMPLATE_LIBRARY_PATH).toBe("/templates/relationship");
-    expect(TEMPLATE_LIBRARY_PATH).toBe(RELATIONSHIP_TEMPLATES_PATH);
-    expect(matchRoute(routeManifest, TEMPLATE_LIBRARY_PATH)?.kind).toBe("static");
-    expect(matchRoute(routeManifest, relationshipTemplatePath("assessment-x"))?.kind).toBe(
-      "dynamic",
-    );
-  });
-
-  it("sends a signed-out visitor to /login with this path preserved", async () => {
-    await expect(renderLibrary()).rejects.toThrow(
-      "NEXT_REDIRECT:/login?next=%2Ftemplates%2Frelationship",
-    );
-    expect(listLibraryTemplates).not.toHaveBeenCalled();
-  });
-
-  it("reads with the session's own id and nothing else", async () => {
-    asSignedIn(ACCOUNT_A);
-    await renderLibrary();
-    expect(listLibraryTemplates).toHaveBeenCalledWith(ACCOUNT_A);
-  });
-
-  it("draws the built-ins-only state: the four built-ins, no Mine row", async () => {
-    asSignedIn(ACCOUNT_B);
-    listLibraryTemplates.mockResolvedValue([builtIn]);
-    const html = await renderLibrary();
-
-    expect(renderedRowIds(html)).toEqual([builtIn.id]);
-    expect(html).toContain("Built-in");
-    expect(html).not.toContain("Yours");
-    expect(html).not.toContain("data-template-library-empty");
-  });
-
-  it("draws the built-ins + own state, and Mine leaves only the account's rows", async () => {
-    asSignedIn(ACCOUNT_A);
-    listLibraryTemplates.mockResolvedValue([builtIn, authoredByA, archivedByA]);
-
-    const all = await renderLibrary();
-    expect(renderedRowIds(all)).toEqual([builtIn.id, authoredByA.id, archivedByA.id]);
-
-    const mine = await renderLibrary({ view: "mine" });
-    expect(renderedRowIds(mine)).toEqual([authoredByA.id, archivedByA.id]);
-
-    const builtIns = await renderLibrary({ view: "built-in" });
-    expect(renderedRowIds(builtIns)).toEqual([builtIn.id]);
-  });
-
-  it("offers archive on an own row and unarchive on an archived one, and neither on a built-in", async () => {
-    asSignedIn(ACCOUNT_A);
-    listLibraryTemplates.mockResolvedValue([builtIn, authoredByA, archivedByA]);
-    const html = await renderLibrary();
-
-    const rowOf = (id: string) => {
-      const cards = html.match(/<article[^>]*data-template-card="[^"]+"[\s\S]*?<\/article>/g) ?? [];
-      const found = cards.find((card) => card.includes(`data-template-card="${id}"`));
-      if (found === undefined) throw new Error(`no rendered card ${id}`);
-      return found.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
-    };
-
-    expect(rowOf(builtIn.id)).not.toContain("Archive");
-    expect(rowOf(builtIn.id)).toContain("Duplicate");
-    expect(rowOf(authoredByA.id)).toContain("Archive");
-    expect(rowOf(archivedByA.id)).toContain("Unarchive");
-  });
-
-  it("draws the empty state when the account may use no template at all", async () => {
-    asSignedIn(ACCOUNT_A);
-    listLibraryTemplates.mockResolvedValue([]);
-    const html = await renderLibrary();
-
-    expect(html).toContain("data-template-library-empty");
-    expect(renderedRowIds(html)).toEqual([]);
-  });
-
-  it("draws the no-match state when a search excludes everything", async () => {
-    asSignedIn(ACCOUNT_A);
-    listLibraryTemplates.mockResolvedValue([builtIn, authoredByA]);
-    const html = await renderLibrary({ q: "nothing called this" });
-
-    expect(html).toContain("data-template-library-no-match");
-    expect(html).not.toContain("data-template-library-empty");
-    expect(renderedRowIds(html)).toEqual([]);
-  });
-
-  it("names a write's notice from the record, never from the query string", async () => {
-    asSignedIn(ACCOUNT_A);
-    listLibraryTemplates.mockResolvedValue([builtIn, authoredByA]);
-
-    const known = await renderLibrary({ archived: authoredByA.id });
-    expect(known).toContain('data-template-library-notice="archived"');
-    expect(known).toContain("Our Quarterly Check-In");
-
-    const crafted = await renderLibrary({ archived: "<script>alert(1)</script>" });
-    expect(crafted).not.toContain("data-template-library-notice");
-    expect(crafted).not.toContain("<script>alert(1)</script>");
-  });
-
-  it("says that a template with no author reads as a built-in", async () => {
-    asSignedIn(ACCOUNT_A);
-    listLibraryTemplates.mockResolvedValue([builtIn]);
-    const html = await renderLibrary();
-    expect(html).toContain("data-template-library-legacy");
-    expect(html).toContain("no author on its row");
-  });
-});
-
-describe("the detail page", () => {
-  const detail: LibraryTemplateDetail = {
-    template: authoredByA,
-    aspects: [
-      {
-        id: "aspect-1",
-        position: 1,
-        prompt: "How much of the load do I carry at home?",
-        leftValue: "All of it",
-        rightValue: "None of it",
-      },
-    ],
-  };
-
-  it("sends a signed-out visitor to /login, and 404s a template it may not read", async () => {
-    await expect(renderDetail(authoredByA.id)).rejects.toThrow("NEXT_REDIRECT");
-
-    asSignedIn(ACCOUNT_B);
-    readLibraryTemplate.mockResolvedValue(undefined);
-    await expect(renderDetail(authoredByA.id)).rejects.toThrow("NEXT_NOT_FOUND");
-    expect(readLibraryTemplate).toHaveBeenCalledWith(authoredByA.id, ACCOUNT_B);
-  });
-
-  /**
-   * #794 — the address carries the slug, and the read still answers an id.
-   *
-   * A bookmarked `/assessment/templates/<id>` 308s with the id still in the segment (a redirect row
-   * cannot look a row up), so the page resolves either handle and then sends the browser to the
-   * slug form: the address bar ends on the address the app itself writes, and the storage handle
-   * never becomes the app's own link.
-   */
-  it("canonicalises an id-shaped address to the slug, one 307 and no second entry point", async () => {
-    asSignedIn(ACCOUNT_A);
-    readLibraryTemplate.mockResolvedValue(detail);
-
-    await expect(renderDetail(authoredByA.id)).rejects.toThrow(
-      `NEXT_REDIRECT:${relationshipTemplatePath(authoredByA.slug)}`,
-    );
-    expect(readLibraryTemplate).toHaveBeenCalledWith(authoredByA.id, ACCOUNT_A);
-    expect(relationshipTemplatePath(authoredByA.slug)).toBe(
-      `/templates/relationship/${authoredByA.slug}`,
-    );
-  });
-
-  it("draws a template's Aspects with their Values", async () => {
-    asSignedIn(ACCOUNT_A);
-    readLibraryTemplate.mockResolvedValue(detail);
-    const html = await renderDetail(authoredByA.slug);
-
-    expect(html).toContain('data-template-aspect="aspect-1"');
-    expect(html).toContain("How much of the load do I carry at home?");
-    expect(html).toContain('data-template-aspect-left="All of it"');
-    expect(html).toContain('data-template-aspect-right="None of it"');
-    expect(html).toContain("Left Value");
-    expect(html).toContain("Right Value");
-    expect(html).not.toContain("data-template-detail-archived");
-  });
-
-  it("says what archiving did, and offers no way to start a session from it", async () => {
-    asSignedIn(ACCOUNT_A);
-    readLibraryTemplate.mockResolvedValue({
-      template: { ...authoredByA, status: "archived" },
-      aspects: detail.aspects,
-    });
-    const html = await renderDetail(authoredByA.slug);
-
-    expect(html).toContain("data-template-detail-archived");
-    expect(html).toContain("keeps its own copy of the Aspects");
-    expect(html).not.toContain("Start a session");
-    expect(html).toContain("Unarchive");
-  });
-});
-
-describe("the copy the two pages read", () => {
-  it("carries every section and item the components ask for", () => {
-    const librarySections = [
-      "list",
-      "tabs",
-      "status",
-      "search",
-      "columns",
-      "row",
-      "legacy",
-      "create",
-      "empty",
-      "no-match",
-      "notice",
-      "unavailable",
-    ];
-    for (const id of librarySections) {
-      expect(
-        templateLibraryPageCopy.sections?.some((section) => section.id === id),
-        `library fixture is missing section ${id}`,
-      ).toBe(true);
-    }
-
-    const detailSections = ["back", "facts", "aspects", "actions", "archive-note"];
-    for (const id of detailSections) {
-      expect(
-        templateDetailPageCopy.sections?.some((section) => section.id === id),
-        `detail fixture is missing section ${id}`,
-      ).toBe(true);
-    }
   });
 });

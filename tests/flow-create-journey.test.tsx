@@ -9,7 +9,7 @@
  * So this file follows the rendered hrefs:
  *
  *   1. the product page's CTA is **"Create Relationship"** and its href is this template's own
- *      create path — not the library it was found in, and not "Start a session";
+ *      create path — not the library it was found in, and not "Start an instance";
  *   2. the create step, signed out, draws the account gate instead of the form, and both of its
  *      links carry `next` = the create path from (1), decoded and compared;
  *   3. the create step, signed in, draws the form, whose action is the create endpoint and whose
@@ -25,12 +25,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { CreateRelationship } from "@/components/assessment-flow/create-relationship";
-import { TemplateDetail } from "@/components/assessment-flow/template-detail";
 import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
-import { templateDetailPageCopy } from "@/data/pages/assessment-template-detail";
 import type { LibraryTemplateDetail } from "@/lib/db/template-library";
 import { EMPTY_CREATE_DRAFT } from "@/lib/flow/create-draft";
-import { PRICING_PATH, SAVE_WHO_PATH, createRelationshipPath } from "@/lib/flow/paths";
+import { PRICING_PATH, SAVE_WHO_PATH } from "@/lib/flow/paths";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /**
@@ -74,7 +72,6 @@ const detail: LibraryTemplateDetail = {
   ],
 };
 
-const CREATE_PATH = createRelationshipPath(TEMPLATE_ID);
 const CREATE_TEMPLATE = {
   slug: detail.template.slug,
   recordId: TEMPLATE_ID,
@@ -83,12 +80,11 @@ const CREATE_TEMPLATE = {
   aspectCount: detail.aspects.length,
 };
 
-function landerHtml(): string {
-  return renderToStaticMarkup(
-    createElement(TemplateDetail, { copy: templateDetailPageCopy, detail }),
-  );
-}
-
+/**
+ * The create step's render, with the two optional refusal inputs a case may vary. The lander that
+ * used to be built beside it — the retired `/templates/relationship/<slug>` page — is gone (#1109);
+ * what this file walks now starts at the create step itself.
+ */
 function createHtml(input: {
   problem?: string | null;
   problemLink?: { href: string; label: string } | null;
@@ -105,47 +101,6 @@ function createHtml(input: {
     }),
   );
 }
-
-describe("stage 2 — the product page", () => {
-  it("has one primary CTA called Create Relationship, pointing at this template's create step", () => {
-    const html = landerHtml();
-    expect(html).toContain("Create Relationship");
-    expect(html).toContain(`data-template-detail-cta="create"`);
-    expect(html).toContain(`href="${CREATE_PATH}"`);
-  });
-
-  it("is not session language and does not send the reader back to the library", () => {
-    const html = landerHtml();
-    expect(html).not.toContain("Start a session");
-    // The library link is the back link only — one `href`, not the CTA.
-    const libraryLinks = html.match(/href="\/assessment"/g) ?? [];
-    expect(libraryLinks).toHaveLength(0);
-  });
-
-  it("names where the price actually is, and prints no figure of its own", () => {
-    const html = landerHtml();
-    expect(html).toContain(`data-template-detail-cta="plans"`);
-    expect(html).toContain(`href="${PRICING_PATH}"`);
-    expect(html).toContain("See plans and prices");
-    expect(html).not.toMatch(/\$\d/);
-  });
-
-  /**
-   * #791 — the browse rail is gone from this page. It numbered the reader `Step 2 of 3` of a
-   * journey that the create step downstream prints as `Stage 1 of 6`, and this screen is a
-   * pre-stage view of that flow rather than a stage of it (the same finding as the assertion at
-   * the foot of this file). One numbering, on the screen that actually has stages.
-   */
-  it("draws no browse rail — a template is a pre-stage view, not step 2 of 3 (#791)", () => {
-    const html = landerHtml();
-    expect(html).not.toContain("data-wizard-rail");
-    expect(html).not.toContain("Step 2 of 3");
-    expect(html).not.toContain("This product");
-    expect(html).not.toContain("Create the relationship");
-    // The deletion is the band only: the way back to the library the reader came from stays.
-    expect(html).toContain("All templates");
-  });
-});
 
 describe("stage 1 — the create step", () => {
   it("draws the form for a signed-out visitor — no account is asked for before stage 4 (#690)", () => {
@@ -186,7 +141,7 @@ describe("the plan lines are no longer dead ends", () => {
   }
 
   it("a sentence that names no plan draws no pricing link", () => {
-    // `session-limit` used to be the example here; #835 removed that refusal (the plan limits
+    // `instance-limit` used to be the example here; #835 removed that refusal (the plan limits
     // relationships started, not seats held), so the case uses a template refusal instead.
     const html = createHtml({
       problem: itemLabel(problems, "template-not-published"),

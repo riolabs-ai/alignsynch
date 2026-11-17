@@ -1685,7 +1685,12 @@ for (const finding of copyProblems({
   budget: pageCopyBudget,
   sources: copySources,
   routePatterns: ROUTE_PATTERNS,
-  resolves: (href) => resolveRoute(href).ok,
+  // A query string selects a **state** of a route, not a different route: `?tab=mine` is the
+  // templates tab's own parameter (#1109 sends `/templates/relationship/new` there). The pattern is
+  // resolved without it — the same reading `tests/route-redirects.test.ts` uses for a destination,
+  // and the same one E10 applies to an `href` — so copy is not forced to spell a path that lands on
+  // the wrong tab just to satisfy the checker.
+  resolves: (href) => resolveRoute(href.split("?")[0] ?? href).ok,
 })) {
   err(finding.code, finding.message);
 }
