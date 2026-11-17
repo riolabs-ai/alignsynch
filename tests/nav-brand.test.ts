@@ -298,7 +298,10 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     // instances` is a 308 to `/assessments` (which the v2 rail does not carry a row for).
     expect(memberHrefs).not.toContain("/dashboard/library");
     expect(memberHrefs).not.toContain("/assessment/instances");
-    expect(memberHrefs.filter((href) => href.startsWith("/dashboard/")).slice(0, 3)).toEqual([
+    // The workspace group's own rows, in the owner's order. `slice` rather than a `/dashboard/`
+    // prefix, because Start's address *is* `/dashboard` and does not carry the trailing slash —
+    // a prefix filter silently drops the row this card exists to draw.
+    expect(memberHrefs.slice(0, 3)).toEqual([
       "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",

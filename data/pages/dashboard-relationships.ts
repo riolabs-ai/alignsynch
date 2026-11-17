@@ -284,27 +284,25 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "paused-next", label: "Stage 6 is paused. Nothing is lost." },
       ],
     },
-    {
-      id: "empty",
-      heading: "No relationships yet",
-      body: "Nobody has started one with you, and you have not started one. Start from a template you own — its Aspects are yours to tune until you publish it — or open the invitation somebody sends you, and it appears here.",
-    },
     /**
-     * #841 part 2 — the second empty state, and the one the artifact draws: a list that has rows
-     * but none matching what the reader asked for. Two sentences, because the two ways to get here
-     * are different: a search that matched nothing, and a tab with nothing in it.
+     * **The two empty states are the bundle's, not a paraphrase of them** (#1129, bundle 05).
+     *
+     * `empty` is a member with no rows at all: one sentence, and the way out is the Library —
+     * the only place a first relationship can begin. `empty-filter` is the opposite case, rows
+     * that exist but none the reader asked for: one sentence and `Show All`, which clears both
+     * halves of the question (the chip and the search) rather than guessing which one hurt.
      */
     {
+      id: "empty",
+      heading: "No Relationships Yet",
+      body: "Pick a template, invite one person, and see where you agree.",
+      items: [{ id: "browse", label: "Browse Templates" }],
+    },
+    {
       id: "empty-filter",
-      heading: "No relationships found",
-      items: [
-        {
-          id: "search",
-          label:
-            "Nothing matches “{query}”. Try a different search, or clear it to see all {count}.",
-        },
-        { id: "status", label: "You have no {status} relationships yet. Try another tab." },
-      ],
+      heading: "Nothing Matches",
+      body: "Try another filter or search.",
+      items: [{ id: "reset", label: "Show All" }],
     },
     {
       id: "unreadable",

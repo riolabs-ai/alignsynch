@@ -31,6 +31,7 @@ vi.mock("next/link", () => ({
 import {
   RelationshipsList,
   stateCount,
+  stateFilterOf,
   visibleRelationships,
   type StateFilter,
 } from "@/components/dashboard/relationships-list";
@@ -183,10 +184,59 @@ describe("the relationships list", () => {
     expect(html).toContain("Newest");
   });
 
-  it("draws the no-relationships sentence when the read returned nothing", () => {
+  it("draws the no-relationships empty state and sends the reader to the Library (#1129)", () => {
     const html = render([]);
-    expect(html).toContain("No relationships yet");
+    expect(html).toContain("No Relationships Yet");
+    expect(html).toContain("Pick a template, invite one person, and see where you agree.");
+    expect(html).toContain("Browse Templates");
+    expect(html).toContain('href="/dashboard/templates?tab=library"');
+    expect(html).toContain('data-relationships-empty-action="browse"');
+    expect(html).not.toContain('data-relationships-empty-action="reset"');
     expect(html).not.toContain("data-relationship-card=");
+  });
+
+  it("draws Nothing Matches with Show All when rows exist but the filter hides them", () => {
+    // `?filter=paused` over a list with no paused row: the bundle's second empty state.
+    const html = renderToStaticMarkup(
+      createElement(RelationshipsList, {
+        copy,
+        rows: rows.filter((one) => one.status !== "expired"),
+        summaries: {},
+        templates: [],
+        unreadable: null,
+        initialFilter: "paused",
+      }),
+    );
+    expect(html).toContain("Nothing Matches");
+    expect(html).toContain("Try another filter or search.");
+    expect(html).toContain("Show All");
+    expect(html).toContain('data-relationships-empty-action="reset"');
+    expect(html).toContain('href="/dashboard/relationships"');
+    expect(html).toContain('data-relationships-empty="filter"');
+    expect(html).not.toContain("Browse Templates");
+  });
+
+  it("reads ?filter= as a chip, and anything else as All", () => {
+    expect(stateFilterOf("paused")).toBe("paused");
+    expect(stateFilterOf(["draft", "live"])).toBe("draft");
+    expect(stateFilterOf(undefined)).toBe("all");
+    expect(stateFilterOf("rubber")).toBe("all");
+    // The deep link lands on the chip, not on a second default.
+    const html = renderToStaticMarkup(
+      createElement(RelationshipsList, {
+        copy,
+        rows,
+        summaries: {},
+        templates: [],
+        unreadable: null,
+        initialFilter: stateFilterOf("paused"),
+      }),
+    );
+    const paused = chipChunks(html).find((chunk) =>
+      chunk.includes('data-relationships-state="paused"'),
+    );
+    expect(paused).toContain('aria-selected="true"');
+    expect(chipChunks(html)[0]).toContain('aria-selected="false"');
   });
 
   it("counts a chip as the rows that draw as that state", () => {

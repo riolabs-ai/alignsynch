@@ -42,8 +42,10 @@ import type { PageCopy } from "@/content/pages";
 import type { AlignmentSummary } from "@/lib/member/alignment-summary";
 import type { MemberRelationshipRow } from "@/lib/member/relationships";
 import { cardStateOf, type RelationshipCardState } from "@/lib/member/start";
-import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
+import { RELATIONSHIPS_PATH, TEMPLATE_LIBRARY_TAB_PATH } from "@/lib/flow/paths";
+import { itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { Plus, Search } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { RelationshipCard } from "./relationship-card";
 import {
@@ -65,6 +67,19 @@ const STATE_FILTERS = [
 
 export type StateFilter = (typeof STATE_FILTERS)[number]["value"];
 type SortOrder = "newest" | "oldest";
+
+/**
+ * The `?filter=` value as a chip (#1129) — `all` for anything the row does not name.
+ *
+ * The bundle deep-links `?filter=paused`, so the chip is addressable: the page reads the value
+ * here rather than comparing it inline, and an unknown word lands on `All` instead of drawing an
+ * empty list with no way back.
+ */
+export function stateFilterOf(value: string | string[] | undefined): StateFilter {
+  const one = Array.isArray(value) ? value[0] : value;
+  const found = STATE_FILTERS.find((filter) => filter.value === one);
+  return found === undefined ? "all" : found.value;
+}
 
 /** Which of the four states a row draws as — `null` for `void`, which this screen does not draw. */
 export function stateOf(row: MemberRelationshipRow): RelationshipCardState | null {
@@ -133,17 +148,34 @@ export function RelationshipsList({
   summaries,
   templates,
   unreadable,
+  initialFilter = "all",
 }: {
   copy: PageCopy;
   rows: readonly MemberRelationshipRow[];
   summaries: Readonly<Record<string, AlignmentSummary | null>>;
   templates: readonly RelationshipStartTemplate[];
   unreadable: string | null;
+  /** The chip `?filter=` names (#1129); `All` when the address names none. */
+  initialFilter?: StateFilter;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [state, setState] = useState<StateFilter>("all");
+  const [state, setState] = useState<StateFilter>(initialFilter);
   const [sort, setSort] = useState<SortOrder>("newest");
   const [createOpen, setCreateOpen] = useState(false);
+
+  /**
+   * Choosing a chip writes the address as well as the state, so `?filter=paused` is what a
+   * reload, a second tab and a shared link all land on. `replaceState` rather than the router:
+   * the list is already in hand, and a navigation would re-run the two reads to redraw one grid.
+   */
+  const selectFilter = (next: StateFilter) => {
+    setState(next);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (next === "all") url.searchParams.delete("filter");
+    else url.searchParams.set("filter", next);
+    window.history.replaceState(null, "", url);
+  };
 
   const controls = sectionOf(copy, "controls");
   const filters = sectionOf(copy, "tabs");
@@ -241,7 +273,7 @@ export function RelationshipsList({
               role="tab"
               aria-selected={selected}
               data-relationships-state={filter.value}
-              onClick={() => setState(filter.value)}
+              onClick={() => selectFilter(filter.value)}
               className={
                 selected
                   ? "inline-flex h-9 items-center gap-2 rounded-full border border-action bg-action px-3 text-sm font-medium text-action-foreground"
@@ -257,28 +289,44 @@ export function RelationshipsList({
 
       {visible.length === 0 ? (
         <div
-          data-relationships-empty
-          className="flex flex-col items-center justify-center py-12 text-center"
+          data-relationships-empty={rows.length === 0 ? "all" : "filter"}
+          className="flex flex-col items-center rounded-lg border border-dashed border-gray-300 bg-card px-4 py-10 text-center dark:border-gray-700"
         >
-          <div className="mb-4 rounded-full bg-muted p-6">
-            <Search className="h-10 w-10 text-muted-foreground" />
+          <div className="mb-3 rounded-full bg-muted p-3">
+            <Search className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h2 className="mb-2 text-xl font-semibold">
+          <h2 className="mb-1 text-lg font-semibold">
             {rows.length === 0 ? empty.heading : emptyFilter.heading}
           </h2>
-          <p className="mb-6 max-w-md text-muted-foreground">
-            {rows.length === 0
-              ? sectionBody(empty)
-              : query === ""
-                ? fillLabel(itemLabel(emptyFilter, "status"), {
-                    status: itemLabel(filters, state).toLowerCase(),
-                  })
-                : fillLabel(itemLabel(emptyFilter, "search"), {
-                    query: searchQuery.trim(),
-                    count: String(rows.length),
-                  })}
+          <p className="max-w-sm text-sm text-muted-foreground">
+            {rows.length === 0 ? sectionBody(empty) : sectionBody(emptyFilter)}
           </p>
-          {startAction}
+          {/*
+            **One way forward, as rule 7 requires.** One control, drawn as a `Button asChild`
+            around a `Link`, so the census counts a single action and the control is a real link
+            rather than a button that navigates: the target is a URL either way, and following it
+            with scripts off still does the right thing.
+
+            - no rows → the Library (`?tab=library`), where a first relationship is chosen from a
+              template; no `onClick`, so the link is the navigation.
+            - rows, none matching → "Show All", whose href is the unfiltered list. The click is
+              intercepted only to clear the chip *and* the search in place — a navigation would
+              re-run both reads to redraw one grid, and the search box would still be full.
+          */}
+          <Button asChild variant={rows.length === 0 ? "default" : "outline"} className="mt-4">
+            <Link
+              href={rows.length === 0 ? TEMPLATE_LIBRARY_TAB_PATH : RELATIONSHIPS_PATH}
+              data-relationships-empty-action={rows.length === 0 ? "browse" : "reset"}
+              onClick={(event) => {
+                if (rows.length === 0) return;
+                event.preventDefault();
+                selectFilter("all");
+                setSearchQuery("");
+              }}
+            >
+              {rows.length === 0 ? itemLabel(empty, "browse") : itemLabel(emptyFilter, "reset")}
+            </Link>
+          </Button>
         </div>
       ) : (
         <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
