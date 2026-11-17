@@ -87,11 +87,23 @@ export interface Pause {
 /** The paused state's reason, as `membershipOf` reports it. Absent reads as the trial's. */
 function pauseReasonOf(membership: Membership): "trial-ended" | "other" {
   if (membership.state !== "lapsed") return "other";
-  // An unreadable reason is treated as the trial's: it is the pause that loses nothing, and the
-  // alternative is telling a member their paid relationship closed when it merely stopped.
-  return membership.reason === null || membership.reason === "trial-ended"
-    ? "trial-ended"
-    : "other";
+  return isTrialPauseReason(membership.reason) ? "trial-ended" : "other";
+}
+
+/**
+ * Is this lapse reason the trial's — the pause, rather than a paid relationship that stopped?
+ *
+ * **Exported because a second surface asks it.** The screen asks through `pauseOf()`; the lapse
+ * notice (`lib/billing/notices.ts`) asks directly, because it is handed a `relationship.lapse_reason`
+ * and a seat, not a `Membership`. One home for the rule means the mail cannot offer the free week to
+ * an account whose card was refused while the screen refuses it — the drift the original module was
+ * written to prevent.
+ *
+ * `null` — an unreadable reason — is the trial's: it is the pause that loses nothing, and the
+ * alternative is telling a member their paid relationship closed when it merely stopped.
+ */
+export function isTrialPauseReason(reason: string | null): boolean {
+  return reason === null || reason === "trial-ended";
 }
 
 /** Whole days from `now` to `endsAt`, rounded up, floored at 1. `null` when either is unreadable. */
