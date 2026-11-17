@@ -253,6 +253,7 @@ export function CreateRelationship({
   initialPaid,
   planIncluded,
   carriedPlan,
+  trialEndsAt,
   copyBlocked,
 }: {
   copy: PageCopy;
@@ -326,6 +327,14 @@ export function CreateRelationship({
   checkout?: CheckoutHandlers;
   /** A card is already on file for this relationship: the walk opens on the thank-you. */
   initialPaid?: boolean;
+  /**
+   * **The trial's end, from the server's one read** (#1115).
+   *
+   * `trialStateOf()` on the page, handed to the walk as an instant so stage 5 can state when the
+   * free week closes. The create path passes it and passes no `checkout`, which is what takes
+   * payment out of every stage of this flow.
+   */
+  trialEndsAt?: string;
   /** What the account's plan already covers (#870), measured by the page. */
   planIncluded?: { readonly name: string; readonly entitled: boolean };
   /**
@@ -769,6 +778,7 @@ export function CreateRelationship({
             {...(initialPaid === undefined ? {} : { initialPaid })}
             {...(planIncluded === undefined ? {} : { planIncluded })}
             {...(carriedPlan === undefined ? {} : { carriedPlan })}
+            {...(trialEndsAt === undefined ? {} : { trialEndsAt })}
             backHref={backHref}
             cancelHref={shell.closeHref}
             cancelLabel={cancelLabel}

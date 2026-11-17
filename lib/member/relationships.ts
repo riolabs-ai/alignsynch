@@ -87,7 +87,13 @@ import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
 import { lapseIfDue, recordLapseIfDue, type Sql } from "@/lib/relationship/enforcement";
-import { membershipOf, membershipSentence, type Membership } from "@/lib/relationship/membership";
+import {
+  connectionOf,
+  membershipOf,
+  membershipSentence,
+  type Connection,
+  type Membership,
+} from "@/lib/relationship/membership";
 import { initiatorIsViewer } from "@/lib/relationship/initiator";
 import { trialStateOf, type TrialFacts, type TrialState } from "@/lib/relationship/trial";
 import {
@@ -219,6 +225,17 @@ export interface MemberRelationshipRow {
    * does; `readMyRelationship` always fills it.
    */
   readonly counterpartySeatName?: string | null;
+  /**
+   * #1115 task 5 — is the pair **connected**? Both seats bound to an account, and the session
+   * exists: the owner's own criterion (issue #1115, D1), which is explicitly *not* "they shared
+   * or published their opinions". Derived by `connectionOf()` from the three facts the query
+   * reads, so no screen computes it.
+   *
+   * Optional for the reason `counterpartySeatName` is: view literals in the suites predate the
+   * field. `readMyRelationship` and the list always fill it; a screen that finds it absent draws
+   * no connection row rather than guessing one.
+   */
+  readonly connection?: Connection;
   /** What the band says, derived at the instant the read was given. */
   readonly view: PublishView;
   /**
@@ -253,6 +270,12 @@ interface RelationshipQueryRow {
   readonly initiator_name: string | null;
   /** #975 — the Counterparty's **seat** name, from `party`; present when `counterparty_name` is not. */
   readonly counterparty_seat_name: string | null;
+  /** #1115 task 5 — a session row exists for the relationship's latest round. */
+  readonly session_exists: boolean;
+  /** #1115 task 5 — the Initiator's `party` row exists and carries an account. */
+  readonly initiator_bound: boolean;
+  /** #1115 task 5 — the Counterparty's `party` row exists and carries an account. */
+  readonly counterparty_bound: boolean;
   readonly claimed: boolean | null;
   readonly revoked: boolean | null;
   readonly expires_at: Date | string | null;
@@ -338,6 +361,18 @@ const COUNTERPARTY_SEAT_NAME = `(
 const RELATIONSHIP_COLUMNS = `
   rel.id, rel.status, rel.created_at, rel.published_at, rel.expired_at, rel.lapse_reason,
   rel.initiator_user_id, ${VIEWER_ROLE}, ${INITIATOR_NAME}, ${COUNTERPARTY_SEAT_NAME},
+  -- #1115 task 5 — "connected" is a fact about the two seats and the session, read here and never
+  -- computed on a screen. A seat counts as bound only when the party row carries a user_id: a row
+  -- with a NULL binding is a browser holding a cookie, and that person cannot open the dashboard.
+  (s.record_id IS NOT NULL) AS session_exists,
+  EXISTS (
+    SELECT 1 FROM party bp
+     WHERE bp.session_record_id = s.record_id AND bp.role = 'initiator' AND bp.user_id IS NOT NULL
+  ) AS initiator_bound,
+  EXISTS (
+    SELECT 1 FROM party bp
+     WHERE bp.session_record_id = s.record_id AND bp.role = 'counterparty' AND bp.user_id IS NOT NULL
+  ) AS counterparty_bound,
   t.id AS template_id, t.slug AS template_slug, t.title, t.summary,
   -- #841 — the relationship's own title, written at create from stage 1, beside the template's.
   -- The list used to head every card with the template's title, so two relationships made from one
@@ -496,6 +531,11 @@ function relationshipOf(
     counterpartyName: row.counterparty_name,
     initiatorName: row.initiator_name,
     counterpartySeatName: row.counterparty_seat_name ?? null,
+    connection: connectionOf({
+      hasSession: row.session_exists === true,
+      initiatorBound: row.initiator_bound === true,
+      counterpartyBound: row.counterparty_bound === true,
+    }),
     view: publishViewOf({ status, invite, now }),
     membership: membershipOf({
       status,
@@ -545,21 +585,14 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
    */
   readonly aspectsEditable: boolean;
   /**
-   * May it be published from its current status? `publishable()` — the detail screen's band.
+   * May it be published from its current status? `publishable()` — the detail screen's publish
+   * panel.
    *
-   * **Status is only half the answer since #690.** Publishing is the hard gate for payment: a
-   * relationship with no method on file gets no publish control at all, and this flag says only
-   * what the status allows. The screen reads both (`publishable && hasPaymentMethod`).
+   * **Only the status question, plus the seat** (`publishable: base.isInitiator && publishable(...)`,
+   * below). `publishable()` is `draft|pending`, and a relationship in one of those states is not sold
+   * yet, so there is no second payment fact for a screen to check against it.
    */
   readonly publishable: boolean;
-  /**
-   * Is the membership paying for this relationship live? #690's hard gate, re-based by #1010 R2.
-   *
-   * Derived from the initiator's subscription (`membership.writable`) — the same fact the claim and
-   * the answer submit refuse on — and `false` when the account has no live subscription. There is
-   * no card to look for any more: the membership bought at stage 5 is what unlocks publishing.
-   */
-  readonly hasMembership: boolean;
   /**
    * #739 — **the completion gate, as facts.** The payer's two acts live on this screen: put a
    * method on file, and complete and open the Gap. This is what the band draws from — the sheets'
@@ -700,25 +733,11 @@ export async function readMyRelationship(
   const base = relationshipOf(row, now, subscription, userId);
   const trial = trialStateOf(subscription, now);
   /*
-   * #690 / #1010 R2 — **the hard gate at publish, as a fact.**
-   *
-   * Publishing is gated on the account's **membership**, not on a card: #1010 deletes the
-   * per-relationship capture, and a card now reaches an account only by buying the subscription at
-   * stage 5. So the question this field answers is "is the membership paying for this relationship
-   * live?", which is `membership.writable` — derived from the initiator's subscription at the
-   * instant this read was handed, by the same function the claim and the answer submit refuse with.
-   * A relationship with no subscription (a brand-new draft, or one whose trial is over) reads
-   * `false` here, and the screen draws no publish control rather than one the write would refuse.
-   */
-  const hasMembership = base.membership.writable;
-  /*
    * #739 — the completion gate, read beside the method fact.
    *
-   * Two reads rather than one because they answer two different questions: `hasPaymentMethod`
-   * above is the publish gate's (#690 — a draft has no session, so nothing here could answer it),
-   * and this is the payer's band once a session exists. Both come from
-   * `relationship_payment.method_captured_at`, so they cannot disagree about the card; what this
-   * adds is the seal, the phase and the deadline, none of which the relationship row carries.
+   * The publish question is status and seat alone (`publishable` above — #690), so the only read
+   * left here is the payer's band once a session exists: its seal, its phase and its deadline, from
+   * `relationship_payment.method_captured_at`, none of which the relationship row carries.
    */
   const completion =
     base.sessionRecordId === null
@@ -755,9 +774,6 @@ export async function readMyRelationship(
      */
     aspectsEditable: base.isInitiator && aspectsEditable(base.status),
     publishable: base.isInitiator && publishable(base.status),
-    // #690 / #1010 R2 — a live membership, or nothing to click at publish. `publishable` stays
-    // the status question the transaction re-asks; this is the second half the screen must not guess.
-    hasMembership,
     completion,
     offersRepublish: base.isInitiator && republishable(base.view) && membership.state !== "lapsed",
     trialWithoutLiveInvite: base.isInitiator && trialRunningWithoutLiveInvite(trial, base.view),

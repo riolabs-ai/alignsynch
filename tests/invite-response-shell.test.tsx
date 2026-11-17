@@ -5,14 +5,14 @@
  * The card's acceptance is four facts, and three of them are visible in static markup — which is
  * the whole reason this file renders instead of screenshotting:
  *
- *   1. **The response renders inside `StageShell`.** The invitation's wizard is not a second flow:
- *      the dialog, its close control and the five-stage rail come from the components the create
- *      flow already draws, and the screen is stage 4 — **Account** (#825)
- *      because nothing is shared yet.
- *   2. **The stage is in the server's HTML, so a deep link and a refresh land on it.** The shell
- *      renders in place rather than through `DialogPortal`, and the three onboarding screens are
- *      each addressed by `?step=` with the token in the path — `inviteWizardStepOf()` reads the
- *      query, and an unknown value lands on step 1 instead of a 404.
+ *   1. **The response renders inside `StageShell`.** The claim screen is not a second flow: the
+ *      dialog, its close control and the five-stage rail come from the components the create flow
+ *      already draws, and the screen is stage 4 — **Account** (#825) — because nothing is shared
+ *      yet.
+ *   2. **It is one screen, and it is in the server's HTML.** Since #1115 task 4 there is no
+ *      `?step=1|2|3` wizard: the claim is two fields on one screen, addressed by the token in the
+ *      path, so a refresh and a deep link both land on it. Old `?step=` links still resolve (a mail
+ *      client's copy cannot be rewritten) and are ignored rather than 404ing.
  *   3. **A completed response closes onto `/dashboard`.** That decision is `afterClaimTarget()` in
  *      `lib/flow/paths.ts`, asserted here rather than restated in the route, plus one source rule
  *      proving the claim handler is its caller.
@@ -27,7 +27,7 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { CounterpartyWizard } from "@/components/assessment-flow/counterparty-wizard";
+import { ClaimForm } from "@/components/assessment-flow/claim-form";
 import { invitePageCopy } from "@/data/pages/invite";
 import { afterClaimTarget, instancePath, inviteStepPath, OVERVIEW_PATH } from "@/lib/flow/paths";
 import { inviteWizardStepOf } from "@/lib/flow/paths";
@@ -59,14 +59,12 @@ const PREVIEW: InvitePreview = {
   viewerRole: null,
 };
 
-function responseHtml(step: 1 | 2 | 3, viewerName: string | null = null): string {
+function responseHtml(): string {
   return renderToStaticMarkup(
-    createElement(CounterpartyWizard, {
+    createElement(ClaimForm, {
       copy: invitePageCopy,
       preview: PREVIEW,
       token: TOKEN,
-      step,
-      viewerName,
     }),
   );
 }
@@ -87,18 +85,19 @@ function railCells(html: string): string[] {
 
 describe("the response path renders in the flow's one modal", () => {
   it("draws the shared shell, with the close control leaving onto an address", () => {
-    const html = responseHtml(1);
+    const html = responseHtml();
     expect(html).toContain('role="dialog"');
     expect(html).toContain('data-stage-shell="true"');
     // The exit is a path, not a piece of state: closing is navigation (#709's contract).
     expect(html).toContain(`data-stage-close="${OVERVIEW_PATH}"`);
     expect(html).toContain('aria-label="Close"');
     // The stage is in the server's string, not mounted by a client after hydration.
-    expect(html).toContain("Avery invited you to answer Relationship Basics.");
+    expect(html).toContain("You have been invited");
+    expect(html).toContain("Avery wants to compare notes with you on Relationship Basics.");
   });
 
   it("keeps the shell's two presentations — the 390 sheet and the ≥1024 inset dialog", () => {
-    const panel = panelOf(responseHtml(1));
+    const panel = panelOf(responseHtml());
     expect(panel).toContain("inset-0");
     expect(panel).toContain("lg:inset-6");
     expect(panel).toContain("lg:rounded-lg");
@@ -106,7 +105,7 @@ describe("the response path renders in the flow's one modal", () => {
   });
 
   it("sits at Account — stage 4 of 5 — and draws no Align cell", () => {
-    const html = responseHtml(1);
+    const html = responseHtml();
     expect(html).toContain(`Stage ${ACCOUNT_POSITION} of 5`);
     // Five cells, the same rail every other stage draws.
     expect(railCells(html)).toHaveLength(5);
@@ -118,7 +117,7 @@ describe("the response path renders in the flow's one modal", () => {
   });
 
   it("renders on the shared stage column, not a centred column of its own", () => {
-    const html = responseHtml(1);
+    const html = responseHtml();
     // The column itself is still left-flush inside whatever frames it (#687): a max width, and no
     // centring of its own.
     const column = /class="([^"]*max-w-\[1126px\][^"]*)"/.exec(html)?.[1] ?? "";
@@ -130,47 +129,38 @@ describe("the response path renders in the flow's one modal", () => {
   });
 
   it("has exactly one progress band — the five-stage rail, not a second step rail", () => {
-    const html = responseHtml(2);
+    const html = responseHtml();
     // The retired `Step {n} of 3` line and its band are gone: one progress pattern (#716).
     expect(html).not.toMatch(/Step \d of 3/);
     expect(html.split("<nav").length - 1).toBe(1);
   });
 });
 
-describe("an invitation deep link resolves to the response stage", () => {
-  it("reads the step from the query, and lands on step 1 for anything it does not know", () => {
+describe("an invitation deep link resolves to the one claim screen", () => {
+  it("reads an old `?step=` link without failing on it", () => {
+    // The steps are retired as screens (#1115 task 4) but the addresses a mail client already
+    // holds still have to resolve — nothing 404s and nothing re-mints the token.
     expect(inviteWizardStepOf("1")).toBe(1);
-    expect(inviteWizardStepOf("2")).toBe(2);
     expect(inviteWizardStepOf("3")).toBe(3);
-    // A reader's position is not an address that can be wrong.
     expect(inviteWizardStepOf(undefined)).toBe(1);
-    expect(inviteWizardStepOf("4")).toBe(1);
-    expect(inviteWizardStepOf("")).toBe(1);
-    expect(inviteWizardStepOf(["3", "1"])).toBe(3);
-  });
-
-  it("keeps the token in the path on every step, so a refresh returns to the same screen", () => {
     expect(inviteStepPath(TOKEN, 1)).toBe(`/invite/${TOKEN}`);
-    for (const step of [2, 3] as const) {
-      expect(inviteStepPath(TOKEN, step)).toBe(`/invite/${TOKEN}?step=${step}`);
-    }
+    expect(inviteStepPath(TOKEN, 3)).toBe(`/invite/${TOKEN}?step=3`);
   });
 
-  it("renders every step inside the one shell — a deep link, not a second page", () => {
-    for (const step of [1, 2, 3] as const) {
-      const html = responseHtml(step);
-      expect(html, `step ${step}`).toContain('data-stage-shell="true"');
-      expect(html, `step ${step}`).toContain(`Stage ${ACCOUNT_POSITION} of 5`);
-    }
-  });
-
-  it("is the page's own wiring — the route hands its query to the wizard, unclaimed", () => {
+  it("is the page's own wiring — one claim screen, unclaimed on a GET", () => {
     const page = source("app/(mainlayout)/invite/[token]/page.tsx");
-    expect(page).toContain("inviteWizardStepOf(rawStep)");
-    expect(page).toContain("<CounterpartyWizard");
+    expect(page).toContain("<ClaimForm");
     // The GET stays inert: claiming is the POST, and the page only previews.
     expect(page).toContain("previewInvite(");
     expect(page).not.toContain("claimInvite(");
+  });
+
+  it("posts both fields to the claim endpoint, so a refresh never spends the token", () => {
+    const html = responseHtml();
+    expect(html).toContain(`action="/invite/${TOKEN}/claim"`);
+    expect(html).toContain('method="post"');
+    expect(html).toContain('name="name"');
+    expect(html).toContain('name="email"');
   });
 });
 
@@ -197,6 +187,8 @@ describe("a completed response closes onto /dashboard", () => {
   it("is the claim handler that asks for it, so the route has no second copy of the rule", () => {
     const route = source("app/(mainlayout)/invite/[token]/claim/route.ts");
     expect(route).toContain("afterClaimTarget({");
-    expect(route).toContain("viewerSignedIn: viewer !== null");
+    // #1115 task 4 — a claim that just created the account is signed in by the auth server's own
+    // cookies, so it exits onto the dashboard like any other signed-in claim.
+    expect(route).toContain("viewerSignedIn: signedIn");
   });
 });

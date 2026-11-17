@@ -44,7 +44,8 @@ const STAGE_NAMES = ["Details", "Settings", "Aspects", "Account", "Invite"];
 const FLOW_SCREENS = [
   "components/assessment-flow/create-relationship.tsx",
   "components/assessment-flow/accept-session.tsx",
-  "components/assessment-flow/counterparty-wizard.tsx",
+  // #1115 task 4 — the wizard is retired; the claim is one screen, and it renders the column.
+  "components/assessment-flow/claim-form.tsx",
 ];
 
 function source(path: string): string {

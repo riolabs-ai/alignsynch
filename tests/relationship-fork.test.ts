@@ -554,7 +554,6 @@ function relationshipView(overrides: Partial<MemberRelationshipView> = {}): Memb
     template: V1,
     aspectsEditable: false,
     publishable: false,
-    hasMembership: false,
     completion: null,
     offersRepublish: false,
     canForkTemplate: true,

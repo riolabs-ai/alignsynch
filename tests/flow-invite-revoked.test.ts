@@ -73,6 +73,7 @@ function inviteRow(over: Record<string, unknown> = {}): Record<string, unknown> 
   return {
     session_record_id: INSTANCE,
     counterparty_name: "Rowan",
+    email: "rowan@example.test",
     claimed_at: null,
     expires_at: EXPIRED_INSTANT,
     revoked_at: null,
@@ -80,9 +81,16 @@ function inviteRow(over: Record<string, unknown> = {}): Record<string, unknown> 
   };
 }
 
-/** The claim as the invite route makes it: a token, a confirmation, and no signed-in account. */
+/** The claim as the invite route makes it now: an invitation, two fields, and no signed-in account. */
 function claim() {
-  return { token: TOKEN, viewerTokens: [], viewerUserId: null, confirm: "Rowan", now: NOW };
+  return {
+    invitationToken: TOKEN,
+    viewerTokens: [],
+    viewerUserId: null,
+    name: "Rowan",
+    email: "rowan@example.test",
+    now: NOW,
+  };
 }
 
 describe("a withdrawn invitation cannot be claimed", () => {
@@ -99,7 +107,9 @@ describe("a withdrawn invitation cannot be claimed", () => {
     // It began, looked the token up by its hash, rolled back. No write, no commit, no token issued.
     expect(fake.calls).toHaveLength(3);
     expect(fake.calls[0].text).toBe("BEGIN");
-    expect(fake.calls[1].text).toMatch(/^SELECT session_record_id, counterparty_name, claimed_at/);
+    expect(fake.calls[1].text).toMatch(
+      /^SELECT session_record_id, counterparty_name, email, claimed_at/,
+    );
     expect(fake.calls[1].values).toEqual([hashToken(TOKEN)]);
     expect(fake.calls.at(-1)?.text).toBe("ROLLBACK");
     expect(fake.calls.some(({ text }) => /^(UPDATE|INSERT|DELETE)/i.test(text))).toBe(false);

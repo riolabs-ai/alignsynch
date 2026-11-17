@@ -499,7 +499,7 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
     status: "db",
     templates: ["alignsynch"],
     capability:
-      "Stage 5 of the create flow (Invite): the payment walk as a soft prompt, the address the invitation goes to, and the two acts — send it, or keep the draft.",
+      "Stage 5 of the create flow (Invite): the plans as a comparison beside the account's free week (no card at any step), the address the invitation goes to, and the two acts — send it, or keep the draft.",
     notes:
       "The decision the flow exists to reach (#825). `Send and Continue` posts to `POST /assessment/instances/[id]/send`, which calls `sendDraftInvitation()`: the token is reissued first (`resendInvite` owns one-token-per-instance and the cooldown), then the status flips `draft → published` through `canTransition()` with `published_at` stamped, and the email goes out after that commit — the order is what stops a published relationship with a token nobody sent. `Continue as Draft` is a plain link to `/dashboard`, where the draft is listed; it sends nothing and charges nothing. The walk (#771: plan, account, method, confirmation, done) is `components/assessment-flow/invite-walk.tsx`, one client component so the server column stays server-rendered; choosing a plan writes nothing, the method step defers the capture to publish, and the stage's foot no longer depends on which panel is open — the send is the stage's act, not the walk's. The relationship is read through `readFlowScreen()` with this browser's `flow_party_*` cookie and then the signed-in account, so a crafted id, somebody else's relationship and a dead one all land back on Details.",
   },

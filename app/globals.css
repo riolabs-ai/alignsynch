@@ -168,6 +168,87 @@
     --gap-2: 138.8 25.2% 35.8%;
     --gap-3: 108.2 28.8% 40.5%;
     --gap-4: 77.6 32.5% 45.3%;
+
+    /*
+     * ## v2.0 design tokens (#1120) — the calm palette's product roles
+     *
+     * Ported from `docs/specs/v2-bundles/09-spec-design-system-tokens-v2/css/tokens.css`, which
+     * is the visual authority for epic #1119; the values below are that file's, unchanged. They
+     * are **product** roles, not brand identity: an initiator is clay and a counterparty is
+     * slate-teal on every build, the same way the Gap scale above is one scale on both builds.
+     * So they live here, in the token layer, beside `--chart-*` and `--gap-0..4` — not in the
+     * brand record, which owns only what a *skin* changes (and whose one instruction from #1120
+     * is "do not change `deep`").
+     *
+     * **Additive only, and nothing consumes them yet.** No component in this tree names one of
+     * these roles, which is why every rendered byte — and therefore every parity hash — is
+     * unchanged. The surface cards apply them; this card is the single source they read, so
+     * that each of them cannot re-invent a hex.
+     *
+     * Deliberately **not** here, because neither is additive:
+     *   - `--destructive`, `--muted-foreground` and `--border` are *value changes* to tokens both
+     *     builds already paint (v2 wants graphite destructive and a firmer card edge). Changing
+     *     them repaints QuizHub, and this card may not touch that lane.
+     *   - `--radius` 0.5rem and the 14px body size change QuizHub too; #1120 puts both behind a
+     *     separate card after an owner ruling.
+     *
+     * Party roles: five per party, and the role decides what a colour may do —
+     *   DEFAULT = mark (dots, stripes, a response track — never text)
+     *   ink     = text/label (≥4.5:1 on white and on its own tint)
+     *   solid   = ground under white initials (avatars, party markers; ≥4.5:1 with white)
+     *   tint    = background · line = border
+     */
+    --initiator: 13.6 50% 56.9%; /* #c8735a clay */
+    --initiator-ink: 14 50.2% 40.2%; /* #9a4b33 */
+    --initiator-solid: 14.7 45.1% 44.3%; /* #a4573e */
+    --initiator-tint: 20 65.2% 95.5%; /* #fbf1ec */
+    --initiator-line: 17.8 58.7% 82%; /* #ecc6b6 */
+    --counterparty: 191.1 31% 44.3%; /* #4e8794 slate-teal */
+    --counterparty-ink: 191.2 36.6% 31.6%; /* #33636e */
+    --counterparty-solid: 191.1 34% 37.5%; /* #3f7480 */
+    --counterparty-tint: 186.7 33.3% 94.7%; /* #edf5f6 */
+    --counterparty-line: 189.1 30.8% 79%; /* #b9d5da */
+
+    /* Purpose surfaces — one ground, one line, one icon chip per region type. Progress is
+       where you stand (soft cyan family, and the ink on it is `deep`); billing is payment and
+       membership (calm sage, 6.32:1 ink on its own ground). */
+    --status: 188.6 36.8% 96.3%; /* #f2f8f9 */
+    --status-line: 190 38.5% 84.7%; /* #c9e2e7 */
+    --status-chip: 189.5 40.4% 90.8%; /* #deeef1 */
+    --billing: 144 23.8% 95.9%; /* #f2f7f4 */
+    --billing-line: 141 22.2% 82.4%; /* #c8dccf */
+    --billing-chip: 140 26.1% 91%; /* #e2eee6 */
+    --billing-ink: 150 38.4% 28.6%; /* #2d6549 */
+
+    /* The three Gap statuses, in two weights. The `-ink` value is the word; the `-mark` value is
+       the vivid one that draws a bar, a dot or an edge, and it is never a label on its own —
+       `--small-gap-mark` is 1.82:1 on white and always travels with a 1px `--small-gap` edge.
+       Status is a word plus a mark, never colour alone. */
+    --synch: 148.5 38.6% 30%; /* #2f6a4b */
+    --synch-tint: 137.1 43.8% 93.7%; /* #e8f6ec */
+    --small-gap: 45.5 47.8% 27.1%; /* #665624 */
+    --small-gap-tint: 47.7 90.7% 91.6%; /* #fdf5d6 */
+    --gap: 33.5 67.1% 29.8%; /* #7f5219 */
+    --gap-tint: 30.9 89.2% 92.7%; /* #fdeddc */
+    --synch-mark: 145.7 67% 36.9%; /* #1f9d55 */
+    --small-gap-mark: 45.1 96% 48.4%; /* #f2b705 */
+    --gap-mark: 29.3 100% 42.5%; /* #d96a00 */
+
+    /* The answer scale, **locked** (§17 of the design system, owner-approved 2026-11-16):
+       1 is warm apricot, 5 is sage, and these five values do not change. The track carries the
+       position; party identity stays on the markers (M/E) drawn in the party roles above, so
+       the scale never says *who* answered. Every step is ≥3.09:1 against both party solids and
+       ≥6.05:1 under body text. */
+    --scale-1: 21 76.1% 78.6%; /* #f2bc9f */
+    --scale-2: 35.9 76.7% 76.5%; /* #f1cc95 */
+    --scale-3: 47.3 61.7% 77.5%; /* #e9daa2 */
+    --scale-4: 76.5 40.2% 75.1%; /* #cbd9a6 */
+    --scale-5: 133.3 27.7% 74.5%; /* #acd0b4 */
+
+    /* The calm deep — the prototype's `--deep`, kept as its own token so the brand record's
+       `deep` (`#156898`, painted on `<html>` by `lib/brand-theme.ts`) is not silently
+       re-pointed. A v2 surface that wants the softer cyan-family ink names this one. */
+    --deep-calm: 194.8 53.3% 32.7%; /* #276a80 */
   }
 
   .dark {

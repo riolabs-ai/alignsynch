@@ -193,6 +193,16 @@ export function membershipOf(facts: MembershipFacts): Membership {
   // read-only, which is the opposite of what a draft is for.
   if (facts.status !== "published" && facts.status !== "active") return OPEN;
 
+  // **A published relationship nobody has accepted yet is not a lapse** (#1115, spec D3). The week
+  // opens when the Counterparty accepts, so a sent invitation that is still pending holds **no**
+  // subscription row — and it has spent nothing. Reading that as `lapsed` is not the cautious
+  // answer, it is a wrong one twice over: the member would be told their invitation had expired
+  // before it was answered, and `lapseIfDue()` (`lib/relationship/enforcement.ts`) would write
+  // `expired` over the row, so the pair could never be joined at all. `active` keeps the strict
+  // reading below — acceptance writes the trial in the same transaction that sets it, so an
+  // `active` row with no subscription is drift, and drift is read-only.
+  if (facts.status === "published" && facts.subscription === null) return OPEN;
+
   const { subscription } = facts;
   const trial = trialStateOf(subscription, facts.now);
   if (trial === "expired" || (trial === "none" && !entitlesNow(subscription, facts.now))) {
@@ -236,6 +246,65 @@ export function membershipWritable(facts: MembershipFacts): boolean {
  */
 export function reactivationStatusOf(hasCounterparty: boolean): "active" | "published" {
   return hasCounterparty ? "active" : "published";
+}
+
+/* ------------------------------------------------------------------ *
+ * "Connected" — a fact about two seats and the session (#1115)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The facts a connection is a function of — and nothing else is passed, so nothing else can
+ * decide it.
+ *
+ * **`connected` is not "they answered".** The owner's own criterion (issue #1115, D1) is that
+ * both people can open the relationship, reach the dashboard and open the first assessment
+ * session — the moment the second seat is taken. Opinions, submitted answers and a published
+ * report are all *later* and none of them is representable here: there is no field for an answer
+ * count, an opinion, or a `status` column, so no caller can make the state wait on one.
+ *
+ * "Bound" is the repo's own word for a seat somebody can sign in and answer from: the `party` row
+ * exists **and** carries `user_id`. A row with a NULL binding is a browser holding a cookie
+ * (`lib/flow/store.ts::claimInvite` leaves it NULL when no account exists), which is exactly the
+ * case the criterion excludes — that person cannot reach the dashboard.
+ */
+export interface ConnectionFacts {
+  /** A `session` row exists for the relationship — the first assessment cycle. */
+  readonly hasSession: boolean;
+  /** The Initiator's seat exists and is bound to an account. */
+  readonly initiatorBound: boolean;
+  /** The Counterparty's seat exists and is bound to an account. */
+  readonly counterpartyBound: boolean;
+}
+
+/** What the pair is connected for, and — when they are not — whose turn it is. */
+export interface Connection {
+  readonly connected: boolean;
+  /**
+   * The seat the pair is waiting on, for the `waiting on <name>` line; `null` once both seats are
+   * bound. Never a count and never a date: the fact is which person has not arrived.
+   */
+  readonly waitingOn: "initiator" | "counterparty" | null;
+}
+
+/**
+ * Connected, derived. One call, no state, no clock.
+ *
+ *   no session, or either seat unbound   → not connected, waiting on the unbound seat
+ *   both seats bound and a session       → connected
+ *
+ * The Counterparty is named first when both are unbound because they are the invited person: a
+ * screen that said "waiting on the initiator" before anyone had accepted would be describing the
+ * wrong side of the invitation.
+ */
+export function connectionOf(facts: ConnectionFacts): Connection {
+  if (!facts.counterpartyBound || !facts.initiatorBound) {
+    return {
+      connected: false,
+      waitingOn: facts.counterpartyBound ? "initiator" : "counterparty",
+    };
+  }
+  if (!facts.hasSession) return { connected: false, waitingOn: "counterparty" };
+  return { connected: true, waitingOn: null };
 }
 
 /* ------------------------------------------------------------------ *
