@@ -124,6 +124,8 @@ describe("the menu descriptor", () => {
       "/admin/broadcast",
       "/admin/docs",
       "/admin/permissions",
+      // #1138 — the transactional-mail override editor, the third reference row.
+      "/admin/email-templates",
       "/admin/audit",
     ]);
   });
@@ -202,14 +204,27 @@ describe("the ladder decides the rows", () => {
     // #1126 — the CRUD & Permissions matrix, directly after Docs: the docs say how the product
     // works, this says which role may do what.
     "/admin/permissions",
+    // #1138 — the transactional-mail override editor: what the product writes to a person.
+    "/admin/email-templates",
     "/admin/audit",
   ];
 
   /** #929 — the Support group, in the owner's order: two staff rows among the help pair. */
   const SUPPORT_GROUP = ["/admin/review", "/dashboard/help", "/admin/health", "/dashboard/support"];
 
-  /** The three Workspace rows every rung above it shares (#620, #877, #1129). */
-  const WORKSPACE = ["/dashboard", "/dashboard/relationships", "/dashboard/templates"];
+  /**
+   * The four Workspace rows every rung above it shares (#620, #877, #1129, #1131).
+   *
+   * #1129 put `start` at the top (the signed-in landing, `/dashboard`) and retired
+   * `my-assessments`; #1131 added `Chat` → `/dashboard/chat` last of the group, which is the order
+   * the v2 rail draws (Start · My Relationships · Templates · Chat).
+   */
+  const WORKSPACE = [
+    "/dashboard",
+    "/dashboard/relationships",
+    "/dashboard/templates",
+    "/dashboard/chat",
+  ];
 
   /**
    * **The rule the amendment added, and the one that is easy to lose in a "just move these six
@@ -236,29 +251,32 @@ describe("the ladder decides the rows", () => {
     }
   });
 
-  it("gives a member the five rows that are theirs, and no staff row", () => {
+  it("gives a member the six rows that are theirs, and no staff row", () => {
     expect(MENUS.member).toEqual([...WORKSPACE, "/dashboard/help", "/dashboard/support"]);
     expect(MENUS.member.filter((href) => href.startsWith("/admin"))).toEqual([]);
   });
 
   /**
-   * #620 — the Workspace group is **exactly three rows**, and the assertion is over the descriptor
+   * #620 — the Workspace group is **exactly four rows**, and the assertion is over the descriptor
    * rather than a screenshot: a menu is data, and the count is the thing the issues asked for. The
    * ids are the owner's words, so a row cannot be added back without naming it here — #1129 put
-   * `start` at the top (the signed-in landing, `/dashboard`) and retired `my-assessments`; the
-   * sessions it listed are one click from My Relationships and `/assessments` still answers.
+   * `start` at the top (the signed-in landing, `/dashboard`) and retired `my-assessments` (the
+   * sessions it listed are one click from My Relationships and `/assessments` still answers), and
+   * #1131 added `chat` ("Chat") last, where the v2 rail draws it.
    */
-  it("draws exactly three Workspace rows — Start, My Relationships and Templates", () => {
+  it("draws exactly four Workspace rows — Start, My Relationships, Templates and Chat", () => {
     const workspace = ALIGN_MENU.find((group) => group.label === "group-app");
     expect(workspace?.items.map((item) => item.id)).toEqual([
       "start",
       "my-relationships",
       "templates",
+      "chat",
     ]);
     expect(workspace?.items.map((item) => item.href)).toEqual([
       "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
+      "/dashboard/chat",
     ]);
   });
 
@@ -282,9 +300,10 @@ describe("the ladder decides the rows", () => {
     // the help pair — #929's arrangement, asserted rather than assumed.
     expect(MENUS.admin).toContain("/admin/review");
     expect(MENUS.admin).toContain("/admin/health");
-    // #901's docs row survived the move, #1095 removed the growth row, and #1126 added the CRUD &
-    // Permissions row directly after Docs, so nine rows in the operator group.
-    expect(ADMIN_GROUP).toHaveLength(9);
+    // #901's docs row survived the move, #1095 removed the growth row, #1126 added the CRUD &
+    // Permissions row directly after Docs and #1138 added the mail-override row after that, so ten
+    // rows in the operator group.
+    expect(ADMIN_GROUP).toHaveLength(10);
   });
 
   /**
@@ -309,8 +328,10 @@ describe("the ladder decides the rows", () => {
   it("counts one more row per rung, in the ladder's own order", () => {
     const counts = USER_ROLES.map((role) => MENUS[role].length);
     // #920 added one operator row and #1095 removed it again; #1126 added the CRUD & Permissions
-    // row, so the two staff rungs carry 16 rather than 15.
-    expect(counts).toEqual([5, 6, 16, 16]);
+    // row and #1138 the mail-override row (so the two staff rungs carry 17 rather than 15), and
+    // #1131 added Chat to the Workspace group, so every rung that draws it counts one more:
+    // 18 for a staff rung (ADMIN_GROUP 10 + WORKSPACE 4 + SUPPORT_GROUP 4), 6 and 7 below.
+    expect(counts).toEqual([6, 7, 18, 18]);
     // Not decoration: the first two rungs differ by exactly the row support exists for.
     expect(counts[1]).toBe(counts[0] + 1);
     expect(counts[2]).toBeGreaterThan(counts[1]);

@@ -283,6 +283,11 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
           /**
+           * #1131 — Chat, beside the relationships it is about. The owner's word, and the v2 rail's
+           * own row (`docs/specs/v2-bundles/07-…/chat.html`): a thread per relationship.
+           */
+          { id: "chat", label: "Chat" },
+          /**
            * #877 — the sessions, beside the relationships they belong to. The owner's word is
            * plural and it is the page's own `<h1>`: one string, one home.
            */
@@ -357,6 +362,14 @@ export function shellCopy(brand: Brand): PageCopy {
            * the rest of the group, because "CRUD & Permissions" is the name the v2 spec uses.
            */
           { id: "admin-permissions", label: "CRUD & Permissions" },
+          /**
+           * #1138 — the transactional-mail override editor. It sits after the two reference rows
+           * because it is the same kind of thing: the docs say how the product works, CRUD says who
+           * may do it, and this says what it writes to a person. The label is the issue's own title,
+           * and it is two words where the rest of the group is one — "Email Templates" is the name
+           * #1138 uses and renaming it here would be the screen disagreeing with its card.
+           */
+          { id: "admin-email-templates", label: "Email Templates" },
           /**
            * The rail's three group labels (#539 item 10, re-cut by #542 phase 2). The rail draws
            * the member's own work under `group-app`, the help/contact pair under
@@ -589,6 +602,13 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "signed-out", label: "Sign In" },
           { id: "sign-up", label: "Sign Up" },
+          /**
+           * The avatar trigger's accessible name (#1136). The button carried none — an icon button
+           * with no label is announced as "button" — so the v2 bundle's `aria-label="Account menu"`
+           * becomes a fixture row and both brands use it. It is an affordance of the shell, not
+           * product vocabulary, which is why this one id is not paired.
+           */
+          { id: "menu", label: "Account menu" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -611,6 +631,45 @@ export function shellCopy(brand: Brand): PageCopy {
            * click and the session ending, and the failure said out loud rather than swallowed
            * (issue #272's rule, on the header's control rather than the rail's).
            */
+          { id: "logout-pending", label: "Signing out…" },
+          { id: "logout-error", label: "Couldn't sign out. Try again." },
+        ],
+      },
+      /**
+       * The account menu's v2 words (#1136), the AlignSynch expression of the same slot.
+       *
+       * **Paired rather than renamed, the way `nav`/`nav-alignsynch` is.** The v2 bundles are the
+       * AlignSynch build's visual authority (#1119), and they name two controls the quiz build
+       * spells differently: **Account Settings** (this build said "Settings") and **Sign Out**
+       * ("Log out"). QuizHub is a shipped product whose own words are its own — an epic about the
+       * alignment surface does not get to rewrite the quiz app's menu — so the two live side by
+       * side and `accountCopyFor()` in `lib/shell-copy.ts` picks one, exhaustively, per brand.
+       *
+       * The v2 menu draws **one line per row**: name + address, then Account Settings and Sign Out
+       * with an icon each (`settings.html`). There are no hint subtitles here for that reason, and
+       * the reader asks for them with `itemLabelOr` so a brand that draws none is not an error.
+       *
+       * `menu` is the avatar button's accessible name, verbatim from the bundle's `aria-label`; the
+       * trigger used to carry no name at all, which is what made it a decorative disc (#1136).
+       */
+      {
+        id: "account-alignsynch",
+        items: [
+          { id: "signed-out", label: "Sign In" },
+          { id: "sign-up", label: "Sign Up" },
+          { id: "menu", label: "Account menu" },
+          { id: "profile", label: "My Profile" },
+          { id: "dashboard", label: "Dashboard" },
+          { id: "quizzes", label: "My Quizzes" },
+          { id: "settings", label: "Account Settings" },
+          { id: "logout", label: "Sign Out" },
+          /**
+           * What the confirmation says once the session is gone (`lib/shell/account-sign-out.ts`).
+           * The bundle's own sentence: the toast is the only place this build tells a person the
+           * revocation actually happened, and a silent redirect to a catalogue reads as "the page
+           * changed", not "you are signed out".
+           */
+          { id: "logout-toast", label: "You’re signed out." },
           { id: "logout-pending", label: "Signing out…" },
           { id: "logout-error", label: "Couldn't sign out. Try again." },
         ],

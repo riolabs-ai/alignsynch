@@ -22,7 +22,7 @@ import Link from "next/link";
  * one-time entrance is the first thing a reduced-motion reader has to disable and the last thing
  * worth a client component on a prerendered marketing page. The card hover is a CSS transition.
  *
- * The hero does **not** draw the header. The shared marketing layout mounts `MarketingHeader`
+ * The hero does **not** draw the header. The shared marketing layout mounts `PublicHeader`
  * above this page, and the artifact's transparent-over-hero header is exactly the thing that
  * cannot survive contact with the real shell — see the PR body.
  *

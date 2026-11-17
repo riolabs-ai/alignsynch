@@ -47,7 +47,7 @@ import {
 } from "@/lib/alignment-home";
 import { createRelationshipPath, relationshipTypeDemoPath } from "@/lib/flow/paths";
 import { FEATURED_TEMPLATE_TYPE_IDS } from "@/data/template-shelf";
-import { CATALOGUE_PATH, START_PATH, startPathFor } from "@/lib/template-catalogue";
+import { CATALOGUE_PATH, startPathFor } from "@/lib/template-catalogue";
 import { visitorOf } from "@/lib/start-path";
 import { leafLiterals } from "@/scripts/copy-refs";
 
@@ -507,8 +507,11 @@ describe("the render", () => {
       .trim();
     expect(text.toLowerCase()).not.toContain("per relationship");
     expect(text).not.toContain("999");
-    expect(text).not.toContain("$9.99");
-    expect(html).not.toContain(formatCurrency(999));
+    // The page prints one figure and it is the plan's month — asserted above by comparing every
+    // printed amount to `basic.monthlyCents`. This used to read `not $9.99` as a proxy for "not
+    // the taxonomy's per-relationship amount"; since #1127 that amount and the Single plan's month
+    // are the same number, so the surviving guard is `tests/plan-catalogue.test.ts`'s: nothing in
+    // `components/` or `lib/` reads `RELATIONSHIP_PRICE_CENTS`.
   });
 
   it("names nobody who is not on a relationship it links", () => {

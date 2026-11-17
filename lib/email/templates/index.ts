@@ -15,11 +15,16 @@
  * house move.
  *
  * **The class is the column that decides the footer, so `renderTemplate()` forwards the one input
- * it needs.** Eleven of the twelve are transactional and carry no unsubscribe line. #9 is the
+ * it needs.** Twelve of the thirteen are transactional and carry no unsubscribe line. #9 is the
  * marketing one, and its unsubscribe URL is a per-recipient token — it cannot live in a fixture, so
  * it is an option on `renderTemplate()` and reaches the band unchanged. A caller that forgets it
  * gets the band's own throw ("a marketing mail needs an unsubscribe URL"), not a mail with no way
  * out.
+ *
+ * **Numerals are identities, and a new template takes the next free one.** #12 and #13 (#1139) were
+ * appended rather than inserted beside #7 where they read most naturally: 8–11 are cited by tests,
+ * docstrings and operations docs, and renumbering them would edit the record of what a numeral
+ * meant when it was written. The array stays in numeral order.
  *
  * **Text first holds for every entry by construction.** Each `document()` returns blocks; the
  * only way to get bodies is `renderTemplate()`, which composes the text and derives the HTML from
@@ -32,6 +37,7 @@
 import type { EmailClass, EmailDocument, RenderedEmail } from "@/lib/email/band";
 import { renderEmail } from "@/lib/email/band";
 import type { EmailBodySpec } from "@/lib/email/body";
+import type { EmailOverride } from "@/lib/email/override";
 import { releaseNoteDocument, type ChangelogSection } from "@/lib/email/release-note";
 import {
   INVITATION_BODY,
@@ -66,6 +72,16 @@ import {
   type MembershipLapsedFacts,
 } from "@/lib/email/templates/membership-lapsed";
 import {
+  TRIAL_ENDED_PAUSED_BODY,
+  trialEndedPausedDocument,
+  type TrialEndedPausedFacts,
+} from "@/lib/email/templates/trial-ended-paused";
+import {
+  RELATIONSHIP_PAUSED_BODY,
+  relationshipPausedDocument,
+  type RelationshipPausedFacts,
+} from "@/lib/email/templates/relationship-paused";
+import {
   SUPPORT_REPLY_BODY,
   supportReplyDocument,
   supportReplySubject,
@@ -96,6 +112,17 @@ export interface EmailTemplate<Facts> {
   /** `marketing` may carry an unsubscribe line; `transactional` may not. */
   readonly emailClass: EmailClass;
   /**
+   * **Who reads this mail** — the column #1138's admin page lists, and the rule behind its one
+   * hard guardrail: a template whose audience includes the Counterparty seat may never carry price,
+   * trial, card, plan or extension words (`lib/email/override.ts::checkOverride`).
+   *
+   * It is a column here rather than a sentence in a comment because it is *checked*: the page
+   * groups and labels by it, the save path refuses a leaking override by it, and the test that
+   * `trial-ending`, `extra-week-*` and `purchase-confirmation` cannot reach the Counterparty is a
+   * read of this field rather than a grep for a subject.
+   */
+  readonly recipient: EmailRecipient;
+  /**
    * Where this template's body comes from: its section in `content/email-bodies.md`, and the
    * `{{…}}` facts it may say. **Omitted** means the body is already written in code and is not the
    * owner's to edit there — `scripts/gen-email-bodies.mjs` reports a section for a template that
@@ -104,7 +131,58 @@ export interface EmailTemplate<Facts> {
    */
   readonly body?: EmailBodySpec;
   readonly subject: (facts: Facts) => string;
-  readonly document: (facts: Facts) => EmailDocument;
+  /**
+   * The document. `body` is the admin's published (or draft) body text, when there is one — it
+   * replaces the markdown body's blocks and leaves the template's own sentences alone, because
+   * what an admin edits is `content/email-bodies.md`'s paragraph and not the product behaviour
+   * written around it (#1138 requirement 8: there is no separate HTML field and no second body).
+   * A template with no `body` spec ignores the argument; the save path refuses to give it one.
+   */
+  readonly document: (facts: Facts, body?: string) => EmailDocument;
+}
+
+/**
+ * Who a mail is addressed to. Five values, and each is a different promise:
+ *
+ *   counterparty  someone who is not a member yet, or is the other seat — **no price, no trial, no
+ *                 card, no plan, no extension, no `$`**, ever (see `lib/email/override.ts`)
+ *   initiator     the person who started the relationship, signed in — may read money words
+ *   both          one body sent to either seat, so the Counterparty's rule binds it
+ *   member        a signed-in account holder, neither seat in particular
+ *   subscriber    a news-list address — the marketing class, and no relationship at all
+ *   operator      ours, not a member's: the stakeholder release note, and `/admin/broadcast`
+ *
+ * `operator` is the one value #1138's page does not list: "the stakeholder release note stays out
+ * of this page", so the page filters on it rather than keeping a second list of what to hide.
+ */
+export type EmailRecipient =
+  | "counterparty"
+  | "initiator"
+  | "both"
+  | "member"
+  | "subscriber"
+  | "operator";
+
+/** Every recipient value, so a test can walk them and a page can name one. */
+export const EMAIL_RECIPIENTS: readonly EmailRecipient[] = [
+  "counterparty",
+  "initiator",
+  "both",
+  "member",
+  "subscriber",
+  "operator",
+];
+
+/**
+ * Does this mail reach the Counterparty seat? The guardrail's predicate, in one place.
+ *
+ * `both` is the subtle one and it is deliberately included: a notice written once for either seat
+ * is a notice that reaches the Counterparty, so it carries the same silence about money. The
+ * rewrite #1138 open-question 2 asks about (`trial-ended-paused` + a split `relationship-paused`)
+ * exists precisely because the current both-seats lapse letter does not obey this.
+ */
+export function reachesCounterparty(recipient: EmailRecipient): boolean {
+  return recipient === "counterparty" || recipient === "both";
 }
 
 /** #1 — the stakeholder release note, registered from its own module. */
@@ -112,6 +190,7 @@ export const releaseNoteTemplate: EmailTemplate<ChangelogSection> = {
   id: "stakeholder-release-note",
   numeral: 1,
   emailClass: "transactional",
+  recipient: "operator",
   subject: (section) => releaseNoteDocument(section).subject,
   document: releaseNoteDocument,
 };
@@ -121,6 +200,7 @@ export const invitationTemplate: EmailTemplate<InvitationFacts> = {
   id: "counterparty-invitation",
   numeral: 2,
   emailClass: "transactional",
+  recipient: "counterparty",
   body: INVITATION_BODY,
   subject: invitationSubject,
   document: invitationDocument,
@@ -134,6 +214,7 @@ export const reminderTemplate: EmailTemplate<ReminderFacts> = {
   id: "invitation-reminder",
   numeral: 3,
   emailClass: "transactional",
+  recipient: "counterparty",
   body: REMINDER_BODY,
   subject: (facts) => reminderDocument(facts).subject,
   document: reminderDocument,
@@ -144,6 +225,7 @@ export const joinedTemplate: EmailTemplate<JoinedFacts> = {
   id: "counterparty-joined",
   numeral: 4,
   emailClass: "transactional",
+  recipient: "initiator",
   body: JOINED_BODY,
   subject: joinedSubject,
   document: joinedDocument,
@@ -154,6 +236,7 @@ export const reportReadyTemplate: EmailTemplate<ReportReadyFacts> = {
   id: "gap-report-ready",
   numeral: 5,
   emailClass: "transactional",
+  recipient: "both",
   body: REPORT_READY_BODY,
   subject: (facts) => reportReadyDocument(facts).subject,
   document: reportReadyDocument,
@@ -168,16 +251,18 @@ export const trialEndingTemplate: EmailTemplate<TrialEndingFacts> = {
   id: "trial-ending",
   numeral: 6,
   emailClass: "transactional",
+  recipient: "initiator",
   body: TRIAL_ENDING_BODY,
   subject: (facts) => trialEndingDocument(facts).subject,
   document: trialEndingDocument,
 };
 
-/** #7 — the membership lapsed: the words for `membershipOf()`'s read-only state. */
+/** #7 — the membership lapsed: the words for `membershipOf()`'s read-only state, Initiator only. */
 export const membershipLapsedTemplate: EmailTemplate<MembershipLapsedFacts> = {
   id: "membership-lapsed",
   numeral: 7,
   emailClass: "transactional",
+  recipient: "both",
   body: MEMBERSHIP_LAPSED_BODY,
   subject: (facts) => membershipLapsedDocument(facts).subject,
   document: membershipLapsedDocument,
@@ -188,6 +273,7 @@ export const supportReplyTemplate: EmailTemplate<SupportReplyFacts> = {
   id: "support-reply",
   numeral: 8,
   emailClass: "transactional",
+  recipient: "member",
   body: SUPPORT_REPLY_BODY,
   subject: supportReplySubject,
   document: supportReplyDocument,
@@ -202,6 +288,7 @@ export const signupConfirmationTemplate: EmailTemplate<SignupConfirmationFacts> 
   id: "signup-confirmation",
   numeral: 9,
   emailClass: "marketing",
+  recipient: "subscriber",
   body: SIGNUP_CONFIRMATION_BODY,
   subject: (facts) => signupConfirmationDocument(facts).subject,
   document: signupConfirmationDocument,
@@ -212,27 +299,66 @@ export const purchaseConfirmationTemplate: EmailTemplate<PurchaseConfirmationFac
   id: "purchase-confirmation",
   numeral: 10,
   emailClass: "transactional",
+  recipient: "initiator",
   body: PURCHASE_CONFIRMATION_BODY,
   subject: (facts) => purchaseConfirmationDocument(facts).subject,
   document: purchaseConfirmationDocument,
 };
 
 /**
- /**
-  * #11 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
-  * no figure and no fee: `expire` is a job whose notice cannot be the fact (the state is already
-  * terminal and stored), so this template is a courtesy rather than a stamp's evidence.
-  *
-  * It was #12 until #1010 deleted the day-3 / day-10 fee reminder that sat before it: a reminder to
-  * pay a fee no longer taken is a letter nobody should receive, so the register is now eleven
-  * templates and this one keeps the sequence contiguous.
-  */
+ * #11 — the unpaid relationship expired. Both seats are told, and the counterparty's body carries
+ * no figure and no fee: `expire` is a job whose notice cannot be the fact (the state is already
+ * terminal and stored), so this template is a courtesy rather than a stamp's evidence.
+ *
+ * It was #12 until #1010 deleted the day-3 / day-10 fee reminder that sat before it: a reminder to
+ * pay a fee no longer taken is a letter nobody should receive, so the register is now eleven
+ * templates and this one keeps the sequence contiguous.
+ */
 export const relationshipExpiredTemplate: EmailTemplate<RelationshipExpiredFacts> = {
   id: "relationship-expired",
   numeral: 11,
   emailClass: "transactional",
+  recipient: "both",
   subject: relationshipExpiredSubject,
   document: relationshipExpiredDocument,
+};
+
+/**
+ * #12 — the trial ended and Align is paused, to the Initiator (#1139).
+ *
+ * The trial's lapse, and only that one: `lib/billing/notices.ts` chooses it from
+ * `relationship.lapse_reason`, so a failed payment still gets #7 and its "resume it" sentence rather
+ * than a free week the account cannot take.
+ */
+export const trialEndedPausedTemplate: EmailTemplate<TrialEndedPausedFacts> = {
+  id: "trial-ended-paused",
+  numeral: 12,
+  emailClass: "transactional",
+  // The Initiator's mail, and only theirs: it offers the free week and the plan's address, so the
+  // Counterparty's rule in `lib/email/override.ts::checkOverride` must bind it (#1139).
+  recipient: "initiator",
+  body: TRIAL_ENDED_PAUSED_BODY,
+  subject: (facts) => trialEndedPausedDocument(facts).subject,
+  document: trialEndedPausedDocument,
+};
+
+/**
+ * #13 — the relationship is paused, to the Counterparty (#1139).
+ *
+ * The seat that cannot act, told the one thing it needs: Align is paused, nothing was deleted, and
+ * they will hear when it resumes. No price, plan, trial, card or extension word is legal here —
+ * `tests/counterparty-no-leak.test.ts` sweeps this template for exactly that vocabulary.
+ */
+export const relationshipPausedTemplate: EmailTemplate<RelationshipPausedFacts> = {
+  id: "relationship-paused",
+  numeral: 13,
+  emailClass: "transactional",
+  // The Counterparty's own sentence (#1139) — the one seat that cannot act, and the seat the money
+  // rule exists for.
+  recipient: "counterparty",
+  body: RELATIONSHIP_PAUSED_BODY,
+  subject: (facts) => relationshipPausedDocument(facts).subject,
+  document: relationshipPausedDocument,
 };
 
 /**
@@ -251,7 +377,9 @@ export type RegisteredEmailTemplate =
   | EmailTemplate<SupportReplyFacts>
   | EmailTemplate<SignupConfirmationFacts>
   | EmailTemplate<PurchaseConfirmationFacts>
-  | EmailTemplate<RelationshipExpiredFacts>;
+  | EmailTemplate<RelationshipExpiredFacts>
+  | EmailTemplate<TrialEndedPausedFacts>
+  | EmailTemplate<RelationshipPausedFacts>;
 
 export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   releaseNoteTemplate,
@@ -265,6 +393,8 @@ export const EMAIL_TEMPLATES: readonly RegisteredEmailTemplate[] = [
   signupConfirmationTemplate,
   purchaseConfirmationTemplate,
   relationshipExpiredTemplate,
+  trialEndedPausedTemplate,
+  relationshipPausedTemplate,
 ];
 
 /** What a caller gets back: the document it was built from, and the two bodies. */
@@ -292,16 +422,36 @@ export function renderTemplate<Facts>(
     readonly mode?: Parameters<typeof renderEmail>[1]["mode"];
     /** Required for a `marketing` template (the band throws without it), refused for the rest. */
     readonly unsubscribeUrl?: string;
+    /**
+     * **The admin's override, when one is published** (#1138 requirement 9). Resolved by the
+     * caller — `lib/email/send.ts::renderTemplateForSend()` is the one implementation — so this
+     * function stays pure and importable from a client component (the editor's live preview).
+     *
+     * A field the override does not name is the code default; an override with no fields is the
+     * same mail the default renders. The body replaces `content/email-bodies.md`'s blocks and
+     * leaves the template's own sentences alone — an admin edits the paragraph, never the product
+     * behaviour written around it.
+     */
+    readonly override?: EmailOverride;
   } = {},
 ): RenderedTemplate {
-  const document = template.document(facts);
-  const rendered = renderEmail(document, {
-    emailClass: template.emailClass,
-    ...(options.origin === undefined ? {} : { origin: options.origin }),
-    ...(options.mode === undefined ? {} : { mode: options.mode }),
-    ...(options.unsubscribeUrl === undefined ? {} : { unsubscribeUrl: options.unsubscribeUrl }),
-  });
-  return { subject: document.subject, ...rendered };
+  const document = template.document(facts, options.override?.body);
+  const rendered = renderEmail(
+    options.override === undefined
+      ? document
+      : {
+          subject: options.override.subject ?? document.subject,
+          preheader: options.override.preheader ?? document.preheader,
+          blocks: document.blocks,
+        },
+    {
+      emailClass: template.emailClass,
+      ...(options.origin === undefined ? {} : { origin: options.origin }),
+      ...(options.mode === undefined ? {} : { mode: options.mode }),
+      ...(options.unsubscribeUrl === undefined ? {} : { unsubscribeUrl: options.unsubscribeUrl }),
+    },
+  );
+  return { subject: options.override?.subject ?? document.subject, ...rendered };
 }
 
 /** A template by its stable id, or `undefined` — the lookup a scheduler or a doc check uses. */

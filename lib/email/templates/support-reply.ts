@@ -54,16 +54,20 @@ export function supportReplySubject(facts: SupportReplyFacts): string {
   return `Re: ${facts.subject}`;
 }
 
-export function supportReplyDocument(facts: SupportReplyFacts): EmailDocument {
+export function supportReplyDocument(facts: SupportReplyFacts, body?: string): EmailDocument {
   return {
     subject: supportReplySubject(facts),
     preheader: `A reply to your message of ${calendarDate(facts.receivedAt)} about ${facts.subject}.`,
     blocks: [
-      ...bodyBlocks(SUPPORT_REPLY_BODY, {
-        recipient: facts.recipient,
-        subject: facts.subject,
-        received_on: calendarDate(facts.receivedAt),
-      }),
+      ...bodyBlocks(
+        SUPPORT_REPLY_BODY,
+        {
+          recipient: facts.recipient,
+          subject: facts.subject,
+          received_on: calendarDate(facts.receivedAt),
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, this answers the message you sent us on ${calendarDate(facts.receivedAt)} about ${facts.subject}.`,

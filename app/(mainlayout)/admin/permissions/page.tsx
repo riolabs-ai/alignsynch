@@ -14,12 +14,11 @@
  * (a filterable table with a counts band instead of a document reader). Nothing new is invented,
  * and no control the issue does not name is drawn.
  *
- * **Request-time, always.** `force-dynamic`: the matrix is read on the visit, so a matrix that
- * lands is live without a rebuild, and `pnpm build` needs no source and no database. The source is
- * absent on this tree today — #1126's matrix was reviewed on a Page outside the repo and arrives
- * with the pending v2 docs PR — so the standing render is the one honest panel the issue
- * prescribes, naming the path and saying an owner supplies it. That absence is drawn, not logged:
- * it is the expected state, not an incident.
+ * **Request-time, always.** `force-dynamic`: the matrix is read on the visit, so an edited matrix
+ * is live without a rebuild, and `pnpm build` needs no source and no database. #1158 committed the
+ * source (`docs/specs/v2-prototype/crud-matrix.md`), so a visit renders its 169 rows; a tree where
+ * the file is missing or unparseable draws the one honest panel the issue prescribes, naming the
+ * path and the reason. That state is drawn, not logged: it is an expected state, not an incident.
  *
  * **Read-only, and the filter is the URL.** No write path, no server action, no form; `?object=`,
  * `?role=`, `?prototype=`, `?upstream=` and `?priority=` are parsed once by
@@ -41,6 +40,7 @@ import {
   ADMIN_PERMISSIONS_PATH,
   CrudMatrixUnreadable,
   type CrudCell,
+  type CrudColumn,
   conflictedCells,
   countsOf,
   facetsOf,
@@ -71,9 +71,12 @@ export default async function AdminPermissionsPage({
   const filter = parseCrudFilter((await searchParams) ?? {});
 
   let cells: CrudCell[] = [];
+  let columns: readonly CrudColumn[] = [];
   let unreadable: string | null = null;
   try {
-    cells = readCrudMatrix();
+    const matrix = readCrudMatrix();
+    cells = [...matrix.cells];
+    columns = matrix.columns;
   } catch (error) {
     if (!(error instanceof CrudMatrixUnreadable)) throw error;
     unreadable = error.reason;
@@ -84,6 +87,7 @@ export default async function AdminPermissionsPage({
       <PermissionsConsole
         copy={adminPermissionsPageCopy}
         cells={filterCells(cells, filter)}
+        columns={columns}
         counts={unreadable === null ? countsOf(cells) : null}
         conflicts={conflictedCells(cells)}
         facets={facetsOf(cells)}

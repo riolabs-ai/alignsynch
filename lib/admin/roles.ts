@@ -138,6 +138,19 @@ export const ADMIN_ACTIONS = [
    */
   "template.delete",
   /**
+   * #1138 — the four writes `/admin/email-templates` makes to a transactional mail's override.
+   *
+   * `admin` for all four, because a mail the product sends to a person is the product's words: the
+   * register's default is content, and an override is content that goes out under the product's
+   * name. `support` reads the inbox and answers one message; it does not get to rewrite the
+   * invitation everybody receives. They are four names rather than one `email-template.write`
+   * because the audit log is read as a sentence — "published" and "sent a test" are different
+   * acts and a reader should not have to infer which one a row was.
+   */
+  "email-template.save",
+  "email-template.publish",
+  "email-template.reset",
+  /**
    * Give a relationship a tier for a period, or extend the one it has (#505). The action name is
    * the card's word — an operator "comps" a plan — and the row it writes is `plan_grant`, not
    * `billing_subscription`: no money moved, so it must not read as a purchase.
@@ -325,6 +338,14 @@ export const ACTION_REQUIREMENTS: Readonly<Record<AdminAction, UserRole>> = {
   "template.archive": "admin",
   "template.restore": "admin",
   "template.delete": "admin",
+  // #1138 — the mail-override triad. `admin` for the publish pair's reason: the words the product
+  // sends are what it promises, and an operator below `admin` answers mail rather than authoring
+  // it. The fourth thing the screen offers — "Send Test" — is not an action here on purpose: it
+  // writes nothing, so `act()` has nothing to record, and the mail it sends is the actor's own
+  // address carrying sample data and a test footer.
+  "email-template.save": "admin",
+  "email-template.publish": "admin",
+  "email-template.reset": "admin",
   /**
    * #505 — **`owner` alone, and the second action in this table that is owner-floored.**
    *
@@ -520,6 +541,13 @@ export const AUDIT_TARGET_TABLES = [
   "review_todo",
   "review_issue",
   "review_issue_comment",
+  /**
+   * #1138 — the row an email-override write creates. The target is the **version**, not the
+   * template id, for the reason `plan_grant` is a target: the audit row then points at the words
+   * that were saved or published, and the version row carries the actor and the instant beside it.
+   * A template id is not a row, so pointing there would give the log's join nothing to land on.
+   */
+  "email_template_version",
 ] as const;
 
 export type AuditTargetTable = (typeof AUDIT_TARGET_TABLES)[number];

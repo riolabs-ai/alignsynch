@@ -61,6 +61,13 @@
           "note": "#1126 — the CRUD & Permissions matrix, directly after Docs because it is the second reference: the docs say how the product works, this says which role may do what. `review` is the checklist glyph and no name in the set draws a table; the console's own review row lives in group-support, so the reuse never reads as the same destination in one rail."
         },
         {
+          "id": "admin-email-templates",
+          "href": "/admin/email-templates",
+          "icon": "inbox",
+          "needs": "admin",
+          "note": "#1138 — the transactional-mail override editor, the third reference row: the docs say how the product works, CRUD says who may do it, and this says what it writes to a person. `inbox` is the glyph the console's own mail surface uses, and it is not drawn by any other row in this group — a distinct letter is the point of a rail. It carries `needs: admin` so a support seat does not see it, which is the issue's own condition."
+        },
+        {
           "id": "admin-audit",
           "href": "/admin/audit",
           "icon": "audit",
@@ -94,6 +101,13 @@
           "icon": "templates",
           "needs": "member",
           "note": "#620 — one destination, two tabs: the catalogue and what this member owns. /dashboard/library is a 308 to this tab (next.config.mjs)."
+        },
+        {
+          "id": "chat",
+          "href": "/dashboard/chat",
+          "icon": "chat",
+          "needs": "member",
+          "note": "#1131 — one thread per relationship, last of the member's destinations as the v2 rail draws it (Start · My Relationships · Templates · Chat). NOT /chat: that address is the quiz product's conversations, gated to the quiz brand (#300), and it answers 404 on the build this rail belongs to."
         }
       ]
     },

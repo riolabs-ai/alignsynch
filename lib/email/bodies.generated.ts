@@ -6,10 +6,12 @@
 export const EMAIL_BODIES = {
   "counterparty-invitation": "This is {{inviter}}'s invitation to answer {{template}}: a set of statements about the two of you,\nanswered separately.",
   "invitation-reminder": "This invitation is the way in to {{template}}, and it stops working on {{expires_on}}.",
-  "counterparty-joined": "The invitation has been claimed: that seat belongs to {{joiner}} now, and the answering is what is\nleft.",
+  "counterparty-joined": "The invitation has been claimed: that seat belongs to {{joiner}} now, and the answering is what is\nleft. Your trial has started, and it runs from the day the invitation was accepted.",
   "gap-report-ready": "The report sets your answers side by side, so you can see where the two of you agree — In Synch — and\nwhere the difference is the Gap.",
   "trial-ending": "While the trial runs, the relationship it pays for stays writable: both of you can answer, accept and\nedit.",
   "membership-lapsed": "Nothing was deleted: the membership that paid for {{template}} ended, and what it bought is still\nyours to read.",
+  "trial-ended-paused": "Align is paused on {{template}}. Nothing was deleted: everything you both answered is saved, and\nboth of you can still read it.",
+  "relationship-paused": "Align is paused for now; you'll hear when it resumes.",
   "support-reply": "You are reading the reply itself: there is no ticket number to quote and no second screen to open.",
   "signup-confirmation": "You asked to hear from us, and the address you gave us is recorded.",
   "purchase-confirmation": "While the {{plan}} plan is active, the relationships it pays for stay writable: both seats can\nanswer, accept and edit.",

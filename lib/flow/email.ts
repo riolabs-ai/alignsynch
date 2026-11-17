@@ -40,7 +40,8 @@
  */
 import { brand } from "@/data/brand";
 import { resetRequestPageCopy } from "@/data/pages/password-reset";
-import { invitationTemplate, renderTemplate } from "@/lib/email/templates";
+import { invitationTemplate } from "@/lib/email/templates";
+import { renderTemplateForSend } from "@/lib/email/send";
 import { RESET_TTL_MINUTES } from "@/lib/auth/reset-token";
 import { instancePath, relationshipScreenPath } from "@/lib/flow/paths";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
@@ -144,10 +145,17 @@ export interface InvitationMessage {
   readonly link: string;
 }
 
-/** The message, built from the band's template #2 — subject, text, HTML and one link. */
-export function invitationMessage(fields: InvitationFields): InvitationMessage {
+/**
+ * The message, built from the band's template #2 — subject, text, HTML and one link.
+ *
+ * **Async since #1138**, and that is not incidental: the published override is a row, so building
+ * this message is I/O now. A route awaits it before `sendInvitation()`; the override read falls
+ * back to the code default whenever it cannot answer (`lib/email/send.ts`), so this cannot fail an
+ * invitation — the link still lands on the screen when the mail is `unset` or `failed`.
+ */
+export async function invitationMessage(fields: InvitationFields): Promise<InvitationMessage> {
   const link = invitationLink(fields.token, fields.base);
-  const rendered = renderTemplate(invitationTemplate, {
+  const rendered = await renderTemplateForSend(invitationTemplate, {
     inviter: fields.initiatorName,
     counterparty: fields.counterpartyName,
     template: fields.templateTitle,

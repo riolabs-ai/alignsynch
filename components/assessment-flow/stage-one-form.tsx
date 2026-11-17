@@ -93,6 +93,7 @@ function refusalsOf(
 export function StageOneForm({
   action,
   templateRecordId,
+  planIntent,
   copy,
   values,
   descriptionDefault,
@@ -103,6 +104,15 @@ export function StageOneForm({
   action: string;
   /** The template the stage is copying; the form carries it so the POST names it. */
   templateRecordId: string;
+  /**
+   * #1127 — the plan a reader chose on `/pricing`, carried by the stage's own address.
+   *
+   * Two hidden fields, nothing drawn: the plan is not a question this stage asks, it is a fact the
+   * address already holds. `POST /assessment/new/who` validates the pair again and writes the
+   * flow's plan cookie, which is what stage 5 reads and what lets the choice survive the sign-in at
+   * stage 4. Absent when nothing was carried, so an ordinary first visit posts exactly what it did.
+   */
+  planIntent?: { readonly planId: string; readonly interval: string };
   copy: StageOneCopy;
   values: StageOneValues;
   /** The template's own summary — the description's default, never a second fixture. */
@@ -145,6 +155,13 @@ export function StageOneForm({
     >
       {/* The template is the route's own fact; the form carries it so the POST names it. */}
       <input type="hidden" name="templateRecordId" value={templateRecordId} />
+      {/* #1127 — the plan off the address, for the save handler to write into the flow's cookie. */}
+      {planIntent === undefined ? null : (
+        <>
+          <input type="hidden" name="plan" value={planIntent.planId} />
+          <input type="hidden" name="interval" value={planIntent.interval} />
+        </>
+      )}
 
       <StageOneFields
         copy={copy}

@@ -39,7 +39,7 @@
 | Header and avatar | `components/layout/header`, `components/ui/avatar`, `components/ui/dropdown-menu` | Avatar → button (aria-label "Account menu"); menu per the bundle 09 kebab rules. |
 | Settings route | existing `/settings` | Keep the route; restyle in the v2 shell. |
 | Auth | existing auth actions | Sign Out → public catalog `/relationship-templates` with the toast "You’re signed out." |
-| Account deletion | account/relationship records | Closes every relationship the user is in and removes the account within 30 days; answers stay readable to the other person (same rule as Leave). |
+| Account deletion | account/relationship records | Closes every relationship the user is in and removes the account immediately; answers stay readable to the other person (same rule as Leave). |
 
 ## Page and interaction requirements
 
@@ -49,7 +49,7 @@
   - **Password** ("Use at least 8 characters."): Current Password, New Password, **Update Password**.
   - **Notifications** ("Email only. No marketing."): switches When the Other Person Finishes ("So you know results are ready."), New Chat Messages ("A daily summary, never one email per message."), Billing Reminders ("Before a trial ends or a card is charged."); **Save Notifications**.
   - **Session:** "Signed in as Marcus Reyes on this device." **Sign Out**.
-  - **Delete Account:** "Closes every relationship you’re in and removes your account within 30 days. Relationship answers stay readable to the other person." **Delete Account** (neutral outline + ×, neutral confirm).
+  - **Delete Account:** "Closes every relationship you’re in and removes your account immediately. Relationship answers stay readable to the other person." **Delete Account** (neutral outline + ×, neutral confirm).
 - Save buttons confirm with the shared toast.
 - **Counterparty-only accounts:** hide the Billing Reminders switch (or reword it without "trial"/"card"), so the no-price rule holds for people who only ever joined.
 

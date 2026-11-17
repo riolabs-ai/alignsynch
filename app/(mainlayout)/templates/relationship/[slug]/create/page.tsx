@@ -54,6 +54,7 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { EMPTY_CREATE_DRAFT, parseCreateDraft, type CreateDraft } from "@/lib/flow/create-draft";
 import { type CopyReadiness, stageRefusal } from "@/lib/flow/create-copy";
+import { planIntentFromSearch } from "@/lib/flow/plan-intent";
 import { readLibraryTemplate } from "@/lib/db/template-library";
 import {
   RELATIONSHIP_TEMPLATES_PATH,
@@ -72,6 +73,17 @@ export const metadata: Metadata = {
 type CreateParams = {
   readonly problem?: string | string[];
   readonly field?: string | string[];
+  /**
+   * #1127 — the plan a reader chose on `/pricing`, carried on the stage-1 address.
+   *
+   * The catalogue's cards and a template's `Create Relationship` both hand the pair on
+   * (`?from=pricing&plan=<tier>&interval=<interval>`). Stage 1 draws two hidden inputs for it and
+   * the save handler writes the flow's plan cookie, which is what stage 5 reads — the one carrier
+   * the flow already had, now fed from the address the visitor actually arrived on instead of from
+   * a redirect that sat between Pricing and the catalogue.
+   */
+  readonly plan?: string | string[];
+  readonly interval?: string | string[];
 };
 
 /** The first value of a search param — Next hands a repeated param back as an array. */
@@ -156,6 +168,15 @@ export default async function TemplateCreatePage({
    * second set of rules.
    */
   const problems = sectionOf(assessmentCreatePageCopy, "problems");
+  /**
+   * **The carried plan, validated (#1127).** `planIntentFromSearch()` is the same reader `/pricing`
+   * and the catalogue use, so a crafted tier or a stray interval carries nothing at all and the
+   * stage posts no plan. The pair goes to the form as two hidden fields; the save handler is what
+   * writes the cookie stage 5 reads.
+   */
+  const planIntent = planIntentFromSearch({
+    get: (name) => firstValue(query[name as "plan" | "interval"]) ?? null,
+  });
   const publishAction =
     detail !== undefined &&
     detail.template.authorship === "mine" &&
@@ -205,6 +226,7 @@ export default async function TemplateCreatePage({
       problemLink={refusal?.link ?? null}
       {...(publishAction === undefined ? {} : { publishAction })}
       {...(blocked ? { copyBlocked: true } : {})}
+      {...(planIntent === null ? {} : { planIntent })}
     />
   );
 }

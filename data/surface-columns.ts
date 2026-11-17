@@ -121,6 +121,8 @@ const rows: readonly SurfaceColumn[] = [
   // column table is a wide *element* inside the column, and it scrolls in its own container rather
   // than widening the page — the reading measure is the console family's, not the table's.
   { path: "/admin/permissions", mode: "column" },
+  { path: "/admin/email-templates", mode: "column" },
+  { path: "/admin/email-templates/[id]", mode: "column" },
   { path: "/admin/review", mode: "column" },
   { path: "/admin/templates", mode: "column" },
   { path: "/admin/templates/[id]", mode: "column" },
@@ -130,10 +132,21 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/dashboard/help", mode: "column" },
   { path: "/dashboard/relationships", mode: "column" },
   { path: "/dashboard/relationships/[id]", mode: "column" },
+  /**
+   * #1131 — Chat v2. A column, not a bleed: the v2 surface is two panes inside the page's own
+   * `max-w-content` (the conversation list beside the thread), so it takes the same left edge as the
+   * templates and relationships lists next to it. The quiz product's `/chat` — the bleed surface the
+   * mode table's `bleed` reason names — is a different route, and it keeps its own row below.
+   */
+  { path: "/dashboard/chat", mode: "column" },
+  // #1132 — the billing surface: the same left edge as the detail screen it is a sibling of.
+  { path: "/dashboard/payment", mode: "column" },
   { path: "/dashboard/support", mode: "column" },
   { path: "/dashboard/support/articles/[slug]", mode: "column" },
   { path: "/dashboard/templates", mode: "column" },
   { path: "/dashboard/templates/[id]", mode: "column" },
+  /* #1130 — the proposal form is a two-up (form + its two asides), like the template page above it. */
+  { path: "/dashboard/templates/[id]/propose", mode: "column" },
   { path: "/dashboard/user", mode: "column" },
   { path: "/settings", mode: "column" },
   /**

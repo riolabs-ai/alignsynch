@@ -102,6 +102,8 @@ describe("the shell's menus", () => {
       "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
+      // #1131 — one thread per relationship, closing the member's destinations as the v2 rail draws it.
+      "/dashboard/chat",
       "/dashboard/help",
       "/dashboard/support",
     ]);
@@ -120,10 +122,14 @@ describe("the shell's menus", () => {
       "/admin/docs",
       // #1126 — the CRUD & Permissions matrix: the spec reference the docs alone cannot state.
       "/admin/permissions",
+      // #1138 — the transactional-mail override editor: the words the product sends.
+      "/admin/email-templates",
       "/admin/audit",
       "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
+      // #1131 — Chat, last of the member's destinations.
+      "/dashboard/chat",
       // #665 — the review shelf: published artifacts with their to-dos and feedback.
       "/admin/review",
       "/dashboard/help",

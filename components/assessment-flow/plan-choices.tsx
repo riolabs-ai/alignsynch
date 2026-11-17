@@ -25,30 +25,37 @@
  * only wants to remember a preference can take the same report and post nothing. Nothing is charged
  * here either way: the charge surface is the walk's own provider frame.
  *
- * **Every word is the fixture's.** Labels, notes, prices and the `/mo` suffix all come from
- * `data/pages/assessment-create.ts` through `sectionOf`/`itemLabel` (E23 counts what a component
- * writes, and this one writes no sentence at all). The two ids are structure, not copy.
+ * **Every word is the fixture's.** Labels, notes, prices and the `/mo` / `/yr` suffixes all come
+ * from `data/pages/assessment-create.ts` through `sectionOf`/`itemLabel` (E23 counts what a component
+ * writes, and this one writes no sentence at all). The row ids are structure, not copy, and they are
+ * the plan catalogue's own (`single`, `family`, `annual`).
  */
 import type { PageCopy } from "@/content/pages";
+import { MEMBERSHIP_PLANS, MEMBERSHIP_PLAN_IDS } from "@/data/membership-plans";
 import type { PlanRowId } from "@/data/pages/assessment-create";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 /**
- * The two plans, in the order the prototype prints them. Their words are the fixture's.
+ * The three plans, in the order the catalogue and the artifact print them. Their words are the
+ * fixture's.
  *
  * `satisfies readonly PlanRowId[]` is half of the binding: an id listed here that the fixture's
- * `PLAN_BILLING_TIER` does not price is a compile error, because the walk indexes that map with a
- * `PlanId`. The other half — a row the fixture prices that this list forgot to draw — is the key
- * comparison in `tests/plan-billing-tier.test.tsx`, since no type can see a map entry nothing
- * reads.
+ * `PLAN_BILLING_TIER` does not name is a compile error, because the walk indexes that map with a
+ * `PlanRowId`. The other half — a row the fixture prices that this list forgot to draw — is the key
+ * comparison in `tests/plan-catalogue.test.ts`.
  */
-export const PLAN_IDS = ["one", "unlimited"] as const satisfies readonly PlanRowId[];
+export const PLAN_IDS = MEMBERSHIP_PLAN_IDS satisfies readonly PlanRowId[];
 
 export type PlanId = (typeof PLAN_IDS)[number];
 
-/** A plan's fixture ids: its own name and note, and the price it prints. */
+/** A plan's fixture ids: its own name and note, the price it prints, and the unit it is charged in. */
 function idsFor(plan: PlanId) {
-  return { name: plan, note: `${plan}-note`, price: `${plan}-price` } as const;
+  return {
+    name: plan,
+    note: `${plan}-note`,
+    price: `${plan}-price`,
+    interval: `${plan}-interval`,
+  } as const;
 }
 
 export function PlanChoices({
@@ -73,21 +80,24 @@ export function PlanChoices({
   return (
     <fieldset className="grid gap-2" data-create-plans="true">
       <legend className="sr-only">{itemLabel(plans, "legend")}</legend>
-      {PLAN_IDS.map((plan) => {
-        const ids = idsFor(plan);
+      {MEMBERSHIP_PLANS.map((spec) => {
+        const ids = idsFor(spec.id);
         return (
           /* One row per plan; the whole card is the label, so the target is the card. */
           <label
-            key={plan}
-            data-plan={plan}
+            key={spec.id}
+            data-plan={spec.id}
+            /* The catalogue's own capacity — the number the row advertises, never a typed count. */
+            data-plan-capacity={String(spec.capacity)}
+            data-plan-interval={spec.interval}
             className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 px-3 py-2.5 text-sm has-[:checked]:border-action has-[:checked]:bg-action/5 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 dark:has-[:checked]:bg-action/10"
           >
             <input
               type="radio"
               name="plan"
-              value={plan}
-              defaultChecked={initial === plan}
-              onChange={() => onSelect?.(plan)}
+              value={spec.id}
+              defaultChecked={initial === spec.id}
+              onChange={() => onSelect?.(spec.id)}
               className="mt-1"
             />
             <span className="min-w-0 flex-1">
@@ -99,9 +109,9 @@ export function PlanChoices({
               </span>
             </span>
             <span className="shrink-0 text-right font-semibold text-gray-900 dark:text-gray-100">
-              <span data-plan-price={plan}>{itemLabel(plans, ids.price)}</span>
+              <span data-plan-price={spec.id}>{itemLabel(plans, ids.price)}</span>
               <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
-                {itemLabel(plans, "per")}
+                {itemLabel(plans, ids.interval)}
               </span>
             </span>
           </label>

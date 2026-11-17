@@ -43,17 +43,21 @@ export interface ReportReadyFacts {
 /** `Your Gap report is ready` — the spec's subject. */
 export const REPORT_READY_SUBJECT = "Your Gap report is ready";
 
-export function reportReadyDocument(facts: ReportReadyFacts): EmailDocument {
+export function reportReadyDocument(facts: ReportReadyFacts, body?: string): EmailDocument {
   return {
     subject: REPORT_READY_SUBJECT,
     preheader: `Both of you have answered and accepted ${facts.template}, so the report is open.`,
     blocks: [
-      ...bodyBlocks(REPORT_READY_BODY, {
-        recipient: facts.recipient,
-        other: facts.other,
-        template: facts.template,
-        link: facts.link,
-      }),
+      ...bodyBlocks(
+        REPORT_READY_BODY,
+        {
+          recipient: facts.recipient,
+          other: facts.other,
+          template: facts.template,
+          link: facts.link,
+        },
+        body,
+      ),
       {
         kind: "paragraph",
         text: `Hi ${facts.recipient}, ${facts.other} accepted their side of ${facts.template}, and so have you. The Gap report is open to you both.`,

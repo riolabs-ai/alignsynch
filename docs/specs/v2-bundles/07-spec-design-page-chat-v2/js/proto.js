@@ -768,8 +768,8 @@
   $$("[data-settings-save]").forEach(b => b.addEventListener("click", () => toast(b.dataset.settingsSave)));
   document.addEventListener("click", async e => {
     if (!e.target.closest("[data-act='delete-account']")) return;
-    const ok = await modal({ title: "Delete Your Account?", body: "Every relationship you’re in closes. Your account is removed within 30 days. You can cancel by signing in before then.", confirm: "Delete Account", cancel: "Keep Account" });
-    if (ok) toast("Deletion scheduled. Sign in within 30 days to cancel.");
+    const ok = await modal({ title: "Delete Your Account?", body: "Every relationship you’re in closes. Your account is removed immediately and cannot be restored.", confirm: "Delete Account", cancel: "Keep Account" });
+    if (ok) toast("Account deleted. You’re signed out.");
   });
   // Pass 10 · ?step=1#decline opens the declined panel directly (flow map link)
   if (location.hash === "#decline" && $("[data-declined]")) { $$("[data-decline-hide]").forEach(x => { x.hidden = true; }); $("[data-declined]").hidden = false; }
