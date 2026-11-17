@@ -85,7 +85,7 @@ import {
 } from "@/content/steps";
 import { entitlementForAccount, billingProvider } from "@/lib/billing";
 import { relationshipGateRefusal } from "@/lib/billing/entitlements";
-import { activeRelationshipCount, grantCreationTrial, grantPublishTrial } from "@/lib/db/billing";
+import { activeRelationshipCount } from "@/lib/db/billing";
 import { getPool } from "@/lib/db/client";
 import { openPaymentObligation, type PaymentSql } from "@/lib/db/relationship-payment";
 import {
@@ -449,12 +449,12 @@ export async function createInstanceFromTemplate(
   // `instanceGateRefusal` answered for the count of open sessions *and* refused Advanced Mode on
   // Free. Both legs are gone, for one reason each:
   //
-  //   - **the mode leg, because the publish trial is the Advanced entitlement.** A Free account
-  //     that publishes a relationship is granted the entry paid tier for seven days
-  //     (`grantPublishTrial`, below and in `sendDraftInvitation`), and that tier plays Basic *and*
-  //     Advanced. Refusing the Mode at create was refusing a capability the very next write
-  //     grants — and refusing it on the direct-publish path while the draft path handed it over,
-  //     which is the same account getting two answers depending on which control it used.
+  //   - **the mode leg, because the trial is the Advanced entitlement.** An account inside its
+  //     seven days — which open when the Counterparty accepts the invitation (#1115, spec D3) and
+  //     not before — is entitled at the entry paid tier (`grantAcceptanceTrial` in
+  //     `lib/db/billing.ts`), and that tier plays Basic *and* Advanced. Refusing the Mode at create
+  //     was refusing a capability the very next write grants, and it answered differently depending
+  //     on which control the creator used.
   //   - **the session-count leg, because it was never the thing a plan sells.** An account may
   //     hold a seat as the Counterparty on several relationships without having started one; what
   //     a tier limits is the relationships you *start*, which is `relationshipGateRefusal`.
@@ -782,24 +782,14 @@ export async function createInstanceFromTemplate(
         provider: billingProvider(),
       });
 
-      // #1115 — **the trial opens with the relationship.** The week is anchored here, inside the
-      // transaction that writes the row, so the two facts cannot disagree: a relationship that
-      // commits has a trial, and a trial is never spent by somebody who created nothing. The
-      // writer is account-keyed and idempotent (`grantCreationTrial`), which is what keeps a second
-      // relationship — or the publish below — from restarting or duplicating the clock.
-      //
-      // Its failure is the create's failure, on purpose: a committed relationship whose account
-      // holds no entitling subscription reads `lapsed` on the very next membership read, which is
-      // the lock-out #840 fixed on the other anchor. A rolled-back create is the honest answer.
-      //
-      // `nothing-written` is the ordinary second create: the account already holds an entitling
-      // subscription, so this relationship inherits that clock rather than opening a second one
-      // (spec D3 — one week per account). Nothing to log; the caller reads the same row as before.
-      await grantCreationTrial(sqlOf(client), {
-        userId: initiatorUserId,
-        relationshipId,
-        now,
-      });
+      // #1115 / spec D3 — **creation opens no trial.** The week is anchored at the Counterparty's
+      // acceptance (`grantAcceptanceTrial()`, called from `claimInvite()`), because a draft and a
+      // pending invitation consume no trial days: the creator is waiting on somebody else to start
+      // the clock, and charging them for that wait is the defect the owner's ruling removes. There
+      // was a grant here, and a publish grant after the commit, until this change; both are gone,
+      // and the agreement they used to keep (an entitling row at every membership read) is now a
+      // property of the read itself — a `published` relationship with no subscription is a pair
+      // nobody has accepted yet, not a lapsed one (`lib/relationship/membership.ts`).
     }
 
     await client.query(
@@ -840,29 +830,11 @@ export async function createInstanceFromTemplate(
     throw new Error("createInstanceFromTemplate committed without an instance");
   }
 
-  // Publishing is the instant the trial opens (#840), on **either** publish path (#835). The draft
-  // path grants it in `sendDraftInvitation()`; a create that goes out `published` reaches the same
-  // instant a step earlier, and without the grant the row it has just committed reads `lapsed` on
-  // the very next membership read — every account that has never checked out would be locked out
-  // of the relationship it just published, and the counterparty's claim refused with `lapsed`.
-  // That is the defect #840 fixed on the send path, and this is the same fix on the other one.
-  //
-  // After `client.release()` on purpose: the grant is its own statement on the pool, and the
-  // transaction's connection is no longer held while it runs.
-  if (publishes && initiatorUserId !== null) {
-    try {
-      await grantPublishTrial({ userId: initiatorUserId, publishedAt: now });
-    } catch (error) {
-      // The create stands — it is already committed — but a published row with no trial lapses on
-      // the next read, so this is loud rather than swallowed.
-      console.error(
-        `[billing] publish trial not granted for relationship "${instanceRecordId}" (user ${initiatorUserId}): ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
+  // Publishing opens **no** trial (#1115 / spec D3). #840 put a grant here — and on the draft
+  // send path — because a just-published relationship with no subscription read `lapsed` on the
+  // next membership read, which locked the pair out on the first send. The corrected anchor makes
+  // that read answer differently: a `published` relationship nobody has accepted yet is open, not
+  // lapsed (`lib/relationship/membership.ts`), so the send needs no row and spends no days.
   return created;
 }
 
@@ -1376,29 +1348,20 @@ export async function sendDraftInvitation(input: {
   let status: string | undefined;
   let relationshipId: string | undefined;
   /**
-   * The membership behind the relationship, read from **`billing_subscription`** — the row the
-   * webhook writes (#1010 R2).
+   * The relationship's own state, and nothing about money.
    *
-   * #619's send waited for a **captured card** in `relationship_payment.method_captured_at`. #1010
-   * deletes that path: a card now reaches an account by buying the membership at stage 5, so the
-   * fact the send waits for is the Initiator's live subscription. Reading the old column here would
-   * refuse every send for ever, because nothing writes it any more.
-   *
-   * The live statuses are the ones `entitlements.ts` treats as paid: `active`, `trialing` and
-   * `past_due` (a payment retry in flight still serves the product).
+   * This read asked for the Initiator's live `billing_subscription` until #1115 moved the trial to
+   * the Counterparty's acceptance: at the instant a draft is sent nobody has accepted, so no
+   * membership can exist and the gate built on this column refused every send. The trial now opens
+   * at the claim, and a pending invitation costs nothing (spec D3) — so the send asks only what it
+   * authorises: which relationship, and in which state.
    */
-  let subscriptionStatus: string | null = null;
   try {
     const found = await client.query<{
       relationship_id: string | null;
       status: string | null;
-      subscription_status: string | null;
     }>(
-      `SELECT ai.relationship_id, r.status,
-              (SELECT bs.status FROM billing_subscription bs
-                WHERE bs.user_id = r.initiator_user_id
-                  AND bs.status = ANY(ARRAY['active', 'trialing', 'past_due'])
-                ORDER BY bs.updated_at DESC LIMIT 1) AS subscription_status
+      `SELECT ai.relationship_id, r.status
          FROM session ai
          LEFT JOIN relationship r ON r.id = ai.relationship_id
         WHERE ai.record_id = $1`,
@@ -1406,12 +1369,9 @@ export async function sendDraftInvitation(input: {
     );
     relationshipId = found.rows[0]?.relationship_id ?? undefined;
     status = found.rows[0]?.status ?? undefined;
-    subscriptionStatus = found.rows[0]?.subscription_status ?? null;
   } finally {
     client.release();
   }
-  /** Is the membership paying for this relationship live? `false` is what the send waits on. */
-  const membershipLive = subscriptionStatus !== null;
 
   // Who is asking, by the same two readings everything else uses: this browser's party cookies,
   // then the signed-in account. A role out of Postgres, never a field in the post.
@@ -1453,26 +1413,18 @@ export async function sendDraftInvitation(input: {
     };
   }
 
-  /**
-   * #911 / #1010 R2 — **the send waits for the membership.**
-   *
-   * The invitation publishes the relationship and mails the other seat. Since #1010 the money side
-   * of the stage is the **subscription** bought at stage 5 (one plan, both parties, seven days
-   * free), and the UI disables the control until it is live. That is the courtesy; this is the
-   * rule: a POST that skips the walk is refused here, where the write would happen, so "the send
-   * fired without a membership" is not a state a crafted request can reach. Keeping the draft is
-   * untouched — it sends nothing, so it is never asked for anything.
-   *
-   * The refusal code stays `no-payment-method` because it is the code the screen already maps;
-   * the sentence it carries names the membership, which is what the person can actually act on.
-   */
-  if (!membershipLive) {
-    return {
-      ok: false,
-      code: "no-payment-method",
-      reason: `relationship "${relationshipId ?? "none"}" has no live membership: stage 5's send waits for the subscription bought on that stage`,
-    };
-  }
+  // **The send is not gated on a payment, and it starts no trial** (#1115 / spec D3).
+  //
+  // #911/#1010 R2 put a gate here — `no-payment-method` unless the Initiator held a live
+  // subscription — which worked only because #1115's first anchor granted the trial at creation.
+  // The corrected anchor moves the week to the Counterparty's acceptance, and the gate cannot
+  // survive that move: at the instant a draft is sent, nobody has accepted, so no membership can
+  // exist, and the gate would refuse **every** send the product depends on. A pending invitation
+  // is free by the owner's ruling — "an invitation nobody answers costs nothing" — so the write
+  // that creates one asks nothing of the payer.
+  //
+  // The draft itself is still protected, by the two rules above it: only the Initiator may send, and
+  // only from `draft`/`pending`. What is gone is the money question, not the authorisation.
 
   // The token first — see the docstring. It is the same reissue the recovery path uses, so a draft
   // sent from here answers `no-invitation` for exactly the rows that path would.
@@ -1507,25 +1459,6 @@ export async function sendDraftInvitation(input: {
       reason: `relationship "${relationshipId}" moved out of draft before this send wrote it`,
       relationshipId,
     };
-  }
-
-  // Publishing is the instant the trial opens (#840). Without it the row reads as `lapsed` on the
-  // very next membership read — a just-published relationship whose account has never checked out
-  // holds no entitling subscription — and the counterparty's claim is refused with `lapsed`. The
-  // grant is idempotent and one statement, so a re-send cannot restart a clock.
-  const initiatorUserId = flipped.rows[0]?.initiator_user_id ?? null;
-  if (initiatorUserId !== null) {
-    try {
-      await grantPublishTrial({ userId: initiatorUserId, publishedAt: now });
-    } catch (error) {
-      // The publish stands — it is already committed — but a published row with no trial lapses on
-      // the next read, so this is loud rather than swallowed.
-      console.error(
-        `[billing] publish trial not granted for relationship "${relationshipId}" (user ${initiatorUserId}): ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
   }
 
   return {

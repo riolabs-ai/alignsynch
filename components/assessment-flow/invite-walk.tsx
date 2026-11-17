@@ -141,10 +141,11 @@ export function InviteWalk({
   /**
    * **The trial's end, as the server read it** (#1115).
    *
-   * An ISO instant, produced by `trialStateOf()` on the page and rendered here as a date. Its
-   * presence is also what makes this the **card-free create panel**: the walk only draws the
-   * free-week action, and only the free-week action, when it has a week to name. Absent means
-   * nothing was measured — the purchase path's panel, and the tests' render-only one.
+   * An ISO instant, produced by `trialStateOf()` on the page and rendered here as a date. It is
+   * **optional**, and absent is the ordinary state of a brand-new draft: the week opens when the
+   * Counterparty accepts (spec D3), so before that acceptance there is no instant to name and no
+   * countdown to draw. Presence is what adds the date line; the card-free panel itself depends on
+   * there being no checkout handler (`cardFree` below), not on this.
    */
   trialEndsAt?: string;
   /**
@@ -194,11 +195,14 @@ export function InviteWalk({
   const frameReady = clientSecret !== null && publishableKey !== null;
 
   /**
-   * **The card-free create panel** (#1115): the page measured a week, and supplied no checkout
-   * handler. Both facts are required, and together they are what makes the plan a comparison and
-   * the free-week action the way on — a walk that has neither is the purchase panel, unchanged.
+   * **The card-free create panel** (#1115): the page supplied no checkout handler, which is what
+   * "this is the create path" means. The week's *end* is optional beside that fact, and it is
+   * absent for a creator whose Counterparty has not accepted yet — the trial opens at the
+   * acceptance (spec D3), so there is no instant to print and the panel shows the week without a
+   * date. Gating the panel on a measured date instead would send a brand-new creator to the
+   * purchase panel for a plan they do not need yet.
    */
-  const cardFree = trialEndsAt !== undefined && checkout === undefined;
+  const cardFree = checkout === undefined;
 
   /** The trial's end as a reader sees it — the server instant through the tree's UTC formatter. */
   const trialDate = trialEndsAt === undefined ? null : formatDateLong(trialEndsAt);

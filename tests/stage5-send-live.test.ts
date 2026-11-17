@@ -1,7 +1,7 @@
 /**
  * Stage 5's Send, against **real Postgres**.
  *
- * The defect this file exists for is a column on the wrong table: `sendDraftInvitation()` selected
+ * The defect this file was born for is a column on the wrong table: `sendDraftInvitation()` selected
  * `r.method_captured_at` from `relationship`, which has no such column — it lives on
  * `relationship_payment` (`0036_relationship_payment.sql:65`). Postgres answered `42703` and the
  * handler threw, so **every** send on a real database was a 500, whatever the relationship's state.
@@ -9,14 +9,12 @@
  * A fake SQL surface cannot catch that: the failure is the planner's, not the code's. So this runs
  * the real function against a real schema, in a transaction-shaped fixture of its own.
  *
- * **The table that owns the fact moved, and this file moved with it (#1069).** #1012 (#1010 R2)
- * deleted the card gate from the send: a card now reaches an account by buying the membership at
- * stage 5, so the fact the send waits for is the Initiator's live subscription in
- * **`billing_subscription`** — `lib/flow/store.ts::sendDraftInvitation()` reads
- * `bs.status … WHERE bs.user_id = r.initiator_user_id`. This file kept writing a
- * `relationship_payment` row, which nothing reads any more, so its "paid" case answered
- * `no-payment-method` exactly like its "unpaid" case: the fixture, not the product, was stale. It
- * now writes the row the read actually owns.
+ * **The money question left the send (#1115, spec D3).** #1012 (#1010 R2) made the send wait for the
+ * Initiator's live subscription in `billing_subscription`; the trial now opens when the Counterparty
+ * accepts, so at the instant a draft is sent there is no acceptance and no membership — the gate
+ * would refuse every send the flow depends on, and it was removed with the anchor move. What this
+ * file proves now is the two facts that remain: the query **runs** on a schema with no subscription
+ * row (the `42703` class of defect), and the send writes **no** subscription row of its own.
  *
  * **Skipped unless `DATABASE_URL` is set**, exactly like the other `*-live.test.ts` files: the gate
  * has no connection string by design (`docs/operations/gate.md`), so this costs the gate nothing
@@ -25,7 +23,7 @@
  * **It leaves nothing behind.** Every row is created under a `probe-send-…` id and deleted in
  * `afterAll`. No seeded relationship is read or written.
  *
- *     DATABASE_URL=<branch url> npx vitest run tests/stage5-send-live.test.ts
+ *     DATABASE_URL=<branch url> pnpm exec vitest run tests/stage5-send-live.test.ts
  */
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -92,9 +90,12 @@ async function draftRelationship(suffix: string): Promise<string> {
 }
 
 /**
- * The row the send actually reads since #1012 — `billing_subscription`, keyed by user, with one of
- * the entitling statuses (`active`, `trialing`, `past_due`). `active` on purpose: it is the value a
- * real checkout produces, and it cannot be reached by the trial writer's default.
+ * The row a paid account holds — `billing_subscription`, keyed by user, with one of the entitling
+ * statuses (`active`, `trialing`, `past_due`).
+ *
+ * The send no longer reads it (#1115), so this fixture is no longer *required* for a send to go
+ * out; it stays because the interesting case after the anchor move is the one **without** it, and a
+ * suite that only ever ran unpaid could not tell a removed gate from a gate that happens to pass.
  *
  * `plan_id`/`interval` are held to a seeded `billing_plan` row by `billing_subscription_plan_fk`;
  * `basic/month` is the tier stage 5 sells and is in every migrated database (0018).
@@ -108,7 +109,16 @@ async function liveMembership(payerUserId: string): Promise<void> {
   );
 }
 
-live("stage 5's Send reads the membership fact from the table that owns it", () => {
+/** Every subscription row for one probe account — the 0-row / 1-row evidence for a send. */
+async function subscriptionRows(userId: string): Promise<number> {
+  const { rows } = await pool.query<{ n: number }>(
+    "SELECT count(*)::int AS n FROM billing_subscription WHERE user_id = $1",
+    [userId],
+  );
+  return rows[0]?.n ?? 0;
+}
+
+live("stage 5's Send sends without a membership, and writes no trial", () => {
   // The hooks live **inside** the describe: `describe.skip` with no `DATABASE_URL` must not open a
   // connection, or the gate (which has no connection string by design) fails on the pool instead of
   // skipping the file.
@@ -120,7 +130,7 @@ live("stage 5's Send reads the membership fact from the table that owns it", () 
 
   afterAll(async () => {
     if (databaseUrl === "") return;
-    // The subscription rows the fixture wrote — and any the send's own publish path granted.
+    // The subscription rows the fixture wrote — and any a send granted, which it must not.
     await pool.query("DELETE FROM billing_subscription WHERE user_id LIKE $1", [`${TAG}-%`]);
     for (const id of created) {
       // Children first: payment, party, session, version, then the two records.
@@ -138,33 +148,37 @@ live("stage 5's Send reads the membership fact from the table that owns it", () 
     await pool.end();
   });
 
-  it("does not answer 42703 — the query runs, whatever the relationship's membership state", async () => {
+  it("sends a draft whose Initiator holds no subscription — the week opens at acceptance", async () => {
     const relationshipId = await draftRelationship("unpaid");
-    // No `billing_subscription` row for the Initiator: the state before a plan is bought. On the
-    // pre-#948 query this call threw `42703 column r.method_captured_at does not exist`, which is
-    // the 500 every send produced — the throw is what this assertion is about.
+    const payerId = `${relationshipId}-payer`;
+    // No `billing_subscription` row: the state every draft is in now that the trial is anchored at
+    // the Counterparty's acceptance (spec D3). On the pre-#948 query this call threw `42703`; on the
+    // #911 gate it answered `no-payment-method`. Both are the defects a real schema and a real
+    // function catch and a stub cannot.
     const result = await sendDraftInvitation({
       instanceRecordId: `${relationshipId}-session`,
-      viewerUserId: `${relationshipId}-payer`,
+      viewerUserId: payerId,
       now: NOW,
     });
-    expect(result.ok).toBe(false);
-    // The absence of a live membership reads as "no card on file", never as 500 or as "not found".
-    expect(result.ok === false && result.code).toBe("no-payment-method");
+    expect(result.ok === false ? result.code : "ok").not.toBe("no-payment-method");
+    expect(result.ok === false ? result.code : "ok").not.toBe("internal-error");
+    expect(result.ok).toBe(true);
+
+    // The send spent nothing: a pending invitation costs no trial days.
+    expect(await subscriptionRows(payerId)).toBe(0);
   });
 
-  it("finds the live membership on the subscription row and proceeds past the card gate", async () => {
+  it("sends for a paid Initiator too, and still writes no subscription of its own", async () => {
     const relationshipId = await draftRelationship("paid");
-    // The fact the send waits on lives on `billing_subscription` since #1012. A fixture that wrote
-    // a `relationship_payment` row instead (what this file did until #1069) reads as unpaid, and
-    // the case fails on a product that is working.
     await liveMembership(`${relationshipId}-payer`);
     const result = await sendDraftInvitation({
       instanceRecordId: `${relationshipId}-session`,
       viewerUserId: `${relationshipId}-payer`,
       now: NOW,
     });
-    // Past `no-payment-method`: what it does next belongs to the invitation path, not this card.
-    expect(result.ok === false ? result.code : "ok").not.toBe("no-payment-method");
+    expect(result.ok).toBe(true);
+
+    // The one row is the fixture's: the send neither duplicates nor replaces it.
+    expect(await subscriptionRows(`${relationshipId}-payer`)).toBe(1);
   });
 });

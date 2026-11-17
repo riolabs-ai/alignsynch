@@ -219,15 +219,18 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
          * card is saved), and the create path never reaches it. Leaving it in place keeps the
          * demoted purchase copy intact — the explicit upgrade action is the only reader now.
          *
-         * `trial-free` states the anchor the issue decided (spec D3): the clock opens with the
-         * relationship. `trial-ends` carries the instant as `{date}`, filled from the **server's**
-         * read — never a browser countdown, or two people on one account read two numbers. `{date}`
-         * is deliberately left visible if unfilled, like every other placeholder in this tree.
+         * `trial-free` states the anchor the owner corrected (spec D3): the clock opens when the
+         * person you invited **accepts**, not when the relationship is created and not when the
+         * invitation is sent — so a draft and a pending invitation spend nothing. `trial-ends`
+         * carries the instant as `{date}`, filled from the **server's** read and drawn only once a
+         * week is running — never a browser countdown, or two people on one account read two
+         * numbers. `{date}` is deliberately left visible if unfilled, like every other placeholder
+         * in this tree.
          */
         {
           id: "trial-free",
           label:
-            "7 days free, no card. The trial starts when this relationship is created, and nothing is charged during it.",
+            "7 days free, no card. The trial starts when the person you invite accepts, and nothing is charged before that.",
         },
         { id: "trial-ends", label: "Your 7 days free end on {date}." },
         /**

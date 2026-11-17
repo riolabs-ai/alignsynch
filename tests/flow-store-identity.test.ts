@@ -195,9 +195,9 @@ const stub = vi.hoisted(() => {
     ) {
       return wrote;
     }
-    // #1115 — the creation trial, written **inside** the create's transaction by
-    // `grantCreationTrial()`. This suite is about identity binding, so the answer is "granted";
-    // `tests/trial-create.test.ts` is where the statement itself is read.
+    // #1115 — no trial is written by the create any more (the anchor is the Counterparty's
+    // acceptance), so this answer is only reached if a create starts granting one again. It stays
+    // so that regression shows up as a recorded statement rather than a stub crash.
     if (sql.startsWith("INSERT INTO billing_subscription")) {
       return { rows: [{ provider_subscription_id: `trial:${String(values[0])}` }], rowCount: 1 };
     }
@@ -212,9 +212,8 @@ const stub = vi.hoisted(() => {
   async function rows<T>(text: string, values: readonly unknown[] = []): Promise<T[]> {
     calls.push({ text, values });
     const sql = narrow(text);
-    // #835 — the publish trial, written by `grantPublishTrial()`. Asked before the read below
-    // because this statement's `WHERE NOT EXISTS` also selects `FROM billing_subscription`, and
-    // a write must not be answered as a read. One row: the fixture grants the trial.
+    // #835 — the publish trial's own statement. Nothing in the flow calls it any more (#1115 moved
+    // the anchor to the acceptance), so this answer exists for the paths that still read it.
     if (sql.startsWith("INSERT INTO billing_subscription")) {
       return [{ provider_subscription_id: `trial:${String(values[0])}` }] as T[];
     }
@@ -434,57 +433,34 @@ describe("createInstanceFromTemplate writes the Setting the form chose", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * Create — the trial's anchor (#835, moved by #1115)
+ * Create — no trial (#1115, spec D3: the anchor is the acceptance)
  * ------------------------------------------------------------------ */
 
 /**
- * A create opens the trial, **inside the transaction that writes the relationship**.
+ * A create opens **no** trial.
  *
- * The draft path has granted it since #840 (`sendDraftInvitation`). The pre-#825 one-form create
- * publishes inside its own transaction and granted nothing — so the row it committed read
- * `lapsed` on the next membership read and the counterparty's claim was refused. #835 made the
- * two paths agree; #1115 moved the anchor from the publish to **creation** and added the writer
- * that runs in the create's own transaction (`grantCreationTrial`). The publish grant stays, and
- * the account-scoped provider id is what keeps the two from ever writing two rows.
+ * #835 made the two publish paths agree by granting on each; #1115 first moved that to creation.
+ * The owner's correction moves it again, to the Counterparty's acceptance, because a draft and a
+ * pending invitation must consume no trial days. So the create writes no subscription row on either
+ * path — direct publish or draft — and `grantAcceptanceTrial()` is called from `claimInvite()`
+ * instead. `tests/trial-acceptance.test.ts` reads the statement; this suite is about identity
+ * binding and only needs to know the create stopped writing it.
  */
-describe("a create opens the trial (#1115 moved the anchor)", () => {
+describe("a create opens no trial (#1115, spec D3)", () => {
   function trialInserts() {
     return callsMatching(/^INSERT INTO billing_subscription/);
   }
 
-  it("grants it inside the transaction that writes the relationship, and the publish grant follows", async () => {
+  it("writes no subscription row, on the publishing path or the draft path", async () => {
     await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery" }));
+    expect(trialInserts()).toHaveLength(0);
 
-    const writes = trialInserts();
-    // Two statements, one row: the creation grant **inside** the transaction (a relationship that
-    // commits has a trial) and #840's publish grant after it, which the guard answers with nothing
-    // because the account already holds an entitling row. Neither is removed by #1115.
-    expect(writes).toHaveLength(2);
-    const [creation, publish] = writes;
-    const creationAt = stub.calls.indexOf(creation);
-    expect(creationAt).toBeGreaterThan(onlyIndex(/^BEGIN$/));
-    expect(creationAt).toBeLessThan(onlyIndex(/^COMMIT$/));
-    expect(stub.calls.indexOf(publish)).toBeGreaterThan(onlyIndex(/^COMMIT$/));
-
-    expect(creation.values[0]).toBe("account-avery");
-    // The entry paid tier — the one whose entitlement plays both modes.
-    expect(creation.values[1]).toBe("basic");
-    // One trial per account: both writers name the same provider id, so they can only land on one
-    // row — a second relationship inherits the clock instead of opening a second week (D3).
-    expect(creation.values[3]).toBe("trial:account-avery");
-    expect(publish.values[3]).toBe("trial:account-avery");
-  });
-
-  it("grants it for a draft create too — the row is what opens the week, not the send", async () => {
-    // #1115 supersedes the old rule that only a publish opened the window: stage 4 writes the
-    // relationship, and the week opens with the relationship (spec D3). A draft that is never sent
-    // still spent nothing — the trial is free.
+    stub.reset();
     await createInstanceFromTemplate(createInput({ viewerUserId: "account-avery", draft: true }));
-
-    expect(trialInserts()).toHaveLength(1);
+    expect(trialInserts()).toHaveLength(0);
   });
 
-  it("writes none for a signed-out create — there is no account to hold a trial", async () => {
+  it("writes none for a signed-out create either — there is no account to hold a trial", async () => {
     await createInstanceFromTemplate(createInput({ viewerUserId: null }));
 
     expect(trialInserts()).toHaveLength(0);

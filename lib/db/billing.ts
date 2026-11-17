@@ -166,26 +166,38 @@ export async function grantPublishTrial(input: {
 }
 
 /**
- * Open the trial a relationship starts **when it is created** (#1115, spec D2/D3).
+ * Open the trial a relationship starts **when the Counterparty accepts it** (#1115, spec D3).
  *
- * The anchor moved here from the publish (#840's `grantPublishTrial()` above, kept and untouched
- * by #1115): the week opens with the relationship, not with the send, so a creator slow to invite
- * is not burning their week — and a visitor who never creates one is not burning it at all.
+ * The anchor is the acceptance, and it is the owner's ruling — the week opens at the moment the
+ * pair is *connected*: the second seat is taken, the relationship turns `active`, and both people
+ * can reach the dashboard and the first assessment session. A **draft** and a **pending
+ * invitation** consume no trial days at all: an invitation nobody answers costs nothing, so a
+ * creator is never spending the week they are waiting on somebody else to start.
  *
- * **It runs inside the create's own transaction**, which is why it takes the caller's handle
- * (`Sql`) instead of reading on the pool the way `grantPublishTrial` does. Two facts follow, and
- * both are the point: a relationship that commits has a trial, and a trial never exists without a
- * relationship — a throw after this statement rolls the trial back with the row.
+ * That is why the writer lives here and is called from one place — `claimInvite()`, inside the
+ * transaction that binds the Counterparty's seat and flips the relationship to `active` — and from
+ * no place else. The two earlier anchors are retired: the publish grant (`grantPublishTrial()`,
+ * above, kept for the publish path's own retirement) and #1115's first attempt at creation. A row
+ * written at either of those instants is a week spent before anybody accepted.
+ *
+ * **It runs inside the claim's transaction**, which is why it takes the caller's handle (`Sql`)
+ * instead of reading on the pool the way `grantPublishTrial` does. Two facts follow, and both are
+ * the point: an acceptance that commits has a trial, and a trial never exists without one — a throw
+ * after this statement rolls the trial back with the seat.
  *
  * **One trial per account, by construction.** The statement is the publish writer's shape:
  *
  *   - the provider id is a function of the **user** (`publishTrialSubscriptionId`), NOT the
- *     relationship, so the two writers can only ever land on one row per account — a second create,
- *     or a create followed by a publish, writes nothing;
+ *     relationship, so a second acceptance — or a create, or a publish — writes nothing; a replayed
+ *     claim and a repeated acceptance are the same single row, and the clock is never restarted;
  *   - `NOT EXISTS` over the entitling statuses refuses an account that already holds a live
  *     subscription (a paid one included, so an upgrade is never overwritten by a trial);
  *   - `ON CONFLICT DO NOTHING` covers the partial unique index on `user_id` for a concurrent write
  *     that slips past the check.
+ *
+ * **The row belongs to the relationship's Initiator**, which is the account the week is for: the
+ * Counterparty joins a pair that is already paid for and never buys anything (spec US-2), so the
+ * caller passes `initiator_user_id` and not the claimer.
  *
  * `mock` + `livemode = false`: no money moved, and no provider subscription exists during the
  * trial (D2) — the row is ours, and the upgrade action (a later card) converts it in place.
@@ -194,7 +206,7 @@ export async function grantPublishTrial(input: {
  * account, and the relationship is the **trigger**. It is carried so the call site can name what
  * granted the row in a log line, and so a reader of this function knows what opens it.
  */
-export async function grantCreationTrial(
+export async function grantAcceptanceTrial(
   sql: Sql,
   input: {
     readonly userId: string;

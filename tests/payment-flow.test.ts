@@ -71,7 +71,14 @@ function payActions(html: string): string[] {
   return [...html.matchAll(/data-pay-action="([^"]+)"/g)].map((match) => match[1] ?? "");
 }
 
-/** Render the walk at one panel. `paid` is the returning state — the membership is already live. */
+/**
+ * Render the walk at one panel. `paid` is the returning state — the membership is already live.
+ *
+ * **The checkout handlers are passed, because this file is about the purchase walk.** Since #1115
+ * an absent handler is what marks the *create* path, whose panel is the card-free week
+ * (`cardFree` in `invite-walk.tsx`); the four panels below are only reachable from the explicit
+ * upgrade action, which is the one caller that supplies these two.
+ */
 function walk(step?: PayFlowStep, paid = false): string {
   return decode(
     renderToStaticMarkup(
@@ -81,6 +88,10 @@ function walk(step?: PayFlowStep, paid = false): string {
         relationshipId: RELATIONSHIP,
         paid,
         onPaid: () => undefined,
+        checkout: {
+          onStart: async () => ({ ok: false, code: "not-exercised" }),
+          onConfirm: async () => ({ ok: false, code: "not-exercised" }),
+        },
         ...(step === undefined ? {} : { initialStep: step }),
       }),
     ),

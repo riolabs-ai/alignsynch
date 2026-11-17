@@ -7,13 +7,15 @@
  * the draft is under My relationships. Nothing is sent until Send is pressed, and keeping it as a
  * draft costs nothing.
  *
- * **No stage of this flow takes a card (#1115).** The account's seven-day trial was granted in the
- * same transaction that wrote the relationship (`grantCreationTrial` in `lib/flow/store.ts`), so
- * the walk on this page states the week and lets the reader through: the primary action is
- * `Continue with 7 days free`, and this page hands over **no** checkout action at all — it imports
- * none of the membership actions, so a card cannot come back through this file without the ratchet
- * in `tests/trial-no-payment-inputs.test.tsx` failing on the import line. Those actions belong to
- * the explicit upgrade action, the one caller of `payment_method_collection: "always"`.
+ * **No stage of this flow takes a card (#1115).** The account's seven-day trial is opened by the
+ * **Counterparty's acceptance** — `grantAcceptanceTrial()` in `lib/db/billing.ts`, called from the
+ * claim's own transaction — so a draft and a pending invitation consume no trial days and this page
+ * has no week's end to print until somebody accepts. The walk on this page states the week, its
+ * primary action is `Continue with 7 days free`, and this page hands over **no** checkout action at
+ * all: it imports none of the membership actions, so a card cannot come back through this file
+ * without the ratchet in `tests/trial-no-payment-inputs.test.tsx` failing on the import line. Those
+ * actions belong to the explicit upgrade action, the one caller of
+ * `payment_method_collection: "always"`.
  *
  * **Two handles, and they are not interchangeable (#794).** The path segment is the template's
  * **slug**; `?instance=` is the relationship's **id**. The read is the flow's own
@@ -152,9 +154,12 @@ export default async function TemplateCreateInvitePage({
    * Three facts arrive as props, and none of them is a payment handler any more:
    *
    *   `trialEndsAt`  the instant the creating account's free week closes, from the **one** read
-   *                  (`trialStateOf`) over the subscription `grantCreationTrial` wrote. It is what
-   *                  turns the walk into its card-free panel: the plan is a comparison, the action
-   *                  is `Continue with 7 days free`, and no step of the walk can reach a checkout.
+   *                  (`trialStateOf`) over the account's live subscription. It is what turns the
+   *                  walk into its card-free panel: the plan is a comparison, the action is
+   *                  `Continue with 7 days free`, and no step of the walk can reach a checkout. On a
+   *                  brand-new draft the week has not started — it opens when the Counterparty
+   *                  accepts (spec D3) — so this is `undefined` and the panel states the week
+   *                  without a date, which is the honest answer at that instant.
    *   `initialPaid`  whether a **paid** membership is already live — a Stripe row, not a trial. A
    *                  person who has paid lands one press from the act instead of being sold the
    *                  plan again; a person inside their trial lands on the panel that names the week,
