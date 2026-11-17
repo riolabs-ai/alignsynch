@@ -589,6 +589,13 @@ export function shellCopy(brand: Brand): PageCopy {
            */
           { id: "signed-out", label: "Sign In" },
           { id: "sign-up", label: "Sign Up" },
+          /**
+           * The avatar trigger's accessible name (#1136). The button carried none — an icon button
+           * with no label is announced as "button" — so the v2 bundle's `aria-label="Account menu"`
+           * becomes a fixture row and both brands use it. It is an affordance of the shell, not
+           * product vocabulary, which is why this one id is not paired.
+           */
+          { id: "menu", label: "Account menu" },
           { id: "profile", label: "My Profile" },
           { id: "profile-hint", label: "Account settings" },
           { id: "dashboard", label: "Dashboard" },
@@ -611,6 +618,45 @@ export function shellCopy(brand: Brand): PageCopy {
            * click and the session ending, and the failure said out loud rather than swallowed
            * (issue #272's rule, on the header's control rather than the rail's).
            */
+          { id: "logout-pending", label: "Signing out…" },
+          { id: "logout-error", label: "Couldn't sign out. Try again." },
+        ],
+      },
+      /**
+       * The account menu's v2 words (#1136), the AlignSynch expression of the same slot.
+       *
+       * **Paired rather than renamed, the way `nav`/`nav-alignsynch` is.** The v2 bundles are the
+       * AlignSynch build's visual authority (#1119), and they name two controls the quiz build
+       * spells differently: **Account Settings** (this build said "Settings") and **Sign Out**
+       * ("Log out"). QuizHub is a shipped product whose own words are its own — an epic about the
+       * alignment surface does not get to rewrite the quiz app's menu — so the two live side by
+       * side and `accountCopyFor()` in `lib/shell-copy.ts` picks one, exhaustively, per brand.
+       *
+       * The v2 menu draws **one line per row**: name + address, then Account Settings and Sign Out
+       * with an icon each (`settings.html`). There are no hint subtitles here for that reason, and
+       * the reader asks for them with `itemLabelOr` so a brand that draws none is not an error.
+       *
+       * `menu` is the avatar button's accessible name, verbatim from the bundle's `aria-label`; the
+       * trigger used to carry no name at all, which is what made it a decorative disc (#1136).
+       */
+      {
+        id: "account-alignsynch",
+        items: [
+          { id: "signed-out", label: "Sign In" },
+          { id: "sign-up", label: "Sign Up" },
+          { id: "menu", label: "Account menu" },
+          { id: "profile", label: "My Profile" },
+          { id: "dashboard", label: "Dashboard" },
+          { id: "quizzes", label: "My Quizzes" },
+          { id: "settings", label: "Account Settings" },
+          { id: "logout", label: "Sign Out" },
+          /**
+           * What the confirmation says once the session is gone (`lib/shell/account-sign-out.ts`).
+           * The bundle's own sentence: the toast is the only place this build tells a person the
+           * revocation actually happened, and a silent redirect to a catalogue reads as "the page
+           * changed", not "you are signed out".
+           */
+          { id: "logout-toast", label: "You’re signed out." },
           { id: "logout-pending", label: "Signing out…" },
           { id: "logout-error", label: "Couldn't sign out. Try again." },
         ],

@@ -22,7 +22,7 @@ How a template picks from this page — the order a new surface is decided in �
 ## Summary
 
 - routes: **95** — 60 static, 35 dynamic, from `app/**/page.tsx`
-- component domains: **43** — 370 files under `components/`, 361 of them `.tsx`
+- component domains: **43** — 371 files under `components/`, 362 of them `.tsx`
 - route handlers: **30** — `app/**/route.ts`, listed below and not a UI surface
 - status: **mock** 16 · **fixture** 75 · **db** 38 · **live** 8 · **prototype** 1
 - templates: Both templates 51 · AlignSynch 43 · QuizHub 42 · No template yet 2
@@ -228,8 +228,8 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `/settings` — **live**
   - capability: The parts of your account you can change — display name, handle, bio and the country pair — saved through the guarded POST /api/profile.
-  - components: `components/assessment-flow`, `components/identity`, `components/media`, `components/ui`
-  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `components/identity/sign-out-button.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/account/purge.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
+  - components: `components/assessment-flow`, `components/identity`, `components/ui`
+  - reads: Postgres — `lib/db/client.ts`, `lib/db/password-reset.ts`, `lib/db/profile-rows.ts`, `lib/db/rows.ts`, `lib/db/user-profiles.ts` · an `/api` path — `components/identity/settings-view.tsx`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/account/purge.ts`, `lib/auth/client.ts`, `lib/auth/password-provider.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/auth/sign-out.ts`
 
 - `/support` — **fixture**
   - capability: Account support inside the app: what to include in a message and what actually happens to it (stored in Postgres first, mailed second, read by a person), the links to the help centre and account settings, and a pointer to the one contact form rather than a second copy of it.
@@ -279,7 +279,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 
 - `components/identity` — **live**
   - capability: The account surfaces: the signed-in home, the member profile, the settings form that POSTs /api/profile, sign-out and the demo-account notice.
-  - files (7): `account-home.tsx`, `delete-account-card.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
+  - files (8): `account-home.tsx`, `delete-account-card.tsx`, `demo-account-notice.tsx`, `member-profile.tsx`, `password-card.tsx`, `session-card.tsx`, `settings-view.tsx`, `sign-out-button.tsx`
   - routes (3): `/dashboard/user`, `/profile/[username]`, `/settings`
 
 - `components/layout` — **fixture**
@@ -296,7 +296,7 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
 - `components/media` — **mock**
   - capability: The one media resolver: a file, a remote URL or a generated default drawn from a seed, in that order, with a fallback on error and no image file behind the last tier.
   - files (2): `generated-avatar.tsx`, `media.tsx`
-  - routes (25): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/settings`, `/tournaments`, `/tournaments/[id]`
+  - routes (24): `/`, `/affiliate`, `/battle`, `/categories`, `/categories/[slug]`, `/chat`, `/creator-tips`, `/creator-tips/[slug]`, `/daily-challenge`, `/dashboard/user`, `/explore`, `/explore/featured`, `/leaderboard`, `/my-quizzes`, `/my-quizzes/[id]`, `/my-quizzes/[id]/statistics`, `/news`, `/news/[slug]`, `/profile/[username]`, `/quiz-discussions`, `/quiz/[id]`, `/quiz/[id]/discussion`, `/tournaments`, `/tournaments/[id]`
 
 - `components/not-found` — **mock**
   - capability: The 404 body: floating glyph decoration and a go-back button.
