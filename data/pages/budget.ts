@@ -195,6 +195,17 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/admin-docs",
     budget: 0,
   },
+  // #1126 — the CRUD & Permissions matrix. Budget 0 from the first commit: the status vocabulary,
+  // the nine column names, the counts' captions, the failure panel, the eleven P0 gaps and the six
+  // role × action rules are `data/pages/admin-permissions.ts`, so the next literal written in
+  // `permissions-console.tsx` is a red build. Attribution is the component subdirectory, not the
+  // whole `components/admin` domain, because `/admin/review` already owns that number.
+  "/admin/permissions": {
+    page: "app/(mainlayout)/admin/permissions/page.tsx",
+    dirs: ["components/admin/permissions"],
+    fixture: "data/pages/admin-permissions",
+    budget: 0,
+  },
   // #502a — template authoring. Budget 0 from the first commit: the table's headings and states,
   // the create band's five fields and its nine refusal sentences are `data/pages/admin-templates.ts`,
   // so the next literal written in `template-registry.tsx` is a red build. Attribution is
@@ -269,17 +280,21 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/dashboard` — the console's Overview (Console 2/5), and the first surface whose four figures
-   * are counts rather than authored metrics. Budget 0 from the first commit: the card labels, the
-   * three one-line explanations, the empty band and the failure panel are all
-   * `data/pages/overview.ts`, so the next sentence written in `components/console/**` is a red
-   * build. `dirs` is only the new domain — `/dashboard/user`'s `components/identity` stays
-   * attributed to that surface, and the two consoles cannot lend each other words.
+   * `/dashboard` — **Start**, the v2 landing (#1129). Budget 0 from the first commit: the greeting,
+   * the two jobs' titles and bodies, the four chip words, the dashed line a card carries before
+   * anybody answers, the two section links and the failure band are all `data/pages/start.ts`, so
+   * the next sentence written in `components/dashboard/start-page.tsx` or
+   * `relationship-card.tsx` is a red build.
+   *
+   * The console's four counts moved off this route with the same change (`components/console/**`
+   * stays attributed to `/admin/gaps`, which still renders it): the approved v2 bundle draws a
+   * greeting, one next step and two shelves, and each count's list is one click away at
+   * `/assessments?filter=…`, which is where those cards pointed anyway.
    */
   "/dashboard": {
     page: "app/(mainlayout)/dashboard/page.tsx",
-    dirs: ["components/console"],
-    fixture: "data/pages/overview",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/start",
     budget: 0,
   },
   // #542 phase 1 — support inside the shell: the knowledge base, the request form and the outcome

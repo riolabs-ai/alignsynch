@@ -29,7 +29,7 @@ import { useCallback, useState } from "react";
  * signed-in person, or `null` when nobody is signed in.
  *
  * **One column at `md` and up, a drawer below it.** The rail is the sticky first column at 768px
- * and up — 64px of icons until `lg`, the 250px labelled rail from 1024px — and the content is the
+ * and up — 64px of icons until `xl`, the 250px labelled rail from 1280px — and the content is the
  * second column, so the offset is the rail's own in-flow width and needs no calculation here. Below
  * `md` the rail is `position: fixed` and out of the flow (see `AppSidebar`), so the content takes
  * the full width and nothing reflows when the drawer opens over it. `min-w-0` on the content
@@ -168,7 +168,16 @@ export function MainLayout({
           onOpenNavigation={openNavigation}
           notice={notice}
         />
-        <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">{children}</main>
+        {/*
+          The 1440px content cap (#1129, DESIGN-NOTES §8 row 16). `max-w-content` is 90rem in
+          `tailwind.config.ts`; the wrapper is centred, so a 1920px monitor gets margins rather than
+          a line of text two feet long. It is `w-full` so the column still fills a narrow viewport,
+          and it is inside `<main>` so the scrollbar stays at the viewport's edge rather than the
+          cap's.
+        */}
+        <main className="flex-1 overflow-auto p-3 md:p-4 xxl:p-6">
+          <div className="mx-auto w-full max-w-content">{children}</div>
+        </main>
       </div>
     </div>
   );

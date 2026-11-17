@@ -42,13 +42,18 @@ import { readRelationshipEditState } from "@/lib/member/relationship-edit";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
 import { TEMPLATE_LIBRARY_PATH } from "@/lib/flow/paths";
 import {
+  abandonRelationshipAction,
+  cancelInviteAction,
   claimExtensionAction,
   completeRelationshipAction,
   editRelationshipAction,
   forkRelationshipTemplateAction,
+  leaveRelationshipAction,
   previewRelationshipEditAction,
   publishRelationshipAction,
   republishInviteAction,
+  requestRemovalAction,
+  resendInviteAction,
   saveAspectsAction,
 } from "../actions";
 
@@ -195,6 +200,16 @@ export default async function MemberRelationshipPage({
           onComplete={completeRelationshipAction}
           onFork={forkRelationshipTemplateAction}
           onClaimExtension={claimExtensionAction}
+          /*
+            #1135 — the five ending verbs. Every one is a server action passed in (E34), and each
+            re-asks the seat inside its own transaction; `view.hygiene` is only what decides which of
+            them this render draws.
+          */
+          onCancelInvite={cancelInviteAction}
+          onResendInvite={resendInviteAction}
+          onAbandon={abandonRelationshipAction}
+          onLeave={leaveRelationshipAction}
+          onRequestRemoval={requestRemovalAction}
           /*
             #1121 — `?from=extend` is the one query string this screen keeps, and it is an arrival
             rather than a state: the banner says a week was just added, and every state on the page

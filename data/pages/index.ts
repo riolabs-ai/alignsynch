@@ -32,6 +32,8 @@ import { adminGrowthPageCopy } from "./admin-growth";
 import { adminHealthPageCopy } from "./admin-health";
 import { adminInboxPageCopy } from "./admin-inbox";
 import { adminInstancesPageCopy } from "./admin-instances";
+// #1126 — the CRUD & Permissions matrix: the v2 spec reference, read from one markdown source.
+import { adminPermissionsPageCopy } from "./admin-permissions";
 import { adminRelationshipPageCopy } from "./admin-relationship";
 // #665 — the review shelf: artifacts grouped by release, with to-dos and feedback.
 import { adminReviewPageCopy } from "./admin-review";
@@ -73,13 +75,13 @@ import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
-import { overviewPageCopy } from "./overview";
 import { resetCompletePageCopy, resetFormPageCopy, resetRequestPageCopy } from "./password-reset";
 import { pricingPageCopy } from "./pricing";
 import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
 import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
+import { startPageCopy } from "./start";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
 // The public catalogue — the page the header's `Templates` row names, and one template's page.
@@ -121,6 +123,8 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/admin/instances/[id]/report": adminReportPageCopy,
   // #506 — the support inbox: the contact form's queue, one thread, the reply.
   "/admin/inbox": adminInboxPageCopy,
+  // #1126 — the CRUD & Permissions matrix, read from `docs/specs/v2-prototype/crud-matrix.md`.
+  "/admin/permissions": adminPermissionsPageCopy,
   "/affiliate": affiliatePageCopy,
   "/assessment": assessmentPageCopy,
   // #877 — the member's assessment-session listing, plural and a sibling of `/dashboard/
@@ -142,7 +146,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
   "/daily-challenge": dailyChallengePageCopy,
-  "/dashboard": overviewPageCopy,
+  // #1129 — the v2 landing (Start). The console's four counts moved off this route: the approved
+  // bundle draws a greeting, one next step and two shelves, and the counts' own lists are one click
+  // away at `/assessments?filter=…` (which is where those cards pointed anyway).
+  "/dashboard": startPageCopy,
   // #542 phase 1 — the work the dashboard used to leave the app to do.
   "/dashboard/support": dashboardSupportPageCopy,
   // #533 phase 2 — the initiator's own templates and relationships. Four routes, four fixtures:
