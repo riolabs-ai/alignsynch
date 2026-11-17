@@ -35,12 +35,7 @@
  *     read-only here, and the panel says why instead of the save being refused after the fact.
  */
 import { AnswerForm } from "@/components/assessment-flow/answer-form";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { AspectDrawer } from "@/components/assessment-flow/aspect-drawer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,9 +78,6 @@ interface AspectState {
   readonly leftValue: string;
   readonly rightValue: string;
 }
-
-/** An empty row the author can type into; every field is theirs to fill. */
-const BLANK_ASPECT: AspectState = { prompt: "", leftValue: "", rightValue: "" };
 
 /**
  * The mode the preview draws. Basic asks Feel and Wish — the two every relationship answers — so
@@ -167,8 +159,12 @@ export const CATALOGUE_BAND = "catalogue" as const;
  * The delete's rule is **not** here. `deleteMyTemplate()` refuses a template a relationship was
  * created from or one that was published, and writes nothing when it refuses; the dialog below is a
  * confirmation that names what it would destroy, never the guard.
+ *
+ * **The delete control is a neutral ×**, never a red button: the destructive tone the palette forbids
+ * is also the tone that makes a reversible retire look like an emergency. The mark is a copy item
+ * (`delete-mark`), so no component spells the glyph and the label stays the owner's words.
  */
-function RetireBand({
+export function RetireBand({
   copy,
   title,
   status,
@@ -234,9 +230,11 @@ function RetireBand({
             <Button
               type="button"
               variant="ghost"
+              className="gap-2"
               data-template-delete-trigger
               disabled={pending || onDelete === undefined}
             >
+              <span aria-hidden="true">{itemLabel(copy, "delete-mark")}</span>
               {itemLabel(copy, "delete")}
             </Button>
           </AlertDialogTrigger>
@@ -360,6 +358,8 @@ export function TemplateEditor({
     })),
   );
   const [outcome, setOutcome] = useState<TemplateSaveOutcome | null>(null);
+  /** #1133 — which row the shared Aspect drawer holds: an index, `new`, or shut. */
+  const [openAspect, setOpenAspect] = useState<number | "new" | null>(null);
   const [versionOutcome, setVersionOutcome] = useState<TemplateVersionOutcome | null>(null);
   /** Which retire write last answered — the notice names it, so the sentence matches the verb. */
   const [retireOutcome, setRetireOutcome] = useState<{
@@ -430,11 +430,32 @@ export function TemplateEditor({
         );
   const retireRefusal = refusalText(refusals, retireOutcome?.answer ?? null);
 
-  /** Replace one Aspect, or add one, without mutating the array the render is reading. */
-  function patchAspect(index: number, patch: Partial<AspectState>): void {
-    setAspects((current) =>
-      current.map((aspect, at) => (at === index ? { ...aspect, ...patch } : aspect)),
-    );
+  /**
+   * #1133 — the shared drawer's save.
+   *
+   * The editor holds the whole template as a draft, so this writes nothing: it lands the drawer's
+   * four fields on the row it was opened for (or appends a new one) and the tab's own Save posts
+   * the record, exactly as the inline fields did before. A resolved `{ ok: true }` is what closes
+   * the sheet; there is no server answer to wait for here, and saying otherwise would be a spinner
+   * over a `useState`.
+   */
+  function saveAspectFromDrawer(next: {
+    readonly id: string;
+    readonly prompt: string;
+    readonly leftValue: string;
+    readonly rightValue: string;
+  }): Promise<{ readonly ok: true }> {
+    const patch = { prompt: next.prompt, leftValue: next.leftValue, rightValue: next.rightValue };
+    if (openAspect === null || openAspect === "new") {
+      setAspects((current) => [...current, patch]);
+    } else {
+      const at = openAspect;
+      setAspects((current) =>
+        current.map((aspect, index) => (index === at ? { ...aspect, ...patch } : aspect)),
+      );
+    }
+    setOpenAspect(null);
+    return Promise.resolve({ ok: true } as const);
   }
 
   /** Move one row by one place, inside the record's own order (`item.position`). */
@@ -629,79 +650,103 @@ export function TemplateEditor({
               <CardDescription>{sectionBody(aspectCopy)}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Accordion type="multiple" className="w-full">
-                {aspects.map((aspect, index) => (
-                  <AccordionItem key={aspect.id ?? `new-${index}`} value={`aspect-${index}`}>
-                    <AccordionTrigger>
-                      {aspect.prompt.trim() || itemLabel(aspectCopy, "new-aspect")}
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3">
-                      <Field
-                        id={`aspect-${index}-prompt`}
-                        label={itemLabel(aspectCopy, "prompt")}
-                        value={aspect.prompt}
-                        onChange={(next) => patchAspect(index, { prompt: next })}
-                        disabled={readOnly}
-                      />
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <Field
-                          id={`aspect-${index}-left`}
-                          label={itemLabel(aspectCopy, "left")}
-                          value={aspect.leftValue}
-                          onChange={(next) => patchAspect(index, { leftValue: next })}
+              {/*
+                #1133 — **the per-Aspect accordion is the shared drawer now.** The bundle draws the
+                editor as a right-side sheet (`06-…/my-template-detail.html` → `NEW: Aspect
+                drawer`), and this panel mounts the same component Stage 3 and a relationship's
+                Aspects tab mount, so one Aspect has one editor on all three screens. What stays
+                here is the list itself: the order and the remove control, which are this record's
+                own fields (`item.position`).
+              */}
+              <ol className="space-y-2" data-template-aspect-list="true">
+                {aspects.map((aspect, index) => {
+                  const id = aspect.id ?? `new-${index}`;
+                  return (
+                    <li
+                      key={aspect.id ?? id}
+                      data-template-aspect={id}
+                      className="rounded-lg border border-line bg-background p-3"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <button
+                          type="button"
+                          data-aspect-edit={id}
                           disabled={readOnly}
-                        />
-                        <Field
-                          id={`aspect-${index}-right`}
-                          label={itemLabel(aspectCopy, "right")}
-                          value={aspect.rightValue}
-                          onChange={(next) => patchAspect(index, { rightValue: next })}
-                          disabled={readOnly}
-                        />
+                          onClick={() => setOpenAspect(index)}
+                          className="min-w-0 flex-1 rounded-md px-1 py-1 text-left hover:bg-mist disabled:hover:bg-transparent"
+                        >
+                          <span className="block w-full truncate text-sm font-semibold text-foreground">
+                            {aspect.prompt.trim() || itemLabel(aspectCopy, "new-aspect")}
+                          </span>
+                          <span className="mt-0.5 block w-full truncate text-xs text-muted-foreground">
+                            {aspect.leftValue}
+                            <span aria-hidden="true" className="mx-1">
+                              ↔
+                            </span>
+                            {aspect.rightValue}
+                          </span>
+                        </button>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={readOnly || index === 0}
+                            onClick={() => moveAspect(index, -1)}
+                          >
+                            {itemLabel(aspectCopy, "up")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={readOnly || index === aspects.length - 1}
+                            onClick={() => moveAspect(index, 1)}
+                          >
+                            {itemLabel(aspectCopy, "down")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={readOnly || aspects.length === 1}
+                            onClick={() =>
+                              setAspects((current) => current.filter((_, at) => at !== index))
+                            }
+                          >
+                            {itemLabel(aspectCopy, "remove")}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={readOnly || index === 0}
-                          onClick={() => moveAspect(index, -1)}
-                        >
-                          {itemLabel(aspectCopy, "up")}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={readOnly || index === aspects.length - 1}
-                          onClick={() => moveAspect(index, 1)}
-                        >
-                          {itemLabel(aspectCopy, "down")}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={readOnly || aspects.length === 1}
-                          onClick={() =>
-                            setAspects((current) => current.filter((_, at) => at !== index))
-                          }
-                        >
-                          {itemLabel(aspectCopy, "remove")}
-                        </Button>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+                    </li>
+                  );
+                })}
+              </ol>
               <Button
                 type="button"
                 variant="outline"
                 disabled={readOnly}
-                onClick={() => setAspects((current) => [...current, BLANK_ASPECT])}
+                onClick={() => setOpenAspect("new")}
               >
                 {itemLabel(aspectCopy, "add")}
               </Button>
+              <AspectDrawer
+                copy={copy}
+                open={openAspect !== null}
+                aspect={
+                  openAspect === null || openAspect === "new"
+                    ? null
+                    : {
+                        id: aspects[openAspect]?.id ?? `new-${openAspect}`,
+                        prompt: aspects[openAspect]?.prompt ?? "",
+                        leftValue: aspects[openAspect]?.leftValue ?? "",
+                        rightValue: aspects[openAspect]?.rightValue ?? "",
+                      }
+                }
+                count={aspects.length}
+                onCancel={() => setOpenAspect(null)}
+                onSave={saveAspectFromDrawer}
+              />
             </CardContent>
           </Card>
         </TabsContent>

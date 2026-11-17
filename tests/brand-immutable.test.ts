@@ -39,8 +39,11 @@ vi.mock("next/link", () => ({
     createElement("a", { href, ...rest }, children),
 }));
 
+/** The public header marks its current row with `usePathname()`; the route is stated here. */
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+
 import { Footer } from "@/components/layout/footer";
-import { MarketingHeader } from "@/components/marketing/marketing-header";
+import { PublicHeader } from "@/components/layout/public-header";
 import { brand } from "@/data/brand";
 import { alignSynchBrand } from "@/data/brands/alignsynch";
 import { shellPageCopy } from "@/data/pages/shell";
@@ -117,7 +120,7 @@ function imagePaths(html: string): string[] {
 
 function headerHtml(): string {
   return renderToStaticMarkup(
-    createElement(MarketingHeader, {
+    createElement(PublicHeader, {
       brand: alignSynchBrand,
       brandId: "alignsynch",
       copy: shellPageCopy,
@@ -194,7 +197,7 @@ describe("the marketing chrome", () => {
     expect(image).not.toMatch(/object-(cover|contain)/);
 
     // The header reads the lockup, and never asks for the icon.
-    const source = readFileSync("components/marketing/marketing-header.tsx", "utf8");
+    const source = readFileSync("components/layout/public-header.tsx", "utf8");
     expect(source).not.toMatch(/brandIconMark|alignsynch-icon|brand\.mark/);
 
     // …and the route group hands it the lockup, which is the other way a chrome could "revert":

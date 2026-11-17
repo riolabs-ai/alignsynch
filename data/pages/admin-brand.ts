@@ -24,7 +24,8 @@
  * string typed into `components/admin/brand-profile.tsx` is a red build.
  *
  * **Two destinations, both checked.** The hero's primary action and the closing action point at the
- * public catalogue, `/relationship-types` (`RELATIONSHIP_TYPES_PATH`). The mockup's own targets are
+ * public catalogue, `/relationship-templates` (`TEMPLATE_CATALOGUE_PATH`, the one catalogue address
+ * since #1127). The mockup's own targets are
  * anchors in its home preview, which is a preview artefact rather than a route; E23 resolves every
  * `cta.href` against `content/routes.ts`, so a link that only exists in the mockup fails the build
  * here instead of 404ing in front of an operator.
@@ -42,7 +43,7 @@ export const adminBrandPageCopy: PageCopy = zPageCopy.parse({
   heading: "Bring expectations into the open at work.",
   subtitle:
     "AlignSynch helps two people at work compare expectations with a colleague, manager, business partner, or customer. Each answers privately; the shared report opens after both people accept. Personal relationships and friendships are here for your own reflection, too.",
-  cta: { label: "Explore business templates", href: "/relationship-types" },
+  cta: { label: "Explore business templates", href: "/relationship-templates" },
   /**
    * The hero's figure and its promise strip, block 1's other half. The two-seat figure is part of
    * the hero rather than a section of its own: it is the privacy story drawn, and dropping it
@@ -211,7 +212,7 @@ export const adminBrandPageCopy: PageCopy = zPageCopy.parse({
       id: "closing",
       heading: "Start with a business relationship.",
       body: "Choose a working relationship template, or explore personal and friendship options.",
-      cta: { label: "Explore business templates", href: "/relationship-types" },
+      cta: { label: "Explore business templates", href: "/relationship-templates" },
       items: [{ id: "eyebrow", label: "Primary call to action" }],
     },
   ],

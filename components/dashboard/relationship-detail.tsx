@@ -111,7 +111,10 @@ import {
   type ResendInviteOutcome,
 } from "@/lib/member/outcomes";
 import type { MemberRelationshipView } from "@/lib/member/relationships";
-import { ASPECT_EDITOR_SECTION } from "@/data/pages/dashboard-relationship-detail";
+import {
+  ASPECT_EDITOR_SECTION,
+  ASPECTS_LIVE_SECTION,
+} from "@/data/pages/dashboard-relationship-detail";
 import { REALM_GROUP } from "@/data/relationship-types";
 import type { AspectDraft } from "@/lib/flow/aspects";
 import { fillLabel, itemLabel, itemOf, pageItemOf, sectionBody, sectionOf } from "@/lib/page-copy";
@@ -375,6 +378,8 @@ export function RelationshipDetail({
    */
   const tabCopy = sectionOf(copy, "tabs");
   const tabs = (tabCopy.items ?? []).map((item) => ({ id: item.id, label: item.label }));
+  /** #1133 — the live Aspects band's two sentences (the rule, and why the pencils are gone). */
+  const liveAspectCopy = sectionOf(copy, ASPECTS_LIVE_SECTION);
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -1106,7 +1111,6 @@ export function RelationshipDetail({
             <AspectList
               copy={copy}
               wordsSection={ASPECT_EDITOR_SECTION}
-              validationSection={null}
               aspects={aspectDrafts}
               addRemove
               onChange={mirrorAspects}
@@ -1156,35 +1160,56 @@ export function RelationshipDetail({
             ) : null}
           </div>
         ) : (
-          <ol className="mt-4 grid gap-3">
-            {aspects.map((aspect, index) => (
-              <li
-                key={aspect.id ?? `row-${String(index + 1)}`}
-                data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
-                className="rounded-lg border border-border bg-card p-6"
+          <>
+            {/*
+              #1133 — **the live band.** Once Stage 6 is running the Aspects are locked, and the
+              screen says so instead of leaving a person to wonder where the pencils went. It is
+              the panel's own copy (`aspects-live`), not a sentence written here: E23, and because
+              the same two sentences are the contract the write layer enforces (`saveAspects`
+              refuses `not-editable` inside its transaction).
+            */}
+            {relationship.status === "active" ? (
+              <div
+                data-relationship-aspects-live="true"
+                className="mt-4 rounded-lg border border-border bg-mist p-4"
               >
-                <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
-                <p className={`mt-2 ${DETAIL_MUTED}`}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "left")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.leftValue}
+                <p className="flex items-start gap-2 text-sm font-medium text-foreground">
+                  <span aria-hidden="true">🔒</span>
+                  <span>{itemLabel(liveAspectCopy, "locked-now")}</span>
                 </p>
-                <p className={DETAIL_MUTED}>
-                  <span className="font-medium text-foreground">
-                    {itemLabel(aspectCopy, "right")}
-                  </span>
-                  <span aria-hidden className="mx-1.5">
-                    —
-                  </span>
-                  {aspect.rightValue}
-                </p>
-              </li>
-            ))}
-          </ol>
+                <p className={`mt-1 pl-6 ${DETAIL_MUTED}`}>{itemLabel(liveAspectCopy, "rule")}</p>
+              </div>
+            ) : null}
+            <ol className="mt-4 grid gap-3">
+              {aspects.map((aspect, index) => (
+                <li
+                  key={aspect.id ?? `row-${String(index + 1)}`}
+                  data-relationship-aspect={aspect.id ?? `row-${String(index + 1)}`}
+                  className="rounded-lg border border-border bg-card p-6"
+                >
+                  <p className="text-sm font-semibold text-foreground">{aspect.prompt}</p>
+                  <p className={`mt-2 ${DETAIL_MUTED}`}>
+                    <span className="font-medium text-foreground">
+                      {itemLabel(aspectCopy, "left")}
+                    </span>
+                    <span aria-hidden className="mx-1.5">
+                      —
+                    </span>
+                    {aspect.leftValue}
+                  </p>
+                  <p className={DETAIL_MUTED}>
+                    <span className="font-medium text-foreground">
+                      {itemLabel(aspectCopy, "right")}
+                    </span>
+                    <span aria-hidden className="mx-1.5">
+                      —
+                    </span>
+                    {aspect.rightValue}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </>
         )}
       </DetailSection>
     ),

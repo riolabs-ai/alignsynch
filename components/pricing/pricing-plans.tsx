@@ -1,316 +1,213 @@
-"use client";
+// template-ancestor: components/marketing/relationship-catalogue.tsx   (variation: the pricing route — the hero band, three plan cards with one interval each, the unsure strip, and the How Billing Works panel, all in bundle 02's band vocabulary)
 
-// template-ancestor: components/ui/card.tsx   (variation: the plan grid — one card per plan, an interval switch, a feature list and a plan action)
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { formatCurrencyAmount, formatPercentValue } from "@/content/metrics";
-import type { PageCopySection } from "@/content/pages";
-import type { BillingInterval } from "@/data/billing-plans";
-import { metric } from "@/data/metrics";
-import type { PricingPlanView } from "@/lib/billing/catalogue";
-import { pricingStartPath } from "@/lib/flow/paths";
-import { fillLabel, itemLabel } from "@/lib/page-copy";
-import { Check } from "lucide-react";
+import type {
+  PricingBandsModel,
+  PricingCardModel,
+  PricingHeroModel,
+  PricingUnsureModel,
+} from "@/lib/pricing-page";
 import Link from "next/link";
-import { type JSX, memo, useCallback, useState } from "react";
 
 /**
- * The plan grid — three cards, rendered from `billing_plan` (#289).
+ * `/pricing` — the plans band, drawn as bundle 02 draws it (#1127).
  *
- * **This component owns no price, no bullet and no label for a tier.** Every card is a
- * `PricingPlanView` the server built from `data/billing-plans.ts` (the words) and `billing_plan`
- * (the money, and whether the row is live), which is what replaced the `PLANS_DATA` copy that
- * used to live here. `formatCurrencyAmount` is the only thing that turns cents into a figure, and
- * `tests/billing-plans.test.ts` fails the build if a price literal reappears under
- * `components/pricing/`.
+ * **The pre-v2 composition is gone, not restyled around.** It was a grid of `billing_plan` rows
+ * with a monthly/yearly switch and a "Save up to N%" badge: every tier had two intervals, so the
+ * reader picked a tier and then a frequency, and the page printed a `/mo` figure for a yearly
+ * charge divided by twelve. The artifact sells **three plans, each with one interval** — Single,
+ * Family, Single Annual — where the interval is a property of the plan, and the owner approved
+ * exactly those three on #1127. So the switch, the discount badge and the free tier's card are
+ * removed rather than defaulted, and there is no reader-visible control on this page but the three
+ * actions.
  *
- * **The ribbon is data.** `plan.popular` is the fixture's `popular: true`, and it is the only
- * thing that decides which card carries the "Recommended" badge, which card is outlined in the
- * action colour and which card's button is filled — no index, no id, no "the middle one". Exactly
- * one plan may carry it (`billingPlanProblems()` rejects both two and none), and
- * `tests/billing-plans.test.ts` pins that the badge reads the field rather than a literal.
+ * **This component owns no word and no figure.** The hero, every card and the strip arrive from
+ * `lib/pricing-page.ts`, which joins `data/pages/pricing.ts` (the words) to
+ * `data/membership-plans.ts` (the names, the capacities and the amounts — which that module in turn
+ * reads out of `data/billing-plans.ts`). E23 attributes `components/pricing/**` to the page's
+ * fixture at a budget of 0, so the next sentence typed here is a red build; and no `$` figure can
+ * appear at all, because the only thing that turns cents into money is `formatCurrency` inside the
+ * projection.
  *
- * **Sellability is per interval.** `billing_plan` keys on (tier, interval), so `basic/month` can
- * be live while `basic/year` is retired: the card's button follows the toggle, and the interval
- * whose row is inactive (or missing) prints the not-available line instead. That is the card's
- * honesty rule — a button that cannot work must not render as if it does — enforced by data, not
- * by a flag in this file.
+ * **A card chooses; nothing charges (#1043, #1115 D3).** Each action is one link to the catalogue
+ * carrying the plan's tier and interval. The plan is sold inside stage 5, behind the send, and this
+ * page holds no checkout, no card field and no price input.
  *
- * **The account's own plan says so.** `current` comes from the server's entitlement read, never
- * from a query string: after a successful checkout the page reloads, reads the subscription, and
- * the card that was bought loses its button and gains the current-plan marker. Nothing in the
- * browser decides which plan someone is on.
- *
- * **Test mode is labelled.** When the deployment sells through the hosted adapter's test mode the
- * band says so on one line — the release candidate runs test keys in production, and a page that
- * reads as "you are being billed" without saying this would be the one false claim left.
- *
- * There is no "contact us about a custom plan" control any more: it belonged to the Enterprise
- * tier, which was removed from the catalogue (owner, 2026-11-02), and this component renders the
- * three plans the fixture authors and nothing else.
+ * `testMode` is drawn from the fixture's own sentence rather than assembled here, for the same
+ * reason as every other line: the release candidate runs the hosted adapter on test keys, and the
+ * band has to say so.
  */
-
-/** The copy id for the "/mo" and "/mo, billed yearly" suffixes, per interval. */
-const PRICE_SUFFIX_ITEM: Readonly<Record<BillingInterval, string>> = {
-  month: "price-per-month",
-  year: "price-per-month-yearly",
-};
-
-interface FeatureListProps {
-  features: readonly string[];
-}
-
-interface LimitationsListProps {
-  limitations: readonly string[];
-  copy: PageCopySection;
-}
-
-/** The features a card lists, one bullet each. */
-const FeatureList = memo<FeatureListProps>(({ features }) => {
+export function PricingPlans({
+  hero,
+  cards,
+  unsure,
+  bands,
+}: {
+  hero: PricingHeroModel;
+  cards: readonly PricingCardModel[];
+  unsure: PricingUnsureModel;
+  bands: PricingBandsModel;
+}) {
   return (
-    <ul className="space-y-3">
-      {features.map((feature: string) => (
-        <li key={feature} className="flex items-start">
-          <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-          <span className="text-sm">{feature}</span>
-        </li>
-      ))}
-    </ul>
+    <>
+      <section className="border-b bg-mist" aria-labelledby="pricing-title">
+        <div className="mx-auto w-full max-w-content px-4 lg:px-6">
+          <div className="space-y-3 py-10 text-center lg:py-12">
+            <p className="text-xs font-semibold uppercase tracking-wider text-deep">
+              {hero.eyebrow}
+            </p>
+            <h1
+              className="text-3xl font-bold tracking-tight text-primary lg:text-4xl"
+              id="pricing-title"
+            >
+              {hero.heading}
+            </h1>
+            <p className="mx-auto max-w-xl text-base text-foreground">{hero.subtitle}</p>
+            {bands.testMode === null ? null : (
+              <p className="mx-auto max-w-xl text-sm font-medium text-foreground" role="status">
+                {bands.testMode}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className="mx-auto w-full max-w-content px-4 lg:px-6">
+          <div className="space-y-6 py-10">
+            <ul className="grid gap-6 pt-3 md:grid-cols-3">
+              {cards.map((card) => (
+                <PlanCard card={card} key={card.id} />
+              ))}
+            </ul>
+
+            <div className="flex flex-col items-start gap-3 rounded-lg border border-status-line bg-status p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-foreground">
+                <span className="font-semibold">{unsure.lead}</span> {unsure.body}
+              </p>
+              <Link
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-action px-4 text-sm font-medium text-action-foreground transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-10"
+                href={unsure.cta.href}
+                data-most-popular
+              >
+                {unsure.cta.label}
+              </Link>
+            </div>
+
+            <section className="rounded-lg border border-billing-line bg-billing p-5">
+              <h2 className="text-base font-semibold text-primary">{bands.stepsHeading}</h2>
+              <ol className="mt-3 grid gap-4 md:grid-cols-3">
+                {bands.steps.map((step) => (
+                  <li className="flex gap-3" key={step.id}>
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-billing-chip text-xs font-semibold text-billing-ink">
+                      {step.ordinal}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{step.title}</p>
+                      <p className="text-sm text-muted-foreground">{step.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </div>
+        </div>
+      </section>
+    </>
   );
-});
+}
 
-FeatureList.displayName = "FeatureList";
-
-/** The limitations a card lists, when it has any. */
-const LimitationsList = memo<LimitationsListProps>(({ limitations, copy }) => {
-  if (limitations.length === 0) return null;
-
+/**
+ * One plan: the ribbon, the name and its capacity, the amount, the trial line, the features and
+ * the one action.
+ *
+ * The ribbon is `card.popular`, which the projection sets from `POPULAR_PLAN_ID` — exactly one card
+ * carries it, and the card that does is the one the outline and the filled action follow, so the
+ * three signals cannot point at different plans.
+ *
+ * A card the account already holds (`card.current`) says so and offers no action: a button that
+ * would sell someone the plan they are on is the defect the marker replaces.
+ */
+function PlanCard({ card }: { card: PricingCardModel }) {
   return (
-    <div className="mt-6">
-      <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">
-        {itemLabel(copy, "limitations")}
-      </h4>
-      <ul className="space-y-3">
-        {limitations.map((limitation: string) => (
-          <li key={limitation} className="flex items-start">
-            <span className="h-5 w-5 text-slate-400 mr-2 flex-shrink-0 mt-0.5">•</span>
-            <span className="text-sm text-slate-600 dark:text-slate-400">{limitation}</span>
+    <li
+      className={`relative flex flex-col rounded-lg border bg-card p-5 ${
+        card.popular ? "border-action ring-1 ring-action" : ""
+      }`}
+      data-plan-card={card.id}
+    >
+      {card.popular ? (
+        <span className="absolute -top-3 left-5">
+          <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-transparent bg-action px-2.5 py-0.5 text-xs font-semibold text-action-foreground">
+            <RibbonGlyph />
+            {card.popularLabel}
+          </span>
+        </span>
+      ) : null}
+      <h3 className="text-lg font-semibold text-primary">{card.name}</h3>
+      <p className="text-sm text-muted-foreground">{card.summary}</p>
+      <p className="mt-4">
+        <span className="text-3xl font-bold tracking-tight text-primary">{card.price}</span>
+        <span className="text-sm text-muted-foreground"> {card.interval}</span>
+      </p>
+      <p className="mt-1 text-sm font-medium text-billing-ink">{card.trialNote}</p>
+      <ul className="mt-4 flex-1 space-y-2 text-sm text-foreground">
+        {card.features.map((feature) => (
+          <li className="flex items-start gap-2" key={feature}>
+            <CheckGlyph />
+            <span>{feature}</span>
           </li>
         ))}
       </ul>
-    </div>
-  );
-});
-
-LimitationsList.displayName = "LimitationsList";
-
-/**
- * The card's footer: one of four things, in this order.
- *
- *   current      the account is on this tier — a marker, and nothing to buy
- *   carry        a live row at this interval — the plan's own action, which opens the template
- *                catalogue **carrying this tier and interval** (#1043). It starts no checkout:
- *                the money decision lives inside stage 5's walk, behind its plan panel
- *   unavailable  a checkout tier with no live row — a line, not a disabled button (a disabled
- *                button still reads as a control that would work under other circumstances)
- *   general      `/relationship-templates` — an ordinary destination that carries no plan, and
- *                clears one a previous visit left (the free tier's action, and any other
- *                non-checkout href the fixture authors)
- */
-const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: PageCopySection }>(
-  ({ plan, cycle, copy }) => {
-    const buttonClassName = `w-full ${plan.popular ? "bg-action hover:bg-action-hover text-white border-0" : ""}`;
-    const variant = plan.popular ? "default" : "outline";
-
-    if (plan.current) {
-      return (
-        <Badge variant="secondary" className="w-full justify-center py-2">
-          {itemLabel(copy, "current-plan")}
-        </Badge>
-      );
-    }
-
-    if (plan.cta.href === "checkout") {
-      const interval = plan.intervals[cycle];
-      if (interval === null || !interval.sellable) {
-        return (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {itemLabel(copy, "not-available")}
-          </p>
-        );
-      }
-      /**
-       * **A plan card carries its choice; it does not charge (#1043).** The button used to POST
-       * `/api/billing/checkout` and follow the answer, which is how a membership could start with no
-       * relationship behind it and how a person ended up choosing a plan twice. It is now one link to
-       * `pricingStartPath()`, which records the tier and interval on the browser and answers `303` to
-       * the template catalogue — the flow's only door since #1042. The two `data-` attributes are the
-       * render's own statement of what the action carries, which is what the inventory check reads.
-       */
-      return (
-        <Button asChild className={buttonClassName} variant={variant}>
-          <Link
-            href={pricingStartPath({ planId: plan.id, interval: cycle })}
-            data-plan-carry={plan.id}
-            data-plan-carry-interval={cycle}
-          >
-            {plan.cta.label}
-          </Link>
-        </Button>
-      );
-    }
-
-    return (
-      <Button asChild className={buttonClassName} variant={variant}>
-        {/* The general action: no plan behind it, and the route it names clears any carried one. */}
-        <Link href={plan.cta.href} data-plan-general={plan.id}>
-          {plan.cta.label}
+      {card.current ? (
+        <p className="mt-5 text-sm font-semibold text-primary" data-plan-current={card.id}>
+          {card.currentLabel}
+        </p>
+      ) : (
+        <Link
+          className={`mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-10 ${
+            card.popular
+              ? "bg-action text-action-foreground hover:bg-action-hover"
+              : "border border-input bg-background text-primary hover:bg-mist"
+          }`}
+          data-plan-cta={card.id}
+          href={card.cta.href}
+        >
+          {card.cta.label}
         </Link>
-      </Button>
-    );
-  },
-);
-
-PlanFooter.displayName = "PlanFooter";
-
-/** One card: the tier's words, its price for the selected interval, and its footer. */
-const PricingCard = memo<{
-  plan: PricingPlanView;
-  cycle: BillingInterval;
-  copy: PageCopySection;
-}>(({ plan, cycle, copy }) => {
-  const cardClassName = `relative flex flex-col border-2 ${
-    plan.popular
-      ? "border-action dark:border-action shadow-lg"
-      : "border-slate-200 dark:border-slate-800"
-  }`;
-  const interval = plan.intervals[cycle];
-
-  return (
-    <Card className={cardClassName}>
-      {plan.popular && (
-        <div className="absolute -top-4 left-0 right-0 flex justify-center">
-          <Badge className="bg-action hover:bg-action-hover px-3 py-1 text-white border-0">
-            {itemLabel(copy, "most-popular")}
-          </Badge>
-        </div>
       )}
-      <CardHeader>
-        <CardTitle className="text-2xl">{plan.name}</CardTitle>
-        <CardDescription>{plan.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="mb-6">
-          <div className="flex items-baseline">
-            <span className="text-5xl font-bold">
-              {interval === null ? "—" : formatCurrencyAmount(interval.displayCents)}
-            </span>
-            <span className="text-slate-500 dark:text-slate-400 ml-2">
-              /{itemLabel(copy, PRICE_SUFFIX_ITEM[cycle])}
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            {itemLabel(copy, "whats-included")}
-          </h4>
-          <FeatureList features={plan.features} />
-          <LimitationsList limitations={plan.limitations} copy={copy} />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <PlanFooter plan={plan} cycle={cycle} copy={copy} />
-      </CardFooter>
-    </Card>
+    </li>
   );
-});
+}
 
-PricingCard.displayName = "PricingCard";
-
-export function PricingPlans({
-  copy,
-  plans,
-  testMode,
-}: {
-  copy: PageCopySection;
-  plans: readonly PricingPlanView[];
-  testMode: boolean;
-}): JSX.Element {
-  const [cycle, setCycle] = useState<BillingInterval>("month");
-
-  const handleBillingToggle = useCallback((checked: boolean): void => {
-    setCycle(checked ? "year" : "month");
-  }, []);
-
-  const labelClasses = {
-    monthly: cycle === "month" ? "font-medium" : "text-slate-500",
-    yearly: cycle === "year" ? "font-medium" : "text-slate-500",
-  };
-
+/** The tick the feature lines and the hero share — one glyph, so they read as one set. */
+function CheckGlyph() {
   return (
-    <section className="py-10 xl:py-20">
-      <div className="marketing-container">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">{copy.heading}</h1>
-          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            {copy.body}
-          </p>
+    <svg
+      aria-hidden="true"
+      className="mt-0.5 size-4 shrink-0 text-deep"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
 
-          <div className="flex items-center justify-center mt-8 gap-3">
-            <Label htmlFor="billing-toggle" className={labelClasses.monthly}>
-              {itemLabel(copy, "monthly")}
-            </Label>
-            <Switch
-              id="billing-toggle"
-              checked={cycle === "year"}
-              onCheckedChange={handleBillingToggle}
-            />
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor="billing-toggle" className={labelClasses.yearly}>
-                {itemLabel(copy, "yearly")}
-              </Label>
-              <Badge
-                variant="outline"
-                className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-              >
-                {fillLabel(itemLabel(copy, "save-badge"), {
-                  percent: formatPercentValue(metric("pricing.annualDiscount").value),
-                })}
-              </Badge>
-            </div>
-          </div>
-
-          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-            {itemLabel(copy, "price-note")}
-          </p>
-          {testMode && (
-            <p className="mt-2 text-sm font-medium text-amber-700 dark:text-amber-500 max-w-2xl mx-auto">
-              {itemLabel(copy, "test-mode")}
-            </p>
-          )}
-        </div>
-
-        {/* Three cards, cheapest first: the recommended one is the middle card, where the eye
-            lands, and it is never the last one. `lg:grid-cols-3` is the fixture's tier count —
-            the grid is the same one-card-per-plan projection, not a second layout. */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {plans.map((plan) => (
-            <PricingCard key={plan.id} plan={plan} cycle={cycle} copy={copy} />
-          ))}
-        </div>
-      </div>
-    </section>
+/** The ribbon's mark: a small star, so the badge reads as a claim rather than a label. */
+function RibbonGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-3 shrink-0"
+      fill="currentColor"
+      stroke="none"
+      viewBox="0 0 24 24"
+    >
+      <path d="m12 2 2.9 6.3 6.8.8-5 4.7 1.3 6.8L12 17.3 5.9 20.6 7.2 13.8l-5-4.7 6.8-.8Z" />
+    </svg>
   );
 }

@@ -1,6 +1,6 @@
 import { AdminNoticeBar } from "@/components/layout/admin-notice-bar";
 import { Footer } from "@/components/layout/footer";
-import { MarketingHeader } from "@/components/marketing/marketing-header";
+import { PublicHeader } from "@/components/layout/public-header";
 import { brand, brandIdOf } from "@/data/brand";
 import { shellPageCopy } from "@/data/pages/shell";
 import { shellSession } from "@/lib/auth/shell-account";
@@ -94,7 +94,7 @@ export default async function MarketingLayout({
    */
   const shell = (
     <div className="flex min-h-screen flex-col bg-white">
-      <MarketingHeader
+      <PublicHeader
         account={account}
         brand={brand}
         brandId={brandId}
@@ -128,7 +128,7 @@ export default async function MarketingLayout({
   return (
     <div className={`flex min-h-screen flex-col bg-white ${ADMIN_NOTICE_SHELL_CLASS}`}>
       <AdminNoticeBar copy={shellPageCopy} viewerRole={role} />
-      <MarketingHeader
+      <PublicHeader
         account={account}
         brand={brand}
         brandId={brandId}
