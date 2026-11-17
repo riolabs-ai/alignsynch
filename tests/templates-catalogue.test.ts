@@ -219,22 +219,41 @@ describe("the canon's words, and none of the claims it forbids", () => {
 });
 
 describe("the endpoint and the screen", () => {
-  it("renders the #889 shop listing on every brand, and never the V2 composition (#1040)", async () => {
-    // The route used to switch on `brandIdOf(brand)`: the alignment build got the V2 composition
-    // and the quiz build the #889 one. #1040 restores the shop listing at the canonical door on
-    // **both** builds, so the assertion is brand-independent — which is also what makes it mean
-    // something in either of CI's two matrix lanes instead of passing on one and being skipped on
-    // the other.
-    //
-    // It is `await`ed because the route resolves the request's session before it builds the
-    // composition (#979): a member's action is not a visitor's, so the page is an async server
-    // component and a sync render of it is a suspended component, not a screen.
-    const pageHtml = renderToStaticMarkup(await RelationshipTemplatesPage());
-    // Only the #889 composition emits these: one card per purchasable type, and the shelf's search.
-    expect(pageHtml.match(/data-template-card/g)).toHaveLength(purchasableRelationshipTypes.length);
-    expect(pageHtml).toContain('id="template-search"');
-    // …and the V2 composition's own templates band is absent, so this is one screen, not two.
-    expect(pageHtml).not.toContain('id="relationship-templates"');
+  it("renders bundle 02's catalogue, one card per served template (#1127)", async () => {
+    // #1127 replaced the `#889` shop listing at this address with the bundle's composition: the
+    // hero with its worked example, the filterable shelf, How It Works, the questions and the
+    // closing band. The assertion stays brand-independent, so it means the same thing in either of
+    // CI's matrix lanes.
+    const pageHtml = renderToStaticMarkup(
+      await RelationshipTemplatesPage({ searchParams: Promise.resolve({}) }),
+    );
+    expect(pageHtml.match(/data-template-card=/g)).toHaveLength(purchasableRelationshipTypes.length);
+    // Both band anchors exist: the header's How It Works row and the hero's Browse action point
+    // at them, so a missing id is a link to nowhere.
+    expect(pageHtml).toContain('id="catalog"');
+    expect(pageHtml).toContain('id="how"');
+    // No plan was carried, so no banner: the step is only drawn for a reader arriving from
+    // `/pricing`.
+    expect(pageHtml).not.toContain("data-plan-banner");
+  });
+
+  it("draws the plan step banner only for a carried plan, and names it from the price list", async () => {
+    const carried = renderToStaticMarkup(
+      await RelationshipTemplatesPage({
+        searchParams: Promise.resolve({ from: "pricing", plan: "basic" }),
+      }),
+    );
+    expect(carried).toContain("data-plan-banner");
+    // The name is `data/billing-plans.ts`'s, never the query's value.
+    expect(carried).toContain("Your Basic plan is saved for later.");
+
+    // A crafted tier draws nothing rather than printing "free" or the raw string.
+    const crafted = renderToStaticMarkup(
+      await RelationshipTemplatesPage({
+        searchParams: Promise.resolve({ from: "pricing", plan: "gold" }),
+      }),
+    );
+    expect(crafted).not.toContain("data-plan-banner");
   });
 
   it("answers at the catalogue's one public endpoint", () => {

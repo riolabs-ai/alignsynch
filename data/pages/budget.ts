@@ -484,19 +484,23 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/relationship-templates` — the public catalogue, V2 composition (#905).
+   * `/relationship-templates` — the public catalogue, bundle 02's composition (#1127).
    *
-   * Budget 0, the same rule the #889 row below keeps: the hero's kicker and promise line, the two
-   * life cards, the menu rows, the catalogue band's frame and counselor note, the four steps, the
-   * membership facts and the closing band are all `data/pages/templates.ts`, so the next literal
-   * written in `components/templates/**` or in the page module is a red build. The templates
-   * themselves are `purchasableTypesByGroup()` over `data/relationship-types.ts` — records, not
-   * words — and the bands' geometry is `components/home/as2-*`'s, which the `/` row already owns.
+   * Budget 0: every word is `data/pages/relationship-catalogue.ts` — the hero and its ticks, the
+   * example card's labels, the shelf's search/filter/empty state, the four steps, the five
+   * questions and the closing band. The card's own facts (name, realm, roles, Aspect count) come
+   * from `data/relationship-types.ts` through `lib/relationship-catalogue.ts` — records, not words
+   * — and the worked example's numbers are the fixture's authored demo sheet. A literal typed into
+   * `components/marketing/**` is therefore a red build.
+   *
+   * The `#889` composition this replaced (`components/templates/templates-page.tsx` +
+   * `lib/templates-page.ts`) is retained and catalogued rather than deleted, exactly as the template
+   * doctrine asks: no route mounts it, and `tests/templates-page.test.ts` still pins what it claims.
    */
   "/relationship-templates": {
     page: "app/(marketing)/relationship-templates/page.tsx",
-    dirs: ["components/templates"],
-    fixture: "data/pages/templates",
+    dirs: ["components/marketing"],
+    fixture: "data/pages/relationship-catalogue",
     budget: 0,
   },
   /**

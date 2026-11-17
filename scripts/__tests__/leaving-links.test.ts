@@ -404,6 +404,7 @@ describe("the real tree", () => {
       unmarkedLeavingLinks({
         files: dashboardFiles(realSources),
         routes,
+        sources: realSources,
         surfaces: departureSurfaces({ files: realSources, routes }),
       }),
       [],

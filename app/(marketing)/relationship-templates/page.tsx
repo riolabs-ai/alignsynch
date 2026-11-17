@@ -1,62 +1,90 @@
-import { TemplatesPageView } from "@/components/templates/templates-page";
-import { brand, brandIdOf } from "@/data/brand";
-import { templatesPageCopy } from "@/data/pages/templates";
-import { currentUserIfConfigured } from "@/lib/auth/session";
-import { startViewer } from "@/lib/start-path";
-import { templatesPage } from "@/lib/templates-page";
+import { RelationshipCatalogue } from "@/components/marketing/relationship-catalogue";
+import { billingPlan } from "@/data/billing-plans";
+import { purchasableRelationshipTypes } from "@/data/relationship-types";
+import { relationshipCatalogueCopy } from "@/data/pages/relationship-catalogue";
+import {
+  catalogueBand,
+  catalogueBands,
+  catalogueCards,
+  catalogueExample,
+  catalogueGroups,
+  catalogueHero,
+  cataloguePlanBanner,
+  catalogueQuestions,
+  catalogueSteps,
+} from "@/lib/relationship-catalogue";
+import { isPaidPlanTier } from "@/lib/flow/plan-intent";
+import { relationshipTypePath } from "@/lib/flow/paths";
 import type { Metadata } from "next";
 
 /**
- * `/relationship-templates` — the public catalogue of relationship templates (#905, #1040).
+ * `/relationship-templates` — the public catalogue, the one address it answers at (#905, #1127).
  *
- * **The endpoint the catalogue answers at.** `/relationship-types` was the address from #794 until
- * this page; it stays mounted and unchanged as the retained landing variation (see the note below),
- * while every door the product opens — the shared header's `Templates` row, the footer's catalogue
- * link, the landing pages' "start with a template" actions and `/templates` itself — now points
- * here. The taxonomy pages that a template record lives on (`/relationship-types/<slug>` and its
- * worked example) did not move: a template is a record, and its own page kept its address.
+ * **What this page is.** Bundle 02's visitor surface
+ * (`docs/specs/v2-bundles/02-spec-design-page-onboarding-v2/relationship-templates.html`): the hero
+ * with its three billing ticks and a worked example, the filterable shelf of every template the
+ * platform serves, How It Works in four steps, the five questions, and the closing band. Every word
+ * is `data/pages/relationship-catalogue.ts` and every figure is a record
+ * (`lib/relationship-catalogue.ts`); this module joins them and nothing else.
  *
- * **The #889 shop listing, on both builds (#1040).** This route used to switch on `brandIdOf(brand)`
- * and hand the alignment build the V2 composition. #1040 restores the v1 shop listing at the
- * canonical door, so there is no switch left to get wrong: every brand renders
- * `TemplatesPageView`, the six bands cloned from
- * `docs/specs/spec-as2-style-templates-redesign/templates-listing-redesign.html` (PR #891), from
- * `lib/templates-page.ts` over `data/pages/templates.ts`. The quiz build's markup is unchanged —
- * it rendered this composition before the card and still does, byte for byte — and the alignment
- * build now matches it instead of diverging.
+ * **`/relationship-types` no longer answers here or anywhere else.** It was the second catalogue
+ * address from #794 until #1127; it now 308s to this page (`next.config.mjs`), and a type's own page
+ * and its worked example moved under this path. One catalogue, one address, one composition.
  *
- * **The V2 composition is retained, not deleted.** `components/templates/templates-catalogue-v2.tsx`
- * and its model `lib/templates-catalogue.ts` still build and still render (27 templates as chips
- * under two groups, the in-page menu, the benefits grid and the closing band), and
- * `tests/templates-catalogue.test.ts` keeps pinning what they claim. What changed is that no route
- * mounts them: the template doctrine catalogues a surface rather than deleting it, and
- * `docs/ui-registry.md` is where it is catalogued. Re-mounting it is one import in one branch, which
- * is the point of keeping it whole.
+ * **The plan banner is a query, and the plan itself is a cookie.** A reader arriving from `/pricing`
+ * carries `?from=pricing&plan=<tier>#catalog` — the issue's own URL shape — which is what the
+ * banner reads. The *wizard* reads the cookie `/pricing/start` writes (`lib/flow/plan-intent.ts`),
+ * because the choice has to survive the catalogue, the template page and the sign-in. The banner
+ * therefore trusts nothing: an unknown tier renders no banner, and the name it prints is
+ * `data/billing-plans.ts`'s, never the query's.
  *
- * **Which address is which is answerable from `lib/flow/paths.ts`**, never from this card:
- * `TEMPLATE_CATALOGUE_PATH` / `RELATIONSHIP_TEMPLATES_PATH` is the canonical door and the member's
- * library namespace, and `RELATIONSHIP_TYPES_PATH` is the variation's address and the record pages'
- * namespace.
+ * **No price is printed, here or on any card.** Membership is stated as a 7-day trial with no card
+ * (`tick-trial`), which is what the shop actually sells; the tiers and their figures live on
+ * `/pricing` alone (#798).
  *
- * **Nothing here reads a clock, a store or the database.** The page is a projection of
- * `data/relationship-types.ts` and `data/pages/templates.ts`, so it prerenders — which is what a
- * page a search engine and a stranger both land on first should do.
- *
- * The actions are the viewer's (#979): `startViewer()` decides whether a card's action is the create
- * flow's stage 1 or `/register?next=<that stage>`, and a visitor's markup is unchanged.
- *
- * The title is relative: the root layout's template composes `Relationship Templates · <brand>`, so
- * the brand is named once, by the layout, and not a second time here.
+ * `searchParams` is a Promise in Next 16, and reading it makes this route request-time — which it
+ * already is, because the shelf must know which templates the platform serves today.
  */
 export const metadata: Metadata = {
   title: "Relationship Templates",
 };
 
-export default async function RelationshipTemplatesPage() {
-  const signedIn = (await currentUserIfConfigured()) !== null;
+/** The carried tier's display name, or `null` — a crafted `?plan=` is not a plan. */
+function carriedPlanName(raw: string | string[] | undefined): string | null {
+  if (typeof raw !== "string" || !isPaidPlanTier(raw)) return null;
+  return billingPlan(raw)?.name ?? null;
+}
+
+export default async function RelationshipTemplatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const types = purchasableRelationshipTypes;
+  const cards = catalogueCards(relationshipCatalogueCopy, types);
+  /** The exemplar: the first template the catalogue can actually show an answer for. */
+  const example = catalogueExample(relationshipCatalogueCopy, types);
+  const popular = types.find((type) => type.id === "staff-manager") ?? types[0];
+
   return (
-    <TemplatesPageView
-      model={templatesPage(templatesPageCopy, startViewer(brandIdOf(brand), signedIn))}
+    <RelationshipCatalogue
+      band={catalogueBand(relationshipCatalogueCopy)}
+      bands={catalogueBands(relationshipCatalogueCopy)}
+      banner={cataloguePlanBanner(
+        relationshipCatalogueCopy,
+        params.from === "pricing" ? carriedPlanName(params.plan) : null,
+      )}
+      cards={cards}
+      example={example}
+      groups={catalogueGroups(relationshipCatalogueCopy, cards)}
+      hero={catalogueHero(
+        relationshipCatalogueCopy,
+        cards,
+        popular === undefined ? cards[0]?.href ?? "/relationship-templates" : relationshipTypePath(popular.id),
+      )}
+      questions={catalogueQuestions(relationshipCatalogueCopy)}
+      steps={catalogueSteps(relationshipCatalogueCopy)}
     />
   );
 }
