@@ -61,6 +61,11 @@ tests/parity/artifacts/
 # Hermes profile/board state occasionally lands in a card workspace; never commit it.
 .hermes/
 
+# `gitnexus` writes CLAUDE.md at the repo root as a mirror of the block it also appends inside
+# AGENTS.md: the block is committed there, and a second copy here would drift from it. The writer
+# re-creates the file on every analyze, so it is ignored in a fresh checkout rather than committed.
+/CLAUDE.md
+
 # The audience and positioning canon is held outside this repository on purpose (#903): the repo
 # is public, and the note is a private copy handoff. The copies stay on disk, untracked,
 # and this rule is what stops the next `git add -A` from publishing them.
