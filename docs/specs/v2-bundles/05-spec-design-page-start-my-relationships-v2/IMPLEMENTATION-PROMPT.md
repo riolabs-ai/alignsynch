@@ -1,5 +1,11 @@
 # AlignSynch Start and My Relationships v2: React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Start and My Relationships v2 — implementation brief · prev [Start and My Relationships v2 (handoff)](README.md) · next [Start and My Relationships v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Start and My Relationships** · prev [04-spec-design-page-align-v2](../04-spec-design-page-align-v2/README.md) · next [06-spec-design-page-templates-v2](../06-spec-design-page-templates-v2/README.md)
@@ -178,3 +184,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Start and My Relationships** · prev [04-spec-design-page-align-v2](../04-spec-design-page-align-v2/README.md) · next [06-spec-design-page-templates-v2](../06-spec-design-page-templates-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Start and My Relationships v2 — implementation brief · prev [Start and My Relationships v2 (handoff)](README.md) · next [Start and My Relationships v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

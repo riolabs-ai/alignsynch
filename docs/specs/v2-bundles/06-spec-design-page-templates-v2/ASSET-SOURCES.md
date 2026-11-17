@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Templates in-app v2 — asset sources · prev [Templates in-app v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Chat v2 (handoff)](../07-spec-design-page-chat-v2/README.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Templates in-app (Library | My Templates tabs, template page, My Template detail, proposal)** · prev [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md) · next [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md)
@@ -32,3 +38,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Templates in-app (Library | My Templates tabs, template page, My Template detail, proposal)** · prev [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md) · next [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Templates in-app v2 — asset sources · prev [Templates in-app v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Chat v2 (handoff)](../07-spec-design-page-chat-v2/README.md)
+
+<!-- docs-nav:end -->

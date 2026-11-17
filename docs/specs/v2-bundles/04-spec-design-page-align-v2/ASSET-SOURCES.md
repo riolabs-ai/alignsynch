@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Align (Stage 6) v2 — asset sources · prev [Align (Stage 6) v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Start and My Relationships v2 (handoff)](../05-spec-design-page-start-my-relationships-v2/README.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Align (Stage 6)** · prev [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md) · next [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md)
@@ -27,3 +33,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Align (Stage 6)** · prev [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md) · next [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Align (Stage 6) v2 — asset sources · prev [Align (Stage 6) v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Start and My Relationships v2 (handoff)](../05-spec-design-page-start-my-relationships-v2/README.md)
+
+<!-- docs-nav:end -->

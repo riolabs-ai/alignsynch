@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Assessment v2 — asset sources · prev [Assessment v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Account menu and Settings v2 (handoff)](../11-spec-design-page-account-settings-v2/README.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Assessment (the answer screen)** · prev [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md) · next [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md)
@@ -27,3 +33,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Assessment (the answer screen)** · prev [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md) · next [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Assessment v2 — asset sources · prev [Assessment v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Account menu and Settings v2 (handoff)](../11-spec-design-page-account-settings-v2/README.md)
+
+<!-- docs-nav:end -->

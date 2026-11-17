@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Create Relationship wizard v2 — asset sources · prev [Create Relationship wizard v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Onboarding basics v2 (handoff)](../02-spec-design-page-onboarding-v2/README.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Create Relationship wizard (Stages 1–5)** · prev none · next [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md)
@@ -27,3 +33,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Create Relationship wizard (Stages 1–5)** · prev none · next [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Create Relationship wizard v2 — asset sources · prev [Create Relationship wizard v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Onboarding basics v2 (handoff)](../02-spec-design-page-onboarding-v2/README.md)
+
+<!-- docs-nav:end -->

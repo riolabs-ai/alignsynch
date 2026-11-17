@@ -1,5 +1,11 @@
 # AlignSynch Templates in-app v2: React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Templates in-app v2 — implementation brief · prev [Templates in-app v2 (handoff)](README.md) · next [Templates in-app v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Templates in-app (Library | My Templates tabs, template page, My Template detail, proposal)** · prev [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md) · next [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md)
@@ -206,3 +212,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Templates in-app (Library | My Templates tabs, template page, My Template detail, proposal)** · prev [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md) · next [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Templates in-app v2 — implementation brief · prev [Templates in-app v2 (handoff)](README.md) · next [Templates in-app v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

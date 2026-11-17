@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Onboarding basics v2 — asset sources · prev [Onboarding basics v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Relationship Detail v2 (handoff)](../03-spec-design-page-relationship-detail-v2/README.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Onboarding basics: public Templates catalog, public template page, Pricing → template pick, Counterparty join** · prev [01-spec-design-page-wizard-v2](../01-spec-design-page-wizard-v2/README.md) · next [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md)
@@ -30,3 +36,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Onboarding basics: public Templates catalog, public template page, Pricing → template pick, Counterparty join** · prev [01-spec-design-page-wizard-v2](../01-spec-design-page-wizard-v2/README.md) · next [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Onboarding basics v2 — asset sources · prev [Onboarding basics v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Relationship Detail v2 (handoff)](../03-spec-design-page-relationship-detail-v2/README.md)
+
+<!-- docs-nav:end -->

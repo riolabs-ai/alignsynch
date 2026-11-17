@@ -1,5 +1,11 @@
 # AlignSynch Account menu and Account Settings v2: React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — implementation brief · prev [Account menu and Settings v2 (handoff)](README.md) · next [Account menu and Settings v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Account menu and Account Settings** · prev [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md) · next none
@@ -154,3 +160,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Account menu and Account Settings** · prev [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md) · next none
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — implementation brief · prev [Account menu and Settings v2 (handoff)](README.md) · next [Account menu and Settings v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

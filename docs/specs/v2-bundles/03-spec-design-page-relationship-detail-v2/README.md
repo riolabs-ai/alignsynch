@@ -1,5 +1,11 @@
 # AlignSynch v2 · Relationship Detail (every state, both roles)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Relationship Detail v2 (handoff) · prev [Onboarding basics v2 — asset sources](../02-spec-design-page-onboarding-v2/ASSET-SOURCES.md) · next [Relationship Detail v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Relationship Detail (every state, both roles)** · prev [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md) · next [04-spec-design-page-align-v2](../04-spec-design-page-align-v2/README.md)
@@ -28,3 +34,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Relationship Detail (every state, both roles)** · prev [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md) · next [04-spec-design-page-align-v2](../04-spec-design-page-align-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Relationship Detail v2 (handoff) · prev [Onboarding basics v2 — asset sources](../02-spec-design-page-onboarding-v2/ASSET-SOURCES.md) · next [Relationship Detail v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

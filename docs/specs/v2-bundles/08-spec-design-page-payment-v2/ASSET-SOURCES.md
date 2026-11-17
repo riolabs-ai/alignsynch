@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Payment v2 — asset sources · prev [Payment v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [v2 design system (handoff)](../09-spec-design-system-tokens-v2/README.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Payment (standalone billing)** · prev [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md) · next [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md)
@@ -27,3 +33,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Payment (standalone billing)** · prev [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md) · next [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Payment v2 — asset sources · prev [Payment v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [v2 design system (handoff)](../09-spec-design-system-tokens-v2/README.md)
+
+<!-- docs-nav:end -->

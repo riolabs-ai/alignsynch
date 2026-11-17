@@ -2,7 +2,7 @@
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › Divergence table · prev [The two-party flow](two-party-flow.md) · next [Quiz-surface map](ui-mapping.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Divergence table · prev [Account menu and Settings v2 — asset sources](v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md) · next [Quiz-surface map](ui-mapping.md)
 
 <!-- docs-nav:end -->
 
@@ -241,6 +241,6 @@ loses:
 
 <!-- docs-nav:begin -->
 
-[Docs hub](../README.md) › **Specs & design briefs** › Divergence table · prev [The two-party flow](two-party-flow.md) · next [Quiz-surface map](ui-mapping.md)
+[Docs hub](../README.md) › **Specs & design briefs** › Divergence table · prev [Account menu and Settings v2 — asset sources](v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md) · next [Quiz-surface map](ui-mapping.md)
 
 <!-- docs-nav:end -->

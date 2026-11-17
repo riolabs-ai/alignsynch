@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Chat v2 — asset sources · prev [Chat v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Payment v2 (handoff)](../08-spec-design-page-payment-v2/README.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Chat** · prev [06-spec-design-page-templates-v2](../06-spec-design-page-templates-v2/README.md) · next [08-spec-design-page-payment-v2](../08-spec-design-page-payment-v2/README.md)
@@ -27,3 +33,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Chat** · prev [06-spec-design-page-templates-v2](../06-spec-design-page-templates-v2/README.md) · next [08-spec-design-page-payment-v2](../08-spec-design-page-payment-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Chat v2 — asset sources · prev [Chat v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Payment v2 (handoff)](../08-spec-design-page-payment-v2/README.md)
+
+<!-- docs-nav:end -->

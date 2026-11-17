@@ -1,5 +1,11 @@
 # AlignSynch v2 design system: tokens, component sheet and flow map
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › v2 design system — implementation brief · prev [v2 design system (handoff)](README.md) · next [v2 design system — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Design system: tokens, component sheet, shared modal/toast/kebab, flow map** · prev [08-spec-design-page-payment-v2](../08-spec-design-page-payment-v2/README.md) · next [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md)
@@ -185,3 +191,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Design system: tokens, component sheet, shared modal/toast/kebab, flow map** · prev [08-spec-design-page-payment-v2](../08-spec-design-page-payment-v2/README.md) · next [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › v2 design system — implementation brief · prev [v2 design system (handoff)](README.md) · next [v2 design system — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

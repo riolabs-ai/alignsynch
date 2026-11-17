@@ -1,5 +1,11 @@
 # AlignSynch v2 · Chat
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Chat v2 (handoff) · prev [Templates in-app v2 — asset sources](../06-spec-design-page-templates-v2/ASSET-SOURCES.md) · next [Chat v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Chat** · prev [06-spec-design-page-templates-v2](../06-spec-design-page-templates-v2/README.md) · next [08-spec-design-page-payment-v2](../08-spec-design-page-payment-v2/README.md)
@@ -28,3 +34,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Chat** · prev [06-spec-design-page-templates-v2](../06-spec-design-page-templates-v2/README.md) · next [08-spec-design-page-payment-v2](../08-spec-design-page-payment-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Chat v2 (handoff) · prev [Templates in-app v2 — asset sources](../06-spec-design-page-templates-v2/ASSET-SOURCES.md) · next [Chat v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

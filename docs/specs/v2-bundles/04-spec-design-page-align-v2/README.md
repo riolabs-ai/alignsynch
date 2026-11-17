@@ -1,5 +1,11 @@
 # AlignSynch v2 · Align (Stage 6)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Align (Stage 6) v2 (handoff) · prev [Relationship Detail v2 — asset sources](../03-spec-design-page-relationship-detail-v2/ASSET-SOURCES.md) · next [Align (Stage 6) v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Align (Stage 6)** · prev [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md) · next [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md)
@@ -28,3 +34,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Align (Stage 6)** · prev [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md) · next [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Align (Stage 6) v2 (handoff) · prev [Relationship Detail v2 — asset sources](../03-spec-design-page-relationship-detail-v2/ASSET-SOURCES.md) · next [Align (Stage 6) v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

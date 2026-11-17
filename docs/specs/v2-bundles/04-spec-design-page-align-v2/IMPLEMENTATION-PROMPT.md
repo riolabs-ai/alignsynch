@@ -1,5 +1,11 @@
 # AlignSynch Align v2 (Stage 6): React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Align (Stage 6) v2 — implementation brief · prev [Align (Stage 6) v2 (handoff)](README.md) · next [Align (Stage 6) v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Align (Stage 6)** · prev [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md) · next [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md)
@@ -165,3 +171,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Align (Stage 6)** · prev [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md) · next [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Align (Stage 6) v2 — implementation brief · prev [Align (Stage 6) v2 (handoff)](README.md) · next [Align (Stage 6) v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

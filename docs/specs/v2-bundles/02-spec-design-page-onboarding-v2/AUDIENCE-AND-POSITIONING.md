@@ -1,5 +1,11 @@
 # AlignSynch audience and positioning · v2 onboarding
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Onboarding basics v2 — audience and positioning · prev [Onboarding basics v2 (handoff)](README.md) · next [Onboarding basics v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Onboarding basics** › Audience and positioning
@@ -105,3 +111,9 @@ Write directly to the two people involved: “your relationship,” “the other
 ## Where this direction applies
 
 Use this hierarchy in the static home redesign, private brand profile, marketing-page implementation brief, page-copy fixtures, template-catalogue introductions, and future public-page specs. It defines public audience and copy; it does not change the application's current workflow or account model.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Onboarding basics v2 — audience and positioning · prev [Onboarding basics v2 (handoff)](README.md) · next [Onboarding basics v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

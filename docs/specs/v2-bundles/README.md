@@ -1,5 +1,11 @@
 # AlignSynch v2.0 UI · ingest bundles
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Specs & design briefs** › v2.0 UI handoff bundles (index) · prev [The two-party flow](../two-party-flow.md) · next [Create Relationship wizard v2 (handoff)](01-spec-design-page-wizard-v2/README.md)
+
+<!-- docs-nav:end -->
+
 **Prepared:** 16 November 2026 · **Source:** `v2-prototype` pass 10 (final, QA-clean) · **Repo path when committed:** `docs/specs/v2-bundles/` · **Release pool:** epic [#1119](https://github.com/riolabs-ai/alignsynch/issues/1119), milestone v1.22.0  
 **Status:** Private design and implementation handoff. Not pushed to GitHub.
 
@@ -43,3 +49,9 @@ Serve this folder (or any single bundle folder) with a static server, for exampl
 ## Verification (16 November 2026)
 
 Each folder was served on its own and loaded headless at 390 and 1280 px for every listed state: no 4xx/5xx or failed requests, no page errors, no horizontal overflow. See `VERIFY.txt`.
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../README.md) › **Specs & design briefs** › v2.0 UI handoff bundles (index) · prev [The two-party flow](../two-party-flow.md) · next [Create Relationship wizard v2 (handoff)](01-spec-design-page-wizard-v2/README.md)
+
+<!-- docs-nav:end -->

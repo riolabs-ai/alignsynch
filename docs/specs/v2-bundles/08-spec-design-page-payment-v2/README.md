@@ -1,5 +1,11 @@
 # AlignSynch v2 · Payment (standalone billing)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Payment v2 (handoff) · prev [Chat v2 — asset sources](../07-spec-design-page-chat-v2/ASSET-SOURCES.md) · next [Payment v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Payment (standalone billing)** · prev [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md) · next [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md)
@@ -28,3 +34,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Payment (standalone billing)** · prev [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md) · next [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Payment v2 (handoff) · prev [Chat v2 — asset sources](../07-spec-design-page-chat-v2/ASSET-SOURCES.md) · next [Payment v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

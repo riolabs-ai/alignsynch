@@ -1,5 +1,11 @@
 # AlignSynch v2 · Assessment (the answer screen)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Assessment (answer screen) v2 (handoff) · prev [v2 design system — asset sources](../09-spec-design-system-tokens-v2/ASSET-SOURCES.md) · next [Assessment v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Assessment (the answer screen)** · prev [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md) · next [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md)
@@ -28,3 +34,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Assessment (the answer screen)** · prev [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md) · next [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Assessment (answer screen) v2 (handoff) · prev [v2 design system — asset sources](../09-spec-design-system-tokens-v2/ASSET-SOURCES.md) · next [Assessment v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

@@ -1,5 +1,11 @@
 # AlignSynch v2 · Onboarding basics: public Templates catalog, public template page, Pricing → template pick, Counterparty join
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Onboarding basics v2 (handoff) · prev [Create Relationship wizard v2 — asset sources](../01-spec-design-page-wizard-v2/ASSET-SOURCES.md) · next [Onboarding basics v2 — audience and positioning](AUDIENCE-AND-POSITIONING.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Onboarding basics: public Templates catalog, public template page, Pricing → template pick, Counterparty join** · prev [01-spec-design-page-wizard-v2](../01-spec-design-page-wizard-v2/README.md) · next [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md)
@@ -32,3 +38,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Onboarding basics: public Templates catalog, public template page, Pricing → template pick, Counterparty join** · prev [01-spec-design-page-wizard-v2](../01-spec-design-page-wizard-v2/README.md) · next [03-spec-design-page-relationship-detail-v2](../03-spec-design-page-relationship-detail-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Onboarding basics v2 (handoff) · prev [Create Relationship wizard v2 — asset sources](../01-spec-design-page-wizard-v2/ASSET-SOURCES.md) · next [Onboarding basics v2 — audience and positioning](AUDIENCE-AND-POSITIONING.md)
+
+<!-- docs-nav:end -->

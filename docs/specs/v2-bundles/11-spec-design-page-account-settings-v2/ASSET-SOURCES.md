@@ -1,5 +1,11 @@
 # Asset sources
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — asset sources · prev [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Divergence table](../../ui-divergence.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Account menu and Account Settings** · prev [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md) · next none
@@ -27,3 +33,9 @@ No photography or third-party imagery is used in this bundle, so there are no li
 [Bundles index](../README.md) › **Account menu and Account Settings** · prev [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md) · next none
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 — asset sources · prev [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md) · next [Divergence table](../../ui-divergence.md)
+
+<!-- docs-nav:end -->

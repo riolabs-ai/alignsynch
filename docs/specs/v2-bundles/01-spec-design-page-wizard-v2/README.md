@@ -1,5 +1,11 @@
 # AlignSynch v2 · Create Relationship wizard (Stages 1–5)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Create Relationship wizard v2 (handoff) · prev [v2.0 UI handoff bundles (index)](../README.md) · next [Create Relationship wizard v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Create Relationship wizard (Stages 1–5)** · prev none · next [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md)
@@ -28,3 +34,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Create Relationship wizard (Stages 1–5)** · prev none · next [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Create Relationship wizard v2 (handoff) · prev [v2.0 UI handoff bundles (index)](../README.md) · next [Create Relationship wizard v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

@@ -1,5 +1,11 @@
 # AlignSynch v2 · Templates in-app (Library | My Templates tabs, template page, My Template detail, proposal)
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Templates in-app v2 (handoff) · prev [Start and My Relationships v2 — asset sources](../05-spec-design-page-start-my-relationships-v2/ASSET-SOURCES.md) · next [Templates in-app v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Templates in-app (Library | My Templates tabs, template page, My Template detail, proposal)** · prev [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md) · next [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md)
@@ -29,3 +35,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Templates in-app (Library | My Templates tabs, template page, My Template detail, proposal)** · prev [05-spec-design-page-start-my-relationships-v2](../05-spec-design-page-start-my-relationships-v2/README.md) · next [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Templates in-app v2 (handoff) · prev [Start and My Relationships v2 — asset sources](../05-spec-design-page-start-my-relationships-v2/ASSET-SOURCES.md) · next [Templates in-app v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->

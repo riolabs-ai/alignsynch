@@ -1,5 +1,11 @@
 # AlignSynch Payment v2: React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Payment v2 — implementation brief · prev [Payment v2 (handoff)](README.md) · next [Payment v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Payment (standalone billing)** · prev [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md) · next [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md)
@@ -159,3 +165,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Payment (standalone billing)** · prev [07-spec-design-page-chat-v2](../07-spec-design-page-chat-v2/README.md) · next [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Payment v2 — implementation brief · prev [Payment v2 (handoff)](README.md) · next [Payment v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

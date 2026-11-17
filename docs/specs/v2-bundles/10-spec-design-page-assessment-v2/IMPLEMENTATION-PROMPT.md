@@ -1,5 +1,11 @@
 # AlignSynch Assessment v2 (the answer screen): React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Assessment v2 — implementation brief · prev [Assessment (answer screen) v2 (handoff)](README.md) · next [Assessment v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Assessment (the answer screen)** · prev [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md) · next [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md)
@@ -153,3 +159,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Assessment (the answer screen)** · prev [09-spec-design-system-tokens-v2](../09-spec-design-system-tokens-v2/README.md) · next [11-spec-design-page-account-settings-v2](../11-spec-design-page-account-settings-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Assessment v2 — implementation brief · prev [Assessment (answer screen) v2 (handoff)](README.md) · next [Assessment v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

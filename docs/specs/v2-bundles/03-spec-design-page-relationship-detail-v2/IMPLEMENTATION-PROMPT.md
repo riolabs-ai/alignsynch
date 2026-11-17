@@ -1,5 +1,11 @@
 # AlignSynch Relationship Detail v2: React / Tailwind CSS v3 implementation brief
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Relationship Detail v2 — implementation brief · prev [Relationship Detail v2 (handoff)](README.md) · next [Relationship Detail v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Relationship Detail (every state, both roles)** · prev [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md) · next [04-spec-design-page-align-v2](../04-spec-design-page-align-v2/README.md)
@@ -242,3 +248,9 @@ Generated from the bundled HTML so the build team can diff against it. Headings 
 [Bundles index](../README.md) › **Relationship Detail (every state, both roles)** · prev [02-spec-design-page-onboarding-v2](../02-spec-design-page-onboarding-v2/README.md) · next [04-spec-design-page-align-v2](../04-spec-design-page-align-v2/README.md)
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Relationship Detail v2 — implementation brief · prev [Relationship Detail v2 (handoff)](README.md) · next [Relationship Detail v2 — asset sources](ASSET-SOURCES.md)
+
+<!-- docs-nav:end -->

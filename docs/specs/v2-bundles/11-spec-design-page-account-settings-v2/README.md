@@ -1,5 +1,11 @@
 # AlignSynch v2 · Account menu and Account Settings
 
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 (handoff) · prev [Assessment v2 — asset sources](../10-spec-design-page-assessment-v2/ASSET-SOURCES.md) · next [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
+
 <!-- bundle-nav:begin -->
 
 [Bundles index](../README.md) › **Account menu and Account Settings** · prev [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md) · next none
@@ -28,3 +34,9 @@ To preview, serve this folder with any static HTTP server (for example `python3 
 [Bundles index](../README.md) › **Account menu and Account Settings** · prev [10-spec-design-page-assessment-v2](../10-spec-design-page-assessment-v2/README.md) · next none
 
 <!-- bundle-nav:end -->
+
+<!-- docs-nav:begin -->
+
+[Docs hub](../../../README.md) › **Specs & design briefs** › Account menu and Settings v2 (handoff) · prev [Assessment v2 — asset sources](../10-spec-design-page-assessment-v2/ASSET-SOURCES.md) · next [Account menu and Settings v2 — implementation brief](IMPLEMENTATION-PROMPT.md)
+
+<!-- docs-nav:end -->
