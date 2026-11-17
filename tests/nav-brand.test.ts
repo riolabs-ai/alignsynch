@@ -120,7 +120,8 @@ const QUIZ_MENU = [
 const QUIZ_ONLY = ["/leaderboard", "/tournaments", "/battle", "/categories", "/explore"];
 
 /**
- * The alignment rail's member destinations, in order — the v2 shell's five-row rail (#1129).
+ * The alignment rail's member destinations, in order — the v2 shell's five-row rail (#1129,
+ * #1131: Start, My Relationships, Templates, Chat, and Payment when #1132 lands).
  *
  * **The artifact is the authority, and it draws exactly five:** Start · My Relationships ·
  * Templates · Chat · Payment (`docs/specs/v2-bundles/05-…/start.html`). So:
@@ -138,13 +139,17 @@ const QUIZ_ONLY = ["/leaderboard", "/tournaments", "/battle", "/categories", "/e
  *
  * Then the Support group's two member rows, which are not part of the v2 five.
  *
- * It is one constant rather than five literals per case because three cases assert the same rows;
+ * **#1131 added `Chat`** → `/dashboard/chat`, last of the member's destinations, which is where the
+ * v2 rail draws it (Start · My Relationships · Templates · Chat).
+ *
+ * It is one constant rather than six literals per case because three cases assert the same rows;
  * a second copy is how a menu edit lands in one expectation and not the others.
  */
 const ALIGNMENT_MENU = [
   "/dashboard",
   "/dashboard/relationships",
   "/dashboard/templates",
+  "/dashboard/chat",
   "/dashboard/help",
   "/dashboard/support",
 ];
@@ -189,6 +194,7 @@ const ADMIN_RAIL = [
   "/dashboard",
   "/dashboard/relationships",
   "/dashboard/templates",
+  "/dashboard/chat",
   "/admin/review",
   "/dashboard/help",
   "/admin/health",
@@ -289,7 +295,7 @@ describe("the console's own rows are a member's, the operator's rows are not", (
   const memberHrefs = navHrefs("alignsynch");
   const adminHrefs = navHrefs("alignsynch", navViewer("admin"));
 
-  it("draws the three workspace rows for a member — Start, My Relationships, Templates (#1129)", () => {
+  it("draws the four workspace rows for a member — Start, My Relationships, Templates, Chat (#1129, #1131)", () => {
     expect(memberHrefs).toContain("/dashboard");
     expect(memberHrefs).toContain("/dashboard/relationships");
     expect(memberHrefs).toContain("/dashboard/templates");
@@ -298,13 +304,20 @@ describe("the console's own rows are a member's, the operator's rows are not", (
     // instances` is a 308 to `/assessments` (which the v2 rail does not carry a row for).
     expect(memberHrefs).not.toContain("/dashboard/library");
     expect(memberHrefs).not.toContain("/assessment/instances");
+    // #1131 — one thread per relationship, last of the member's destinations: the v2 rail draws
+    // Start · My Relationships · Templates · Chat. `/chat` is the quiz product's conversations,
+    // gated to that brand (#300): the member's rail carries the dashboard's own address, never
+    // that one.
+    expect(memberHrefs).toContain("/dashboard/chat");
+    expect(memberHrefs).not.toContain("/chat");
     // The workspace group's own rows, in the owner's order. `slice` rather than a `/dashboard/`
     // prefix, because Start's address *is* `/dashboard` and does not carry the trailing slash —
     // a prefix filter silently drops the row this card exists to draw.
-    expect(memberHrefs.slice(0, 3)).toEqual([
+    expect(memberHrefs.slice(0, 4)).toEqual([
       "/dashboard",
       "/dashboard/relationships",
       "/dashboard/templates",
+      "/dashboard/chat",
     ]);
   });
 
@@ -384,21 +397,22 @@ describe("the console's own rows are a member's, the operator's rows are not", (
  * brand-conditional by construction (`AppNav` renders one menu or the other), which is why the last
  * case asserts absence rather than a hidden row.
  */
-describe("the workspace group reads Start, My Relationships, Templates", () => {
+describe("the workspace group reads Start, My Relationships, Templates, Chat", () => {
   const memberHrefs = navHrefs("alignsynch");
 
-  it("opens on Start — the first row of the three that are a member's work (#1129)", () => {
+  it("opens on Start — the first row of the four that are a member's work (#1129)", () => {
     expect(memberHrefs[0]).toBe("/dashboard");
     expect(memberHrefs.filter((href) => href === "/dashboard")).toEqual(["/dashboard"]);
   });
 
-  it("puts My Relationships under Start, and Templates under that", () => {
+  it("puts My Relationships under Start, Templates under that, and Chat last", () => {
     const at = (href: string) => memberHrefs.indexOf(href);
     // #1129 — Start is the landing, so it opens; My Relationships is the work it points at, and
     // Templates follows, because it is the shelf you start a relationship from rather than a
-    // record you read.
+    // record you read. #1131 — Chat closes the group, which is where the v2 rail draws it.
     expect(at("/dashboard/relationships")).toBe(at("/dashboard") + 1);
     expect(at("/dashboard/templates")).toBe(at("/dashboard/relationships") + 1);
+    expect(at("/dashboard/chat")).toBe(at("/dashboard/templates") + 1);
     // The artifact's rail names five rows and `My Assessments` is not one of them; the page still
     // answers, it simply has no row (#1129).
     expect(memberHrefs).not.toContain("/assessments");
@@ -411,7 +425,7 @@ describe("the workspace group reads Start, My Relationships, Templates", () => {
 
   it("puts the support pair after the workspace rows, Help first", () => {
     const at = (href: string) => memberHrefs.indexOf(href);
-    expect(at("/dashboard/help")).toBe(at("/dashboard/templates") + 1);
+    expect(at("/dashboard/help")).toBe(at("/dashboard/chat") + 1);
     expect(at("/dashboard/support")).toBe(at("/dashboard/help") + 1);
   });
 

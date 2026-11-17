@@ -37,6 +37,7 @@ import {
   Lightbulb,
   Medal,
   Megaphone,
+  MessageSquare,
   Newspaper,
   PackagePlus,
   ScrollText,
@@ -481,6 +482,8 @@ const NAV_ICONS: Record<NavIconName, ComponentType<{ className?: string }>> = {
    * and reusing it here would say the two destinations are the same screen.
    */
   assessments: ClipboardList,
+  // #1131 — Chat: a speech bubble, the glyph the v2 bundle draws for its own rail row.
+  chat: MessageSquare,
   templates: LayoutTemplate,
   library: Library,
   help: Workflow,

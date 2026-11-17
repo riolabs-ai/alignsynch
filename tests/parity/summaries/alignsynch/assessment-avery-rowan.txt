@@ -33,6 +33,7 @@ landmarks (5)
 links (7 unique, 8 total)
   /                                                    1
   /dashboard                                           1
+  /dashboard/chat                                      1
   /dashboard/help                                      1
   /dashboard/relationships                             1
   /dashboard/support                                   1

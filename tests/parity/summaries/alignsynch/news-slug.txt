@@ -34,6 +34,7 @@ landmarks (4)
 links (10 unique, 11 total)
   /                                                    1
   /dashboard                                           1
+  /dashboard/chat                                      1
   /dashboard/help                                      1
   /dashboard/relationships                             1
   /dashboard/support                                   1

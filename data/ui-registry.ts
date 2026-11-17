@@ -678,6 +678,16 @@ export const uiRegistry: readonly UiEntry[] = zUiRegistry.parse([
   },
   {
     kind: "route",
+    surface: "/dashboard/chat",
+    status: "db",
+    templates: ["alignsynch"],
+    capability:
+      "One thread per relationship (#1131): a conversation list carrying an unread count and each thread's state, and — for the thread that is open — party-tinted messages where a message may carry an Aspect chip and that Aspect's current Align status, a composer with the five Aspects as toggle tags, a waiting state that says when chat opens, and a paused state that is read-only with one action for the Initiator.",
+    notes:
+      "The v2 bundle (`docs/specs/v2-bundles/07-spec-design-page-chat-v2/`) ported over the member's own rows: `listMyRelationships()` lists the threads (the viewer's id comes from the session, never the URL) and `readRelationshipById()` reads only the open one, so the Aspects and the report behind a status chip are the same gated projection `/assessment/instances/[instanceId]` draws. The thread is `?relationship=<id>` and the search is `?q=`, both GETs; no `?state=` and no `?role=` — the state is derived (`chatThreadStateOf` over `connectionOf()` and `pauseOf()`), so a waiting thread and a paused one render for whichever seat is reading, and a closed relationship is left out rather than drawn as paused. A tag's status is `alignmentStatusOf()` over the Aspect's widest cross-party Gap and is absent until both parties have accepted, which is the blind rule; the chip links to that Aspect on Align. The composer appends to the session and writes nothing durable — the thread model is #921's and that issue ships no schema, so `data/chat-threads.ts` holds the demo bodies and the write is stated as a known limit. This is NOT `/chat`, which stays the quiz product's surface and answers 404 on this brand (#300).",
+  },
+  {
+    kind: "route",
     surface: "/dashboard/user",
     status: "db",
     templates: ["quizhub", "alignsynch"],

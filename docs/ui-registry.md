@@ -472,6 +472,12 @@ None: every catalogued surface has a `capability` sentence. A surface nobody has
   - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/member-alignments.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/tour.ts` · an `/api` path — `components/tour/first-run-tour.tsx`, `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`, `lib/db/tour.ts`, `lib/tour/mark.ts`
   - notes: The page authors no figure. `lib/member/start.ts` maps the seven stored lifecycle values onto the card's four words and orders the jobs (conversation, then one job of each kind); `lib/member/alignment-summary.ts` derives each card's bar and its Next Step over `content/gaps.ts`, so the landing cannot disagree with the Align screen about the same numbers and no Gap is stored. The rows are read by `listMyRelationships` + `readMemberAlignments` — the second is scoped to `party.user_id = $1` and selects no party name, no `user_id` and no invitation row — and a failed read draws the failure panel instead of a zero (`DatabaseUnavailableError`), which is the same rule `/assessment/instances` follows (#213). The four counts the console Overview drew here until #1129 are gone from this route: the approved bundle draws a greeting and two shelves, and each count's list still answers at `/assessments?filter=<id>`.
 
+- `/dashboard/chat` — **db**
+  - capability: One thread per relationship (#1131): a conversation list carrying an unread count and each thread's state, and — for the thread that is open — party-tinted messages where a message may carry an Aspect chip and that Aspect's current Align status, a composer with the five Aspects as toggle tags, a waiting state that says when chat opens, and a paused state that is read-only with one action for the Initiator.
+  - components: `components/assessment-flow`, `components/chat`
+  - reads: Postgres — `lib/db/assessments.ts`, `lib/db/billing.ts`, `lib/db/client.ts`, `lib/db/profile-rows.ts`, `lib/db/relationship-payment.ts`, `lib/db/rows.ts`, `lib/db/steps.ts`, `lib/db/user-profiles.ts` · an `/api` path — `data/billing-plans.ts`, `data/brand.ts`, `data/brands/alignsynch.ts`, `lib/auth/request-context.ts`, `lib/auth/server.ts`
+  - notes: The v2 bundle (`docs/specs/v2-bundles/07-spec-design-page-chat-v2/`) ported over the member's own rows: `listMyRelationships()` lists the threads (the viewer's id comes from the session, never the URL) and `readRelationshipById()` reads only the open one, so the Aspects and the report behind a status chip are the same gated projection `/assessment/instances/[instanceId]` draws. The thread is `?relationship=<id>` and the search is `?q=`, both GETs; no `?state=` and no `?role=` — the state is derived (`chatThreadStateOf` over `connectionOf()` and `pauseOf()`), so a waiting thread and a paused one render for whichever seat is reading, and a closed relationship is left out rather than drawn as paused. A tag's status is `alignmentStatusOf()` over the Aspect's widest cross-party Gap and is absent until both parties have accepted, which is the blind rule; the chip links to that Aspect on Align. The composer appends to the session and writes nothing durable — the thread model is #921's and that issue ships no schema, so `data/chat-threads.ts` holds the demo bodies and the write is stated as a known limit. This is NOT `/chat`, which stays the quiz product's surface and answers 404 on this brand (#300).
+
 - `/demo` — **mock**
   - capability: The demo PIN gate: one four-digit field and a submit. A correct PIN sets a signed, httpOnly unlock cookie and redirects to `/login`, where the three role buttons appear.
   - components: `components/auth`, `components/ui`
@@ -830,8 +836,8 @@ Catalogued, claimed by no template yet.
 
 - `components/chat` — **fixture**
   - capability: The chat surfaces: conversation list, thread, composer, message bubble, search and a small dropdown.
-  - files (7): `chat-conversation.tsx`, `chat-input.tsx`, `chat-message.tsx`, `chat-page.tsx`, `chat-sidebar.tsx`, `chat-utils.ts`, `simple-dropdown.tsx`
-  - routes (1): `/chat`
+  - files (9): `chat-conversation.tsx`, `chat-input.tsx`, `chat-message.tsx`, `chat-page.tsx`, `chat-sidebar.tsx`, `chat-utils.ts`, `conversation-list.tsx`, `simple-dropdown.tsx`, `thread.tsx`
+  - routes (2): `/chat`, `/dashboard/chat`
   - notes: No template claims messaging yet — the same scope decision as /chat, recorded here so the domain is not orphaned in the catalogue.
 
 ## Route handlers

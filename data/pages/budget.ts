@@ -318,6 +318,20 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     fixture: "data/pages/dashboard-templates",
     budget: 0,
   },
+  /**
+   * #1131 — Chat v2. Budget 0: the list's preview lines, the thread header's three state chips, the
+   * pause band, the composer's placeholder, the Tag prefix and the four status words are all
+   * `data/pages/chat.ts`. `components/chat` is one directory for two products' chats, so attribution
+   * is reachability: this row counts only what `/dashboard/chat`'s page imports, and the quiz
+   * surface's `chat-page.tsx` stays with `/chat`'s own row (none — the quiz chat is a mock surface
+   * outside this ratchet's surfaces, and E21 keeps fixtures out of it either way).
+   */
+  "/dashboard/chat": {
+    page: "app/(mainlayout)/dashboard/chat/page.tsx",
+    dirs: ["components/chat"],
+    fixture: "data/pages/chat",
+    budget: 0,
+  },
   "/dashboard/templates/[id]": {
     page: "app/(mainlayout)/dashboard/templates/[id]/page.tsx",
     dirs: ["components/dashboard", "components/admin"],
