@@ -434,10 +434,7 @@ describe("the legacy redirects", () => {
     const retired: [string, string][] = [
       ["/relationship-types", "/relationship-templates"],
       ["/relationship-types/staff-manager", "/relationship-templates/staff-manager"],
-      [
-        "/relationship-types/staff-manager/demo",
-        "/relationship-templates/staff-manager/demo",
-      ],
+      ["/relationship-types/staff-manager/demo", "/relationship-templates/staff-manager/demo"],
     ];
 
     for (const [oldPath, expected] of retired) {

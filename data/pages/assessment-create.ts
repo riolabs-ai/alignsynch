@@ -415,6 +415,19 @@ export const assessmentCreatePageCopy: PageCopy = zPageCopy.parse({
             "The invitation did not go out — the request could not reach the app. Nothing was sent and nothing was charged. Try again, or keep the draft.",
         },
         { id: "note-heading", label: "What you can do later" },
+        /**
+         * #1127 — the plan chip, drawn on stage 5 when the reader chose a plan on `/pricing`.
+         *
+         * The v2 bundle puts the choice here rather than on stage 4, and says the same two things
+         * the flow has always kept apart: the plan is *saved*, and nothing is charged until a card
+         * is added. `{plan}` is the billing fixture's own tier name — never a word typed here.
+         */
+        {
+          id: "plan-chip",
+          label:
+            "{plan} Plan · Saved from Pricing. It starts after the free week, only once you add a card.",
+        },
+        { id: "plan-change", label: "Change" },
         {
           id: "reassure",
           label: "You can resend, edit the title, or withdraw the invitation at any point.",

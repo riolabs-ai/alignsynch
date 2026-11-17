@@ -95,7 +95,9 @@ export default async function RelationshipTemplatesPage({
       hero={catalogueHero(
         relationshipCatalogueCopy,
         cards,
-        popular === undefined ? cards[0]?.href ?? "/relationship-templates" : relationshipTypePath(popular.id),
+        popular === undefined
+          ? (cards[0]?.href ?? "/relationship-templates")
+          : relationshipTypePath(popular.id),
       )}
       questions={catalogueQuestions(relationshipCatalogueCopy)}
       steps={catalogueSteps(relationshipCatalogueCopy)}

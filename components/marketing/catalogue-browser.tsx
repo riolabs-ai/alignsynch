@@ -2,7 +2,11 @@
 
 // template-ancestor: components/templates/template-catalogue.tsx   (variation: a category filter beside the search, and a grid of the bundle's own cards)
 
-import type { CatalogueBandModel, CatalogueCardModel, CatalogueGroupModel } from "@/lib/relationship-catalogue";
+import type {
+  CatalogueBandModel,
+  CatalogueCardModel,
+  CatalogueGroupModel,
+} from "@/lib/relationship-catalogue";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 

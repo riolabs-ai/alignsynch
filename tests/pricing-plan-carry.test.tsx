@@ -198,8 +198,9 @@ describe("every /pricing action opens the flow's door (#1043)", () => {
     // The carry is per row, not one shared address.
     expect(CARRIED_TIERS.length).toBeGreaterThan(1);
     expect(
-      new Set(CARRIED_TIERS.map((tier) => pricingCataloguePath({ planId: tier, interval: "month" })))
-        .size,
+      new Set(
+        CARRIED_TIERS.map((tier) => pricingCataloguePath({ planId: tier, interval: "month" })),
+      ).size,
     ).toBe(CARRIED_TIERS.length);
   });
 

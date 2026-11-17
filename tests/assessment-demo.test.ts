@@ -39,7 +39,9 @@ vi.mock("next/navigation", () => ({
  */
 vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
-import DemoPage, { generateMetadata } from "@/app/(marketing)/relationship-templates/[slug]/demo/page";
+import DemoPage, {
+  generateMetadata,
+} from "@/app/(marketing)/relationship-templates/[slug]/demo/page";
 import { formatCurrency } from "@/content/core";
 import { GAP_KINDS, gapKindsIn, gapKindsOf } from "@/content/gaps";
 import {

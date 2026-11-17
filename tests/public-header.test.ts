@@ -117,7 +117,9 @@ describe("the active row", () => {
     const html = headerHtml(null);
     // The desktop nav and the small-screen panel draw the same row, so the state is asserted on
     // the desktop set: one current page, and it is the catalogue.
-    const marked = desktopNav(html).filter((anchor) => html.includes(`href="${anchor.href}" aria-current="page"`));
+    const marked = desktopNav(html).filter((anchor) =>
+      html.includes(`href="${anchor.href}" aria-current="page"`),
+    );
     expect(marked).toEqual([{ href: "/relationship-templates", text: "Templates" }]);
   });
 
@@ -163,7 +165,10 @@ describe("signed in", () => {
   });
 
   it("keeps the primary action — a member starts relationships from here too", () => {
-    expect(anchorsOf(html)).toContainEqual({ href: "/relationship-templates#catalog", text: "Start Free" });
+    expect(anchorsOf(html)).toContainEqual({
+      href: "/relationship-templates#catalog",
+      text: "Start Free",
+    });
   });
 });
 

@@ -23,14 +23,7 @@
 import type { PageCopy } from "@/content/pages";
 import { demoAnswersFor, type RelationshipType } from "@/data/relationship-types";
 import { createRelationshipPath, relationshipTypePath } from "@/lib/flow/paths";
-import {
-  fillLabel,
-  itemBody,
-  itemLabel,
-  itemValue,
-  pageItemOf,
-  sectionOf,
-} from "@/lib/page-copy";
+import { fillLabel, itemBody, itemLabel, itemValue, pageItemOf, sectionOf } from "@/lib/page-copy";
 
 /** The catalogue band's anchor. One spelling, read by the hero, the CTA and the header. */
 export const CATALOGUE_ANCHOR = "#catalog";

@@ -195,7 +195,8 @@ export function NavRow(props: NavRowProps) {
    * (`lib/marketing-routes.ts`); the accessible name and the marker below are the announcement
    * the rule asks for.
    */
-  const leaving = !pending && (props.leaving === true || (props.href !== undefined && leavesApp(props.href)));
+  const leaving =
+    !pending && (props.leaving === true || (props.href !== undefined && leavesApp(props.href)));
 
   const tone = pending
     ? "cursor-not-allowed text-muted-foreground opacity-70"
@@ -640,4 +641,3 @@ export function AppNav({
     }
   }
 }
-

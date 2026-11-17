@@ -151,12 +151,14 @@ const PlanFooter = memo<{ plan: PricingPlanView; cycle: BillingInterval; copy: P
         );
       }
       /**
-       * **A plan card carries its choice; it does not charge (#1043).** The button used to POST
-       * `/api/billing/checkout` and follow the answer, which is how a membership could start with no
-       * relationship behind it and how a person ended up choosing a plan twice. It is now one link to
-       * `pricingStartPath()`, which records the tier and interval on the browser and answers `303` to
-       * the template catalogue — the flow's only door since #1042. The two `data-` attributes are the
-       * render's own statement of what the action carries, which is what the inventory check reads.
+       * **A plan card chooses a plan; it never charges and never reaches a checkout (#1043, #1127).**
+       * The button used to POST `/api/billing/checkout` and follow the answer, which is how a
+       * membership could start with no relationship behind it and how a person ended up choosing a
+       * plan twice. Since #1127 it is one link to `pricingCataloguePath()`: the catalogue with the
+       * tier and its interval in the address (`?from=pricing&plan=…&interval=…#catalog`), which the
+       * catalogue keeps on its own cards and stage 1 posts into the flow's cookie. The two `data-`
+       * attributes are the render's own statement of what the action carries, which is what the
+       * inventory check reads.
        */
       return (
         <Button asChild className={buttonClassName} variant={variant}>

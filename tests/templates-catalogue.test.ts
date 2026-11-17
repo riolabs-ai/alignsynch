@@ -227,7 +227,9 @@ describe("the endpoint and the screen", () => {
     const pageHtml = renderToStaticMarkup(
       await RelationshipTemplatesPage({ searchParams: Promise.resolve({}) }),
     );
-    expect(pageHtml.match(/data-template-card=/g)).toHaveLength(purchasableRelationshipTypes.length);
+    expect(pageHtml.match(/data-template-card=/g)).toHaveLength(
+      purchasableRelationshipTypes.length,
+    );
     // Both band anchors exist: the header's How It Works row and the hero's Browse action point
     // at them, so a missing id is a link to nowhere.
     expect(pageHtml).toContain('id="catalog"');

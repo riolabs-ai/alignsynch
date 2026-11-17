@@ -341,11 +341,7 @@ describe("routePatterns", () => {
     // has to reach the table, and it can only reach it as the prefix its parent already owns: a
     // literal row would name a URL no reader can be at.
     assert.deepEqual(
-      routePatterns([
-        "/",
-        "/relationship-templates/[slug]",
-        "/relationship-templates/[slug]/demo",
-      ]),
+      routePatterns(["/", "/relationship-templates/[slug]", "/relationship-templates/[slug]/demo"]),
       ["/", "/relationship-templates/*"],
     );
   });

@@ -67,7 +67,9 @@ export function PublicHeaderNav({
 
   /** Is this row the route the reader is on? Exact for the front page, a prefix for a tree. */
   const isActive = (row: PublicNavRow) =>
-    row.href === "/" ? pathname === "/" : pathname === row.href || pathname.startsWith(`${row.href}/`);
+    row.href === "/"
+      ? pathname === "/"
+      : pathname === row.href || pathname.startsWith(`${row.href}/`);
 
   const rowClass = (active: boolean) =>
     cn(

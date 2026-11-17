@@ -91,7 +91,10 @@ export function RelationshipCatalogue({
               <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
               {hero.eyebrow}
             </p>
-            <h1 className="text-3xl font-bold tracking-tight text-primary lg:text-4xl" id="hero-title">
+            <h1
+              className="text-3xl font-bold tracking-tight text-primary lg:text-4xl"
+              id="hero-title"
+            >
               {hero.heading}
             </h1>
             <p className="max-w-xl text-base text-foreground">{hero.subtitle}</p>
