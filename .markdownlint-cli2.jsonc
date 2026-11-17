@@ -21,12 +21,16 @@
     "docs/glossary.md",
     "docs/ui-registry.md",
     "docs/changelog/**",
-    // BYTE-FROZEN DESIGN ARTIFACTS. The same three directories `biome.jsonc` excludes, for the same
+    // BYTE-FROZEN DESIGN ARTIFACTS. The same directories `biome.jsonc` excludes, for the same
     // reason it gives: they are an approved handoff committed byte-identical so the build can be
-    // matched against them, and they are not ours to reformat.
+    // matched against them, and they are not ours to reformat. `docs/specs/v2-bundles` is the same
+    // case at eleven bundles (#1137): its `IMPLEMENTATION-PROMPT.md` pages carry the handoff's own
+    // doubled blank lines, unescaped pipes in three tables and code-span spacing, and rewriting them
+    // would edit the document the React build is matched against.
     "docs/specs/spec-as2-style-home-redesign/**",
     "docs/specs/spec-as2-style-templates-redesign/**",
-    "docs/specs/spec-design-page-rel-templates-v2/**"
+    "docs/specs/spec-design-page-rel-templates-v2/**",
+    "docs/specs/v2-bundles/**"
   ],
   "config": {
     // NO LINE LENGTH. Paragraphs are never re-wrapped: Biome wraps at lineWidth 100 and markdownlint
