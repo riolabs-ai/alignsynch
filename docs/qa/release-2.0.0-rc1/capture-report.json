@@ -1,0 +1,230 @@
+{
+  "release": "2.0.0-rc1",
+  "commit": "44df6f0bd637528a820767104bc9799af6f33d07",
+  "capturedAt": "2026-11-17T20:38:01.694Z",
+  "method": "headless Chrome over the DevTools protocol (scripts/cdp.mjs) — Runtime.evaluate asserts, Page.captureScreenshot at the measured document height",
+  "server": "pnpm dev from this release's own tree, http://localhost:3412, loopback, demo branch env (.env.local wins over .env), /api/version answered {\"version\":\"2.0.0-rc1\",\"commit\":\"44df6f0bd637528a820767104bc9799af6f33d07\"}",
+  "session": "signed in through the app's own demo door — the PIN at /demo, then the Initiator role on /login (lib/auth/demo-accounts.ts::DEMO_ROLES); no credential was typed into the page",
+  "relationship": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
+  "stills": [
+    {
+      "file": "dashboard-templates-1440.png",
+      "url": "/dashboard/templates",
+      "width": 1440,
+      "height": 4274,
+      "sha256": "9abf81749ccf7d50cdb48cc9c1275193e55386623e76a6a4d3d896c280b184a4",
+      "asserts": {
+        "title": "Templates · AlignSynch",
+        "path": "/dashboard/templates",
+        "h1": "Templates",
+        "h2": [
+          "Recent Messages",
+          "Notifications",
+          "Brother–Sister",
+          "Library",
+          "Propose a Template"
+        ],
+        "tabs": [],
+        "rail": "WorkspaceStartMy RelationshipsTemplatesChatSupportHow It WorksSupport Logout Library29My Templates0",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 7027
+      },
+      "why": "Templates v2 — the Library | My Templates shelf, the page that replaced the retired /templates/relationship catalogue (#1130, #1151)"
+    },
+    {
+      "file": "chat-1440.png",
+      "url": "/dashboard/chat",
+      "width": 1440,
+      "height": 900,
+      "sha256": "10f83cd5e018a2f8ffd4d988265a4522e9730f7df4931300025e7ccdc2aeabb9",
+      "asserts": {
+        "title": "Chat · AlignSynch",
+        "path": "/dashboard/chat",
+        "h1": "Chat",
+        "h2": ["Recent Messages", "Notifications", "Conversations", "Pick a Conversation"],
+        "tabs": [],
+        "rail": "WorkspaceStartMy RelationshipsTemplatesChatSupportHow It WorksSupport Logout",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 533
+      },
+      "why": "Chat v2 — a thread per relationship, and the rail's fifth row (#1131, #1154)"
+    },
+    {
+      "file": "relationship-discussion-1440.png",
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a75b2a8aaaca99bccadb6e291051779febf956b4d636e622822272c5f0aa5463",
+      "asserts": {
+        "title": "Relationship · AlignSynch",
+        "path": "/dashboard/relationships/relationship-assessment-instance-avery-rowan",
+        "h1": "Relationship Basics",
+        "h2": [
+          "Recent Messages",
+          "Notifications",
+          "This relationship is closed",
+          "Where this stands",
+          "Relationship Discussion",
+          "Aspects",
+          "Members",
+          "Relationship Information",
+          "Assessment Settings",
+          "Relationship Membership"
+        ],
+        "tabs": ["Discussion", "Aspects", "Members", "Details", "Settings", "Payment"],
+        "rail": "WorkspaceStartMy RelationshipsTemplatesChatSupportHow It WorksSupport Logout",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 1352
+      },
+      "why": "the relationship detail this candidate ships: six tabs on one record, Discussion in front (#1148, from v1.22.0)"
+    },
+    {
+      "file": "relationship-aspects-1440.png",
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan#aspects",
+      "width": 1440,
+      "height": 1384,
+      "sha256": "ffbad5de8c2b98a820772124b583aaf38ef035d84b4071abcd3d66b49e7f7fe7",
+      "asserts": {
+        "title": "Relationship · AlignSynch",
+        "path": "/dashboard/relationships/relationship-assessment-instance-avery-rowan#aspects",
+        "h1": "Relationship Basics",
+        "h2": [
+          "Recent Messages",
+          "Notifications",
+          "This relationship is closed",
+          "Where this stands",
+          "Relationship Discussion",
+          "Aspects",
+          "Members",
+          "Relationship Information",
+          "Assessment Settings",
+          "Relationship Membership"
+        ],
+        "tabs": ["Discussion", "Aspects", "Members", "Details", "Settings", "Payment"],
+        "rail": "WorkspaceStartMy RelationshipsTemplatesChatSupportHow It WorksSupport Logout",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 1946
+      },
+      "why": "the Aspect drawer and the live Aspect lock — numbered Aspects with a tolerance in words (#1133, #1155)"
+    },
+    {
+      "file": "relationship-payment-1440.png",
+      "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan#payment",
+      "width": 1440,
+      "height": 900,
+      "sha256": "634def45e08544118dac5e72780325b6be8c24cf50685630baa3beb5643efa38",
+      "asserts": {
+        "title": "Relationship · AlignSynch",
+        "path": "/dashboard/relationships/relationship-assessment-instance-avery-rowan#payment",
+        "h1": "Relationship Basics",
+        "h2": [
+          "Recent Messages",
+          "Notifications",
+          "This relationship is closed",
+          "Where this stands",
+          "Relationship Discussion",
+          "Aspects",
+          "Members",
+          "Relationship Information",
+          "Assessment Settings",
+          "Relationship Membership"
+        ],
+        "tabs": ["Discussion", "Aspects", "Members", "Details", "Settings", "Payment"],
+        "rail": "WorkspaceStartMy RelationshipsTemplatesChatSupportHow It WorksSupport Logout",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 1318
+      },
+      "why": "Payment v2 — a trial panel per relationship, priced from the one plan catalogue (#1132, #1156)"
+    },
+    {
+      "file": "pricing-1440.png",
+      "url": "/pricing",
+      "width": 1440,
+      "height": 3146,
+      "sha256": "7a1055f1665809f0d3a6018463ff9850f6ed14878fdcfcc3c4f5945df127fa68",
+      "asserts": {
+        "title": "Pricing Plans · AlignSynch",
+        "path": "/pricing",
+        "h1": "Simple Pricing. Start Free.",
+        "h2": ["How Billing Works", "Questions", "Start Your First Relationship"],
+        "tabs": [],
+        "rail": "HomeTemplatesHow It WorksPricingHelp HomeTemplatesHow It WorksPricingHelp",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 2470
+      },
+      "why": "conversion — /pricing reads the same three-plan catalogue the app bills from (#1127, #1159)"
+    },
+    {
+      "file": "relationship-templates-1440.png",
+      "url": "/relationship-templates",
+      "width": 1440,
+      "height": 3633,
+      "sha256": "9e69c16a28c0e6a81c65c54fec42f273fbb0939175ae822cdabffeabac9873d0",
+      "asserts": {
+        "title": "Relationship Templates · AlignSynch",
+        "path": "/relationship-templates",
+        "h1": "See Where You Agree. Talk About the Rest.",
+        "h2": [
+          "Choose a Template",
+          "Choose a Template",
+          "How It Works",
+          "Questions",
+          "Start Your First Relationship"
+        ],
+        "tabs": [],
+        "rail": "HomeTemplatesHow It WorksPricingHelp HomeTemplatesHow It WorksPricingHelp",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 5746
+      },
+      "why": "the public template catalogue, now the only catalogue address (#1127 retires /relationship-types) (#1159)"
+    },
+    {
+      "file": "relationship-template-detail-1440.png",
+      "url": "/relationship-templates/colleagues",
+      "width": 1440,
+      "height": 2037,
+      "sha256": "691b3a387de157def90ce3d2ae0c4bbb24c8afae2d68e832a90696fe781a29aa",
+      "asserts": {
+        "title": "Coworker–Colleague · AlignSynch",
+        "path": "/relationship-templates/colleagues",
+        "h1": "Coworker–Colleague",
+        "h2": [
+          "Who it is for",
+          "The 5 Aspects both people answer",
+          "Start With Your Colleague",
+          "7-Day Free Trial",
+          "How It Works"
+        ],
+        "tabs": [],
+        "rail": "HomeTemplatesHow It WorksPricingHelp HomeTemplatesHow It WorksPricingHelp TemplatesCoworker–Colleague",
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "noHorizontalOverflow": true,
+        "envLeaks": [],
+        "textLength": 2536
+      },
+      "why": "a template's own public page, and the door into the create walk (#1159)"
+    }
+  ]
+}
