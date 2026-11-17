@@ -106,6 +106,7 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 import { compareVersions, isBump, isVersion } from "./release-version.mjs";
+import { readChangedPaths, renderTable } from "./tree-hygiene.mjs";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -1046,6 +1047,34 @@ function ask(question) {
  * Arguments
  * ------------------------------------------------------------------ */
 
+/**
+ * **Who wrote the tree, printed before anything is read (#1178).**
+ *
+ * A cut is made from a clean tree and this script does not enforce that — `scripts/release.sh` does,
+ * as its own refusal. The table belongs here as well because `--prepare` writes the bump and the
+ * entry into whatever `git status` already holds: an `AGENTS.md` from `next dev` or a `CLAUDE.md`
+ * from `gitnexus analyze` would ride into the release commit, and a `data/health/platform-health.json`
+ * the previous cut's record step left behind would make the last record look current.
+ *
+ * It reports and never refuses — the refusal is the release script's, where a cut is made, and a
+ * `--check` on a dirty tree is a legitimate way to read the plan. Two lines when the tree is clean,
+ * nothing more.
+ */
+function reportTreeHygiene() {
+  let rows;
+  try {
+    rows = readChangedPaths(ROOT);
+  } catch (error) {
+    say(`  ${C.dim}tree hygiene: git status could not be read — ${error.message}${C.off}`);
+    return;
+  }
+  if (rows.length === 0) return;
+  say();
+  for (const line of renderTable(rows).split("\n")) say(`  ${C.dim}${line}${C.off}`);
+  say(`  ${C.dim}(a cut is made from a clean tree — the table above is what to clear)${C.off}`);
+  say();
+}
+
 function parseArgs(argv) {
   const opts = {
     mode: "plan",
@@ -1168,6 +1197,8 @@ async function main(argv) {
         "merely inherits the variable, `env -u HERMES_KANBAN_TASK pnpm release:cut --check` is the plan.",
     );
   }
+
+  reportTreeHygiene();
 
   const evidence = gather(opts);
 
