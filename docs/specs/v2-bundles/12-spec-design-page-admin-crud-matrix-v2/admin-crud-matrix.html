@@ -1,0 +1,2793 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRUD & Permissions · AlignSynch v2.0 prototype</title>
+<link rel="icon" href="images/alignsynch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="js/tw-config.js"></script>
+</head>
+<body class="bg-mist text-sm text-foreground" data-role="initiator">
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-action focus:px-4 focus:py-2 focus:text-action-foreground">Skip to Content</a>
+<div class="flex min-h-screen" data-qh="components/layout/main-layout">
+
+<div class="hidden shrink-0 border-r bg-background md:block md:w-16 xl:w-60"><aside class="sticky top-0 flex h-screen flex-col" data-qh="components/layout/sidebar">
+  <a href="../09-spec-design-system-tokens-v2/index.html" class="flex h-14 items-center gap-2 border-b px-4 md:justify-center xl:justify-start" aria-label="AlignSynch home">
+    <img src="images/alignsynch-icon.png" alt="" class="size-8">
+    <span class="text-lg font-bold tracking-tight text-primary md:hidden xl:inline">Align<span class="font-normal text-muted-foreground">Synch</span></span>
+  </a>
+  <nav class="flex flex-1 flex-col gap-1 p-3" aria-label="Admin and workspace"><p class="px-3 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground md:text-center xl:text-left">Admin</p><span title="Docs lives at /admin/docs in the product" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9 md:justify-center xl:justify-start text-foreground hover:bg-mist cursor-default"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg><span class="md:sr-only xl:not-sr-only">Docs</span></span><a href="admin-crud-matrix.html" aria-current="page" title="CRUD & Permissions" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9 md:justify-center xl:justify-start bg-nav-active text-action-foreground"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="m3 6 1 1 2-2"/><path d="m3 12 1 1 2-2"/><path d="m3 18 1 1 2-2"/></svg><span class="md:sr-only xl:not-sr-only">CRUD & Permissions</span></a><p class="px-3 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground md:text-center xl:text-left pt-3">Workspace</p><a href="../05-spec-design-page-start-my-relationships-v2/start.html" title="Start" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9 md:justify-center xl:justify-start text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span class="md:sr-only xl:not-sr-only">Start</span></a><a href="../05-spec-design-page-start-my-relationships-v2/my-relationships.html" title="My Relationships" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9 md:justify-center xl:justify-start text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="md:sr-only xl:not-sr-only">My Relationships</span></a><a href="../06-spec-design-page-templates-v2/templates.html" title="Templates" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9 md:justify-center xl:justify-start text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/></svg><span class="md:sr-only xl:not-sr-only">Templates</span></a><a href="../07-spec-design-page-chat-v2/chat.html" title="Chat" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9 md:justify-center xl:justify-start text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="md:sr-only xl:not-sr-only">Chat</span></a><a href="../08-spec-design-page-payment-v2/payment.html" title="Payment" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9 md:justify-center xl:justify-start text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg><span class="md:sr-only xl:not-sr-only">Payment</span></a></nav>
+</aside></div>
+<div id="mobile-nav" class="fixed inset-0 z-50 md:hidden" hidden data-qh="components/ui/sheet">
+  <div class="absolute inset-0 bg-foreground/40" data-close-nav></div>
+  <div class="absolute inset-y-0 left-0 flex w-72 flex-col bg-background shadow-lg">
+    <div class="flex h-16 items-center justify-between border-b px-4">
+      <span class="flex items-center gap-2"><img src="images/alignsynch-icon.png" alt="" class="size-8"><span class="text-lg font-bold text-primary">Align<span class="font-normal text-muted-foreground">Synch</span></span></span>
+      <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary hover:bg-mist size-10" data-close-nav aria-label="Close menu"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <nav class="flex flex-col gap-1 p-3" aria-label="Admin and workspace mobile"><p class="px-3 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground md:text-center xl:text-left">Admin</p><span title="Docs lives at /admin/docs in the product" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9  text-foreground hover:bg-mist cursor-default"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg><span class="">Docs</span></span><a href="admin-crud-matrix.html" aria-current="page" title="CRUD & Permissions" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9  bg-nav-active text-action-foreground"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="m3 6 1 1 2-2"/><path d="m3 12 1 1 2-2"/><path d="m3 18 1 1 2-2"/></svg><span class="">CRUD & Permissions</span></a><p class="px-3 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground md:text-center xl:text-left pt-3">Workspace</p><a href="../05-spec-design-page-start-my-relationships-v2/start.html" title="Start" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9  text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span class="">Start</span></a><a href="../05-spec-design-page-start-my-relationships-v2/my-relationships.html" title="My Relationships" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9  text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="">My Relationships</span></a><a href="../06-spec-design-page-templates-v2/templates.html" title="Templates" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9  text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/></svg><span class="">Templates</span></a><a href="../07-spec-design-page-chat-v2/chat.html" title="Chat" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9  text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="">Chat</span></a><a href="../08-spec-design-page-payment-v2/payment.html" title="Payment" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors lg:h-9  text-foreground hover:bg-mist"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg><span class="">Payment</span></a></nav>
+  </div>
+</div>
+<div class="flex min-w-0 flex-1 flex-col">
+
+<header class="sticky top-0 z-30 border-b bg-background/95 backdrop-blur" data-qh="components/layout/header">
+  <div class="mx-auto flex h-16 w-full max-w-content items-center gap-3 px-4 lg:h-14 lg:px-6">
+  <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary hover:bg-mist size-10 md:hidden" data-open-nav aria-label="Open menu" aria-controls="mobile-nav"><svg class="size-5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg></button>
+  <img src="images/alignsynch-icon.png" alt="" class="size-7 md:hidden">
+  <nav aria-label="Breadcrumb" class="min-w-0 flex-1"><ol class="flex min-w-0 items-center gap-1.5 text-sm"><li class="hidden shrink-0 sm:block"><a class="text-muted-foreground hover:text-primary hover:underline" href="../09-spec-design-system-tokens-v2/index.html">Admin</a></li><li aria-hidden="true" class="hidden text-muted-foreground sm:block"><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></li><li class="truncate font-medium text-foreground" aria-current="page">CRUD & Permissions</li></ol></nav>
+  <label class="relative hidden w-64 lg:block" data-qh="components/ui/input">
+    <span class="sr-only">Search</span>
+    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+    <input type="search" placeholder="Search Relationships, Templates" class="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+  </label>
+  <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary hover:bg-mist relative size-10" aria-label="Notifications, 1 unread"><svg class="size-5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="absolute right-2.5 top-2.5 size-2 rounded-full bg-accent ring-2 ring-background"></span></button>
+  <div class="relative" data-kebab data-account-menu data-qh="components/ui/dropdown-menu (account)">
+    <button type="button" class="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu" data-kebab-btn><span data-you-avatar><span class="relative flex size-9 shrink-0 overflow-hidden rounded-full" data-qh="components/ui/avatar"><span class="flex h-full w-full items-center justify-center rounded-full bg-initiator-solid text-white text-sm font-semibold" aria-hidden="true">MR</span></span></span></button>
+    <div role="menu" aria-label="Account" class="absolute right-0 top-full z-40 mt-2 w-60 rounded-md border bg-background p-1 shadow-md" data-kebab-menu hidden>
+      <div class="border-b px-2 pb-2 pt-1.5"><p class="text-sm font-semibold text-foreground" data-you-name>Marcus Reyes</p><p class="truncate text-xs text-muted-foreground" data-you-email>marcus.reyes@example.com</p></div>
+      <a role="menuitem" tabindex="-1" href="../11-spec-design-page-account-settings-v2/settings.html" class="mt-1 flex items-center gap-2 rounded-sm px-2 py-2 text-sm text-foreground hover:bg-mist focus:bg-mist focus:outline-none"><svg class="size-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>Account Settings</a>
+      <a role="menuitem" tabindex="-1" href="../02-spec-design-page-onboarding-v2/relationship-templates.html?signed-out=1" class="flex items-center gap-2 rounded-sm px-2 py-2 text-sm text-foreground hover:bg-mist focus:bg-mist focus:outline-none" data-sign-out><svg class="size-4 text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign Out</a>
+    </div></div>
+  </div>
+</header>
+<main id="main" class="mx-auto w-full max-w-content flex-1 px-4 py-5 lg:px-6 lg:py-5" data-qh="components/layout/main-layout (content cap: max-w-content 90rem)">
+<div id="matrix-app" class="space-y-4">
+<section class="overflow-hidden rounded-lg border bg-card shadow-sm" data-qh="components/layout/page-header">
+  <div class="flex h-1" aria-hidden="true"><span class="flex-1 bg-action"></span><span class="w-1/4 bg-deep/60"></span><span class="w-1/6 bg-accent/50"></span></div>
+  <div class="flex flex-col gap-4 p-5 lg:flex-row lg:items-end lg:justify-between lg:p-6">
+    <div class="min-w-0 space-y-2">
+      <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-deep"><svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="m3 6 1 1 2-2"/><path d="m3 12 1 1 2-2"/><path d="m3 18 1 1 2-2"/></svg>Admin</p>
+      <h1 class="text-2xl font-bold tracking-tight text-primary xxl:text-3xl">CRUD & Permissions</h1>
+      <p class="text-base text-foreground">The spec reference for every create, edit, archive and leave action. Read-only. Counts come from the matrix source.</p>
+    </div>
+  </div></section>
+<section class="rounded-lg border bg-card p-4 lg:p-5" aria-labelledby="rules-title" data-qh="components/ui/card (rules)">
+  <h2 id="rules-title" class="text-base font-semibold text-primary">Rules Every #1119 Child Must Honour</h2>
+  <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground"><li>The Counterparty never sees a price, the word trial, a card or an extension.</li><li>Once Stage 6 is live, Aspect changes are proposed and agreed by both parties. Nothing changes under a party until both agree, and any answers that would be discarded are named first.</li><li>Archive over delete: templates archive or restore; permanent delete only when unused and unpublished; relationships close or are abandoned, never deleted.</li><li>The 1–5 answer scale is locked: never a field, never editable.</li><li>No silent edits. The Initiator or staff rewrite-with-confirm in lib/relationship/edit.ts is the conflict to replace, not to port. session.mode and session.alignment_setting stay immutable once the session exists (V18).</li><li>Destructive actions are graphite with an × icon, never red.</li></ul>
+</section>
+<section id="matrix-failure" class="rounded-lg border bg-card p-5" hidden data-qh="components/ui/card (failure)" aria-labelledby="fail-title">
+      <h2 id="fail-title" class="text-base font-semibold text-primary">The Matrix Source Could Not Be Read</h2>
+      <p class="mt-1 text-sm text-foreground" data-fail-reason></p>
+      <p class="mt-2 text-sm text-muted-foreground">This is not an empty matrix. Fix the source file and reload. The page never writes to the matrix.</p>
+    </section>
+<div id="matrix-live" class="space-y-4">
+<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6" aria-label="Matrix counts">
+      <div class="flex flex-col gap-1 rounded-lg border bg-card p-3" data-count="cells" data-qh="components/ui/card (count)"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-line bg-background font-medium text-foreground " data-qh="components/ui/badge" >Cells</span><p class="text-2xl font-bold tabular-nums text-primary">169</p></div>
+      <div class="flex flex-col gap-1 rounded-lg border bg-card p-3" data-count="applicable" data-qh="components/ui/card (count)"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-action/40 bg-action/5 font-medium text-primary " data-qh="components/ui/badge" >Applicable</span><p class="text-2xl font-bold tabular-nums text-primary">124</p></div>
+      <div class="flex flex-col gap-1 rounded-lg border bg-card p-3" data-count="covered" data-qh="components/ui/card (count)"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><p class="text-2xl font-bold tabular-nums text-primary">69</p></div>
+      <div class="flex flex-col gap-1 rounded-lg border bg-card p-3" data-count="hinted" data-qh="components/ui/card (count)"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-small-gap-mark bg-small-gap-tint text-small-gap " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9.5a6.5 6.5 0 0 1 7 0 6.5 6.5 0 0 0 7 0"/><path d="M5 15.5a6.5 6.5 0 0 1 7 0 6.5 6.5 0 0 0 7 0"/></svg>Hinted</span><p class="text-2xl font-bold tabular-nums text-primary">9</p></div>
+      <div class="flex flex-col gap-1 rounded-lg border bg-card p-3" data-count="missing" data-qh="components/ui/card (count)"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-gap-mark bg-gap-tint text-gap " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>Missing</span><p class="text-2xl font-bold tabular-nums text-primary">46</p></div>
+      <div class="flex flex-col gap-1 rounded-lg border bg-card p-3" data-count="conflicts" data-qh="components/ui/card (count)"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-gap-mark bg-gap-tint text-gap " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>Conflicts</span><p class="text-2xl font-bold tabular-nums text-primary">4</p></div>
+    </div>
+    <p class="text-sm text-muted-foreground">Pass 10 snapshot · 34 P0 · 23 P1 · 29 P2 · 15 Won't · 2 P0 still open (hinted or missing). Counts are computed from the source file, not hardcoded.</p>
+<form id="matrix-filters" class="rounded-lg border bg-card p-4" data-qh="components/ui/card (filters)" onsubmit="return false">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <p class="text-sm font-semibold text-primary">Filters</p>
+        <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary hover:bg-mist h-10 px-3 lg:h-9" data-qh="components/ui/button" id="filter-clear" hidden><span>Clear Filters</span></button>
+      </div>
+      <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="min-w-0 space-y-1.5" data-qh="components/ui/select + label">
+      <label for="filter-object" class="text-sm font-medium text-foreground">Object</label>
+      <select id="filter-object" class="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-10"><option value="">All</option><option value="library-template">Relationship Template (Library/public)</option><option value="my-template">My Template (user copy)</option><option value="template-aspect">Aspect (within template)</option><option value="live-aspect">Aspect (within live relationship)</option><option value="scale-item">Question / scale item</option><option value="relationship">Relationship</option><option value="invitation">Invitation</option><option value="assessment">Answers / assessment</option><option value="chat">Chat message</option><option value="payment">Payment / plan</option><option value="account">Account / profile</option></select></div>
+        <div class="min-w-0 space-y-1.5" data-qh="components/ui/select + label">
+      <label for="filter-role" class="text-sm font-medium text-foreground">Role</label>
+      <select id="filter-role" class="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-10"><option value="">All</option><option value="visitor">Visitor</option><option value="initiator">Initiator</option><option value="counterparty">Counterparty</option><option value="admin">Admin/curator</option></select></div>
+        <div class="min-w-0 space-y-1.5" data-qh="components/ui/select + label">
+      <label for="filter-status" class="text-sm font-medium text-foreground">Status</label>
+      <select id="filter-status" class="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-10"><option value="">All</option><option value="covered">Covered</option><option value="hinted">Hinted</option><option value="missing">Missing</option><option value="n/a">N/A</option></select></div>
+        <div class="min-w-0 space-y-1.5" data-qh="components/ui/select + label">
+      <label for="filter-upstream" class="text-sm font-medium text-foreground">Upstream</label>
+      <select id="filter-upstream" class="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-10"><option value="">All</option><option value="exists">Exists</option><option value="not-found">Not Found</option><option value="conflict">Conflict</option><option value="n/a">N/A</option></select></div>
+        <div class="min-w-0 space-y-1.5" data-qh="components/ui/select + label">
+      <label for="filter-priority" class="text-sm font-medium text-foreground">Priority</label>
+      <select id="filter-priority" class="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-10"><option value="">All</option><option value="P0">P0</option><option value="P1">P1</option><option value="P2">P2</option><option value="wont">Won't</option><option value="none">—</option></select></div>
+      </div>
+      <p class="sr-only" aria-live="polite" id="matrix-filter-live"></p>
+    </form>
+<section class="space-y-3" aria-labelledby="p0-title">
+  <h2 id="p0-title" class="text-base font-semibold text-primary">P0 Gaps</h2>
+  <p class="text-sm text-muted-foreground">The debut backbone. Pass 10 built items 1–10 in this prototype; item 11 is drawn in HTML and still needs billing enforcement.</p>
+  <ol class="grid gap-2"><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">1.</span> Aspect Drawer</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Wizard Stage 3 pencil and Add an Aspect, and My Template Edit: title, prompt, left pole, right pole. The 1–5 cells stay locked and are not fields. Keep “at least one Aspect”.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1123">#1123</a><a class="text-primary underline underline-offset-2" href="../01-spec-design-page-wizard-v2/wizard.html?stage=3">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">2.</span> Card Kebab</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">My Templates: Edit, Duplicate, Archive (Delete only in the editor, and only when unused). Library cards: Create Relationship, Save a Copy.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1134">#1134</a><a class="text-primary underline underline-offset-2" href="../06-spec-design-page-templates-v2/templates.html?tab=mine">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">3.</span> Save to My Templates Actually Copies</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Wire it to the existing clonePublic action on /dashboard/templates.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1130">#1130</a><a class="text-primary underline underline-offset-2" href="../06-spec-design-page-templates-v2/templates.html?tab=library">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">4.</span> Counterparty Fork</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">On a live relationship, “Save These Aspects as a My Template”. The Initiator does not see it. Upstream: #785.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1133">#1133</a><a class="text-primary underline underline-offset-2" href="../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=live&role=counterparty#aspects">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">5.</span> Draft and Invited Stay Editable</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">After Save and Exit, reopen Stages 1–3 or an Edit panel on Relationship Detail.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1124">#1124</a><a class="text-primary underline underline-offset-2" href="../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=invited&role=initiator#details">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">6.</span> Live Aspect Changes Are Proposed, Not Silent</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Propose a Change on the Aspects tab for both roles, with accept or decline. Do not port the silent Initiator write in lib/relationship/edit.ts.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1133">#1133</a><a class="text-primary underline underline-offset-2" href="../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=live&role=initiator#aspects">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">7.</span> Assessment-Taking UI</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Locked 1–5 scale; answers private until both finish. Upstream: /assessment/instances/[id]/answer.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1128">#1128</a><a class="text-primary underline underline-offset-2" href="../10-spec-design-page-assessment-v2/assessment.html">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">8.</span> Invitation Hygiene</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Copy Invite Link, Resend, Cancel Invite (graphite × + confirm), Decline (one click, optional reason).</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1135">#1135</a><a class="text-primary underline underline-offset-2" href="../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=invited&role=initiator#members">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">9.</span> Leave / Close, Not Delete</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Leave Relationship / Request My Removal, Abandon a draft (upstream void). No Delete Relationship.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1135">#1135</a><a class="text-primary underline underline-offset-2" href="../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=live&role=initiator#members">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">10.</span> Account Menu</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Header avatar: Account Settings, Sign Out (port /settings). Account deletion is P1.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1136">#1136</a><a class="text-primary underline underline-offset-2" href="../11-spec-design-page-account-settings-v2/settings.html">Open</a></div></li><li class="flex flex-col gap-1 rounded-lg border bg-card p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" data-qh="components/ui/card (p0 item)">
+          <div class="min-w-0"><p class="text-sm font-semibold text-primary"><span class="text-muted-foreground">11.</span> Billing: Trial Pause / Extra Week</p>
+          <p class="mt-0.5 text-sm text-muted-foreground">Enforced in billing, not only in HTML. Stage 6 pauses read-only, one free extra week, the Counterparty never sees price or trial. The clock starts when the Counterparty accepts.</p></div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2"><span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold border-synch-mark bg-synch-tint text-synch " data-qh="components/ui/badge" ><svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Covered</span><a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1121">#1121</a><a class="text-primary underline underline-offset-2" href="../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=trial-ended&role=initiator">Open</a></div></li></ol>
+</section>
+<section class="space-y-3" aria-labelledby="conflicts-title">
+  <h2 id="conflicts-title" class="text-base font-semibold text-primary">Conflicts and Decisions</h2>
+  <ul class="grid gap-2"><li class="rounded-lg border bg-card p-4 space-y-2" data-qh="components/ui/card (conflict)">
+          <p class="text-sm font-semibold text-primary">Live Aspect edits</p>
+          <dl class="grid gap-2 text-sm sm:grid-cols-2">
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prototype</dt><dd class="text-foreground">Locked after Stage 5 (lock note was cut in pass 4, so the rule is invisible). Suggest-a-Change only at Accept.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upstream</dt><dd class="text-foreground">Initiator/staff may edit with stated-cost confirmation (`lib/relationship/edit.ts`). Counterparty has no write. New Aspect after answers is blocked (`answers-sealed`); new round is the path.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">v2 Rule</dt><dd class="text-foreground">Once Stage 6 is live, changes are proposed and agreed by both, never silent.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recommendation</dt><dd class="text-foreground">**Do not port silent edit.** Add Propose a Change. Restore a visible lock/propose note on the Aspects tab.</dd></div>
+          </dl></li><li class="rounded-lg border bg-card p-4 space-y-2" data-qh="components/ui/card (conflict)">
+          <p class="text-sm font-semibold text-primary">Mode / Alignment Tolerance after publish</p>
+          <dl class="grid gap-2 text-sm sm:grid-cols-2">
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prototype</dt><dd class="text-foreground">Settings tab lets the Initiator “Save Settings” (“applies from the next round”). Align already has a Soft/Full *compare* toggle.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upstream</dt><dd class="text-foreground">`session.mode` and `session.alignment_setting` are immutable once the session exists (V18).</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">v2 Rule</dt><dd class="text-foreground">Align compare-toggle is fine. Persistent changes belong on a later round.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recommendation</dt><dd class="text-foreground">Keep the Align toggle. Disable or retarget Settings Save so it cannot rewrite a scored session.</dd></div>
+          </dl></li><li class="rounded-lg border bg-card p-4 space-y-2" data-qh="components/ui/card (conflict)">
+          <p class="text-sm font-semibold text-primary">Propose to Library</p>
+          <dl class="grid gap-2 text-sm sm:grid-cols-2">
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prototype</dt><dd class="text-foreground">Full form on `../06-spec-design-page-templates-v2/template-proposal.html`, mock submit.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upstream</dt><dd class="text-foreground">Members cannot publish. Catalogue is admin-curated (#533). No proposal queue.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">v2 Rule</dt><dd class="text-foreground">Undecided in the repo.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recommendation</dt><dd class="text-foreground">**Decision needed.** Debut can ship without member proposals (P1). Do not build a review queue unless Jaden wants it.</dd></div>
+          </dl></li><li class="rounded-lg border bg-card p-4 space-y-2" data-qh="components/ui/card (conflict)">
+          <p class="text-sm font-semibold text-primary">Settings “from the next round” vs a new round</p>
+          <dl class="grid gap-2 text-sm sm:grid-cols-2">
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prototype</dt><dd class="text-foreground">Copy implies a later round will pick up Mode/Tolerance.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upstream</dt><dd class="text-foreground">No “next round” writer is wired as a first-class member card in the surfaces reviewed; a new Aspect on an answered sheet is refused.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">v2 Rule</dt><dd class="text-foreground">New questions need a new round, agreed.</dd></div>
+            <div><dt class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recommendation</dt><dd class="text-foreground">Treat “next round” as P1 product work, not a hidden Settings save.</dd></div>
+          </dl></li></ul>
+</section>
+<section class="space-y-3" aria-labelledby="matrix-title">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <h2 id="matrix-title" class="text-base font-semibold text-primary">The Matrix</h2>
+        <p class="text-sm text-muted-foreground" id="matrix-shown-count">169 Rows</p>
+      </div>
+      <div id="matrix-cards" class="grid gap-2 lg:hidden"></div>
+      <div class="hidden overflow-x-auto rounded-lg border bg-card lg:block" data-qh="components/ui/table" tabindex="0" role="region" aria-label="CRUD matrix">
+        <table class="w-full border-collapse text-left">
+          <thead class="bg-mist/60"><tr><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Object</th><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Action</th><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Role</th><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Page / Control</th><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Upstream</th><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Priority</th><th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rationale</th></tr></thead>
+          <tbody id="matrix-body"></tbody>
+        </table>
+      </div>
+      <p id="matrix-empty" class="rounded-lg border bg-card p-4 text-sm text-foreground" hidden>No rows match these filters.</p>
+    </section>
+<p class="text-sm text-muted-foreground">Read-only. Source: <code class="text-foreground">docs/specs/v2-prototype/crud-matrix.md</code>.
+      <a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1126">Issue #1126</a> ·
+      <a class="text-primary underline underline-offset-2" href="https://github.com/riolabs-ai/alignsynch/issues/1119">Epic #1119</a> ·
+      <a class="text-primary underline underline-offset-2" href="https://cursor.com/canvas/store-5adda110-c55c-43b0-9b42-d405201b60e3/8f26e4d6-7c4b-482c-b43f-1098864f9ab5" rel="noopener noreferrer" target="_blank">Triage Page<svg class="inline size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>.</p>
+</div>
+</div>
+</main>
+</div>
+</div>
+<script src="js/proto.js"></script>
+<script type="application/json" id="crud-matrix-source">{
+  "source": "docs/specs/v2-prototype/crud-matrix.md",
+  "auditDate": "2026-11-16",
+  "pass": 10,
+  "zone": "America/Sao_Paulo",
+  "counts": {
+    "cells": 169,
+    "applicable": 124,
+    "na": 45,
+    "covered": 69,
+    "hinted": 9,
+    "missing": 46,
+    "upstreamExists": 112,
+    "upstreamNotFound": 28,
+    "upstreamConflict": 4,
+    "p0": 34,
+    "p1": 23,
+    "p2": 29,
+    "wont": 15,
+    "p0Open": 2,
+    "p1Open": 18,
+    "p2Open": 28
+  },
+  "objects": [
+    {
+      "label": "Relationship Template (Library/public)",
+      "slug": "library-template"
+    },
+    {
+      "label": "My Template (user copy)",
+      "slug": "my-template"
+    },
+    {
+      "label": "Aspect (within template)",
+      "slug": "template-aspect"
+    },
+    {
+      "label": "Aspect (within live relationship)",
+      "slug": "live-aspect"
+    },
+    {
+      "label": "Question / scale item",
+      "slug": "scale-item"
+    },
+    {
+      "label": "Relationship",
+      "slug": "relationship"
+    },
+    {
+      "label": "Invitation",
+      "slug": "invitation"
+    },
+    {
+      "label": "Answers / assessment",
+      "slug": "assessment"
+    },
+    {
+      "label": "Chat message",
+      "slug": "chat"
+    },
+    {
+      "label": "Payment / plan",
+      "slug": "payment"
+    },
+    {
+      "label": "Account / profile",
+      "slug": "account"
+    }
+  ],
+  "roles": [
+    "Visitor",
+    "Initiator",
+    "Counterparty",
+    "Admin/curator"
+  ],
+  "actions": [
+    "archive",
+    "clone/duplicate",
+    "create",
+    "delete",
+    "edit",
+    "export",
+    "restore",
+    "share/propose",
+    "view"
+  ],
+  "rules": [
+    "The Counterparty never sees a price, the word trial, a card or an extension.",
+    "Once Stage 6 is live, Aspect changes are proposed and agreed by both parties. Nothing changes under a party until both agree, and any answers that would be discarded are named first.",
+    "Archive over delete: templates archive or restore; permanent delete only when unused and unpublished; relationships close or are abandoned, never deleted.",
+    "The 1–5 answer scale is locked: never a field, never editable.",
+    "No silent edits. The Initiator or staff rewrite-with-confirm in lib/relationship/edit.ts is the conflict to replace, not to port. session.mode and session.alignment_setting stay immutable once the session exists (V18).",
+    "Destructive actions are graphite with an × icon, never red."
+  ],
+  "p0Gaps": [
+    {
+      "n": 1,
+      "title": "Aspect Drawer",
+      "status": "covered",
+      "detail": "Wizard Stage 3 pencil and Add an Aspect, and My Template Edit: title, prompt, left pole, right pole. The 1–5 cells stay locked and are not fields. Keep “at least one Aspect”.",
+      "href": "../01-spec-design-page-wizard-v2/wizard.html?stage=3",
+      "issue": 1123
+    },
+    {
+      "n": 2,
+      "title": "Card Kebab",
+      "status": "covered",
+      "detail": "My Templates: Edit, Duplicate, Archive (Delete only in the editor, and only when unused). Library cards: Create Relationship, Save a Copy.",
+      "href": "../06-spec-design-page-templates-v2/templates.html?tab=mine",
+      "issue": 1134
+    },
+    {
+      "n": 3,
+      "title": "Save to My Templates Actually Copies",
+      "status": "covered",
+      "detail": "Wire it to the existing clonePublic action on /dashboard/templates.",
+      "href": "../06-spec-design-page-templates-v2/templates.html?tab=library",
+      "issue": 1130
+    },
+    {
+      "n": 4,
+      "title": "Counterparty Fork",
+      "status": "covered",
+      "detail": "On a live relationship, “Save These Aspects as a My Template”. The Initiator does not see it. Upstream: #785.",
+      "href": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=live&role=counterparty#aspects",
+      "issue": 1133
+    },
+    {
+      "n": 5,
+      "title": "Draft and Invited Stay Editable",
+      "status": "covered",
+      "detail": "After Save and Exit, reopen Stages 1–3 or an Edit panel on Relationship Detail.",
+      "href": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=invited&role=initiator#details",
+      "issue": 1124
+    },
+    {
+      "n": 6,
+      "title": "Live Aspect Changes Are Proposed, Not Silent",
+      "status": "covered",
+      "detail": "Propose a Change on the Aspects tab for both roles, with accept or decline. Do not port the silent Initiator write in lib/relationship/edit.ts.",
+      "href": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=live&role=initiator#aspects",
+      "issue": 1133
+    },
+    {
+      "n": 7,
+      "title": "Assessment-Taking UI",
+      "status": "covered",
+      "detail": "Locked 1–5 scale; answers private until both finish. Upstream: /assessment/instances/[id]/answer.",
+      "href": "../10-spec-design-page-assessment-v2/assessment.html",
+      "issue": 1128
+    },
+    {
+      "n": 8,
+      "title": "Invitation Hygiene",
+      "status": "covered",
+      "detail": "Copy Invite Link, Resend, Cancel Invite (graphite × + confirm), Decline (one click, optional reason).",
+      "href": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=invited&role=initiator#members",
+      "issue": 1135
+    },
+    {
+      "n": 9,
+      "title": "Leave / Close, Not Delete",
+      "status": "covered",
+      "detail": "Leave Relationship / Request My Removal, Abandon a draft (upstream void). No Delete Relationship.",
+      "href": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=live&role=initiator#members",
+      "issue": 1135
+    },
+    {
+      "n": 10,
+      "title": "Account Menu",
+      "status": "covered",
+      "detail": "Header avatar: Account Settings, Sign Out (port /settings). Account deletion is P1.",
+      "href": "../11-spec-design-page-account-settings-v2/settings.html",
+      "issue": 1136
+    },
+    {
+      "n": 11,
+      "title": "Billing: Trial Pause / Extra Week",
+      "status": "covered",
+      "detail": "Enforced in billing, not only in HTML. Stage 6 pauses read-only, one free extra week, the Counterparty never sees price or trial. The clock starts when the Counterparty accepts.",
+      "href": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=trial-ended&role=initiator",
+      "issue": 1121
+    }
+  ],
+  "conflicts": [
+    {
+      "topic": "Live Aspect edits",
+      "prototype": "Locked after Stage 5 (lock note was cut in pass 4, so the rule is invisible). Suggest-a-Change only at Accept.",
+      "upstream": "Initiator/staff may edit with stated-cost confirmation (`lib/relationship/edit.ts`). Counterparty has no write. New Aspect after answers is blocked (`answers-sealed`); new round is the path.",
+      "rule": "Once Stage 6 is live, changes are proposed and agreed by both, never silent.",
+      "recommendation": "**Do not port silent edit.** Add Propose a Change. Restore a visible lock/propose note on the Aspects tab."
+    },
+    {
+      "topic": "Mode / Alignment Tolerance after publish",
+      "prototype": "Settings tab lets the Initiator “Save Settings” (“applies from the next round”). Align already has a Soft/Full *compare* toggle.",
+      "upstream": "`session.mode` and `session.alignment_setting` are immutable once the session exists (V18).",
+      "rule": "Align compare-toggle is fine. Persistent changes belong on a later round.",
+      "recommendation": "Keep the Align toggle. Disable or retarget Settings Save so it cannot rewrite a scored session."
+    },
+    {
+      "topic": "Propose to Library",
+      "prototype": "Full form on `../06-spec-design-page-templates-v2/template-proposal.html`, mock submit.",
+      "upstream": "Members cannot publish. Catalogue is admin-curated (#533). No proposal queue.",
+      "rule": "Undecided in the repo.",
+      "recommendation": "**Decision needed.** Debut can ship without member proposals (P1). Do not build a review queue unless Jaden wants it."
+    },
+    {
+      "topic": "Settings “from the next round” vs a new round",
+      "prototype": "Copy implies a later round will pick up Mode/Tolerance.",
+      "upstream": "No “next round” writer is wired as a first-class member card in the surfaces reviewed; a new Aspect on an answered sheet is refused.",
+      "rule": "New questions need a new round, agreed.",
+      "recommendation": "Treat “next round” as P1 product work, not a hidden Settings save."
+    }
+  ],
+  "rows": [
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Visitors start a relationship; they do not author the Library."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "Members propose (see share/propose on My Template), they do not publish",
+      "upstream": "exists",
+      "upstreamNote": "exists — visibility forced private in lib/member/templates.ts; publish is console-only (#533, #502b)",
+      "mvp": "—",
+      "rationale": "A member cannot create a public Library row. That is a server rule, not a missing button."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "create",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No curator create UI in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — lib/admin/templates.ts, lib/admin/template-draft.ts, console create/publish",
+      "mvp": "P2",
+      "rationale": "Official catalogue stays admin-curated."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../02-spec-design-page-onboarding-v2/relationship-templates.html (#catalog); ../02-spec-design-page-onboarding-v2/relationship-template-public.html; public header Templates link",
+      "upstream": "exists",
+      "upstreamNote": "exists — app/(marketing)/relationship-templates, components/templates/*",
+      "mvp": "—",
+      "rationale": "Public catalog and template page are the visitor conversion path (pass 9)."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../06-spec-design-page-templates-v2/templates.html?tab=library; ../06-spec-design-page-templates-v2/relationship-template.html; featured card + tpl_card",
+      "upstream": "exists",
+      "upstreamNote": "exists — /templates/relationship, lib/template-catalogue.ts, listPublishedTemplates()",
+      "mvp": "—",
+      "rationale": "In-app Library tab is the signed-in catalog."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Same Library tab once signed in; public pages also work signed-out",
+      "upstream": "exists",
+      "upstreamNote": "exists — published + public visibility only",
+      "mvp": "—",
+      "rationale": "Catalogue is public; a Counterparty can browse like any member."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "view",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No admin/console surface in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — /admin/console/templates, /admin/templates, components/admin/template-editor.tsx",
+      "mvp": "P2",
+      "rationale": "Curator tools exist upstream; not needed in the member prototype."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "edit",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Public templates are read-only."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — members cannot write public rows; they copy into My Templates first",
+      "mvp": "—",
+      "rationale": "Edit happens on the private copy, never on the catalogue original."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Same as any member: copy, then edit."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "edit",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No curator editor in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — /admin/templates/[id], components/admin/template-editor.tsx",
+      "mvp": "P2",
+      "rationale": "Versioned publish/withdraw lives in the console."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "clone/duplicate",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "Public template page offers Create Relationship, not Save a Copy (All Templates instead)",
+      "upstream": "exists",
+      "upstreamNote": "exists — clone requires a session (clonePublic in dashboard/templates/actions.ts)",
+      "mvp": "P1",
+      "rationale": "Visitor signs up at Stage 4, then can save a copy. A pre-account save is not required for debut if Create Relationship stays primary."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "../06-spec-design-page-templates-v2/templates.html?tab=library kebab Save a Copy and ../06-spec-design-page-templates-v2/relationship-template.html hero Save to My Templates (data-act=save-copy): writes “\u003cName> · My Copy” to localStorage as-mt, toast + View, highlighted card in ?tab=mine",
+      "upstream": "exists",
+      "upstreamNote": "exists — clonePublic / clonePublicTemplate (#1109); /dashboard/templates copy band",
+      "mvp": "P0",
+      "rationale": "This is the official make-it-mine path. The button must actually copy, not just open the My Templates tab."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "clone/duplicate",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Same Save a Copy (data-act=save-copy) for any signed-in member; plus the live fork (row 100)",
+      "upstream": "exists",
+      "upstreamNote": "exists — any member may copy a published public template",
+      "mvp": "P0",
+      "rationale": "Same clone action as the Initiator. A Counterparty who wants the words also has a relationship fork (see My Template clone)."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — only the owner or console can retire a row; catalogue rows are not member-owned",
+      "mvp": "—",
+      "rationale": "Members archive their copies, not the public original."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "archive",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No withdraw/archive UI in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — console publish/withdraw; template versions (0026_template_version.sql)",
+      "mvp": "P2",
+      "rationale": "Curator withdraw is a console job."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — deleteMyTemplate refuses published versions (archive it)",
+      "mvp": "—",
+      "rationale": "A catalogue template is never member-deleted."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "delete",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — console retire path; prefer archive/withdraw",
+      "mvp": "P2",
+      "rationale": "Prefer withdraw/archive over destroy, same as members."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "Propose lives on My Template, not on a Library row",
+      "upstream": "not-found",
+      "upstreamNote": "not-found — no member publish-to-catalogue action",
+      "mvp": "—",
+      "rationale": "See My Template share/propose for the review-queue question."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "export",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "Won't",
+      "rationale": "No member or visitor export of a template."
+    },
+    {
+      "object": "Relationship Template (Library/public)",
+      "objectSlug": "library-template",
+      "action": "export",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found for templates (instance report export exists)",
+      "mvp": "Won't",
+      "rationale": "Not a debut need."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Needs an account (wizard Stage 4 or join)."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Save a Copy / Duplicate create real My Templates (as-mt mock state); new card appears in ../06-spec-design-page-templates-v2/templates.html?tab=mine with Not Used Yet and the tab count updates",
+      "upstream": "exists",
+      "upstreamNote": "exists — createPrivate (blank) and clonePublic (from catalogue or own) in lib/member/templates.ts",
+      "mvp": "P0",
+      "rationale": "Ship clone-from-Library as P0. Blank start from scratch can wait (P1) — debut is template-led."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?state=live&role=counterparty#aspects Save These Aspects as a My Template (data-act=fork) creates a copy (per-browser mock)",
+      "upstream": "exists",
+      "upstreamNote": "exists — any member can createPrivate/clonePublic; ownership is actorUserId",
+      "mvp": "P0",
+      "rationale": "Same create/clone surface, scoped to the signed-in member — not only the Initiator persona."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "create",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — console drafts; different from member private copies",
+      "mvp": "P2",
+      "rationale": "Console authoring is separate."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Private to the owner."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../06-spec-design-page-templates-v2/templates.html?tab=mine (mine_card); ../06-spec-design-page-templates-v2/my-template-detail.html; Used In aside",
+      "upstream": "exists",
+      "upstreamNote": "exists — listMyTemplates / readMyTemplate; /dashboard/templates and /dashboard/templates/[id]",
+      "mvp": "—",
+      "rationale": "List, detail, used-in, and empty state are in the prototype."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No my-templates preview as Elena; fork panel also absent",
+      "upstream": "exists",
+      "upstreamNote": "exists — readMyTemplate 404s for anyone else's id (not-yours collapsed into 404)",
+      "mvp": "P1",
+      "rationale": "Same page, different owner. Prototype is Marcus-only."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "view",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — /admin/console/templates, audit rows via act()",
+      "mvp": "P2",
+      "rationale": "Support can see via console, not the member UI."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Kebab Edit → ../06-spec-design-page-templates-v2/my-template-detail.html?id=..&edit=1 focuses the first [data-asp-edit]; each row opens the Aspect drawer (title, prompt, 1 Means, 5 Means; scale locked)",
+      "upstream": "exists",
+      "upstreamNote": "exists — savePrivate / savePrivateTemplate; editor at /dashboard/templates/[id]",
+      "mvp": "P0",
+      "rationale": "This is the core gap Jaden asked about. Open an Aspect drawer / template editor from Edit."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "Cannot edit Marcus's copy; can edit a fork they own (see clone)",
+      "upstream": "exists",
+      "upstreamNote": "exists — ownership checked FOR UPDATE; not-yours is refused",
+      "mvp": "—",
+      "rationale": "Edits are owner-only. The fix is fork, then edit."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "edit",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — console editor; member rows stay private",
+      "mvp": "P2",
+      "rationale": "Staff repair, not a member flow."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "My Template cards only have Open and Create Relationship — no Duplicate",
+      "upstream": "exists",
+      "upstreamNote": "exists — #1109 copy band clones own templates too (listClonableTemplates includes owner rows)",
+      "mvp": "P1",
+      "rationale": "Duplicate is real upstream. Add it to the card kebab once the kebab exists."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "clone/duplicate",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Counterparty-only Save These Aspects as a My Template on the live Aspects tab (data-act=fork, data-show-role=counterparty); Initiator does not see it",
+      "upstream": "exists",
+      "upstreamNote": "exists — relationship fork #785 (tests/relationship-fork.test.ts, onFork, data-fork-template). Copies the pinned version; author becomes the Counterparty. Initiator does not see the panel",
+      "mvp": "P0",
+      "rationale": "A Counterparty who does not own the words they were invited on has no other legal copy path. The relationship's private snapshot is not in the Library."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "My Templates kebab Archive (data-act=mt-archive): no confirm, Undo toast, collapsed Archived section with Restore; detail Retire band Archive; Delete Permanently only for unused copies (?id=ev) with the neutral confirm",
+      "upstream": "exists",
+      "upstreamNote": "exists — archivePrivate / archiveMyTemplate (#1109). In-use or published rows must be archived, not destroyed",
+      "mvp": "P0",
+      "rationale": "Prefer archive over delete. If the template was used in a relationship, archive is the only legal retire."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "archive",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Same kebab Archive/Restore on any copy the member owns (fork copies included)",
+      "upstream": "exists",
+      "upstreamNote": "exists — same retire writers, owner-scoped",
+      "mvp": "P0",
+      "rationale": "Same retire band on their own copies."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "restore",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No archived list, no Restore",
+      "upstream": "exists",
+      "upstreamNote": "exists — restorePrivate / restoreMyTemplate (returns as draft, never as a public offer)",
+      "mvp": "P1",
+      "rationale": "Ship with archive. A filter Archived plus Restore on the detail page is enough."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "restore",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — same restorePrivate",
+      "mvp": "P1",
+      "rationale": "Same restore on their copies."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "../06-spec-design-page-templates-v2/my-template-detail.html Delete Template — no confirm dialog, no in-use refusal",
+      "upstream": "exists",
+      "upstreamNote": "exists — deletePrivate / deleteMyTemplate refuses template-in-use and template-published",
+      "mvp": "P1",
+      "rationale": "Keep Delete only for unused copies, behind a graphite × confirm. Default the kebab to Archive."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "delete",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — same gate",
+      "mvp": "P1",
+      "rationale": "Same rule on their copies."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "../06-spec-design-page-templates-v2/template-proposal.html form [data-proposal]; Propose to Library on detail and My Templates tab; submit is a mock Sent for Review",
+      "upstream": "not-found",
+      "upstreamNote": "not-found — members cannot publish; catalogue is admin-curated (#533: do not make the public directory a form). No propose/review queue in member actions",
+      "mvp": "P1",
+      "rationale": "DECISION: the prototype invented a review queue upstream does not have. Debut can ship without member-to-Library proposals. If Jaden wants it, it is new work, not a port."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "share/propose",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No review-inbox UI in the prototype",
+      "upstream": "not-found",
+      "upstreamNote": "not-found for a proposal queue; admin publishes directly",
+      "mvp": "P1",
+      "rationale": "If proposals ship, the curator inbox is the other half."
+    },
+    {
+      "object": "My Template (user copy)",
+      "objectSlug": "my-template",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "Won't",
+      "rationale": "No template export in repo or prototype."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Add an Aspect (data-asp-add) opens the Aspect drawer in wizard Stage 3 and ../06-spec-design-page-templates-v2/my-template-detail.html; appends a numbered row in-page, count and minutes update",
+      "upstream": "exists",
+      "upstreamNote": "exists — member editor writes item rows (writeItems in lib/member/templates.ts); prompt, left_value, right_value, scale_kind=score",
+      "mvp": "P0",
+      "rationale": "Add an Aspect must open the same drawer as Edit. Keep at least one Aspect (wizard already enforces this for toggles)."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "Only on a template they own (after fork/clone)",
+      "upstream": "exists",
+      "upstreamNote": "exists — owner-only",
+      "mvp": "—",
+      "rationale": "No edits to someone else's template Aspects."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "create",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — console template editor",
+      "mvp": "P2",
+      "rationale": "Curator authoring."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../02-spec-design-page-onboarding-v2/relationship-template-public.html Aspects list + scale_preview",
+      "upstream": "exists",
+      "upstreamNote": "exists — public template detail",
+      "mvp": "—",
+      "rationale": "Read-only preview, including the locked 1-5 scale."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../06-spec-design-page-templates-v2/relationship-template.html; ../01-spec-design-page-wizard-v2/wizard.html Stage 3 [data-wz-aspect]; ../06-spec-design-page-templates-v2/my-template-detail.html ol.divide-y; Library cards show counts",
+      "upstream": "exists",
+      "upstreamNote": "exists — item rows on the record",
+      "mvp": "—",
+      "rationale": "Preview and include/exclude are visible."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../02-spec-design-page-onboarding-v2/counterparty-join.html step 1 read-only Aspects Preview",
+      "upstream": "exists",
+      "upstreamNote": "exists — invite landing reads the pinned template",
+      "mvp": "—",
+      "rationale": "Preview only, until they fork or start their own."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Pencil [data-asp-edit] opens the Aspect drawer (right sheet): Title, Prompt, 1 Means, 5 Means; “Scale Locked · 1–5 for every Aspect” preview; row updates in place",
+      "upstream": "exists",
+      "upstreamNote": "exists — savePrivate rewrites item.prompt / left_value / right_value / position",
+      "mvp": "P0",
+      "rationale": "Recommended UI: Aspect drawer (title, prompt, left pole, right pole). The 1-5 scale cells stay locked and are not fields."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — owner-only",
+      "mvp": "—",
+      "rationale": "Edit after fork, not on the source."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No duplicate this Aspect control",
+      "upstream": "not-found",
+      "upstreamNote": "not-found as a first-class action (a new item can be added and reworded)",
+      "mvp": "P2",
+      "rationale": "Add plus paste is enough; no dedicated duplicate."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../01-spec-design-page-wizard-v2/wizard.html Stage 3 switches [data-aspect-toggle]; last switch locks with Keep at least one Aspect. Turned-off rows fade to 60%",
+      "upstream": "exists",
+      "upstreamNote": "exists — items can be omitted from a saved template or from the relationship snapshot at create",
+      "mvp": "P1",
+      "rationale": "Covered in the wizard. My Template detail still cannot turn Aspects off — add the same switches (or the drawer) there."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "No remove control on My Template; wizard off is the stand-in",
+      "upstream": "exists",
+      "upstreamNote": "exists — savePrivate can drop an item; the relationship snapshot is separate so a live pair is not rewritten",
+      "mvp": "P1",
+      "rationale": "On a My Template, removing an Aspect is an edit of that copy and does not rewrite live relationships."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "../06-spec-design-page-templates-v2/template-proposal.html lists Aspects that would be shared (no names/answers)",
+      "upstream": "not-found",
+      "upstreamNote": "not-found — no member propose path",
+      "mvp": "P1",
+      "rationale": "Tied to the Library proposal decision."
+    },
+    {
+      "object": "Aspect (within template)",
+      "objectSlug": "template-aspect",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "Won't",
+      "rationale": "Not a debut need."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Draft/invited: Edit Aspects → ../01-spec-design-page-wizard-v2/wizard.html?stage=3&edit=draft|invited (drawer + Add an Aspect). Live: Propose a Change (kind Add) on #panel-aspects, applies from Round 2 once both agree",
+      "upstream": "conflict",
+      "upstreamNote": "conflict — lib/relationship/edit.ts blocks a new Aspect once answers exist (answers-sealed, V6). The honest path is a new round. Before answers, an add is a stated-cost initiator+staff edit — no Counterparty agreement",
+      "mvp": "P0",
+      "rationale": "FLAG: product rule is propose-and-agree once Stage 6 is live, not silent initiator edit. Do not port the upstream stated-cost write as-is. A new Aspect after answers should start a proposed new round."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Live Aspects tab Propose a Change (kind Add) for the Counterparty too; Initiator sees Accept/Decline",
+      "upstream": "not-found",
+      "upstreamNote": "not-found — no propose-change record; counterparty has no relationship-edit write (who: initiator+staff only)",
+      "mvp": "P0",
+      "rationale": "Promote this hint into a real Propose Change flow that both parties can open from the Aspects tab, not only at Accept."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "create",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — staff may use the same edit inventory (initiator+staff), still stated-cost / blocked",
+      "mvp": "P2",
+      "rationale": "Support repair only."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Private to the pair."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html #panel-aspects [data-aspect]; ../04-spec-design-page-align-v2/align.html rows; At a Glance bar",
+      "upstream": "exists",
+      "upstreamNote": "exists — session items + answers",
+      "mvp": "—",
+      "rationale": "Read-only bars and status chips are solid."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Same Aspects tab and Align with ?role=counterparty; join preview before accept",
+      "upstream": "exists",
+      "upstreamNote": "exists — both seats can read the pinned aspects",
+      "mvp": "—",
+      "rationale": "Same view, no payment or trial leakage."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Draft/invited: Still Editable panel (Edit Details / Settings / Aspects → wizard ?stage=1|2|3&edit=…, Save Changes). Live: Propose a Change (kind Reword), no silent edits; lock note restored",
+      "upstream": "conflict",
+      "upstreamNote": "conflict — lib/relationship/edit.ts allows initiator+staff to rewrite prompt/poles/position with a stated-cost confirmation (discards-answers, rewrites-question). Mode/setting are locked (session-immutable). Product rule: once Stage 6 is live, edits must be agreed by both (propose, not silent edit)",
+      "mvp": "P0",
+      "rationale": "Split: (1) Draft/invited — give the Initiator a real Aspect editor (re-enter Stage 3 or a panel). (2) Live Stage 6 — Propose a Change, both must agree; do not port silent edit. Surface a visible lock/propose note on the Aspects tab (the pass 4 cut hid the rule)."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Live Aspects tab Propose a Change (Reword) for the Counterparty; Marcus sees “Elena Proposes a Change” with Decline/Accept",
+      "upstream": "not-found",
+      "upstreamNote": "not-found — no CP write on item rows; no proposal entity",
+      "mvp": "P0",
+      "rationale": "They must be able to propose, and to accept or decline the Initiator's proposal, after Stage 6 is live."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "edit",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — initiator+staff inventory, with invalidation stated",
+      "mvp": "P2",
+      "rationale": "Only as a last-resort repair, still with a stated cost. Prefer the pair agrees."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "Fork is at template level, not per Aspect",
+      "upstream": "exists",
+      "upstreamNote": "exists — relationship fork copies the whole pinned set",
+      "mvp": "—",
+      "rationale": "See My Template clone (Counterparty fork)."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Live: Propose a Change (kind Turn Off) with an extra warning for the other party; draft/invited: switch off in edit mode",
+      "upstream": "conflict",
+      "upstreamNote": "conflict — turning one off is stated-cost (discards-answers) and initiator-only upstream",
+      "mvp": "P0",
+      "rationale": "Same propose-and-agree rule as edit once live. Draft/invited can toggle without agreement."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "No hard delete of a live Aspect: Turn Off via Propose a Change (both agree); draft/invited: switch off in edit mode",
+      "upstream": "conflict",
+      "upstreamNote": "conflict — same as archive/off, stated-cost",
+      "mvp": "P0",
+      "rationale": "Prefer propose to drop over silent delete. Answers to a dropped Aspect must be explained."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "#panel-aspects Propose a Change (data-act=propose, neutral modal: Reword / Turn Off / Add, Aspect, text) → “Waiting on Elena” + Withdraw; other party Accept/Decline; Change Agreed applies from Round 2 (as-prop mock)",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "P0",
+      "rationale": "New UI: Propose a Change on the Aspects tab (add, reword, or drop). The other party gets a clear accept/decline. Nothing changes until both agree."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "share/propose",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Same Propose a Change for the Counterparty on the live Aspects tab, plus the optional join-time suggestion",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "P0",
+      "rationale": "Keep the Accept hint, and add the same propose action on the live Aspects tab."
+    },
+    {
+      "object": "Aspect (within live relationship)",
+      "objectSlug": "live-aspect",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "Won't",
+      "rationale": "Export lives on answers/report if anywhere."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "Won't",
+      "rationale": "No custom scale types."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "scale_preview on public template pages (numbered 1-5 cells, poles labelled)",
+      "upstream": "exists",
+      "upstreamNote": "exists — item.scale_kind=score, left_value/right_value",
+      "mvp": "—",
+      "rationale": "The locked scale is shown, not edited."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "wizard Stage 3, template pages, Aspects tab paired-answer-bars, ../04-spec-design-page-align-v2/align.html, ../09-spec-design-system-tokens-v2/baseline.html",
+      "upstream": "exists",
+      "upstreamNote": "exists — same item model",
+      "mvp": "—",
+      "rationale": "Scale is the same 1-5 everywhere."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Join preview, Aspects tab, Align",
+      "upstream": "exists",
+      "upstreamNote": "exists",
+      "mvp": "—",
+      "rationale": "Same scale, same poles."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "No control to change the 1-5 itself. Poles are part of Aspect edit (hinted, see Aspect within template)",
+      "upstream": "exists",
+      "upstreamNote": "exists — scale_kind is written as score only; poles are item.left_value / right_value (editable with the Aspect)",
+      "mvp": "Won't",
+      "rationale": "Product rule: the 1-5 scale is locked. Do not add a scale editor. Pole labels travel with the Aspect drawer."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "Won't",
+      "rationale": "Locked for everyone, including staff."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "edit",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — still score-only; do not unlock a new scale kind for debut",
+      "mvp": "Won't",
+      "rationale": "Do not introduce a second scale in v2.0."
+    },
+    {
+      "object": "Question / scale item",
+      "objectSlug": "scale-item",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "Won't",
+      "rationale": "The scale is structural, not a record to delete."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../02-spec-design-page-onboarding-v2/relationship-templates.html / ../02-spec-design-page-onboarding-v2/pricing.html plan CTAs → ../01-spec-design-page-wizard-v2/wizard.html?stage=1&from=public or from=pricing&plan=; account at Stage 4",
+      "upstream": "exists",
+      "upstreamNote": "exists — create flow under /templates/relationship/[slug]/create/*, lib/member/relationships.ts, lib/flow/create-draft.ts",
+      "mvp": "—",
+      "rationale": "Pass 9 orphan fix: Pricing never jumps to Payment. Plan is carried into the wizard."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Create Relationship CTAs on ../05-spec-design-page-start-my-relationships-v2/start.html, ../05-spec-design-page-start-my-relationships-v2/my-relationships.html, ../06-spec-design-page-templates-v2/templates.html, ../06-spec-design-page-templates-v2/relationship-template.html, ../06-spec-design-page-templates-v2/my-template-detail.html; wizard Stages 1-5; Continue as Draft (data-wz-draft)",
+      "upstream": "exists",
+      "upstreamNote": "exists — draft → pending/published transitions (lib/relationship/status.ts)",
+      "mvp": "—",
+      "rationale": "The create path is the most complete flow in the prototype."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "They join an existing one (see Invitation). They can later create their own as Initiator",
+      "upstream": "exists",
+      "upstreamNote": "exists — counterparty never publishes; published→active is a system reaction to accept",
+      "mvp": "—",
+      "rationale": "Correct: the invitee does not create this relationship."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "create",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — admin may not publish or activate (repairs only)",
+      "mvp": "—",
+      "rationale": "Operators do not sell a relationship."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Private to the parties."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../05-spec-design-page-start-my-relationships-v2/my-relationships.html (rel_card, filters, empty); ../05-spec-design-page-start-my-relationships-v2/start.html; ../03-spec-design-page-relationship-detail-v2/relationship-detail.html ?state=draft|invited|joined|waiting|live|trial-ended|trial-ended-extended. No void/complete/closed state",
+      "upstream": "exists",
+      "upstreamNote": "exists — /dashboard/relationships, /dashboard/relationships/[id], lib/member/relationships.ts. Closed statuses complete|void are read-only",
+      "mvp": "P1",
+      "rationale": "List and in-progress/paused states are covered. Add a closed/read-only state after leave/void so the record does not vanish (P1)."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html?role=counterparty (and from=join); payment/timeline stripped of trial/price",
+      "upstream": "exists",
+      "upstreamNote": "exists — membership reads, seat-scoped views",
+      "mvp": "—",
+      "rationale": "Role preview is thorough, including the no-price rule."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "view",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No console relationship page in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — /admin/console/relationships/[id], lib/admin/relationship-ops.ts, lib/db/admin-relationship.ts",
+      "mvp": "P2",
+      "rationale": "Support console, not the member debut UI."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Live: Details tab Edit Details opens the neutral modal (title, goal) and updates [data-detail]. Draft/invited: Edit Details links to ../01-spec-design-page-wizard-v2/wizard.html?stage=1&edit=draft|invited",
+      "upstream": "exists",
+      "upstreamNote": "exists — title and summary are policy open for initiator+staff (lib/relationship/edit.ts). Mode/setting locked once a session exists (session-immutable, V18)",
+      "mvp": "P0",
+      "rationale": "Edit Details must open a form for title and shared goal (safe at any stage). Re-entry to Aspects while draft/invited is also P0. Do not let Settings Save rewrite mode/setting on a scored session — that conflicts with upstream."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Details tab shows badge Managed by Marcus (lock) instead of Edit",
+      "upstream": "exists",
+      "upstreamNote": "exists — who is initiator+staff only",
+      "mvp": "P2",
+      "rationale": "Denial is clear. A later suggest a title change is optional."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "edit",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — staff can write the same open fields",
+      "mvp": "P2",
+      "rationale": "Repair only."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "No duplicate this relationship. Create Relationship from the same template is the path",
+      "upstream": "not-found",
+      "upstreamNote": "not-found — fork copies the template, not the relationship/answers",
+      "mvp": "Won't",
+      "rationale": "A new relationship from the same template is enough."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Card kebab by status: Draft Abandon Draft, Invited Cancel Invite, Live/Paused Leave (neutral confirms). Detail Members tab: Abandon Draft, Cancel Invite, Leave Relationship → Relationship Closed banner (nothing deleted). No Delete Relationship anywhere",
+      "upstream": "exists",
+      "upstreamNote": "exists — initiator may void from draft, pending, or published; cannot void a live active row (admin only). complete/expired are system/admin. CLOSED = complete|void; expired can be revived by payment",
+      "mvp": "P0",
+      "rationale": "Add kebab on relationship cards: for drafts, Abandon (void); for invited, Cancel Invite; for live, Leave/Close with confirm. Prefer void/close over delete. There is no member archive status — use the lifecycle words."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "archive",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Members tab Leave Relationship (same action for both roles: Stage 6 closes, nothing deleted) and ghost Request My Removal (optional reason, removal within 30 days); both use the neutral confirm",
+      "upstream": "exists",
+      "upstreamNote": "exists — CP has no status transition; leaving is a seat concern, not a void. Admin void is the escape hatch for a live pair",
+      "mvp": "P0",
+      "rationale": "Ship one clearly named leave/request-removal action with the small print: answers stay readable, Stage 6 closes for both if that is the rule. Align the label (Leave vs Request My Removal)."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "archive",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — admin may void from any live status with a reason, and force-complete",
+      "mvp": "P2",
+      "rationale": "Console operations already exist (0025_relationship_operations.sql)."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "restore",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Paused (trial-ended): Add a Card / Get 7 More Days Free on #payment and ../08-spec-design-page-payment-v2/payment.html. Closed (void/complete) is not in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — expired→active or expired→published is a system edge on payment, not a member restore button. complete and void are terminal",
+      "mvp": "—",
+      "rationale": "Resume from pause/lapse via payment is designed. Do not add restore for void/complete — start a new relationship."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "restore",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "They see Paused · Waiting on Marcus and never a resume/price CTA",
+      "upstream": "exists",
+      "upstreamNote": "exists — payment revival is the billing owner's event",
+      "mvp": "—",
+      "rationale": "Correct: the Counterparty does not restore a membership they do not pay for."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Abandon Draft (kebab + Members tab) is the only removal, for drafts nobody was invited to; no Delete Relationship control",
+      "upstream": "not-found",
+      "upstreamNote": "not-found as hard delete of a relationship; void/complete are the close words. Account deletion sweeps (0033/0034)",
+      "mvp": "Won't",
+      "rationale": "Do not add Delete Relationship. Abandon/void and leave/close are the member actions."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Invitation is the share path (wizard Stage 5, Members tab)",
+      "upstream": "exists",
+      "upstreamNote": "exists — session_invite",
+      "mvp": "—",
+      "rationale": "See Invitation."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists only as admin instance report export (admin/instances/[id]/report/export)",
+      "mvp": "P2",
+      "rationale": "A member PDF/export of Align can wait."
+    },
+    {
+      "object": "Relationship",
+      "objectSlug": "relationship",
+      "action": "export",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No export UI in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — /admin/instances/[id]/report/export/route.ts",
+      "mvp": "P2",
+      "rationale": "Already in the console."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "The Visitor is the recipient, not the sender."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../01-spec-design-page-wizard-v2/wizard.html Stage 5: cp-name, cp-email, cp-msg, What Elena Sees preview, Send Invitation (data-wz-send) or Continue as Draft. Members tab also has Send Invitation in draft",
+      "upstream": "exists",
+      "upstreamNote": "exists — lib/flow (invite, email templates/invitation.ts), draft→published or pending→published",
+      "mvp": "—",
+      "rationale": "The send path is complete in the wizard."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — CP never publishes or sends this invite",
+      "mvp": "—",
+      "rationale": "Correct."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../02-spec-design-page-onboarding-v2/counterparty-join.html?step=1 — invite landing (goal, parties, Aspects preview, never-charged tiles)",
+      "upstream": "exists",
+      "upstreamNote": "exists — /invite/[token]",
+      "mvp": "—",
+      "rationale": "The signed-out invite landing is a real surface."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Members tab Invitation History table; states invited/joined/live",
+      "upstream": "exists",
+      "upstreamNote": "exists — session_invite + invitation history",
+      "mvp": "—",
+      "rationale": "History is visible per state."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Same join landing, then the relationship after accept",
+      "upstream": "exists",
+      "upstreamNote": "exists",
+      "mvp": "—",
+      "rationale": "After accept they no longer need the token page."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "Editable before send in the wizard. After send: no edit of email, name, message, or expiry. Resend is a separate hinted button",
+      "upstream": "exists",
+      "upstreamNote": "exists — counterparty name/email and invite-window are stated-cost while the seat is unclaimed; claimed seat is locked (seat-claimed)",
+      "mvp": "P1",
+      "rationale": "Allow correct-and-resend while unclaimed (name, email, expiry). Lock after accept."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Resend is the action, not duplicate."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "restore",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Members tab Resend Invite (data-act=resend): toast, button becomes Invite Resent, adds a history row",
+      "upstream": "exists",
+      "upstreamNote": "exists — lib/flow/resend.ts, docs/specs/flow-reinvite.md, 0010_invite_resend.sql",
+      "mvp": "P0",
+      "rationale": "Resend must work from Invite Sent, with a quiet confirmation."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "delete",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "../02-spec-design-page-onboarding-v2/counterparty-join.html step 1 Decline the invitation: one click → Invitation Declined panel with optional reason (Send Note / Done); ?step=1#decline",
+      "upstream": "exists",
+      "upstreamNote": "exists — invitation can be declined/left unused until expiry; exact decline writer should be confirmed in flow-reinvite",
+      "mvp": "P0",
+      "rationale": "Make Decline a real action. Recommend one click plus an optional reason (do not block decline on a form)."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Members tab and invited card kebab Cancel Invite: neutral confirm (graphite ×) → relationship returns to Draft (state=draft&notice=invite-cancelled)",
+      "upstream": "exists",
+      "upstreamNote": "exists — published→void cancels and kills the link (initiator or admin)",
+      "mvp": "P0",
+      "rationale": "Cancel Invite with graphite × confirm: the link dies, the relationship is abandoned or returns to draft — pick one and say it."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Copy Invite Link (Members tab, Next Step, card kebab): clipboard + toast",
+      "upstream": "exists",
+      "upstreamNote": "exists — invite tokens /invite/[token]",
+      "mvp": "P0",
+      "rationale": "Copy Invite Link should actually copy. This is how people send the link outside email."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "share/propose",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "They receive it; they do not reshare the token as a product action."
+    },
+    {
+      "object": "Invitation",
+      "objectSlug": "invitation",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "Won't",
+      "rationale": "No invite export."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Must join first."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "../10-spec-design-page-assessment-v2/assessment.html: one Aspect at a time, Feel and Wish on the locked 1–5 scale, progress, autosave, Save and Exit, resume banner, review + Submit; privacy note until both finish. Every Start Assessment links here",
+      "upstream": "exists",
+      "upstreamNote": "exists — /assessment/instances/[instanceId]/answer, answers/route.ts, lib/flow/answers.ts, lib/flow/answer-gate.ts (private until both finish)",
+      "mvp": "P0",
+      "rationale": "Blocker for the debut loop. Build the Round 1 answer surface with the locked 1-5 cells, Feel/Wish (and Think/Guess in Advanced). Keep answers private until both finish."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "../10-spec-design-page-assessment-v2/assessment.html?role=counterparty, same flow; Submit → Results In",
+      "upstream": "exists",
+      "upstreamNote": "exists — same answer route, seat-scoped",
+      "mvp": "P0",
+      "rationale": "Same assessment UI, their seat. Their answers stay private until both finish."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../04-spec-design-page-align-v2/align.html; ../03-spec-design-page-relationship-detail-v2/relationship-detail.html Aspects tab paired bars once live; pending copy: Both answers appear here once you both finish. Waiting state when only one has finished",
+      "upstream": "exists",
+      "upstreamNote": "exists — report / Align, answer-gate",
+      "mvp": "—",
+      "rationale": "Results and the privacy rule are represented. Taking the assessment is the hole."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Same Align and Aspects tab as Elena",
+      "upstream": "exists",
+      "upstreamNote": "exists",
+      "mvp": "—",
+      "rationale": "Same results, no billing leakage."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "view",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — /admin/instances/[id]/report and export",
+      "mvp": "P2",
+      "rationale": "Console report already exists."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "Update My Opinions was removed from Align in pass 4. No way to change a submitted answer",
+      "upstream": "exists",
+      "upstreamNote": "exists — answer writes go through the flow; a completed sheet is not casually rewritten (new round is the honest path)",
+      "mvp": "P1",
+      "rationale": "Do not add silent edits to a finished round. A later new-round card can wait until after debut if Round 1 submit is solid. Optional: allow change until the other person submits."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — same gate",
+      "mvp": "P1",
+      "rationale": "Same as the Initiator."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Answers are not copied between relationships."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Answers persist; dropping an Aspect is a proposed change, not an answer archive."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists only as side effect of stated-cost Aspect removal or account deletion",
+      "mvp": "Won't",
+      "rationale": "Members do not delete answers. If an Aspect is dropped by agreement, say what happens to those answers."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "Privacy is the product: hidden until both finish, then only the pair sees Align",
+      "upstream": "exists",
+      "upstreamNote": "exists — answer-gate",
+      "mvp": "—",
+      "rationale": "Not a share-out action."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists for admin report export only",
+      "mvp": "P2",
+      "rationale": "Member export of Align can wait."
+    },
+    {
+      "object": "Answers / assessment",
+      "objectSlug": "assessment",
+      "action": "export",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — admin/instances/[id]/report/export",
+      "mvp": "P2",
+      "rationale": "Already in the console."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Private to the pair."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../03-spec-design-page-relationship-detail-v2/relationship-detail.html #discussion [data-composer] Post Comment (data-post appends); ../07-spec-design-page-chat-v2/chat.html [data-chat-form] send mock. Paused replaces composer with read-only note",
+      "upstream": "not-found",
+      "upstreamNote": "not-found as a first-class relationship chat store (components/chat/* look QuizHub-legacy; discussion is on the relationship detail). Persistence model for v2 comments should be confirmed",
+      "mvp": "P1",
+      "rationale": "The prototype discussion is enough to port as the pair's thread. Confirm it writes to a real table before calling it done in the app. Upstream chat routes may still be QuizHub leftovers."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Same composer when Stage 6 is live; paused is read-only for both",
+      "upstream": "not-found",
+      "upstreamNote": "not-found — same persistence question",
+      "mvp": "P1",
+      "rationale": "Same thread, both seats."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Discussion tab (comments, Aspect chips, likes, replies); ../07-spec-design-page-chat-v2/chat.html inbox + relationship thread (?relationship=busy|dad70|cofound)",
+      "upstream": "not-found",
+      "upstreamNote": "not-found / legacy QuizHub chat-data.ts vs relationship discussion",
+      "mvp": "—",
+      "rationale": "Two surfaces (inbox and in-record thread). Keep one product thread per relationship for debut."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Same Discussion; ../07-spec-design-page-chat-v2/chat.html can be opened as Elena via role bar on other pages, chat itself is mostly Marcus-framed",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "P1",
+      "rationale": "Inbox should list threads for the signed-in person, not only Marcus."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No edit on a posted comment or chat bubble",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "P2",
+      "rationale": "Skip for debut. Posting is enough."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "P2",
+      "rationale": "Skip for debut."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "N/A."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "No archive-message concept."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "restore",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "N/A."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No delete on comments or bubbles",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "P2",
+      "rationale": "Skip for debut, or later allow delete-own with the graphite ×."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Discussion: Link to Aspect select; ../07-spec-design-page-chat-v2/chat.html Tag: Aspect chips (aria-pressed)",
+      "upstream": "not-found",
+      "upstreamNote": "not-found as a formal propose",
+      "mvp": "—",
+      "rationale": "Tagging an Aspect is the useful share-inside-the-pair action."
+    },
+    {
+      "object": "Chat message",
+      "objectSlug": "chat",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found",
+      "mvp": "Won't",
+      "rationale": "No transcript export for debut."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../02-spec-design-page-onboarding-v2/pricing.html plan CTAs → ../02-spec-design-page-onboarding-v2/relationship-templates.html with plan banner Step 1 of 2 · Pick a Template, your plan is saved; plan carried into wizard Stage 4",
+      "upstream": "exists",
+      "upstreamNote": "exists — lib/billing/*, lib/flow/plan-intent.ts, checkout-request.ts",
+      "mvp": "—",
+      "rationale": "The Pricing orphan is closed in the prototype."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "create",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../01-spec-design-page-wizard-v2/wizard.html Stage 4 trial vs add-card; ../08-spec-design-page-payment-v2/payment.html Add a Card (data-add-card-open, mock Save Card); ../03-spec-design-page-relationship-detail-v2/relationship-detail.html #payment",
+      "upstream": "exists",
+      "upstreamNote": "exists — trial, relationship payment (0036_relationship_payment.sql), Stripe adapter, entitlements",
+      "mvp": "—",
+      "rationale": "Card-free 7-day trial and add-card are specified and mocked."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "../08-spec-design-page-payment-v2/payment.html?role=counterparty and #payment member note: Marcus covers this relationship. You're never charged. No price, trial, or card CTA",
+      "upstream": "exists",
+      "upstreamNote": "exists — billing owner is the initiator; CP is never the payer",
+      "mvp": "—",
+      "rationale": "Product rule held. Do not add a card ask or a price on this role."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "../08-spec-design-page-payment-v2/payment.html (account + per-relationship panels); ../03-spec-design-page-relationship-detail-v2/relationship-detail.html #payment (trial, paused, extra week); timeline keeps trial events for this role only",
+      "upstream": "exists",
+      "upstreamNote": "exists — lib/member/payment.ts, lib/db/relationship-payment.ts, lib/relationship/trial.ts",
+      "mvp": "—",
+      "rationale": "Initiator-only trial language is consistent."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Coverage note only; timeline strips trial/payment events (rd.py cp())",
+      "upstream": "exists",
+      "upstreamNote": "exists — notices must not leak",
+      "mvp": "—",
+      "rationale": "This is a covered denial, and it is load-bearing."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "view",
+      "role": "Admin/curator",
+      "roleSlug": "admin",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — /admin/billing, lib/admin/billing-control.ts, 0026_billing_control.sql",
+      "mvp": "P2",
+      "rationale": "Console billing control already exists."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "Save Card is a mock. No change-plan or update-card-on-file after the first add, beyond the payment page mock. Pricing Change appears in the wizard when a plan was carried",
+      "upstream": "exists",
+      "upstreamNote": "exists — Stripe customer portal / checkout; subscription sync in enforcement.syncRelationshipsWithSubscription",
+      "mvp": "P1",
+      "rationale": "Add card is P0 and already designed. Changing plan or replacing a card can follow immediately after debut if checkout is real."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "N/A."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Cancel is the action, not archive."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "restore",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "?state=trial-ended: Add a Card + Get 7 More Days Free (once). ?state=trial-ended-extended: Add a Card only",
+      "upstream": "exists",
+      "upstreamNote": "exists — expired→active/published on payment; one free extra week is a v2 product decision (2026-11-16) that must be implemented, not only prototyped",
+      "mvp": "P0",
+      "rationale": "The pause/resume behavior is specified. Engineering must implement the one-time extra week and the pause (not close) when the trial ends without a card — this is a v2 rule, not all in today's lapse code."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "restore",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "No resume CTA, no price",
+      "upstream": "exists",
+      "upstreamNote": "exists — system transition on the payer's event",
+      "mvp": "—",
+      "rationale": "Correct."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "Cancel Trial ghost button on #payment when the trial is running — no confirm, no end date. Pass 4 cut the cancellation box that said ends Stage 6 on DATE; read access stays",
+      "upstream": "exists",
+      "upstreamNote": "exists — cancelling a subscription completes or expires via provider events; complete is terminal",
+      "mvp": "P1",
+      "rationale": "Restore the confirm small print and wire cancel. Graphite, not red."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Never share pricing with the Counterparty."
+    },
+    {
+      "object": "Payment / plan",
+      "objectSlug": "payment",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found as a member invoice list (Stripe may email receipts)",
+      "mvp": "P2",
+      "rationale": "Invoices can wait if Stripe receipts go out."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "create",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "../01-spec-design-page-wizard-v2/wizard.html Stage 4 Create Account / Sign In (data-wz-auth, visual mock); ../02-spec-design-page-onboarding-v2/counterparty-join.html step 2 same mock. Copy: Sign-in is a visual mock in this prototype.",
+      "upstream": "exists",
+      "upstreamNote": "exists — app/(auth)/*, Neon Auth, signup emails",
+      "mvp": "P0",
+      "rationale": "Auth is real upstream. The prototype mock is fine; the port must use the real signup/signin, including the join token path."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "create",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "hinted",
+      "prototypeNote": "hinted / mock",
+      "page": "Join step 2 Create Account / Sign In, email prefilled from the invite",
+      "upstream": "exists",
+      "upstreamNote": "exists — invite claim /invite/[token]/claim",
+      "mvp": "P0",
+      "rationale": "Join-and-create must stay frictionless."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "view",
+      "role": "Visitor",
+      "roleSlug": "visitor",
+      "prototype": "covered",
+      "prototypeNote": "covered",
+      "page": "Public marketing header: Sign In → ../05-spec-design-page-start-my-relationships-v2/start.html, Start Free → ../02-spec-design-page-onboarding-v2/relationship-templates.html#catalog",
+      "upstream": "exists",
+      "upstreamNote": "exists — app/(auth)/login, marketing layout",
+      "mvp": "—",
+      "rationale": "Signed-out entry is present on the public shell."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "view",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Header avatar is an Account menu ([data-account-menu]): name, email, Account Settings, Sign Out",
+      "upstream": "exists",
+      "upstreamNote": "exists — /settings (SettingsView: name, email, password, delete account), /profile/[username]",
+      "mvp": "P0",
+      "rationale": "Minimal Account menu on the avatar: Account Settings, Sign Out. Port /settings. Public profile can wait."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "view",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Same Account menu for every member (name/email follow the role preview)",
+      "upstream": "exists",
+      "upstreamNote": "exists — same /settings for any signed-in user",
+      "mvp": "P0",
+      "rationale": "Same Account menu for every member."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "edit",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "../11-spec-design-page-account-settings-v2/settings.html: Profile (name, email), Password, Notifications, Session (Sign Out), Delete Account (neutral confirm). Saves are mocks (toasts)",
+      "upstream": "exists",
+      "upstreamNote": "exists — /settings save profile + savePassword; Google-only accounts can set a password",
+      "mvp": "P0",
+      "rationale": "Settings: display name, email (read or change), password, sign out."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "edit",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "covered",
+      "prototypeNote": "covered (pass 10)",
+      "page": "Same ../11-spec-design-page-account-settings-v2/settings.html for any signed-in member",
+      "upstream": "exists",
+      "upstreamNote": "exists — same /settings",
+      "mvp": "P0",
+      "rationale": "Same settings page."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "clone/duplicate",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "N/A."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "archive",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "n/a",
+      "prototypeNote": "N/A",
+      "page": "—",
+      "upstream": "n/a",
+      "upstreamNote": "n/a",
+      "mvp": "—",
+      "rationale": "Deletion is the close path, not archive."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "restore",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — account deletion jobs (0033/0034) may have a grace window; confirm in docs/specs/account-deletion-spec.md",
+      "mvp": "P2",
+      "rationale": "Only if deletion ships with a grace period."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "delete",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No delete-account UI",
+      "upstream": "exists",
+      "upstreamNote": "exists — deleteAccountAction, components/identity/delete-account-card.tsx, docs/specs/account-deletion-spec.md, tests/delete-account-action.test.ts",
+      "mvp": "P1",
+      "rationale": "Required for a public launch, and already built upstream. Port the existing card onto the new Settings page. Not a prototype-HTML blocker for the visual debut, but do not drop it in the port."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "delete",
+      "role": "Counterparty",
+      "roleSlug": "counterparty",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "exists",
+      "upstreamNote": "exists — same account deletion",
+      "mvp": "P1",
+      "rationale": "Same port."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "share/propose",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "No public profile in the prototype",
+      "upstream": "exists",
+      "upstreamNote": "exists — /profile/[username], lib/db/user-profiles.ts",
+      "mvp": "P2",
+      "rationale": "Public profile is not part of the pair-alignment debut."
+    },
+    {
+      "object": "Account / profile",
+      "objectSlug": "account",
+      "action": "export",
+      "role": "Initiator",
+      "roleSlug": "initiator",
+      "prototype": "missing",
+      "prototypeNote": "missing",
+      "page": "—",
+      "upstream": "not-found",
+      "upstreamNote": "not-found as a first-class data-export button (may be in the deletion spec)",
+      "mvp": "P2",
+      "rationale": "Handle with account deletion / privacy, not the v2 UI debut."
+    }
+  ],
+  "links": {
+    "epic": "https://github.com/riolabs-ai/alignsynch/issues/1119",
+    "issue": "https://github.com/riolabs-ai/alignsynch/issues/1126",
+    "triage": "https://cursor.com/canvas/store-5adda110-c55c-43b0-9b42-d405201b60e3/8f26e4d6-7c4b-482c-b43f-1098864f9ab5"
+  }
+}</script>
+<script src="js/crud-matrix.js"></script>
+</body>
+</html>
