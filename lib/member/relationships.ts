@@ -83,6 +83,7 @@ import { invitationLink } from "@/lib/flow/email";
 import { RELATIONSHIPS_PATH } from "@/lib/flow/paths";
 import { hashToken, mintToken } from "@/lib/flow/tokens";
 import { readCompletionGate, type CompletionGate } from "@/lib/member/payment";
+import { REMOVAL_REQUEST_ACTION } from "@/lib/member/relationship-close";
 import { freeSlug } from "@/lib/member/templates";
 import type { Subscription } from "@/lib/billing/types";
 import { canTransition, type RelationshipStatus } from "@/lib/relationship/status";
@@ -205,6 +206,8 @@ export interface MemberRelationshipRow {
   readonly invite: {
     readonly claimed: boolean;
     readonly revoked: boolean;
+    /** #1135 — the person invited declined it (`revoked_by = 'counterparty'`). */
+    readonly declined?: boolean;
     readonly expiresAt: Date;
   } | null;
   readonly counterpartyName: string | null;
@@ -279,6 +282,8 @@ interface RelationshipQueryRow {
   readonly counterparty_bound: boolean;
   readonly claimed: boolean | null;
   readonly revoked: boolean | null;
+  /** #1135 — `revoked_by = 'counterparty'`: the person invited declined it (#1125's marker). */
+  readonly declined: boolean | null;
   readonly expires_at: Date | string | null;
 }
 
@@ -386,6 +391,9 @@ const RELATIONSHIP_COLUMNS = `
   inv.counterparty_name,
   (inv.claimed_at IS NOT NULL) AS claimed,
   (inv.revoked_at IS NOT NULL) AS revoked,
+  -- #1135 — who ended it. The marker #1125's decline writes, read here so the Initiator's screen
+  -- can say "declined" instead of "an operator revoked this".
+  (inv.revoked_by = 'counterparty') AS declined,
   inv.expires_at
 `;
 
@@ -512,6 +520,7 @@ function relationshipOf(
       : {
           claimed: row.claimed === true,
           revoked: row.revoked === true,
+          declined: row.declined === true,
           expiresAt: row.expires_at instanceof Date ? row.expires_at : new Date(row.expires_at),
         };
   return {
@@ -663,6 +672,41 @@ export interface MemberRelationshipView extends MemberRelationshipRow {
   readonly lapseSentence: string | null;
   /** The invitation's link, when the read can produce one — never: only a mint returns a token. */
   readonly inviteLinkAvailable: boolean;
+  /**
+   * #1135 — **the five ending verbs, decided here rather than in the component.**
+   *
+   * The same rule the four write flags above follow: the server answers which controls this reader's
+   * render carries, and each server action re-asks the seat inside its own transaction, because a
+   * flag is a screen and never a permission. All five are `false` on a closed relationship and the
+   * Counterparty's three Initiator-only verbs are `false` for them by construction.
+   *
+   * `removalRequestedAt` is read **only for the Counterparty**: it is their own request coming back,
+   * and the bundle is explicit that the reason and the request are never the other party's news
+   * ("optional reason Marcus never sees"). A read that answered it for both seats would make that a
+   * styling decision instead of a property of the read.
+   *
+   * Optional for the reason `pause` and `canClaimExtension` are: a view literal written before this
+   * field existed (the suites that build one by hand) carries no hygiene facts, and the screen then
+   * draws none of the five rather than inventing a permission. `readMyRelationship()` always fills
+   * it, which is the only path a page has.
+   */
+  readonly hygiene?: InvitationHygiene;
+}
+
+/** #1135 — what this reader may end, and the one fact the Counterparty's own request leaves behind. */
+export interface InvitationHygiene {
+  /** A live, unclaimed invitation the Initiator may kill (`published`, `invite-live`). */
+  readonly canCancelInvite: boolean;
+  /** A live invitation the Initiator may re-send (#275's rate-limited writer). */
+  readonly canResendInvite: boolean;
+  /** A draft nobody was invited to (`draft`/`pending` — the two `→ void` edges). */
+  readonly canAbandon: boolean;
+  /** A live Stage 6, either seat (`active → complete`). */
+  readonly canLeave: boolean;
+  /** The Counterparty's own ask, drawn while Stage 6 runs and never twice. */
+  readonly canRequestRemoval: boolean;
+  /** When the Counterparty's removal was requested (ISO-8601), for them; `null` otherwise. */
+  readonly removalRequestedAt: string | null;
 }
 
 /**
@@ -715,6 +759,28 @@ async function readExtensionClaimedAt(initiatorUserId: string): Promise<Date | n
     [initiatorUserId],
   );
   const value = rows[0]?.extended_at ?? null;
+  if (value === null) return null;
+  return value instanceof Date ? value : new Date(value);
+}
+
+/**
+ * #1135 — when this relationship's most recent **removal request** was written, or `null`.
+ *
+ * The request is an `admin_action` row and nothing else (`lib/member/relationship-close.ts` says
+ * why), so this reads the log the console reads: one row, newest first, keyed on the relationship.
+ * It is read **only for the Counterparty's seat** — the Initiator never sees that their counterparty
+ * asked — and it is what turns "Removal Requested · <instant>" on their screen into a fact.
+ */
+async function readRemovalRequest(relationshipId: string): Promise<Date | null> {
+  const rows = await queryRows<{ requested_at: Date | string | null }>(
+    `SELECT created_at AS requested_at
+       FROM admin_action
+      WHERE target_table = 'relationship' AND target_id = $1 AND action = $2
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [relationshipId, REMOVAL_REQUEST_ACTION],
+  );
+  const value = rows[0]?.requested_at ?? null;
   if (value === null) return null;
   return value instanceof Date ? value : new Date(value);
 }
@@ -820,6 +886,11 @@ export async function readMyRelationship(
     trialExtendedAt,
     now,
   });
+  /*
+   * #1135 — the Counterparty's own removal request, read only for their seat. The Initiator's screen
+   * has no field for it and no query for it: "the reason Marcus never sees" is this line.
+   */
+  const removalRequestedAt = base.isInitiator ? null : await readRemovalRequest(base.id);
   return {
     ...base,
     /*
@@ -876,6 +947,29 @@ export async function readMyRelationship(
     // A token is never stored, so a read can never hand one back: the link exists only in the
     // response to the publish (or republish) that minted it. `lib/flow/tokens.ts` is why.
     inviteLinkAvailable: false,
+    /*
+     * #1135 — **the five ending verbs.** Each one is the pair (seat, status) the writer will check
+     * again under its own lock, so this is the render's answer and not the permission:
+     *
+     *   cancel / resend   the Initiator, on a `published` row whose link is still live
+     *   abandon           the Initiator, on a draft nobody was invited to
+     *   leave             either seat, while Stage 6 runs (`canTransition` — not an `if`)
+     *   request removal   the Counterparty, once, and only once
+     */
+    hygiene: {
+      canCancelInvite:
+        base.isInitiator && base.view === "invite-live" && membership.state !== "lapsed",
+      canResendInvite:
+        base.isInitiator && base.view === "invite-live" && membership.state !== "lapsed",
+      canAbandon: base.isInitiator && (base.status === "draft" || base.status === "pending"),
+      canLeave: canTransition(base.status, "complete", base.viewerRole),
+      canRequestRemoval:
+        !base.isInitiator &&
+        base.viewerRole === "counterparty" &&
+        removalRequestedAt === null &&
+        canTransition(base.status, "complete", "counterparty"),
+      removalRequestedAt: removalRequestedAt === null ? null : removalRequestedAt.toISOString(),
+    },
   };
 }
 

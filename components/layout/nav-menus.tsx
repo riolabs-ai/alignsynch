@@ -93,8 +93,8 @@ export interface NavRenderProps {
   collapsed?: boolean;
   /**
    * Render every row's label as a text node, whatever the viewport says (the mobile drawer, see
-   * `AppSidebar`). Without it the label is `hidden lg:inline`: an icon rail between 768 and
-   * 1023px, a labelled column from 1024. The drawer is 250px wide at a 390px viewport, so its
+   * `AppSidebar`). Without it the label is `hidden xl:inline`: an icon rail between 768 and
+   * 1279px, a labelled column from 1280. The drawer is 250px wide at a 390px viewport, so its
    * labels have room — a class that asks the viewport instead of the container would leave a
    * phone with a full-width panel of icons and no words.
    */
@@ -200,25 +200,25 @@ export function NavRow(props: NavRowProps) {
     ? cn("flex h-10 w-10 items-center justify-center rounded-md transition-colors", tone)
     : cn(
         /**
-         * **The row is an icon between `md` and `lg`.** The rail narrows to 64px there
-         * (`components/layout/sidebar.tsx`), so the text is `hidden lg:inline` and the row is a
-         * 40px square centred in the column; from `lg` — a laptop, and the width the owner asked
-         * the rail to be expanded at — it is the full-width row it always was. The accessible
-         * name does not depend on the width: `title` and `aria-label` carry the label at every
-         * breakpoint, so the icon rail is still readable by a pointer and announced by a screen
-         * reader. That is a class, not state — no component measures a window to decide whether a
-         * label exists. `labelled` is the one exception, and it is not a width: it is the mobile
-         * drawer, which is 250px wide at a 390px viewport.
+         * **The row is an icon between `md` and `xl`.** The rail narrows to 64px there
+         * (`components/layout/sidebar.tsx`), so the text is `hidden xl:inline` and the row is a
+         * 40px square centred in the column; from `xl` — 1280px, the width the owner's v2 shell
+         * asked the rail to be expanded at (#1129, DESIGN-NOTES §8) — it is the full-width row it
+         * always was. The accessible name does not depend on the width: `title` and `aria-label`
+         * carry the label at every breakpoint, so the icon rail is still readable by a pointer and
+         * announced by a screen reader. That is a class, not state — no component measures a window
+         * to decide whether a label exists. `labelled` is the one exception, and it is not a width:
+         * it is the mobile drawer, which is 250px wide at a 390px viewport.
          */
         labelled
           ? "flex h-10 items-center justify-start gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
-          : "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors lg:h-auto lg:justify-start lg:px-3 lg:py-2.5",
+          : "flex h-10 items-center justify-center gap-3 rounded-md text-sm font-medium transition-colors xl:h-auto xl:justify-start xl:px-3 xl:py-2.5",
         tone,
       );
 
   /**
    * The words a screen reader hears and a pointer shows on hover. A pending row carries its
-   * status as well, because the second line that explains it is `hidden lg:flex` like every other
+   * status as well, because the second line that explains it is `hidden xl:flex` like every other
    * label — the announcement may not depend on a width either.
    */
   const accessibleLabel = pending ? `${label} — ${statusWord.toLowerCase()}` : label;
@@ -230,7 +230,7 @@ export function NavRow(props: NavRowProps) {
     <>
       <span>{icon}</span>
       {pending ? (
-        <span className={labelled ? "flex min-w-0 flex-col" : "hidden min-w-0 flex-col lg:flex"}>
+        <span className={labelled ? "flex min-w-0 flex-col" : "hidden min-w-0 flex-col xl:flex"}>
           <span className="truncate">{label}</span>
           <span className="truncate text-xs font-normal">
             {statusWord} — {surface?.reason}
@@ -239,7 +239,7 @@ export function NavRow(props: NavRowProps) {
       ) : labelled ? (
         <span className="truncate">{label}</span>
       ) : (
-        <span className="hidden lg:inline">{label}</span>
+        <span className="hidden xl:inline">{label}</span>
       )}
     </>
   );
@@ -266,7 +266,7 @@ export function NavRow(props: NavRowProps) {
         onClick={onNavigate}
         tourAnchor={props.tourAnchor}
         className={className}
-        iconClassName={collapsed ? "hidden" : labelled ? "ml-auto" : "ml-auto hidden lg:inline"}
+        iconClassName={collapsed ? "hidden" : labelled ? "ml-auto" : "ml-auto hidden xl:inline"}
       >
         {content}
       </LeavingLink>
@@ -586,7 +586,7 @@ function NavGroup({
       <p
         className={cn(
           "px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
-          labelled ? "block" : "hidden lg:block",
+          labelled ? "block" : "hidden xl:block",
         )}
       >
         {label}
