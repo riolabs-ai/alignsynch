@@ -110,6 +110,13 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "create", label: "Create Relationship" },
         { id: "aspects", label: "{count} Aspects" },
         /**
+         * The third chip bundle 06 draws on every Library card (`templates.html`: `Family`,
+         * `5 Aspects`, `About 3 Minutes`), and the one #1130 names beside the Aspect count. `{count}`
+         * is derived from the Aspect count by `minutesForAspects()` — a template carries no duration
+         * of its own, so this is a reading of the work, never a stored field.
+         */
+        { id: "minutes", label: "About {count} Minutes" },
+        /**
          * The card's one price (#796) — the *plan's*, never a per-relationship charge. It is the
          * same chip `/assessment/templates` prints (`{plan} · {price}/mo`, Basic's monthly figure
          * from `data/billing-plans.ts`), and the name is in the line because a bare `$8.95/mo`
