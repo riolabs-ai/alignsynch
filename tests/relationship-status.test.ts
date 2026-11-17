@@ -97,17 +97,52 @@ describe("the transition table", () => {
     expect(actorsFor("complete", "active")).toEqual([]);
   });
 
-  it("refuses a counterparty publishing", () => {
+  it("refuses a counterparty publishing, and gives them exactly one move: leaving", () => {
     expect(canTransition("pending", "published", "counterparty")).toBe(false);
     expect(canTransition("draft", "published", "counterparty")).toBe(false);
-    expect(transitionsBy("counterparty")).toEqual([]);
+    /*
+     * #1135 — the Counterparty's one edge. It used to be none at all, on the argument that an
+     * invitee must never publish, void or complete somebody else's purchase. Leaving is not that:
+     * it ends their own participation and nothing else on the row moves, and a two-party
+     * relationship cannot run with one seat — so `active → complete` is the honest outcome, and it
+     * is the *only* one they get.
+     */
+    expect(transitionsBy("counterparty")).toEqual([
+      expect.objectContaining({ from: "active", to: "complete" }),
+    ]);
+    expect(canTransition("active", "complete", "counterparty")).toBe(true);
+    for (const status of ["draft", "pending", "published", "expired"] as const) {
+      expect(
+        transitionsFrom(status).some((t) => t.actors.includes("counterparty")),
+        status,
+      ).toBe(false);
+    }
   });
 
-  it("refuses the initiator activating, completing, expiring or voiding a live relationship", () => {
+  it("refuses the initiator activating, expiring or voiding a live relationship", () => {
     expect(canTransition("published", "active", "initiator")).toBe(false);
-    expect(canTransition("active", "complete", "initiator")).toBe(false);
     expect(canTransition("active", "expired", "initiator")).toBe(false);
     expect(canTransition("active", "void", "initiator")).toBe(false);
+    /*
+     * #1135 — but the initiator may **leave**, which is `active → complete`. It is not the payer
+     * "completing" their own purchase on a whim: the answers stay readable for both and nothing is
+     * charged, which is the difference between closing a relationship and sealing one.
+     */
+    expect(canTransition("active", "complete", "initiator")).toBe(true);
+    expect(canTransition("published", "complete", "initiator")).toBe(false);
+  });
+
+  it("lets the initiator cancel a sent invitation back to draft, and nothing else back", () => {
+    /*
+     * #1135 — Cancel Invite's edge. The draft stays (same Aspects, same title) so it can be invited
+     * again, which is what bundle 03's confirm sentence promises; the link's death is the
+     * `session_invite` row's, written in the same transaction.
+     */
+    expect(canTransition("published", "draft", "initiator")).toBe(true);
+    expect(canTransition("published", "draft", "counterparty")).toBe(false);
+    expect(canTransition("published", "draft", "admin")).toBe(false);
+    expect(canTransition("active", "draft", "initiator")).toBe(false);
+    expect(canTransition("published", "pending", "initiator")).toBe(false);
   });
 
   it("refuses an operator selling: admin cannot publish or activate", () => {

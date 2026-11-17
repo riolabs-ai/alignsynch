@@ -91,7 +91,9 @@ describe("publishable and isClosed", () => {
 });
 
 describe("publishViewOf", () => {
-  const invite = (over: Partial<{ expiresAt: Date; claimed: boolean; revoked: boolean }> = {}) => ({
+  const invite = (
+    over: Partial<{ expiresAt: Date; claimed: boolean; revoked: boolean; declined: boolean }> = {},
+  ) => ({
     expiresAt: new Date(NOW.getTime() + DAY),
     claimed: false,
     ...over,
@@ -138,18 +140,32 @@ describe("publishViewOf", () => {
     }
   });
 
-  it("has six views and returns one of them for every status", () => {
-    expect(PUBLISH_VIEWS).toHaveLength(6);
+  it("has seven views and returns one of them for every status", () => {
+    expect(PUBLISH_VIEWS).toHaveLength(7);
     for (const status of RELATIONSHIP_STATUSES) {
       expect(PUBLISH_VIEWS).toContain(publishViewOf({ status, invite: invite(), now: NOW }));
     }
   });
+
+  it("reads a declined invitation as its own view, not as an operator's revocation (#1135)", () => {
+    // The two are one row write (`revoked_at`) and different news to the Initiator, and
+    // `inviteStateOf()` already tells them apart by the actor column — this is the same ordering,
+    // one layer up.
+    expect(
+      publishViewOf({ status: "published", invite: invite({ declined: true }), now: NOW }),
+    ).toBe("invite-declined");
+    expect(
+      publishViewOf({ status: "published", invite: invite({ revoked: true }), now: NOW }),
+    ).toBe("invite-revoked");
+  });
 });
 
 describe("republishable", () => {
-  it("is offered for exactly the two dead-link states", () => {
+  it("is offered for exactly the three dead-link states", () => {
     expect(republishable("invite-expired")).toBe(true);
     expect(republishable("invite-revoked")).toBe(true);
+    // #1135 — a decline kills the link the same way, and re-minting it is the honest recovery.
+    expect(republishable("invite-declined")).toBe(true);
   });
 
   it("is not offered for a live link, a claimed seat, or a missing row", () => {
