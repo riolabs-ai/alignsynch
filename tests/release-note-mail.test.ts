@@ -358,9 +358,14 @@ describe("the release note draws the visuals that exist, and no others", () => {
   it("emits no figure for a surface the entry names when no asset matches", () => {
     expect(text).not.toContain("surface-console");
     expect(html).not.toContain("surface-console");
-    // And nothing standing in for it: no second picture, no placeholder path.
+    // And nothing standing in for it: no second picture, no placeholder path. Counted over the
+    // *figures*, because the header band draws the brand lockup as an `<img>` on a brand that has
+    // one and as text on a brand that does not — the note may not depend on which.
     expect(html).not.toContain("placeholder");
-    expect([...html.matchAll(/<img[^>]*src="([^"]+)"/g)]).toHaveLength(1);
+    const figures = [...html.matchAll(/<img[^>]*src="([^"]+)"/g)].filter((match) =>
+      (match[1] ?? "").includes("/og/"),
+    );
+    expect(figures).toHaveLength(1);
   });
 
   it("marks the hero as a picture in the plain text too, so the text half is not silent", () => {
