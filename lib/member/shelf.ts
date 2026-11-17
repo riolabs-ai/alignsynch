@@ -57,9 +57,9 @@ const CATALOGUE_PLAN: BillingPlan = (() => {
 })();
 
 /**
- * `"Basic · $8.95/mo"` — the plan's name and its monthly figure, never a bare price.
+ * `"Basic · $9.99/mo"` — the plan's name and its monthly figure, never a bare price.
  *
- * The name is in the sentence on purpose: `$8.95/mo` alone beside a shelf of templates reads as
+ * The name is in the sentence on purpose: the figure alone beside a shelf of templates reads as
  * one subscription per template, and the card is not selling the template.
  */
 function planPriceLabel(card: PageCopySection): string {

@@ -61,8 +61,8 @@ export const dashboardTemplatesPageCopy: PageCopy = zPageCopy.parse({
         { id: "aspects", label: "{count} Aspects" },
         /**
          * The card's one price (#796) — the *plan's*, never a per-relationship charge. It is the
-         * same chip `/assessment/templates` prints (`{plan} · {price}/mo`, Basic's monthly figure
-         * from `data/billing-plans.ts`), and the name is in the line because a bare `$8.95/mo`
+         * same chip `/assessment/templates` prints (`{plan} · {price}/mo`, the entry plan's monthly
+         * figure from `data/billing-plans.ts`), and the name is in the line because a bare figure
          * beside nine cards reads as nine subscriptions. `{price}` is `formatCurrency`.
          */
         { id: "price", label: "{plan} · {price}/mo" },

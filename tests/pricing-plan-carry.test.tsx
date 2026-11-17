@@ -268,7 +268,7 @@ let container: HTMLDivElement | null = null;
 let posted: { planId?: string; interval?: string }[] = [];
 
 async function mountWalk(
-  carriedPlan?: PlanIntent & { row: "one" | "unlimited" },
+  carriedPlan?: PlanIntent & { row: "single" | "family" | "annual" },
 ): Promise<HTMLDivElement> {
   container = document.createElement("div");
   document.body.append(container);
@@ -324,7 +324,7 @@ afterEach(async () => {
 
 describe("stage 5 opens with the carried plan already selected", () => {
   it("draws the row checked, names it, and continues with the carried tier and interval", async () => {
-    const where = await mountWalk({ planId: "principal", interval: "year", row: "unlimited" });
+    const where = await mountWalk({ planId: "principal", interval: "year", row: "family" });
 
     // The render says what it carried — the attribute the acceptance quotes.
     const section = where.querySelector("[data-plan-carried]");
@@ -333,10 +333,10 @@ describe("stage 5 opens with the carried plan already selected", () => {
 
     // …and the row itself is the selected one, before anything is pressed.
     const checked = where.querySelector<HTMLInputElement>('input[name="plan"]:checked');
-    expect(checked?.value).toBe("unlimited");
+    expect(checked?.value).toBe("family");
     // The panel's own recap names the plan the money would buy (#1036's line, now filled).
     expect(where.textContent).toContain(
-      `${itemLabel(PLANS, "unlimited")} · ${itemLabel(PLANS, "unlimited-price")}${itemLabel(PLANS, "per")}`,
+      `${itemLabel(PLANS, "family")} · ${itemLabel(PLANS, "family-price")}${itemLabel(PLANS, "family-interval")}`,
     );
 
     // A checked row fires no `change`, so the panel carries one control that opens the card step.
@@ -351,20 +351,20 @@ describe("stage 5 opens with the carried plan already selected", () => {
   });
 
   it("carries the row, not the walk's own id, whatever the interval", async () => {
-    const where = await mountWalk({ planId: "basic", interval: "month", row: "one" });
+    const where = await mountWalk({ planId: "basic", interval: "month", row: "single" });
     await press(where, '[data-pay-action="continue"]');
 
     expect(posted).toEqual([{ planId: "basic", interval: "month" }]);
-    expect(posted[0]?.planId).not.toBe("one");
+    expect(posted[0]?.planId).not.toBe("single");
   });
 
   it("restores the carried choice on Back instead of dropping it", async () => {
-    const where = await mountWalk({ planId: "principal", interval: "month", row: "unlimited" });
+    const where = await mountWalk({ planId: "principal", interval: "month", row: "family" });
     await press(where, '[data-pay-action="continue"]');
     await press(where, '[data-pay-action="plan"]');
 
     expect(where.querySelector<HTMLInputElement>('input[name="plan"]:checked')?.value).toBe(
-      "unlimited",
+      "family",
     );
     expect(where.querySelector('[data-pay-action="continue"]')).not.toBeNull();
   });
@@ -380,7 +380,7 @@ describe("stage 5 opens with the carried plan already selected", () => {
     // With nothing carried, choosing the row is still the act (#1031): no continue control.
     expect(where.querySelector('[data-pay-action="continue"]')).toBeNull();
 
-    await press(where, 'input[name="plan"][value="one"]');
+    await press(where, 'input[name="plan"][value="single"]');
     expect(posted).toEqual([{ planId: "basic", interval: "month" }]);
   });
 
@@ -396,10 +396,12 @@ describe("stage 5 opens with the carried plan already selected", () => {
     expect(page).toContain("{...(carriedPlan === null ? {} : { carriedPlan })}");
   });
 
-  it("keeps the plan rows' own words: Basic and Principal, authored in the fixture", () => {
-    // #1043 changes where a plan is chosen, never what it is called (#1035's rows stand).
-    expect(itemLabel(PLANS, "one")).toBe("Basic");
-    expect(itemLabel(PLANS, "unlimited")).toBe("Principal");
+  it("keeps the plan rows' own words: the approved catalogue's three plans (#1127)", () => {
+    // #1043 changes where a plan is chosen, never what it is called; #1127 then replaced the two
+    // rows with the owner's three, so the words are Single, Family and Single Annual.
+    expect(itemLabel(PLANS, "single")).toBe("Single");
+    expect(itemLabel(PLANS, "family")).toBe("Family");
+    expect(itemLabel(PLANS, "annual")).toBe("Single Annual");
     // …and the copy that only the deleted checkout button read is gone, so nothing names a state
     // this product no longer has on `/pricing`.
     expect((pricingPageCopy.sections ?? []).flatMap((section) => section.items ?? [])).not.toEqual(

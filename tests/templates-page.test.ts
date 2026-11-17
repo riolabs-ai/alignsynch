@@ -216,13 +216,14 @@ describe("membership is stated once, from the plan fixture", () => {
     const printed = [...html.matchAll(/\$[\d.,]+/g)].map((match) => match[0]);
     expect(printed).toEqual([basicMonth]);
 
-    // The unit the old label charged in, and the figure the pricing page does not sell, are gone
-    // from what a reader sees — asserted on the render, not only on the model.
+    // The unit the old label charged in is gone from what a reader sees — asserted on the render,
+    // not only on the model. (The old `not $9.99` line was a proxy for "not the taxonomy's
+    // per-relationship amount", which is the same 999 cents as the Single plan's month since
+    // #1127; the guard that survives is `tests/plan-catalogue.test.ts`'s — nothing in `components/`
+    // or `lib/` reads `RELATIONSHIP_PRICE_CENTS`.)
     const text = textOf(html);
     expect(text.toLowerCase()).not.toContain("per relationship");
     expect(text).not.toContain("999");
-    expect(text).not.toContain("$9.99");
-    expect(html).not.toContain(formatCurrency(999));
     // The projection still carries the chip (the detail page and the front page print it); this
     // surface prints it exactly once, in the membership band, and never on a card.
     for (const card of cards) expect(card.priceNote).toBe(`${basic.name} · ${basicMonth}/mo`);
