@@ -73,13 +73,13 @@ import { marketingPageCopy } from "./marketing";
 import { newsPageCopy } from "./news";
 import { newsArticlePageCopy } from "./news-article";
 import { notFoundPageCopy } from "./not-found";
-import { overviewPageCopy } from "./overview";
 import { resetCompletePageCopy, resetFormPageCopy, resetRequestPageCopy } from "./password-reset";
 import { pricingPageCopy } from "./pricing";
 import { profilePageCopy } from "./profile";
 import { registerPageCopy } from "./register";
 import { settingsPageCopy } from "./settings";
 import { shellPageCopy } from "./shell";
+import { startPageCopy } from "./start";
 import { supportPageCopy } from "./support";
 import { supportArticlePageCopy } from "./support-article";
 // The public catalogue — the page the header's `Templates` row names, and one template's page.
@@ -142,7 +142,10 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   "/creator-tips": creatorTipsPageCopy,
   "/creator-tips/[slug]": creatorTipsDetailPageCopy,
   "/daily-challenge": dailyChallengePageCopy,
-  "/dashboard": overviewPageCopy,
+  // #1129 — the v2 landing (Start). The console's four counts moved off this route: the approved
+  // bundle draws a greeting, one next step and two shelves, and the counts' own lists are one click
+  // away at `/assessments?filter=…` (which is where those cards pointed anyway).
+  "/dashboard": startPageCopy,
   // #542 phase 1 — the work the dashboard used to leave the app to do.
   "/dashboard/support": dashboardSupportPageCopy,
   // #533 phase 2 — the initiator's own templates and relationships. Four routes, four fixtures:

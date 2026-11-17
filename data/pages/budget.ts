@@ -269,17 +269,21 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
     budget: 0,
   },
   /**
-   * `/dashboard` — the console's Overview (Console 2/5), and the first surface whose four figures
-   * are counts rather than authored metrics. Budget 0 from the first commit: the card labels, the
-   * three one-line explanations, the empty band and the failure panel are all
-   * `data/pages/overview.ts`, so the next sentence written in `components/console/**` is a red
-   * build. `dirs` is only the new domain — `/dashboard/user`'s `components/identity` stays
-   * attributed to that surface, and the two consoles cannot lend each other words.
+   * `/dashboard` — **Start**, the v2 landing (#1129). Budget 0 from the first commit: the greeting,
+   * the two jobs' titles and bodies, the four chip words, the dashed line a card carries before
+   * anybody answers, the two section links and the failure band are all `data/pages/start.ts`, so
+   * the next sentence written in `components/dashboard/start-page.tsx` or
+   * `relationship-card.tsx` is a red build.
+   *
+   * The console's four counts moved off this route with the same change (`components/console/**`
+   * stays attributed to `/admin/gaps`, which still renders it): the approved v2 bundle draws a
+   * greeting, one next step and two shelves, and each count's list is one click away at
+   * `/assessments?filter=…`, which is where those cards pointed anyway.
    */
   "/dashboard": {
     page: "app/(mainlayout)/dashboard/page.tsx",
-    dirs: ["components/console"],
-    fixture: "data/pages/overview",
+    dirs: ["components/dashboard"],
+    fixture: "data/pages/start",
     budget: 0,
   },
   // #542 phase 1 — support inside the shell: the knowledge base, the request form and the outcome

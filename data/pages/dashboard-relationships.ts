@@ -93,19 +93,19 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     },
     {
       /**
-       * The six tabs the owner approved. Five are stored statuses (`draft`, `published`,
-       * `active`, `complete`, `expired`) — `running` reads stored `active` — and `all` is the
-       * default. `Drafts` is the tab's word, `Draft` is the badge's: one is a filter, the other
-       * is a state, and `data/pages` keeps both.
+       * The filter row, in the v2 vocabulary (#1129, bundle 05). `All` is the default and the other
+       * four are the card's own words — Live · Waiting on Invite · Draft · Paused — so the filter and
+       * the chip a row shows are the same four states (`lib/member/start.ts::cardStateOf`). The
+       * stored lifecycle values (`pending`, `complete`, `void`) are not filters: `pending` and
+       * `complete` print as Draft and Stage 6 Live, and `void` is drawn nowhere on this screen.
        */
       id: "tabs",
       items: [
         { id: "all", label: "All" },
-        { id: "draft", label: "Drafts" },
-        { id: "published", label: "Published" },
-        { id: "active", label: "Running" },
-        { id: "complete", label: "Complete" },
-        { id: "expired", label: "Expired" },
+        { id: "live", label: "Stage 6 Live" },
+        { id: "waiting", label: "Waiting on Invite" },
+        { id: "draft", label: "Draft" },
+        { id: "paused", label: "Paused" },
       ],
     },
     {
@@ -160,7 +160,7 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
     {
       id: "card",
       items: [
-        { id: "with", label: "with" },
+        { id: "with", label: "with {name}" },
         { id: "not-claimed", label: "Not claimed yet" },
         { id: "the-other", label: "the other party" },
         /**
@@ -248,6 +248,40 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
         { id: "submit", label: "Start the relationship" },
         { id: "none", label: "No template is published to start from yet." },
         { id: "new-template", label: "Create a template first" },
+      ],
+    },
+    {
+      /**
+       * The v2 card's words (#1129, bundle 05). This section is read by
+       * `components/dashboard/relationship-card-model.ts`'s caller, so the chip a row carries, the
+       * sentence it says while there is nothing to draw and the three legend words all live here.
+       *
+       * **The four chips are the states, not the stored values.** `draft` and `pending` print
+       * `Draft`, `published` prints `Waiting on Invite`, `active` and `complete` print
+       * `Stage 6 Live`, and `expired` prints `Paused` — one word per state, mapped once in
+       * `lib/member/start.ts`. Colour never carries a state on its own, so the chip is always a
+       * word.
+       */
+      id: "card-v2",
+      items: [
+        { id: "live", label: "Stage 6 Live" },
+        { id: "waiting", label: "Waiting on Invite" },
+        { id: "draft", label: "Draft" },
+        { id: "paused", label: "Paused" },
+        { id: "with", label: "with {name}" },
+        { id: "aligned", label: "{aligned} of {total} Aspects Aligned" },
+        { id: "read-only", label: "Aligned · Read-Only" },
+        { id: "no-results", label: "Results appear once you both answer." },
+        { id: "next", label: "Next Step: {prompt}" },
+        { id: "open", label: "Open" },
+        { id: "continue", label: "Continue Setup" },
+        { id: "add-card-action", label: "Add a Card" },
+        { id: "legend-synch", label: "{count} In Synch" },
+        { id: "legend-small", label: "{count} Small Gap" },
+        { id: "legend-gap", label: "{count} Gap" },
+        { id: "waiting-next", label: "Invite sent. Waiting on {name} to join." },
+        { id: "draft-next", label: "Not sent yet." },
+        { id: "paused-next", label: "Stage 6 is paused. Nothing is lost." },
       ],
     },
     {
