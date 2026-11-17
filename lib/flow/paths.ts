@@ -47,6 +47,33 @@ export function relationshipPath(relationshipId: string): string {
 }
 
 /**
+ * `/dashboard/chat` — the member's chat: one thread per relationship (#1131).
+ *
+ * **Not `/chat`.** That address is the *quiz* product's conversations and is gated to that brand
+ * (`app/(mainlayout)/chat/page.tsx` calls `requireQuizProduct()`, #300), so on the AlignSynch build
+ * — the only build whose relationships there are to talk about — it answers 404. The v2 bundle names
+ * this address (`IMPLEMENTATION-PROMPT.md`: "Target: `/dashboard/chat` and
+ * `/dashboard/chat?relationship=<id>`… confirm in `lib/flow/paths.ts`") and every other member
+ * surface in this wave is a child of `/dashboard`, so the constant is the one place both are
+ * decided.
+ */
+export const CHAT_PATH = `${OVERVIEW_PATH}/chat`;
+
+/**
+ * One thread, as an address: `/dashboard/chat?relationship=<id>`.
+ *
+ * A query, not a segment — the opening line of the chat surface is the list, and a thread is the
+ * *selection* inside it. It is also what makes the mobile back chevron a plain link to
+ * `CHAT_PATH`, with no history to unwind and no route of its own to keep in the manifest.
+ *
+ * The id is the **relationship's**, never a session's: a relationship has one shared chat and its
+ * rounds are cycles inside it (`content/chat.ts`).
+ */
+export function chatThreadPath(relationshipId: string): string {
+  return `${CHAT_PATH}?relationship=${encodeURIComponent(relationshipId)}`;
+}
+
+/**
  * `/assessments` — the **assessment sessions** this signed-in account is a party to (#877).
  *
  * Plural, and a sibling of `/dashboard/relationships` and `/dashboard/templates`: the three are
@@ -61,7 +88,6 @@ export const MY_ASSESSMENTS_PATH = "/assessments";
 
 /** The create endpoint — a POST-only route handler. */
 export const CREATE_INSTANCE_PATH = "/assessment/new";
-
 /**
  * The id the stage card's heading carries, so the card can be the labelled region and
  * `StageTitleFocus` can move focus to it (#1123).

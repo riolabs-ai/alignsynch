@@ -130,6 +130,13 @@ const rows: readonly SurfaceColumn[] = [
   { path: "/dashboard/help", mode: "column" },
   { path: "/dashboard/relationships", mode: "column" },
   { path: "/dashboard/relationships/[id]", mode: "column" },
+  /**
+   * #1131 — Chat v2. A column, not a bleed: the v2 surface is two panes inside the page's own
+   * `max-w-content` (the conversation list beside the thread), so it takes the same left edge as the
+   * templates and relationships lists next to it. The quiz product's `/chat` — the bleed surface the
+   * mode table's `bleed` reason names — is a different route, and it keeps its own row below.
+   */
+  { path: "/dashboard/chat", mode: "column" },
   { path: "/dashboard/support", mode: "column" },
   { path: "/dashboard/support/articles/[slug]", mode: "column" },
   { path: "/dashboard/templates", mode: "column" },

@@ -52,6 +52,10 @@ import { assessmentCreatePageCopy } from "./assessment-create";
 import { battlePageCopy } from "./battle";
 import { categoriesPageCopy } from "./categories";
 import { categoryDetailPageCopy } from "./category-detail";
+/**
+ * #1131 — Chat v2: one thread per relationship, in the member's dashboard.
+ */
+import { chatPageCopy } from "./chat";
 import { creatorTipsPageCopy } from "./creator-tips";
 import { creatorTipsDetailPageCopy } from "./creator-tips-detail";
 import { dailyChallengePageCopy } from "./daily-challenge";
@@ -150,6 +154,12 @@ export const pageCopies: PageCopyTable = zPageCopyTable.parse({
   // bundle draws a greeting, one next step and two shelves, and the counts' own lists are one click
   // away at `/assessments?filter=…` (which is where those cards pointed anyway).
   "/dashboard": startPageCopy,
+  /**
+   * #1131 — one thread per relationship. The AlignSynch build's chat, beside the member's other
+   * record lists: `/chat` stays the **quiz** product's conversations (#300 gates it to that brand),
+   * so this is a sibling of the three routes below rather than a replacement for a quiz surface.
+   */
+  "/dashboard/chat": chatPageCopy,
   // #542 phase 1 — the work the dashboard used to leave the app to do.
   "/dashboard/support": dashboardSupportPageCopy,
   // #533 phase 2 — the initiator's own templates and relationships. Four routes, four fixtures:

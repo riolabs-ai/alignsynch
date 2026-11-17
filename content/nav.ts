@@ -48,6 +48,9 @@ export const NAV_ICON_NAMES = [
   "relationships",
   // #877 — the member's assessment-session listing, beside the relationships they belong to.
   "assessments",
+  // #1131 — one thread per relationship. Its own glyph rather than the inbox's: the rail's Chat row
+  // is a conversation list about these relationships, not a mailbox of notifications.
+  "chat",
   "templates",
   "library",
   "help",

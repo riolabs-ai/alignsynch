@@ -70,6 +70,13 @@ const STATIC_ROUTES = [
   "/creator-tips",
   "/daily-challenge",
   "/dashboard",
+  /**
+   * #1131 — Chat v2: one thread per relationship. A **member** surface under the dashboard, not the
+   * quiz product's `/chat` above: that address is gated to the quiz brand (`requireQuizProduct`,
+   * #300) and its conversations are a different product's; this one lists the relationships the
+   * reader is a party to, so it sits beside the two lists below.
+   */
+  "/dashboard/chat",
   // #542 phase 1 — the destinations the rail used to reach on the marketing site.
   "/dashboard/help",
   "/dashboard/support",

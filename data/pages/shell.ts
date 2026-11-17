@@ -283,6 +283,11 @@ export function shellCopy(brand: Brand): PageCopy {
           { id: "how-it-works", label: "How It Works" },
           { id: "my-relationships", label: "My Relationships" },
           /**
+           * #1131 — Chat, beside the relationships it is about. The owner's word, and the v2 rail's
+           * own row (`docs/specs/v2-bundles/07-…/chat.html`): a thread per relationship.
+           */
+          { id: "chat", label: "Chat" },
+          /**
            * #877 — the sessions, beside the relationships they belong to. The owner's word is
            * plural and it is the page's own `<h1>`: one string, one home.
            */
