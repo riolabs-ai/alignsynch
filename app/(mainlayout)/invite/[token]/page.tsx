@@ -70,11 +70,18 @@ export const metadata: Metadata = {
   title: "Invitation",
 };
 
-/** The column each step is laid out in — the bundle's three widths, and nothing else varies. */
+/**
+ * The column each step is laid out in — the bundle's three widths, and nothing else varies.
+ *
+ * **No `mx-auto`.** `StageColumn` owns the left edge (#858): a `column` surface re-centring its own
+ * body is what gave three pages three left edges, and `scripts/column-refs.ts` fails it. The bundle's
+ * narrow invitation column is kept as a width, so the content reads the same against the column's
+ * edge instead of a second, page-local one.
+ */
 const COLUMN: Record<InviteWizardStep, string> = {
-  1: "mx-auto max-w-3xl space-y-6",
-  2: "mx-auto max-w-md space-y-4",
-  3: "mx-auto max-w-xl space-y-4",
+  1: "max-w-3xl space-y-6",
+  2: "max-w-md space-y-4",
+  3: "max-w-xl space-y-4",
 };
 
 export default async function InvitePage({
@@ -113,7 +120,7 @@ export default async function InvitePage({
     // `2`, because that is where the reader is — not where the address bar pointed them.
     const step: InviteWizardStep = requested === 3 && details === null ? 2 : requested;
     return (
-      <div className="mx-auto w-full max-w-content px-4 py-5 lg:px-6">
+      <StageColumn>
         <div className={COLUMN[step]}>
           <JoinStepper copy={invitePageCopy} step={step} />
           {step === 1 ? (
@@ -136,7 +143,7 @@ export default async function InvitePage({
             />
           )}
         </div>
-      </div>
+      </StageColumn>
     );
   }
 
