@@ -1,23 +1,19 @@
 /**
- * The answer screen draws **no progress band at all** (#716, reversed by #825).
+ * The answer screen's progress is the bundle's own bar — and it is not a rail (#716 → #825 → #1128).
  *
- * Rule 4 of `docs/specs/ux-reference-patterns.md` is a rule about every multi-step surface: it
- * shows progress at the top of its block. #716 read that as "the answer sheet mounts the create
- * flow's rail at stage 6"; #825 took `Align` out of the flow — it is the dashboard's surface, not
- * the sixth cell of a create modal — and with it the reason a band was on this screen. A rail here
- * would say `Stage 5 of 5 · Invite` over a screen nobody is inviting anybody from.
+ * Three decisions stack here, and this suite is where they are read in order:
  *
- * So the claim is still a count, and it is now zero. For every state the gate can pick — the live
- * form, the sealed sheet, a lapsed membership and the coach band — the rendered markup carries:
+ *   #716  a multi-step surface shows progress at the top of its block (`docs/specs/
+ *         ux-reference-patterns.md` rule 4).
+ *   #825  `Align` left the create flow, so the shared **rail** — six cells, `Stage n of 5` —
+ *         came off this screen: it numbered a flow nobody invites anybody from.
+ *   #1128 the v2 answer surface is **paged**: one Aspect at a time, with the bundle's own progress
+ *         (`Round 1 · Aspect 3 of 5` and a five-segment bar, `assessment.html`). That is rule 4's
+ *         progress, not #825's rail, and the two are different claims this suite keeps apart.
  *
- *   zero bands   no `data-progress`, no `data-wizard-rail`, no `<nav>`;
- *   zero others  no `<progress`/`<meter`/`role="progressbar"`, no `<ol>` and no numbered circle;
- *   in words     the relationship's own position is said by `stageCopyId()` (a sentence), which is
- *                what `tests/flow-stages.test.ts` covers on the stage fixture.
- *
- * The route half stays a source fact, because the page needs Postgres to mount: it renders
- * `StageColumn` and centres nothing of its own, so the block's left edge is the one every stage of
- * the journey uses.
+ * So: a segmented bar and the position sentence are required; a rail, a `<nav>`, a wizard stepper,
+ * a `<progress>`/`<meter>` element and a `role="progressbar"` are still forbidden. The page half
+ * stays a source fact — it renders `StageColumn` and centres nothing of its own.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -29,6 +25,7 @@ import { AnswerSheet } from "@/components/assessment-flow/answer-sheet";
 import { SCORE_MAX, SCORE_MIN } from "@/content/record";
 import { assessmentAnswerPageCopy } from "@/data/pages/assessment-answer";
 import type { AnswerGate } from "@/lib/flow/answer-gate";
+import { positionOf } from "@/lib/flow/answer-position";
 import type { FlowAspect } from "@/lib/flow/screen";
 import { itemLabel, sectionOf } from "@/lib/page-copy";
 
@@ -41,27 +38,16 @@ const INSTANCE_ID = "instance-answer-progress-test";
  */
 const STAGE_NAMES = ["Details", "Settings", "Aspects", "Account", "Invite"];
 
-/** Two Aspects, unanswered — enough to draw the sheet's bands without inventing answers. */
-const ASPECTS: readonly FlowAspect[] = [
-  {
-    itemId: "aspect-time-together",
-    prompt: "Time together",
-    leftValue: "Apart",
-    rightValue: "Together",
-    min: SCORE_MIN,
-    max: SCORE_MAX,
-    own: null,
-  },
-  {
-    itemId: "aspect-shared-decisions",
-    prompt: "Shared decisions",
-    leftValue: "Solo",
-    rightValue: "Joint",
-    min: SCORE_MIN,
-    max: SCORE_MAX,
-    own: null,
-  },
-];
+/** Five Aspects, none answered — yesterday's two-aspect fixture, at the v2 surface's own count. */
+const ASPECTS: readonly FlowAspect[] = Array.from({ length: 5 }, (_, index) => ({
+  itemId: `aspect-${index + 1}`,
+  prompt: `Aspect ${index + 1}`,
+  leftValue: "Apart",
+  rightValue: "Together",
+  min: SCORE_MIN,
+  max: SCORE_MAX,
+  own: null,
+}));
 
 /** The four shapes one answer URL can draw (#427 + #533 phase 3). */
 const GATES: readonly { readonly name: string; readonly gate: AnswerGate }[] = [
@@ -114,6 +100,11 @@ function render(gate: AnswerGate): string {
           : { role: gate.role ?? "initiator", name: "Rowan" },
       mode: "basic",
       backHref: `/assessment/instances/${INSTANCE_ID}`,
+      sheetPath: `/assessment/instances/${INSTANCE_ID}/answer`,
+      draftAction: `/assessment/instances/${INSTANCE_ID}/answers/draft`,
+      answersAction: `/assessment/instances/${INSTANCE_ID}/answers`,
+      otherName: "Avery",
+      position: positionOf(ASPECTS, undefined),
     }),
   );
 }
@@ -130,28 +121,34 @@ function code(path: string): string {
     .replace(/^\s*\/\/.*$/gm, "");
 }
 
-describe("the answer screen draws no progress band", () => {
-  for (const { name, gate } of GATES) {
-    it(`draws no progress element on the ${name} shape`, () => {
+describe("the answer screen's progress is the bundle's bar", () => {
+  it("draws the position sentence and one segment per Aspect on the live sheet", () => {
+    const html = render(GATES[0].gate);
+    expect(html).toContain("Round 1 · Aspect 1 of 5");
+    expect(count(html, "data-qbar=")).toBe(ASPECTS.length);
+    expect(html).toContain('data-state="current"');
+    expect(html).toContain('data-saved-state="idle"');
+  });
+
+  it("never draws the create flow's rail, or a second progress element", () => {
+    for (const { name, gate } of GATES) {
       const html = render(gate);
       expect(count(html, "data-progress="), `${name}: no progress element`).toBe(0);
       expect(html).not.toContain("data-wizard-rail");
       expect(html).not.toContain("<nav");
-      // And no second pattern standing in for it.
       expect(html).not.toContain("<progress");
       expect(html).not.toContain("<meter");
       expect(html).not.toContain('role="progressbar"');
       expect(html).not.toContain("aria-valuenow");
-      expect(html).not.toContain("<ol");
-      expect(html).not.toContain("rounded-full");
-    });
-  }
+    }
+  });
 
-  it("keeps the option rows at their 44px targets", () => {
-    // Losing the band must not have bought space out of the control's: every notch is still a
-    // 44×44 target (SC 2.5.8's floor is 24; this repo ships 44).
+  it("keeps the option cells at the bundle's own height on the way down", () => {
+    // The v2 band is h-14 (56 px) with lg:h-12 (48 px) — both over SC 2.5.8's 24 px floor and the
+    // 44 px touch guidance. Losing the old 44 px class must not have shrunk the target.
     const html = render(GATES[0].gate);
-    expect(count(html, "min-h-[44px] min-w-[44px]")).toBe(ASPECTS.length * 2 * 5);
+    expect(count(html, "h-14")).toBeGreaterThanOrEqual(ASPECTS.length * 2);
+    expect(html).toContain("lg:h-12");
   });
 });
 
