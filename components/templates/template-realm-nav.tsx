@@ -6,7 +6,7 @@ import type { TemplatesPageModel } from "@/lib/templates-page";
  * The sticky realm menu: `All`, then one anchor per realm with its derived count.
  *
  * **It sticks directly under the shared header, and the offset is the header's own.** The row is
- * `top-[var(--site-header-height)]` — the same custom property `components/marketing/marketing-header.tsx`
+ * `top-[var(--site-header-height)]` — the same custom property `components/layout/public-header.tsx`
  * draws `h-20` from — so the bar cannot drift under the chrome when the header's height changes.
  * The seven targets' `scroll-margin-top` is derived from the same two heights in
  * `app/globals.css` (`.templates-anchors`), which is the mechanism the AS2 home page already

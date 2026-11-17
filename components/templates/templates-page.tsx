@@ -15,7 +15,7 @@ import type { TemplatesPageModel } from "@/lib/templates-page";
  * is its six bands in its order: hero → how AlignSynch works → one membership line → the sticky
  * realm menu → the catalogue → the journey. The four components the artifact names as *not* to be
  * copied — the static header, the static footer, the newsletter and the logo lockup — are absent
- * by construction: `app/(marketing)/layout.tsx` mounts `MarketingHeader`, `PublicNav`,
+ * by construction: `app/(marketing)/layout.tsx` mounts `PublicHeader`, `PublicNav`,
  * `PublicAccountSlot`, `Footer` and `NewsSignup` above and below this file, and nothing here
  * imports one.
  *

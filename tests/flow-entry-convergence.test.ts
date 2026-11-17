@@ -184,9 +184,19 @@ describe("the marketing surfaces keep navigating", () => {
         "FlowEntryLink",
       );
     }
-    // A marketing action still **navigates** — it is a link, not the intercepted dialog — but since
+    // A marketing action still **navigates** — it is a link, not the intercepted dialog — and since
     // #1042 its destination is the flow's stage 1 for every viewer rather than the sign-up form.
-    expect(source("app/(marketing)/relationship-types/page.tsx")).toContain("startViewer(");
+    // #1127 moved the *catalogue's* own actions one step earlier in the same walk: the v2 hero's
+    // "Browse Templates" and "Start With the Most Popular" open a template's own public page, and it
+    // is that page whose one action is `startPathFor()` — stage 1, carrying the template. Both are
+    // navigations, neither mounts the door, and the stage-1 address is still the only door.
+    const catalogue = source("app/(marketing)/relationship-templates/page.tsx");
+    expect(catalogue).toContain("relationshipTypePath(");
+    expect(catalogue).not.toContain("startViewer(");
+    expect(source("app/(marketing)/relationship-templates/[slug]/page.tsx")).toContain(
+      "TemplateDetail",
+    );
+    expect(source("lib/template-detail.ts")).toContain("startPathFor(");
     expect(source("lib/start-path.ts")).toContain("createRelationshipPath(typeId)");
     expect(source("lib/start-path.ts")).not.toContain("registerPathFor");
   });
@@ -205,6 +215,12 @@ describe("the marketing surfaces keep navigating", () => {
       .sort();
     expect(importers).toEqual([
       "components/assessment-flow/template-card.tsx",
+      /*
+       * #1130 — a My Template's own page draws `Create Relationship` as the same door: it is the same
+       * template the Library shelf opens, so a document load here would lose the interception for the
+       * one entry a member is most likely to take.
+       */
+      "components/dashboard/my-template-detail.tsx",
       "components/dashboard/relationship-cards.tsx",
       /*
        * #975 D10 — a relationship's own screen draws the same doors its card does (the publish gate's

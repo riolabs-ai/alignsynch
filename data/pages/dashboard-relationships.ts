@@ -285,6 +285,83 @@ export const dashboardRelationshipsPageCopy: PageCopy = zPageCopy.parse({
       ],
     },
     /**
+     * The relationship card's kebab (#1134, bundle 05). One `More actions` trigger; the rows behind
+     * it follow the card's state, and their words are the bundle's — `Leave Relationship`, not the
+     * `Remove Counterparty` the issue's summary remembers (#1135's decision, and the artifact's).
+     *
+     * `Copy Invite Link` is drawn on the waiting card in the artifact and is **not** in this table:
+     * a token is never stored, so no read can hand a list card the link (`inviteLinkAvailable` is
+     * always false, #220) and the item would copy nothing. The copy control lives on the
+     * relationship's own screen, where a link has just been minted.
+     */
+    {
+      id: "card-menu",
+      items: [
+        { id: "more", label: "More actions for {title}" },
+        { id: "open", label: "Open" },
+        { id: "continue", label: "Continue Setup" },
+        { id: "add-card", label: "Add a Card" },
+        { id: "resend", label: "Resend Invite" },
+        { id: "cancel-invite", label: "Cancel Invite" },
+        { id: "abandon", label: "Abandon Draft" },
+        { id: "leave", label: "Leave Relationship" },
+      ],
+    },
+    /** The three neutral confirmations the menu's destructive rows open — the bundle's own words. */
+    {
+      id: "confirm-cancel-invite",
+      heading: "Cancel This Invite?",
+      body: "The link stops working, so they can’t join with it. Your draft stays and you can invite again.",
+      items: [
+        { id: "confirm", label: "Cancel Invite" },
+        { id: "cancel", label: "Keep Invite" },
+      ],
+    },
+    {
+      id: "confirm-abandon",
+      heading: "Abandon This Draft?",
+      body: "Nobody was invited, so nobody else is affected. This can’t be undone.",
+      items: [
+        { id: "confirm", label: "Abandon Draft" },
+        { id: "cancel", label: "Keep Draft" },
+      ],
+    },
+    {
+      id: "confirm-leave",
+      heading: "Leave This Relationship?",
+      body: "Stage 6 closes for you and {name}. Answers and the discussion stay readable. Nothing is deleted.",
+      items: [
+        { id: "confirm", label: "Leave Relationship" },
+        { id: "cancel", label: "Stay" },
+      ],
+    },
+    /** What each write says when it lands. */
+    {
+      id: "menu-notices",
+      items: [
+        { id: "resend", label: "Invite sent again to {email}" },
+        { id: "cancel-invite", label: "Invite cancelled. It’s a draft again." },
+        { id: "abandon", label: "Draft abandoned." },
+        { id: "leave", label: "You left. Stage 6 is closed." },
+      ],
+    },
+    /** The refusals the four writes answer with, and the fallback for one this table has not met. */
+    {
+      id: "menu-refusals",
+      items: [
+        { id: "cooldown", label: "An invite went out recently. Try again in a moment." },
+        { id: "cap-reached", label: "This invitation has been resent as often as it can be." },
+        { id: "already-claimed", label: "They have already joined, so there is no link to send." },
+        { id: "no-invite", label: "There is no invitation to resend yet." },
+        { id: "invite-dead", label: "That invitation has expired or been revoked." },
+        { id: "not-published", label: "There is no invitation to cancel." },
+        { id: "not-running", label: "This relationship is not running any more." },
+        { id: "not-yours", label: "This relationship is not yours to change." },
+        { id: "signed-out", label: "Your session ended. Sign in and try again." },
+        { id: "failed", label: "That did not go through." },
+      ],
+    },
+    /**
      * **The two empty states are the bundle's, not a paraphrase of them** (#1129, bundle 05).
      *
      * `empty` is a member with no rows at all: one sentence, and the way out is the Library —

@@ -1,47 +1,176 @@
 /**
- * `/assessment/instances/[instanceId]/answer` — the answer sheet (#427, R2-2).
+ * `/assessment/instances/[instanceId]/answer` — the v2 answer screen (#1128).
  *
- * The sheet is a **write surface** now. R1-E shipped this route as in-progress UI whose copy said
- * plainly that nothing was saved; that sentence is gone, because it would now be false. What
- * replaces it is what a person about to submit needs: whose sheet this is, that a submit is a
- * whole sheet, and that the other party's answers are not on this page to be found.
+ * The screen used to be one long sheet: every Aspect on one page, one submit at the bottom. The
+ * approved v2 surface (`docs/specs/v2-bundles/10-spec-design-page-assessment-v2/assessment.html`)
+ * asks **one Aspect at a time** on the locked 1–5 scale, saves every pick, resumes where the reader
+ * left off and ends with a review. This fixture is its whole vocabulary.
  *
- * The bands:
+ * The bands, in the order the bundle draws them:
  *
- *   `sheet`    the live form — who the viewer answers as, the blind-rule sentence, the Aspect
- *              band, and the note beside the submit that says a submit is a whole sheet.
- *   `rules`    the two facts that do not change from visit to visit: the Mode is fixed at
- *              creation, and no party picks the Setting here.
- *   `frozen`   the read-only state: the viewer has accepted this session (or both have), so this
- *              page shows the viewer their own sheet and offers no control that could only be
- *              refused.
- *   `coach`    a coach membership reads the relationship and has no answers to give, so the page
- *              draws the badge and the reason instead of a sheet.
+ *   `header`    the flow title and the one way out (`Save and Exit`).
+ *   `privacy`   the note that never moves: answers stay private until both parties finish.
+ *   `resume`    the returning reader's banner — "Welcome back", where they are, and `Start Over`.
+ *   `progress`  `Round 1 · Aspect n of 5`, the segmented bar's words and the save state.
+ *   `aspect`    one Aspect's card: eyebrow, the two row headings and their glosses, the pole line
+ *               under each scale, the pick hint and the card's footer buttons.
+ *   `review`    `Check Your Answers`, one summary line per Aspect, `Change`, `Submit Answers`.
+ *   `sheet`     the seat sentence and the blind rule (#427's words, kept: the v2 screen says the
+ *               same thing in more places, not a different thing).
+ *   `frozen`    the sealed sheet — plus the v2 status line: who this reader is waiting on, or that
+ *               the results are ready.
+ *   `lapsed`    the membership that paid for the relationship ended: read-only, and nothing lost.
+ *   `coach`     a coach reads the relationship and has no answers to give.
  *
- * `{name}`/`{seat}`/`{left}`/`{right}` are filled by `fillLabel()` from the rows the page read —
- * the fixture authors no person and no Aspect. `back` is a page-level item because every band
- * ends with the same link.
+ * `{name}`/`{seat}`/`{other}`/`{aspect}`/`{total}`/`{value}`/`{notch}` are filled by `fillLabel()`
+ * from the rows the page read — the fixture authors no person, no Aspect and no count. Opinions are
+ * named by the glossary's own `OPINION_LABELS` inside the component, because Feel, Wish, Think and
+ * Guess are the model's vocabulary and not this page's prose; everything a reader can be surprised
+ * by is here.
  *
- * **`stages` is referenced, not re-typed (#716).** The sheet mounts the shared cell rail
- * (`components/assessment-flow/stage-rail.tsx`), which asks this surface's copy for the `stages`
- * section by id — so the six approved names arrive from `data/pages/lifecycle.ts` through one
- * import rather than a seventh copy that could drift. Answering is the `Align` stage of that
- * same journey; the rail's position is the view's fact, never a name authored here.
+ * `stages` is referenced, not re-typed (#716): the shared five stage names live in
+ * `data/pages/lifecycle.ts` and are imported, so this fixture cannot carry a sixth copy that
+ * drifts. The v2 screen itself draws no rail — its progress is the bundle's own `Round 1 · Aspect n
+ * of 5` bar, which is why the names are referenced for the flow rather than printed here.
  */
 import { zPageCopy, type PageCopy } from "../../content/pages";
 import { lifecycleStageSection } from "./lifecycle";
 
 export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
-  heading: "Answer your side",
+  heading: "Round 1 Assessment",
   subtitle:
-    "Every Aspect of this relationship, asked in the shape its Mode defines. Your answers stay sealed until both parties accept.",
-  items: [{ id: "back", label: "Back to the relationship" }],
+    "One Aspect at a time, on the same 1–5 scale both of you answer. Nothing is sent until you review it, and nothing is shown to anyone else until you both finish.",
+  items: [
+    { id: "back", label: "Back to the relationship" },
+    { id: "exit", label: "Save and Exit" },
+  ],
   sections: [
     lifecycleStageSection,
     {
+      id: "header",
+      items: [{ id: "round", label: "Round 1" }],
+    },
+    {
+      id: "privacy",
+      heading: "Private until you both finish.",
+      body: "{other} sees nothing of yours until then, and you see nothing of theirs.",
+      items: [{ id: "privacy-mark", label: "Private" }],
+    },
+    {
+      id: "resume",
+      heading: "Welcome back.",
+      body: "Your answers are saved. You’re on Aspect {aspect}.",
+      items: [
+        { id: "start-over", label: "Start Over" },
+        {
+          id: "start-over-note",
+          label:
+            "Start Over erases the answers on this sheet and puts you back on Aspect 1. Nothing you answered is kept.",
+        },
+      ],
+    },
+    {
+      id: "progress",
+      items: [
+        { id: "position", label: "Round 1 · Aspect {aspect} of {total}" },
+        { id: "saving", label: "Saves as you go" },
+        { id: "saved", label: "Saved" },
+        { id: "save-failed", label: "Not saved — pick again" },
+        { id: "segmented", label: "Aspect {aspect} of {total}" },
+      ],
+    },
+    {
+      id: "aspect",
+      items: [
+        { id: "eyebrow", label: "Aspect {aspect} of {total}" },
+        { id: "feel", label: "Feel" },
+        { id: "feel-gloss", label: "How it is now" },
+        { id: "wish", label: "Wish" },
+        { id: "wish-gloss", label: "How you want it" },
+        { id: "pole-left", label: "{notch} · {value}" },
+        { id: "pole-right", label: "{notch} · {value}" },
+        { id: "scale-name", label: "{value} — {notch}" },
+        {
+          id: "hint",
+          label: "Pick a number for Feel and for Wish to continue.",
+        },
+        {
+          id: "hint-advanced",
+          label: "Pick a number for Feel, Wish, Think and Guess to continue.",
+        },
+        { id: "back", label: "Back" },
+        { id: "save-exit", label: "Save and Exit" },
+        { id: "next", label: "Next Aspect" },
+        { id: "to-review", label: "Review Answers" },
+      ],
+    },
+    {
+      id: "review",
+      heading: "Check Your Answers",
+      body: "Once you submit, your answers are sealed for Round 1.",
+      items: [
+        { id: "eyebrow", label: "Review" },
+        { id: "summary-basic", label: "Feel {feel} · Wish {wish}" },
+        {
+          id: "summary-advanced",
+          label: "Feel {feel} · Wish {wish} · Think {think} · Guess {guess}",
+        },
+        { id: "missing", label: "–" },
+        { id: "change", label: "Change" },
+        { id: "change-name", label: "Change {aspect}" },
+        { id: "back", label: "Back" },
+        { id: "save-exit", label: "Save and Exit" },
+        { id: "submit", label: "Submit Answers" },
+        {
+          id: "submit-note",
+          label:
+            "Submitting sends every Aspect of your sheet and seals it. You can still change a score until you accept the session.",
+        },
+      ],
+    },
+    {
+      id: "refusals",
+      items: [
+        {
+          id: "not-a-party",
+          label:
+            "This browser is not a party to this relationship, so nothing here is yours to answer. Open it from the link you were sent.",
+        },
+        {
+          id: "no-such-instance",
+          label: "There is no session at this address. It may have been closed.",
+        },
+        {
+          id: "frozen",
+          label:
+            "You have accepted this session, so your answers are sealed and cannot be changed.",
+        },
+        {
+          id: "incomplete",
+          label:
+            "That answer did not reach the sheet. Pick a number for every row on this Aspect and it will be saved.",
+        },
+        {
+          id: "voided",
+          label: "This session was voided, so it takes no further answers.",
+        },
+        {
+          id: "lapsed",
+          label: "The membership behind this relationship ended, so the sheet is read-only.",
+        },
+        {
+          id: "payment-method-required",
+          label: "This relationship needs a payment method before it can go further.",
+        },
+        {
+          id: "unknown",
+          label: "That answer was not saved. Pick it again.",
+        },
+      ],
+    },
+    {
       id: "sheet",
       heading: "Your sheet",
-      body: "Each Aspect is one line of the relationship. You score it from the left Value to the right Value, once for every Opinion kind your Mode asks, and you submit the sheet as a whole.",
       items: [
         { id: "answering-as", label: "You are answering as {name} · {seat}" },
         { id: "seat-initiator", label: "Initiator" },
@@ -51,30 +180,6 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
           label:
             "Until both parties accept, neither of you sees the other's answers — they are not hidden here, they are absent.",
         },
-        { id: "scale", label: "{left} — {right}" },
-        { id: "submit", label: "Submit answers" },
-        { id: "resubmit", label: "Replace my answers" },
-        {
-          id: "submit-note",
-          label:
-            "A submit posts your whole sheet: every Aspect, every kind the Mode asks. Submitting again replaces your previous answers rather than adding to them.",
-        },
-      ],
-    },
-    {
-      id: "rules",
-      heading: "What this sheet keeps",
-      items: [
-        {
-          id: "mode-fixed",
-          label:
-            "The Mode is fixed at creation. Basic asks Feel and Wish on every Aspect; Advanced adds Think and Guess.",
-        },
-        {
-          id: "setting",
-          label:
-            "The Setting is the bar these answers are judged against later. It changes the verdict, never a question, and no party picks it here.",
-        },
       ],
     },
     {
@@ -82,6 +187,18 @@ export const assessmentAnswerPageCopy: PageCopy = zPageCopy.parse({
       heading: "This sheet is the record",
       body: "You have accepted this session, so your answers are sealed. What you marked is below, exactly as it was stored.",
       items: [
+        { id: "waiting", label: "Waiting for {other}" },
+        { id: "ready", label: "Results are ready" },
+        {
+          id: "waiting-body",
+          label:
+            "{other} answers the same Aspects from their side and accepts the session. The results open for you both when they do.",
+        },
+        {
+          id: "ready-body",
+          label:
+            "Both of you have finished, so the results are open. Nothing on this sheet changed.",
+        },
         {
           id: "frozen-note",
           label:

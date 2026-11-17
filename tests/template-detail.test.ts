@@ -35,7 +35,7 @@ import { test, vi } from "vitest";
  */
 vi.mock("@/lib/auth/session", () => ({ currentUserIfConfigured: async () => null }));
 
-import { generateStaticParams } from "@/app/(marketing)/relationship-types/[slug]/page";
+import { generateStaticParams } from "@/app/(marketing)/relationship-templates/[slug]/page";
 import { TemplateDetail } from "@/components/templates/template-detail";
 import { TemplatesPageView } from "@/components/templates/templates-page";
 import { formatCurrency } from "@/content/core";
@@ -51,7 +51,7 @@ import { alignSynchHomeCopy } from "@/data/pages/home-alignsynch";
 import { templatesDetailPageCopy } from "@/data/pages/templates-detail";
 import { templatesPageCopy } from "@/data/pages/templates";
 import {
-  RELATIONSHIP_TYPES_PATH,
+  TEMPLATE_CATALOGUE_PATH,
   createRelationshipPath,
   relationshipTypeDemoPath,
 } from "@/lib/flow/paths";
@@ -135,10 +135,18 @@ test("prints the plan's price and the one start action, both from the fixture", 
   const type = typeAt("staff-manager");
   const { model, html, text } = renderTemplate(type.id);
 
-  // The page's one figure is the plan's month, named with its plan and its interval — the same
-  // chip the member shelf and `/assessment/templates` print, from the one plan fixture (#798).
-  assert.equal(model.priceNote, PLAN_CHIP);
-  assert.ok(html.includes(model.priceNote), "the price line is not in the markup");
+  /**
+   * **The page's one figure is the plan's month, inside the trial panel (#1127).** The v2 page
+   * replaces the one-line `Basic · $9.99/mo` chip with the artifact's trial panel: no card to
+   * start, the amount after, and the invitee never paying. The amount is
+   * `data/membership-plans.ts`'s Single plan read through `formatCurrency`, so it is the same cents
+   * a checkout charges — never a figure typed into the view.
+   */
+  assert.equal(model.trial.items.length, 3);
+  const after = model.trial.items[1] ?? "";
+  assert.ok(after.includes(BASIC_MONTH), `the trial panel does not print ${BASIC_MONTH}`);
+  assert.ok(html.includes(after), "the trial panel's amount is not in the markup");
+  assert.ok(html.includes("data-template-trial"), "the trial panel is not drawn");
   assert.equal(model.start.href, startPathFor(type.id));
   assert.equal(START_PATH, "/register");
   // #1042 — the one action is the create flow's stage 1, carrying the template: one door for a
@@ -151,6 +159,9 @@ test("prints the plan's price and the one start action, both from the fixture", 
   );
   assert.ok(html.includes(`href="${CATALOGUE_PATH}"`), "there is no way back to the directory");
   assert.equal(model.back.href, CATALOGUE_PATH);
+  // The breadcrumb is the artifact's first row: the catalogue, then this template.
+  assert.equal(model.crumb.root.href, CATALOGUE_PATH);
+  assert.equal(model.crumb.current, type.name);
 
   // Neither the figure the pricing page does not sell nor the unit it was charged in is on the
   // page — asserted on what a reader gets, not only on the model.
@@ -160,28 +171,40 @@ test("prints the plan's price and the one start action, both from the fixture", 
     false,
     'the page says "per relationship"',
   );
-  assert.equal(html.includes(formatCurrency(999)), false, "the page prints $9.99");
+  // **One figure, and it is the plan's.** This used to read `not $9.99`, as a proxy for "not the
+  // taxonomy's per-relationship amount" (`RELATIONSHIP_PRICE_CENTS`, also 999). Since #1127 the
+  // Single plan's month *is* $9.99, so the string can no longer tell the two apart — the guard is
+  // `tests/plan-catalogue.test.ts`'s: no component or `lib/` module reads the taxonomy amount at
+  // all. What a reader sees is still exactly one price, and it is the plan's.
+  assert.deepEqual(html.match(/\$[\d.,]+/g) ?? [], [BASIC_MONTH]);
 });
 
 test("the plan's price does not vary with the template", () => {
-  const chips = new Set(
-    purchasableRelationshipTypes.map((type) => renderTemplate(type.id).model.priceNote),
+  const prices = new Set(
+    purchasableRelationshipTypes.map((type) =>
+      renderTemplate(type.id).model.trial.items.join("\n"),
+    ),
   );
-  assert.deepEqual([...chips], [PLAN_CHIP]);
+  assert.deepEqual([...prices].length, 1);
 });
 
 /**
- * One label, three fixtures — not three spellings of the same rule.
+ * One label, one wording — the surfaces that still print the plan chip.
  *
- * `template-price` is declared on each surface's own fixture (E23: a component reads the fixture
- * of the route that renders it), so the three rows are three copies by design. What they may not
- * be is three *wordings*: this pins them to one string, so the shop cannot end up describing the
- * same plan three ways (#798).
+ * `template-price` is declared on each surface's own fixture (E23: a component reads the fixture of
+ * the route that renders it), so the rows are copies by design. What they may not be is different
+ * *wordings*: this pins them to one string, so the shop cannot end up describing the same plan two
+ * ways (#798).
+ *
+ * **The detail page left this set in #1127.** Bundle 02 draws no chip there: the aside states the
+ * trial instead (`No card needed to start` / `{price} a month after, only with a card` / the
+ * invitee never paying), so `data/pages/templates-detail.ts` no longer declares `template-price` —
+ * and its amount comes from the same plan fixture through `lib/template-detail.ts`, which
+ * `tests/template-detail.test.ts` asserts against the plan's own cents.
  */
-test("all three marketing fixtures carry the same price label, with both placeholders", () => {
+test("the marketing fixtures that print the plan chip share one label", () => {
   const labels = [
     ["data/pages/templates.ts", pageItemOf(templatesPageCopy, "template-price").label],
-    ["data/pages/templates-detail.ts", pageItemOf(templatesDetailPageCopy, "template-price").label],
     ["data/pages/home-alignsynch.ts", pageItemOf(alignSynchHomeCopy, "template-price").label],
   ] as const;
 
@@ -240,10 +263,10 @@ test("every catalogue card carries its own detail href, and the directory render
   assert.equal(cards.length, purchasableRelationshipTypes.length);
   for (const card of cards) {
     assert.equal(card.slug, card.id);
-    assert.equal(card.detail, `${RELATIONSHIP_TYPES_PATH}/${card.id}`);
-    // #794 — the public catalogue moved out of the template noun: `/templates` is the template
-    // namespace now (a 308 to the catalogue), so a card's address is a *type*'s.
-    assert.equal(card.detail, `/relationship-types/${card.id}`);
+    assert.equal(card.detail, `${TEMPLATE_CATALOGUE_PATH}/${card.id}`);
+    // #1127 — the catalogue and a type's own page are one noun: a card links under the
+    // catalogue's path, and `/relationship-types/<id>` is a 308 to it.
+    assert.equal(card.detail, `/relationship-templates/${card.id}`);
     assert.ok(html.includes(`href="${card.detail}"`), `the directory does not link ${card.detail}`);
   }
 });

@@ -1260,6 +1260,7 @@ for (const finding of [
   ...unmarkedLeavingLinks({
     files: leavingDashboard,
     routes: leavingRoutes,
+    sources: uiSources,
     surfaces: leavingSurfaces,
   }),
   ...unmarkedLeavingMounts({
@@ -1331,8 +1332,9 @@ const imageMeasured = imageCensus(imageTags);
  *
  *   E17  no `components/**` or `app/**` file writes a `public/` asset path at all — a
  *        component asks the registry for a key (`media["quiz.q1"].src`).
- *   E18  registry <-> disk is a bijection, both directions, plus the map's own integrity
- *        (path-derived key, one key per file, real dimensions).
+ *   E18  registry <-> disk is a bijection over the images under `public/`, both directions, plus
+ *        the map's own integrity (path-derived key, one key per file, real dimensions). A
+ *        non-image file beside the assets it documents is not media and is not counted.
  *   E19  every `ImageRef.src` a fixture carries equals a registry `src` (decision D-P2-1:
  *        the fixture still holds a path in P2, so this is what keeps it honest).
  *
@@ -1356,12 +1358,21 @@ for (const problem of danglingEntries(registry, (src) =>
   err("E18", problem);
 }
 
+/**
+ * Every **image** under `public/`, so the bijection is over the files the registry can address.
+ *
+ * The extension filter is `gen-media.mjs`'s (`IMAGE`), and it has to be: that walk emits only
+ * images, so a disk walk that counted a `.md` would make the two directions unsatisfiable for
+ * any file that is not media — which is why `public/og/README.md`, the provenance record for the
+ * three banners beside it, could not exist. A raster's regeneration command belongs next to the
+ * raster; a prose file is not something a component addresses through `media[]`.
+ */
 function walkPublic(dir = join(process.cwd(), "public"), files: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     if (entry.startsWith(".")) continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walkPublic(full, files);
-    else
+    else if (/\.(?:png|jpe?g|webp|svg|gif|avif|ico)$/i.test(entry))
       files.push(
         full
           .slice(join(process.cwd(), "public").length + 1)

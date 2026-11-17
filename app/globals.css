@@ -147,7 +147,7 @@
        value rather than retyped per section. `tests/as2-home.test.tsx` reads both files and fails
        when they disagree, which is what makes the header's next height change a red build instead
        of five anchors landing under a bar. */
-    --site-header-height: 5rem;
+    --site-header-height: 4rem;
 
     /* The admin notice bar's height (#906), and the only place the number is written.
        `components/layout/admin-notice-bar.tsx` draws its row at `min-height: var(--admin-notice-h)`

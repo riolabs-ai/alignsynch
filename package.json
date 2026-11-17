@@ -1,6 +1,6 @@
 {
   "name": "quizhub",
-  "version": "1.22.0",
+  "version": "2.0.0-rc1",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "engines": {
@@ -30,6 +30,7 @@
     "qa:atlas:check": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-atlas-check.mjs",
     "qa:atlas:prune": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-atlas.mjs --prune",
     "brand:icons": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/gen-brand-icons.mjs",
+    "og:banners": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-modules.mjs scripts/og-banners.ts",
     "glossary": "node scripts/gen-glossary.mjs",
     "glossary:check": "node scripts/gen-glossary.mjs --check",
     "email:bodies": "node --import ./scripts/ts-modules.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/gen-email-bodies.mjs",

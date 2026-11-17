@@ -27,14 +27,29 @@
  * change from reaching one and not the other.
  *
  * **Money is integer cents**, the convention the rest of the tree already follows
- * (`QuizStats.rewardCents`, `data/metrics.ts`): `895` is `$8.95`, and no price is a float that
+ * (`QuizStats.rewardCents`, `data/metrics.ts`): `999` is `$9.99`, and no price is a float that
  * `0.1 + 0.2` can move.
  *
+ * **The amounts are the owner's approved catalogue (#1127, 2026-11-17)** — Single `$9.99` a month,
+ * Family `$19.99` a month, Single Annual `$99` a year — and the *plans* those amounts belong to are
+ * named in `data/membership-plans.ts`, which reads every figure back out of this file. This fixture
+ * stays the one home for an **amount**; that one is the one home for a plan's name, capacity and
+ * interval. Neither types a price the other can disagree with: `membershipPlanProblems()` and
+ * `tests/plan-catalogue.test.ts` compare them row for row.
+ *
  * **`yearlyCents` is the amount charged once a year**, not the monthly-equivalent the card prints:
- * `$85.92` beside "/mo, billed yearly" is `8_592 / 12`. A `billing_plan` row is what a checkout
- * charges, so it holds 8_592 — an amount the page renders but a checkout never charges would be
- * exactly the drift this fixture prevents. The yearly rate is **20% off the monthly rate × 12**
- * (`895 × 12 × 0.8 = 8_592`), the discount the page's `pricing.annualDiscount` metric prints.
+ * `$99` beside "/mo, billed yearly" is `9_900 / 12`. A `billing_plan` row is what a checkout
+ * charges, so it holds 9_900 — an amount the page renders but a checkout never charges would be
+ * exactly the drift this fixture prevents. The annual figure is **not** a percentage rule any more:
+ * the owner priced Single Annual at a round `$99` against `$9.99 × 12 = $119.88` (the artifact's
+ * "2 months free"), so it is an authored amount and the test asserts the number rather than a
+ * formula that would round it.
+ *
+ * **Family is sold monthly only.** The approved catalogue has no Family annual plan, so no plan
+ * maps the `principal/year` row and `alignsynch_principal_year` stays unclaimed — see
+ * `data/membership-plans.ts`. The row itself is left exactly as it was seeded rather than repriced,
+ * because there is no approved amount to put in it; the card's handoff names that as the one open
+ * catalogue item for the owner.
  */
 
 /** The tiers, in the order the page draws them: cheapest first, the recommended one in the middle. */
@@ -143,8 +158,8 @@ export const billingPlans: readonly BillingPlan[] = [
     id: "basic",
     name: "Basic",
     description: "For a coach running a practice",
-    monthlyCents: 895,
-    yearlyCents: 8_592, // 8.95 × 12, less 20% — the yearly rate, charged once
+    monthlyCents: 999,
+    yearlyCents: 9_900, // Single Annual — the owner's round $99 for a year, charged once
     features: [
       "Unlimited active relationships",
       "Basic Mode and Advanced Mode",
@@ -162,8 +177,10 @@ export const billingPlans: readonly BillingPlan[] = [
     id: "principal",
     name: "Principal",
     description: "For a practice running several relationships at once",
-    monthlyCents: 1_695,
-    yearlyCents: 16_272, // 16.95 × 12, less 20% — the yearly rate, charged once
+    monthlyCents: 1_999,
+    // Left exactly as seeded: the approved catalogue sells Family monthly only, so no plan maps this
+    // row and `alignsynch_principal_year` is unclaimed. Repricing it would invent a Family annual.
+    yearlyCents: 16_272,
     features: [
       "Everything in Basic",
       "Unlimited active relationships",

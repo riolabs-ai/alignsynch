@@ -30,6 +30,7 @@ landmarks (5)
 links (17 unique, 33 total)
   /                                                    1
   /dashboard                                           1
+  /dashboard/chat                                      1
   /dashboard/help                                      1
   /dashboard/relationships                             1
   /dashboard/support                                   1
@@ -43,12 +44,11 @@ links (17 unique, 33 total)
   /news/quiz-monetization-strategies-2025              2
   /news/quiz-trends-2025                               4
   /news/summer-quiz-championship-announcement          2
-  /settings                                            1
-  https://github.com/riolabs-ai/alignsynch/releases/tag/v1.22.0 2
+  https://github.com/riolabs-ai/alignsynch/releases/tag/v2.0.0-rc1 2
 
 counts
   elements  552
   images    2
   buttons   17
   inputs    2
-  classes   252 (sha edb8cbb7a7dc)
+  classes   250 (sha b9d059ad067d)

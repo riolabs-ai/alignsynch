@@ -194,6 +194,12 @@ const ALT_OVERRIDES = {
   "/home/business-life.avif": "Two colleagues reviewing documents together outdoors over coffee",
   "/home/relationship-gaps.avif": "A couple having a serious conversation at their kitchen table",
   "/home/opinions-scale.avif": "An older couple talking together at a table",
+  /** The release-comms rasters (#1169): a title-cased filename reads "Release Default" to a
+   * screen reader, which describes neither the card nor the product. */
+  "/og/readme-banner.png":
+    "AlignSynch banner — two answers, one Gap, beside the relationship screen",
+  "/og/email-banner.png": "AlignSynch release-note header — two answers, one Gap",
+  "/og/release-default.png": "AlignSynch release notes card — what changed, and why",
 };
 
 /** Alt text a screen reader can use. Decorative media legitimately carries none. */

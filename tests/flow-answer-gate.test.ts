@@ -29,6 +29,7 @@ import { assessmentAnswerPageCopy } from "@/data/pages/assessment-answer";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
 import { answerGateOf, ownScoreOf, type AnswerGate } from "@/lib/flow/answer-gate";
+import { positionOf } from "@/lib/flow/answer-position";
 import { projectScreen, type FlowAspect, type FlowInstanceRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
@@ -159,6 +160,7 @@ function render(
   gate: AnswerGate,
   aspects: readonly FlowAspect[],
   viewer: { role: PartyRole | "coach"; name: string } = { role: "initiator", name: "Avery" },
+  aspect?: string,
 ): string {
   return renderToStaticMarkup(
     createElement(AnswerSheet, {
@@ -168,6 +170,11 @@ function render(
       viewer,
       mode: "basic",
       backHref: `/assessment/instances/${INSTANCE_ID}`,
+      sheetPath: `/assessment/instances/${INSTANCE_ID}/answer`,
+      draftAction: `/assessment/instances/${INSTANCE_ID}/answers/draft`,
+      answersAction: `/assessment/instances/${INSTANCE_ID}/answers`,
+      otherName: "Rowan",
+      position: positionOf(aspects, aspect),
     }),
   );
 }
@@ -256,31 +263,43 @@ describe("answerGateOf: which surface the page draws", () => {
 describe("the sheet's markup", () => {
   const aspects = items.map((item) => aspectWith(item.item_id, null));
 
-  it("is a plain POST to the instance's answers endpoint", () => {
+  it("is a plain POST to the draft endpoint, so a pick is saved without a script", () => {
     const html = render(gateFor("initiator"), aspects);
-    expect(html).toContain(`action="/assessment/instances/${INSTANCE_ID}/answers"`);
+    expect(html).toContain(`action="/assessment/instances/${INSTANCE_ID}/answers/draft"`);
     expect(html).toContain('method="post"');
   });
 
-  it("names no seat, and carries no hidden field of any kind", () => {
+  it("names no seat, and carries no field but the reader's position", () => {
     const html = render(gateFor("initiator"), aspects);
     expect(html).not.toMatch(/\bname="role"/);
-    expect(html).not.toMatch(/type="hidden"/);
+    // The two hidden fields are *where the reader is*, which the URL could have said too; neither
+    // says who is writing — that is the party cookie's answer inside the store.
+    const hidden = [...html.matchAll(/<input\b[^>]*type="hidden"[^>]*>/g)].map(
+      (match) => /\bname="([^"]*)"/.exec(match[0])?.[1] ?? "",
+    );
+    expect(hidden.sort()).toEqual(["aspect", "item"]);
     // The seat is drawn for the reader, from the read that resolved it.
     expect(html).toContain('data-answering-as="initiator"');
   });
 
-  it("posts kind:itemId with the whole 1..5 band on every Aspect", () => {
+  it("draws one Aspect — the resume point — not one long sheet", () => {
+    const html = render(gateFor("initiator"), aspects);
+    expect(html.split("data-aspect-card=").length - 1).toBe(1);
+    expect(html).toContain(items[0].prompt);
+    expect(html).not.toContain(items[1].prompt);
+    expect(html).toContain(`name="feel:${items[0].item_id}"`);
+    expect(html).not.toContain(`name="feel:${items[1].item_id}"`);
+  });
+
+  it("posts kind:itemId with the whole 1..5 band on the Aspect it draws", () => {
     const html = render(gateFor("initiator"), aspects);
     const found = radios(html);
-    expect(found).toHaveLength(items.length * 2 * (SCORE_MAX - SCORE_MIN + 1));
-    for (const item of items) {
-      for (const kind of ["feel", "wish"]) {
-        const values = found
-          .filter((radio) => radio.name === `${kind}:${item.item_id}`)
-          .map((radio) => radio.value);
-        expect(values, `${kind}:${item.item_id}`).toEqual(["1", "2", "3", "4", "5"]);
-      }
+    expect(found).toHaveLength(2 * (SCORE_MAX - SCORE_MIN + 1));
+    for (const kind of ["feel", "wish"]) {
+      const values = found
+        .filter((radio) => radio.name === `${kind}:${items[0].item_id}`)
+        .map((radio) => radio.value);
+      expect(values, `${kind}:${items[0].item_id}`).toEqual(["1", "2", "3", "4", "5"]);
     }
   });
 
@@ -296,7 +315,14 @@ describe("the sheet's markup", () => {
     const answered = items.map((item) =>
       aspectWith(item.item_id, item.item_id === TIME ? { feel: 4, wish: 2 } : null),
     );
-    const html = render(gateFor("initiator", [opinion("initiator", TIME, 4, 2)]), answered);
+    // `?aspect=1` addresses the answered Aspect; without it the sheet resumes past it, which is
+    // the next test in the resume suite.
+    const html = render(
+      gateFor("initiator", [opinion("initiator", TIME, 4, 2)]),
+      answered,
+      { role: "initiator", name: "Avery" },
+      "1",
+    );
     expect(checkedIn(html, `feel:${TIME}`)).toEqual(["4"]);
     expect(checkedIn(html, `wish:${TIME}`)).toEqual(["2"]);
     // The Aspect they have not answered stays blank: a default answer is one they did not give.
@@ -312,7 +338,7 @@ describe("the sheet's markup", () => {
     expect(html).toContain("Coach");
   });
 
-  it("a sealed sheet draws the viewer's own answers disabled, with no form", () => {
+  it("a sealed sheet draws the viewer's own answers with no form and no submit", () => {
     const initiatorAnswers = items.map((item) => aspectWith(item.item_id, { feel: 2, wish: 4 }));
     const sealed = render(
       gateFor(
@@ -326,9 +352,12 @@ describe("the sheet's markup", () => {
       initiatorAnswers,
     );
     expect(sealed).not.toContain("<form");
-    expect(sealed).toContain("<fieldset disabled");
-    expect(checkedIn(sealed, `feel:${TIME}`)).toEqual(["2"]);
-    expect(checkedIn(sealed, `wish:${TIME}`)).toEqual(["4"]);
+    expect(sealed).not.toContain('type="radio"');
+    // The review is the record: every row is drawn, in words, with nothing to change.
+    expect(sealed).toContain(`data-review-row="${TIME}"`);
+    expect(sealed).toContain("Feel 2 · Wish 4");
+    expect(sealed).not.toContain("data-change=");
+    expect(sealed).toContain('data-frozen-status="waiting"');
   });
 });
 

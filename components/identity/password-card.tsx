@@ -3,7 +3,7 @@
 // template-ancestor: components/identity/settings-view.tsx   (variation: two password fields and one outcome band, over the same session)
 
 import { Button } from "@/components/ui/button";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { FormSurface } from "@/components/ui/form-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import {
   type ResetSetOutcome,
 } from "@/lib/auth/reset-token";
 import { fillLabel, itemLabel, sectionOf } from "@/lib/page-copy";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 /**
@@ -78,7 +78,9 @@ export function PasswordCard({
   return (
     <FormSurface>
       <CardHeader>
-        <CardTitle>{band.heading}</CardTitle>
+        <h2 id="settings-password" className="text-base font-semibold text-primary">
+          {band.heading}
+        </h2>
         <CardDescription>{itemLabel(band, hasPassword ? "body-set" : "body-none")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -126,11 +128,13 @@ export function PasswordCard({
 
         {outcome !== null &&
           (outcome.kind === "set" ? (
-            <p aria-live="polite" className="text-sm text-emerald-600">
+            <p aria-live="polite" className="flex items-center gap-2 text-sm text-foreground">
+              <Check aria-hidden="true" className="size-4 shrink-0" />
               {itemLabel(band, "outcome-set")}
             </p>
           ) : (
-            <p aria-live="polite" className="text-sm text-red-600">
+            <p aria-live="polite" className="flex items-center gap-2 text-sm text-foreground">
+              <X aria-hidden="true" className="size-4 shrink-0" />
               {fillLabel(itemLabel(band, resetSetItemId(outcome.kind)), values)}
             </p>
           ))}

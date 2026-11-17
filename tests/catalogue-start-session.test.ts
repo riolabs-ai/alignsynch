@@ -112,7 +112,7 @@ describe("startHrefFor — hrefs that arrive as data", () => {
   });
 
   it("does not rewrite a destination that was never a sign-up page", () => {
-    for (const href of ["checkout", "/pricing", "/#questions", "/relationship-types"]) {
+    for (const href of ["checkout", "/pricing", "/#questions", "/relationship-templates"]) {
       expect(startHrefFor(href, MEMBER)).toBe(href);
       expect(startHrefFor(href, VISITOR)).toBe(href);
     }
