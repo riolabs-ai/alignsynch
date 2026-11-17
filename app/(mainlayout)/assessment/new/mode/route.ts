@@ -1,7 +1,7 @@
 /**
  * `POST /assessment/new/mode` — stage 2 saves its two choices and hands over to stage 3 (#689).
  *
- * Before this endpoint existed the Mode form posted straight to `CREATE_INSTANCE_PATH`, and the
+ * Before this endpoint existed the Mode form posted straight to `CREATE_SESSION_PATH`, and the
  * relationship was created by the *second* of the six stages. The approved flow
  * (`docs/review/artifacts/prototype-relationship-lifecycle-v5.html`, #659) puts **Aspects**
  * between Mode and the create, and the create itself behind the last stage's own control — so

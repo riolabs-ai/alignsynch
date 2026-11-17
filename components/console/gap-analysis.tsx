@@ -20,7 +20,7 @@
  *                   Soft / Full are partitions of the read, not filters over an operator's list.
  *                   `stat-card-grid.tsx` keeps its one job rather than growing a non-linking
  *                   variant for this caller.
- *   the kinds table `components/ui/table.tsx`, as `components/admin/instance-registry.tsx`
+ *   the kinds table `components/ui/table.tsx`, as `components/admin/session-registry.tsx`
  *                   already composes it: the same eight rows, one `<TableRow>` per kind, the
  *                   five column labels still resolved from the fixture.
  *   the failure     `components/ui/alert.tsx` with the `warning` variant — the amber block is the
@@ -98,7 +98,7 @@ function KindTableRow({
     const reason = row.reading.reason;
     const sentence =
       reason === "withheld"
-        ? fillLabel(itemLabel(absence, "withheld"), { count: reading.instances, floor })
+        ? fillLabel(itemLabel(absence, "withheld"), { count: reading.sessions, floor })
         : reason === "no-advanced"
           ? itemLabel(absence, "no-advanced")
           : itemLabel(absence, "no-answer");
@@ -148,17 +148,17 @@ function SettingSection({
   const absence = sectionOf(copy, "absence");
 
   const outcome =
-    reading.instances === 0
+    reading.sessions === 0
       ? itemLabel(section, "none")
       : reading.aligned === null || reading.unmet === null
         ? fillLabel(itemLabel(section, "withheld"), {
-            count: reading.instances,
+            count: reading.sessions,
             floor: aggregate.floor,
           })
         : fillLabel(itemLabel(section, "outcome"), {
             aligned: reading.aligned,
             unmet: reading.unmet,
-            instances: reading.instances,
+            instances: reading.sessions,
             limit: reading.limit,
           });
 
@@ -232,8 +232,8 @@ function SettingSection({
         {/* Each id is a literal at its own `itemLabel` call so E23 can resolve it; one
             relationship is the case a plural noun would get wrong ("1 relationships"). */}
         {fillLabel(
-          reading.instances === 1 ? itemLabel(kinds, "count-one") : itemLabel(kinds, "count"),
-          { count: reading.gaps, instances: reading.instances },
+          reading.sessions === 1 ? itemLabel(kinds, "count-one") : itemLabel(kinds, "count"),
+          { count: reading.gaps, instances: reading.sessions },
         )}
       </p>
     </section>
@@ -259,8 +259,8 @@ export function AdminGapsView({ copy, aggregate }: { copy: PageCopy; aggregate: 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {card("complete", aggregate.complete)}
           {card("excluded", aggregate.excluded)}
-          {card("soft", aggregate.settings.find((s) => s.setting === "soft")?.instances ?? 0)}
-          {card("full", aggregate.settings.find((s) => s.setting === "full")?.instances ?? 0)}
+          {card("soft", aggregate.settings.find((s) => s.setting === "soft")?.sessions ?? 0)}
+          {card("full", aggregate.settings.find((s) => s.setting === "full")?.sessions ?? 0)}
         </div>
       </section>
 

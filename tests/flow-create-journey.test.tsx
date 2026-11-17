@@ -51,7 +51,7 @@ const detail: LibraryTemplateDetail = {
     status: "published",
     createdAt: "2026-11-01T00:00:00.000Z",
     aspectCount: 2,
-    instanceCount: 3,
+    sessionCount: 3,
     authorship: "built-in",
   },
   aspects: [

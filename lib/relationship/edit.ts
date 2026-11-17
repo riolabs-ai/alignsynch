@@ -25,7 +25,7 @@
  *     were asked and the answers were shaped by it, so moving it would rewrite a score by
  *     relabelling it. They are chosen at **publish** instead, where no row exists yet.
  *   - a **new Aspect** on a sheet somebody has already answered leaves the sheet incomplete
- *     (`V6`: every party answers every Aspect, and a complete instance must), so it is refused
+ *     (`V6`: every party answers every Aspect, and a complete session must), so it is refused
  *     with `answers-sealed` — the honest path to a new question is a new round, which is its own
  *     card.
  *

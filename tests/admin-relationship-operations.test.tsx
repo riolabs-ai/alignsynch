@@ -52,7 +52,7 @@ function seat(overrides: Partial<AdminSeat> = {}): AdminSeat {
 /** The row the screen draws, defaulted to a live relationship with an unclaimed invitation. */
 function detail(overrides: Partial<AdminRelationshipDetail> = {}): AdminRelationshipDetail {
   return {
-    instanceRecordId: "inst-1",
+    sessionRecordId: "inst-1",
     relationshipId: "relationship-inst-1",
     slug: "avery-rowan",
     name: "Avery & Rowan",

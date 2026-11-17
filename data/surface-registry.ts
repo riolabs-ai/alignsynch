@@ -144,7 +144,7 @@ export const surfaceRegistry: readonly Surface[] = [
     // Live since R2 (#427, PR #428). The sheet posts to `…/answers`, and `submitAnswers()` records
     // one party's whole sheet — one row per Aspect — under the role the party cookie resolves
     // inside its transaction; it answers 409 once that party has accepted (403 for a browser that
-    // is not a party, 404 for an unknown instance). What it renders is real rows, not a layout: the
+    // is not a party, 404 for an unknown session). What it renders is real rows, not a layout: the
     // seat comes from Postgres and the prefills are that seat's own `opinion` rows. It is reached
     // from the acceptance screen's "answer first" band and from the locked report's "Answer your
     // Aspects" CTA (`report-view.tsx`, which points here and not at `…/answers` — a GET of that

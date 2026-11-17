@@ -493,7 +493,7 @@ async function main() {
   step(
     "✓",
     "seed",
-    `${bundle.payload.templates.length} template(s) + ${bundle.payload.instances.length} instance(s) from ${BUNDLE_FILE} (${seconds(seed.ms)})`,
+    `${bundle.payload.templates.length} template(s) + ${bundle.payload.instances.length} session(s) from ${BUNDLE_FILE} (${seconds(seed.ms)})`,
   );
 
   // --- the data half: the rows the seed just wrote, counted, never remembered -------------------

@@ -46,8 +46,8 @@ export interface LibraryTemplate {
   readonly createdAt: string;
   /** `count(item)` — how many Aspects the template asks. */
   readonly aspectCount: number;
-  /** Instances copied from this template. Archiving never changes it. */
-  readonly instanceCount: number;
+  /** Sessions copied from this template. Archiving never changes it. */
+  readonly sessionCount: number;
   readonly authorship: TemplateAuthorship;
 }
 
@@ -78,9 +78,9 @@ export function authorshipOf(
 }
 
 /**
- * May this viewer use (open, duplicate, start an instance from) this template?
+ * May this viewer use (open, duplicate, start a session from) this template?
  *
- * The one predicate the read, the row actions and `createInstanceFromTemplate` share. A
+ * The one predicate the read, the row actions and `createSessionFromTemplate` share. A
  * built-in is usable by every account, a template is usable by the account that wrote it and
  * by nobody else, and a template written before the author column existed is a built-in.
  */

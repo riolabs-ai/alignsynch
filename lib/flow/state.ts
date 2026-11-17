@@ -1,7 +1,7 @@
 /**
  * The two-party flow's state — derived from rows, never stored (#146).
  *
- * The instance's status is five values, and every one of them is a function of the rows that
+ * The session's status is five values, and every one of them is a function of the rows that
  * already exist:
  *
  *   draft                   the relationship has never been sent (#975). Nothing was invited and
@@ -58,7 +58,7 @@ import {
  * Status
  * ------------------------------------------------------------------ */
 
-export const INSTANCE_STATUSES = [
+export const SESSION_STATUSES = [
   /**
    * The relationship has never been published (#975): no invitation went out and nothing was
    * charged, so the session is not waiting on anybody. Answered **before** the Counterparty check,
@@ -78,11 +78,11 @@ export const INSTANCE_STATUSES = [
   "voided",
 ] as const;
 
-export type InstanceStatus = (typeof INSTANCE_STATUSES)[number];
+export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
-/** The counts one instance contributes to its own status. */
-export interface InstanceProgress {
-  /** Aspects in the instance's copy. `0` is a broken instance, and never `complete`. */
+/** The counts one session contributes to its own status. */
+export interface SessionProgress {
+  /** Aspects in the session's copy. `0` is a broken session, and never `complete`. */
   readonly aspectCount: number;
   /** The Counterparty claims the invite before they exist as a party at all. */
   readonly hasCounterparty: boolean;
@@ -102,7 +102,7 @@ export interface InstanceProgress {
    * `session.voided_at IS NOT NULL` — an operator ended this session (#503).
    *
    * `voided` is the only input here that is not a count, because it
-   * is the only fact about an instance that no `party` or `opinion` row can imply: a person
+   * is the only fact about a session that no `party` or `opinion` row can imply: a person
    * decided the session is over. It is `true`/`false` and never an instant, for the same reason
    * the two acceptances are counts — this shape is fed by SQL, and the read that fills it asks
    * `voided_at IS NOT NULL` in the same statement as the counts.
@@ -171,7 +171,7 @@ export interface InstanceProgress {
  * means nothing was sent at all, and it is decided by the record's own `published_at` — supplied as
  * `published: false`. `undefined` (not measured) falls through to the old answer unchanged.
  */
-export function instanceStatusOf(progress: InstanceProgress): InstanceStatus {
+export function sessionStatusOf(progress: SessionProgress): SessionStatus {
   if (progress.voided === true) return "voided";
   if (progress.published === false) return "draft";
   if (!progress.hasCounterparty) return "awaiting_counterparty";
@@ -188,17 +188,17 @@ export function instanceStatusOf(progress: InstanceProgress): InstanceStatus {
 }
 
 /** Whether one seat has accepted the session — the hinge, per party. */
-export function acceptedBy(progress: InstanceProgress, role: PartyRole): boolean {
+export function acceptedBy(progress: SessionProgress, role: PartyRole): boolean {
   return (role === "initiator" ? progress.initiatorAccepted : progress.counterpartyAccepted) >= 1;
 }
 
 /** How many of the two seats have accepted. `2` is `complete`; a count, never a verdict. */
-export function acceptedCount(progress: InstanceProgress): number {
+export function acceptedCount(progress: SessionProgress): number {
   return (progress.initiatorAccepted >= 1 ? 1 : 0) + (progress.counterpartyAccepted >= 1 ? 1 : 0);
 }
 
 /** How many Aspects each party still owes. `complete` owes none. */
-export function answersRemaining(progress: InstanceProgress): Record<PartyRole, number> {
+export function answersRemaining(progress: SessionProgress): Record<PartyRole, number> {
   const owed = (answered: number) => Math.max(0, progress.aspectCount - answered);
   return {
     initiator: owed(progress.initiatorAnswered),
@@ -219,7 +219,7 @@ export function answersRemaining(progress: InstanceProgress): Record<PartyRole, 
  * once it is scored. A component cannot widen this by asking for it: the roles are the return
  * value, and the read path (`lib/flow/store.ts`) only queries the opinions these roles name.
  */
-export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus): PartyRole[] {
+export function visibleRoles(viewer: PartyRole | "coach", status: SessionStatus): PartyRole[] {
   if (viewer === "coach") return status === "complete" ? ["initiator", "counterparty"] : [];
   if (status === "complete") return ["initiator", "counterparty"];
   return [viewer];
@@ -248,7 +248,7 @@ export function visibleRoles(viewer: PartyRole | "coach", status: InstanceStatus
  * never sent has no invitation for a sheet to belong to, and the write paths that could reach it
  * read their own row rather than this predicate.
  */
-export function maySubmit(status: InstanceStatus, viewerAccepted: boolean): boolean {
+export function maySubmit(status: SessionStatus, viewerAccepted: boolean): boolean {
   const open = status === "answering" || status === "awaiting_counterparty";
   return open && !viewerAccepted;
 }
@@ -305,7 +305,7 @@ export type RawAnswer = {
  *
  * `zOpinions` is imported rather than re-implemented: a score is an integer in 1..5
  * because `content/assessment.ts` says so, and the DB layer learns the rule from the same
- * place the fixtures do. Every Aspect the instance holds must arrive exactly once —
+ * place the fixtures do. Every Aspect the session holds must arrive exactly once —
  * a submit is the party's whole sheet, not a patch, so a missing Aspect is a refusal and
  * not a partial write.
  *
@@ -425,7 +425,7 @@ function toScore(value: string | undefined): number {
  * The order the screen names who is still to answer: the viewer's opposite first, because
  * it is the other person the reader is waiting for, then the viewer themselves.
  */
-export function waitingOn(progress: InstanceProgress, hasInitiator: boolean): PartyRole[] {
+export function waitingOn(progress: SessionProgress, hasInitiator: boolean): PartyRole[] {
   const owed = answersRemaining(progress);
   const waiting: PartyRole[] = [];
   // An unclaimed invite means the Counterparty has not even been named a party yet, and
@@ -436,7 +436,7 @@ export function waitingOn(progress: InstanceProgress, hasInitiator: boolean): Pa
 }
 
 /* ------------------------------------------------------------------ *\
- * One row of "my instances" (#213)
+ * One row of "my sessions" (#213)
  * ------------------------------------------------------------------ */
 
 /**
@@ -444,7 +444,7 @@ export function waitingOn(progress: InstanceProgress, hasInitiator: boolean): Pa
  * mentions anything the viewer has not seen themselves.
  *
  *   yours-to-answer   the viewer still owes an Aspect. Their own sheet, their own arithmetic.
- *   awaiting-other    the viewer has answered everything and the instance is not complete, so
+ *   awaiting-other    the viewer has answered everything and the session is not complete, so
  *                     either the other party has not answered or one of the two has not accepted
  *                     yet. The row says *awaiting* and nothing else.
  *   complete          both answered every Aspect **and both accepted**: the Gap is open to both.
@@ -457,32 +457,32 @@ export function waitingOn(progress: InstanceProgress, hasInitiator: boolean): Pa
  *
  * The values are the copy item ids (`data/pages/assessment-instances.ts`), kebab-case like every
  * other id in the content model, so the view joins on them with `itemLabel(state, state)` the way
- * the instance screen joins a `?problem=` code.
+ * the session screen joins a `?problem=` code.
  *
  * `draft` is the fourth, and it is not a thing the viewer owes (#975): the relationship has never
  * been sent, so nothing is waiting on them and nothing is waiting on anybody else. It is answered
- * from the record's `published_at` (via `instanceStatusOf`), which is why it exists here rather
+ * from the record's `published_at` (via `sessionStatusOf`), which is why it exists here rather
  * than as a sentence the view invented.
  *
  * Pure, like the rest of this module: both counts come from rows the caller already read, and
- * `instanceStatusOf` is reused so the list and the screen can never disagree about `complete`.
+ * `sessionStatusOf` is reused so the list and the screen can never disagree about `complete`.
  */
-export const MY_INSTANCE_STATES = [
+export const MY_SESSION_STATES = [
   "draft",
   "yours-to-answer",
   "awaiting-other",
   "complete",
 ] as const;
 
-export type MyInstanceState = (typeof MY_INSTANCE_STATES)[number];
+export type MySessionState = (typeof MY_SESSION_STATES)[number];
 
 /** The counts one row contributes, plus which side of it the viewer is. */
-export interface MyInstanceProgress extends InstanceProgress {
+export interface MySessionProgress extends SessionProgress {
   readonly viewerRole: PartyRole;
 }
 
 /** The viewer's own answered count. Never the other party's — see the comment above. */
-export function viewerAnsweredCount(progress: MyInstanceProgress): number {
+export function viewerAnsweredCount(progress: MySessionProgress): number {
   return progress.viewerRole === "initiator"
     ? progress.initiatorAnswered
     : progress.counterpartyAnswered;
@@ -491,15 +491,15 @@ export function viewerAnsweredCount(progress: MyInstanceProgress): number {
 /**
  * The row's state.
  *
- * A copy with no Aspects is never `complete` (`instanceStatusOf`), and it is not
+ * A copy with no Aspects is never `complete` (`sessionStatusOf`), and it is not
  * `yours_to_answer` either — there is nothing to answer, so the honest row is `awaiting_other`
  * rather than an invitation to fill in a form that does not exist.
  *
  * **A draft is answered first (#975).** Nothing was sent, so "you owe the sheet" and "they owe the
  * sheet" are both false statements about it; the row's own word is that it has not gone out.
  */
-export function myInstanceStateOf(progress: MyInstanceProgress): MyInstanceState {
-  const status = instanceStatusOf(progress);
+export function mySessionStateOf(progress: MySessionProgress): MySessionState {
+  const status = sessionStatusOf(progress);
   if (status === "draft") return "draft";
   if (status === "complete") return "complete";
   const answered = viewerAnsweredCount(progress);
@@ -514,7 +514,7 @@ export function myInstanceStateOf(progress: MyInstanceProgress): MyInstanceState
 /**
  * Whether a row's `complete` is news to the viewer.
  *
- *   unseen   the instance is complete and this party has not opened it since — the marker
+ *   unseen   the session is complete and this party has not opened it since — the marker
  *   seen     everything else, including every row that is not complete
  *
  * The two values are the decision, so the view cannot invent a third and the pure suite can
@@ -524,12 +524,12 @@ export function myInstanceStateOf(progress: MyInstanceProgress): MyInstanceState
  * write from a party once they have accepted, and the session cannot complete until both have — so
  * there is no "complete, but from before" case for a timestamp comparison to distinguish.
  * `party.unlock_seen_at` is therefore a mark,
- * not a clock: `NULL` is "this party has never opened a complete instance", and the moment they
+ * not a clock: `NULL` is "this party has never opened a complete session", and the moment they
  * do, the page writes one and the marker is gone for them (`markUnlockSeen()` in
  * `lib/flow/store.ts` writes it, and only for the party who opened it).
  *
  * **The blind rule is untouched.** The mark is arithmetic over a count and a column: it says
- * *that* the instance is complete, which the row already said, and nothing about what is in it —
+ * *that* the session is complete, which the row already said, and nothing about what is in it —
  * no score, no count, no Gap value. `unseen` is only ever derivable from `complete`, so a row
  * cannot use it to tell a reader that somebody else is partway through.
  *
@@ -539,6 +539,6 @@ export const UNLOCK_MARKS = ["unseen", "seen"] as const;
 
 export type UnlockMark = (typeof UNLOCK_MARKS)[number];
 
-export function unlockMarkOf(state: MyInstanceState, unlockSeenAt: Date | null): UnlockMark {
+export function unlockMarkOf(state: MySessionState, unlockSeenAt: Date | null): UnlockMark {
   return state === "complete" && unlockSeenAt === null ? "unseen" : "seen";
 }

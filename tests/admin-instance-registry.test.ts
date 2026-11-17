@@ -7,28 +7,28 @@
  *   1. **The filters filter.** Each axis is asserted by the row ids it keeps, not by a count that
  *      a second bug could satisfy — the failure this catches is a filter that renders but matches
  *      nothing, which is exactly what an operator would not notice on a quiet database.
- *   2. **A row cannot carry an opinion.** `AdminInstanceRow` is the whole of what crosses to the
+ *   2. **A row cannot carry an opinion.** `AdminSessionRow` is the whole of what crosses to the
  *      browser, and the assertion is over its *keys*: adding a `feel`, a `gap` or an
  *      `answered` field to that type fails this test, which is the cheap way to keep "admins see
  *      the stage, not the answers" from becoming a comment nobody reads.
  *
  * The stage cases go through `stageOf()` rather than restating its arithmetic: an aligned
- * instance is one whose Gaps meet its Setting (Soft tolerates 1, Full does not), so the two
+ * session is one whose Gaps meet its Setting (Soft tolerates 1, Full does not), so the two
  * assertions below are the same facts the report draws.
  */
 import { describe, expect, it } from "vitest";
 
 import { gapOf } from "@/content/record";
-import type { AspectOpinions } from "@/lib/admin/instance-registry";
+import type { AspectOpinions } from "@/lib/admin/session-registry";
 import {
   aspectGapsOf,
   filterRegistry,
   NO_FILTER,
   registryRowOf,
   seatStateOf,
-  type AdminInstanceRow,
+  type AdminSessionRow,
   type RegistryFacts,
-} from "@/lib/admin/instance-registry";
+} from "@/lib/admin/session-registry";
 
 const NOW = new Date("2026-10-31T12:00:00.000Z");
 const YESTERDAY = new Date("2026-10-30T12:00:00.000Z");
@@ -46,10 +46,10 @@ function pair(itemId: string, left: number, right: number): AspectOpinions {
 const AGREED = aspectGapsOf([pair("aspect-trust", 4, 4)]);
 const ONE_POINT = aspectGapsOf([pair("aspect-trust", 4, 5)]);
 
-/** The facts of one instance, defaulted to a claimed, complete, Basic/Soft relationship. */
+/** The facts of one session, defaulted to a claimed, complete, Basic/Soft relationship. */
 function facts(overrides: Partial<RegistryFacts> = {}): RegistryFacts {
   return {
-    instanceRecordId: "assessment-instance-avery-rowan",
+    sessionRecordId: "assessment-instance-avery-rowan",
     slug: "avery-rowan",
     name: null,
     templateTitle: "Parent & Child",
@@ -165,7 +165,7 @@ describe("the row is what an operator may see, and nothing else", () => {
         "counterparty",
         "created",
         "initiator",
-        "instanceRecordId",
+        "sessionRecordId",
         "invite",
         "lastActivity",
         "mode",
@@ -193,10 +193,10 @@ describe("the row is what an operator may see, and nothing else", () => {
 });
 
 describe("the four filters", () => {
-  const rows: AdminInstanceRow[] = [
+  const rows: AdminSessionRow[] = [
     registryRowOf(
       facts({
-        instanceRecordId: "i1",
+        sessionRecordId: "i1",
         slug: "invited-live",
         counterparty: null,
         counterpartyAnswered: 0,
@@ -207,7 +207,7 @@ describe("the four filters", () => {
     ),
     registryRowOf(
       facts({
-        instanceRecordId: "i2",
+        sessionRecordId: "i2",
         slug: "invited-stalled",
         counterparty: null,
         counterpartyAnswered: 0,
@@ -218,7 +218,7 @@ describe("the four filters", () => {
     ),
     registryRowOf(
       facts({
-        instanceRecordId: "i3",
+        sessionRecordId: "i3",
         slug: "connected-advanced",
         mode: "advanced",
         counterpartyAnswered: 0,
@@ -227,11 +227,11 @@ describe("the four filters", () => {
       NOW,
     ),
     registryRowOf(
-      facts({ instanceRecordId: "i4", slug: "sharing-full", setting: "full" }),
+      facts({ sessionRecordId: "i4", slug: "sharing-full", setting: "full" }),
       ONE_POINT,
       NOW,
     ),
-    registryRowOf(facts({ instanceRecordId: "i5", slug: "aligned-soft" }), AGREED, NOW),
+    registryRowOf(facts({ sessionRecordId: "i5", slug: "aligned-soft" }), AGREED, NOW),
   ];
 
   const ids = (filter: Parameters<typeof filterRegistry>[1]) =>

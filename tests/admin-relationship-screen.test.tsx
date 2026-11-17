@@ -4,7 +4,7 @@
  * `tests/admin-relationship-ops.test.ts` pins the **write** half of the card: `voidSession()` and
  * `forceCloseSeat()` go through `act()` in one audited transaction, refuse below `admin`, and
  * leave a `before`/`after` pair on `admin_action`. `tests/flow-void.test.ts` pins the derivation:
- * `instanceStatusOf()` answers `voided` before it reads a count and neither writer can reopen it.
+ * `sessionStatusOf()` answers `voided` before it reads a count and neither writer can reopen it.
  *
  * Neither of those says the operator or the party can **see** it, and that is the half this file
  * covers — the two sentences the card is accepted on:
@@ -46,7 +46,7 @@ import { assessments } from "@/data/assessments";
 import { adminRelationshipPageCopy } from "@/data/pages/admin-relationship";
 import type { AdminRelationshipDetail } from "@/lib/db/admin-relationship";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 import type { RepairInput, RepairOutcome } from "@/lib/admin/repairs";
 
 /* ------------------------------------------------------------------ *
@@ -58,9 +58,9 @@ const OPERATOR = "operator-2f9c";
 /** A detail the derivation reads as `voided`: one seat answered, the operator ended it. */
 function voidedDetail(): AdminRelationshipDetail {
   return {
-    instanceRecordId: "instance-void-test",
-    relationshipId: "relationship-instance-void-test",
-    slug: "instance-void-test",
+    sessionRecordId: "session-void-test",
+    relationshipId: "relationship-session-void-test",
+    slug: "session-void-test",
     name: "Avery and Rowan",
     templateTitle: "Relationship Basics",
     mode: "basic",
@@ -141,7 +141,7 @@ describe("void, on the operator's screen", () => {
   it("prints the derived status and takes every band a voided session cannot use away", () => {
     const html = adminMarkup(voidedDetail());
 
-    // The status is `instanceStatusOf()`'s answer, drawn through the copy fixture's own label.
+    // The status is `sessionStatusOf()`'s answer, drawn through the copy fixture's own label.
     expect(html).toContain("Voided");
 
     expect(bandIsDisabled(html, "void")).toBe(true);
@@ -218,10 +218,10 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-report-void-test";
+const SESSION_ID = "session-report-void-test";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -235,7 +235,7 @@ const ACCEPTED_AT = new Date("2026-11-03T10:00:00.000Z");
 /** Both seats accepted; `impersonatedBy` is the operator one of them was closed by, or null. */
 function parties(impersonatedBy: string | null): PartyRow[] {
   return (["initiator", "counterparty"] as const).map((role) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     name: role === "initiator" ? "Avery" : "Rowan",
     // The operator's write lands on the Counterparty's seat — the stuck one.
@@ -248,7 +248,7 @@ function parties(impersonatedBy: string | null): PartyRow[] {
 
 function opinionsFor(role: PartyRole): OpinionRow[] {
   return template.items.map((item) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     item_id: item.id,
     feel: 3,
@@ -258,10 +258,10 @@ function opinionsFor(role: PartyRole): OpinionRow[] {
   }));
 }
 
-function completeRows(impersonatedBy: string | null): FlowInstanceRows {
+function completeRows(impersonatedBy: string | null): FlowSessionRows {
   return {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "relationship-basics-report-test",
       record_type: "assessment",
       status: "draft",
@@ -271,8 +271,8 @@ function completeRows(impersonatedBy: string | null): FlowInstanceRows {
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-report-test",
       mode: "basic",

@@ -23,12 +23,12 @@
  * **Which party this is, is on the screen.** The band under the header names the viewer and
  * the role their answers are recorded under, on every visit and in every state (#202) — a
  * session that finds itself answering as somebody else has no way to notice otherwise, and
- * that silence is what made a link click able to corrupt a whole instance's Gap.
+ * that silence is what made a link click able to corrupt a whole session's Gap.
  *
  * **Which mode this is, is on the screen too** (#213): a badge under the title names the mode
- * the instance was played in (`data-mode` for a test), because a reader looking at a report
+ * the session was played in (`data-mode` for a test), because a reader looking at a report
  * has to be able to tell a two-score sheet from a four-score one. The mode is a fact about
- * the instance, so it is drawn, not chosen — there is no control here that changes it.
+ * the session, so it is drawn, not chosen — there is no control here that changes it.
  *
  * **The invitation panel draws its state, not a flag** (#266). `screen.invite.state` is
  * `unclaimed`, `expired` or `claimed`, derived at read time from `expires_at` and `claimed_at`
@@ -137,7 +137,7 @@ const INVITE_TONES: Record<InviteDisplayState, string> = {
     "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
 };
 
-export function AssessmentInstanceView({
+export function AssessmentSessionView({
   screen,
   copy,
   problem,
@@ -160,7 +160,7 @@ export function AssessmentInstanceView({
   inviteNotice?: InviteNotice;
   /**
    * The re-invite's refusal code, from `?resend=` (#275). Rendered as the fixture's sentence for
-   * that code, above the panels and never inside them: `instance-complete` arrives on an instance
+   * that code, above the panels and never inside them: `instance-complete` arrives on a session
    * whose screen is the report, where the invitation panel is not drawn at all, so a sentence
    * placed inside the panel would be a refusal nobody could read.
    */
@@ -237,7 +237,7 @@ export function AssessmentInstanceView({
     screen.viewer.role === "initiator" ? (screen.counterpartyName ?? "") : screen.initiatorName;
   const acceptHref =
     !isCoach && screen.status === "answering" && ownSheetComplete && !screen.viewerAccepted
-      ? acceptPath(screen.instanceRecordId)
+      ? acceptPath(screen.sessionRecordId)
       : null;
 
   const names = screen.waiting.map((role) =>
@@ -316,7 +316,7 @@ export function AssessmentInstanceView({
         <div className="mb-6">
           <SubmissionConfirmation
             copy={copy}
-            instanceRecordId={screen.instanceRecordId}
+            sessionRecordId={screen.sessionRecordId}
             otherName={otherName}
             acceptHref={acceptHref}
           />
@@ -506,7 +506,7 @@ export function AssessmentInstanceView({
               {canReinvite ? (
                 <ReinviteForm
                   copy={copy}
-                  action={reinvitePath(screen.instanceRecordId)}
+                  action={reinvitePath(screen.sessionRecordId)}
                   email={screen.invite.email}
                   counterpartyName={screen.invite.counterpartyName}
                 />
@@ -562,7 +562,7 @@ export function AssessmentInstanceView({
             <AnswerForm
               copy={copy}
               aspects={screen.aspects}
-              action={answersPath(screen.instanceRecordId)}
+              action={answersPath(screen.sessionRecordId)}
               hasAnswers={answered}
               mode={screen.mode}
             />
@@ -585,7 +585,7 @@ export function AssessmentInstanceView({
               itemId: aspect.itemId,
               prompt: aspect.prompt,
             }))}
-            action={stepsPath(screen.instanceRecordId)}
+            action={stepsPath(screen.sessionRecordId)}
             canMark={!isCoach}
             aligned={screen.report.verdict.aligned}
             copy={copy}

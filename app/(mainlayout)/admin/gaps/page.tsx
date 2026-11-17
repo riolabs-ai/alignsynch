@@ -14,7 +14,7 @@ import type { Metadata } from "next";
  * This is the one surface in the console that is genuinely relationship-specific. Its generic
  * form is *response analytics*: stat cards, one distribution per measure, a comparison axis —
  * a "measure across a population" dashboard that any expression reuses. What varies for
- * AlignSynch is only the measure (`gapOf` over eight kinds), the population (instances both
+ * AlignSynch is only the measure (`gapOf` over eight kinds), the population (sessions both
  * parties finished) and the comparison (each relationship read under its own Setting). The body
  * therefore takes the aggregate as props (`components/console/gap-analysis.tsx`) and the numbers
  * are computed by a pure module (`lib/admin/gap-aggregates.ts`); this file is the gate, the read

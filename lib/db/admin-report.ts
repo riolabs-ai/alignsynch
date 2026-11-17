@@ -3,16 +3,16 @@
  *
  * Three reads, and each exists because a different question is being asked:
  *
- *   `readReportSource()`     is there a report for this instance, and if so what does it say?
+ *   `readReportSource()`     is there a report for this session, and if so what does it say?
  *   `readPartySubmission()`  what did one seat actually answer? — the PII read behind the gate
  *   `statusOfRow()`          the completeness answer on its own, so `act()` can refuse a
- *                            regeneration of an instance that has nothing to regenerate
+ *                            regeneration of a session that has nothing to regenerate
  *
- * **Why the status is read before the model.** `lib/db/rows.ts` parses a whole instance through
- * `zAssessmentInstance`, and that schema requires **both** parties to answer **every** Aspect —
+ * **Why the status is read before the model.** `lib/db/rows.ts` parses a whole session through
+ * `zAssessmentSession`, and that schema requires **both** parties to answer **every** Aspect —
  * which is exactly right for a report and exactly wrong for a screen that has to say "there is no
  * report yet". A session with one seat still answering would throw through the parse, so the
- * status is decided from counts in SQL first, and the model is built only for an instance that is
+ * status is decided from counts in SQL first, and the model is built only for a session that is
  * `complete`. That is the same order `lib/flow/state.ts` states: completeness is derived from the
  * rows, and nothing is drawn from a partial one.
  *
@@ -31,8 +31,8 @@
  * `ScreenReaders` seam when `act()` needs the same read inside its transaction — so the report a
  * regeneration hashes is the report the transaction read, not a second read afterwards.
  */
-import type { Assessment, AssessmentInstance, PartyRole } from "@/content/assessment";
-import { instanceStatusOf, type InstanceProgress, type InstanceStatus } from "@/lib/flow/state";
+import type { Assessment, AssessmentSession, PartyRole } from "@/content/assessment";
+import { sessionStatusOf, type SessionProgress, type SessionStatus } from "@/lib/flow/state";
 import type { AssessmentReport } from "@/lib/assessment-report";
 import { assessmentReport } from "@/lib/assessment-report";
 import {
@@ -42,7 +42,7 @@ import {
 } from "@/lib/db/assessments";
 
 /**
- * Why an instance has no report to draw.
+ * Why a session has no report to draw.
  *
  *   not-complete      a seat is still answering, or an acceptance is missing (#R2)
  *   voided            an operator ended the session; the rows are intact, the deliverable is not
@@ -52,14 +52,14 @@ export type ReportUnavailableReason = "not-complete" | "voided" | "template-miss
 
 /** Everything the report screen, the export and the regeneration need, in one read. */
 export interface ReportSource {
-  readonly instanceRecordId: string;
-  readonly status: InstanceStatus;
-  /** Aspects in the instance's copy — 0 is a broken instance and never `complete`. */
+  readonly sessionRecordId: string;
+  readonly status: SessionStatus;
+  /** Aspects in the session's copy — 0 is a broken session and never `complete`. */
   readonly aspects: number;
   readonly voidedAt: string | null;
-  /** The records and their projection, or `null` when the instance is not reportable. */
+  /** The records and their projection, or `null` when the session is not reportable. */
   readonly document: {
-    readonly instance: AssessmentInstance;
+    readonly session: AssessmentSession;
     readonly template: Assessment;
     readonly report: AssessmentReport;
   } | null;
@@ -87,7 +87,7 @@ export interface SubmissionAnswer {
  * selects it.
  */
 export interface PartySubmission {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   readonly role: PartyRole;
   readonly name: string;
   readonly submittedAt: string | null;
@@ -99,9 +99,9 @@ export interface PartySubmission {
  * The completeness answer, from counts — one statement, no model parse.
  *
  * `aspects` is counted off `item`, the two answered counts off `opinion`, and the two acceptances
- * off `party.accepted_at`; `instanceStatusOf()` then decides, which is the same function every
+ * off `party.accepted_at`; `sessionStatusOf()` then decides, which is the same function every
  * other surface asks (`lib/flow/state.ts`). A `session` row that does not exist answers no rows
- * and the caller reports "no such instance".
+ * and the caller reports "no such session".
  */
 const STATUS_SQL = `
   SELECT
@@ -187,25 +187,25 @@ function isoOf(value: string | Date | null): string | null {
 /**
  * The status and the counts, on their own.
  *
- * `act()`'s regeneration asks this inside its transaction so a refusal costs no audit row: an
- * instance that is not complete has nothing to regenerate, and recording "regenerated" over it
+ * `act()`'s regeneration asks this inside its transaction so a refusal costs no audit row: a
+ * session that is not complete has nothing to regenerate, and recording "regenerated" over it
  * would be the log inventing work.
  */
 export async function readReportStatus(
-  instanceRecordId: string,
+  sessionRecordId: string,
   readers: ScreenReaders = POOL_SCREEN_READERS,
 ): Promise<
   | {
-      readonly status: InstanceStatus;
-      readonly progress: InstanceProgress;
+      readonly status: SessionStatus;
+      readonly progress: SessionProgress;
       readonly voidedAt: string | null;
     }
   | undefined
 > {
-  const [row] = await readers.rowsOf<StatusRow>(STATUS_SQL, [instanceRecordId]);
+  const [row] = await readers.rowsOf<StatusRow>(STATUS_SQL, [sessionRecordId]);
   if (row === undefined) return undefined;
 
-  const progress: InstanceProgress = {
+  const progress: SessionProgress = {
     aspectCount: Number(row.aspects),
     hasCounterparty: row.has_counterparty === true,
     initiatorAnswered: Number(row.initiator_answered),
@@ -216,7 +216,7 @@ export async function readReportStatus(
   };
 
   return {
-    status: instanceStatusOf(progress),
+    status: sessionStatusOf(progress),
     progress,
     voidedAt: isoOf(row.voided_at),
   };
@@ -225,19 +225,19 @@ export async function readReportStatus(
 /**
  * Everything the report screen needs, or `undefined` when the id names no session.
  *
- * Two statements for a complete instance (the status, then the records); one for an incomplete
+ * Two statements for a complete session (the status, then the records); one for an incomplete
  * one, because there is nothing else to read. Both go through the same `readers`, so a caller
  * inside a transaction reads one snapshot.
  */
 export async function readReportSource(
-  instanceRecordId: string,
+  sessionRecordId: string,
   readers: ScreenReaders = POOL_SCREEN_READERS,
 ): Promise<ReportSource | undefined> {
-  const status = await readReportStatus(instanceRecordId, readers);
+  const status = await readReportStatus(sessionRecordId, readers);
   if (status === undefined) return undefined;
 
   const base = {
-    instanceRecordId,
+    sessionRecordId,
     status: status.status,
     aspects: status.progress.aspectCount,
     voidedAt: status.voidedAt,
@@ -250,7 +250,7 @@ export async function readReportSource(
     return { ...base, document: null, unavailable: "not-complete" };
   }
 
-  const screen = await readAssessmentScreenByRecordId(instanceRecordId, readers);
+  const screen = await readAssessmentScreenByRecordId(sessionRecordId, readers);
   if (screen === undefined) {
     // The copy is complete but names a template that no longer resolves: `db:verify` drift, and
     // there is no title to draw a report under.
@@ -260,9 +260,9 @@ export async function readReportSource(
   return {
     ...base,
     document: {
-      instance: screen.instance,
+      session: screen.session,
       template: screen.template,
-      report: assessmentReport(screen.instance, screen.template),
+      report: assessmentReport(screen.session, screen.template),
     },
     unavailable: null,
   };
@@ -282,15 +282,15 @@ export async function readReportSource(
  * answered, so an unstarted seat has none).
  */
 export async function readPartySubmission(
-  instanceRecordId: string,
+  sessionRecordId: string,
   role: PartyRole,
   readers: ScreenReaders = POOL_SCREEN_READERS,
 ): Promise<PartySubmission | undefined> {
-  const [row] = await readers.rowsOf<SubmissionRow>(SUBMISSION_SQL, [instanceRecordId, role]);
+  const [row] = await readers.rowsOf<SubmissionRow>(SUBMISSION_SQL, [sessionRecordId, role]);
   if (row === undefined) return undefined;
 
   return {
-    instanceRecordId,
+    sessionRecordId,
     role,
     name: row.name,
     submittedAt: isoOf(row.submitted_at),

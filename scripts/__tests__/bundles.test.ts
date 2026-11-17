@@ -30,7 +30,7 @@ import {
   serializeBundle,
   type DatasetBundle,
 } from "../../content/bundle";
-import { assessmentInstances, assessments } from "../../data/assessments";
+import { assessmentSessions, assessments } from "../../data/assessments";
 import {
   BundleError,
   DEMO_BUNDLE_FILE,
@@ -59,7 +59,7 @@ after(() => {
 
 /** A dataset bundle as text, with `mutate` applied to a fresh copy of the fixtures' payload. */
 function datasetText(mutate?: (bundle: DatasetBundle) => void): string {
-  const bundle = canonicalDemoBundle(assessments, assessmentInstances, APP);
+  const bundle = canonicalDemoBundle(assessments, assessmentSessions, APP);
   const copy = JSON.parse(serializeBundle(bundle)) as DatasetBundle;
   mutate?.(copy);
   return serializeBundle(copy);
@@ -98,7 +98,7 @@ const temporaryFiles = (directory: string): string[] =>
 
 describe("a canonical bundle is a fixed point of serialize(parse(…))", () => {
   it("serializes the fixtures' dataset bundle and re-serializes it unchanged", () => {
-    const once = serializeBundle(canonicalDemoBundle(assessments, assessmentInstances, APP));
+    const once = serializeBundle(canonicalDemoBundle(assessments, assessmentSessions, APP));
     const parsed = parseBundle(once);
     assert.ok(parsed.ok, parsed.ok ? "" : parsed.issues.map(formatBundleIssue).join("\n"));
     assert.equal(serializeBundle(parsed.bundle), once);
@@ -124,7 +124,7 @@ describe("export → import → export is byte-identical", () => {
     // taxonomy does (`data/assessments.ts` derives one template per purchasable type), and a
     // literal would make adding a type look like a bundle defect.
     assert.equal(imported.templates, assessments.length);
-    assert.equal(imported.instances, assessmentInstances.length);
+    assert.equal(imported.instances, assessmentSessions.length);
     assert.equal(imported.materialized, false, "a dataset install has nothing to materialize");
 
     const second = exportDataset({ store, out: join(directory, "two.json"), appVersion: APP });
@@ -165,7 +165,7 @@ describe("export → import → export is byte-identical", () => {
     });
 
     // The receiving store is a dataset without it: `assessment-blank-template` ships as a
-    // draft no instance copies, so a dataset that leaves it out is still valid.
+    // draft no session copies, so a dataset that leaves it out is still valid.
     const bundle = JSON.parse(datasetText()) as DatasetBundle;
     importBundleFile(
       write(
@@ -175,7 +175,7 @@ describe("export → import → export is byte-identical", () => {
           ...bundle,
           payload: {
             templates: bundle.payload.templates.filter((template) => template.id !== blank),
-            instances: bundle.payload.instances.filter((instance) => instance.templateId !== blank),
+            instances: bundle.payload.instances.filter((session) => session.templateId !== blank),
           },
         }),
       ),
@@ -230,7 +230,7 @@ describe("export → import → export is byte-identical", () => {
 
     const exported = exportDataset({ store, out: join(directory, "all.json"), appVersion: APP });
     assert.equal(exported.bundle.payload.templates.length, assessments.length + 1);
-    assert.equal(exported.bundle.payload.instances.length, assessmentInstances.length);
+    assert.equal(exported.bundle.payload.instances.length, assessmentSessions.length);
   });
 });
 
@@ -273,7 +273,7 @@ const BUNDLE_CASES: readonly RefusalCase[] = [
   {
     name: "B3 — an instance naming a template outside the bundle",
     code: "B3",
-    line: /^\[B3\] instances: instance "assessment-instance-avery-rowan" names template "assessment-not-in-this-bundle"/,
+    line: /^\[B3\] instances: session "assessment-instance-avery-rowan" names template "assessment-not-in-this-bundle"/,
     text: () =>
       datasetText((bundle) => {
         bundle.payload.instances[0].templateId = "assessment-not-in-this-bundle";

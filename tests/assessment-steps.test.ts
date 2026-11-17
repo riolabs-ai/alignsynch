@@ -1,10 +1,10 @@
 /**
  * The Steps panel and the write behind it (#478) — the `/v1` prototype's `steps-panel.tsx` ported
- * into the instance screen, and `tests/v1-steps.test.ts` retired.
+ * into the session screen, and `tests/v1-steps.test.ts` retired.
  *
  * Two halves, because the port has two halves:
  *
- *   1. **the panel** — what a party and a coach are drawn, asserted on `AssessmentInstanceView`'s own
+ *   1. **the panel** — what a party and a coach are drawn, asserted on `AssessmentSessionView`'s own
  *      markup: the panel exists only in the report state (a Step names a Gap, so drawing one earlier
  *      would be the blind rule leaking by another door), a party gets a tick and a reword, a coach
  *      gets neither, and a closed Step gets no form at all;
@@ -81,15 +81,15 @@ vi.mock("@/lib/db/client", async (importOriginal) => {
   };
 });
 
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import { StepsPanel } from "@/components/assessment-flow/steps-panel";
 import type { Assessment, PartyRole } from "@/content/assessment";
 import type { Step } from "@/content/steps";
 import { STEP_STATUS_LABELS, AUTHORED_STEP_LABEL } from "@/content/steps";
 import { assessments } from "@/data/assessments";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 import { stepsPath } from "@/lib/flow/paths";
 import { writeStep } from "@/lib/flow/store";
 
@@ -97,7 +97,7 @@ import { writeStep } from "@/lib/flow/store";
  * Fixtures
  * ------------------------------------------------------------------ */
 
-const INSTANCE_ID = "instance-steps-1";
+const SESSION_ID = "session-steps-1";
 const RELATIONSHIP_ID = "rel-1";
 const CREATED_AT = "2026-11-03T10:00:00.000Z";
 const template = assessments.find(
@@ -141,10 +141,10 @@ function panel(overrides: { steps?: readonly Step[]; canMark?: boolean; aligned?
     createElement(StepsPanel, {
       steps: overrides.steps ?? steps,
       aspects,
-      action: stepsPath(INSTANCE_ID),
+      action: stepsPath(SESSION_ID),
       canMark: overrides.canMark ?? true,
       aligned: overrides.aligned ?? false,
-      copy: assessmentInstancePageCopy,
+      copy: assessmentSessionPageCopy,
     }),
   );
 }
@@ -170,7 +170,7 @@ function formOf(html: string, stepId: string): string {
  * ------------------------------------------------------------------ */
 
 describe("the Steps panel", () => {
-  it("groups by Aspect in the instance's own order, and keeps an Aspect the instance no longer holds", () => {
+  it("groups by Aspect in the session's own order, and keeps an Aspect the session no longer holds", () => {
     const html = panel();
     const order = [
       html.indexOf('data-steps-aspect="aspect-a"'),
@@ -203,7 +203,7 @@ describe("the Steps panel", () => {
 
     // Every form posts to the endpoint and names no role, no token, no relationship: the seat is
     // resolved from the cookie inside the store's transaction.
-    expect(html).toContain(`action="${stepsPath(INSTANCE_ID)}"`);
+    expect(html).toContain(`action="${stepsPath(SESSION_ID)}"`);
     expect(html).not.toContain('name="role"');
     expect(html).not.toContain('name="token"');
     expect(html).not.toContain('name="relationshipId"');
@@ -278,12 +278,12 @@ describe("the Steps panel", () => {
 });
 
 /* ------------------------------------------------------------------ *\
- * The panel inside the instance screen
+ * The panel inside the session screen
  * ------------------------------------------------------------------ */
 
 function itemsOf(): ItemRow[] {
   return template.items.map((item, position) => ({
-    record_id: INSTANCE_ID,
+    record_id: SESSION_ID,
     item_id: item.id,
     position,
     prompt: item.prompt,
@@ -295,7 +295,7 @@ function itemsOf(): ItemRow[] {
 
 function opinionsFor(role: PartyRole): OpinionRow[] {
   return template.items.map((item) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     item_id: item.id,
     feel: 3,
@@ -305,18 +305,18 @@ function opinionsFor(role: PartyRole): OpinionRow[] {
   }));
 }
 
-/** The same screen the instance page builds: `answered` decides whether both seats have answered. */
+/** The same screen the session page builds: `answered` decides whether both seats have answered. */
 function screenOf(answered: "both" | "initiator-only", viewerRole: "initiator" | "coach") {
   const items = itemsOf();
   const parties: PartyRow[] = [
     {
-      session_record_id: INSTANCE_ID,
+      session_record_id: SESSION_ID,
       role: "initiator",
       name: "Avery",
       accepted_at: new Date(CREATED_AT),
     },
     {
-      session_record_id: INSTANCE_ID,
+      session_record_id: SESSION_ID,
       role: "counterparty",
       name: "Rowan",
       accepted_at: new Date(CREATED_AT),
@@ -325,7 +325,7 @@ function screenOf(answered: "both" | "initiator-only", viewerRole: "initiator" |
   return projectScreen({
     rows: {
       record: {
-        id: INSTANCE_ID,
+        id: SESSION_ID,
         slug: "relationship-steps",
         record_type: "assessment",
         status: "published",
@@ -335,8 +335,8 @@ function screenOf(answered: "both" | "initiator-only", viewerRole: "initiator" |
       },
       items,
       options: [],
-      instance: {
-        record_id: INSTANCE_ID,
+      session: {
+        record_id: SESSION_ID,
         template_record_id: template.id,
         relationship_id: RELATIONSHIP_ID,
         mode: "advanced",
@@ -351,7 +351,7 @@ function screenOf(answered: "both" | "initiator-only", viewerRole: "initiator" |
         initiator: items.length,
         counterparty: answered === "both" ? items.length : 0,
       },
-    } satisfies FlowInstanceRows,
+    } satisfies FlowSessionRows,
     template,
     viewerRole,
     invite: {
@@ -366,31 +366,31 @@ function screenOf(answered: "both" | "initiator-only", viewerRole: "initiator" |
   });
 }
 
-function instanceHtml(screen: ReturnType<typeof screenOf>, stepsRead: readonly Step[]): string {
+function sessionHtml(screen: ReturnType<typeof screenOf>, stepsRead: readonly Step[]): string {
   return renderToStaticMarkup(
-    createElement(AssessmentInstanceView, {
+    createElement(AssessmentSessionView, {
       screen,
-      copy: assessmentInstancePageCopy,
+      copy: assessmentSessionPageCopy,
       steps: stepsRead,
     }),
   );
 }
 
-describe("the Steps on the instance screen", () => {
+describe("the Steps on the session screen", () => {
   it("draws the plan in the report state, with a party's controls and the tick's words", () => {
-    const html = instanceHtml(screenOf("both", "initiator"), [
+    const html = sessionHtml(screenOf("both", "initiator"), [
       stepOf({ id: "step-1-a", aspectId: "aspect-a", status: "open" }),
     ]);
     expect(html).toContain("data-steps-panel");
     expect(html).toContain("data-step-toggle");
     expect(html).toContain("Steps for Improving the Relationship");
-    expect(html).toContain(`action="${stepsPath(INSTANCE_ID)}"`);
+    expect(html).toContain(`action="${stepsPath(SESSION_ID)}"`);
   });
 
   it("draws no plan at all before both seats have accepted — the blind rule, one surface over", () => {
     // The page reads no Steps at all in this state; the panel is still handed rows here to prove the
     // screen — not the caller — is what keeps them off the page.
-    const html = instanceHtml(screenOf("initiator-only", "initiator"), [
+    const html = sessionHtml(screenOf("initiator-only", "initiator"), [
       stepOf({ id: "step-1-a", aspectId: "aspect-a" }),
     ]);
     expect(html).not.toContain("data-steps-panel");
@@ -398,7 +398,7 @@ describe("the Steps on the instance screen", () => {
   });
 
   it("shows a coach the plan and no tick", () => {
-    const html = instanceHtml(screenOf("both", "coach"), [
+    const html = sessionHtml(screenOf("both", "coach"), [
       stepOf({ id: "step-1-a", aspectId: "aspect-a" }),
     ]);
     expect(html).toContain("data-steps-panel");
@@ -449,7 +449,7 @@ beforeEach(() => {
   stub.rowCount = 1;
 });
 
-const base = { instanceRecordId: INSTANCE_ID, token: "token-1" as string | undefined };
+const base = { sessionRecordId: SESSION_ID, token: "token-1" as string | undefined };
 
 describe("a party's tick", () => {
   it("is one UPDATE, scoped by the relationship, inside one transaction", async () => {
@@ -553,7 +553,7 @@ describe("who may write, and when", () => {
     stub.tokenRole = undefined;
     stub.userRole = "counterparty";
     const result = await writeStep({
-      instanceRecordId: INSTANCE_ID,
+      sessionRecordId: SESSION_ID,
       stepId: "step-1-a",
       token: undefined,
       viewerUserId: "user-1",
@@ -574,7 +574,7 @@ describe("who may write, and when", () => {
     expect(written(/FROM step WHERE relationship_id/)).toHaveLength(0);
   });
 
-  it("refuses an instance that does not exist", async () => {
+  it("refuses a session that does not exist", async () => {
     stub.session = undefined;
     const result = await writeStep({ ...base, stepId: "step-1-a", patch: { status: "done" } });
     expect(result).toMatchObject({ ok: false, code: "no-such-instance" });

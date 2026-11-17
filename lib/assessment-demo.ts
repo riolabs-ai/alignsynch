@@ -5,15 +5,15 @@
  * can look at is a claim. This module builds the one page that shows it before anyone pays: the
  * type's own Aspects, the authored demo sheet (`data/relationship-types.ts`) as the two
  * parties' Opinions, and `assessmentReport()` over both — the **same projection and the same
- * renderer** `/assessment/[slug]` and the instance report use. There is one report in the app,
+ * renderer** `/assessment/[slug]` and the session report use. There is one report in the app,
  * not a marketing copy of one; that is what `docs/operations/history/V1-RETIREMENT.md`'s demo row means by "owns
  * the port of `components/v1/template-demo.tsx` to the v2 report".
  *
  * **The example is built from the type, not from a stored template record.** A type's demo
  * sheet is keyed by the type's own Aspect ids, and the catalogue's records are not always that
  * shape — `staff-manager`'s authored record predates the taxonomy and carries Aspects the sheet
- * never answered. Synthesising the template and the instance from the type keeps the model's
- * own rule honest (an instance is a copy of its template, and `data:check` E31 fails a copy that
+ * never answered. Synthesising the template and the session from the type keeps the model's
+ * own rule honest (a session is a copy of its template, and `data:check` E31 fails a copy that
  * drifted): the demo's items are the template's items, because both are the type's.
  *
  * **Nothing here reads a clock.** The instants below are authored, not `new Date()`: this page
@@ -22,12 +22,7 @@
  * Pure: no React, no Next. `app/(marketing)/relationship-types/[slug]/demo/page.tsx` draws it and
  * `tests/assessment-demo.test.ts` reads it in a node environment.
  */
-import type {
-  Assessment,
-  AssessmentInstance,
-  AspectOpinions,
-  Opinions,
-} from "@/content/assessment";
+import type { Assessment, AssessmentSession, AspectOpinions, Opinions } from "@/content/assessment";
 import { DEMO_NOW_ISO } from "@/content/core";
 import {
   demoAnswersFor,
@@ -70,7 +65,7 @@ function opinionsFor(
 }
 
 /**
- * The template the demo is an instance of: the type's own name, its who-it-is-for line and its
+ * The template the demo is a session of: the type's own name, its who-it-is-for line and its
  * own Aspects. Not a record from `data/assessments.ts` — see the module comment.
  */
 function demoTemplate(type: RelationshipType): Assessment {
@@ -86,8 +81,8 @@ function demoTemplate(type: RelationshipType): Assessment {
   };
 }
 
-/** The instance: the template copied, both seats answered and accepted. */
-function demoInstance(type: RelationshipType, template: Assessment): AssessmentInstance {
+/** The session: the template copied, both seats answered and accepted. */
+function demoSession(type: RelationshipType, template: Assessment): AssessmentSession {
   const demo = demoAnswersFor(type.id);
   if (demo === undefined) {
     throw new Error(`relationship-types: "${type.id}" has no demo answers`);
@@ -158,11 +153,11 @@ export function assessmentDemo(typeId: string): AssessmentDemo | undefined {
   if (demoAnswersFor(type.id) === undefined) return undefined;
 
   const template = demoTemplate(type);
-  const instance = demoInstance(type, template);
+  const session = demoSession(type, template);
 
   return {
     type,
-    report: assessmentReport(instance, template),
+    report: assessmentReport(session, template),
     startPath: startPathFor(type.id),
   };
 }

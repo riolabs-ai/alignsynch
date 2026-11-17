@@ -4,15 +4,15 @@
  *
  * Four claims, each one a line of the card:
  *
- *   * **per-viewer, from real rows** — a count is `overviewCountsOf()` over `MyInstance[]`, and the
- *     only rows that exist are the ones `listMyInstances(user.userId)` returned. Nothing here
+ *   * **per-viewer, from real rows** — a count is `overviewCountsOf()` over `MySession[]`, and the
+ *     only rows that exist are the ones `listMySessions(user.userId)` returned. Nothing here
  *     reads a fixture metric, and there is no field on the result a label could be formatted into:
  *     the values are `number`.
  *   * **each count equals the list it links to** — `overviewCountsOf(rows)[f]` and
  *     `overviewFiltered(rows, f).length` are asserted equal for every state, because they are two
  *     passes over one array through one predicate. That is the property that makes "click through
  *     and the list's length matches" true by construction rather than by care.
- *   * **the blind rule** — an instance where the other party has answered and the viewer has not
+ *   * **the blind rule** — a session where the other party has answered and the viewer has not
  *     is `yours-to-answer`, which counts the *viewer's* obligation and says nothing about the other
  *     party's progress. The other direction (`awaiting-other`) is asserted to carry no count of
  *     the other party's answers, and the copy is asserted to hold no such sentence.
@@ -25,7 +25,7 @@ import { describe, expect, it } from "vitest";
 
 import { overviewPageCopy } from "@/data/pages/overview";
 import { assessmentsPageCopy } from "@/data/pages/assessments";
-import type { MyInstance } from "@/lib/db/my-instances";
+import type { MySession } from "@/lib/db/my-sessions";
 import {
   OVERVIEW_FILTERS,
   matchesOverviewFilter,
@@ -35,12 +35,12 @@ import {
   overviewFiltered,
 } from "@/lib/flow/overview";
 import { MY_ASSESSMENTS_PATH } from "@/lib/flow/paths";
-import { myInstanceStateOf } from "@/lib/flow/state";
+import { mySessionStateOf } from "@/lib/flow/state";
 
 /** A row as the read produces it: the state is already derived from the counts. */
-function row(overrides: Partial<MyInstance>): MyInstance {
+function row(overrides: Partial<MySession>): MySession {
   return {
-    instanceRecordId: "assessment-instance-avery-rowan",
+    sessionRecordId: "assessment-instance-avery-rowan",
     slug: "avery-rowan",
     templateTitle: "Relationship Basics",
     viewerRole: "initiator",
@@ -52,10 +52,10 @@ function row(overrides: Partial<MyInstance>): MyInstance {
   };
 }
 
-const awaiting = row({ instanceRecordId: "i-awaiting", state: "awaiting-other" });
-const yours = row({ instanceRecordId: "i-yours", state: "yours-to-answer" });
-const openReport = row({ instanceRecordId: "i-open", state: "complete", unlock: "unseen" });
-const readReport = row({ instanceRecordId: "i-read", state: "complete", unlock: "seen" });
+const awaiting = row({ sessionRecordId: "i-awaiting", state: "awaiting-other" });
+const yours = row({ sessionRecordId: "i-yours", state: "yours-to-answer" });
+const openReport = row({ sessionRecordId: "i-open", state: "complete", unlock: "unseen" });
+const readReport = row({ sessionRecordId: "i-read", state: "complete", unlock: "seen" });
 
 describe("the four counts", () => {
   it("counts each state, and a complete report the viewer has already read is in none of them", () => {
@@ -80,7 +80,7 @@ describe("the four counts", () => {
       // The card's figure and the list's length, from the one predicate.
       expect(counts[filter]).toBe(overviewFiltered(rows, filter).length);
       expect(overviewFiltered(rows, filter).length).toBe(
-        rows.filter((instance) => matchesOverviewFilter(instance, filter)).length,
+        rows.filter((session) => matchesOverviewFilter(session, filter)).length,
       );
     }
 
@@ -88,9 +88,9 @@ describe("the four counts", () => {
     // makes each figure a question with its own answer rather than a share of a total.
     const seen = new Set<string>();
     for (const filter of OVERVIEW_FILTERS) {
-      for (const instance of overviewFiltered(rows, filter)) {
-        expect(seen.has(instance.instanceRecordId)).toBe(false);
-        seen.add(instance.instanceRecordId);
+      for (const session of overviewFiltered(rows, filter)) {
+        expect(seen.has(session.sessionRecordId)).toBe(false);
+        seen.add(session.sessionRecordId);
       }
     }
   });
@@ -100,7 +100,7 @@ describe("the blind rule on the Overview", () => {
   it("a viewer who has not answered is `yours-to-answer`, never a count of the other party's answers", () => {
     // The other party has answered all three Aspects; this viewer has answered none. This is the
     // exact state that must not be visible as progress anywhere.
-    const state = myInstanceStateOf({
+    const state = mySessionStateOf({
       aspectCount: 3,
       hasCounterparty: true,
       initiatorAnswered: 0,
@@ -118,7 +118,7 @@ describe("the blind rule on the Overview", () => {
   });
 
   it("`awaiting-other` is the mirror case, and still carries no figure about them", () => {
-    const state = myInstanceStateOf({
+    const state = mySessionStateOf({
       aspectCount: 3,
       hasCounterparty: true,
       initiatorAnswered: 3,

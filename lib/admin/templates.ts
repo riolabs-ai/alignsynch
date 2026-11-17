@@ -3,7 +3,7 @@
  * versions, audited through `act()`.
  *
  * A **template** in this tree is a `record` row with `record_type = 'assessment'` and no `session`
- * row (a session is what makes a record an instance). That definition is not restated here: the
+ * row (a session is what makes a record a session). That definition is not restated here: the
  * editor's read is `readAssessmentTemplateRowsById` from `lib/db/assessments.ts`, whose SQL already
  * carries the `NOT EXISTS` half, and every write below keeps it true by never touching `session`.
  *
@@ -55,7 +55,7 @@ export { ADMIN_TEMPLATES_PATH, adminTemplatePath } from "@/lib/admin/paths";
  * Why a template save was refused — facts about the draft or the row, not about permission.
  * Permissions are `act()`'s (`ActRefused`), decided before the mutation.
  *
- *   no-such-template  the id is not a template record (or it is an instance)
+ *   no-such-template  the id is not a template record (or it is a session)
  *   not-editable      the row is archived — restore it before editing
  *   not-published     unpublish asked for a row that offers nothing
  *   already-archived  archive asked for a row that is already retired (#711)
@@ -106,7 +106,7 @@ export interface AdminTemplateRow {
   /** The record's one instant, UTC — `formatDate` turns it into a label at the edge. */
   readonly date: string;
   readonly aspectCount: number;
-  readonly instanceCount: number;
+  readonly sessionCount: number;
   readonly editable: boolean;
 }
 
@@ -117,7 +117,7 @@ interface AdminTemplateQueryRow {
   readonly status: string;
   readonly date: Date | string;
   readonly aspect_count: number;
-  readonly instance_count: number;
+  readonly session_count: number;
 }
 
 /**
@@ -136,7 +136,7 @@ export async function listAdminTemplates(): Promise<AdminTemplateRow[]> {
            r.status,
            r.date,
            (SELECT count(*)::int FROM item i WHERE i.record_id = r.id) AS aspect_count,
-           (SELECT count(*)::int FROM session s WHERE s.template_record_id = r.id) AS instance_count
+           (SELECT count(*)::int FROM session s WHERE s.template_record_id = r.id) AS session_count
       FROM record r
      WHERE r.record_type = 'assessment'
        AND NOT EXISTS (SELECT 1 FROM session own WHERE own.record_id = r.id)
@@ -149,7 +149,7 @@ export async function listAdminTemplates(): Promise<AdminTemplateRow[]> {
     status: row.status,
     date: row.date instanceof Date ? row.date.toISOString() : row.date,
     aspectCount: Number(row.aspect_count),
-    instanceCount: Number(row.instance_count),
+    sessionCount: Number(row.session_count),
     editable: row.status === "draft",
   }));
 }
@@ -475,13 +475,13 @@ export async function publishTemplate(
       mutate: async (sql) => {
         const before = await lockTemplate(sql, request.templateId);
 
-        // `NOT EXISTS (session)` is the template definition, so an instance id is refused here
+        // `NOT EXISTS (session)` is the template definition, so a session id is refused here
         // rather than published as a template of its own.
         const rows = await readTemplateRowsWithin(sql, request.templateId);
         if (rows === undefined) {
           throw new TemplateRefused(
             "no-such-template",
-            `"${before.id}" is not a template record (it is an instance, or a non-assessment)`,
+            `"${before.id}" is not a template record (it is a session, or a non-assessment)`,
           );
         }
 
@@ -548,7 +548,7 @@ export async function unpublishTemplate(
         if (rows === undefined) {
           throw new TemplateRefused(
             "no-such-template",
-            `"${before.id}" is not a template record (it is an instance, or a non-assessment)`,
+            `"${before.id}" is not a template record (it is a session, or a non-assessment)`,
           );
         }
         if (before.status !== "published") {
@@ -698,7 +698,7 @@ export async function deleteTemplate(
         if (rows === undefined) {
           throw new TemplateRefused(
             "no-such-template",
-            `"${before.id}" is not a template record (it is an instance, or a non-assessment)`,
+            `"${before.id}" is not a template record (it is a session, or a non-assessment)`,
           );
         }
 

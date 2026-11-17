@@ -1,14 +1,14 @@
 /**
  * The assessment read path — the database half of `lib/assessment-report.ts` (#145).
  *
- * **One round trip per request, not four (#204).** The screen used to cost four statements: an
- * instance read and a template read, each repeated by `generateMetadata` and by the page. The
- * template is now a subselect of the instance statement — the two halves are the same row's
+ * **One round trip per request, not four (#204).** The screen used to cost four statements: a
+ * session read and a template read, each repeated by `generateMetadata` and by the page. The
+ * template is now a subselect of the session statement — the two halves are the same row's
  * business — and `readAssessmentScreenBySlug` is memoised for the request, so the metadata call
  * and the render share one read instead of racing each other for a connection. Measured on the
  * demo branch: ~546 ms p50 for four round trips, ~200 ms for one.
  *
- * The row-level reads (`readAssessmentInstanceRowsBySlug`, `readAssessmentTemplateRowsById`)
+ * The row-level reads (`readAssessmentSessionRowsBySlug`, `readAssessmentTemplateRowsById`)
  * stay separate on purpose: `db:verify` wants the unparsed rows so it can report drift, and it
  * runs in a script where a request-scoped memo means nothing.
  *
@@ -31,21 +31,21 @@ import type { FlowScreen } from "@/lib/flow/screen";
 import { readFlowScreen } from "@/lib/flow/store";
 import { type FlowStage, relationshipStage } from "@/lib/flow/stage";
 import {
-  instanceStatusOf,
-  myInstanceStateOf,
+  sessionStatusOf,
+  mySessionStateOf,
   unlockMarkOf,
-  type InstanceProgress,
-  type MyInstanceState,
+  type SessionProgress,
+  type MySessionState,
   type UnlockMark,
 } from "@/lib/flow/state";
 import {
-  assessmentInstanceFromRows,
+  assessmentSessionFromRows,
   assessmentTemplateFromPayload,
   assessmentTemplateFromRows,
   itemIdsOf,
-  type AssessmentInstanceRows,
+  type AssessmentSessionRows,
   type AssessmentTemplateRows,
-  type InstanceRow,
+  type SessionRow,
   type ItemRow,
   type OpinionRow,
   type OptionRow,
@@ -53,12 +53,12 @@ import {
   type RecordRow,
   type RelationshipRow,
 } from "@/lib/db/rows";
-import type { Assessment, AssessmentInstance } from "@/content/assessment";
+import type { Assessment, AssessmentSession } from "@/content/assessment";
 
 const RECORD_JSON = "to_jsonb(r) AS record";
 
-/** One instance record plus its copy, parties and opinions — one statement, one round trip. */
-const INSTANCE_BY_SLUG_SQL = `
+/** One session record plus its copy, parties and opinions — one statement, one round trip. */
+const SESSION_BY_SLUG_SQL = `
   SELECT
     ${RECORD_JSON},
     ai.template_record_id,
@@ -94,8 +94,8 @@ const INSTANCE_BY_SLUG_SQL = `
  * One template record plus its items.
  *
  * A template is a record with `record_type = 'assessment'` and **no** `session`
- * row, so the `NOT EXISTS` is the definition and not a defensive filter: an id that names an
- * instance must not resolve as the template it was copied from.
+ * row, so the `NOT EXISTS` is the definition and not a defensive filter: an id that names a
+ * session must not resolve as the template it was copied from.
  */
 const TEMPLATE_BY_ID_SQL = `
   SELECT
@@ -115,7 +115,7 @@ const TEMPLATE_BY_ID_SQL = `
     AND NOT EXISTS (SELECT 1 FROM session ai WHERE ai.record_id = r.id)
 `;
 
-interface InstanceQueryRow {
+interface SessionQueryRow {
   readonly record: RecordRow;
   readonly template_record_id: string;
   readonly mode: string;
@@ -153,14 +153,14 @@ export async function readTemplateRowsWithin(
 }
 
 /**
- * The whole screen in one statement: the instance's six row sets **and** the template it names.
+ * The whole screen in one statement: the session's six row sets **and** the template it names.
  *
  * The template is four subselects on `ai.template_record_id` rather than a second call, because
  * a page that costs one round trip is a page a demo can afford: on the demo branch a round trip
- * measured 160–200 ms, and the screen used to pay four of them (instance, template, then both
+ * measured 160–200 ms, and the screen used to pay four of them (session, template, then both
  * again for `generateMetadata`).
  *
- * **Two keys, one statement (#504).** The party's screen resolves an instance by its slug; the
+ * **Two keys, one statement (#504).** The party's screen resolves a session by its slug; the
  * console's report screen holds the record id it was handed by the registry. Writing the
  * statement twice would be two statements that can drift about which columns the model needs, so
  * `screenSql()` takes the predicate and both callers share the rest — including `voided_at`,
@@ -220,7 +220,7 @@ const SCREEN_BY_SLUG_SQL = screenSql("r.slug = $1");
 const SCREEN_BY_RECORD_ID_SQL = screenSql("r.id = $1");
 
 /** One screen row, as the statement above selects it. Exported for the report's reader (#504). */
-export interface ScreenQueryRow extends InstanceQueryRow {
+export interface ScreenQueryRow extends SessionQueryRow {
   /** The version this relationship was created from — NULL is drift, and a 404. */
   readonly template_version_id: string | null;
   readonly template_version: number | null;
@@ -255,17 +255,17 @@ export const POOL_SCREEN_READERS: ScreenReaders = {
  */
 export function screenFromRow(
   row: ScreenQueryRow,
-): { instance: AssessmentInstance; template: Assessment } | undefined {
+): { session: AssessmentSession; template: Assessment } | undefined {
   // An unbound relationship (or a version row that went missing) is a 404 and a `db:verify`
   // failure, never a render over the working copy: the words above somebody's answers are the
   // version they were asked on, and there is no second source for them.
   if (row.template_version_id === null || row.template_payload === null) return undefined;
   return {
-    instance: assessmentInstanceFromRows({
+    session: assessmentSessionFromRows({
       record: row.record,
       items: row.items,
       options: row.options,
-      instance: {
+      session: {
         record_id: row.record.id,
         template_record_id: row.template_record_id,
         relationship_id: row.relationship_id,
@@ -284,7 +284,7 @@ export function screenFromRow(
 }
 
 /**
- * One instance by its own record id, or `undefined`.
+ * One session by its own record id, or `undefined`.
  *
  * Not memoised: this is the console's read, it runs once per request, and the one caller that
  * needs it inside a transaction hands its own `ScreenReaders`.
@@ -292,7 +292,7 @@ export function screenFromRow(
 export async function readAssessmentScreenByRecordId(
   recordId: string,
   readers: ScreenReaders = POOL_SCREEN_READERS,
-): Promise<{ instance: AssessmentInstance; template: Assessment } | undefined> {
+): Promise<{ session: AssessmentSession; template: Assessment } | undefined> {
   const [row] = await readers.rowsOf<ScreenQueryRow>(SCREEN_BY_RECORD_ID_SQL, [recordId]);
   return row === undefined ? undefined : screenFromRow(row);
 }
@@ -304,15 +304,15 @@ interface TemplateQueryRow {
 }
 
 /**
- * The instance's rows, unparsed — `db:verify` needs the ids and order to report a drift that
+ * The session's rows, unparsed — `db:verify` needs the ids and order to report a drift that
  * the parse would only collapse into one line.
  */
-export async function readAssessmentInstanceRowsBySlug(
+export async function readAssessmentSessionRowsBySlug(
   slug: string,
-): Promise<AssessmentInstanceRows | undefined> {
-  const [row] = await queryRows<InstanceQueryRow>(INSTANCE_BY_SLUG_SQL, [slug]);
+): Promise<AssessmentSessionRows | undefined> {
+  const [row] = await queryRows<SessionQueryRow>(SESSION_BY_SLUG_SQL, [slug]);
   if (row === undefined) return undefined;
-  const instance: InstanceRow = {
+  const session: SessionRow = {
     record_id: row.record.id,
     template_record_id: row.template_record_id,
     relationship_id: row.relationship_id,
@@ -324,7 +324,7 @@ export async function readAssessmentInstanceRowsBySlug(
     record: row.record,
     items: row.items,
     options: row.options,
-    instance,
+    session,
     parties: row.parties,
     opinions: row.opinions,
   };
@@ -340,16 +340,16 @@ export async function readAssessmentTemplateRowsById(
 }
 
 /**
- * The instance a slug names, or `undefined`.
+ * The session a slug names, or `undefined`.
  *
  * `undefined` is "no such slug", which the page turns into `notFound()` — the same 404 the
- * fixture-driven route gave for a slug no instance carries.
+ * fixture-driven route gave for a slug no session carries.
  */
-export async function readAssessmentInstanceBySlug(
+export async function readAssessmentSessionBySlug(
   slug: string,
-): Promise<AssessmentInstance | undefined> {
-  const rows = await readAssessmentInstanceRowsBySlug(slug);
-  return rows === undefined ? undefined : assessmentInstanceFromRows(rows);
+): Promise<AssessmentSession | undefined> {
+  const rows = await readAssessmentSessionRowsBySlug(slug);
+  return rows === undefined ? undefined : assessmentSessionFromRows(rows);
 }
 
 /** The template a record id names, or `undefined` when it is not a template record. */
@@ -364,8 +364,8 @@ export async function readAssessmentTemplateByRecordId(
  * Both halves of the screen, or `undefined` if either is missing — **one statement, one round
  * trip**, memoised for the request (#204).
  *
- * The page's 404 semantics are the fixture route's, unchanged: an instance that does not exist
- * **or** an instance whose template does not resolve is `notFound()`, because the title and
+ * The page's 404 semantics are the fixture route's, unchanged: a session that does not exist
+ * **or** a session whose template does not resolve is `notFound()`, because the title and
  * summary above the rows are the template's and there is no second source for them.
  *
  * `cache()` is React's request-scoped memo, not a data cache: `generateMetadata` and the
@@ -377,14 +377,14 @@ export async function readAssessmentTemplateByRecordId(
 export const readAssessmentScreenBySlug = cache(
   async (
     slug: string,
-  ): Promise<{ instance: AssessmentInstance; template: Assessment } | undefined> => {
+  ): Promise<{ session: AssessmentSession; template: Assessment } | undefined> => {
     const [row] = await queryRows<ScreenQueryRow>(SCREEN_BY_SLUG_SQL, [slug]);
     return row === undefined ? undefined : screenFromRow(row);
   },
 );
 
-/** Every instance, in slug order — `db:verify` walks this. */
-export async function listAssessmentInstances(): Promise<
+/** Every session, in slug order — `db:verify` walks this. */
+export async function listAssessmentSessions(): Promise<
   { slug: string; recordId: string; templateRecordId: string; mode: string }[]
 > {
   const rows = await queryRows<{
@@ -407,10 +407,10 @@ export async function listAssessmentInstances(): Promise<
   }));
 }
 
-/** The slugs an instance exists for. No route prerenders from this any more — it is a read. */
-export async function listAssessmentInstanceSlugs(): Promise<string[]> {
-  const instances = await listAssessmentInstances();
-  return instances.map((instance) => instance.slug);
+/** The slugs a session exists for. No route prerenders from this any more — it is a read. */
+export async function listAssessmentSessionSlugs(): Promise<string[]> {
+  const sessions = await listAssessmentSessions();
+  return sessions.map((session) => session.slug);
 }
 
 /** Re-exported so a caller can compare a copy's ids without reaching into `rows.ts`. */
@@ -456,7 +456,7 @@ export async function readRelationshipRow(
  * the page is handed `report: null` and `aspects[].own`, never a value it would then have to
  * hide. The list goes one step further and is handed **no score at all** unless the session it
  * would score is complete: the `opinions` column below is only mapped into a figure behind
- * `instanceStatusOf() === "complete"`, and the card's one Gap-shaped field (`alignment`) is
+ * `sessionStatusOf() === "complete"`, and the card's one Gap-shaped field (`alignment`) is
  * `null` — drawn `—`, never `0` — for every other row.
  *
  * **A relationship is not a session.** The relationship persists across cycles and carries the
@@ -467,7 +467,7 @@ export async function readRelationshipRow(
  *
  * **The stage is the screen's three, not the ladder's four.** `relationshipStage()` maps the
  * derived status onto Invited / Connected / Sharing and cannot return `aligned`, because Aligned
- * is `instanceAlignment()`'s verdict over a finished Gap and not a step (#274,
+ * is `sessionAlignment()`'s verdict over a finished Gap and not a step (#274,
  * `docs/specs/ux-stages.md`). It answers `null` for a relationship that is off the ladder: a
  * voided session (excluded by the read below) and a never-sent draft (#975), which is a card with
  * no stage word rather than a card that claims `Invited`. The list therefore offers four stage-free
@@ -485,7 +485,7 @@ export async function readRelationshipRow(
  * One relationship, as the list draws it.
  *
  * Every number is derived, none is authored: `sessionsOpened` is a count of the relationship's
- * sessions, `sessionsCompleted` is that count filtered through `instanceStatusOf()`, and
+ * sessions, `sessionsCompleted` is that count filtered through `sessionStatusOf()`, and
  * `alignment` is the mean Gap of the latest session when — and only when — that session is
  * complete. `null` is absent: the card draws `—` for it and never `0`, because a relationship
  * nobody has scored and one scored at zero are different facts.
@@ -493,7 +493,7 @@ export async function readRelationshipRow(
 export interface RelationshipCard {
   readonly relationshipId: string;
   /** The latest session — the row's link target, and where its stage comes from. */
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   readonly slug: string;
   /** The relationship's own name, else the template's title it was copied from. */
   readonly name: string;
@@ -519,8 +519,8 @@ export interface RelationshipCard {
    * excludes those rows and the mapping throws rather than drawing one.
    */
   readonly stage: FlowStage | null;
-  /** `lib/flow/state.ts::myInstanceStateOf` — the state the console's `?filter=` counts. */
-  readonly state: MyInstanceState;
+  /** `lib/flow/state.ts::mySessionStateOf` — the state the console's `?filter=` counts. */
+  readonly state: MySessionState;
   readonly unlock: UnlockMark;
   /** The latest session's invitation, derived from its row at the instant of this read. */
   readonly inviteState: InviteDisplayState | null;
@@ -547,7 +547,7 @@ interface SessionCountRow {
   readonly initiatorAnswered: number;
   readonly counterpartyAnswered: number;
   readonly hasCounterparty: boolean;
-  /** `party.accepted_at IS NOT NULL` per seat (#R2) — the hinge `instanceStatusOf()` now needs. */
+  /** `party.accepted_at IS NOT NULL` per seat (#R2) — the hinge `sessionStatusOf()` now needs. */
   readonly initiatorAccepted: boolean;
   readonly counterpartyAccepted: boolean;
   /** `session.voided_at IS NOT NULL` (#503) — a past session an operator ended. */
@@ -599,7 +599,7 @@ export interface RelationshipCardRow {
    * `relationship.published_at IS NOT NULL` — did the invitation ever go out? (#975)
    *
    * The list's one record-shaped fact, and the reason this read joins nothing new: `relationship`
-   * is its FROM row. `false` is the never-sent draft, which is `draft` in `instanceStatusOf()`.
+   * is its FROM row. `false` is the never-sent draft, which is `draft` in `sessionStatusOf()`.
    */
   readonly published: boolean;
   readonly read_at: Date;
@@ -610,11 +610,11 @@ export interface RelationshipCardRow {
  *
  * `WHERE … user_id = $1` appears twice and both halves are the same value: the session's own
  * account. There is no second parameter that could widen it — no role, no name, no query value —
- * which is the same rule `lib/db/my-instances.ts` states for the per-instance list.
+ * which is the same rule `lib/db/my-sessions.ts` states for the per-session list.
  *
  * `DISTINCT ON (s.relationship_id)` picks the relationship's latest session (newest `record.date`,
  * slug breaking the tie); a relationship with no session at all is absent rather than a card that
- * links to nothing, exactly as `listMyInstances()` drops an instance whose template stopped
+ * links to nothing, exactly as `listMySessions()` drops a session whose template stopped
  * resolving.
  */
 const RELATIONSHIP_CARDS_SQL = `
@@ -775,7 +775,7 @@ function meanGapOf(
   return count === 0 ? null : sum / count;
 }
 
-/** Progress counts from one session's row, in the shape `instanceStatusOf()` reads. */
+/** Progress counts from one session's row, in the shape `sessionStatusOf()` reads. */
 function progressOf(
   aspectCount: number,
   hasCounterparty: boolean,
@@ -788,10 +788,10 @@ function progressOf(
   /**
    * `relationship.published_at IS NOT NULL` (#975) — the **relationship's** fact, so every session
    * of one relationship is handed the same value. `false` is the never-sent draft, and it is
-   * answered right after the void (see `instanceStatusOf`).
+   * answered right after the void (see `sessionStatusOf`).
    */
   published: boolean,
-): InstanceProgress {
+): SessionProgress {
   return {
     aspectCount,
     hasCounterparty,
@@ -842,19 +842,19 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     row.voided,
     row.published,
   );
-  const status = instanceStatusOf(progress);
+  const status = sessionStatusOf(progress);
   const complete = status === "complete";
   /** #975 — the relationship was never sent, so the card says so instead of naming a stage. */
   const draft = status === "draft";
 
-  const state: MyInstanceState =
+  const state: MySessionState =
     viewerRole === "coach"
       ? draft
         ? "draft"
         : complete
           ? "complete"
           : "awaiting-other"
-      : myInstanceStateOf({ ...progress, viewerRole });
+      : mySessionStateOf({ ...progress, viewerRole });
 
   // Scored means complete, and only then are the session's opinions turned into a figure. A
   // session that is not complete never reaches `meanGapOf()`: the blind rule is enforced by
@@ -866,7 +866,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
 
   const sessionsCompleted = row.sessions.filter(
     (session) =>
-      instanceStatusOf(
+      sessionStatusOf(
         progressOf(
           session.aspectCount,
           session.hasCounterparty,
@@ -884,7 +884,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
 
   // #503 — the ladder has no rung for a voided session, so there is no card to draw: an operator
   // ended it and the party's to-do list is not the place to report that. The read excludes them
-  // (`lib/db/my-instances.ts`), which makes a `null` here drift rather than a state, and drift is
+  // (`lib/db/my-sessions.ts`), which makes a `null` here drift rather than a state, and drift is
   // loud in this tree rather than a `?? "connected"` that would draw a relationship still running.
   //
   // #975 — a `null` for a **draft** is the other way to be off the ladder, and it is a card: the
@@ -899,7 +899,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
 
   return {
     relationshipId: row.relationship_id,
-    instanceRecordId: row.session_record_id,
+    sessionRecordId: row.session_record_id,
     slug: row.slug,
     name: row.session_name ?? row.template_title,
     templateTitle: row.template_title,
@@ -912,7 +912,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
     state,
     unlock: viewerRole === "coach" ? "seen" : unlockMarkOf(state, row.viewer_unlock_seen_at),
     inviteState:
-      // #975 — a draft has no invitation to report. The create writes an session_invite row even
+      // #975 — a draft has no invitation to report. The create writes a session_invite row even
       // when nothing is sent, so the row is there; reading its state would claim an invitation
       // that never went out. `null` is this card's "not this row's fact".
       row.invite === null || draft
@@ -940,7 +940,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
  * One relationship, as the detail screen draws it — the money facts plus the screen.
  *
  * `ref` is a relationship id **or** a session record id. The second is what every link in this
- * tree already carries (`lib/flow/paths.ts::instancePath`), so the newest session of the
+ * tree already carries (`lib/flow/paths.ts::sessionPath`), so the newest session of the
  * relationship answers for it and the old URLs keep working; the first is what
  * `/v1/[persona]/relationships/[id]` uses, so the two surfaces can be compared on one id.
  *
@@ -956,7 +956,7 @@ export function relationshipCardFromRow(row: RelationshipCardRow): RelationshipC
  */
 export interface RelationshipDetail {
   readonly relationshipId: string;
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /** `null` for every viewer who is not the Initiator. Never an empty object. */
   readonly paid: { readonly plan: string | null; readonly purchasedAt: string | null } | null;
   readonly screen: FlowScreen;
@@ -992,7 +992,7 @@ export async function readRelationshipById(
   if (row === undefined) return undefined;
 
   const screen = await readFlowScreen({
-    instanceRecordId: row.session_record_id,
+    sessionRecordId: row.session_record_id,
     token: viewer.token,
     inviteToken: viewer.inviteToken ?? null,
     viewerUserId: viewer.viewerUserId,
@@ -1002,7 +1002,7 @@ export async function readRelationshipById(
 
   return {
     relationshipId: row.relationship_id,
-    instanceRecordId: row.session_record_id,
+    sessionRecordId: row.session_record_id,
     paid:
       screen.viewer.role === "initiator"
         ? {

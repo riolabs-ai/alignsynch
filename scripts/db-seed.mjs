@@ -610,7 +610,9 @@ async function readDemoDataset() {
   const { parseBundle, canonicalDemoBundle, serializeBundle, formatBundleIssue } = await import(
     "../content/bundle.ts"
   );
-  const { assessments, assessmentInstances } = await import("../data/assessments.ts");
+  const { assessments, assessmentSessions: assessmentInstances } = await import(
+    "../data/assessments.ts"
+  );
 
   const text = readFileSync(DEMO_DATASET_FILE, "utf8");
   const parsed = parseBundle(text);
@@ -1574,7 +1576,7 @@ async function main() {
       // #1079 — the same subscription the full seed writes, so the narrow repair leaves an
       // `active` relationship reading entitled rather than lapsed. The derivation is read from the
       // fixtures, which `data:check` E32 holds the bundle equal to.
-      const { assessmentInstances } = await import("../data/assessments.ts");
+      const { assessmentSessions: assessmentInstances } = await import("../data/assessments.ts");
       const subscriptions = await seedDemoSubscriptions(client, accounts, assessmentInstances);
       /* #1081 — the console half is re-written here too, and the reason is the ids: every account
        * this path creates is a *new* auth user, so a repair that stopped at the subscriptions would
@@ -1606,8 +1608,8 @@ async function main() {
   // With DEMO_AUTH=1 the demo dataset file is the source of the rows (asserted canonical);
   // without it, the fixtures are, exactly as before #183.
   const demoDataset = demo ? await readDemoDataset() : null;
-  const { assessments, assessmentInstances } = demoDataset
-    ? { assessments: demoDataset.templates, assessmentInstances: demoDataset.instances }
+  const { assessments, assessmentSessions: assessmentInstances } = demoDataset
+    ? { assessments: demoDataset.templates, assessmentSessions: demoDataset.instances }
     : await import("../data/assessments.ts");
 
   // One name for "where the rows came from", used by the sweep, the assertion and the closing

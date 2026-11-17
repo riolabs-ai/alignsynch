@@ -137,14 +137,14 @@ vi.mock("next/image", async () => {
  * and `pnpm db:verify` holds the rows to — so the render is the record a seeded database returns.
  */
 vi.mock("@/lib/db/assessments", async () => {
-  const { assessments, assessmentInstances } = await import("@/data/assessments");
+  const { assessments, assessmentSessions } = await import("@/data/assessments");
   return {
     readAssessmentScreenBySlug: async (slug: string) => {
-      const instance = assessmentInstances.find((entry) => entry.slug === slug);
-      if (instance === undefined) return undefined;
-      const template = assessments.find((entry) => entry.id === instance.templateId);
+      const session = assessmentSessions.find((entry) => entry.slug === slug);
+      if (session === undefined) return undefined;
+      const template = assessments.find((entry) => entry.id === session.templateId);
       if (template === undefined) return undefined;
-      return { instance, template };
+      return { session, template };
     },
   };
 });
@@ -170,12 +170,12 @@ vi.mock("@/lib/db/user-profiles", () => ({
  * a fixture above. With no rows the pages take their ordinary empty paths, so what is measured on
  * the open side is a render rather than a failure panel.
  */
-vi.mock("@/lib/db/admin-instances", () => ({
-  listAdminInstances: async () => [],
+vi.mock("@/lib/db/admin-sessions", () => ({
+  listAdminSessions: async () => [],
 }));
 
 vi.mock("@/lib/db/gap-rows", () => ({
-  readGapPopulation: async () => ({ instances: [], excluded: 0, total: 0 }),
+  readGapPopulation: async () => ({ sessions: [], excluded: 0, total: 0 }),
 }));
 
 /**

@@ -158,7 +158,7 @@ function AspectRow({ row }: { row: AlignmentAspectScore }) {
  * The hero's proof card: the featured relationship, drawn from its own record.
  *
  * The header names the relationship and the mode it was answered in; the legend names the two
- * people behind the two bar colours; the rows are the instance's five Aspects; and the foot
+ * people behind the two bar colours; the rows are the session's five Aspects; and the foot
  * states what the distance between two answers is for. A reader can check every number on it
  * against `/assessment/<slug>`, which is the point of putting it on the front page.
  */

@@ -1,14 +1,14 @@
 /**
  * The accept step is reachable from where a party actually is (#617).
  *
- * Completion requires **both** parties' `party.accepted_at` (`lib/flow/state.ts::instanceStatusOf`,
+ * Completion requires **both** parties' `party.accepted_at` (`lib/flow/state.ts::sessionStatusOf`,
  * #R2). The accept page, its form and its `/accepts` endpoint all existed — and no surface in the
  * tree linked to the page, so a human-created session could not finish while every fixture-seeded
  * one could (the seed writes `accepted_at` directly). Every existing test POSTed `/accepts`
  * directly, which is exactly why the gate stayed green.
  *
  * So this file asserts the links, on the two surfaces a party is standing on once their own sheet
- * is complete: the confirmation a submit lands on, and the instance screen on any later visit.
+ * is complete: the confirmation a submit lands on, and the session screen on any later visit.
  * `scripts/flow-e2e.mjs` follows these anchors against a running app; this is the half that can
  * fail in the gate, with no database and no server.
  *
@@ -28,14 +28,14 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import AssessmentAcceptPage from "@/app/(mainlayout)/assessment/instances/[instanceId]/accept/page";
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import { SubmissionConfirmation } from "@/components/assessment-flow/submission-confirmation";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { Assessment, PartyRole } from "@/content/assessment";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
 import { acceptPath, acceptsPath, answerSheetPath } from "@/lib/flow/paths";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -43,12 +43,12 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-accept-entry";
+const SESSION_ID = "session-accept-entry";
 const ACCEPTED_AT = new Date("2026-11-07T09:00:00.000Z");
 const ASPECTS = template.items.length;
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -59,8 +59,8 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 
 function partiesWith(acceptance: { initiator: boolean; counterparty: boolean }): PartyRow[] {
   const base: PartyRow[] = [
-    { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-    { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+    { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+    { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
   ];
   return base.map((party) => {
     const accepted = party.role === "initiator" ? acceptance.initiator : acceptance.counterparty;
@@ -71,7 +71,7 @@ function partiesWith(acceptance: { initiator: boolean; counterparty: boolean }):
 /** One opinion row per Aspect, so a sheet is either wholly in or wholly out. */
 function opinionsFor(role: PartyRole): OpinionRow[] {
   return template.items.map((item) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role,
     item_id: item.id,
     feel: 3,
@@ -86,9 +86,9 @@ function screenWith(input: {
   acceptance?: { initiator: boolean; counterparty: boolean };
   viewer: PartyRole | "coach";
 }) {
-  const rows: FlowInstanceRows = {
+  const rows: FlowSessionRows = {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "relationship-basics-accept-entry",
       record_type: "assessment",
       status: "draft",
@@ -98,8 +98,8 @@ function screenWith(input: {
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-accept-entry",
       mode: "basic",
@@ -147,46 +147,46 @@ describe("the acceptance entry point (#617)", () => {
     expect(screen.report).toBeNull();
 
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen,
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
         submitted: true,
       }),
     );
 
     expect(html).toContain("data-submitted-confirmation");
-    expect(acceptAnchor(html)).toBe(acceptPath(INSTANCE_ID));
+    expect(acceptAnchor(html)).toBe(acceptPath(SESSION_ID));
     // The band's own label is the fixture's, not a literal the component invented.
     expect(html).toContain("Review and accept this session");
     // Still blind: a link to the accept step is not a link to the report.
     expect(html).not.toContain("data-feel-gap");
-    expect(html).not.toContain(acceptPath(INSTANCE_ID).replace(/\/accept$/, "/report"));
+    expect(html).not.toContain(acceptPath(SESSION_ID).replace(/\/accept$/, "/report"));
   });
 
-  it("links a party from the instance screen on any later visit", () => {
+  it("links a party from the session screen on any later visit", () => {
     // The same seat, a plain visit (`?submitted` absent): the party who closed the tab, or came
     // back to the session from a bookmark. The confirmation band is gone; the way to accept is not.
     const screen = screenWith({ answered: bothAnswered, viewer: "initiator" });
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
 
     expect(html).not.toContain("data-submitted-confirmation");
     expect(html).toContain('data-accept-step="ready"');
-    expect(acceptAnchor(html)).toBe(acceptPath(INSTANCE_ID));
+    expect(acceptAnchor(html)).toBe(acceptPath(SESSION_ID));
   });
 
   it("draws the submit confirmation's answer-sheet link beside it, and no accept link before the sheet is whole", () => {
     const html = renderToStaticMarkup(
       createElement(SubmissionConfirmation, {
-        copy: assessmentInstancePageCopy,
-        instanceRecordId: INSTANCE_ID,
+        copy: assessmentSessionPageCopy,
+        sessionRecordId: SESSION_ID,
         otherName: "Avery",
         acceptHref: null,
       }),
     );
 
-    expect(html).toContain(`href="${answerSheetPath(INSTANCE_ID)}"`);
+    expect(html).toContain(`href="${answerSheetPath(SESSION_ID)}"`);
     expect(acceptAnchor(html)).toBeNull();
   });
 
@@ -199,7 +199,7 @@ describe("the acceptance entry point (#617)", () => {
     });
 
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
 
     expect(screen.status).toBe("answering");
@@ -215,7 +215,7 @@ describe("the acceptance entry point (#617)", () => {
     });
 
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
 
     expect(screen.status).toBe("answering");
@@ -233,7 +233,7 @@ describe("the acceptance entry point (#617)", () => {
     });
 
     const html = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
 
     expect(screen.status).toBe("complete");
@@ -247,9 +247,9 @@ describe("the acceptance entry point (#617)", () => {
 /**
  * The journey, in the gate (#617).
  *
- * The blocks above prove the anchors exist. This one **follows** one: it renders the instance
+ * The blocks above prove the anchors exist. This one **follows** one: it renders the session
  * screen, reads the `href` off the anchor that screen drew, and then drives the real accept page
- * module for that instance — so the form's `action` is the page's own wiring (`acceptsPath()`), not
+ * module for that session — so the form's `action` is the page's own wiring (`acceptsPath()`), not
  * a string this test typed. Two hops of the journey are therefore measured against the app rather
  * than against a copy of its URLs.
  *
@@ -280,25 +280,25 @@ describe("following the rendered link to the accept form (#617)", () => {
       viewer: "counterparty",
     });
 
-    const instanceHtml = renderToStaticMarkup(
-      createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+    const sessionHtml = renderToStaticMarkup(
+      createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
     );
-    const href = acceptAnchor(instanceHtml);
-    expect(href).toBe(acceptPath(INSTANCE_ID));
+    const href = acceptAnchor(sessionHtml);
+    expect(href).toBe(acceptPath(SESSION_ID));
 
-    // The page reads its instance through `readFlowScreen()` — the same projection this screen came
+    // The page reads its session through `readFlowScreen()` — the same projection this screen came
     // from — and resolves everything else (the viewer, the seats) from those rows.
     pageStore.current = screen;
     const pageElement = await AssessmentAcceptPage({
-      params: Promise.resolve({ instanceId: INSTANCE_ID }),
+      params: Promise.resolve({ instanceId: SESSION_ID }),
       searchParams: Promise.resolve({}),
     });
     const pageHtml = renderToStaticMarkup(pageElement);
 
-    // The hop: the address the instance screen linked to is the page that posts this seat's
+    // The hop: the address the session screen linked to is the page that posts this seat's
     // acceptance. If either side renames its URL without the other, this fails.
-    expect(new URL(href ?? "", "https://instance.invalid").pathname).toBe(acceptPath(INSTANCE_ID));
-    expect(formActionOf(pageHtml)).toBe(acceptsPath(INSTANCE_ID));
+    expect(new URL(href ?? "", "https://session.invalid").pathname).toBe(acceptPath(SESSION_ID));
+    expect(formActionOf(pageHtml)).toBe(acceptsPath(SESSION_ID));
     // The page draws this seat as the one to act (`data-accepted="no"` on its own row), and the
     // other seat sealed — no score, no Gap, on the page the journey arrives at.
     expect(pageHtml).toContain(`data-party="counterparty" data-accepted="no"`);

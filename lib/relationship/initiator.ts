@@ -4,7 +4,7 @@
  * A relationship can answer that question from two places, and they are not the same kind of fact:
  *
  *   the column   `relationship.initiator_user_id` — an **account**, written by the create that
- *                committed the row (`lib/flow/store.ts::createInstanceFromTemplate`), when the
+ *                committed the row (`lib/flow/store.ts::createSessionFromTemplate`), when the
  *                creator was signed in.
  *   the seat     `party.role = 'initiator'` with `party.user_id = the viewer` — the binding the
  *                session itself carries, which is what every flow read already decides a role by

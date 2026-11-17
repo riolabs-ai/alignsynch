@@ -290,7 +290,7 @@ describe("every action on the page is public", () => {
    */
   it("sends every card to a create step this build actually ships", () => {
     // The stage-1 route is in the manifest (E7 checks it in both directions), and every card's
-    // address is one instance of that pattern.
+    // address is one session of that pattern.
     expect(ROUTE_PATTERNS).toContain("/templates/relationship/[slug]/create");
     for (const card of cards) {
       expect(card.start).toMatch(/^\/templates\/relationship\/[a-z-]+\/create$/);

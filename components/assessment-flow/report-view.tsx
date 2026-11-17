@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/assessment/assessment-report.tsx   (variation: the instance's read through the flow screen, with the locked page replacing a redacted body — the v1 report body it was ported from is deleted with `/v1`)
+ * template-ancestor: components/assessment/assessment-report.tsx   (variation: the session's read through the flow screen, with the locked page replacing a redacted body — the v1 report body it was ported from is deleted with `/v1`)
  *
  * `/assessment/instances/[instanceId]/report` — **the one read surface the app did not have**
  * (#409). This is the surface whose loss cost a whole card to restore: a report that collapses to
@@ -9,7 +9,7 @@
  * ## The blind rule, as a branch and not as a redaction
  *
  * `screen.report` is `null` until both parties have answered every Aspect (`projectScreen` →
- * `instanceStatusOf` → `assessmentReport`, and `readFlowScreen` never reads the other party's
+ * `sessionStatusOf` → `assessmentReport`, and `readFlowScreen` never reads the other party's
  * opinion rows before that). When it is `null` this component draws the **locked page**: the
  * relationship's title, what unlocks the report, and the viewer's own answered count. It does not
  * draw a greyed-out table, a hidden score, a "3 of 5" for the other party, or an empty Aspect
@@ -21,8 +21,8 @@
  * The scores are each party's stored `opinion` rows. The Gaps are `gapKindsOf()` — eight calls of
  * `gapOf()`, one per kind, with the pairs read from `GAP_KIND_SOURCES` — so a row can never label
  * one pair and compute another. The per-Aspect line and the verdict band are
- * `instanceAlignment()`'s own `unmet` list, so the sentence and the table cannot disagree. The
- * Setting is the instance's column and its tolerance is `SETTING_GAP_LIMITS`, carried by the
+ * `sessionAlignment()`'s own `unmet` list, so the sentence and the table cannot disagree. The
+ * Setting is the session's column and its tolerance is `SETTING_GAP_LIMITS`, carried by the
  * projection as `settingLimit` rather than re-imported here.
  *
  * ## A dash, never a zero
@@ -50,7 +50,7 @@ import { GAP_KIND_LABELS, GAP_KIND_SOURCES, gapKindsIn, groupsIn } from "@/conte
 import { MAX_GAP } from "@/content/record";
 import { relationshipReportPageCopy } from "@/data/pages/assessment-relationship-report";
 import type { AspectReportRow, AssessmentReport, ReportedParty } from "@/lib/assessment-report";
-import { answerSheetPath, instancePath } from "@/lib/flow/paths";
+import { answerSheetPath, sessionPath } from "@/lib/flow/paths";
 import type { FlowScreen } from "@/lib/flow/screen";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 
@@ -98,7 +98,7 @@ function SideScore({ side, unscored }: { side: GapSide; unscored: string }) {
 
 /**
  * Both parties' Opinions on one Aspect, as a matrix — one row per party, one column per kind the
- * instance's Mode asks. This is the table a "widest gap" summary throws away: the reader sees who
+ * session's Mode asks. This is the table a "widest gap" summary throws away: the reader sees who
  * said what before seeing the distance between them.
  */
 function OpinionMatrix({
@@ -380,7 +380,7 @@ function ReportGate({
       <nav aria-label={itemLabel(back, "all")} className="mb-3">
         <a
           className="text-sm font-medium text-action hover:underline"
-          href={instancePath(screen.instanceRecordId)}
+          href={sessionPath(screen.sessionRecordId)}
         >
           {itemLabel(back, "all")}
         </a>
@@ -407,7 +407,7 @@ function ReportGate({
         */}
         <a
           className={`mt-4 ${PRIMARY}`}
-          href={answerSheetPath(screen.instanceRecordId)}
+          href={answerSheetPath(screen.sessionRecordId)}
           data-report-continue="true"
         >
           {itemLabel(gate, "continue")}
@@ -446,7 +446,7 @@ export function RelationshipReport({
       <nav aria-label={itemLabel(back, "all")} className="mb-3">
         <a
           className="text-sm font-medium text-action hover:underline"
-          href={instancePath(screen.instanceRecordId)}
+          href={sessionPath(screen.sessionRecordId)}
         >
           {itemLabel(back, "all")}
         </a>

@@ -14,7 +14,7 @@
  *      `returnTo` that keeps the 303 on this screen.
  *   4. **Signed out is behind the person, not in front.** Nothing here links to `/login`; the `go`
  *      band says where the relationship lives until an account claims it.
- *   5. **The rail is stage 5 of 5**, one current entry, because this is a stage and the instance
+ *   5. **The rail is stage 5 of 5**, one current entry, because this is a stage and the session
  *      screen it leads to is not (`docs/specs/ux-stages.md`).
  *
  * No database and no server: `projectScreen` is the same pure projection the read path hands the
@@ -30,10 +30,10 @@ import { assessmentSentPageCopy } from "@/data/pages/assessment-sent";
 import type { Assessment, PartyRole } from "@/content/assessment";
 import type { ItemRow, PartyRow } from "@/lib/db/rows";
 import { INVITE_STATES } from "@/lib/flow/invite-state";
-import { instancePath, reinvitePath } from "@/lib/flow/paths";
+import { sessionPath, reinvitePath } from "@/lib/flow/paths";
 import {
   projectScreen,
-  type FlowInstanceRows,
+  type FlowSessionRows,
   type FlowInvite,
   type FlowScreen,
 } from "@/lib/flow/screen";
@@ -45,13 +45,13 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-sent-state";
+const SESSION_ID = "session-sent-state";
 const SENT_AT = "2026-11-07T09:00:00.000Z";
 const EXPIRES_AT = "2026-11-14T09:00:00.000Z";
 const CLAIMED_AT = "2026-11-08T10:00:00.000Z";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -61,14 +61,14 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 }));
 
 const parties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
 ];
 
-function rows(): FlowInstanceRows {
+function rows(): FlowSessionRows {
   return {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "relationship-basics-sent",
       record_type: "assessment",
       status: "draft",
@@ -78,8 +78,8 @@ function rows(): FlowInstanceRows {
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-sent-state",
       mode: "basic",
@@ -124,8 +124,8 @@ function htmlWith(
     createElement(SentState, {
       copy: assessmentSentPageCopy,
       screen,
-      resendAction: reinvitePath(INSTANCE_ID),
-      openHref: instancePath(INSTANCE_ID),
+      resendAction: reinvitePath(SESSION_ID),
+      openHref: sessionPath(SESSION_ID),
       signedIn,
     }),
   );
@@ -204,7 +204,7 @@ describe("a relationship with no invitation row (#976)", () => {
  * `invite.state` is derived by the read, so its id is not a literal E23 can resolve against the
  * fixture: the next status `inviteStateOf()` grows — or a second route that reuses this band with
  * another vocabulary — met `itemLabel`'s throw inside a server render, at request time, while
- * `typecheck`, `lint`, `data:check` and `next build` all stayed green. #988 closed the one instance
+ * `typecheck`, `lint`, `data:check` and `next build` all stayed green. #988 closed the one session
  * of that (the absent row, `none`); this pins the class: the band carries a neutral fallback row,
  * the band's own sentence renders, and the screen keeps its timeline and its next-step list.
  */
@@ -226,8 +226,8 @@ describe("a state the band has no sentence for (#998)", () => {
       createElement(SentState, {
         copy: assessmentSentPageCopy,
         screen: unknownStateScreen(),
-        resendAction: reinvitePath(INSTANCE_ID),
-        openHref: instancePath(INSTANCE_ID),
+        resendAction: reinvitePath(SESSION_ID),
+        openHref: sessionPath(SESSION_ID),
         signedIn: true,
       }),
     );
@@ -269,8 +269,8 @@ describe("a state the band has no sentence for (#998)", () => {
         // `?resend=` names a code from a later build: the band has no row for it, so nothing is
         // drawn — the same answer the route's own filter gives a value it does not know.
         resendRefusal: "a-code-from-a-later-build",
-        resendAction: reinvitePath(INSTANCE_ID),
-        openHref: instancePath(INSTANCE_ID),
+        resendAction: reinvitePath(SESSION_ID),
+        openHref: sessionPath(SESSION_ID),
         signedIn: true,
       }),
     );
@@ -321,9 +321,9 @@ describe("the invitation timeline (#691)", () => {
 });
 
 describe("resend, on the shipped mechanism (#691)", () => {
-  it("posts to the instance's own re-invite endpoint and comes back here", () => {
+  it("posts to the session's own re-invite endpoint and comes back here", () => {
     const html = htmlWith("unclaimed");
-    expect(html).toContain(`action="${reinvitePath(INSTANCE_ID)}"`);
+    expect(html).toContain(`action="${reinvitePath(SESSION_ID)}"`);
     expect(html).toContain('name="returnTo"');
     expect(html).toContain('value="sent"');
   });
@@ -353,7 +353,7 @@ describe("the rail and the way onward (#691)", () => {
   });
 
   it("points at the relationship itself, which is stage 6", () => {
-    expect(htmlWith("unclaimed")).toContain(`href="${instancePath(INSTANCE_ID)}"`);
+    expect(htmlWith("unclaimed")).toContain(`href="${sessionPath(SESSION_ID)}"`);
   });
 
   it("offers no sign-in when the person is signed out — the account is behind them", () => {

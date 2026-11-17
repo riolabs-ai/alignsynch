@@ -46,7 +46,7 @@ export const TOUR_DEMO_TEMPLATE_ID = "assessment-relationship-basics";
 export const TOUR_DEMO_ASPECT_COUNT = 2;
 
 /**
- * The mode the example is played in. Templates carry no mode (an **instance** records one), and
+ * The mode the example is played in. Templates carry no mode (a **session** records one), and
  * Basic is the shortest honest sheet: two Opinions per Aspect, which is what the script's answers
  * are written for (`data/pages/tour.ts::tourDemoAnswers`).
  */

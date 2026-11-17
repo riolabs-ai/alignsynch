@@ -190,7 +190,7 @@ export const AUTH_CLASS_TABLE: readonly {
   {
     prefix: "/assessment/instances",
     auth: "member",
-    why: "currentUser() — the member's own instances",
+    why: "currentUser() — the member's own sessions",
   },
   {
     prefix: "/how-it-works",

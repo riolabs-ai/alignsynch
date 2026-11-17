@@ -5,23 +5,23 @@
  * **This module is the whole of what an admin may see, and it is written so a leak would be a
  * visible line of SQL rather than a prop someone forgot to withhold.** Two statements:
  *
- *   1. the registry: one row per instance, with the seats, their identity state, the mode, the
- *      Setting, the counts `instanceStatusOf()` needs, the created instant and the last instant
+ *   1. the registry: one row per session, with the seats, their identity state, the mode, the
+ *      Setting, the counts `sessionStatusOf()` needs, the created instant and the last instant
  *      anything happened to the row;
- *   2. the opinions, **only for the instances the first statement proved complete**, and only
+ *   2. the opinions, **only for the sessions the first statement proved complete**, and only
  *      as the input to `stageOf()`. Nothing from statement 2 is returned: `registryRowOf()`
  *      turns each Aspect's two opinion sets into Gaps and then into one stage name, and the
  *      scores stay in this function.
  *
  * That is the shape the blind rule takes for an admin: the *derived stage* is a permitted fact
  * (`console-ia` §5, and the card says so), the opinions behind it are not, and there is no field
- * on `AdminInstanceRow` through which a score could travel. `tests/admin-instance-registry.test.ts`
+ * on `AdminSessionRow` through which a score could travel. `tests/admin-session-registry.test.ts`
  * pins the type's contents at the level of the module's own contract; the grep in the PR proves
  * the rendered HTML carries no answer value.
  *
  * **`complete` is decided in SQL-shaped counts, not in the view.** The second statement's `WHERE
  * o.session_record_id = ANY($1)` is handed only the ids whose two answered counts reached the
- * Aspect count — the same comparison `instanceStatusOf()` makes — so an unfinished instance can
+ * Aspect count — the same comparison `sessionStatusOf()` makes — so an unfinished session can
  * not contribute a row to a stage, exactly as §5 requires ("Admin surfaces filter to `complete`
  * in SQL before reading `opinion`").
  *
@@ -34,7 +34,7 @@
  * `initiator_email`, `counterparty_name` and the invitation `email` are not selected, so a row
  * cannot print them even if a later view asked.
  *
- * Reads through `queryRows` (`lib/db/client.ts`) for the same reason `listMyInstances` does: the
+ * Reads through `queryRows` (`lib/db/client.ts`) for the same reason `listMySessions` does: the
  * retry and `DatabaseUnavailableError` are the list's failure panel, not Next's 500.
  */
 import { queryRows } from "@/lib/db/client";
@@ -42,9 +42,9 @@ import {
   aspectGapsOf,
   type AspectOpinions,
   registryRowOf,
-  type AdminInstanceRow,
+  type AdminSessionRow,
   type SeatFacts,
-} from "@/lib/admin/instance-registry";
+} from "@/lib/admin/session-registry";
 import type { AlignmentSetting, AssessmentMode, Opinions } from "@/content/assessment";
 import type { InviteFacts } from "@/lib/flow/invite-state";
 
@@ -65,8 +65,8 @@ interface InviteJson {
 interface RegistryQueryRow {
   readonly session_record_id: string;
   readonly slug: string;
-  readonly instance_name: string | null;
-  readonly instance_title: string;
+  readonly session_name: string | null;
+  readonly session_title: string;
   readonly template_title: string | null;
   readonly mode: string;
   readonly alignment_setting: string;
@@ -75,7 +75,7 @@ interface RegistryQueryRow {
   readonly aspect_count: number;
   readonly initiator_answered: number;
   readonly counterparty_answered: number;
-  /** The two acceptances (#R2) — an instance is complete only when both are true. */
+  /** The two acceptances (#R2) — a session is complete only when both are true. */
   readonly initiator_accepted: boolean;
   readonly counterparty_accepted: boolean;
   readonly initiator: SeatJson | null;
@@ -89,20 +89,20 @@ interface RegistryQueryRow {
  * The registry, one statement.
  *
  * `ORDER BY r.date DESC, r.slug` is the list's stable order — newest relationship first, and a
- * tie broken by slug so two instances seeded on one day cannot swap places between visits.
+ * tie broken by slug so two sessions seeded on one day cannot swap places between visits.
  *
- * `last_activity` is the latest instant the instance's own rows record: the invitation created,
+ * `last_activity` is the latest instant the session's own rows record: the invitation created,
  * claimed or re-sent, or either party submitting. It is `GREATEST` of the seeded date and that
- * maximum, so an instance that only exists has its creation instant rather than NULL. The
+ * maximum, so a session that only exists has its creation instant rather than NULL. The
  * `party.submitted_at` column is `0011`'s and is unwritten today — "we do not know when" is
  * NULL, and the maximum simply skips it instead of inventing a time.
  */
-const ADMIN_INSTANCES_SQL = `
+const ADMIN_SESSIONS_SQL = `
   SELECT
     r.id                            AS session_record_id,
     r.slug                          AS slug,
-    r.title                         AS instance_title,
-    ai.name                         AS instance_name,
+    r.title                         AS session_title,
+    ai.name                         AS session_name,
     t.title                         AS template_title,
     ai.mode                         AS mode,
     ai.alignment_setting            AS alignment_setting,
@@ -144,7 +144,7 @@ const ADMIN_INSTANCES_SQL = `
     ON t.id = ai.template_record_id
    AND t.record_type = 'assessment'
   WHERE r.record_type = 'assessment'
-    -- #1100b — the console's instance list is sessions, so a **draft session is not on it**. A
+    -- #1100b — the console's session list is sessions, so a **draft session is not on it**. A
     -- draft is a create that has not been accepted: it has no Counterparty seat, no answers and
     -- nothing to administer, and listing it here would print a session with 0 answers beside
     -- thirty real ones. The relationship itself is still visible wherever its creator reads it
@@ -155,9 +155,9 @@ const ADMIN_INSTANCES_SQL = `
 `;
 
 /**
- * The opinions behind the stages, for the instances that are complete.
+ * The opinions behind the stages, for the sessions that are complete.
  *
- * A complete instance has every pair by construction (`instanceStatusOf`), so this statement
+ * A complete session has every pair by construction (`sessionStatusOf`), so this statement
  * returns the Gaps' inputs and nothing else. `role` is the party's, `item_id` the Aspect's — no
  * party name, no address, no invitation.
  */
@@ -219,20 +219,20 @@ function opinionsOf(row: OpinionQueryRow): Opinions {
 }
 
 /**
- * Every instance in the system, newest first — the operator's list.
+ * Every session in the system, newest first — the operator's list.
  *
  * `now` is handed in rather than read here: the invite's expiry is a comparison against an
  * instant, and a page that decided it should say which instant it decided at. One clock per
  * request also keeps every row's state consistent with every other row's on the same screen
  * (the reason `inviteStateOf` takes `now` at all).
  *
- * An instance whose template record is missing still lists: `templateTitle` falls back to the
- * instance's own copied title, which is the words the flow wrote when it copied the template.
+ * A session whose template record is missing still lists: `templateTitle` falls back to the
+ * session's own copied title, which is the words the flow wrote when it copied the template.
  * That is drift `db:verify` reports on its own (E31); hiding the row would make the operator's
  * registry disagree with the database about how many relationships exist.
  */
-export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]> {
-  const rows = await queryRows<RegistryQueryRow>(ADMIN_INSTANCES_SQL);
+export async function listAdminSessions(now: Date): Promise<AdminSessionRow[]> {
+  const rows = await queryRows<RegistryQueryRow>(ADMIN_SESSIONS_SQL);
 
   const completeIds = rows
     .filter(
@@ -241,7 +241,7 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
         row.aspect_count > 0 &&
         row.initiator_answered >= row.aspect_count &&
         row.counterparty_answered >= row.aspect_count &&
-        // #R2: an instance is complete only when both seats have ACCEPTED it. Reading the
+        // #R2: a session is complete only when both seats have ACCEPTED it. Reading the
         // opinions behind a stage is the one permission the blind rule grants at `complete`, so
         // the acceptance is a condition of this statement, not a decoration on the view.
         row.initiator_accepted &&
@@ -249,7 +249,7 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
     )
     .map((row) => row.session_record_id);
 
-  // No complete instance means no opinion read at all: the statement is not sent for a list that
+  // No complete session means no opinion read at all: the statement is not sent for a list that
   // could not use it, and a registry with only invitations never touches the opinion table.
   const aspectsById =
     completeIds.length === 0
@@ -260,10 +260,10 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
     const pairs = aspectsById.get(row.session_record_id) ?? [];
     return registryRowOf(
       {
-        instanceRecordId: row.session_record_id,
+        sessionRecordId: row.session_record_id,
         slug: row.slug,
-        name: row.instance_name,
-        templateTitle: row.template_title ?? row.instance_title,
+        name: row.session_name,
+        templateTitle: row.template_title ?? row.session_title,
         mode: modeOf(row.mode),
         setting: settingOf(row.alignment_setting),
         aspectCount: row.aspect_count,
@@ -278,7 +278,7 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
         created: row.created,
         lastActivity: row.last_activity ?? row.created,
       },
-      // One `AspectGaps` list per instance, built from the pairs; `aspectGapsOf` is the one
+      // One `AspectGaps` list per session, built from the pairs; `aspectGapsOf` is the one
       // place the two opinion sets become Gaps, so the stage cannot disagree with the report.
       aspectGapsOf(pairs),
       now,
@@ -287,29 +287,29 @@ export async function listAdminInstances(now: Date): Promise<AdminInstanceRow[]>
 }
 
 /**
- * The per-instance Aspect/opinion pairs, keyed by instance id, in Aspect order.
+ * The per-session Aspect/opinion pairs, keyed by session id, in Aspect order.
  *
  * A pair is only recorded when **both** parties answered that Aspect: `gapKindsOf` would return
  * the kinds it can compute from one side, and a Gap computed from one person's answers is not a
- * Gap — it is a number about a question nobody compared. A complete instance has every pair, so
+ * Gap — it is a number about a question nobody compared. A complete session has every pair, so
  * this branch is the model's own guarantee rather than a filter.
  */
 async function readCompleteAspects(
-  instanceIds: readonly string[],
+  sessionIds: readonly string[],
 ): Promise<Map<string, readonly AspectOpinions[]>> {
-  const rows = await queryRows<OpinionQueryRow>(COMPLETE_OPINIONS_SQL, [instanceIds]);
+  const rows = await queryRows<OpinionQueryRow>(COMPLETE_OPINIONS_SQL, [sessionIds]);
 
-  // instance -> item -> role -> opinions
-  const byInstance = new Map<
+  // session -> item -> role -> opinions
+  const bySession = new Map<
     string,
     Map<string, Partial<Record<"initiator" | "counterparty", Opinions>>>
   >();
   for (const row of rows) {
     if (row.role !== "initiator" && row.role !== "counterparty") continue;
-    let byItem = byInstance.get(row.session_record_id);
+    let byItem = bySession.get(row.session_record_id);
     if (byItem === undefined) {
       byItem = new Map();
-      byInstance.set(row.session_record_id, byItem);
+      bySession.set(row.session_record_id, byItem);
     }
     let pair = byItem.get(row.item_id);
     if (pair === undefined) {
@@ -320,13 +320,13 @@ async function readCompleteAspects(
   }
 
   const out = new Map<string, readonly AspectOpinions[]>();
-  for (const [instanceId, byItem] of byInstance) {
+  for (const [sessionId, byItem] of bySession) {
     const pairs: AspectOpinions[] = [];
     for (const [itemId, pair] of byItem) {
       if (pair.initiator === undefined || pair.counterparty === undefined) continue;
       pairs.push({ itemId, initiator: pair.initiator, counterparty: pair.counterparty });
     }
-    out.set(instanceId, pairs);
+    out.set(sessionId, pairs);
   }
   return out;
 }

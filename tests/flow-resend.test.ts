@@ -139,7 +139,7 @@ vi.mock("@/lib/db/client", () => ({
  * Fixtures
  * ------------------------------------------------------------------ */
 
-const INSTANCE_ID = "instance-resend-test";
+const SESSION_ID = "session-resend-test";
 const NOW = new Date("2026-11-04T12:00:00.000Z");
 const OLD_TOKEN = "o".repeat(43);
 
@@ -188,7 +188,7 @@ describe("who may re-invite", () => {
     expect(resendRefusal(facts({ viewerRole: "counterparty" }), NOW)).toBe("not-initiator");
   });
 
-  it("refuses an instance with no invitation at all", () => {
+  it("refuses a session with no invitation at all", () => {
     expect(resendRefusal(facts({ inviteExists: false }), NOW)).toBe("no-invite");
   });
 });
@@ -199,8 +199,8 @@ describe("the invitation's own state", () => {
   });
 
   it("names a finished relationship as complete, not merely claimed", () => {
-    // A complete instance is necessarily claimed; the stronger, terminal fact is the one to say,
-    // because its honest next step ("start a new instance") is different from a spent link's.
+    // A complete session is necessarily claimed; the stronger, terminal fact is the one to say,
+    // because its honest next step ("start a new session") is different from a spent link's.
     expect(resendRefusal(facts({ claimed: true, complete: true }), NOW)).toBe("instance-complete");
   });
 });
@@ -283,7 +283,7 @@ describe("resendInvite writes one replacement token", () => {
     unclaimedInvitation();
 
     const result = await resendInvite({
-      instanceRecordId: INSTANCE_ID,
+      sessionRecordId: SESSION_ID,
       viewerTokens: ["party-token"],
       now: NOW,
     });
@@ -295,7 +295,7 @@ describe("resendInvite writes one replacement token", () => {
     expect(update.values[1]).toBe(hashToken(result.inviteToken));
     expect(update.values[1]).not.toBe(result.inviteToken);
     expect(update.values[1]).not.toBe(hashToken(OLD_TOKEN));
-    expect(update.values[0]).toBe(INSTANCE_ID);
+    expect(update.values[0]).toBe(SESSION_ID);
     // Nothing in the transaction carried the raw token: only its digest reached SQL.
     for (const call of stub.calls) expect(call.values).not.toContain(result.inviteToken);
     // Two tokens from the same generator are different tokens.
@@ -305,19 +305,19 @@ describe("resendInvite writes one replacement token", () => {
 
   it("moves the window to now + 7 days and records the reissue instant", async () => {
     unclaimedInvitation();
-    await resendInvite({ instanceRecordId: INSTANCE_ID, viewerTokens: ["t"], now: NOW });
+    await resendInvite({ sessionRecordId: SESSION_ID, viewerTokens: ["t"], now: NOW });
 
     const [update] = callsMatching(/^UPDATE session_invite SET token_hash/);
     expect(update.values[3]).toBe(new Date(NOW.getTime() + INVITE_TTL_MS).toISOString());
     expect(update.values[4]).toBe(NOW.toISOString());
-    // `created_at` is the instance's own fact and is not rewritten by a reissue.
+    // `created_at` is the session's own fact and is not rewritten by a reissue.
     expect(stub.narrow(update.text)).not.toContain("created_at");
     expect(stub.narrow(update.text)).toContain("resent_count = resent_count + 1");
   });
 
   it("keeps the address on the row when the form posts none", async () => {
     unclaimedInvitation();
-    await resendInvite({ instanceRecordId: INSTANCE_ID, viewerTokens: ["t"], now: NOW });
+    await resendInvite({ sessionRecordId: SESSION_ID, viewerTokens: ["t"], now: NOW });
 
     const [update] = callsMatching(/^UPDATE session_invite SET token_hash/);
     expect(update.values[2]).toBe("rowan@example.com");
@@ -326,7 +326,7 @@ describe("resendInvite writes one replacement token", () => {
   it("writes a corrected address, and reports where the invitation went", async () => {
     unclaimedInvitation();
     const result = await resendInvite({
-      instanceRecordId: INSTANCE_ID,
+      sessionRecordId: SESSION_ID,
       email: "  rowan.corrected@example.com  ",
       viewerTokens: ["t"],
       now: NOW,
@@ -346,7 +346,7 @@ describe("resendInvite writes one replacement token", () => {
 
   it("locks the invitation before it decides, and commits the success", async () => {
     unclaimedInvitation();
-    await resendInvite({ instanceRecordId: INSTANCE_ID, viewerTokens: ["t"], now: NOW });
+    await resendInvite({ sessionRecordId: SESSION_ID, viewerTokens: ["t"], now: NOW });
 
     const [select] = callsMatching(/^SELECT iv\.email/);
     expect(stub.narrow(select.text)).toContain("FOR UPDATE OF iv, ai");
@@ -402,7 +402,7 @@ describe("every refusal writes nothing", () => {
     },
     {
       name: "no-invite",
-      // The seat still exists (the instance has its Initiator); it is the invitation row that is
+      // The seat still exists (the session has its Initiator); it is the invitation row that is
       // missing, which is the one thing `no-invite` is about.
       setup: () => {
         stub.reset();
@@ -417,7 +417,7 @@ describe("every refusal writes nothing", () => {
       scenario.setup();
 
       const result = await resendInvite({
-        instanceRecordId: INSTANCE_ID,
+        sessionRecordId: SESSION_ID,
         viewerTokens: ["t"],
         now: NOW,
       });
@@ -434,7 +434,7 @@ describe("every refusal writes nothing", () => {
   it("refuses an undeliverable address without writing", async () => {
     unclaimedInvitation();
     const result = await resendInvite({
-      instanceRecordId: INSTANCE_ID,
+      sessionRecordId: SESSION_ID,
       email: "rowan@example",
       viewerTokens: ["t"],
       now: NOW,

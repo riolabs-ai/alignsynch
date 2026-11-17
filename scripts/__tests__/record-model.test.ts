@@ -20,13 +20,13 @@ import {
   ADVANCED_OPINION_KINDS,
   BASIC_OPINION_KINDS,
   OPINION_KINDS,
-  instanceTemplateProblems,
+  sessionTemplateProblems,
   opinionKindsOf,
   zAssessment,
-  zAssessmentInstance,
+  zAssessmentSession,
   zOpinions,
   type Assessment,
-  type AssessmentInstance,
+  type AssessmentSession,
   type Party,
 } from "../../content/assessment";
 import {
@@ -43,15 +43,15 @@ import {
   type ScoreScale,
 } from "../../content/record";
 import { quizAsTemplate, zQuiz } from "../../content/quiz";
-import { assessmentInstances, assessments } from "../../data/assessments";
+import { assessmentSessions, assessments } from "../../data/assessments";
 import { currentQuiz } from "../../data/currentQuiz";
 
 const assessment = assessments[0] as Assessment;
-const instance = assessmentInstances[0] as AssessmentInstance;
-/** The Advanced fixture (#213): the only seeded instance that answers all four kinds. */
-const advancedInstance = assessmentInstances.find(
+const session = assessmentSessions[0] as AssessmentSession;
+/** The Advanced fixture (#213): the only seeded session that answers all four kinds. */
+const advancedSession = assessmentSessions.find(
   (entry) => entry.slug === "noor-iris",
-) as AssessmentInstance;
+) as AssessmentSession;
 
 /** The party's opinions on one Aspect. */
 const opinionsOn = (party: Party, itemId: string) => {
@@ -208,39 +208,39 @@ describe("an item carries a scale, and a response is a value on it", () => {
 
 describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", () => {
   it("answers every Aspect of both modes' instances, two or four opinions each", () => {
-    assert.equal(zAssessmentInstance.safeParse(instance).success, true);
-    assert.equal(instance.parties.length, 2);
+    assert.equal(zAssessmentSession.safeParse(session).success, true);
+    assert.equal(session.parties.length, 2);
 
-    const counts = (candidate: AssessmentInstance) =>
+    const counts = (candidate: AssessmentSession) =>
       candidate.parties.flatMap((party) =>
         party.opinions.map((row) => opinionKindsOf(row.opinions).length),
       );
 
-    // Both modes are exercised by the fixtures, in separate instances: a mode is the whole
-    // play (#213), so no single instance mixes a two-score Aspect with a four-score one.
-    assert.equal(instance.mode, "basic");
+    // Both modes are exercised by the fixtures, in separate sessions: a mode is the whole
+    // play (#213), so no single session mixes a two-score Aspect with a four-score one.
+    assert.equal(session.mode, "basic");
     assert.equal(
-      counts(instance).every((count) => count === BASIC_OPINION_KINDS.length),
+      counts(session).every((count) => count === BASIC_OPINION_KINDS.length),
       true,
-      `a Basic instance answers exactly 2 opinions per Aspect (got ${counts(instance).join(", ")})`,
+      `a Basic session answers exactly 2 opinions per Aspect (got ${counts(session).join(", ")})`,
     );
-    assert.equal(advancedInstance.mode, "advanced");
+    assert.equal(advancedSession.mode, "advanced");
     assert.equal(
-      counts(advancedInstance).every((count) => count === OPINION_KINDS.length),
+      counts(advancedSession).every((count) => count === OPINION_KINDS.length),
       true,
-      `an Advanced instance answers all 4 (got ${counts(advancedInstance).join(", ")})`,
+      `an Advanced session answers all 4 (got ${counts(advancedSession).join(", ")})`,
     );
   });
 
   it("names the Basic opinions in the glossary's order", () => {
-    const basic = opinionsOn(instance.parties[0] as Party, "aspect-housework");
+    const basic = opinionsOn(session.parties[0] as Party, "aspect-housework");
     assert.deepEqual(opinionKindsOf(basic), [...BASIC_OPINION_KINDS]);
     assert.equal(basic.think, undefined);
     assert.equal(basic.guess, undefined);
   });
 
   it("adds Think and Guess as a pair, never one alone", () => {
-    const advanced = opinionsOn(advancedInstance.parties[0] as Party, "aspect-check-ins");
+    const advanced = opinionsOn(advancedSession.parties[0] as Party, "aspect-check-ins");
     assert.deepEqual(opinionKindsOf(advanced), [...BASIC_OPINION_KINDS, ...ADVANCED_OPINION_KINDS]);
 
     assert.equal(zOpinions.safeParse({ feel: 3, wish: 4, think: 2 }).success, false);
@@ -260,21 +260,21 @@ describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", (
 
   /**
    * #213 — the mixed state is unrepresentable. The schema has always allowed four opinions
-   * per Aspect; what it now refuses is an instance whose **mode** and opinion rows disagree.
+   * per Aspect; what it now refuses is a session whose **mode** and opinion rows disagree.
    * Both cases spread the real fixtures and change one thing about them.
    */
   it("rejects a Basic instance carrying Advanced opinions", () => {
-    const mixed: AssessmentInstance = {
-      ...instance,
-      parties: instance.parties.map((party) => ({
+    const mixed: AssessmentSession = {
+      ...session,
+      parties: session.parties.map((party) => ({
         ...party,
         opinions: party.opinions.map((row, index) =>
           index === 0 ? { ...row, opinions: { ...row.opinions, think: 3, guess: 4 } } : row,
         ),
-      })) as AssessmentInstance["parties"],
+      })) as AssessmentSession["parties"],
     };
 
-    const parsed = zAssessmentInstance.safeParse(mixed);
+    const parsed = zAssessmentSession.safeParse(mixed);
     assert.equal(parsed.success, false);
     if (parsed.success) return;
     const message = parsed.error.issues.map((issue) => issue.message).join(" ");
@@ -283,19 +283,19 @@ describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", (
   });
 
   it("rejects an Advanced instance answered with Basic sheets", () => {
-    const short: AssessmentInstance = {
-      ...advancedInstance,
-      parties: advancedInstance.parties.map((party) => ({
+    const short: AssessmentSession = {
+      ...advancedSession,
+      parties: advancedSession.parties.map((party) => ({
         ...party,
         opinions: party.opinions.map((row, index) =>
           index === 0
             ? { ...row, opinions: { feel: row.opinions.feel, wish: row.opinions.wish } }
             : row,
         ),
-      })) as AssessmentInstance["parties"],
+      })) as AssessmentSession["parties"],
     };
 
-    const parsed = zAssessmentInstance.safeParse(short);
+    const parsed = zAssessmentSession.safeParse(short);
     assert.equal(parsed.success, false);
     if (parsed.success) return;
     const message = parsed.error.issues.map((issue) => issue.message).join(" ");
@@ -314,23 +314,23 @@ describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", (
   });
 
   it("rejects two parties of the same role, and a party with one answer", () => {
-    const [initiator, counterparty] = instance.parties;
+    const [initiator, counterparty] = session.parties;
     assert.ok(initiator && counterparty);
     const twoInitiators = {
-      ...instance,
+      ...session,
       parties: [initiator, { ...counterparty, role: initiator.role }] as const,
     };
-    assert.equal(zAssessmentInstance.safeParse(twoInitiators).success, false);
+    assert.equal(zAssessmentSession.safeParse(twoInitiators).success, false);
 
-    const oneParty = { ...instance, parties: [initiator] };
-    assert.equal(zAssessmentInstance.safeParse(oneParty).success, false);
+    const oneParty = { ...session, parties: [initiator] };
+    assert.equal(zAssessmentSession.safeParse(oneParty).success, false);
   });
 
   it("rejects a party that answers an Aspect the instance does not hold", () => {
-    const [initiator, counterparty] = instance.parties;
+    const [initiator, counterparty] = session.parties;
     assert.ok(initiator && counterparty);
     const unknown = {
-      ...instance,
+      ...session,
       parties: [
         {
           ...initiator,
@@ -342,17 +342,17 @@ describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", (
         counterparty,
       ],
     };
-    assert.equal(zAssessmentInstance.safeParse(unknown).success, false);
+    assert.equal(zAssessmentSession.safeParse(unknown).success, false);
   });
 
   it("rejects a party that leaves an Aspect unanswered", () => {
-    const [initiator, counterparty] = instance.parties;
+    const [initiator, counterparty] = session.parties;
     assert.ok(initiator && counterparty);
     const short = {
-      ...instance,
+      ...session,
       parties: [{ ...initiator, opinions: initiator.opinions.slice(1) }, counterparty],
     };
-    assert.equal(zAssessmentInstance.safeParse(short).success, false);
+    assert.equal(zAssessmentSession.safeParse(short).success, false);
   });
 });
 
@@ -362,8 +362,8 @@ describe("opinions — Basic is Feel and Wish, Advanced adds Think and Guess", (
 
 describe("the gap — a difference of Opinion, computed and never stored", () => {
   it("reads two parties' different opinions as a Gap of 3", () => {
-    const initiator = instance.parties[0] as Party;
-    const counterparty = instance.parties[1] as Party;
+    const initiator = session.parties[0] as Party;
+    const counterparty = session.parties[1] as Party;
     const aspectId = "aspect-time-together";
 
     const mine = opinionsOn(initiator, aspectId).feel;
@@ -378,8 +378,8 @@ describe("the gap — a difference of Opinion, computed and never stored", () =>
   });
 
   it("is 0 when the two opinions agree — the glossary's In Synch", () => {
-    const initiator = instance.parties[0] as Party;
-    const counterparty = instance.parties[1] as Party;
+    const initiator = session.parties[0] as Party;
+    const counterparty = session.parties[1] as Party;
 
     // Both parties Feel 4 about money: In Synch, the green check, no Gap.
     assert.equal(
@@ -410,10 +410,10 @@ describe("the gap — a difference of Opinion, computed and never stored", () =>
   });
 
   it("does not store the Gap: a `gap` key is rejected, not merely unwritten", () => {
-    const initiator = instance.parties[0] as Party;
+    const initiator = session.parties[0] as Party;
     const tampered = {
-      ...instance,
-      parties: instance.parties.map((party) => ({
+      ...session,
+      parties: session.parties.map((party) => ({
         ...party,
         opinions: party.opinions.map((row) => ({
           ...row,
@@ -421,7 +421,7 @@ describe("the gap — a difference of Opinion, computed and never stored", () =>
         })),
       })),
     };
-    assert.equal(zAssessmentInstance.safeParse(tampered).success, false);
+    assert.equal(zAssessmentSession.safeParse(tampered).success, false);
 
     // And the field the schema does own is the pair of scores the Gap is read from.
     const feel = opinionsOn(initiator, "aspect-time-together").feel;
@@ -431,29 +431,29 @@ describe("the gap — a difference of Opinion, computed and never stored", () =>
 });
 
 /* ================================================================== *
- * E31 — an instance is a copy of a template
+ * E31 — a session is a copy of a template
  * ================================================================== */
 
 describe("E31 — the instance's Aspects are its template's", () => {
   it("finds nothing wrong in the real tree", () => {
-    assert.deepEqual(instanceTemplateProblems(assessments, assessmentInstances), []);
+    assert.deepEqual(sessionTemplateProblems(assessments, assessmentSessions), []);
   });
 
   it("reports an instance whose template is not in the collection", () => {
-    const orphan: AssessmentInstance = { ...instance, templateId: "assessment-not-there" };
-    const problems = instanceTemplateProblems(assessments, [orphan]);
+    const orphan: AssessmentSession = { ...session, templateId: "assessment-not-there" };
+    const problems = sessionTemplateProblems(assessments, [orphan]);
     assert.equal(problems.length, 1);
     assert.match(problems[0] ?? "", /names template "assessment-not-there"/);
   });
 
   it("reports a copy that drifted from its template", () => {
-    const drifted: AssessmentInstance = {
-      ...instance,
-      items: instance.items.map((item, index) =>
+    const drifted: AssessmentSession = {
+      ...session,
+      items: session.items.map((item, index) =>
         index === 0 ? { ...item, id: "aspect-time-apart" } : item,
       ),
     };
-    const problems = instanceTemplateProblems(assessments, [drifted]);
+    const problems = sessionTemplateProblems(assessments, [drifted]);
     assert.equal(problems.length, 1);
     assert.match(problems[0] ?? "", /its Aspects are \[aspect-time-apart/);
     assert.match(problems[0] ?? "", /the template's are \[aspect-time-together/);

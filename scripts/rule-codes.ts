@@ -139,7 +139,7 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     owner: "the record model — one record type, two templates (issue #128)",
     files: ["data-check.ts"],
     codes: {
-      E31: "an assessment instance names a template that exists, and its Aspects are that template's Aspects — a copy that drifted is not a copy",
+      E31: "an assessment session names a template that exists, and its Aspects are that template's Aspects — a copy that drifted is not a copy",
       E32: "the committed demo bundle is the canonical export of `data/assessments.ts`",
       E33: "an imported tenant store parses, and the active assessment set passes E0/E1/E2/E31 against itself",
     },
@@ -223,7 +223,7 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     // other copy rules and prints its census line.
     files: ["vocabulary.ts", "data-check.ts"],
     codes: {
-      E41: 'no reader-visible string the alignment build renders names a retired product noun — the model says `instance`, the product says "session", and the exact strings that may keep a noun are the shrink-only `VOCABULARY_ALLOWANCES` table',
+      E41: 'no reader-visible string the alignment build renders names a retired product noun — the model says `session`, the product says "session", and the exact strings that may keep a noun are the shrink-only `VOCABULARY_ALLOWANCES` table',
     },
   },
   {
@@ -237,7 +237,7 @@ export const RULE_CODE_GROUPS: readonly RuleCodeGroup[] = [
     files: ["bundles.ts", "bundle-platform.ts", "../content/bundle.ts"],
     codes: {
       B1: "envelope shape — not one JSON object, a bad `format`/`kind`/`appVersion`, an unknown top-level key",
-      B2: "payload record — a `zAssessment` / `zAssessmentInstance` issue, or an unknown key on one, path included",
+      B2: "payload record — a `zAssessment` / `zAssessmentSession` issue, or an unknown key on one, path included",
       B3: "dataset collection — an id or a slug twice, a `templateId` outside the bundle, or a copy that drifted",
       B4: "forbidden key — a key that names a credential (`token`, `secret`, `password`, `apiKey`, `key`, `pin`), wherever it sits",
       B5: "a template import colliding with the active store's id or `type/slug` — the import refuses rather than rewriting",

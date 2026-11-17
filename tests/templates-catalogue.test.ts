@@ -12,7 +12,7 @@
  *
  * The page is a re-cut on the visual system `docs/specs/spec-design-page-rel-templates-v2/` draws,
  * and it is **not** a clone of a drawing: the package contains a home page and a brand profile and
- * no catalogue page, so what the card asked for is that every band be an *instance* of a drawn
+ * no catalogue page, so what the card asked for is that every band be an *session* of a drawn
  * pattern rather than a new one. That is a claim about the tree, and this file is where it is
  * checked:
  *

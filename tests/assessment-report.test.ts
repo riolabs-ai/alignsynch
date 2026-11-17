@@ -53,8 +53,8 @@ import {
   gapKindsOf,
   type GapKind,
 } from "@/content/gaps";
-import { assessmentInstances, assessments } from "@/data/assessments";
-import { assessmentReport, instanceBySlug } from "@/lib/assessment-report";
+import { assessmentSessions, assessments } from "@/data/assessments";
+import { assessmentReport, sessionBySlug } from "@/lib/assessment-report";
 
 /** React escapes the characters it writes as markup; a title carrying `&` arrives escaped. */
 function escapeHtml(text: string): string {
@@ -66,24 +66,22 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#x27;");
 }
 
-const instance = instanceBySlug("avery-rowan", assessmentInstances);
-const template = instance
-  ? assessments.find((entry) => entry.id === instance.templateId)
-  : undefined;
+const session = sessionBySlug("avery-rowan", assessmentSessions);
+const template = session ? assessments.find((entry) => entry.id === session.templateId) : undefined;
 
-if (instance === undefined || template === undefined) {
+if (session === undefined || template === undefined) {
   throw new Error("the Avery/Rowan fixture and its template are the test's subject");
 }
 
-const report = assessmentReport(instance, template);
+const report = assessmentReport(session, template);
 const markup = renderToStaticMarkup(createElement(AssessmentReportView, { report }));
 
 /** The render of one fixture: the projection, then the static markup of it. */
-function renderInstance(slug: string): {
+function renderSession(slug: string): {
   report: ReturnType<typeof assessmentReport>;
   html: string;
 } {
-  const entry = instanceBySlug(slug, assessmentInstances);
+  const entry = sessionBySlug(slug, assessmentSessions);
   const own =
     entry === undefined
       ? undefined
@@ -108,7 +106,7 @@ function gapAttributes(aHtml: string): string[] {
   return aHtml.match(/data-[a-z]+(?:-[a-z]+)*-gap=/g) ?? [];
 }
 
-const advancedSpec = renderInstance("noor-iris");
+const advancedSpec = renderSession("noor-iris");
 
 describe("the report's Gaps", () => {
   const rowOf = (from: ReturnType<typeof assessmentReport>, itemId: string) => {
@@ -164,7 +162,7 @@ describe("the report's Gaps", () => {
    * these are the numbers this card quotes (hand-computed from the fixture, and pinned a
    * second time under plain node by `scripts/__tests__/gaps.test.ts`).
    */
-  it("gives an Advanced instance eight kinds on every Aspect, and these are the numbers", () => {
+  it("gives an Advanced session eight kinds on every Aspect, and these are the numbers", () => {
     expect(advancedSpec.report.mode).toBe("advanced");
     expect(advancedSpec.report.rows).toHaveLength(5);
 
@@ -300,8 +298,8 @@ describe("the rendered screen", () => {
   it("renders the template's title and summary, and both parties' names", () => {
     expect(markup).toContain(template.title);
     expect(markup).toContain(template.summary);
-    expect(markup).toContain(instance.parties[0].name);
-    expect(markup).toContain(instance.parties[1].name);
+    expect(markup).toContain(session.parties[0].name);
+    expect(markup).toContain(session.parties[1].name);
     expect(markup).toContain("aspect-time-together");
   });
 
@@ -409,14 +407,14 @@ describe("the rendered screen", () => {
   });
 
   /**
-   * The fixture grew four instances after this screen was written (three Relationship
-   * Types, one template with no instances). A projection that only draws the record its
+   * The fixture grew four sessions after this screen was written (three Relationship
+   * Types, one template with no sessions). A projection that only draws the record its
    * test was written for would pass every case above and blank `/assessment/ruth-sam`,
-   * so every instance is rendered here and counted against its own Aspects.
+   * so every session is rendered here and counted against its own Aspects.
    */
-  it("renders every instance in the fixture, not only the one this file names", () => {
-    expect(assessmentInstances.length).toBeGreaterThan(1);
-    for (const entry of assessmentInstances) {
+  it("renders every session in the fixture, not only the one this file names", () => {
+    expect(assessmentSessions.length).toBeGreaterThan(1);
+    for (const entry of assessmentSessions) {
       const own = assessments.find((candidate) => candidate.id === entry.templateId);
       expect(own, `${entry.slug} names no template`).toBeDefined();
       if (own === undefined) continue;
@@ -432,7 +430,7 @@ describe("the rendered screen", () => {
       // since #274: the verdict band above the cards is a `<section>` too, and a count of the
       // tag would have had to grow by one to keep saying "every Aspect is drawn".
       expect((html.match(/data-aspect="/g) ?? []).length).toBe(entry.items.length);
-      // Every instance draws four kinds per Aspect, or eight when it is Advanced.
+      // Every session draws four kinds per Aspect, or eight when it is Advanced.
       const perAspect = entry.mode === "advanced" ? GAP_KINDS.length : BASIC_GAP_KINDS.length;
       expect(gapAttributes(html), `${entry.slug} (${entry.mode})`).toHaveLength(
         perAspect * entry.items.length,
@@ -442,8 +440,8 @@ describe("the rendered screen", () => {
 });
 
 describe("the slug", () => {
-  it("resolves to the instance whose slug matches", () => {
-    expect(instanceBySlug("avery-rowan", assessmentInstances)?.id).toBe(instance.id);
+  it("resolves to the session whose slug matches", () => {
+    expect(sessionBySlug("avery-rowan", assessmentSessions)?.id).toBe(session.id);
   });
 
   /** The read is a request-time database read: no `generateStaticParams`, no prerender (#145). */
@@ -459,7 +457,7 @@ describe("the slug", () => {
     ).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
-  it("404s an instance whose template no longer resolves", async () => {
+  it("404s a session whose template no longer resolves", async () => {
     // What the read layer returns for that case is `undefined`: the page has no second source
     // for the title, so a broken copy is a 404 rather than a report with no words above it.
     screenFor.mockResolvedValue(undefined);
@@ -470,15 +468,15 @@ describe("the slug", () => {
   });
 
   it("renders both names from the rows it is handed, for the slug it asked for", async () => {
-    screenFor.mockResolvedValue({ instance, template });
+    screenFor.mockResolvedValue({ session, template });
 
     const html = renderToStaticMarkup(
       await AssessmentPage({ params: Promise.resolve({ slug: "avery-rowan" }) }),
     );
 
     expect(screenFor).toHaveBeenCalledWith("avery-rowan");
-    expect(html).toContain(escapeHtml(instance.parties[0].name));
-    expect(html).toContain(escapeHtml(instance.parties[1].name));
+    expect(html).toContain(escapeHtml(session.parties[0].name));
+    expect(html).toContain(escapeHtml(session.parties[1].name));
     expect(html).toContain(escapeHtml(template.title));
   });
 });
@@ -523,7 +521,7 @@ describe("when the database does not answer (#204)", () => {
   });
 
   it("still throws a row that does not parse — a defect is not an outage", async () => {
-    screenFor.mockRejectedValueOnce(new Error("assessment instance row failed the model"));
+    screenFor.mockRejectedValueOnce(new Error("assessment session row failed the model"));
 
     await expect(
       AssessmentPage({ params: Promise.resolve({ slug: "avery-rowan" }) }),

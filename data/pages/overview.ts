@@ -8,13 +8,13 @@
  *
  * **The card labels are the filter names.** `awaiting-other`, `yours-to-answer` and `reports-open`
  * are the ids `lib/flow/overview.ts` filters `/assessment/instances` by, and `data/pages/
- * assessment-instances.ts` names the same three in its `filter` band. That is the one sentence
+ * assessment-sessions.ts` names the same three in its `filter` band. That is the one sentence
  * written twice in this fixture pair, and it is deliberate: each surface owns its own words (the
  * card is a label under a number, the list is a line above a list), while the *contract* — which
  * rows a number counts — is single-sourced in `lib/flow/overview.ts` and cannot drift.
  *
  * **No number is authored here.** There is no `value` on any item and no example figure in a body:
- * the page hands the component counts it derived from `listMyInstances()` and
+ * the page hands the component counts it derived from `listMySessions()` and
  * `listPublishedTemplates()`, and `data/pages/dashboard.ts`'s ruling — "the honest page is
  * identity plus honest empty states: no invented balance, no invented quiz" — is the rule this
  * fixture follows for a console whose rows *do* exist.

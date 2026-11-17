@@ -8,7 +8,7 @@
  * owner — recoverable, and invisible.
  *
  * The check is `stuckDeletionJobProblems()` in `scripts/db-verify.mjs`, exported for the same
- * reason `seededInstanceStatusProblems()` and `orphanProfileProblems()` are: the gate is
+ * reason `seededSessionStatusProblems()` and `orphanProfileProblems()` are: the gate is
  * database-free (`docs/operations/gate.md`), so the part that decides an answer takes rows and a `now`, and
  * these cases feed it both. The boundary cases are logged as comments beside the rule: the
  * threshold exists so an ordinary in-flight scrub never fires it, which is only true if the

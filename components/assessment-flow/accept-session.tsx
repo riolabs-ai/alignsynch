@@ -1,5 +1,5 @@
 /**
- * template-ancestor: components/assessment-flow/instance-view.tsx   (variation: server-rendered from the instance's own rows, and the acceptance is real — each seat reads its own `party.accepted_at`, the control posts to the accept endpoint, and the Aspect columns show the viewer's own answers with the other seat sealed until both accept)
+ * template-ancestor: components/assessment-flow/session-view.tsx   (variation: server-rendered from the session's own rows, and the acceptance is real — each seat reads its own `party.accepted_at`, the control posts to the accept endpoint, and the Aspect columns show the viewer's own answers with the other seat sealed until both accept)
  *
  * `AcceptSession` — the acceptance step, live since R2 (#427).
  *
@@ -48,7 +48,7 @@ import {
 } from "@/content/assessment";
 import { formatDate } from "@/content/core";
 import type { PageCopy } from "@/content/pages";
-import type { InstanceStatus } from "@/lib/flow/state";
+import type { SessionStatus } from "@/lib/flow/state";
 import { fillLabel, itemLabel, sectionBody, sectionOf } from "@/lib/page-copy";
 import { StageColumn } from "./stage-column";
 
@@ -127,7 +127,7 @@ export function AcceptSession({
   viewerRole: PartyRole | "coach";
   viewerAnswered: number;
   viewerAccepted: boolean;
-  status: InstanceStatus;
+  status: SessionStatus;
   problem: AcceptProblemCode | undefined;
   acceptAction: string;
   answerHref: string;

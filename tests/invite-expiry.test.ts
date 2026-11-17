@@ -2,13 +2,13 @@
  * The Initiator learns their invitation expired (#266).
  *
  * The defect: an invitation dies after seven days, the **Recipient** is told so on
- * `/invite/[token]`, and the **Initiator** was not — `readInstanceBundle` read `email,
+ * `/invite/[token]`, and the **Initiator** was not — `readSessionBundle` read `email,
  * counterparty_name, claimed_at` and left `expires_at` behind, so the panel that hands the
  * Initiator their link kept drawing it forever, for a URL the claim path refuses.
  *
  * Three claims, and each one is checked at the cheapest place it can be read:
  *
- *   the column   the instance bundle's invite query selects `expires_at` — asserted on the
+ *   the column   the session bundle's invite query selects `expires_at` — asserted on the
  *                statement the store issued, not on the view model, because "the screen shows a
  *                date" is also true of a date the store invented;
  *   the clock    the state is `inviteStateOf()` over that column and the read's own `now`, so the
@@ -16,7 +16,7 @@
  *                after it. Nothing is written between the two reads: no UPDATE, no INSERT, no
  *                `expired` value anywhere (`expires_at` is in `0002_two_party_flow.sql` and no
  *                later migration touches it);
- *   the screen   all three states are quoted out of the markup `AssessmentInstanceView` renders
+ *   the screen   all three states are quoted out of the markup `AssessmentSessionView` renders
  *                for that screen, with the date the row carries.
  *
  * **The client is a stub, on purpose** — the gate is database-free (`docs/operations/gate.md`), exactly as
@@ -32,8 +32,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { invitePageCopy } from "@/data/pages/invite";
 import { assessments } from "@/data/assessments";
 import type { ResendRefusal } from "@/lib/flow/resend";
@@ -57,7 +57,7 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-expiry-test";
+const SESSION_ID = "session-expiry-test";
 const TEMPLATE_RECORD_ID = "assessment-relationship-basics";
 
 /** The invitation's deadline, and the two instants read against it. */
@@ -68,8 +68,8 @@ const AFTER_EXPIRY = new Date("2026-11-07T12:00:00.000Z");
 /** `2026-11-06` as the screen draws it — `content/core.ts`'s UTC formatter. */
 const EXPIRY_DATE = "Nov 6, 2026";
 
-const instanceRecord: RecordRow = {
-  id: INSTANCE_ID,
+const sessionRecord: RecordRow = {
+  id: SESSION_ID,
   slug: "relationship-basics-expiry-test",
   record_type: "assessment",
   status: "draft",
@@ -78,9 +78,9 @@ const instanceRecord: RecordRow = {
   summary: `Answered by Avery and Rowan.`,
 };
 
-function instanceItems(): ItemRow[] {
+function sessionItems(): ItemRow[] {
   return template.items.map((item, position) => ({
-    record_id: INSTANCE_ID,
+    record_id: SESSION_ID,
     item_id: item.id,
     position,
     prompt: item.prompt,
@@ -103,13 +103,13 @@ const templateItems: ItemRow[] = template.items.map((item, position) => ({
 
 const templateOptions: OptionRow[] = [];
 
-/** The instance's copy of those rows — the Aspects the Initiator's answer sheet asks. */
-const copiedItems: ItemRow[] = instanceItems();
+/** The session's copy of those rows — the Aspects the Initiator's answer sheet asks. */
+const copiedItems: ItemRow[] = sessionItems();
 
 /** A Counterparty who has answered everything — the answers the Initiator must never see. */
 function counterpartyOpinions(): OpinionRow[] {
   return template.items.map((item) => ({
-    session_record_id: INSTANCE_ID,
+    session_record_id: SESSION_ID,
     role: "counterparty",
     item_id: item.id,
     feel: 5,
@@ -175,13 +175,13 @@ const stub = vi.hoisted(() => {
     if (sql.startsWith("SELECT p.role FROM party p")) {
       return { rows: [{ role: "initiator" }], rowCount: 1 };
     }
-    // The instance bundle. Matched before the template read below: both open with
+    // The session bundle. Matched before the template read below: both open with
     // `SELECT to_jsonb(r) AS record,`, and only this one joins `session`.
     if (sql.includes("JOIN session ai ON ai.record_id = r.id")) {
       return {
         rows: [
           {
-            record: { ...instanceRecord, date: "2026-10-30T12:00:00.000Z" },
+            record: { ...sessionRecord, date: "2026-10-30T12:00:00.000Z" },
             template_record_id: TEMPLATE_RECORD_ID,
             mode: "basic",
             alignment_setting: "soft",
@@ -212,8 +212,8 @@ const stub = vi.hoisted(() => {
       };
     }
     if (sql.startsWith("SELECT to_jsonb(r) AS record,")) {
-      // `readTemplate` — the template the instance was copied from, which supplies the title
-      // and summary the screen draws. Not an instance: the query's own `NOT EXISTS` guard.
+      // `readTemplate` — the template the session was copied from, which supplies the title
+      // and summary the screen draws. Not a session: the query's own `NOT EXISTS` guard.
       return {
         rows: [
           {
@@ -268,7 +268,7 @@ function callsMatching(pattern: RegExp) {
 /** The screen the Initiator's browser would be handed at `now`, from these rows. */
 async function initiatorScreen(now: Date): Promise<FlowScreen> {
   const screen = await readFlowScreen({
-    instanceRecordId: INSTANCE_ID,
+    sessionRecordId: SESSION_ID,
     token: INVITE_TOKEN,
     inviteToken: INVITE_TOKEN,
     now,
@@ -279,7 +279,7 @@ async function initiatorScreen(now: Date): Promise<FlowScreen> {
 
 function render(screen: FlowScreen): string {
   return renderToStaticMarkup(
-    createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+    createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
   );
 }
 
@@ -304,7 +304,7 @@ function invitePanel(markup: string): { state: string; sentence: string } {
   return { state: match[1] ?? "", sentence: inviteSentence(markup) };
 }
 
-/** An unclaimed, still-live invitation on an instance only the Initiator has a seat on. */
+/** An unclaimed, still-live invitation on a session only the Initiator has a seat on. */
 function unclaimedInvitation(over: Partial<NonNullable<(typeof stub.state)["invite"]>> = {}) {
   stub.reset();
   stub.state.invite = {
@@ -321,14 +321,14 @@ function unclaimedInvitation(over: Partial<NonNullable<(typeof stub.state)["invi
     revoked_at: null,
     ...over,
   };
-  stub.state.parties = [{ session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" }];
+  stub.state.parties = [{ session_record_id: SESSION_ID, role: "initiator", name: "Avery" }];
 }
 
 /* ------------------------------------------------------------------ *\
  * The column
  * ------------------------------------------------------------------ */
 
-describe("the instance bundle reads the invitation's deadline", () => {
+describe("the session bundle reads the invitation's deadline", () => {
   it("selects expires_at, so the screen can name the date instead of guessing it", async () => {
     unclaimedInvitation();
     await initiatorScreen(BEFORE_EXPIRY);
@@ -337,7 +337,7 @@ describe("the instance bundle reads the invitation's deadline", () => {
       /^SELECT email, counterparty_name, created_at, claimed_at, expires_at, resent_at, resent_count, revoked_at, revoked_by FROM session_invite/,
     );
     expect(bundleQuery).toBeDefined();
-    expect(bundleQuery.values).toEqual([INSTANCE_ID]);
+    expect(bundleQuery.values).toEqual([SESSION_ID]);
   });
 
   it("is the only surface that needs it: no UPDATE, INSERT or new column on the read", async () => {
@@ -423,8 +423,8 @@ describe("the Initiator's screen draws three states", () => {
   it("quotes claimed, unchanged", async () => {
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+      { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
     ];
 
     const markup = render(await initiatorScreen(AFTER_EXPIRY));
@@ -442,8 +442,8 @@ describe("the Initiator's screen draws three states", () => {
 
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+      { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
     ];
     const taken = render(await initiatorScreen(AFTER_EXPIRY));
 
@@ -462,8 +462,8 @@ describe("the blind rule survives the new read", () => {
   it("asks for the viewer's own opinions only, while the Counterparty has answered", async () => {
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+      { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
     ];
     // Their answers exist in the "database" — 5/1 on every Aspect. The Initiator has none.
     stub.state.opinions = counterpartyOpinions();
@@ -513,7 +513,7 @@ describe("the Recipient's page is untouched", () => {
   it("still says the four words it always did, and now points at a re-send", () => {
     // The copy the Recipient reads lives in `data/pages/invite.ts` and is asserted here by value.
     // #266 changed the Initiator's panel only and left this sentence alone; #275 changed it on
-    // purpose, by one clause: re-invite now exists, so "start a new instance" stopped being the
+    // purpose, by one clause: re-invite now exists, so "start a new session" stopped being the
     // honest next step — the same invitation can be reissued. The heading and the seven-day fact
     // are unchanged.
     const expired = invitePageCopy.sections?.find((entry) => entry.id === "expired");
@@ -532,15 +532,15 @@ describe("the Recipient's page is untouched", () => {
 describe("the Initiator's panel offers one recovery action", () => {
   const renderWith = (screen: FlowScreen, resendRefusal?: ResendRefusal): string =>
     renderToStaticMarkup(
-      createElement(AssessmentInstanceView, {
+      createElement(AssessmentSessionView, {
         screen,
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
         ...(resendRefusal === undefined ? {} : { resendRefusal }),
       }),
     );
 
   const SENTENCE = (code: ResendRefusal): string =>
-    fillLabel(itemLabel(sectionOf(assessmentInstancePageCopy, "invite"), code), {
+    fillLabel(itemLabel(sectionOf(assessmentSessionPageCopy, "invite"), code), {
       counterparty: "Rowan",
     });
 
@@ -549,7 +549,7 @@ describe("the Initiator's panel offers one recovery action", () => {
     const markup = renderWith(await initiatorScreen(BEFORE_EXPIRY));
 
     expect(markup).toContain("data-reinvite-form");
-    expect(markup).toContain(`action="${reinvitePath(INSTANCE_ID)}"`);
+    expect(markup).toContain(`action="${reinvitePath(SESSION_ID)}"`);
     expect(markup).toContain('name="email"');
     expect(markup).toContain('value="rowan@example.com"');
     // No refusal on a plain visit: the alert is the redirect's fact, not a standing panel.
@@ -561,15 +561,15 @@ describe("the Initiator's panel offers one recovery action", () => {
     const markup = renderWith(await initiatorScreen(AFTER_EXPIRY));
 
     expect(markup).toContain("data-reinvite-form");
-    // And the sentence it sits under now points at the form rather than at a new instance.
+    // And the sentence it sits under now points at the form rather than at a new session.
     expect(markup).toContain("send Rowan a new one below");
   });
 
   it("is not drawn once the invitation is claimed — the seat is taken", async () => {
     unclaimedInvitation({ claimed_at: new Date("2026-11-01T12:00:00.000Z") });
     stub.state.parties = [
-      { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery" },
-      { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan" },
+      { session_record_id: SESSION_ID, role: "initiator", name: "Avery" },
+      { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan" },
     ];
 
     const markup = renderWith(await initiatorScreen(AFTER_EXPIRY));

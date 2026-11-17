@@ -17,10 +17,10 @@
  * code. The narrow `WHERE` is the permission; this route never checks one of its own, because a
  * second copy of a rule is a second chance to get it wrong.
  *
- * **Archiving is not deletion, and it cannot break an instance.** An instance copies its Aspects
- * into its own `item` rows when it is created, and the instance screen draws from that copy —
+ * **Archiving is not deletion, and it cannot break a session.** A session copies its Aspects
+ * into its own `item` rows when it is created, and the session screen draws from that copy —
  * nothing joins back to the template. Archiving only stops the catalogue listing it and stops
- * `createInstanceFromTemplate` from copying it (that path refuses a non-published template).
+ * `createSessionFromTemplate` from copying it (that path refuses a non-published template).
  *
  * The answer is a 303 to the library with the record's id in `?archived=` / `?unarchived=`, so
  * the browser follows with a GET and a reload cannot perform the write twice. The filter the

@@ -11,14 +11,14 @@
  * `$1` is nullable on purpose: a signed-out visitor's answer is the built-ins only, because
  * `author_user_id = NULL` matches nothing. Nothing in this module reads a name, a header or a
  * role — the id is the session's (`lib/auth/session.ts`), which is the same rule
- * `lib/db/my-instances.ts` follows for `party.user_id`.
+ * `lib/db/my-sessions.ts` follows for `party.user_id`.
  *
  * **A template is a record with no `session` row.** The `NOT EXISTS` is the
  * definition `TEMPLATE_BY_ID_SQL` and `listPublishedTemplates()` already use, repeated here
- * rather than joined, so an instance can never be listed as a template and archived as one.
+ * rather than joined, so a session can never be listed as a template and archived as one.
  *
  * Reads go through `queryRows` so this surface gets the same dead-socket retry and the same
- * `DatabaseUnavailableError` the instance list has.
+ * `DatabaseUnavailableError` the session list has.
  */
 import type { PublishStatus } from "@/content/core";
 import { queryRows } from "@/lib/db/client";
@@ -35,7 +35,7 @@ interface LibraryRow {
   /** NULL is the platform's template (`0011_console_columns.sql`). */
   readonly author_user_id: string | null;
   readonly aspects: number;
-  readonly instances: number;
+  readonly sessions: number;
 }
 
 /**
@@ -57,7 +57,7 @@ const LIBRARY_COLUMNS = `
   COALESCE(live.payload->>'summary', r.summary)   AS summary,
   COALESCE(jsonb_array_length(live.payload->'items'),
            (SELECT count(*) FROM item i WHERE i.record_id = r.id))::int AS aspects,
-  (SELECT count(*) FROM session ai WHERE ai.template_record_id = r.id)::int AS instances
+  (SELECT count(*) FROM session ai WHERE ai.template_record_id = r.id)::int AS sessions
 `;
 
 const LIVE_VERSION_JOIN = `
@@ -84,7 +84,7 @@ function libraryTemplateOf(row: LibraryRow, viewerUserId: string | null): Librar
     status: row.status as PublishStatus,
     createdAt: instantOf(row.date),
     aspectCount: row.aspects,
-    instanceCount: row.instances,
+    sessionCount: row.sessions,
     authorship: authorshipOf(row.author_user_id, viewerUserId),
   };
 }
@@ -157,7 +157,7 @@ export interface LibraryTemplateDetail {
    *
    * The one fact `LibraryTemplate.status` cannot answer: a row can be `published` and still have no
    * version — a template archived before publishing recorded versions, and then unarchived by a
-   * path that did not write one. `createInstanceFromTemplate` refuses exactly that shape, so the
+   * path that did not write one. `createSessionFromTemplate` refuses exactly that shape, so the
    * stage-1 guard has to be able to ask it before the person types anything.
    *
    * **Optional, because absent is "not measured" and it must not become a refusal.** Every fixture
@@ -185,8 +185,8 @@ interface AspectRow {
  * either way, and it is what lets a permanent redirect land on a page that resolves it without a
  * second entry point in the app's own links.
  *
- * "Otherwise" covers all four misses with one answer — no such record, a record that is an
- * instance, a template somebody else wrote, and a withdrawn one — because the page turns every one
+ * "Otherwise" covers all four misses with one answer — no such record, a record that is a
+ * session, a template somebody else wrote, and a withdrawn one — because the page turns every one
  * of them into `notFound()`. Distinguishing them in the response would tell a stranger that a
  * handle exists, which is the one thing a 404 is for.
  *
@@ -273,7 +273,7 @@ export interface TemplateHandle {
  * to get it wrong. So this answers "which row is this address about", and nothing else.
  *
  * A single `record_type = 'assessment'` + `NOT EXISTS (session)` predicate, for the reason
- * `readLibraryTemplate` states: an instance must never be reachable as a template. Both columns
+ * `readLibraryTemplate` states: a session must never be reachable as a template. Both columns
  * are indexed and the match is one of them, so the `OR` costs no scan.
  */
 export async function resolveTemplateHandle(handle: string): Promise<TemplateHandle | undefined> {

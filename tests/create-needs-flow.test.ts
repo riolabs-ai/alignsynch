@@ -41,7 +41,7 @@ import { itemLabel, sectionOf } from "@/lib/page-copy";
 
 const TEMPLATE_ID = "assessment-relationship-basics";
 const TEMPLATE_SLUG = "relationship-basics";
-const INSTANCE_ID = "assessment-instance-server-half";
+const SESSION_ID = "assessment-instance-server-half";
 
 /** What the route asked the store for, per test — empty means the create never happened. */
 const stub = vi.hoisted(() => ({
@@ -63,10 +63,10 @@ vi.mock("@/lib/flow/store", () => {
   }
   return {
     FlowError,
-    createInstanceFromTemplate: async (input: { draft?: boolean; templateRecordId?: string }) => {
+    createSessionFromTemplate: async (input: { draft?: boolean; templateRecordId?: string }) => {
       stub.creates.push({ draft: input.draft, templateRecordId: input.templateRecordId });
       return {
-        instanceRecordId: "assessment-instance-server-half",
+        sessionRecordId: "assessment-instance-server-half",
         initiatorToken: "initiator-token",
         inviteToken: "invite-token",
         templateTitle: "Relationship Basics",
@@ -175,7 +175,7 @@ describe("a create that did not come through the flow", () => {
     const location = new URL(response.headers.get("location") ?? "");
     // Stage 5 is where the send is decided; the create's own redirect reports no `invite=` outcome.
     expect(location.pathname).toBe("/templates/relationship/relationship-basics/create/invite");
-    expect(location.searchParams.get("instance")).toBe(INSTANCE_ID);
+    expect(location.searchParams.get("instance")).toBe(SESSION_ID);
     expect(location.searchParams.get("invite")).toBeNull();
     expect(stub.creates).toEqual([{ draft: true, templateRecordId: TEMPLATE_ID }]);
   });

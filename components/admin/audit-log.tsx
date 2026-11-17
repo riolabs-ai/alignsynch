@@ -5,7 +5,7 @@
  *
  * **The template, and the axes it varies.** This is `components/my-quizzes/my-quizzes.tsx` in its
  * list shape, composed with `components/ui/table.tsx` and the registry's filter row
- * (`components/admin/instance-registry.tsx`):
+ * (`components/admin/session-registry.tsx`):
  *
  *   my-quizzes                    this log
  *   ----------------------------  ------------------------------------------------

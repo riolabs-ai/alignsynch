@@ -9,7 +9,7 @@
  *
  * Five decisions, each one the reason a code exists:
  *
- * 1. **The payload is the schemas.** `content` is exactly `zAssessment` / `zAssessmentInstance`
+ * 1. **The payload is the schemas.** `content` is exactly `zAssessment` / `zAssessmentSession`
  *    — Aspects, parties and opinions travel inside an instance, as they always did — so there
  *    is no second shape to drift between the package and the store.
  *
@@ -57,7 +57,7 @@ import {
   ASSESSMENT_MODES,
   OPINION_KINDS,
   type Assessment,
-  type AssessmentInstance,
+  type AssessmentSession,
 } from "../content/assessment";
 import {
   BUNDLE_FORMAT,
@@ -417,7 +417,7 @@ function prodSubset(full: PlatformPayload): SubsetResult {
     }
   }
 
-  const keptInstances: AssessmentInstance[] = [];
+  const keptInstances: AssessmentSession[] = [];
   const orphaned: string[] = [];
 
   for (const instance of full.content.instances) {
@@ -495,7 +495,7 @@ function previewSubset(full: PlatformPayload, limit: number): SubsetResult {
     });
   }
 
-  const keptInstances: AssessmentInstance[] = [];
+  const keptInstances: AssessmentSession[] = [];
   for (const instance of full.content.instances) {
     if (!keptTemplateIds.has(instance.templateId)) {
       dropped.push({
@@ -928,7 +928,7 @@ export function unpackPackage(file: string, options: UnpackOptions = {}): Unpack
       store,
       serializeDatasetPayload({
         templates: parsed.bundle.payload.content.templates as Assessment[],
-        instances: parsed.bundle.payload.content.instances as AssessmentInstance[],
+        instances: parsed.bundle.payload.content.instances as AssessmentSession[],
       }),
     );
     installed = store;

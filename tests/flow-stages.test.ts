@@ -19,7 +19,7 @@
  *             #825 moved Align out of the flow.
  *
  * The projection is the shipped one (`lib/flow/screen.ts`), so the two screens are built the way
- * the route builds them and the status under test is `instanceStatusOf()`'s answer, not a string
+ * the route builds them and the status under test is `sessionStatusOf()`'s answer, not a string
  * this file typed.
  */
 import { readFileSync, readdirSync } from "node:fs";
@@ -36,8 +36,8 @@ import { assessmentCreatePageCopy } from "@/data/pages/assessment-create";
 import { assessmentSentPageCopy } from "@/data/pages/assessment-sent";
 import { lifecycleStageSection } from "@/data/pages/lifecycle";
 import type { FlowInvite, FlowScreen } from "@/lib/flow/screen";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
-import { instancePath } from "@/lib/flow/paths";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
+import { sessionPath } from "@/lib/flow/paths";
 import { alignAvailableOf } from "@/lib/flow/stage";
 import type { ItemRow, PartyRow } from "@/lib/db/rows";
 
@@ -134,10 +134,10 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-flow-stages";
+const SESSION_ID = "session-flow-stages";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
-  record_id: INSTANCE_ID,
+  record_id: SESSION_ID,
   item_id: item.id,
   position,
   prompt: item.prompt,
@@ -148,19 +148,19 @@ const items: ItemRow[] = template.items.map((item, position) => ({
 
 /** An unclaimed seat: the relationship exists, but nobody has agreed to answer anything. */
 const unclaimedParties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery", accepted_at: null },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery", accepted_at: null },
 ];
 
 /** Both seats bound and answering — one shared assessment, in progress. */
 const sharedParties: PartyRow[] = [
-  { session_record_id: INSTANCE_ID, role: "initiator", name: "Avery", accepted_at: null },
-  { session_record_id: INSTANCE_ID, role: "counterparty", name: "Rowan", accepted_at: null },
+  { session_record_id: SESSION_ID, role: "initiator", name: "Avery", accepted_at: null },
+  { session_record_id: SESSION_ID, role: "counterparty", name: "Rowan", accepted_at: null },
 ];
 
 function screenOver(parties: PartyRow[], answered: number): FlowScreen {
-  const rows: FlowInstanceRows = {
+  const rows: FlowSessionRows = {
     record: {
-      id: INSTANCE_ID,
+      id: SESSION_ID,
       slug: "relationship-basics-flow-stages",
       record_type: "assessment",
       status: "draft",
@@ -170,8 +170,8 @@ function screenOver(parties: PartyRow[], answered: number): FlowScreen {
     },
     items,
     options: [],
-    instance: {
-      record_id: INSTANCE_ID,
+    session: {
+      record_id: SESSION_ID,
       template_record_id: template.id,
       relationship_id: "relationship-flow-stages",
       mode: "basic",
@@ -202,7 +202,7 @@ function sentHtml(screen: FlowScreen): string {
       copy: assessmentSentPageCopy,
       screen,
       resendAction: "/assessment/instances/x/invite",
-      openHref: instancePath(screen.instanceRecordId),
+      openHref: sessionPath(screen.sessionRecordId),
       signedIn: false,
     }),
   );

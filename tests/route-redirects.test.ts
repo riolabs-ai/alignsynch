@@ -367,7 +367,7 @@ describe("the legacy redirects", () => {
    * The row is **one segment wide on purpose**. `/assessment/demo/<type>/junk` has never answered
    * anything, and a `:path*` row would 308 it into a 404 — the judgment that removed
    * `/testimonials/jessica.png`. The same width is what keeps `/assessment/instances/**` out of it:
-   * a row written one segment up (`/assessment/:kind/:type`) would catch the instance pages, and
+   * a row written one segment up (`/assessment/:kind/:type`) would catch the session pages, and
    * they do not move in this pass.
    */
   const DEMO_OLD_ROOT = "/assessment/demo";
@@ -499,15 +499,15 @@ describe("the legacy redirects", () => {
    * the manifest rather than listed, so a page added under it is covered without editing this case.
    */
   it("leaves every /assessment/instances/<id> address to the tree", () => {
-    const instances = ROUTE_PATTERNS.filter((pattern) =>
+    const sessions = ROUTE_PATTERNS.filter((pattern) =>
       pattern.startsWith("/assessment/instances/"),
     );
     // The family is four dynamic addresses; a filter that silently matched nothing would make the
     // loop below vacuous.
-    expect(instances.length).toBeGreaterThan(1);
+    expect(sessions.length).toBeGreaterThan(1);
 
     const caught: string[] = [];
-    for (const pattern of instances) {
+    for (const pattern of sessions) {
       const live = samplePathOf(pattern);
       for (const entry of redirects) {
         if (matcherFor(entry.source)(live) !== false) {

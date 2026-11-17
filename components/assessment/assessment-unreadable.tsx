@@ -3,7 +3,7 @@
  *
  * The assessment screen when the database did not answer — a page, not a digest (#204).
  *
- * Every other failure on this route is already honest: a slug no instance carries is a 404
+ * Every other failure on this route is already honest: a slug no session carries is a 404
  * (`notFound()`), and a row that does not parse throws, because that is a code or data defect
  * the gate is supposed to catch. The one case that had no words was the database being
  * unreachable, and Next's default answer to it is `<h1>500</h1>` plus a digest a reader cannot

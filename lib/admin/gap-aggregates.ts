@@ -3,11 +3,11 @@
  *
  * This module is the **measure plugin** the console spec names: the surface is generic
  * response analytics ("how did answers land across a population"), and the only AlignSynch
- * part is what it measures — `gapOf`, eight kinds, judged under the instance's Setting. So the
+ * part is what it measures — `gapOf`, eight kinds, judged under the session's Setting. So the
  * measure lives in one pure module and the surface takes it as data, which is what lets the
  * quiz expression reuse the shell with a different plugin.
  *
- * **The population is complete instances, and nothing else.** A partial relationship has no
+ * **The population is complete sessions, and nothing else.** A partial relationship has no
  * Gap: one party's answers against nobody's is not a difference between two people, and a
  * number computed there would be a number about nothing. The read (`lib/db/gap-rows.ts`)
  * filters in SQL; this module never widens what it was handed, and it carries the excluded
@@ -24,7 +24,7 @@
  *     would invent a sixth Gap.
  *   - The range (smallest to widest) is the spread stated in the model's own units. It is what
  *     the mean is reached for, and it does not pretend to a centre.
- *   - A mean of per-instance means is refused twice over: `gapOf` is ordinal, and averaging
+ *   - A mean of per-session means is refused twice over: `gapOf` is ordinal, and averaging
  *     averages gives a family with four Aspects the same weight as one with five.
  *
  * **Never across Settings.** Soft tolerates a Gap of 1 and Full does not, so the same eight
@@ -36,7 +36,7 @@
  * a ninth number nobody authored (`docs/specs/ux-report.md` bans it, and `tests/report-groups.ts`
  * enforces the same ban on the report).
  *
- * **Nameless, structurally.** `GapInstanceRow` has an id and no party name, no e-mail and no
+ * **Nameless, structurally.** `GapSessionRow` has an id and no party name, no e-mail and no
  * user id — not because a view promises not to print them, but because they never arrive.
  * Pure: no React, no Next, no `lib/db/**`, so a node test drives every branch.
  */
@@ -47,34 +47,34 @@ import {
   GAP_KIND_LABELS,
   gapKindsIn,
   gapKindsOf,
-  instanceAlignment,
+  sessionAlignment,
   type AspectGaps,
   type GapKind,
 } from "@/content/gaps";
 import type { Gap, Score } from "@/content/record";
 
 /**
- * How many complete instances a Setting needs before its distribution is shown.
+ * How many complete sessions a Setting needs before its distribution is shown.
  *
- * Three, and the number is a floor rather than a target. At one instance the "distribution" is
- * that instance's rows; at two, the median is the midpoint of a pair and the range is the pair —
+ * Three, and the number is a floor rather than a target. At one session the "distribution" is
+ * that session's rows; at two, the median is the midpoint of a pair and the range is the pair —
  * both restatements of what a reader could count, dressed as an aggregate. Three is the first
  * count at which a median and a range say something the rows do not. Below it the screen says
  * how many there are and shows no number at all — the `#164` rule that a dashboard of two rows
  * is worse than an honest empty state.
  */
-export const MIN_COMPLETE_INSTANCES = 3;
+export const MIN_COMPLETE_SESSIONS = 3;
 
 /** One party's four answers about one Aspect — the input to `gapOf`, as read from `opinion`. */
 export interface GapOpinions {
   readonly feel: Score;
   readonly wish: Score;
-  /** Present only on an Advanced instance; a Basic one answered no prediction. */
+  /** Present only on an Advanced session; a Basic one answered no prediction. */
   readonly think?: Score;
   readonly guess?: Score;
 }
 
-/** One Aspect of one complete instance: the same item, answered by both parties. */
+/** One Aspect of one complete session: the same item, answered by both parties. */
 export interface GapAspect {
   readonly itemId: string;
   readonly initiator: GapOpinions;
@@ -82,32 +82,32 @@ export interface GapAspect {
 }
 
 /**
- * One complete instance, as this module needs it.
+ * One complete session, as this module needs it.
  *
- * `instanceId` exists to count and to key — never to print (the screen is a population view;
+ * `sessionId` exists to count and to key — never to print (the screen is a population view;
  * the per-relationship list is `/admin/instances`). There is deliberately no party field.
  */
-export interface GapInstance {
-  readonly instanceId: string;
+export interface GapSession {
+  readonly sessionId: string;
   readonly setting: AlignmentSetting;
   readonly aspects: readonly GapAspect[];
 }
 
 /** What the read returned: the complete population, and what it excluded. */
 export interface GapPopulation {
-  readonly instances: readonly GapInstance[];
-  /** Instances that are not complete, and are therefore in no number on the screen. */
+  readonly sessions: readonly GapSession[];
+  /** Sessions that are not complete, and are therefore in no number on the screen. */
   readonly excluded: number;
-  /** Every instance row the read saw, complete or not — the denominator of `excluded`. */
+  /** Every session row the read saw, complete or not — the denominator of `excluded`. */
   readonly total: number;
 }
 
 /**
  * Why a kind has no reading in a Setting.
  *
- *   withheld     the Setting has fewer than `MIN_COMPLETE_INSTANCES`; every kind is withheld,
+ *   withheld     the Setting has fewer than `MIN_COMPLETE_SESSIONS`; every kind is withheld,
  *                whether or not it has values — the sentence names the count and the floor
- *   no-advanced  no Advanced instance in this Setting, so no Think/Guess pair was ever asked
+ *   no-advanced  no Advanced session in this Setting, so no Think/Guess pair was ever asked
  *   no-answer    the pair existed and nobody answered it (a structural gap, not an absence of
  *                question) — kept so the union is total rather than an unhandled default
  */
@@ -117,9 +117,9 @@ export type AbsenceReason = "withheld" | "no-advanced" | "no-answer";
 export type KindReading =
   | {
       readonly state: "measured";
-      /** Instances that contributed at least one Gap of this kind. */
-      readonly instances: number;
-      /** Gaps measured — instances × Aspects that have both answers. */
+      /** Sessions that contributed at least one Gap of this kind. */
+      readonly sessions: number;
+      /** Gaps measured — sessions × Aspects that have both answers. */
       readonly count: number;
       /** The ordinal median: one of 0..4, always on the scale. */
       readonly median: Gap;
@@ -143,13 +143,13 @@ export interface SettingReading {
   readonly setting: AlignmentSetting;
   /** The widest Gap this Setting tolerates (`content/assessment.ts::SETTING_GAP_LIMITS`). */
   readonly limit: Gap;
-  /** Complete instances completed under this Setting. */
-  readonly instances: number;
-  /** `instances >= MIN_COMPLETE_INSTANCES` — the one condition `kinds` was measured under. */
+  /** Complete sessions completed under this Setting. */
+  readonly sessions: number;
+  /** `sessions >= MIN_COMPLETE_SESSIONS` — the one condition `kinds` was measured under. */
   readonly chartable: boolean;
-  /** Instances whose every Gap met the Setting. Withheld with the rest below the floor. */
+  /** Sessions whose every Gap met the Setting. Withheld with the rest below the floor. */
   readonly aligned: number | null;
-  /** Instances with at least one Gap wider than `limit`. `aligned + unmet = instances`. */
+  /** Sessions with at least one Gap wider than `limit`. `aligned + unmet = sessions`. */
   readonly unmet: number | null;
   /** Every Gap measured in this Setting, across kinds. */
   readonly gaps: number;
@@ -159,13 +159,13 @@ export interface SettingReading {
 
 /** The whole screen's numbers. */
 export interface GapAggregate {
-  /** Complete instances the screen is computed over. */
+  /** Complete sessions the screen is computed over. */
   readonly complete: number;
-  /** Instances left out because they are not complete. */
+  /** Sessions left out because they are not complete. */
   readonly excluded: number;
   readonly total: number;
   readonly floor: number;
-  /** Soft then Full; a Setting with no complete instance is present with zero and no reading. */
+  /** Soft then Full; a Setting with no complete session is present with zero and no reading. */
   readonly settings: readonly SettingReading[];
 }
 
@@ -207,34 +207,34 @@ export function histogramOf(values: readonly Gap[]): number[] {
   return counts;
 }
 
-/** The `AspectGaps` `instanceAlignment` reads, derived here so both callers agree. */
-function aspectGapsOf(instance: GapInstance): AspectGaps[] {
-  return instance.aspects.map((aspect) => ({
+/** The `AspectGaps` `sessionAlignment` reads, derived here so both callers agree. */
+function aspectGapsOf(session: GapSession): AspectGaps[] {
+  return session.aspects.map((aspect) => ({
     itemId: aspect.itemId,
     gaps: gapKindsOf(opinionsOf(aspect.initiator), opinionsOf(aspect.counterparty)),
   }));
 }
 
-/** Does any Aspect of this instance carry a prediction kind? — the Advanced test, from the data. */
-function hasAdvancedKind(instance: GapInstance): boolean {
-  return aspectGapsOf(instance).some((aspect) =>
+/** Does any Aspect of this session carry a prediction kind? — the Advanced test, from the data. */
+function hasAdvancedKind(session: GapSession): boolean {
+  return aspectGapsOf(session).some((aspect) =>
     ADVANCED_GAP_KINDS.some((kind) => aspect.gaps[kind] !== undefined),
   );
 }
 
-/** One Setting's reading, over the complete instances that were completed under it. */
-function readingOf(setting: AlignmentSetting, instances: readonly GapInstance[]): SettingReading {
-  const chartable = instances.length >= MIN_COMPLETE_INSTANCES;
+/** One Setting's reading, over the complete sessions that were completed under it. */
+function readingOf(setting: AlignmentSetting, sessions: readonly GapSession[]): SettingReading {
+  const chartable = sessions.length >= MIN_COMPLETE_SESSIONS;
   const limit = SETTING_GAP_LIMITS[setting];
 
-  // Every Gap of every kind, grouped by kind. Instances whose Aspects have no answers are
+  // Every Gap of every kind, grouped by kind. Sessions whose Aspects have no answers are
   // impossible here (complete means both parties answered every Aspect) but the loops do not
   // assume it: a kind simply collects nothing and is reported absent.
   const byKind = new Map<GapKind, Gap[]>();
-  const instancesByKind = new Map<GapKind, number>();
-  for (const instance of instances) {
+  const sessionsByKind = new Map<GapKind, number>();
+  for (const session of sessions) {
     const counted = new Set<GapKind>();
-    for (const aspect of aspectGapsOf(instance)) {
+    for (const aspect of aspectGapsOf(session)) {
       for (const kind of gapKindsIn(aspect.gaps)) {
         const gap = aspect.gaps[kind];
         if (gap === undefined) continue;
@@ -244,10 +244,10 @@ function readingOf(setting: AlignmentSetting, instances: readonly GapInstance[])
         counted.add(kind);
       }
     }
-    for (const kind of counted) instancesByKind.set(kind, (instancesByKind.get(kind) ?? 0) + 1);
+    for (const kind of counted) sessionsByKind.set(kind, (sessionsByKind.get(kind) ?? 0) + 1);
   }
 
-  const advanced = instances.some((instance) => hasAdvancedKind(instance));
+  const advanced = sessions.some((session) => hasAdvancedKind(session));
   const gaps = [...byKind.values()].reduce((sum, values) => sum + values.length, 0);
 
   const kinds: KindRow[] = GAP_KINDS.map((kind) => {
@@ -275,7 +275,7 @@ function readingOf(setting: AlignmentSetting, instances: readonly GapInstance[])
       label: GAP_KIND_LABELS[kind],
       reading: {
         state: "measured",
-        instances: instancesByKind.get(kind) ?? 0,
+        sessions: sessionsByKind.get(kind) ?? 0,
         count: values.length,
         median: ordinalMedian(values),
         min,
@@ -285,14 +285,14 @@ function readingOf(setting: AlignmentSetting, instances: readonly GapInstance[])
     };
   });
 
-  const verdicts = instances.map((instance) =>
-    instanceAlignment(aspectGapsOf(instance), instance.setting),
+  const verdicts = sessions.map((session) =>
+    sessionAlignment(aspectGapsOf(session), session.setting),
   );
 
   return {
     setting,
     limit,
-    instances: instances.length,
+    sessions: sessions.length,
     chartable,
     aligned: chartable ? verdicts.filter((verdict) => verdict.aligned).length : null,
     unmet: chartable ? verdicts.filter((verdict) => !verdict.aligned).length : null,
@@ -305,20 +305,20 @@ function readingOf(setting: AlignmentSetting, instances: readonly GapInstance[])
  * The screen's numbers, from the rows.
  *
  * The Settings are emitted in the model's order (Soft, then Full) and a Setting with no complete
- * instance is still present, with zero instances and eight withheld rows: "nobody has completed
+ * session is still present, with zero sessions and eight withheld rows: "nobody has completed
  * one under Full" is a fact this screen exists to state, and dropping the section would hide it.
  */
 export function aggregateGapPopulation(population: GapPopulation): GapAggregate {
   const settings: AlignmentSetting[] = ["soft", "full"];
   return {
-    complete: population.instances.length,
+    complete: population.sessions.length,
     excluded: population.excluded,
     total: population.total,
-    floor: MIN_COMPLETE_INSTANCES,
+    floor: MIN_COMPLETE_SESSIONS,
     settings: settings.map((setting) =>
       readingOf(
         setting,
-        population.instances.filter((instance) => instance.setting === setting),
+        population.sessions.filter((session) => session.setting === setting),
       ),
     ),
   };

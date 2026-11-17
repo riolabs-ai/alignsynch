@@ -187,7 +187,7 @@ describe("the surfaces the shell wraps outside the four stages", () => {
     const invite = source("app/(mainlayout)/templates/relationship/[slug]/create/invite/page.tsx");
     expect(invite).toContain("<CreateRelationship");
     expect(invite).toContain("stage={5}");
-    expect(invite).toContain("instanceRecordId={screen.instanceRecordId}");
+    expect(invite).toContain("sessionRecordId={screen.sessionRecordId}");
   });
 
   it("renders Sent inside the shell, still as a stage that answers when asked for by URL", () => {

@@ -621,9 +621,9 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
    * "Pages" and "Assessments & pages" describe the same rows. So the surface names
    * `data/pages/shell` as its fixture, exactly as the two `search` / `search-alignsynch` sections
    * are shared today, and E23 attributes this route's own component directory
-   * (`components/search/**`) to it. `data/pages/index.ts` maps `"/search"` to the same instance
+   * (`components/search/**`) to it. `data/pages/index.ts` maps `"/search"` to the same session
    * for the same reason — a budget with no copy entry is a stale slot, and the copy it points at
-   * is the instance the page renders.
+   * is the session the page renders.
    *
    * Budget 0, measured: the body's title, result count, empty states, no-query state and the
    * difficulty filter's options were all literals in `components/search/search-results.tsx`
@@ -713,7 +713,7 @@ export const pageCopyBudget: PageCopyBudget = zPageCopyBudget.parse({
   // `data/pages/assessment-sent.ts`, and the two bands it shares with the other screens are
   // referenced from `data/pages/lifecycle.ts` and `data/pages/assessment-instance.ts`. Attribution
   // is reachability, so this row counts `sent-state.tsx` and what it mounts, and the resend and
-  // copy bands' own copy stays the instance fixture's.
+  // copy bands' own copy stays the session fixture's.
   "/assessment/instances/[instanceId]/sent": {
     page: "app/(mainlayout)/assessment/instances/[instanceId]/sent/page.tsx",
     dirs: ["components/assessment-flow"],

@@ -19,7 +19,7 @@
  *      `connected` and nothing else, and the type makes the Setting and the Gaps
  *      **unrepresentable** on that branch (the `@ts-expect-error` below is a compile-time
  *      assertion: if it ever stops erroring, `pnpm data:check`'s `tsc` step fails);
- *   5. zero authored copies — no instance fixture carries a `stage`, `aligned` or `gap` field.
+ *   5. zero authored copies — no session fixture carries a `stage`, `aligned` or `gap` field.
  *
  * This file runs under `pnpm data:check` (`tsc` then `node --test` over the compiled
  * `.datacheck/` tree) with `DATABASE_URL` unset: the module it tests is `content/stages.ts`,
@@ -28,8 +28,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type { AssessmentInstance } from "../../content/assessment";
-import { gapKindsOf, instanceAlignment, type AspectGaps } from "../../content/gaps";
+import type { AssessmentSession } from "../../content/assessment";
+import { gapKindsOf, sessionAlignment, type AspectGaps } from "../../content/gaps";
 import { gapOf } from "../../content/record";
 import {
   RELATIONSHIP_STAGES,
@@ -41,30 +41,30 @@ import {
   type RelationshipStage,
   type StageFacts,
 } from "../../content/stages";
-import { assessmentInstances } from "../../data/assessments";
+import { assessmentSessions } from "../../data/assessments";
 
-const instanceNamed = (slug: string): AssessmentInstance => {
-  const instance = assessmentInstances.find((entry) => entry.slug === slug);
-  if (instance === undefined) throw new Error(`the fixture has no instance "${slug}"`);
-  return instance;
+const sessionNamed = (slug: string): AssessmentSession => {
+  const session = assessmentSessions.find((entry) => entry.slug === slug);
+  if (session === undefined) throw new Error(`the fixture has no session "${slug}"`);
+  return session;
 };
 
-/** One Aspect's Gaps, in the shape `instanceAlignment()` and `stageOf()` read. */
-const aspectGapsOf = (instance: AssessmentInstance): AspectGaps[] => {
-  const [initiator, counterparty] = instance.parties;
-  return instance.items.map((item) => {
+/** One Aspect's Gaps, in the shape `sessionAlignment()` and `stageOf()` read. */
+const aspectGapsOf = (session: AssessmentSession): AspectGaps[] => {
+  const [initiator, counterparty] = session.parties;
+  return session.items.map((item) => {
     const left = initiator.opinions.find((answer) => answer.itemId === item.id);
     const right = counterparty.opinions.find((answer) => answer.itemId === item.id);
     if (left === undefined || right === undefined) {
-      throw new Error(`instance "${instance.slug}" has an Aspect nobody answered: ${item.id}`);
+      throw new Error(`session "${session.slug}" has an Aspect nobody answered: ${item.id}`);
     }
     return { itemId: item.id, gaps: gapKindsOf(left.opinions, right.opinions) };
   });
 };
 
-const avery = instanceNamed("avery-rowan");
-const ruth = instanceNamed("ruth-sam");
-const marco = instanceNamed("marco-priya");
+const avery = sessionNamed("avery-rowan");
+const ruth = sessionNamed("ruth-sam");
+const marco = sessionNamed("marco-priya");
 
 describe("the vocabulary", () => {
   it("names four stages, in progress order", () => {
@@ -121,7 +121,7 @@ describe("the vocabulary", () => {
 
 describe("the four states, from real fixtures", () => {
   it("invited — avery-rowan's five Aspects with the invite still unclaimed", () => {
-    // Avery's instance has five Aspects and Avery has answered none of them; Rowan is not a
+    // Avery's session has five Aspects and Avery has answered none of them; Rowan is not a
     // party yet because the invitation has not been claimed. That is `awaiting_counterparty`.
     const initiator = avery.parties.find((party) => party.role === "initiator");
     const stage = stageOf({ counterpartyClaimed: false, bothSubmitted: false });
@@ -135,7 +135,7 @@ describe("the four states, from real fixtures", () => {
     // `marco-priya` authors every Aspect on both sides, so the fixture is the *finished*
     // state; the mid-flow counts are the ones a real sheet hands over. Marco has answered all
     // five (read from the fixture), Priya three of five — two still owed — which is
-    // `instanceStatusOf`'s `answering`, and the stage that says a seat, not a score.
+    // `sessionStatusOf`'s `answering`, and the stage that says a seat, not a score.
     const [marcoParty, priyaParty] = marco.parties;
     const aspectCount = marco.items.length;
     const initiatorAnswered = marcoParty.opinions.length;
@@ -152,7 +152,7 @@ describe("the four states, from real fixtures", () => {
 
   it("sharing — marco-priya complete under Soft, with Gaps 1..4", () => {
     const aspects = aspectGapsOf(marco);
-    const verdict = instanceAlignment(aspects, "soft");
+    const verdict = sessionAlignment(aspects, "soft");
     assert.equal(verdict.aligned, false);
     const stage = stageOf({
       counterpartyClaimed: true,
@@ -170,7 +170,7 @@ describe("the four states, from real fixtures", () => {
 
   it("aligned — ruth-sam complete under Soft, every Gap 0 or 1", () => {
     const aspects = aspectGapsOf(ruth);
-    const verdict = instanceAlignment(aspects, "soft");
+    const verdict = sessionAlignment(aspects, "soft");
     assert.equal(verdict.aligned, true);
     assert.deepEqual(verdict.unmet, []);
     const stage = stageOf({
@@ -207,10 +207,10 @@ describe("the Setting is read, never assumed", () => {
     assert.equal(soft, "aligned");
     assert.equal(full, "sharing");
     assert.notEqual(soft, full);
-    // And the arithmetic behind the difference, quoted from `instanceAlignment`.
-    assert.deepEqual(instanceAlignment(onePointOfGap, "soft").unmet, []);
+    // And the arithmetic behind the difference, quoted from `sessionAlignment`.
+    assert.deepEqual(sessionAlignment(onePointOfGap, "soft").unmet, []);
     assert.deepEqual(
-      instanceAlignment(onePointOfGap, "full").unmet.map(
+      sessionAlignment(onePointOfGap, "full").unmet.map(
         (gap) => `${gap.itemId}.${gap.kind}=${gap.gap}`,
       ),
       ["aspect-trust.feel=1"],
@@ -233,7 +233,7 @@ describe("the Setting is read, never assumed", () => {
     });
     assert.equal(soft, "aligned");
     assert.equal(full, "sharing");
-    const unmet = instanceAlignment(aspects, "full").unmet;
+    const unmet = sessionAlignment(aspects, "full").unmet;
     assert.equal(unmet.length, 6);
     assert.ok(unmet.every((gap) => gap.gap === 1));
   });
@@ -294,7 +294,7 @@ describe("a stage never carries an answer", () => {
   });
 
   it("a copy with no Aspects is Sharing, never Aligned", () => {
-    // `instanceStatusOf` never calls this branch complete (0 Aspects is `answering`), and if
+    // `sessionStatusOf` never calls this branch complete (0 Aspects is `answering`), and if
     // it did, claiming In Synch about a sheet with nothing on it is the defect this refuses.
     assert.equal(
       stageOf({ counterpartyClaimed: true, bothSubmitted: true, setting: "soft", aspects: [] }),
@@ -305,13 +305,13 @@ describe("a stage never carries an answer", () => {
 
 describe("zero authored copies", () => {
   it("no instance fixture carries a stage, an aligned flag or a gap", () => {
-    for (const instance of assessmentInstances) {
-      const keys = Object.keys(instance);
+    for (const session of assessmentSessions) {
+      const keys = Object.keys(session);
       for (const forbidden of ["stage", "aligned", "gap"]) {
         assert.equal(
           keys.includes(forbidden),
           false,
-          `instance "${instance.slug}" authors "${forbidden}" — the stage is derived, never stored`,
+          `session "${session.slug}" authors "${forbidden}" — the stage is derived, never stored`,
         );
       }
     }

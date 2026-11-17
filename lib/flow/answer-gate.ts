@@ -33,7 +33,7 @@
  */
 import type { PartyRole } from "@/content/assessment";
 import { answersPath } from "@/lib/flow/paths";
-import { maySubmit, type InstanceStatus } from "@/lib/flow/state";
+import { maySubmit, type SessionStatus } from "@/lib/flow/state";
 import type { FlowAspect } from "@/lib/flow/screen";
 import type { Membership } from "@/lib/relationship/membership";
 
@@ -57,15 +57,15 @@ export interface AnswerGate {
   readonly action: string | null;
   /** How many Aspects the viewer has already answered — the resubmit label, and nothing else. */
   readonly answered: number;
-  /** Aspects in the instance's own copy. */
+  /** Aspects in the session's own copy. */
   readonly aspects: number;
 }
 
 export interface AnswerGateInput {
-  readonly instanceRecordId: string;
+  readonly sessionRecordId: string;
   /** The seat the read resolved, from Postgres — never from the URL or a form field. */
   readonly viewerRole: PartyRole | "coach";
-  readonly status: InstanceStatus;
+  readonly status: SessionStatus;
   /**
    * Whether the **viewer's own** seat has accepted (#R2). The freeze is per party now, so the
    * status alone cannot answer "may this viewer still edit": a session in `answering` where the
@@ -107,7 +107,7 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
     ...counts,
     state: "sheet",
     role: input.viewerRole,
-    action: answersPath(input.instanceRecordId),
+    action: answersPath(input.sessionRecordId),
   };
 }
 
@@ -116,7 +116,7 @@ export function answerGateOf(input: AnswerGateInput): AnswerGate {
  *
  * A thin read of `aspect.own` so the view has one function to call per radio group instead of a
  * chain of optional accesses, and so "prefilled" means exactly one thing: the row this viewer
- * wrote. `own` is `null` until they answer, and a Basic instance carries no Think/Guess at all —
+ * wrote. `own` is `null` until they answer, and a Basic session carries no Think/Guess at all —
  * both come back `undefined` here, and neither is ever a default score.
  */
 export function ownScoreOf(

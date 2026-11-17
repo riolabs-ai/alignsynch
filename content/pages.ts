@@ -3,7 +3,7 @@
  *
  * A route's editorial copy is *storage*, not a projection: the words are authored
  * per route and carry no record data. `data/pages/<route>.ts` holds one parsed
- * instance per route, keyed in `data/pages/index.ts` by the route pattern
+ * session per route, keyed in `data/pages/index.ts` by the route pattern
  * `content/routes.ts` already owns, and the page module passes each section down
  * as a prop — so no component holds the string (E23).
  *

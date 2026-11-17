@@ -12,7 +12,7 @@
  *
  * **A relationship with no row answers `null`, and `null` is not "unpaid".** Rows written before
  * this card do not exist; `lib/flow/payment.ts::paymentArmedOf()` turns the absence into
- * `undefined` ("not measured"), which `instanceStatusOf()` does not treat as a gate. Only a row
+ * `undefined` ("not measured"), which `sessionStatusOf()` does not treat as a gate. Only a row
  * that exists and has no method captured is a `false`.
  *
  * **No card data.** `provider_customer_id` and `provider_payment_method_id` are the two opaque ids
@@ -127,7 +127,7 @@ export async function readRelationshipPayment(
  * One statement, and `COALESCE` on the relationship id so a session with no obligation row still
  * names its relationship: the LEFT JOIN's nulls are then `row: null`, which is the honest "not
  * measured", and not a session that appears to have no relationship. A session that does not exist
- * answers `undefined`, which a caller must treat as "no such instance".
+ * answers `undefined`, which a caller must treat as "no such session".
  */
 export async function readPaymentForSession(
   sessionRecordId: string,

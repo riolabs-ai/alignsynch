@@ -307,7 +307,7 @@ async function mountWalk(
     root?.render(
       createElement(InviteWalk, {
         copy: assessmentCreatePageCopy,
-        instanceRecordId: "assessment-instance-1",
+        sessionRecordId: "assessment-instance-1",
         relationshipId: "relationship-1",
         paid: false,
         onPaid: () => undefined,

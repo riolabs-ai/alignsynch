@@ -18,8 +18,8 @@
  *     is `active | trialing | past_due` while it entitles; those are the states the index covers.
  *     `canceled` rows accumulate as history, which is what an audit wants and what a plain
  *     `UNIQUE (user_id)` would refuse.
- *   - **`activeInstanceCount()` is a query, not a column.** Free is "one active assessment", and
- *     "active" is derived from the same counts `instanceStatusOf` uses — an instance the account
+ *   - **`activeSessionCount()` is a query, not a column.** Free is "one active assessment", and
+ *     "active" is derived from the same counts `sessionStatusOf` uses — a session the account
  *     holds a seat on and that is not complete. A boolean or a counter column would be a second
  *     truth every write path has to remember to update, and the first missed update is a person
  *     paying for a plan the product does not give them.
@@ -439,18 +439,18 @@ export async function listSubscriptionsFor(userId: string): Promise<Subscription
 }
 
 /**
- * How many assessment instances this account is actively holding.
+ * How many assessment sessions this account is actively holding.
  *
- * The same three facts `instanceStatusOf` derives, in SQL: the account holds a party row on the
- * instance, the instance has Aspects, and at least one seat has not answered every Aspect. An
- * instance both parties have finished does not hold a slot — which is what makes the free plan
+ * The same three facts `sessionStatusOf` derives, in SQL: the account holds a party row on the
+ * session, the session has Aspects, and at least one seat has not answered every Aspect. A
+ * session both parties have finished does not hold a slot — which is what makes the free plan
  * usable for ever rather than once.
  *
  * Signed-out creators hold no seat (their `party.user_id` is NULL), so they are not counted and
  * cannot be gated; the gate is a property of an account, and the anonymous flow is the pre-#213
  * behaviour the product still supports.
  */
-export async function activeInstanceCount(userId: string): Promise<number> {
+export async function activeSessionCount(userId: string): Promise<number> {
   const rows = await queryRows<{ n: number }>(
     `SELECT count(*)::int AS n
        FROM party vp
@@ -499,7 +499,7 @@ export async function livePlanGrantIds(userId: string, now: Date): Promise<strin
  * How many relationships this account has **started** and not finished (#505).
  *
  * The plan's own count, and the one `relationshipGateRefusal()` is asked with. "Active" is the same
- * predicate `activeInstanceCount()` uses, one level up: a relationship counts while it holds a
+ * predicate `activeSessionCount()` uses, one level up: a relationship counts while it holds a
  * session that is voided nowhere and still has an Aspect one of the parties has not answered. A
  * relationship both parties have finished stops holding a slot, which is what makes the free plan
  * usable for ever rather than once.
@@ -508,7 +508,7 @@ export async function livePlanGrantIds(userId: string, now: Date): Promise<strin
  * Counterparty on five relationships is not five purchases, and `initiator_user_id` is the column
  * 0013 records for "the thing bought once by the Initiator". A relationship with no initiator
  * account (a seeded one, or one started signed out) belongs to nobody and is counted for nobody —
- * the same rule `activeInstanceCount` states for an unbound party.
+ * the same rule `activeSessionCount` states for an unbound party.
  */
 export async function activeRelationshipCount(userId: string): Promise<number> {
   const rows = await queryRows<{ n: number }>(

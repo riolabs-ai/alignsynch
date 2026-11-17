@@ -16,18 +16,18 @@
  *
  * **A row is one session.** `RelationshipCard` carries the relationship's **latest** session —
  * its record id, its invitation, its state and its figures — so the row links to the session, and
- * the row's state is the stored derivation `myInstanceStateOf()` made (`yours-to-answer`,
+ * the row's state is the stored derivation `mySessionStateOf()` made (`yours-to-answer`,
  * `awaiting-other`, `complete`). Nothing on the card is authored here: the title, the party line,
  * the sentence, the marker, the paid block and the one facts line are `relationshipCard()`'s, and
  * `tests/member-card-projection.test.ts` fails the build if this file starts naming a figure
  * (`sessionsOpened`, `alignment`, `aspectCount`) or formats one.
  *
  * **Every destination is an address that already exists** — the owner's scope, exactly: "only UI,
- * data scoped to session, instance, assessment, gap analysis".
+ * data scoped to session, session, assessment, gap analysis".
  *
  * | The row offers | The address |
  * |---|---|
- * | the session | `/assessment/instances/<record id>` (`instancePath()`) |
+ * | the session | `/assessment/instances/<record id>` (`sessionPath()`) |
  * | the assessment | `/templates/relationship/<slug>` (`relationshipTemplatePath()`) |
  * | the relationship | `/dashboard/relationships/<id>` (`relationshipScreenPath()`) |
  * | its Gap | `/assessment/instances/<record id>/report` (`reportPath()`) |
@@ -64,12 +64,12 @@ import type { RelationshipCard } from "@/lib/db/assessments";
 import { matchesOverviewFilter, type OverviewFilter } from "@/lib/flow/overview";
 import {
   MY_ASSESSMENTS_PATH,
-  instancePath,
+  sessionPath,
   relationshipScreenPath,
   relationshipTemplatePath,
   reportPath,
 } from "@/lib/flow/paths";
-import type { MyInstanceState } from "@/lib/flow/state";
+import type { MySessionState } from "@/lib/flow/state";
 import {
   CARD_ACTIONS,
   CARD_COVER,
@@ -89,21 +89,21 @@ const OUTLINE =
 /**
  * The four stored states a tab can select, in the order they happen.
  *
- * These are `MyInstanceState`'s values — `lib/flow/state.ts` owns the derivation and this file
+ * These are `MySessionState`'s values — `lib/flow/state.ts` owns the derivation and this file
  * does not re-decide it. `all` is the default, so no row is hidden behind a tab nobody clicked.
  *
  * `draft` leads because it happens first: it is a relationship the creator has not sent yet
  * (#975), and it is a state in its own right rather than a kind of "waiting" — nothing was
  * invited, so nobody is waiting on anybody.
  */
-export const SESSION_STATES: readonly MyInstanceState[] = [
+export const SESSION_STATES: readonly MySessionState[] = [
   "draft",
   "yours-to-answer",
   "awaiting-other",
   "complete",
 ];
 
-export type StateFilter = "all" | MyInstanceState;
+export type StateFilter = "all" | MySessionState;
 type SortOrder = "newest" | "oldest";
 
 /** The state tabs, `all` first — the shell's order, and the order the counts print in. */
@@ -371,12 +371,12 @@ export function AssessmentsList({
                 // no name and no sentence of its own (#795 F2).
                 const model = relationshipCard(copy, row);
                 const rel = model.relationship;
-                const sessionHref = instancePath(rel.instanceRecordId);
+                const sessionHref = sessionPath(rel.sessionRecordId);
 
                 return (
                   <li
                     key={rel.relationshipId}
-                    data-assessment-session={rel.instanceRecordId}
+                    data-assessment-session={rel.sessionRecordId}
                     data-assessment-state={rel.state}
                     data-assessment-relationship={rel.relationshipId}
                     className={CARD_FRAME}
@@ -466,8 +466,8 @@ export function AssessmentsList({
                             in, and it says why. */}
                         {rel.state === "complete" ? (
                           <Link
-                            href={reportPath(rel.instanceRecordId)}
-                            data-assessment-gap={rel.instanceRecordId}
+                            href={reportPath(rel.sessionRecordId)}
+                            data-assessment-gap={rel.sessionRecordId}
                             className={OUTLINE}
                           >
                             {itemLabel(links, "gap")}
@@ -475,7 +475,7 @@ export function AssessmentsList({
                         ) : null}
                         <Link
                           href={sessionHref}
-                          data-assessment-session-link={rel.instanceRecordId}
+                          data-assessment-session-link={rel.sessionRecordId}
                           className={OUTLINE}
                         >
                           {itemLabel(links, "session")}

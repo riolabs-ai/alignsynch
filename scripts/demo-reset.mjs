@@ -1466,9 +1466,9 @@ function bundleKeys(seededRowTotals) {
     session: (payload) => payload.instances.length,
     relationship: (payload) => payload.instances.length,
     party: (payload) =>
-      payload.instances.reduce((total, instance) => total + seededRowTotals(instance).parties, 0),
+      payload.instances.reduce((total, session) => total + seededRowTotals(session).parties, 0),
     opinion: (payload) =>
-      payload.instances.reduce((total, instance) => total + seededRowTotals(instance).opinions, 0),
+      payload.instances.reduce((total, session) => total + seededRowTotals(session).opinions, 0),
   };
 }
 

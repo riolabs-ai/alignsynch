@@ -1,4 +1,4 @@
-// template-ancestor: components/assessment-flow/instance-view.tsx
+// template-ancestor: components/assessment-flow/session-view.tsx
 import { StageColumn } from "@/components/assessment-flow/stage-column";
 import { AdminRelationshipDetail } from "@/components/v1/admin-relationship-detail";
 
