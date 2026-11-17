@@ -1,9 +1,9 @@
 {
   "release": "1.22.0",
-  "commit": "7eb8ed0dc57afc215dfed842ab3dc0e3d39faa90",
-  "capturedAt": "2026-11-17T15:26:06.545Z",
+  "commit": "33c59da947530f96f0a7ecffa651120e29b32def",
+  "capturedAt": "2026-11-17T16:59:01.434Z",
   "method": "headless Chrome over the DevTools protocol (scripts/cdp.mjs) — Runtime.evaluate asserts, Page.captureScreenshot at the measured document height",
-  "server": "pnpm dev from this release's own worktree, port 3411, loopback, demo branch env (.env.local wins over .env), /api/version answered {\"version\":\"1.22.0\",\"commit\":\"7eb8ed0dc57afc215dfed842ab3dc0e3d39faa90\"}",
+  "server": "pnpm dev from this release's own worktree, port 3412, loopback, demo branch env (.env.local wins over .env), /api/version answered {\"version\":\"1.22.0\",\"commit\":\"33c59da947530f96f0a7ecffa651120e29b32def\"}",
   "session": "signed in from Node through POST /api/auth/sign-in/email as initiator@demo.alignsynch.test (the demo initiator), cookies handed to Chrome with Network.setCookie",
   "stills": [
     {
@@ -11,7 +11,7 @@
       "url": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial",
       "width": 1440,
       "height": 1366,
-      "sha256": "f2cd4c58d92a86bd54f6031b17b7130b93bd6b73b656c5721fd5f67648979edb",
+      "sha256": "f06188553c15fd20ce5b36557f65d522fb314c3a850883111e2fe8b57aa3f535",
       "asserts": {
         "title": "Relationship · AlignSynch",
         "path": "/dashboard/relationships/relationship-assessment-instance-avery-rowan-trial",
@@ -29,13 +29,14 @@
           "Assessment Settings"
         ],
         "tabs": ["Discussion", "Aspects", "Members", "Details", "Settings", "Payment"],
+        "rail": "WORKSPACE Start My Relationships Templates SUPPORT How It Works Support Logout Version 1.22.0",
         "innerWidth": 1440,
         "scrollWidth": 1440,
         "noHorizontalOverflow": true,
         "envLeaks": [],
-        "textLength": 1936
+        "textLength": 1927
       },
-      "why": "the six-tab relationship detail this release ships — a live trial relationship seen by its Initiator, with the numbered Aspects, the counter-party seat and the trial-ended band"
+      "why": "the six-tab relationship detail this release ships — a live trial relationship seen by its Initiator, with the numbered Aspects, the counter-party seat and the trial-ended band — rendered on the re-issued tree, where app shell v2 supplies the rail"
     }
   ]
 }

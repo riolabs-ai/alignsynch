@@ -10,6 +10,8 @@ with a **Known limits** block, because a release that does not say what it canno
 
 ### Added
 
+- `feat(shell)` — app shell v2 — Start and My Relationships, the rail opens on Start (#1129) ([#1150](https://github.com/riolabs-ai/alignsynch/pull/1150))
+- `feat(crud)` — invitation hygiene, and leave or abandon instead of delete (#1135) ([#1149](https://github.com/riolabs-ai/alignsynch/pull/1149))
 - `feat(admin)` — the CRUD and Permissions matrix — admin-only, read-only, with the honest failure state (#1126) ([#1157](https://github.com/riolabs-ai/alignsynch/pull/1157))
 - `feat(v2)` — #1124 — Relationship Detail's six-tab layer ([#1148](https://github.com/riolabs-ai/alignsynch/pull/1148))
 - `feat(v2)` — #1125 — Counterparty join — a 3-step role flow (Invite · Join · Accept) ([#1147](https://github.com/riolabs-ai/alignsynch/pull/1147))
@@ -27,6 +29,7 @@ with a **Known limits** block, because a release that does not say what it canno
 
 ### Maintenance
 
+- `docs(specs)` — bundle 12 Admin CRUD & Permissions + crud-matrix.md (#1126) ([#1158](https://github.com/riolabs-ai/alignsynch/pull/1158))
 - `chore(deps)` — bump next from 16.4.1 to 16.4.5 ([#1118](https://github.com/riolabs-ai/alignsynch/pull/1118))
 - `docs(specs)` — v2.0 UI handoff bundles (01–11) ([#1137](https://github.com/riolabs-ai/alignsynch/pull/1137))
 - `chore(gate)` — routes:check — Next's own router validation over the built manifest (#1113) ([#1114](https://github.com/riolabs-ai/alignsynch/pull/1114))
@@ -34,35 +37,37 @@ with a **Known limits** block, because a release that does not say what it canno
 
 ### Known limits
 
-- **The v2.0 lane is not in this release.** Ten open pull requests — `#1149`, `#1150`, `#1151`,
-  `#1152`, `#1153`, `#1154`, `#1155`, `#1156`, `#1158` and `#1159` — carry the v2.0 surface (app
-  shell, templates, chat, payment, CRUD, the admin matrix, conversion, the answer screen). Every one
-  of them is `DIRTY` or `BEHIND` against `main`, and all ten are excluded from this tag by name: they
-  land in v2.0.0, not here. `#1112` (templates retirement, phase 2) is excluded the same way.
+- **The v2.0 lane is half in this release, and the other half is excluded by name.** Three v2.0 pull
+  requests merged onto `main` before this tag and are **in it**: the app shell v2 — Start and My
+  Relationships, the rail opening on Start (`#1129`, `#1150`) — invitation hygiene and leave-instead-of-
+  delete (`#1135`, `#1149`), and the admin CRUD bundle's docs (`#1158`). The rest are open and are not in
+  this version: `#1151` Templates v2, `#1152` the account menu, `#1153` card menus and Save a Copy,
+  `#1154` Chat v2, `#1155` the Aspect drawer, `#1156` Payment v2, `#1159` conversion, `#1161` the three-plan
+  catalogue, `#1163` the copy-deletion fix, and `#1112` (templates retirement, phase 2). Those land in
+  v2.0.0.
 
-- **The noun sweep has not happened.** `#1103` retires `instance` in favour of `session` — `#1106`
-  in the code and `#1107` in the bundle format — and both are deferred to v2.0.0, so both nouns are
-  still in this tree's comments, its docs and its schema, and the platform bundle this build writes
-  is still version 2 (`content/bundle.ts::PLATFORM_BUNDLE_VERSION`).
+- **The noun sweep has not happened.** `#1103` retires `instance` in favour of `session` — `#1106` in the
+  code and `#1107` in the bundle format — and both are deferred to v2.0.0, so both nouns are still in this
+  tree's comments, its docs and its schema, and the platform bundle this build writes is still version 2
+  (`content/bundle.ts::PLATFORM_BUNDLE_VERSION`).
 
-- **No dependency majors.** `#1027` (swiper `14.4.0`) and `#1025` (jsdom `31.0.0`) are open and
-  deferred to v2.0.0. The only dependency that moved in this window is `next` `16.4.1` → `16.4.5`
-  (`#1118`), a patch release taken for an advisory that stopped `next build`.
+- **No dependency majors.** `#1027` (swiper `14.4.0`) and `#1025` (jsdom `31.0.0`) are open and deferred to
+  v2.0.0. The only dependency that moved in this window is `next` `16.4.1` → `16.4.5` (`#1118`), a patch
+  release taken for an advisory that stopped `next build`.
 
-- **No migration rides this tag.** Nothing under `db/migrations/` changed between `v1.21.0` and this
-  release — the newest file in the tree is `db/migrations/0041_session_state.sql`, applied on the
-  demo branch on 2026-11-16. Production's schema is applied by hand with `pnpm db:migrate` and this
-  release neither adds nor applies a migration, so a create against a production database whose
-  ledger has not been run is a separate, deliberate step rather than something this tag performs.
+- **No migration rides this tag.** Nothing under `db/migrations/` changed between `v1.21.0` and this release
+  — the newest file in the tree is `db/migrations/0041_session_state.sql`, applied on the demo branch on
+  2026-11-16. Production's schema is applied by hand with `pnpm db:migrate`, and this release neither adds
+  nor applies a migration, so a create against a production database whose ledger has not been run is a
+  separate, deliberate step rather than something this tag performs.
 
-- **`#1115` is still open in this milestone.** Its two landings — the trial anchored at creation
-  (`#1116`) and the counterparty claims (`#1117`) — are in this release; the issue itself is not
-  closed by it and moves to v2.0.0, so the trial's acceptance anchor is shipped but unproven end to
-  end by an issue that has not closed.
+- **`#1115` is still open.** Its two landings — the trial anchored at creation (`#1116`) and the
+  counterparty claims (`#1117`) — are in this release; the issue itself is not closed by it and moves to
+  v2.0.0, so the trial's acceptance anchor ships without an issue closing behind it.
 
 - **Production's two `ADMIN_EMAILS` seats still answer `401`** (`#1084`). `walt1@alignsynch.com` and
-  `alignsynch@riolabs.ai` fail `INVALID_EMAIL_OR_PASSWORD` against `https://alignsynch.com`. Carried
-  from v1.21.0 unchanged: this release provisions neither seat, and the issue is open in the backlog.
+  `alignsynch@riolabs.ai` fail `INVALID_EMAIL_OR_PASSWORD` against `https://alignsynch.com`. Carried from
+  v1.21.0 unchanged: this release provisions neither seat, and the issue is open in the backlog.
 
 ## [1.21.0] - 2026-11-16
 
