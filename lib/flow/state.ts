@@ -374,7 +374,7 @@ export function parseSubmission(
  * That is why this returns no `problems`: a half-answered Aspect is the normal state of a sheet
  * being filled in, not a refusal, and `parseSubmission()` stays the one place that refuses an
  * incomplete **submission**. A value that is not a score still drops its Aspect (never a silent 0),
- * and an Aspect whose id the instance does not have is ignored — the same forgiveness a form gains
+ * and an Aspect whose id the session does not have is ignored — the same forgiveness a form gains
  * from being rendered out of the rows.
  */
 export function parseDraft(

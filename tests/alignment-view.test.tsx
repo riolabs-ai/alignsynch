@@ -2,7 +2,7 @@
  * Stage 6, **Align** — the v2 surface (#1122).
  *
  * The issue's acceptance is a claim about a screen a person reaches, so these cases render the
- * real `AssessmentInstanceView` over a real `projectScreen()` projection and read the markup:
+ * real `AssessmentSessionView` over a real `projectScreen()` projection and read the markup:
  *
  *   surface     the completed relationship draws "Where You Agree, and Where You Differ" with the
  *               "Stage 6 · Align" eyebrow, one numbered card per Aspect, and a Feel and a Wish row
@@ -18,20 +18,20 @@
  *               sentence** and no alignment at all: no counts, no zeroed summary, no bars.
  *
  * No database and no server: the rows are `lib/db/rows.ts` shapes, exactly as
- * `tests/instance-stage.test.ts` builds them.
+ * `tests/session-stage.test.ts` builds them.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { AlignmentView } from "@/components/assessment-flow/alignment-view";
-import { AssessmentInstanceView } from "@/components/assessment-flow/instance-view";
+import { AssessmentSessionView } from "@/components/assessment-flow/session-view";
 import type { AlignmentSetting, Assessment, PartyRole } from "@/content/assessment";
-import { assessmentInstancePageCopy } from "@/data/pages/assessment-instance";
+import { assessmentSessionPageCopy } from "@/data/pages/assessment-instance";
 import { assessments } from "@/data/assessments";
 import type { ItemRow, OpinionRow, PartyRow } from "@/lib/db/rows";
 import { relationshipPath } from "@/lib/flow/paths";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 
 const template: Assessment = (() => {
   const found = assessments.find((entry) => entry.id === "assessment-relationship-basics");
@@ -39,7 +39,7 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-alignment-view";
+const INSTANCE_ID = "session-alignment-view";
 const RELATIONSHIP_ID = "relationship-alignment";
 const ACCEPTED_AT = new Date("2026-11-08T09:00:00.000Z");
 const ASPECTS = template.items.length;
@@ -93,7 +93,7 @@ function screenWith(
   answered: { initiator: number; counterparty: number },
   setting: AlignmentSetting = "soft",
 ) {
-  const rows: FlowInstanceRows = {
+  const rows: FlowSessionRows = {
     record: {
       id: INSTANCE_ID,
       slug: "relationship-basics-alignment",
@@ -105,7 +105,7 @@ function screenWith(
     },
     items,
     options: [],
-    instance: {
+    session: {
       record_id: INSTANCE_ID,
       template_record_id: template.id,
       relationship_id: RELATIONSHIP_ID,
@@ -128,7 +128,7 @@ const full = screenWith(both, "full");
 
 const render = (screen: ReturnType<typeof screenWith>) =>
   renderToStaticMarkup(
-    createElement(AssessmentInstanceView, { screen, copy: assessmentInstancePageCopy }),
+    createElement(AssessmentSessionView, { screen, copy: assessmentSessionPageCopy }),
   );
 
 const softHtml = render(soft);
@@ -257,7 +257,7 @@ describe("the surface in isolation", () => {
     const markup = renderToStaticMarkup(
       createElement(AlignmentView, {
         screen: screenWith({ initiator: ASPECTS, counterparty: 0 }),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
       }),
     );
     expect(markup).toContain('data-alignment="waiting"');
@@ -274,7 +274,7 @@ describe("the surface in isolation", () => {
     const markup = renderToStaticMarkup(
       createElement(AlignmentView, {
         screen: screenWith({ initiator: 0, counterparty: 0 }),
-        copy: assessmentInstancePageCopy,
+        copy: assessmentSessionPageCopy,
       }),
     );
     expect(markup).toContain('data-alignment-waiting="true"');

@@ -9,13 +9,13 @@
  * `docs/specs/v2-bundles/04-spec-design-page-align-v2/` (`align.html` + `reference/align-*`),
  * ported rather than redesigned. `docs/specs/flow-stages.md` keeps Align on the relationship's
  * own screen and never in the rail, so this file still replaces the *content* of stage 6 instead
- * of adding a page: `components/assessment-flow/instance-view.tsx` draws it in the report state
+ * of adding a page: `components/assessment-flow/session-view.tsx` draws it in the report state
  * and the route (`/assessment/instances/[instanceId]`) is unchanged.
  *
  * ## What the surface is
  *
  *   tolerance   Soft / Full, re-scoring in place. It is a **lens, not a setting**: the
- *               instance's own `setting` seeds the toggle and nothing is written back, exactly
+ *               session's own `setting` seeds the toggle and nothing is written back, exactly
  *               as the prototype's `proto.js` behaves. A per-reader choice would need a column,
  *               and #1122 puts a migration out of scope.
  *   summary     one segment per Aspect in template order, then the legend's three counts. The

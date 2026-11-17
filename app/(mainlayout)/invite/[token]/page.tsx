@@ -8,7 +8,7 @@ import { invitePageCopy } from "@/data/pages/invite";
 import { currentUserIfConfigured } from "@/lib/auth/session";
 import { claimRefusalOf } from "@/lib/flow/claim";
 import { decodeJoinDetails, joinDetailsCookieName } from "@/lib/flow/join-details";
-import { instancePath, inviteWizardStepOf, type InviteWizardStep } from "@/lib/flow/paths";
+import { sessionPath, inviteWizardStepOf, type InviteWizardStep } from "@/lib/flow/paths";
 import { partyTokensFrom } from "@/lib/flow/session";
 import { previewInvite } from "@/lib/flow/store";
 import { hashToken } from "@/lib/flow/tokens";
@@ -104,9 +104,9 @@ export default async function InvitePage({
   if (
     preview.state === "claimed" &&
     preview.viewerRole === "counterparty" &&
-    preview.instanceRecordId !== null
+    preview.sessionRecordId !== null
   ) {
-    redirect(instancePath(preview.instanceRecordId));
+    redirect(sessionPath(preview.sessionRecordId));
   }
 
   const refusal = claimRefusalOf(claim);

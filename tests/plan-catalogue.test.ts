@@ -90,7 +90,7 @@ async function press(where: HTMLElement, selector: string): Promise<void> {
 function cardFreeWalk() {
   return createElement(InviteWalk, {
     copy: assessmentCreatePageCopy,
-    instanceRecordId: "assessment-instance-1",
+    sessionRecordId: "assessment-instance-1",
     relationshipId: "relationship-1",
     paid: false,
     onPaid: () => undefined,

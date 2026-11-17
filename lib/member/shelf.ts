@@ -136,7 +136,7 @@ export function categoryLabelOf(copy: PageCopy, slug: string): string | null {
  * `View Details` opens the template's own screen (`/dashboard/templates/<id>`), which is the page
  * that lists its Aspects; `Create Relationship` opens the create step under the same handle
  * (`/dashboard/templates/<slug>/create`), which is the shipped flow — the Library never says
- * "start an instance", because a relationship is what a person starts and a session is what a
+ * "start an session", because a relationship is what a person starts and a session is what a
  * published relationship opens.
  *
  * The chips are bundle 06's three, in its order: the shelf, the Aspect count, and how long the

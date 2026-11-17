@@ -34,7 +34,7 @@
  *
  * A message can carry an Aspect chip and, beside it, that Aspect's Align status
  * (`chatAspectTagsOf`). The status exists only once both parties have accepted — the blind rule —
- * and clicking the pair opens the Aspect **on Align** (`instancePath()` + the card's anchor). The
+ * and clicking the pair opens the Aspect **on Align** (`sessionPath()` + the card's anchor). The
  * composer appends what the reader sends to this session and writes nothing durable: the thread
  * model is #921's, that issue has not been approved for a schema, so `data/chat-threads.ts` holds the
  * demo bodies and the write is stated as absent rather than faked. That is the one known limit of
@@ -77,7 +77,7 @@ import {
 } from "@/lib/chat/thread";
 import { readRelationshipById } from "@/lib/db/assessments";
 import { DatabaseUnavailableError } from "@/lib/db/client";
-import { CHAT_PATH, createInviteForPath, instancePath, relationshipPath } from "@/lib/flow/paths";
+import { CHAT_PATH, createInviteForPath, sessionPath, relationshipPath } from "@/lib/flow/paths";
 import { listMyRelationships, type MemberRelationshipRow } from "@/lib/member/relationships";
 import { fillLabel, itemLabel, pageItemOf, sectionOf } from "@/lib/page-copy";
 import { pauseOf } from "@/lib/relationship/pause";
@@ -299,7 +299,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         messages={messages}
         tags={tags}
         alignHrefBase={
-          screen === undefined ? relationshipPath(row.id) : instancePath(screen.instanceRecordId)
+          screen === undefined ? relationshipPath(row.id) : sessionPath(screen.sessionRecordId)
         }
         withLine={
           otherName === unnamed
@@ -310,7 +310,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         openHref={relationshipPath(row.id)}
         payHref={
           state === "paused" && row.isInitiator && screen !== undefined
-            ? createInviteForPath(row.templateSlug, screen.instanceRecordId)
+            ? createInviteForPath(row.templateSlug, screen.sessionRecordId)
             : null
         }
         waitingHeading={fillLabel(waitingCopy.heading ?? "", { name: otherName })}

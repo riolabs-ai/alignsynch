@@ -27,7 +27,7 @@
 import { opinionKindsFor, type AssessmentMode } from "@/content/assessment";
 import type { FlowAspect } from "@/lib/flow/screen";
 
-/** How many of the instance's Aspects the viewer has answered — the progress line's numerator. */
+/** How many of the session's Aspects the viewer has answered — the progress line's numerator. */
 export function answeredCount(aspects: readonly Pick<FlowAspect, "own">[]): number {
   return aspects.filter((aspect) => aspect.own !== null).length;
 }

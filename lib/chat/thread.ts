@@ -114,7 +114,7 @@ export function aspectGapOf(row: AspectReportRow): number | null {
 }
 
 /**
- * One Aspect's status, read through the instance's Alignment Tolerance, or `null` when there is
+ * One Aspect's status, read through the session's Alignment Tolerance, or `null` when there is
  * nothing measured. `alignmentStatusOf` owns the 1-step row — this module never compares a Gap to 1,
  * so a re-score can never disagree with the Align surface about the same numbers.
  */

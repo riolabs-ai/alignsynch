@@ -30,7 +30,7 @@ import { answersFrom } from "@/lib/flow/answers";
 import { advanceOf, answeredCount, positionOf, resumeIndexOf } from "@/lib/flow/answer-position";
 import { answerGateOf, type AnswerGate } from "@/lib/flow/answer-gate";
 import { answerDraftsPath, answerSheetPath, answersPath } from "@/lib/flow/paths";
-import { projectScreen, type FlowInstanceRows } from "@/lib/flow/screen";
+import { projectScreen, type FlowSessionRows } from "@/lib/flow/screen";
 import { parseDraft } from "@/lib/flow/state";
 
 const template: Assessment = (() => {
@@ -39,7 +39,7 @@ const template: Assessment = (() => {
   return found;
 })();
 
-const INSTANCE_ID = "instance-answer-resume-test";
+const INSTANCE_ID = "session-answer-resume-test";
 
 const items: ItemRow[] = template.items.map((item, position) => ({
   record_id: INSTANCE_ID,
@@ -85,7 +85,7 @@ function rowsAfter(picks: Readonly<Record<string, { feel: number; wish: number }
 }
 
 function screenWith(opinions: readonly OpinionRow[]) {
-  const rows: FlowInstanceRows = {
+  const rows: FlowSessionRows = {
     record: {
       id: INSTANCE_ID,
       slug: "answer-resume-test",
@@ -97,7 +97,7 @@ function screenWith(opinions: readonly OpinionRow[]) {
     },
     items,
     options: [],
-    instance: {
+    session: {
       record_id: INSTANCE_ID,
       template_record_id: template.id,
       relationship_id: "relationship-test",
@@ -147,7 +147,7 @@ function renderSheet({
 
 function gateFor(screen: ReturnType<typeof screenWith>, accepted = false): AnswerGate {
   return answerGateOf({
-    instanceRecordId: screen.instanceRecordId,
+    sessionRecordId: screen.sessionRecordId,
     viewerRole: "initiator",
     status: screen.status,
     viewerAccepted: accepted,

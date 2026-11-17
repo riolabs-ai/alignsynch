@@ -9,7 +9,7 @@
  * So this file follows the rendered hrefs:
  *
  *   1. the product page's CTA is **"Create Relationship"** and its href is this template's own
- *      create path — not the library it was found in, and not "Start an instance";
+ *      create path — not the library it was found in, and not "Start an session";
  *   2. the create step, signed out, draws the account gate instead of the form, and both of its
  *      links carry `next` = the create path from (1), decoded and compared;
  *   3. the create step, signed in, draws the form, whose action is the create endpoint and whose
@@ -141,7 +141,7 @@ describe("the plan lines are no longer dead ends", () => {
   }
 
   it("a sentence that names no plan draws no pricing link", () => {
-    // `instance-limit` used to be the example here; #835 removed that refusal (the plan limits
+    // `session-limit` used to be the example here; #835 removed that refusal (the plan limits
     // relationships started, not seats held), so the case uses a template refusal instead.
     const html = createHtml({
       problem: itemLabel(problems, "template-not-published"),

@@ -620,16 +620,16 @@ export async function cancelInviteAction(payload: {
  * still minted a working invitation.
  */
 export async function resendInviteAction(payload: {
-  instanceRecordId?: string;
+  sessionRecordId?: string;
 }): Promise<ResendInviteOutcome> {
   const user = await currentUser();
   if (user === null) return { ok: false, code: "signed-out" };
 
-  const instanceRecordId = text(payload.instanceRecordId);
-  if (instanceRecordId === "") return { ok: false, code: "no-invite" };
+  const sessionRecordId = text(payload.sessionRecordId);
+  if (sessionRecordId === "") return { ok: false, code: "no-invite" };
 
   const result = await resendInvite({
-    instanceRecordId,
+    sessionRecordId,
     viewerUserId: user.userId,
   });
   if (!result.ok) return { ok: false, code: result.code, message: result.reason };

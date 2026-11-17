@@ -334,7 +334,7 @@ export function RelationshipDetail({
     relationshipId?: string;
     reason?: string;
   }) => Promise<CancelInviteOutcome>;
-  onResendInvite?: (payload: { instanceRecordId?: string }) => Promise<ResendInviteOutcome>;
+  onResendInvite?: (payload: { sessionRecordId?: string }) => Promise<ResendInviteOutcome>;
   onAbandon?: (payload: { relationshipId?: string; reason?: string }) => Promise<AbandonOutcome>;
   onLeave?: (payload: { relationshipId?: string; reason?: string }) => Promise<LeaveOutcome>;
   onRequestRemoval?: (payload: {
@@ -737,7 +737,7 @@ export function RelationshipDetail({
       const answer = await onResendInvite?.({
         ...(relationship.sessionRecordId === null
           ? {}
-          : { instanceRecordId: relationship.sessionRecordId }),
+          : { sessionRecordId: relationship.sessionRecordId }),
       });
       setResendOutcome(answer ?? null);
       if (answer?.ok === true) router.refresh();

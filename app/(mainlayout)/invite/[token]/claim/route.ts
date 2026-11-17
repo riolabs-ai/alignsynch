@@ -26,7 +26,7 @@ import { NextResponse } from "next/server";
  *
  *   the token          from the path, never from the body
  *   the party cookies  every `flow_party_*` value this browser holds. A browser that
- *                      already answers as a party to this instance cannot claim its
+ *                      already answers as a party to this session cannot claim its
  *                      invitation — that was the defect QA found: an Initiator following
  *                      their own link spent the token and their session silently became the
  *                      Counterparty, so one person filled both columns
@@ -115,7 +115,7 @@ export async function POST(
   }
 
   jar.set(
-    partyCookieName(result.instanceRecordId),
+    partyCookieName(result.sessionRecordId),
     result.sessionToken,
     flowCookieOptions(FLOW_COOKIE_MAX_AGE),
   );
@@ -125,13 +125,13 @@ export async function POST(
   // unreachable host can cost the person their claim; the redirect below happens either way.
   // `sendJoinNotice()` never throws and answers `no-address` when the create was signed out.
   await sendJoinNotice({
-    instanceRecordId: result.instanceRecordId,
+    sessionRecordId: result.sessionRecordId,
     ...(suggestionText === ""
       ? {}
       : { suggestion: { aspect: suggestionAspect, text: suggestionText } }),
   }).catch((error: unknown) => {
     console.error(
-      "[joined] the notice could not be attempted after a claim — the claim is stored and the instance screen shows both seats",
+      "[joined] the notice could not be attempted after a claim — the claim is stored and the session screen shows both seats",
       error instanceof Error ? error.name : "unknown",
     );
   });
@@ -141,7 +141,7 @@ export async function POST(
     new URL(
       afterClaimTarget({
         viewerSignedIn: signedIn,
-        instanceRecordId: result.instanceRecordId,
+        sessionRecordId: result.sessionRecordId,
       }),
       request.url,
     ),

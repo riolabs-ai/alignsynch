@@ -24,10 +24,10 @@ import { opinionKindsFor } from "@/content/assessment";
 import { authConfigured } from "@/lib/auth/config";
 import { currentUser } from "@/lib/auth/session";
 import { answersFrom } from "@/lib/flow/answers";
-import { answerAspectPath, answerSheetPath, instancePath } from "@/lib/flow/paths";
+import { answerAspectPath, answerSheetPath, sessionPath } from "@/lib/flow/paths";
 import { partyCookieName } from "@/lib/flow/session";
 import { parseDraft } from "@/lib/flow/state";
-import { readInstanceMode, saveDraftAnswers } from "@/lib/flow/store";
+import { readSessionMode, saveDraftAnswers } from "@/lib/flow/store";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -69,7 +69,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ instanceId: string }> },
 ): Promise<Response> {
-  const { instanceId } = await params;
+  const { instanceId: sessionId } = await params;
   const form = await request.formData();
   const goal = goalOf(form.get("go"));
   const item = typeof form.get("item") === "string" ? String(form.get("item")) : "";
@@ -81,13 +81,13 @@ export async function POST(
   const aspect = Number.isInteger(posted) && posted >= 1 ? posted : 1;
 
   const json = wantsJson(request);
-  const mode = (await readInstanceMode(instanceId)) ?? "basic";
+  const mode = (await readSessionMode(sessionId)) ?? "basic";
   const parsed = answersFrom(form, opinionKindsFor(mode));
   const jar = await cookies();
 
   const result = await saveDraftAnswers({
-    instanceRecordId: instanceId,
-    token: jar.get(partyCookieName(instanceId))?.value,
+    sessionRecordId: sessionId,
+    token: jar.get(partyCookieName(sessionId))?.value,
     viewerUserId: await viewerUserId(),
     answers: parsed.answers,
     ...(goal === "reset" ? { clear: true } : {}),
@@ -101,7 +101,7 @@ export async function POST(
       );
     }
     return NextResponse.redirect(
-      new URL(`${answerSheetPath(instanceId)}?refused=${result.code}`, request.url),
+      new URL(`${answerSheetPath(sessionId)}?refused=${result.code}`, request.url),
       303,
     );
   }
@@ -112,16 +112,16 @@ export async function POST(
   const complete = parseDraft([item], parsed.answers, mode).length === 1;
 
   const target: string = (() => {
-    if (goal === "reset") return answerAspectPath(instanceId, 1);
-    if (goal === "exit") return instancePath(instanceId);
-    if (goal === "back") return answerAspectPath(instanceId, Math.max(aspect - 1, 1));
+    if (goal === "reset") return answerAspectPath(sessionId, 1);
+    if (goal === "exit") return sessionPath(sessionId);
+    if (goal === "back") return answerAspectPath(sessionId, Math.max(aspect - 1, 1));
     if (goal === "next") {
-      if (!complete) return `${answerAspectPath(instanceId, aspect)}&incomplete=1`;
+      if (!complete) return `${answerAspectPath(sessionId, aspect)}&incomplete=1`;
       return aspect >= result.aspectCount
-        ? answerAspectPath(instanceId, "review")
-        : answerAspectPath(instanceId, aspect + 1);
+        ? answerAspectPath(sessionId, "review")
+        : answerAspectPath(sessionId, aspect + 1);
     }
-    return answerAspectPath(instanceId, aspect);
+    return answerAspectPath(sessionId, aspect);
   })();
 
   if (json) {

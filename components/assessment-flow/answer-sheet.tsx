@@ -71,7 +71,7 @@ export function AnswerSheet({
   gate: AnswerGate;
   viewer: SheetViewer;
   mode: AssessmentMode;
-  /** The session screen — `instancePath()`. Where `Save and Exit` goes. */
+  /** The session screen — `sessionPath()`. Where `Save and Exit` goes. */
   backHref: string;
   /** This route, without a query — `?aspect=` positions are built from it. */
   sheetPath: string;
