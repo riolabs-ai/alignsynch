@@ -31,7 +31,7 @@ stale.
 
 <!-- docs-hub:begin -->
 
-**184 documents in 9 sections.** Every page carries the same nav block, generated
+**188 documents in 9 sections.** Every page carries the same nav block, generated
 from `docs/docs.json` by `scripts/docs-nav.mjs`; `pnpm docs:check` fails by name when a page is
 missing from this hub, a link does not resolve, or a nav block is stale.
 
@@ -41,7 +41,7 @@ missing from this hub, a link does not resolve, or a nav block is stale.
 - [Guides](#guides) — 4 documents
 - [Reference](#reference) — 10 documents
 - [Operations](#operations) — 18 documents
-- [Specs & design briefs](#specs-design-briefs) — 79 documents
+- [Specs & design briefs](#specs-design-briefs) — 83 documents
 - [Records & QA](#records-qa) — 24 documents
 - [Code wiki](#code-wiki) — 15 documents
 - [Diagrams](#diagrams) — 5 documents
@@ -177,6 +177,10 @@ What the product promises, written down before it was built.
 - [`specs/v2-bundles/11-spec-design-page-account-settings-v2/README.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/README.md) — **Account menu and Settings v2 (handoff)** — How do I preview the account menu and the Account Settings sections?
 - [`specs/v2-bundles/11-spec-design-page-account-settings-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/IMPLEMENTATION-PROMPT.md) — **Account menu and Settings v2 — implementation brief** — Which settings sections does v2 carry, and which components do they reuse?
 - [`specs/v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md`](specs/v2-bundles/11-spec-design-page-account-settings-v2/ASSET-SOURCES.md) — **Account menu and Settings v2 — asset sources** — Where did each file in the Account Settings bundle come from?
+- [`specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/README.md`](specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/README.md) — **Admin CRUD & Permissions matrix v2 (handoff)** — How do I preview the admin CRUD and permissions matrix, its filters and its broken state?
+- [`specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/IMPLEMENTATION-PROMPT.md`](specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/IMPLEMENTATION-PROMPT.md) — **Admin CRUD & Permissions matrix v2 — implementation brief** — Which shell and components does the read-only Admin matrix reuse, and what must the React port honour?
+- [`specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md`](specs/v2-bundles/12-spec-design-page-admin-crud-matrix-v2/ASSET-SOURCES.md) — **Admin CRUD & Permissions matrix v2 — asset sources** — Where did each file in the Admin CRUD & Permissions matrix bundle come from?
+- [`specs/v2-prototype/crud-matrix.md`](specs/v2-prototype/crud-matrix.md) — **CRUD & Permissions matrix** — Which object × action × role rows does the v2 prototype cover, and where does upstream conflict?
 - [`specs/ui-divergence.md`](specs/ui-divergence.md) — **Divergence table** — Where does each surface deliberately differ from its ancestor?
 - [`specs/ui-mapping.md`](specs/ui-mapping.md) — **Quiz-surface map** — Which quiz surface is this AlignSynch file a variation of?
 - [`specs/ui-ux-audit.md`](specs/ui-ux-audit.md) — **UI/UX audit** — What does the build follow, vary, or quietly diverge from in the purchased template?
