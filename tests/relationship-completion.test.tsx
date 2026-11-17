@@ -135,6 +135,8 @@ function mount(
         onRepublish: async () => ({ ok: false as const, code: "failed" }),
         onComplete: complete,
         onFork: async () => ({ ok: false as const, code: "failed" }),
+        /* #1121 — this suite presses the completion band; the free week's stub never resolves. */
+        onClaimExtension: async () => ({ ok: false as const, code: "failed" }),
         templatesHref: "/templates/relationship?view=mine",
       }),
     );

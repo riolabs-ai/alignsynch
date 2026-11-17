@@ -108,6 +108,8 @@ function html(view: MemberRelationshipView): string {
       onRepublish: noop,
       onComplete: noop,
       onFork: noop,
+      /* #1121 — none of these suites presses the free week; the stub exists so the screen renders. */
+      onClaimExtension: noop,
       templatesHref: "/templates/relationship?view=mine",
     }),
   );

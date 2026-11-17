@@ -109,6 +109,7 @@ describe("can()", () => {
     const memberFloor = ADMIN_ACTIONS.filter((action) => requirementFor(action) === "member");
     expect([...memberFloor].sort()).toEqual([
       "relationship.aspects",
+      "relationship.claim-extension",
       "relationship.complete",
       "relationship.create",
       "relationship.edit",

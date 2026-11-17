@@ -108,6 +108,7 @@ function html(overrides: Partial<MemberRelationshipView> = {}): string {
       onRepublish: noop,
       onComplete: noop,
       onFork: noop,
+      onClaimExtension: noop,
       templatesHref: "/templates/relationship?view=mine",
     }),
   );

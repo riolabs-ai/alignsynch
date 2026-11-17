@@ -69,6 +69,12 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
     { id: "connection", label: "Connection" },
     { id: "connected", label: "Connected" },
     { id: "waiting", label: "Waiting on {name}" },
+    /**
+     * #1121 — the facts card's membership row: the window, the pause, or the other person's cover.
+     * The four values are the pause section's own items, so the fact and the badge never say two
+     * things about one account.
+     */
+    { id: "membership", label: "Membership" },
     { id: "none", label: "—" },
     /** #533 phase 3 — the badge the derived lapse draws beside the stored status. */
     { id: "read-only", label: "Read-only" },
@@ -156,6 +162,63 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
           label:
             "The Aspects, publishing and invitation on this relationship belong to the account that started it, so this screen is read-only for you — answer on the assessment itself, from My Relationships or the invitation you were sent.",
         },
+      ],
+    },
+    {
+      /**
+       * #1121 — **Stage 6's pause, in the owner's words.**
+       *
+       * Every string here is verbatim from the issue's state table (and the ported bundle,
+       * `docs/specs/v2-bundles/03-spec-design-page-rel-detail-v2/`): *Paused*, *Your Trial Ended*,
+       * *Add a Card*, *Get 7 More Days Free*, *Waiting on Marcus*, *See Your Results*, *Paused ·
+       * Trial Ended*, *Covered by Marcus*. The Counterparty's column is the half of the table that
+       * may not carry a price, the word *trial*, a card ask or an extension — so their four labels
+       * are the only ones that name the pause from the outside, and `tests/trial-pause-no-leak`
+       * fails on any of those words reaching their render.
+       *
+       * `{initiator}` is the initiating account's name, filled by the view; `{days}` and `{instant}`
+       * are the trial window's, so the pill, the Payment fact and the arrival banner cannot disagree
+       * about a date the read already knows.
+       */
+      id: "pause",
+      heading: "Stage 6 is paused",
+      body: "Nothing is lost. Both of you can still read the results and the Discussion; Stage 6 runs again the moment a card is added.",
+      items: [
+        { id: "badge", label: "Paused" },
+        { id: "badge-waiting", label: "Paused · Waiting on {initiator}" },
+        {
+          id: "line",
+          label: "Stage 6 is paused. Your results and Discussion are saved and read-only.",
+        },
+        {
+          id: "line-waiting",
+          label: "Stage 6 is paused until {initiator} resumes it. Everything is saved.",
+        },
+        { id: "trial-ended-heading", label: "Your Trial Ended" },
+        {
+          id: "trial-ended-body",
+          label: "Add a card or get 7 more days free. Either one resumes Stage 6 right away.",
+        },
+        { id: "extra-ended-heading", label: "Your Extra Week Ended" },
+        { id: "extra-ended-body", label: "Add a card to resume Stage 6. Everything is saved." },
+        { id: "waiting-heading", label: "Waiting on {initiator}" },
+        { id: "waiting-body", label: "Nothing to do. You can still read your results." },
+        { id: "add-card", label: "Add a Card" },
+        { id: "extend", label: "Get 7 More Days Free" },
+        { id: "extending", label: "Adding the week…" },
+        { id: "see-results", label: "See Your Results" },
+        { id: "read-only", label: "Read-only while Stage 6 is paused." },
+        {
+          id: "added",
+          label: "7 More Days Added · Stage 6 is running again. Your extra week ends {instant}.",
+        },
+        { id: "membership-trial", label: "Free Trial · Ends {instant}" },
+        { id: "membership-extra", label: "Extra Week · Ends {instant}" },
+        { id: "membership-trial-ended", label: "Paused · Trial Ended" },
+        { id: "membership-extra-ended", label: "Paused · Extra Week Ended" },
+        { id: "membership-covered", label: "Covered by {initiator}" },
+        { id: "pill-trial", label: "Trial · {days} Days Left" },
+        { id: "pill-extra", label: "Extra Week · {days} Days Left" },
       ],
     },
     {
@@ -563,6 +626,23 @@ export const dashboardRelationshipDetailPageCopy: PageCopy = zPageCopy.parse({
         { id: "invalid-window", label: "The invitation window is 1 to 60 whole days." },
         { id: "no-such-version", label: "That version is not one of this relationship's." },
         { id: "no-change", label: "Nothing in this form differs from the relationship." },
+        /* #1121 — the free week's three dead ends, one sentence each, each naming the way back so a
+         * refusal is a next step rather than a wall. */
+        {
+          id: "not-paused",
+          label:
+            "Stage 6 is not paused right now, so there is no free week to add. Add a card if you want to keep it running.",
+        },
+        {
+          id: "no-trial",
+          label:
+            "This account has no free trial to extend. Adding a card is the way to resume Stage 6.",
+        },
+        {
+          id: "extension-used",
+          label:
+            "Your one free week has already been used on this account. Adding a card resumes Stage 6.",
+        },
         { id: "signed-out", label: "Your session ended. Sign in and try again." },
         { id: "failed", label: "The change did not go through." },
       ],
